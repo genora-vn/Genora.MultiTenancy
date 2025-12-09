@@ -1,38 +1,52 @@
 {
   "Culture": "th",
   "Texts": {
-    "AppName": "BookStore",
-    "Menu:BookStore": "Book Store",
-    "Menu:Books": "Books",
+    // Cấu hình Menu language
+    "AppName": "Genora CX Flatform",
+    "Menu:Home": "Home",
+    "Menu:MiniAppSetting": "Mini App",
+    "Menu:AppSettings": "Mini App Settings",
+
+    // Cấu hình bảng Logs
+    "Permission:AuditLogs": "Audit Logs",
+    "Permission:AuditLogs.View": "Audit Logs",
+    "Menu:AuditLogs": "Audit Logs",
+
+    // Cấu hình trường thông tin
     "Actions": "Actions",
     "Close": "Close",
     "Delete": "Delete",
     "Edit": "Edit",
     "PublishDate": "Publish date",
-    "NewBook": "New book",
     "Name": "Name",
     "Type": "Type",
     "Price": "Price",
     "CreationTime": "Creation time",
+
+    // Cấu hình Mini App
+    "PermissionGroup:MiniAppSetting": "Mini App Settings",
+    "PermissionGroup:MiniAppSettingHost": "App Settings Manager (Host)",
+    "Permission:MiniAppSetting": "Mini App Settings manager",
+    "Permission:MiniAppSetting.Create": "Create",
+    "Permission:MiniAppSetting.Edit": "Edit",
+    "Permission:MiniAppSetting.Delete": "Delete",
+
+    "FeatureGroup:MiniAppSetting": "Mini App settings",
+    "Feature:MiniAppSetting": "Active Mini App settings",
+    "Feature:MiniAppSettingDesc": "Allows use of Mini App configuration function (add/edit/delete).",
+
+    "NewAppSetting": "New App Setting",
+    "SettingKey": "Setting key",
+    "SettingValue": "Setting value",
+    "SettingType": "Setting type",
+    "Description": "Description",
+    "IsActive": "Status",
+
+    // Cấu hình thông báo
     "AreYouSure": "Are you sure?",
     "AreYouSureToDelete": "Are you sure you want to delete this item?",
-    "BookDeletionConfirmationMessage": "Are you sure to delete the book '{0}'?",
-    "Enum:BookType.0": "Undefined",
-    "Enum:BookType.1": "Adventure",
-    "Enum:BookType.2": "Biography",
-    "Enum:BookType.3": "Dystopia",
-    "Enum:BookType.4": "Fantastic",
-    "Enum:BookType.5": "Horror",
-    "Enum:BookType.6": "Science",
-    "Enum:BookType.7": "Science fiction",
-    "Enum:BookType.8": "Poetry",
-    "Permission:BookStore": "Book Store",
-    "Permission:Books": "Book Management",
-    "Permission:Books.Create": "Creating new books",
-    "Permission:Books.Edit": "Editing the books",
-    "Permission:Books.Delete": "Deleting the books",
-    "Menu:Home": "Home",
-    "LongWelcomeMessage": "Welcome to the application. This is a startup project based on the ABP framework. For more information visit",
-    "Welcome": "Welcome"
+    "AppSettingDeletionConfirmationMessage": "Are you sure to delete the setting '{0}'?",
+    "LongWelcomeMessage": "Genora CX Flatform - Welcome to management system",
+    "Welcome": "Genora welcome"
   }
 }

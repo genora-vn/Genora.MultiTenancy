@@ -46,22 +46,10 @@ public class MultiTenancyMenuContributor : IMenuContributor
 
         if (tenant.IsAvailable) // TENANT
         {
-            if (await feature.IsEnabledAsync(BookStoreFeatures.Management) &&
-                await perms.IsGrantedAsync(MultiTenancyPermissions.Books.Default))
-            {
-                context.Menu.AddItem(
-                    new ApplicationMenuItem("BookStore", l["Menu:BookStore"], icon: "fa fa-book")
-                        .AddItem(
-                            new ApplicationMenuItem("Books", l["Menu:Books"], "/Books")
-                                .RequirePermissions(MultiTenancyPermissions.Books.Default)
-                        )
-                );
-            }
-
             if (await feature.IsEnabledAsync(AppSettingFeatures.Management) && await perms.IsGrantedAsync(MultiTenancyPermissions.AppSettings.Default))
             {
                 context.Menu.AddItem(
-                    new ApplicationMenuItem("MiniAppSetting", l["Menu:MiniAppSetting"], icon: "fa fa-book")
+                    new ApplicationMenuItem("MiniAppSetting", l["Menu:MiniAppSetting"], icon: "fa fa-mobile")
                         .AddItem(
                             new ApplicationMenuItem("AppSettings", l["Menu:AppSettings"], "/AppSettings")
                                 .RequirePermissions(MultiTenancyPermissions.AppSettings.Default)
@@ -71,10 +59,7 @@ public class MultiTenancyMenuContributor : IMenuContributor
         }
         else // HOST
         {
-            if (await perms.IsGrantedAsync(MultiTenancyPermissions.HostBooks.Default))
-            {
-                // Thêm mục AuditLogs vào nhóm Quản trị
-                administration.AddItem(
+            administration.AddItem(
                     new ApplicationMenuItem(
                         name: "AuditLogs",
                         displayName: l["Menu:AuditLogs"],
@@ -83,14 +68,7 @@ public class MultiTenancyMenuContributor : IMenuContributor
                         order: 60
                     ).RequirePermissions(AuditLogPermissions.View)
                 );
-                context.Menu.AddItem(
-                    new ApplicationMenuItem("BookStoreHost", l["Menu:BookStore"], icon: "fa fa-book")
-                        .AddItem(
-                            new ApplicationMenuItem("BooksHost", l["Menu:Books"], "/Books")
-                                .RequirePermissions(MultiTenancyPermissions.HostBooks.Default)
-                        )
-                );
-            }
+
             if (await perms.IsGrantedAsync(MultiTenancyPermissions.HostAppSettings.Default))
             {
                 context.Menu.AddItem(

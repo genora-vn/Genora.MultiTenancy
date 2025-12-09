@@ -6,10 +6,10 @@ namespace Genora.MultiTenancy.Apps.AppSettings;
 
 public interface IAppSettingService :
     ICrudAppService< //Defines CRUD methods
-        AppSettingDto, //Used to show books
-        Guid, //Primary key of the book entity
+        AppSettingDto, //Used to show AppSettings
+        Guid, //Primary key of the AppSettings entity
         PagedAndSortedResultRequestDto, //Used for paging/sorting
-        CreateUpdateAppSettingDto> //Used to create/update a book
+        CreateUpdateAppSettingDto> //Used to create/update a AppSettings
 {
 
 }

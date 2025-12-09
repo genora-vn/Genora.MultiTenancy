@@ -12,43 +12,7 @@ public class MultiTenancyPermissionDefinitionProvider : PermissionDefinitionProv
 {
     public override void Define(IPermissionDefinitionContext context)
     {
-        #region Cấu hình quyền Thêm / Sửa / Xóa cho tính năng quản trị BookStore
-
-        var group = context.AddGroup("BookStore", L("PermissionGroup:BookStore"));
-
-        // ========== TENANT (bị ràng bởi Feature) ==========
-        var tRoot = group.AddPermission(MultiTenancyPermissions.Books.Default, L("Permission:Books"));
-        tRoot.MultiTenancySide = MultiTenancySides.Tenant;
-        tRoot.RequireFeatures(BookStoreFeatures.Management);
-
-        var tCreate = tRoot.AddChild(MultiTenancyPermissions.Books.Create, L("Permission:Books.Create"));
-        tCreate.MultiTenancySide = MultiTenancySides.Tenant;
-        tCreate.RequireFeatures(BookStoreFeatures.Management);
-
-        var tEdit = tRoot.AddChild(MultiTenancyPermissions.Books.Edit, L("Permission:Books.Edit"));
-        tEdit.MultiTenancySide = MultiTenancySides.Tenant;
-        tEdit.RequireFeatures(BookStoreFeatures.Management);
-
-        var tDelete = tRoot.AddChild(MultiTenancyPermissions.Books.Delete, L("Permission:Books.Delete"));
-        tDelete.MultiTenancySide = MultiTenancySides.Tenant;
-        tDelete.RequireFeatures(BookStoreFeatures.Management);
-
-        var groupHost = context.AddGroup("BookStoreDev", L("PermissionGroup:BookStoreDev"));
-        // ========== HOST (không ràng Feature) ==========
-        var hRoot = groupHost.AddPermission(MultiTenancyPermissions.HostBooks.Default, L("Permission:Books"));
-        hRoot.MultiTenancySide = MultiTenancySides.Host;
-
-        var hCreate = hRoot.AddChild(MultiTenancyPermissions.HostBooks.Create, L("Permission:Books.Create"));
-        hCreate.MultiTenancySide = MultiTenancySides.Host;
-
-        var hEdit = hRoot.AddChild(MultiTenancyPermissions.HostBooks.Edit, L("Permission:Books.Edit"));
-        hEdit.MultiTenancySide = MultiTenancySides.Host;
-
-        var hDelete = hRoot.AddChild(MultiTenancyPermissions.HostBooks.Delete, L("Permission:Books.Delete"));
-        hDelete.MultiTenancySide = MultiTenancySides.Host;
-        #endregion
-
-        #region Cấu hình quyền Thêm / Sửa / Xóa cho tính năng quản trị BookStore
+        #region Cấu hình quyền Thêm / Sửa / Xóa cho tính năng quản trị AppSettings
 
         var appSettingGroup = context.AddGroup("MiniAppSetting", L("PermissionGroup:MiniAppSetting"));
 

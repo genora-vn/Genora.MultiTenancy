@@ -8,7 +8,6 @@ using Volo.Abp.Modularity;
 using Volo.Abp.TenantManagement;
 using Volo.Abp.Domain.Entities.Caching;
 using System;
-using Genora.MultiTenancy.Books;
 using Genora.MultiTenancy.Apps.AppSettings;
 
 namespace Genora.MultiTenancy;
@@ -32,7 +31,6 @@ public class MultiTenancyApplicationModule : AbpModule
             options.AddMaps<MultiTenancyApplicationModule>();
         });
 
-        context.Services.AddEntityCache<Book, BookDto, Guid>();
         context.Services.AddEntityCache<AppSetting, AppSettingDto, Guid>();
     }
 }

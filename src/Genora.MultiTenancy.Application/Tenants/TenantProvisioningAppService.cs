@@ -21,7 +21,7 @@ public class TenantProvisioningAppService : ApplicationService, ITenantProvision
     private readonly ICurrentTenant _currentTenant;
     private readonly IMultiTenancyDbSchemaMigrator _migrator; // ⬅️ abstraction (không EF ở Application)
     private readonly IUnitOfWorkManager _uow;
-    private readonly IDataSeeder _dataSeeder;          // chạy tất cả contributor Domain (Books…)
+    private readonly IDataSeeder _dataSeeder;          // chạy tất cả contributor Domain
     private readonly IIdentityDataSeeder _identitySeeder; // seed admin user/role
 
     public TenantProvisioningAppService(
@@ -80,7 +80,7 @@ public class TenantProvisioningAppService : ApplicationService, ITenantProvision
             // seed admin (username=admin, email=AdminEmail)
             await _identitySeeder.SeedAsync(input.AdminEmail, input.AdminPassword, tenant.Id);
 
-            // chạy tất cả IDataSeedContributor (ví dụ Books) trong DB tenant
+            // chạy tất cả IDataSeedContributor (ví dụ AppSettings) trong DB tenant
             await _dataSeeder.SeedAsync(new DataSeedContext(tenant.Id));
             await uow.CompleteAsync();
         }

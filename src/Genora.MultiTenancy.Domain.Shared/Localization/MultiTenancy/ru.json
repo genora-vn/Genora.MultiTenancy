@@ -1,42 +1,52 @@
 {
-  "culture": "ru",
-  "texts": {
-    "AppName": "BookStore",
-    "Menu:Home": "Дома",
-    "Menu:ContactUs": "Связаться с нами",
-    "Menu:ArticleSample": "Образец статьи",
-    "Home": "Дома",
-    "Welcome": "Добро пожаловать",
-    "LongWelcomeMessage": "Добро пожаловать в приложение. Это стартап-проект, основанный на структуре ABP. Для получения дополнительной информации посетите сайт",
-    "Date": "датировать",
-    "Permission:Dashboard": "Панель приборов",
-    "Menu:Dashboard": "Панель приборов",
-    "Menu:HomePage": "Домашняя страница",
-    "Dashboard": "Панель приборов",
-    "ExternalProvider:Google": "Google",
-    "ExternalProvider:Google:ClientId": "ID клиента",
-    "ExternalProvider:Google:ClientSecret": "Секрет клиента",
-    "ExternalProvider:Microsoft": "Майкрософт",
-    "ExternalProvider:Microsoft:ClientId": "ID клиента",
-    "ExternalProvider:Microsoft:ClientSecret": "Секрет клиента",
-    "ExternalProvider:Twitter": "Твиттер",
-    "ExternalProvider:Twitter:ConsumerKey": "Потребительский ключ",
-    "ExternalProvider:Twitter:ConsumerSecret": "Потребительский секрет",
-    "NewsletterHeader": "Подпишитесь на рассылку!",
-    "NewsletterInfo": "Получайте информацию о последних событиях.",
-    "NewsletterPreference_Default": "Информационный бюллетень по умолчанию",
-    "NewsletterPrivacyAcceptMessage": "Я принимаю <a href='/privacy-policy'>Политику конфиденциальности</a>.",
-    "Language": "Язык",
-    "Search": "Поиск",
-    "LoadMore": "Загрузи больше",
-    "Settings": "Настройки",
-    "Theme": "Тема",
-    "DeviceTheme": "Тема устройства",
-    "Dark": "Темный",
-    "Light": "Свет",
-    "Unspecified": "Система",
-    "SeeAllUsers": "Просмотреть всех пользователей",
-    "TakePhoto": "Сделать фотографию",
-    "ChoosePhoto": "Выбрать фото"
+  "Culture": "ru",
+  "Texts": {
+    // Cấu hình Menu language
+    "AppName": "Genora CX Flatform",
+    "Menu:Home": "Home",
+    "Menu:MiniAppSetting": "Mini App",
+    "Menu:AppSettings": "Mini App Settings",
+
+    // Cấu hình bảng Logs
+    "Permission:AuditLogs": "Audit Logs",
+    "Permission:AuditLogs.View": "Audit Logs",
+    "Menu:AuditLogs": "Audit Logs",
+
+    // Cấu hình trường thông tin
+    "Actions": "Actions",
+    "Close": "Close",
+    "Delete": "Delete",
+    "Edit": "Edit",
+    "PublishDate": "Publish date",
+    "Name": "Name",
+    "Type": "Type",
+    "Price": "Price",
+    "CreationTime": "Creation time",
+
+    // Cấu hình Mini App
+    "PermissionGroup:MiniAppSetting": "Mini App Settings",
+    "PermissionGroup:MiniAppSettingHost": "App Settings Manager (Host)",
+    "Permission:MiniAppSetting": "Mini App Settings manager",
+    "Permission:MiniAppSetting.Create": "Create",
+    "Permission:MiniAppSetting.Edit": "Edit",
+    "Permission:MiniAppSetting.Delete": "Delete",
+
+    "FeatureGroup:MiniAppSetting": "Mini App settings",
+    "Feature:MiniAppSetting": "Active Mini App settings",
+    "Feature:MiniAppSettingDesc": "Allows use of Mini App configuration function (add/edit/delete).",
+
+    "NewAppSetting": "New App Setting",
+    "SettingKey": "Setting key",
+    "SettingValue": "Setting value",
+    "SettingType": "Setting type",
+    "Description": "Description",
+    "IsActive": "Status",
+
+    // Cấu hình thông báo
+    "AreYouSure": "Are you sure?",
+    "AreYouSureToDelete": "Are you sure you want to delete this item?",
+    "AppSettingDeletionConfirmationMessage": "Are you sure to delete the setting '{0}'?",
+    "LongWelcomeMessage": "Genora CX Flatform - Welcome to management system",
+    "Welcome": "Genora welcome"
   }
 }

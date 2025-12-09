@@ -1,5 +1,4 @@
 ﻿using Genora.MultiTenancy.Apps.AppSettings;
-using Genora.MultiTenancy.Books;
 using Genora.MultiTenancy.Diagnostics;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Hosting;
@@ -31,8 +30,6 @@ public class MultiTenancyDbContext :
 {
     private readonly SerilogCommandInterceptor _sqlInterceptor;
     private readonly IHostEnvironment _env;
-
-    public DbSet<Book> Books { get; set; }
 
     public DbSet<AppSetting> AppSettings { get; set; }
 
@@ -97,11 +94,11 @@ public class MultiTenancyDbContext :
         builder.ConfigureTenantManagement();
         builder.ConfigureBlobStoring();
 
-        builder.Entity<Book>(b =>
+        builder.Entity<AppSetting>(b =>
         {
-            b.ToTable(MultiTenancyConsts.DbTablePrefix + "Books", MultiTenancyConsts.DbSchema);
+            b.ToTable(MultiTenancyConsts.DbTablePrefix + "Settings", MultiTenancyConsts.DbSchema);
             b.ConfigureByConvention();
-            b.Property(x => x.Name).IsRequired().HasMaxLength(128);
+            b.Property(x => x.SettingKey).IsRequired().HasMaxLength(100);
         });
     }
 }

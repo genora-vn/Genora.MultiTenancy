@@ -1,7 +1,6 @@
 ﻿using AutoMapper;
 using Genora.MultiTenancy.Apps.AppSettings;
 using Genora.MultiTenancy.AuditLogs;
-using Genora.MultiTenancy.Books;
 using Volo.Abp.AuditLogging;
 
 namespace Genora.MultiTenancy;
@@ -10,16 +9,10 @@ public class MultiTenancyApplicationAutoMapperProfile : Profile
 {
     public MultiTenancyApplicationAutoMapperProfile()
     {
-        CreateMap<Book, BookDto>();
-        CreateMap<CreateUpdateBookDto, Book>();
-
         #region AppSetting auto mapper profile
         CreateMap<AppSetting, AppSettingDto>();
         CreateMap<CreateUpdateAppSettingDto, AppSetting>();
         #endregion
-
-
-
 
         CreateMap<AuditLog, AuditLogListDto>()
             .ForMember(d => d.HasException, o => o.MapFrom(s => !string.IsNullOrEmpty(s.Exceptions)))
