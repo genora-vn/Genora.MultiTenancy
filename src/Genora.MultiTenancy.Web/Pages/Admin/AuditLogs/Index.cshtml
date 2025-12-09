@@ -1,0 +1,96 @@
+﻿@page
+@using Microsoft.AspNetCore.Authorization
+@model Genora.MultiTenancy.Web.Pages.Admin.AuditLogs.IndexModel
+@attribute [Authorize]
+@{
+    ViewData["Title"] = "Audit Logs";
+}
+<h1 class="mb-3">Audit Logs</h1>
+
+<form method="get" class="row g-2 mb-3">
+    <!-- TenantId (chỉ host mới dùng) -->
+    <div class="col-md-3">
+        <input class="form-control" name="TenantId" value="@Model.Filter.TenantId"
+               placeholder="TenantId (Host only)" />
+    </div>
+
+    <div class="col-md-3">
+        <input class="form-control" name="Url" value="@Model.Filter.Url" placeholder="URL contains..." />
+    </div>
+    <div class="col-md-2">
+        <select class="form-select" name="HttpMethod">
+            <option value="">Any</option>
+            <option selected="@(Model.Filter.HttpMethod == "GET")">GET</option>
+            <option selected="@(Model.Filter.HttpMethod == "POST")">POST</option>
+            <option selected="@(Model.Filter.HttpMethod == "PUT")">PUT</option>
+            <option selected="@(Model.Filter.HttpMethod == "DELETE")">DELETE</option>
+        </select>
+    </div>
+    <div class="col-md-2">
+        <input class="form-control" type="datetime-local" name="StartTime"
+               value="@(Model.Filter.StartTime?.ToString("yyyy-MM-ddTHH:mm"))" />
+    </div>
+    <div class="col-md-2">
+        <input class="form-control" type="datetime-local" name="EndTime"
+               value="@(Model.Filter.EndTime?.ToString("yyyy-MM-ddTHH:mm"))" />
+    </div>
+    <div class="col-md-2">
+        <select class="form-select" name="HasException">
+            <option value="">All</option>
+            <option value="true" selected="@(Model.Filter.HasException == true)">Has Exception</option>
+            <option value="false" selected="@(Model.Filter.HasException == false)">No Exception</option>
+        </select>
+    </div>
+    <div class="col-md-1">
+        <button class="btn btn-primary w-100">Lọc</button>
+    </div>
+</form>
+
+<table class="table table-hover align-middle">
+    <thead>
+        <tr>
+            <th style="width:170px;">Time</th>
+            <th style="width:220px;">Tenant</th>   <!-- ★ hiện Tenant -->
+            <th>User</th>
+            <th>Method</th>
+            <th>URL</th>
+            <th style="width:120px;">Duration (ms)</th>
+            <th style="width:120px;">IP</th>
+            <th style="width:80px;">Err</th>
+            <th style="width:80px;"></th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var i in Model.Result.Items)
+        {
+            <tr>
+                <td>@i.ExecutionTime.ToString("yyyy-MM-dd HH:mm:ss")</td>
+                <td>@(i.TenantId?.ToString() ?? "HOST")</td> <!-- ★ -->
+                <td>@i.UserName</td>
+                <td>@i.HttpMethod</td>
+                <td style="max-width:500px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">@i.Url</td>
+                <td>@i.ExecutionDuration</td>
+                <td>@i.ClientIpAddress</td>
+                <td>@(i.HasException ? "⚠️" : "")</td>
+                <td><a class="btn btn-sm btn-outline-secondary" asp-page="./Detail" asp-route-id="@i.Id">Chi tiết</a></td>
+            </tr>
+        }
+    </tbody>
+</table>
+<nav aria-label="pagination">
+    <ul class="pagination">
+        @{
+            var currentPage = (Model.Filter.SkipCount / Model.Filter.MaxResultCount) + 1;
+            var totalPages = (int)Math.Ceiling((double)Model.Result.TotalCount / Model.Filter.MaxResultCount);
+            int PrevSkip() => Math.Max(0, Model.Filter.SkipCount - Model.Filter.MaxResultCount);
+            int NextSkip() => Model.Filter.SkipCount + Model.Filter.MaxResultCount;
+        }
+        <li class="page-item @(currentPage <= 1 ? "disabled" : "")">
+            <a class="page-link" href="@Url.Page("./Index", new { SkipCount = PrevSkip(), MaxResultCount = Model.Filter.MaxResultCount, Model.Filter.Url, Model.Filter.HttpMethod, Model.Filter.StartTime, Model.Filter.EndTime, Model.Filter.HasException })">Prev</a>
+        </li>
+        <li class="page-item disabled"><span class="page-link">@currentPage  / @totalPages</span></li>
+        <li class="page-item @((Model.Filter.SkipCount + Model.Filter.MaxResultCount) >= Model.Result.TotalCount ? "disabled" : "")">
+            <a class="page-link" href="@Url.Page("./Index", new { SkipCount = NextSkip(), MaxResultCount = Model.Filter.MaxResultCount, Model.Filter.Url, Model.Filter.HttpMethod, Model.Filter.StartTime, Model.Filter.EndTime, Model.Filter.HasException })">Next</a>
+        </li>
+    </ul>
+</nav>

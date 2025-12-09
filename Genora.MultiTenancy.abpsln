@@ -1,0 +1,54 @@
+{
+  "id": "99f9b441-b5ae-4e8a-8a58-9e7df2f9139e",
+  "creationTime": "10/10/2025 06:36:00 +00:00",
+  "template": "app",
+  "versions": {
+    "AbpFramework": "9.3.5",
+    "AbpStudio": "1.3.3",
+    "TargetDotnetFramework": "net9.0"
+  },
+  "modules": {
+    "Baygolf.MultiTenancy": {
+      "path": "Baygolf.MultiTenancy.abpmdl"
+    }
+  },
+  "runProfiles": {
+    "Default": {
+      "path": "etc/abp-studio/run-profiles/Default.abprun.json"
+    }
+  },
+  "options": {
+    "httpRequests": {
+      "ignoredUrls": [
+      
+      ]
+    }
+  },
+  "creatingStudioConfiguration": {
+    "template": "app",
+    "createdAbpStudioVersion": "1.3.3",
+    "tiered": "false",
+    "runInstallLibs": "true",
+    "useLocalReferences": "false",
+    "multiTenancy": "true",
+    "includeTests": "true",
+    "kubernetesConfiguration": "false",
+    "uiFramework": "mvc",
+    "mobileFramework": "none",
+    "distributedEventBus": "none",
+    "databaseProvider": "ef",
+    "runDbMigrator": "true",
+    "databaseManagementSystem": "sqlserver",
+    "separateTenantSchema": "false",
+    "createInitialMigration": "true",
+    "theme": "leptonx-lite",
+    "themeStyle": "",
+    "themeMenuPlacement": "",
+    "mobileFramework": "none",
+    "publicWebsite": "false",
+    "socialLogin": "true",
+    "selectedLanguages": ["Arabic", "Chinese (Simplified)", "Chinese (Traditional)", "Czech", "English", "English (United Kingdom)", "Finnish", "French", "German (Germany)", "Hindi ", "Hungarian", "Icelandic", "Italian", "Portuguese (Brazil)", "Romanian (Romania)", "Russian", "Slovak", "Spanish", "Swedish", "Turkish", ],
+    "defaultLanguage": "Arabic",
+    "createCommand": "abp new Baygolf.MultiTenancy -t app --ui-framework mvc --database-provider ef --database-management-system sqlserver --theme leptonx-lite --without-cms-kit --dont-run-bundling -no-file-management"
+  }
+}

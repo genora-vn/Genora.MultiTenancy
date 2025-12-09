@@ -1,0 +1,18 @@
+﻿{
+  "applications": {
+    "Baygolf.MultiTenancy.Web": {
+      "type": "dotnet-project",
+      "launchUrl": "https://localhost:44374",
+      "path": "../../../src/Baygolf.MultiTenancy.Web/Baygolf.MultiTenancy.Web.csproj",
+      "kubernetesService": ".*-web$",
+      "healthCheckEndpoint": "/health-status",
+      "healthUiEndpoint": "/health-ui",
+      "execution": {
+        "order": 2
+      }
+    }
+  },
+  "containers": {
+    "serviceName": "MultiTenancy-Containers",
+  }
+}

@@ -1,0 +1,93 @@
+﻿@page "{id:guid}"
+@model Genora.MultiTenancy.Web.Pages.Admin.AuditLogs.DetailModel
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize]
+@{
+    ViewData["Title"] = "Audit Log Detail";
+    var i = Model.Item;
+}
+
+<a asp-page="./Index" class="btn btn-link">&larr; Back</a>
+<h2 class="mb-3">Audit Log Detail</h2>
+
+<div class="card mb-3">
+    <div class="card-body">
+        <div class="row g-2">
+            <div class="col-md-3"><strong>Time</strong><br />@i.ExecutionTime.ToString("yyyy-MM-dd HH:mm:ss")</div>
+            <div class="col-md-3"><strong>User</strong><br />@i.UserName (@i.UserId)</div>
+            <div class="col-md-3"><strong>Tenant</strong><br />@i.TenantId</div>
+            <div class="col-md-3"><strong>CorrelationId</strong><br />@i.CorrelationId</div>
+            <div class="col-md-3"><strong>HTTP</strong><br />@i.HttpMethod @i.HttpStatusCode</div>
+            <div class="col-md-3"><strong>Duration</strong><br />@i.ExecutionDuration ms</div>
+            <div class="col-md-3"><strong>Client IP</strong><br />@i.ClientIpAddress</div>
+            <div class="col-md-3"><strong>Browser</strong><br />@i.BrowserInfo</div>
+            <div class="col-md-12"><strong>URL</strong><br /><code>@i.Url</code></div>
+        </div>
+    </div>
+</div>
+
+@if (!string.IsNullOrWhiteSpace(i.Exceptions))
+{
+    <div class="card mb-3 border-danger">
+        <div class="card-header bg-danger text-white">Exceptions</div>
+        <div class="card-body">
+            <pre class="mb-0" style="white-space:pre-wrap;">@i.Exceptions</pre>
+        </div>
+    </div>
+}
+
+@if (i.Actions?.Count > 0)
+{
+    <div class="card mb-3">
+        <div class="card-header">Actions (@i.Actions.Count)</div>
+        <div class="card-body p-0">
+            <table class="table mb-0">
+                <thead><tr><th>Service</th><th>Method</th><th>Duration</th><th>Parameters</th></tr></thead>
+                <tbody>
+                    @foreach (var a in i.Actions)
+                    {
+                        <tr>
+                            <td>@a.ServiceName</td>
+                            <td>@a.MethodName</td>
+                            <td>@a.ExecutionDuration ms</td>
+                            <td><pre class="mb-0" style="white-space:pre-wrap;max-height:200px;overflow:auto;">@a.Parameters</pre></td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+}
+
+@if (i.EntityChanges?.Count > 0)
+{
+    <div class="card mb-3">
+        <div class="card-header">Entity Changes (@i.EntityChanges.Count)</div>
+        <div class="card-body p-0">
+            <table class="table mb-0">
+                <thead><tr><th>Type</th><th>Change</th><th>EntityId</th><th>Properties</th></tr></thead>
+                <tbody>
+                    @foreach (var c in i.EntityChanges)
+                    {
+                        <tr>
+                            <td>@c.EntityTypeFullName</td>
+                            <td>@c.ChangeType</td>
+                            <td>@c.EntityId</td>
+                            <td>
+                                @if (c.PropertyChanges?.Count > 0)
+                                {
+                                    <ul class="mb-0">
+                                        @foreach (var p in c.PropertyChanges)
+                                        {
+                                            <li><strong>@p.PropertyName</strong>: <code>@p.OriginalValue</code> → <code>@p.NewValue</code></li>
+                                        }
+                                    </ul>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+}

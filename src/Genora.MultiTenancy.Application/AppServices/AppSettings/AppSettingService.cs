@@ -1,0 +1,109 @@
+﻿using Genora.MultiTenancy.Features.AppSettings;
+using Genora.MultiTenancy.Permissions;
+using Microsoft.AspNetCore.Authorization;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using Volo.Abp.Application.Dtos;
+using Volo.Abp.Application.Services;
+using Volo.Abp.Authorization;
+using Volo.Abp.Domain.Entities.Caching;
+using Volo.Abp.Domain.Repositories;
+using Volo.Abp.Features;
+using Volo.Abp.MultiTenancy;
+using System.Linq.Dynamic.Core;
+
+namespace Genora.MultiTenancy.Apps.AppSettings;
+
+[Authorize]
+public class AppSettingService : ApplicationService, IAppSettingService
+{
+    private readonly IRepository<AppSetting, Guid> _repository;
+    private readonly IEntityCache<AppSettingDto, Guid> _appSettingCache;
+    private readonly ICurrentTenant _currentTenant;
+    private readonly IFeatureChecker _featureChecker;
+
+    public AppSettingService(
+        IRepository<AppSetting, Guid> repository,
+        IEntityCache<AppSettingDto, Guid> appSettingCache,
+        ICurrentTenant currentTenant,
+        IFeatureChecker featureChecker)
+    {
+        _repository = repository;
+        _appSettingCache = appSettingCache;
+        _currentTenant = currentTenant;
+        _featureChecker = featureChecker;
+    }
+
+    // map quyền TENANT -> quyền HOST khi đang ở host
+    private string MapPermissionForSide(string tenantPermission)
+        => _currentTenant.IsAvailable
+            ? tenantPermission
+            : tenantPermission switch
+            {
+                var x when x == MultiTenancyPermissions.AppSettings.Create => MultiTenancyPermissions.HostAppSettings.Create,
+                var x when x == MultiTenancyPermissions.AppSettings.Edit => MultiTenancyPermissions.HostAppSettings.Edit,
+                var x when x == MultiTenancyPermissions.AppSettings.Delete => MultiTenancyPermissions.HostAppSettings.Delete,
+                _ => MultiTenancyPermissions.HostAppSettings.Default
+            };
+
+    private async Task EnsureAccessAsync(string tenantPermissionForAction)
+    {
+        // 1) Check quyền: Host dùng HostAppSettings.*, Tenant dùng AppSettings.*
+        await AuthorizationService.CheckAsync(MapPermissionForSide(tenantPermissionForAction));
+
+        // 2) Chỉ Tenant mới bị ràng buộc Feature
+        if (_currentTenant.IsAvailable &&
+            !await _featureChecker.IsEnabledAsync(AppSettingFeatures.Management))
+        {
+            throw new AbpAuthorizationException("AppSetting feature is disabled for this tenant.");
+        }
+    }
+
+    public async Task<AppSettingDto> GetAsync(Guid id)
+    {
+        await EnsureAccessAsync(MultiTenancyPermissions.AppSettings.Default);
+        return await _appSettingCache.GetAsync(id);
+    }
+
+    public async Task<PagedResultDto<AppSettingDto>> GetListAsync(PagedAndSortedResultRequestDto input)
+    {
+        await EnsureAccessAsync(MultiTenancyPermissions.AppSettings.Default);
+
+        var q = (await _repository.GetQueryableAsync())
+                .OrderBy(input.Sorting.IsNullOrWhiteSpace() ? "SettingKey" : input.Sorting)
+                .Skip(input.SkipCount)
+                .Take(input.MaxResultCount);
+
+        var items = await AsyncExecuter.ToListAsync(q);
+        var total = await AsyncExecuter.CountAsync(await _repository.GetQueryableAsync());
+
+        return new PagedResultDto<AppSettingDto>(total, ObjectMapper.Map<List<AppSetting>, List<AppSettingDto>>(items));
+    }
+
+    public async Task<AppSettingDto> CreateAsync(CreateUpdateAppSettingDto input)
+    {
+        await EnsureAccessAsync(MultiTenancyPermissions.AppSettings.Create);
+
+        var appSetting = ObjectMapper.Map<CreateUpdateAppSettingDto, AppSetting>(input);
+        await _repository.InsertAsync(appSetting);
+        return ObjectMapper.Map<AppSetting, AppSettingDto>(appSetting);
+    }
+
+    public async Task<AppSettingDto> UpdateAsync(Guid id, CreateUpdateAppSettingDto input)
+    {
+        await EnsureAccessAsync(MultiTenancyPermissions.AppSettings.Edit);
+
+        var appSetting = await _repository.GetAsync(id);
+        ObjectMapper.Map(input, appSetting);
+        await _repository.UpdateAsync(appSetting);
+        return ObjectMapper.Map<AppSetting, AppSettingDto>(appSetting);
+    }
+
+    public async Task DeleteAsync(Guid id)
+    {
+        await EnsureAccessAsync(MultiTenancyPermissions.AppSettings.Delete);
+        await _repository.DeleteAsync(id);
+    }
+}

@@ -1,0 +1,112 @@
+{
+  "template": "app",
+  "imports": {
+    "Volo.Abp.LeptonXLiteTheme": {
+      "version": "4.3.5",
+      "isInstalled": true
+    },
+    "Volo.Abp.Account": {
+      "version": "9.3.5",
+      "isInstalled": true,
+      "creationTime": "10/10/2025 06:36:00 +00:00"
+    },
+    "Volo.Abp.OpenIddict": {
+      "version": "9.3.5",
+      "isInstalled": true,
+      "creationTime": "10/10/2025 06:36:00 +00:00"
+    },
+    "Volo.Abp.Identity": {
+      "version": "9.3.5",
+      "isInstalled": true,
+      "creationTime": "10/10/2025 06:36:00 +00:00"
+    },
+    "Volo.Abp.TenantManagement": {
+      "version": "9.3.5",
+      "isInstalled": true,
+      "creationTime": "10/10/2025 06:36:00 +00:00"
+    },
+    "Volo.Abp.SettingManagement": {
+      "version": "9.3.5",
+      "isInstalled": true,
+      "creationTime": "10/10/2025 06:36:00 +00:00"
+    },
+    "Volo.Abp.PermissionManagement": {
+      "version": "9.3.5",
+      "isInstalled": true,
+      "creationTime": "10/10/2025 06:36:00 +00:00"
+    },
+    "Volo.Abp.FeatureManagement": {
+      "version": "9.3.5",
+      "isInstalled": true,
+      "creationTime": "10/10/2025 06:36:00 +00:00"
+    }
+  },
+  "folders": {
+    "items": {
+      "src": {},
+      "test": {}
+    }
+  },
+  "packages": {
+    "Baygolf.MultiTenancy.Application": {
+      "path": "src/Baygolf.MultiTenancy.Application/Baygolf.MultiTenancy.Application.abppkg",
+      "folder": "src"
+    },
+    "Baygolf.MultiTenancy.Application.Tests": {
+      "path": "test/Baygolf.MultiTenancy.Application.Tests/Baygolf.MultiTenancy.Application.Tests.abppkg",
+      "folder": "test"
+    },
+    "Baygolf.MultiTenancy.Domain.Shared": {
+      "path": "src/Baygolf.MultiTenancy.Domain.Shared/Baygolf.MultiTenancy.Domain.Shared.abppkg",
+      "folder": "src"
+    },
+    "Baygolf.MultiTenancy.Application.Contracts": {
+      "path": "src/Baygolf.MultiTenancy.Application.Contracts/Baygolf.MultiTenancy.Application.Contracts.abppkg",
+      "folder": "src"
+    },
+    "Baygolf.MultiTenancy.HttpApi": {
+      "path": "src/Baygolf.MultiTenancy.HttpApi/Baygolf.MultiTenancy.HttpApi.abppkg",
+      "folder": "src"
+    },
+    "Baygolf.MultiTenancy.HttpApi.Client": {
+      "path": "src/Baygolf.MultiTenancy.HttpApi.Client/Baygolf.MultiTenancy.HttpApi.Client.abppkg",
+      "folder": "src"
+    },
+    "Baygolf.MultiTenancy.Web": {
+      "path": "src/Baygolf.MultiTenancy.Web/Baygolf.MultiTenancy.Web.abppkg",
+      "folder": "src"
+    },
+    "Baygolf.MultiTenancy.Web.Tests": {
+      "path": "test/Baygolf.MultiTenancy.Web.Tests/Baygolf.MultiTenancy.Web.Tests.abppkg",
+      "folder": "test"
+    },
+    "Baygolf.MultiTenancy.EntityFrameworkCore.Tests": {
+      "path": "test/Baygolf.MultiTenancy.EntityFrameworkCore.Tests/Baygolf.MultiTenancy.EntityFrameworkCore.Tests.abppkg",
+      "folder": "test"
+    },
+    "Baygolf.MultiTenancy.EntityFrameworkCore": {
+      "path": "src/Baygolf.MultiTenancy.EntityFrameworkCore/Baygolf.MultiTenancy.EntityFrameworkCore.abppkg",
+      "folder": "src"
+    },
+    "Baygolf.MultiTenancy.TestBase": {
+      "path": "test/Baygolf.MultiTenancy.TestBase/Baygolf.MultiTenancy.TestBase.abppkg",
+      "folder": "test"
+    },
+    "Baygolf.MultiTenancy.Domain.Tests": {
+      "path": "test/Baygolf.MultiTenancy.Domain.Tests/Baygolf.MultiTenancy.Domain.Tests.abppkg",
+      "folder": "test"
+    },
+    "Baygolf.MultiTenancy.HttpApi.Client.ConsoleTestApp": {
+      "path": "test/Baygolf.MultiTenancy.HttpApi.Client.ConsoleTestApp/Baygolf.MultiTenancy.HttpApi.Client.ConsoleTestApp.abppkg",
+      "folder": "test"
+    },
+    "Baygolf.MultiTenancy.DbMigrator": {
+      "path": "src/Baygolf.MultiTenancy.DbMigrator/Baygolf.MultiTenancy.DbMigrator.abppkg",
+      "folder": "src"
+    },
+    "Baygolf.MultiTenancy.Domain": {
+      "path": "src/Baygolf.MultiTenancy.Domain/Baygolf.MultiTenancy.Domain.abppkg",
+      "folder": "src"
+    }
+  }
+}

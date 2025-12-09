@@ -1,0 +1,15 @@
+﻿using System;
+using Volo.Abp.Application.Dtos;
+using Volo.Abp.Application.Services;
+
+namespace Genora.MultiTenancy.Apps.AppSettings;
+
+public interface IAppSettingService :
+    ICrudAppService< //Defines CRUD methods
+        AppSettingDto, //Used to show books
+        Guid, //Primary key of the book entity
+        PagedAndSortedResultRequestDto, //Used for paging/sorting
+        CreateUpdateAppSettingDto> //Used to create/update a book
+{
+
+}

@@ -1,0 +1,44 @@
+﻿@page
+@using Genora.MultiTenancy.Localization
+@using Genora.MultiTenancy.Permissions
+@using Genora.MultiTenancy.Web.Pages.AppSettings
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.Extensions.Localization
+@inject IStringLocalizer<MultiTenancyResource> L
+@inject IAuthorizationService AuthorizationService
+@inject Volo.Abp.MultiTenancy.ICurrentTenant CurrentTenant
+
+@{
+    var canCreate = CurrentTenant.IsAvailable
+        ? await AuthorizationService.IsGrantedAsync(MultiTenancyPermissions.AppSettings.Create)
+        : await AuthorizationService.IsGrantedAsync(MultiTenancyPermissions.HostAppSettings.Create);
+}
+
+
+@section scripts
+{
+    <abp-script src="/Pages/AppSettings/Index.js" />
+}
+
+<abp-card>
+    <abp-card-header>
+        <abp-row>
+            <abp-column size-md="_6">
+                <abp-card-title>@L["AppSettings"]</abp-card-title>
+            </abp-column>
+            <abp-column size-md="_6" class="text-end">
+                @* HOST: luôn thấy; TENANT: cần quyền *@
+                @if (canCreate)
+                {
+                    <abp-button id="NewAppSettingButton"
+                                text="@L["NewAppSetting"].Value"
+                                icon="plus"
+                                button-type="Primary" />
+                }
+            </abp-column>
+        </abp-row>
+    </abp-card-header>
+    <abp-card-body>
+        <abp-table striped-rows="true" id="AppSettingsTable"></abp-table>
+    </abp-card-body>
+</abp-card>
