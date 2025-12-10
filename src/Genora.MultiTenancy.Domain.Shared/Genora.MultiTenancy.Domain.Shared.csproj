@@ -34,8 +34,4 @@
     <Content Remove="Localization\MultiTenancy\*.json" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="AppTypes\" />
-  </ItemGroup>
-
 </Project>

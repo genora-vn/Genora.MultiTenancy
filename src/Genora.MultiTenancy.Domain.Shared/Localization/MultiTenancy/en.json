@@ -6,6 +6,7 @@
     "Menu:Home": "Home",
     "Menu:MiniAppSetting": "Mini App",
     "Menu:AppSettings": "General Settings",
+    "Menu:AppCustomerTypes": "Customer types",
 
     // Cấu hình bảng Logs
     "Permission:AuditLogs": "Audit Logs",
@@ -41,6 +42,28 @@
     "SettingType": "Setting type",
     "Description": "Description",
     "IsActive": "Is Active",
+
+    // ====== AppCustomerTypes (Loại khách hàng) ======
+    "PermissionGroup:MiniAppCustomerType": "Customer types",
+    "PermissionGroup:MiniAppCustomerTypeHost": "Customer types (Host)",
+    "Permission:MiniAppCustomerType": "Manage customer types",
+    "Permission:MiniAppCustomerType.Create": "Create",
+    "Permission:MiniAppCustomerType.Edit": "Edit",
+    "Permission:MiniAppCustomerType.Delete": "Delete",
+
+    "FeatureGroup:MiniAppCustomerType": "Customer types",
+    "Feature:MiniAppCustomerType": "Enable customer type management",
+    "Feature:MiniAppCustomerTypeDesc": "Allows using customer type management (create/edit/delete).",
+
+    "AppCustomerTypes": "Customer types",
+    "EditAppCustomerType": "Edit customer type",
+    "InvalidHexColor": "Invalid color code. Please use format #RRGGBB (e.g. #FF9800).",
+
+    "NewAppCustomerType": "New customer type",
+    "CustomerTypeCode": "Customer type code",
+    "CustomerTypeName": "Customer type name",
+    "CustomerTypeDescription": "Description",
+    "CustomerTypeColorCode": "Label color",
 
     // Cấu hình thông báo
     "AreYouSure": "Are you sure?",

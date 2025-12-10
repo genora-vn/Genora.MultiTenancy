@@ -5,8 +5,8 @@ using Volo.Abp.MultiTenancy;
 
 namespace Genora.MultiTenancy.Apps.AppSettings;
 
-[Audited]
-public class AppSetting : AuditedAggregateRoot<Guid>, IMultiTenant
+//[Audited] - AuditedAggregateRoot
+public class AppSetting : FullAuditedAggregateRoot<Guid>, IMultiTenant
 {
     public Guid? TenantId { get; private set; }
     public string SettingKey { get; set; }

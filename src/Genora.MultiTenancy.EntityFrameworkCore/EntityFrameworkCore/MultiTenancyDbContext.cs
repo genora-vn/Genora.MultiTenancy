@@ -1,5 +1,16 @@
 ﻿using Genora.MultiTenancy.Apps.AppSettings;
 using Genora.MultiTenancy.Diagnostics;
+using Genora.MultiTenancy.DomainModels.AppBookingPlayers;
+using Genora.MultiTenancy.DomainModels.AppBookings;
+using Genora.MultiTenancy.DomainModels.AppBookingStatusHistories;
+using Genora.MultiTenancy.DomainModels.AppCalendarSlotPrices;
+using Genora.MultiTenancy.DomainModels.AppCalendarSlots;
+using Genora.MultiTenancy.DomainModels.AppCustomerMemberships;
+using Genora.MultiTenancy.DomainModels.AppCustomers;
+using Genora.MultiTenancy.DomainModels.AppCustomerTypes;
+using Genora.MultiTenancy.DomainModels.AppGolfCourses;
+using Genora.MultiTenancy.DomainModels.AppMembershipTiers;
+using Genora.MultiTenancy.DomainModels.AppNews;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Hosting;
 using Volo.Abp.AuditLogging.EntityFrameworkCore;
@@ -32,6 +43,19 @@ public class MultiTenancyDbContext :
     private readonly IHostEnvironment _env;
 
     public DbSet<AppSetting> AppSettings { get; set; }
+
+    // Mini App
+    public DbSet<CustomerType> CustomerType { get; set; }
+    public DbSet<GolfCourse> GolfCourse { get; set; }
+    public DbSet<MembershipTier> MembershipTier { get; set; }
+    public DbSet<Customer> Customer { get; set; }
+    public DbSet<CalendarSlot> CalendarSlot { get; set; }
+    public DbSet<CalendarSlotPrice> CalendarSlotPrice { get; set; }
+    public DbSet<News> News { get; set; }
+    public DbSet<CustomerMembership> CustomerMembership { get; set; }
+    public DbSet<Booking> Booking { get; set; }
+    public DbSet<BookingPlayer> BookingPlayer { get; set; }
+    public DbSet<BookingStatusHistory> BookingStatusHistory { get; set; }
 
     // Identity
     public DbSet<IdentityUser> Users { get; set; }
@@ -100,5 +124,8 @@ public class MultiTenancyDbContext :
             b.ConfigureByConvention();
             b.Property(x => x.SettingKey).IsRequired().HasMaxLength(100);
         });
+
+        // Mini App domain module
+        builder.ConfigureMiniAppModule();
     }
 }

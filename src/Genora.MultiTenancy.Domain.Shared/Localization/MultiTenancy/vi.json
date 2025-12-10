@@ -6,6 +6,7 @@
     "Menu:Home": "Trang chủ",
     "Menu:MiniAppSetting": "Mini App",
     "Menu:AppSettings": "Cấu hình chung",
+    "Menu:AppCustomerTypes": "Loại khách hàng",
 
     // Cấu hình bảng Logs
     "Permission:AuditLogs": "Nhật ký hệ thống",
@@ -16,7 +17,7 @@
     "Actions": "Hành động",
     "Close": "Thoát",
     "Yes": "Hoạt động",
-    "No":  "Không hoạt động",
+    "No": "Không hoạt động",
     "Delete": "Xóa",
     "Edit": "Sửa",
     "PublishDate": "Ngày xuất bản",
@@ -43,6 +44,28 @@
     "SettingType": "Loại cấu hình",
     "Description": "Mô tả",
     "IsActive": "Trạng thái",
+
+    // ====== AppCustomerTypes (Loại khách hàng) ======
+    "PermissionGroup:MiniAppCustomerType": "Loại khách hàng",
+    "PermissionGroup:MiniAppCustomerTypeHost": "Loại khách hàng (Host)",
+    "Permission:MiniAppCustomerType": "Quản lý loại khách hàng",
+    "Permission:MiniAppCustomerType.Create": "Tạo mới",
+    "Permission:MiniAppCustomerType.Edit": "Chỉnh sửa",
+    "Permission:MiniAppCustomerType.Delete": "Xoá",
+
+    "FeatureGroup:MiniAppCustomerType": "Loại khách hàng",
+    "Feature:MiniAppCustomerType": "Bật quản lý loại khách hàng",
+    "Feature:MiniAppCustomerTypeDesc": "Cho phép sử dụng chức năng quản lý loại khách hàng (thêm/sửa/xoá).",
+
+    "AppCustomerTypes": "Loại khách hàng",
+    "EditAppCustomerType": "Chỉnh sửa loại khách hàng",
+    "InvalidHexColor": "Mã màu không hợp lệ. Vui lòng nhập dạng #RRGGBB (ví dụ: #FF9800).",
+
+    "NewAppCustomerType": "Thêm loại khách hàng",
+    "CustomerTypeCode": "Mã loại khách hàng",
+    "CustomerTypeName": "Tên loại khách hàng",
+    "CustomerTypeDescription": "Mô tả",
+    "CustomerTypeColorCode": "Màu nhãn",
 
     // Cấu hình thông báo
     "AreYouSure": "Bạn chắc chắn?",

@@ -2,29 +2,28 @@ using Genora.MultiTenancy.Apps.AppSettings;
 using Microsoft.AspNetCore.Mvc;
 using System.Threading.Tasks;
 
-namespace Genora.MultiTenancy.Web.Pages.AppSettings
+namespace Genora.MultiTenancy.Web.Pages.AppSettings;
+
+public class CreateModalModel : MultiTenancyPageModel
 {
-    public class CreateModalModel : MultiTenancyPageModel
+    [BindProperty]
+    public CreateUpdateAppSettingDto AppSetting { get; set; }
+
+    private readonly IAppSettingService _appSettingService;
+
+    public CreateModalModel(IAppSettingService appSettingService)
     {
-        [BindProperty]
-        public CreateUpdateAppSettingDto AppSetting { get; set; }
+        _appSettingService = appSettingService;
+    }
 
-        private readonly IAppSettingService _appSettingService;
+    public void OnGet()
+    {
+        AppSetting = new CreateUpdateAppSettingDto();
+    }
 
-        public CreateModalModel(IAppSettingService appSettingService)
-        {
-            _appSettingService = appSettingService;
-        }
-
-        public void OnGet()
-        {
-            AppSetting = new CreateUpdateAppSettingDto();
-        }
-
-        public async Task<IActionResult> OnPostAsync()
-        {
-            await _appSettingService.CreateAsync(AppSetting);
-            return NoContent();
-        }
+    public async Task<IActionResult> OnPostAsync()
+    {
+        await _appSettingService.CreateAsync(AppSetting);
+        return NoContent();
     }
 }

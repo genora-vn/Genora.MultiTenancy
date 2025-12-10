@@ -1,4 +1,5 @@
 ﻿using Genora.MultiTenancy.Features;
+using Genora.MultiTenancy.Features.AppCustomerTypes;
 using Genora.MultiTenancy.Features.AppSettings;
 using Genora.MultiTenancy.Localization;
 using Genora.MultiTenancy.Permissions;
@@ -30,7 +31,6 @@ public class MultiTenancyMenuContributor : IMenuContributor
         var perms = context.ServiceProvider.GetRequiredService<IPermissionChecker>();
         var tenant = context.ServiceProvider.GetRequiredService<ICurrentTenant>();
 
-        // Lấy nhóm "Quản trị" (Administration) sẵn có của ABP
         var administration = context.Menu.GetAdministration();
 
         // Home
@@ -44,45 +44,105 @@ public class MultiTenancyMenuContributor : IMenuContributor
             )
         );
 
-        if (tenant.IsAvailable) // TENANT
+        if (tenant.IsAvailable) // ===== TENANT =====
         {
-            if (await feature.IsEnabledAsync(AppSettingFeatures.Management) && await perms.IsGrantedAsync(MultiTenancyPermissions.AppSettings.Default))
+            // Kiểm tra từng feature + permission
+            var canSeeAppSettings =
+                await feature.IsEnabledAsync(AppSettingFeatures.Management) &&
+                await perms.IsGrantedAsync(MultiTenancyPermissions.AppSettings.Default);
+
+            var canSeeCustomerTypes =
+                await feature.IsEnabledAsync(AppCustomerTypeFeatures.Management) &&
+                await perms.IsGrantedAsync(MultiTenancyPermissions.AppCustomerTypes.Default);
+
+            // Nếu không có quyền gì thì khỏi add menu
+            if (canSeeAppSettings || canSeeCustomerTypes)
             {
-                context.Menu.AddItem(
-                    new ApplicationMenuItem("MiniAppSetting", l["Menu:MiniAppSetting"], icon: "fa fa-mobile")
-                        .AddItem(
-                            new ApplicationMenuItem("AppSettings", l["Menu:AppSettings"], "/AppSettings")
-                                .RequirePermissions(MultiTenancyPermissions.AppSettings.Default)
-                        )
-                );
-            }
-        }
-        else // HOST
-        {
-            administration.AddItem(
-                    new ApplicationMenuItem(
-                        name: "AuditLogs",
-                        displayName: l["Menu:AuditLogs"],
-                        url: "/Admin/AuditLogs",
-                        icon: "fa fa-clipboard-list",
-                        order: 60
-                    ).RequirePermissions(AuditLogPermissions.View)
+                var miniAppMenu = new ApplicationMenuItem(
+                    "MiniAppSetting",
+                    l["Menu:MiniAppSetting"],
+                    icon: "fa fa-mobile",
+                    order: 20
                 );
 
-            if (await perms.IsGrantedAsync(MultiTenancyPermissions.HostAppSettings.Default))
+                if (canSeeAppSettings)
+                {
+                    miniAppMenu.AddItem(
+                        new ApplicationMenuItem(
+                            "AppSettings",
+                            l["Menu:AppSettings"],
+                            "/AppSettings"
+                        ).RequirePermissions(MultiTenancyPermissions.AppSettings.Default)
+                    );
+                }
+
+                if (canSeeCustomerTypes)
+                {
+                    miniAppMenu.AddItem(
+                        new ApplicationMenuItem(
+                            "AppCustomerTypes",
+                            l["Menu:AppCustomerTypes"],
+                            "/AppCustomerTypes"
+                        ).RequirePermissions(MultiTenancyPermissions.AppCustomerTypes.Default)
+                    );
+                }
+
+                context.Menu.AddItem(miniAppMenu);
+            }
+        }
+        else // ===== HOST =====
+        {
+            // Audit logs
+            administration.AddItem(
+                new ApplicationMenuItem(
+                    name: "AuditLogs",
+                    displayName: l["Menu:AuditLogs"],
+                    url: "/Admin/AuditLogs",
+                    icon: "fa fa-clipboard-list",
+                    order: 60
+                ).RequirePermissions(AuditLogPermissions.View)
+            );
+
+            var hostCanAppSettings =
+                await perms.IsGrantedAsync(MultiTenancyPermissions.HostAppSettings.Default);
+
+            var hostCanCustomerTypes =
+                await perms.IsGrantedAsync(MultiTenancyPermissions.HostAppCustomerTypes.Default);
+
+            if (hostCanAppSettings || hostCanCustomerTypes)
             {
-                context.Menu.AddItem(
-                    new ApplicationMenuItem("AppSettingsHost", l["Menu:MiniAppSetting"], icon: "fa fa-mobile")
-                        .AddItem(
-                            new ApplicationMenuItem(
-                                name: "AuditLogs",
-                                displayName: l["Menu:AppSettings"],
-                                url: "/AppSettings",
-                                icon: "fa fa-cogs",
-                                order: 1
-                                ).RequirePermissions(MultiTenancyPermissions.HostAppSettings.Default)
-                        )
+                var hostMiniAppMenu = new ApplicationMenuItem(
+                    "MiniAppSettingHost",
+                    l["Menu:MiniAppSetting"],
+                    icon: "fa fa-mobile",
+                    order: 20
                 );
+
+                if (hostCanAppSettings)
+                {
+                    hostMiniAppMenu.AddItem(
+                        new ApplicationMenuItem(
+                            name: "AppSettingsHost",
+                            displayName: l["Menu:AppSettings"],
+                            url: "/AppSettings",
+                            icon: "fa fa-cogs"
+                        ).RequirePermissions(MultiTenancyPermissions.HostAppSettings.Default)
+                    );
+                }
+
+                if (hostCanCustomerTypes)
+                {
+                    hostMiniAppMenu.AddItem(
+                        new ApplicationMenuItem(
+                            name: "AppCustomerTypesHost",
+                            displayName: l["Menu:AppCustomerTypes"],
+                            url: "/AppCustomerTypes",
+                            icon: "fa fa-users"
+                        ).RequirePermissions(MultiTenancyPermissions.HostAppCustomerTypes.Default)
+                    );
+                }
+
+                context.Menu.AddItem(hostMiniAppMenu);
             }
         }
     }
