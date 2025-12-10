@@ -1,0 +1,19 @@
+﻿@page
+@using Genora.MultiTenancy.Localization
+@using Genora.MultiTenancy.Web.Pages.AppMembershipTiers
+@using Microsoft.Extensions.Localization
+@using Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.TagHelpers.Modal
+@model CreateModalModel
+@inject IStringLocalizer<MultiTenancyResource> L
+@{
+    Layout = null;
+}
+<abp-dynamic-form abp-model="MembershipTier" asp-page="/AppMembershipTiers/CreateModal">
+    <abp-modal>
+        <abp-modal-header title="@L["CreateAppMembershipTier"].Value"></abp-modal-header>
+        <abp-modal-body>
+            <abp-form-content />
+        </abp-modal-body>
+        <abp-modal-footer buttons="@(AbpModalButtons.Cancel | AbpModalButtons.Save)"></abp-modal-footer>
+    </abp-modal>
+</abp-dynamic-form>

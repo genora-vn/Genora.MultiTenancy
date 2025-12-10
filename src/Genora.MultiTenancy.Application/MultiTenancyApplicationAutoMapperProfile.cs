@@ -1,8 +1,10 @@
 ﻿using AutoMapper;
 using Genora.MultiTenancy.AppDtos.AppCustomerTypes;
+using Genora.MultiTenancy.AppDtos.AppMembershipTiers;
 using Genora.MultiTenancy.Apps.AppSettings;
 using Genora.MultiTenancy.AuditLogs;
 using Genora.MultiTenancy.DomainModels.AppCustomerTypes;
+using Genora.MultiTenancy.DomainModels.AppMembershipTiers;
 using Volo.Abp.AuditLogging;
 
 namespace Genora.MultiTenancy;
@@ -18,6 +20,11 @@ public class MultiTenancyApplicationAutoMapperProfile : Profile
         #region AppSetting auto mapper profile
         CreateMap<CustomerType, AppCustomerTypeDto>();
         CreateMap<CreateUpdateAppCustomerTypeDto, CustomerType>();
+        #endregion
+
+        #region AppMembershipTier auto mapper profile
+        CreateMap<MembershipTier, AppMembershipTierDto>();
+        CreateMap<CreateUpdateAppMembershipTierDto, MembershipTier>();
         #endregion
 
         CreateMap<AuditLog, AuditLogListDto>()

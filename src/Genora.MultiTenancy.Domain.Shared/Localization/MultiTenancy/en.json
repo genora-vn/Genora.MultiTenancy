@@ -7,6 +7,7 @@
     "Menu:MiniAppSetting": "Mini App",
     "Menu:AppSettings": "General Settings",
     "Menu:AppCustomerTypes": "Customer types",
+    "Menu:AppMembershipTiers": "Membership tiers",
 
     // Cấu hình bảng Logs
     "Permission:AuditLogs": "Audit Logs",
@@ -64,6 +65,32 @@
     "CustomerTypeName": "Customer type name",
     "CustomerTypeDescription": "Description",
     "CustomerTypeColorCode": "Label color",
+
+    // ====== AppMembershipTiers (Hạng hội viên) ======
+    "PermissionGroup:MiniAppMembershipTier": "Membership tiers",
+    "PermissionGroup:MiniAppMembershipTierHost": "Membership tiers (Host)",
+    "Permission:MiniAppMembershipTier": "Manage membership tiers",
+    "Permission:MiniAppMembershipTier.Create": "Create",
+    "Permission:MiniAppMembershipTier.Edit": "Edit",
+    "Permission:MiniAppMembershipTier.Delete": "Delete",
+
+    "FeatureGroup:MiniAppMembershipTier": "Membership tiers",
+    "Feature:MiniAppMembershipTier": "Enable membership tier management",
+    "Feature:MiniAppMembershipTierDesc": "Allows managing membership tiers (create/edit/delete).",
+
+    "AppMembershipTiers": "Membership tiers",
+    "NewAppMembershipTier": "New membership tier",
+    "CreateAppMembershipTier": "Create membership tier",
+    "EditAppMembershipTier": "Edit membership tier",
+
+    "MembershipTierCode": "Tier code",
+    "MembershipTierName": "Tier name",
+    "MinTotalSpending": "Minimum total spending",
+    "MinRounds": "Minimum rounds",
+    "EvaluationPeriod": "Evaluation period",
+    "DisplayOrder": "Display order",
+    "MinTotalSpendingMustBePositive": "Minimum total spending must be greater than or equal to 0.",
+    "MinRoundsMustBePositive": "Minimum rounds must be greater than or equal to 0.",
 
     // Cấu hình thông báo
     "AreYouSure": "Are you sure?",

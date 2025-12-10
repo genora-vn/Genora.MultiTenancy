@@ -41,6 +41,24 @@ public static class MultiTenancyPermissions
     }
     #endregion
 
+    #region Thêm permission cho tính năng quản trị AppMembershipTiers
+    public static class AppMembershipTiers
+    {
+        public const string Default = GroupName + ".AppMembershipTiers";
+        public const string Create = Default + ".Create";
+        public const string Edit = Default + ".Edit";
+        public const string Delete = Default + ".Delete";
+    }
+
+    public static class HostAppMembershipTiers
+    {
+        public const string Default = GroupName + ".HostAppMembershipTiers";
+        public const string Create = Default + ".Create";
+        public const string Edit = Default + ".Edit";
+        public const string Delete = Default + ".Delete";
+    }
+    #endregion
+
     //Add your own permission names. Example:
     //public const string MyPermission1 = GroupName + ".MyPermission1";
 }
