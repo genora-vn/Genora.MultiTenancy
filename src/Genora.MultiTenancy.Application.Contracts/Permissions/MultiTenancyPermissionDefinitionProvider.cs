@@ -1,6 +1,8 @@
-﻿using Genora.MultiTenancy.Features.AppCustomerTypes;
-using Genora.MultiTenancy.Features.AppGolfCourses;
+using Genora.MultiTenancy.Features;
 using Genora.MultiTenancy.Features.AppSettings;
+using Genora.MultiTenancy.Features.AppCustomerTypes;
+using Genora.MultiTenancy.Features.AppGolfCourses;
+using Genora.MultiTenancy.Features.AppMembershipTiers;
 using Genora.MultiTenancy.Localization;
 using Volo.Abp.Authorization.Permissions;
 using Volo.Abp.Features;
@@ -50,7 +52,6 @@ public class MultiTenancyPermissionDefinitionProvider : PermissionDefinitionProv
         #endregion
 
         #region Cấu hình quyền Thêm / Sửa / Xóa cho tính năng quản trị AppCustomerTypes
-
         var appCustomerTypeGroup = context.AddGroup(
             "MiniAppCustomerType",
             L("PermissionGroup:MiniAppCustomerType")
@@ -181,6 +182,71 @@ public class MultiTenancyPermissionDefinitionProvider : PermissionDefinitionProv
 
         golfCourseHostDelete.MultiTenancySide = MultiTenancySides.Host;
 
+        #endregion
+
+        #region Cấu hình quyền Thêm / Sửa / Xóa cho tính năng quản trị AppMembershipTiers
+
+        var membershipTierGroup = context.AddGroup(
+            "MiniAppMembershipTier",
+            L("PermissionGroup:MiniAppMembershipTier"));
+
+        // TENANT (bị ràng Feature)
+        var membershipTenantRoot = membershipTierGroup.AddPermission(
+            MultiTenancyPermissions.AppMembershipTiers.Default,
+            L("Permission:MiniAppMembershipTier"));
+
+        membershipTenantRoot.MultiTenancySide = MultiTenancySides.Tenant;
+        membershipTenantRoot.RequireFeatures(AppMembershipTierFeatures.Management);
+
+        var membershipTenantCreate = membershipTenantRoot.AddChild(
+            MultiTenancyPermissions.AppMembershipTiers.Create,
+            L("Permission:MiniAppMembershipTier.Create"));
+
+        membershipTenantCreate.MultiTenancySide = MultiTenancySides.Tenant;
+        membershipTenantCreate.RequireFeatures(AppMembershipTierFeatures.Management);
+
+        var membershipTenantEdit = membershipTenantRoot.AddChild(
+            MultiTenancyPermissions.AppMembershipTiers.Edit,
+            L("Permission:MiniAppMembershipTier.Edit"));
+
+        membershipTenantEdit.MultiTenancySide = MultiTenancySides.Tenant;
+        membershipTenantEdit.RequireFeatures(AppMembershipTierFeatures.Management);
+
+        var membershipTenantDelete = membershipTenantRoot.AddChild(
+            MultiTenancyPermissions.AppMembershipTiers.Delete,
+            L("Permission:MiniAppMembershipTier.Delete"));
+
+        membershipTenantDelete.MultiTenancySide = MultiTenancySides.Tenant;
+        membershipTenantDelete.RequireFeatures(AppMembershipTierFeatures.Management);
+
+        // HOST (không ràng Feature)
+        var membershipTierGroupHost = context.AddGroup(
+            "MiniAppMembershipTierHost",
+            L("PermissionGroup:MiniAppMembershipTierHost"));
+
+        var membershipHostRoot = membershipTierGroupHost.AddPermission(
+            MultiTenancyPermissions.HostAppMembershipTiers.Default,
+            L("Permission:MiniAppMembershipTier"));
+
+        membershipHostRoot.MultiTenancySide = MultiTenancySides.Host;
+
+        var membershipHostCreate = membershipHostRoot.AddChild(
+            MultiTenancyPermissions.HostAppMembershipTiers.Create,
+            L("Permission:MiniAppMembershipTier.Create"));
+
+        membershipHostCreate.MultiTenancySide = MultiTenancySides.Host;
+
+        var membershipHostEdit = membershipHostRoot.AddChild(
+            MultiTenancyPermissions.HostAppMembershipTiers.Edit,
+            L("Permission:MiniAppMembershipTier.Edit"));
+
+        membershipHostEdit.MultiTenancySide = MultiTenancySides.Host;
+
+        var membershipHostDelete = membershipHostRoot.AddChild(
+            MultiTenancyPermissions.HostAppMembershipTiers.Delete,
+            L("Permission:MiniAppMembershipTier.Delete"));
+
+        membershipHostDelete.MultiTenancySide = MultiTenancySides.Host;
         #endregion
     }
 

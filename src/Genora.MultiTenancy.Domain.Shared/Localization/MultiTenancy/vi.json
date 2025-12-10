@@ -8,6 +8,7 @@
     "Menu:AppSettings": "Cấu hình chung",
     "Menu:AppCustomerTypes": "Loại khách hàng",
     "Menu:AppGolfCourses": "Sân golf",
+    "Menu:AppMembershipTiers": "Hạng hội viên",
 
     // Cấu hình bảng Logs
     "Permission:AuditLogs": "Nhật ký hệ thống",
@@ -92,6 +93,31 @@
     "Website": "Website",
     "InvalidUrl": "Địa chỉ URL không hợp lệ.",
 
+    // ====== AppMembershipTiers (Hạng hội viên) ======
+    "PermissionGroup:MiniAppMembershipTier": "Hạng hội viên",
+    "PermissionGroup:MiniAppMembershipTierHost": "Hạng hội viên (Host)",
+    "Permission:MiniAppMembershipTier": "Quản lý hạng hội viên",
+    "Permission:MiniAppMembershipTier.Create": "Tạo mới",
+    "Permission:MiniAppMembershipTier.Edit": "Chỉnh sửa",
+    "Permission:MiniAppMembershipTier.Delete": "Xoá",
+
+    "FeatureGroup:MiniAppMembershipTier": "Hạng hội viên",
+    "Feature:MiniAppMembershipTier": "Bật quản lý hạng hội viên",
+    "Feature:MiniAppMembershipTierDesc": "Cho phép sử dụng chức năng quản lý hạng hội viên (thêm/sửa/xoá).",
+
+    "AppMembershipTiers": "Danh sách hạng hội viên",
+    "NewAppMembershipTier": "Thêm hạng hội viên",
+    "CreateAppMembershipTier": "Thêm hạng hội viên",
+    "EditAppMembershipTier": "Chỉnh sửa hạng hội viên",
+
+    "MembershipTierCode": "Mã hạng",
+    "MembershipTierName": "Tên hạng",
+    "MinTotalSpending": "Tổng chi tiêu tối thiểu",
+    "MinRounds": "Số vòng tối thiểu",
+    "EvaluationPeriod": "Kỳ xét hạng",
+    "DisplayOrder": "Thứ tự hiển thị",
+    "MinTotalSpendingMustBePositive": "Tổng chi tiêu tối thiểu phải lớn hơn hoặc bằng 0.",
+    "MinRoundsMustBePositive": "Số vòng tối thiểu phải lớn hơn hoặc bằng 0.",
 
     // Cấu hình thông báo
     "AreYouSure": "Bạn chắc chắn?",

@@ -1,10 +1,12 @@
 ﻿using AutoMapper;
 using Genora.MultiTenancy.AppDtos.AppCustomerTypes;
 using Genora.MultiTenancy.AppDtos.AppGolfCourses;
+using Genora.MultiTenancy.AppDtos.AppMembershipTiers;
 using Genora.MultiTenancy.Apps.AppSettings;
 using Genora.MultiTenancy.AuditLogs;
 using Genora.MultiTenancy.DomainModels.AppCustomerTypes;
 using Genora.MultiTenancy.DomainModels.AppGolfCourses;
+using Genora.MultiTenancy.DomainModels.AppMembershipTiers;
 using Volo.Abp.AuditLogging;
 
 namespace Genora.MultiTenancy;
@@ -18,7 +20,7 @@ public class MultiTenancyApplicationAutoMapperProfile : Profile
         CreateMap<CreateUpdateAppSettingDto, AppSetting>();
         #endregion
 
-        #region AppCustomerType auto mapper profile
+        #region CustomerType auto mapper profile
         CreateMap<CustomerType, AppCustomerTypeDto>();
         CreateMap<CreateUpdateAppCustomerTypeDto, CustomerType>();
         #endregion
@@ -26,6 +28,11 @@ public class MultiTenancyApplicationAutoMapperProfile : Profile
         #region AppGolfCourse auto mapper profile
         CreateMap<GolfCourse, AppGolfCourseDto>();
         CreateMap<CreateUpdateAppGolfCourseDto, GolfCourse>();
+        #endregion
+
+        #region AppMembershipTier auto mapper profile
+        CreateMap<MembershipTier, AppMembershipTierDto>();
+        CreateMap<CreateUpdateAppMembershipTierDto, MembershipTier>();
         #endregion
 
         CreateMap<AuditLog, AuditLogListDto>()
