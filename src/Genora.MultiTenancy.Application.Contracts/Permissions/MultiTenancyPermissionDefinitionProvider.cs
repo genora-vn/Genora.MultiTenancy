@@ -1,5 +1,5 @@
-﻿using Genora.MultiTenancy.Features;
-using Genora.MultiTenancy.Features.AppCustomerTypes;
+﻿using Genora.MultiTenancy.Features.AppCustomerTypes;
+using Genora.MultiTenancy.Features.AppGolfCourses;
 using Genora.MultiTenancy.Features.AppSettings;
 using Genora.MultiTenancy.Localization;
 using Volo.Abp.Authorization.Permissions;
@@ -114,6 +114,72 @@ public class MultiTenancyPermissionDefinitionProvider : PermissionDefinitionProv
             L("Permission:MiniAppCustomerType.Delete"));
 
         appCustomerTypeHostDelete.MultiTenancySide = MultiTenancySides.Host;
+
+        #endregion
+
+        #region Cấu hình quyền Thêm / Sửa / Xóa cho tính năng quản trị AppGolfCourses
+
+        var golfCourseGroup = context.AddGroup(
+            "MiniAppGolfCourse",
+            L("PermissionGroup:MiniAppGolfCourse"));
+
+        // TENANT (bị ràng Feature)
+        var golfCourseTenantRoot = golfCourseGroup.AddPermission(
+            MultiTenancyPermissions.AppGolfCourses.Default,
+            L("Permission:MiniAppGolfCourse"));
+
+        golfCourseTenantRoot.MultiTenancySide = MultiTenancySides.Tenant;
+        golfCourseTenantRoot.RequireFeatures(AppGolfCourseFeatures.Management);
+
+        var golfCourseTenantCreate = golfCourseTenantRoot.AddChild(
+            MultiTenancyPermissions.AppGolfCourses.Create,
+            L("Permission:MiniAppGolfCourse.Create"));
+
+        golfCourseTenantCreate.MultiTenancySide = MultiTenancySides.Tenant;
+        golfCourseTenantCreate.RequireFeatures(AppGolfCourseFeatures.Management);
+
+        var golfCourseTenantEdit = golfCourseTenantRoot.AddChild(
+            MultiTenancyPermissions.AppGolfCourses.Edit,
+            L("Permission:MiniAppGolfCourse.Edit"));
+
+        golfCourseTenantEdit.MultiTenancySide = MultiTenancySides.Tenant;
+        golfCourseTenantEdit.RequireFeatures(AppGolfCourseFeatures.Management);
+
+        var golfCourseTenantDelete = golfCourseTenantRoot.AddChild(
+            MultiTenancyPermissions.AppGolfCourses.Delete,
+            L("Permission:MiniAppGolfCourse.Delete"));
+
+        golfCourseTenantDelete.MultiTenancySide = MultiTenancySides.Tenant;
+        golfCourseTenantDelete.RequireFeatures(AppGolfCourseFeatures.Management);
+
+        // HOST (không ràng Feature)
+        var golfCourseGroupHost = context.AddGroup(
+            "MiniAppGolfCourseHost",
+            L("PermissionGroup:MiniAppGolfCourseHost"));
+
+        var golfCourseHostRoot = golfCourseGroupHost.AddPermission(
+            MultiTenancyPermissions.HostAppGolfCourses.Default,
+            L("Permission:MiniAppGolfCourse"));
+
+        golfCourseHostRoot.MultiTenancySide = MultiTenancySides.Host;
+
+        var golfCourseHostCreate = golfCourseHostRoot.AddChild(
+            MultiTenancyPermissions.HostAppGolfCourses.Create,
+            L("Permission:MiniAppGolfCourse.Create"));
+
+        golfCourseHostCreate.MultiTenancySide = MultiTenancySides.Host;
+
+        var golfCourseHostEdit = golfCourseHostRoot.AddChild(
+            MultiTenancyPermissions.HostAppGolfCourses.Edit,
+            L("Permission:MiniAppGolfCourse.Edit"));
+
+        golfCourseHostEdit.MultiTenancySide = MultiTenancySides.Host;
+
+        var golfCourseHostDelete = golfCourseHostRoot.AddChild(
+            MultiTenancyPermissions.HostAppGolfCourses.Delete,
+            L("Permission:MiniAppGolfCourse.Delete"));
+
+        golfCourseHostDelete.MultiTenancySide = MultiTenancySides.Host;
 
         #endregion
     }

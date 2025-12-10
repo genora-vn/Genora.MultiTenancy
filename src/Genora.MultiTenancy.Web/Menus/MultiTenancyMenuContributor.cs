@@ -1,5 +1,6 @@
 ﻿using Genora.MultiTenancy.Features;
 using Genora.MultiTenancy.Features.AppCustomerTypes;
+using Genora.MultiTenancy.Features.AppGolfCourses;
 using Genora.MultiTenancy.Features.AppSettings;
 using Genora.MultiTenancy.Localization;
 using Genora.MultiTenancy.Permissions;
@@ -55,8 +56,12 @@ public class MultiTenancyMenuContributor : IMenuContributor
                 await feature.IsEnabledAsync(AppCustomerTypeFeatures.Management) &&
                 await perms.IsGrantedAsync(MultiTenancyPermissions.AppCustomerTypes.Default);
 
+            var canSeeGolfCourses =
+                await feature.IsEnabledAsync(AppGolfCourseFeatures.Management) &&
+                await perms.IsGrantedAsync(MultiTenancyPermissions.AppGolfCourses.Default);
+
             // Nếu không có quyền gì thì khỏi add menu
-            if (canSeeAppSettings || canSeeCustomerTypes)
+            if (canSeeAppSettings || canSeeCustomerTypes || canSeeGolfCourses)
             {
                 var miniAppMenu = new ApplicationMenuItem(
                     "MiniAppSetting",
@@ -87,6 +92,17 @@ public class MultiTenancyMenuContributor : IMenuContributor
                     );
                 }
 
+                if (canSeeGolfCourses)
+                {
+                    miniAppMenu.AddItem(
+                        new ApplicationMenuItem(
+                            "AppGolfCourses",
+                            l["Menu:AppGolfCourses"],
+                            "/AppGolfCourses"
+                        ).RequirePermissions(MultiTenancyPermissions.AppGolfCourses.Default)
+                    );
+                }
+
                 context.Menu.AddItem(miniAppMenu);
             }
         }
@@ -109,7 +125,10 @@ public class MultiTenancyMenuContributor : IMenuContributor
             var hostCanCustomerTypes =
                 await perms.IsGrantedAsync(MultiTenancyPermissions.HostAppCustomerTypes.Default);
 
-            if (hostCanAppSettings || hostCanCustomerTypes)
+            var hostCanGolfCourses =
+                await perms.IsGrantedAsync(MultiTenancyPermissions.HostAppGolfCourses.Default);
+
+            if (hostCanAppSettings || hostCanCustomerTypes || hostCanGolfCourses)
             {
                 var hostMiniAppMenu = new ApplicationMenuItem(
                     "MiniAppSettingHost",
@@ -139,6 +158,18 @@ public class MultiTenancyMenuContributor : IMenuContributor
                             url: "/AppCustomerTypes",
                             icon: "fa fa-users"
                         ).RequirePermissions(MultiTenancyPermissions.HostAppCustomerTypes.Default)
+                    );
+                }
+
+                if (hostCanGolfCourses)
+                {
+                    hostMiniAppMenu.AddItem(
+                        new ApplicationMenuItem(
+                            name: "AppGolfCoursesHost",
+                            displayName: l["Menu:AppGolfCourses"],
+                            url: "/AppGolfCourses",
+                            icon: "fa fa-flag"
+                        ).RequirePermissions(MultiTenancyPermissions.HostAppGolfCourses.Default)
                     );
                 }
 

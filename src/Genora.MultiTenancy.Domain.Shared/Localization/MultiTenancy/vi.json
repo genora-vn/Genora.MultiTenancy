@@ -7,6 +7,7 @@
     "Menu:MiniAppSetting": "Mini App",
     "Menu:AppSettings": "Cấu hình chung",
     "Menu:AppCustomerTypes": "Loại khách hàng",
+    "Menu:AppGolfCourses": "Sân golf",
 
     // Cấu hình bảng Logs
     "Permission:AuditLogs": "Nhật ký hệ thống",
@@ -66,6 +67,31 @@
     "CustomerTypeName": "Tên loại khách hàng",
     "CustomerTypeDescription": "Mô tả",
     "CustomerTypeColorCode": "Màu nhãn",
+
+    // ====== AppGolfCourses (Cấu hình sân) ======
+    "PermissionGroup:MiniAppGolfCourse": "Cấu hình sân golf",
+    "PermissionGroup:MiniAppGolfCourseHost": "Cấu hình sân golf (Host)",
+    "Permission:MiniAppGolfCourse": "Quản lý sân golf",
+    "Permission:MiniAppGolfCourse.Create": "Tạo mới",
+    "Permission:MiniAppGolfCourse.Edit": "Chỉnh sửa",
+    "Permission:MiniAppGolfCourse.Delete": "Xoá",
+
+    "FeatureGroup:MiniAppGolfCourse": "Cấu hình sân golf",
+    "Feature:MiniAppGolfCourse": "Bật quản lý sân golf",
+    "Feature:MiniAppGolfCourseDesc": "Cho phép sử dụng chức năng quản lý sân golf (thêm/sửa/xoá).",
+
+    "AppGolfCourses": "Danh sách sân golf",
+    "NewAppGolfCourse": "Thêm sân golf",
+    "CreateAppGolfCourse": "Thêm sân golf",
+    "EditAppGolfCourse": "Chỉnh sửa sân golf",
+
+    "GolfCourseCode": "Mã sân",
+    "GolfCourseName": "Tên sân",
+    "Province": "Tỉnh/Thành",
+    "Phone": "Số điện thoại",
+    "Website": "Website",
+    "InvalidUrl": "Địa chỉ URL không hợp lệ.",
+
 
     // Cấu hình thông báo
     "AreYouSure": "Bạn chắc chắn?",

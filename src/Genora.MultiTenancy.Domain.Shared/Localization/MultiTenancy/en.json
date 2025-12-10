@@ -7,6 +7,7 @@
     "Menu:MiniAppSetting": "Mini App",
     "Menu:AppSettings": "General Settings",
     "Menu:AppCustomerTypes": "Customer types",
+    "Menu:AppGolfCourses": "Golf courses",
 
     // Cấu hình bảng Logs
     "Permission:AuditLogs": "Audit Logs",
@@ -64,6 +65,23 @@
     "CustomerTypeName": "Customer type name",
     "CustomerTypeDescription": "Description",
     "CustomerTypeColorCode": "Label color",
+
+    // ====== AppGolfCourses (Cấu hình sân) ======
+    "PermissionGroup:MiniAppGolfCourse": "Golf course settings",
+    "PermissionGroup:MiniAppGolfCourseHost": "Golf course settings (Host)",
+    "Permission:MiniAppGolfCourse": "Manage golf courses",
+    "Permission:MiniAppGolfCourse.Create": "Create",
+    "Permission:MiniAppGolfCourse.Edit": "Edit",
+    "Permission:MiniAppGolfCourse.Delete": "Delete",
+
+    "FeatureGroup:MiniAppGolfCourse": "Golf course settings",
+    "Feature:MiniAppGolfCourse": "Enable golf course management",
+    "Feature:MiniAppGolfCourseDesc": "Allows managing golf courses (create/edit/delete).",
+
+    "AppGolfCourses": "Golf courses",
+    "NewAppGolfCourse": "New golf course",
+    "CreateAppGolfCourse": "Create golf course",
+    "EditAppGolfCourse": "Edit golf course",
 
     // Cấu hình thông báo
     "AreYouSure": "Are you sure?",
