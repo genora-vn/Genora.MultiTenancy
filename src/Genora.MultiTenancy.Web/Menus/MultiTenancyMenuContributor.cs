@@ -79,9 +79,10 @@ public class MultiTenancyMenuContributor : IMenuContributor
                 {
                     miniAppMenu.AddItem(
                         new ApplicationMenuItem(
-                            "AppSettings",
-                            l["Menu:AppSettings"],
-                            "/AppSettings"
+                            name: "AppSettings",
+                            displayName: l["Menu:AppSettings"],
+                            url: "/AppSettings",
+                            icon: "fa fa-cogs"
                         ).RequirePermissions(MultiTenancyPermissions.AppSettings.Default)
                     );
                 }
@@ -90,10 +91,12 @@ public class MultiTenancyMenuContributor : IMenuContributor
                 {
                     miniAppMenu.AddItem(
                         new ApplicationMenuItem(
-                            "AppCustomerTypes",
-                            l["Menu:AppCustomerTypes"],
-                            "/AppCustomerTypes"
-                        ).RequirePermissions(MultiTenancyPermissions.AppCustomerTypes.Default)
+                            name: "AppCustomerTypes",
+                            displayName: l["Menu:AppCustomerTypes"],
+                            url: "/AppCustomerTypes",
+                            icon: "fa fa-users"
+                        )
+                        .RequirePermissions(MultiTenancyPermissions.AppCustomerTypes.Default)
                     );
                 }
 
@@ -101,10 +104,25 @@ public class MultiTenancyMenuContributor : IMenuContributor
                 {
                     miniAppMenu.AddItem(
                         new ApplicationMenuItem(
-                            "AppGolfCourses",
-                            l["Menu:AppGolfCourses"],
-                            "/AppGolfCourses"
-                        ).RequirePermissions(MultiTenancyPermissions.AppGolfCourses.Default)
+                            name: "AppGolfCourses",
+                            displayName: l["Menu:AppGolfCourses"],
+                            url: "/AppGolfCourses",
+                            icon: "fa fa-flag"
+                        )
+                        .RequirePermissions(MultiTenancyPermissions.AppGolfCourses.Default)
+                    );
+                }
+
+                if (canSeeMembershipTiers)
+                {
+                    miniAppMenu.AddItem(
+                        new ApplicationMenuItem(
+                            name: "AppMembershipTiers",
+                            displayName: l["Menu:AppMembershipTiers"],
+                            url: "/AppMembershipTiers",
+                            icon: "fa fa-medal"
+                        )
+                        .RequirePermissions(MultiTenancyPermissions.AppMembershipTiers.Default)
                     );
                 }
 
