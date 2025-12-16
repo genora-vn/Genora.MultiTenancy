@@ -1,8 +1,12 @@
 using Genora.MultiTenancy.Features;
-using Genora.MultiTenancy.Features.AppSettings;
+using Genora.MultiTenancy.Features.AppBookingFeatures;
+using Genora.MultiTenancy.Features.AppCalendarSlots;
+using Genora.MultiTenancy.Features.AppCustomers;
 using Genora.MultiTenancy.Features.AppCustomerTypes;
 using Genora.MultiTenancy.Features.AppGolfCourses;
 using Genora.MultiTenancy.Features.AppMembershipTiers;
+using Genora.MultiTenancy.Features.AppNewsFeatures;
+using Genora.MultiTenancy.Features.AppSettings;
 using Genora.MultiTenancy.Localization;
 using Volo.Abp.Authorization.Permissions;
 using Volo.Abp.Features;
@@ -247,6 +251,263 @@ public class MultiTenancyPermissionDefinitionProvider : PermissionDefinitionProv
             L("Permission:MiniAppMembershipTier.Delete"));
 
         membershipHostDelete.MultiTenancySide = MultiTenancySides.Host;
+        #endregion
+
+        #region Cấu hình quyền Thêm / Sửa / Xóa cho tính năng quản trị AppCustomers
+
+        var customerGroup = context.AddGroup(
+            "MiniAppCustomer",
+            L("PermissionGroup:MiniAppCustomer"));
+
+        // TENANT (bị ràng Feature)
+        var customerTenantRoot = customerGroup.AddPermission(
+            MultiTenancyPermissions.AppCustomers.Default,
+            L("Permission:MiniAppCustomer"));
+
+        customerTenantRoot.MultiTenancySide = MultiTenancySides.Tenant;
+        customerTenantRoot.RequireFeatures(AppCustomerFeatures.Management);
+
+        var customerTenantCreate = customerTenantRoot.AddChild(
+            MultiTenancyPermissions.AppCustomers.Create,
+            L("Permission:MiniAppCustomer.Create"));
+
+        customerTenantCreate.MultiTenancySide = MultiTenancySides.Tenant;
+        customerTenantCreate.RequireFeatures(AppCustomerFeatures.Management);
+
+        var customerTenantEdit = customerTenantRoot.AddChild(
+            MultiTenancyPermissions.AppCustomers.Edit,
+            L("Permission:MiniAppCustomer.Edit"));
+
+        customerTenantEdit.MultiTenancySide = MultiTenancySides.Tenant;
+        customerTenantEdit.RequireFeatures(AppCustomerFeatures.Management);
+
+        var customerTenantDelete = customerTenantRoot.AddChild(
+            MultiTenancyPermissions.AppCustomers.Delete,
+            L("Permission:MiniAppCustomer.Delete"));
+
+        customerTenantDelete.MultiTenancySide = MultiTenancySides.Tenant;
+        customerTenantDelete.RequireFeatures(AppCustomerFeatures.Management);
+
+        // HOST (không ràng Feature)
+        var customerGroupHost = context.AddGroup(
+            "MiniAppCustomerHost",
+            L("PermissionGroup:MiniAppCustomerHost"));
+
+        var customerHostRoot = customerGroupHost.AddPermission(
+            MultiTenancyPermissions.HostAppCustomers.Default,
+            L("Permission:MiniAppCustomer"));
+
+        customerHostRoot.MultiTenancySide = MultiTenancySides.Host;
+
+        var customerHostCreate = customerHostRoot.AddChild(
+            MultiTenancyPermissions.HostAppCustomers.Create,
+            L("Permission:MiniAppCustomer.Create"));
+
+        customerHostCreate.MultiTenancySide = MultiTenancySides.Host;
+
+        var customerHostEdit = customerHostRoot.AddChild(
+            MultiTenancyPermissions.HostAppCustomers.Edit,
+            L("Permission:MiniAppCustomer.Edit"));
+
+        customerHostEdit.MultiTenancySide = MultiTenancySides.Host;
+
+        var customerHostDelete = customerHostRoot.AddChild(
+            MultiTenancyPermissions.HostAppCustomers.Delete,
+            L("Permission:MiniAppCustomer.Delete"));
+
+        customerHostDelete.MultiTenancySide = MultiTenancySides.Host;
+
+        #endregion
+
+        #region Cấu hình quyền Thêm / Sửa / Xóa cho tính năng quản trị AppCalendarSlots
+
+        var calendarGroup = context.AddGroup("MiniAppCalendarSlot", L("PermissionGroup:MiniAppCalendarSlot"));
+
+        // TENANT (bị ràng Feature)
+        var calendarTenantRoot = calendarGroup.AddPermission(
+            MultiTenancyPermissions.AppCalendarSlots.Default,
+            L("Permission:MiniAppCalendarSlot")
+        );
+        calendarTenantRoot.MultiTenancySide = MultiTenancySides.Tenant;
+        calendarTenantRoot.RequireFeatures(AppCalendarSlotFeatures.Management);
+
+        var calendarTenantCreate = calendarTenantRoot.AddChild(
+            MultiTenancyPermissions.AppCalendarSlots.Create,
+            L("Permission:MiniAppCalendarSlot.Create")
+        );
+        calendarTenantCreate.MultiTenancySide = MultiTenancySides.Tenant;
+        calendarTenantCreate.RequireFeatures(AppCalendarSlotFeatures.Management);
+
+        var calendarTenantEdit = calendarTenantRoot.AddChild(
+            MultiTenancyPermissions.AppCalendarSlots.Edit,
+            L("Permission:MiniAppCalendarSlot.Edit")
+        );
+        calendarTenantEdit.MultiTenancySide = MultiTenancySides.Tenant;
+        calendarTenantEdit.RequireFeatures(AppCalendarSlotFeatures.Management);
+
+        var calendarTenantDelete = calendarTenantRoot.AddChild(
+            MultiTenancyPermissions.AppCalendarSlots.Delete,
+            L("Permission:MiniAppCalendarSlot.Delete")
+        );
+        calendarTenantDelete.MultiTenancySide = MultiTenancySides.Tenant;
+        calendarTenantDelete.RequireFeatures(AppCalendarSlotFeatures.Management);
+
+        // HOST (không ràng Feature)
+        var calendarHostGroup = context.AddGroup("MiniAppCalendarSlotHost", L("PermissionGroup:MiniAppCalendarSlotHost"));
+
+        var calendarHostRoot = calendarHostGroup.AddPermission(
+            MultiTenancyPermissions.HostAppCalendarSlots.Default,
+            L("Permission:MiniAppCalendarSlot")
+        );
+        calendarHostRoot.MultiTenancySide = MultiTenancySides.Host;
+
+        calendarHostRoot.AddChild(
+            MultiTenancyPermissions.HostAppCalendarSlots.Create,
+            L("Permission:MiniAppCalendarSlot.Create")
+        ).MultiTenancySide = MultiTenancySides.Host;
+
+        calendarHostRoot.AddChild(
+            MultiTenancyPermissions.HostAppCalendarSlots.Edit,
+            L("Permission:MiniAppCalendarSlot.Edit")
+        ).MultiTenancySide = MultiTenancySides.Host;
+
+        calendarHostRoot.AddChild(
+            MultiTenancyPermissions.HostAppCalendarSlots.Delete,
+            L("Permission:MiniAppCalendarSlot.Delete")
+        ).MultiTenancySide = MultiTenancySides.Host;
+
+        #endregion
+
+        #region Cấu hình quyền Thêm / Sửa / Xóa cho tính năng quản trị News
+
+        // TENANT (bị ràng Feature)
+        var newsGroup = context.AddGroup(
+            "MiniAppNews",
+            L("PermissionGroup:MiniAppNews")
+        );
+
+        var newsTenantRoot = newsGroup.AddPermission(
+            MultiTenancyPermissions.AppNews.Default,
+            L("Permission:MiniAppNews")
+        );
+        newsTenantRoot.MultiTenancySide = MultiTenancySides.Tenant;
+        newsTenantRoot.RequireFeatures(AppNewsFeatures.Management);
+
+        var newsTenantCreate = newsTenantRoot.AddChild(
+            MultiTenancyPermissions.AppNews.Create,
+            L("Permission:MiniAppNews.Create")
+        );
+        newsTenantCreate.MultiTenancySide = MultiTenancySides.Tenant;
+        newsTenantCreate.RequireFeatures(AppNewsFeatures.Management);
+
+        var newsTenantEdit = newsTenantRoot.AddChild(
+            MultiTenancyPermissions.AppNews.Edit,
+            L("Permission:MiniAppNews.Edit")
+        );
+        newsTenantEdit.MultiTenancySide = MultiTenancySides.Tenant;
+        newsTenantEdit.RequireFeatures(AppNewsFeatures.Management);
+
+        var newsTenantDelete = newsTenantRoot.AddChild(
+            MultiTenancyPermissions.AppNews.Delete,
+            L("Permission:MiniAppNews.Delete")
+        );
+        newsTenantDelete.MultiTenancySide = MultiTenancySides.Tenant;
+        newsTenantDelete.RequireFeatures(AppNewsFeatures.Management);
+
+        // HOST (không ràng Feature)
+        var newsHostGroup = context.AddGroup(
+            "MiniAppNewsHost",
+            L("PermissionGroup:MiniAppNewsHost")
+        );
+
+        var newsHostRoot = newsHostGroup.AddPermission(
+            MultiTenancyPermissions.HostAppNews.Default,
+            L("Permission:MiniAppNews")
+        );
+        newsHostRoot.MultiTenancySide = MultiTenancySides.Host;
+
+        newsHostRoot.AddChild(
+            MultiTenancyPermissions.HostAppNews.Create,
+            L("Permission:MiniAppNews.Create")
+        ).MultiTenancySide = MultiTenancySides.Host;
+
+        newsHostRoot.AddChild(
+            MultiTenancyPermissions.HostAppNews.Edit,
+            L("Permission:MiniAppNews.Edit")
+        ).MultiTenancySide = MultiTenancySides.Host;
+
+        newsHostRoot.AddChild(
+            MultiTenancyPermissions.HostAppNews.Delete,
+            L("Permission:MiniAppNews.Delete")
+        ).MultiTenancySide = MultiTenancySides.Host;
+
+        #endregion
+
+        #region Cấu hình quyền Thêm / Sửa / Xóa cho tính năng quản trị Bookings
+
+        // TENANT (bị ràng Feature)
+        var bookingGroup = context.AddGroup(
+            "MiniAppBooking",
+            L("PermissionGroup:MiniAppBooking")
+        );
+
+        var bookingTenantRoot = bookingGroup.AddPermission(
+            MultiTenancyPermissions.AppBookings.Default,
+            L("Permission:MiniAppBooking")
+        );
+        bookingTenantRoot.MultiTenancySide = MultiTenancySides.Tenant;
+        bookingTenantRoot.RequireFeatures(AppBookingFeatures.Management);
+
+        var bookingTenantCreate = bookingTenantRoot.AddChild(
+            MultiTenancyPermissions.AppBookings.Create,
+            L("Permission:MiniAppBooking.Create")
+        );
+        bookingTenantCreate.MultiTenancySide = MultiTenancySides.Tenant;
+        bookingTenantCreate.RequireFeatures(AppBookingFeatures.Management);
+
+        var bookingTenantEdit = bookingTenantRoot.AddChild(
+            MultiTenancyPermissions.AppBookings.Edit,
+            L("Permission:MiniAppBooking.Edit")
+        );
+        bookingTenantEdit.MultiTenancySide = MultiTenancySides.Tenant;
+        bookingTenantEdit.RequireFeatures(AppBookingFeatures.Management);
+
+        var bookingTenantDelete = bookingTenantRoot.AddChild(
+            MultiTenancyPermissions.AppBookings.Delete,
+            L("Permission:MiniAppBooking.Delete")
+        );
+        bookingTenantDelete.MultiTenancySide = MultiTenancySides.Tenant;
+        bookingTenantDelete.RequireFeatures(AppBookingFeatures.Management);
+
+        // HOST (không ràng Feature)
+        var bookingGroupHost = context.AddGroup(
+            "MiniAppBookingHost",
+            L("PermissionGroup:MiniAppBookingHost"));
+
+        var bookingHostRoot = bookingGroupHost.AddPermission(
+            MultiTenancyPermissions.HostAppBookings.Default,
+            L("Permission:MiniAppBooking"));
+
+        bookingHostRoot.MultiTenancySide = MultiTenancySides.Host;
+
+        var bookingHostCreate = bookingHostRoot.AddChild(
+            MultiTenancyPermissions.HostAppBookings.Create,
+            L("Permission:MiniAppBooking.Create"));
+
+        bookingHostCreate.MultiTenancySide = MultiTenancySides.Host;
+
+        var bookingHostEdit = bookingHostRoot.AddChild(
+            MultiTenancyPermissions.HostAppBookings.Edit,
+            L("Permission:MiniAppBooking.Edit"));
+
+        bookingHostEdit.MultiTenancySide = MultiTenancySides.Host;
+
+        var bookingHostDelete = bookingHostRoot.AddChild(
+            MultiTenancyPermissions.HostAppBookings.Delete,
+            L("Permission:MiniAppBooking.Delete"));
+
+        bookingHostDelete.MultiTenancySide = MultiTenancySides.Host;
+
         #endregion
     }
 

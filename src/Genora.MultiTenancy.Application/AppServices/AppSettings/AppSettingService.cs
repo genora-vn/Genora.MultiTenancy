@@ -109,6 +109,9 @@ namespace Genora.MultiTenancy.Apps.AppSettings;
 //        await _repository.DeleteAsync(id);
 //    }
 //}
+/// <summary>
+/// AppSetting Service implement base FeatureProtectedCrudAppService
+/// </summary>
 [Authorize]
 public class AppSettingService : FeatureProtectedCrudAppService<AppSetting, AppSettingDto, Guid, PagedAndSortedResultRequestDto, CreateUpdateAppSettingDto>, IAppSettingService
 {

@@ -1,8 +1,11 @@
-﻿using Genora.MultiTenancy.Features;
-using Genora.MultiTenancy.Features.AppSettings;
+﻿using Genora.MultiTenancy.Features.AppBookingFeatures;
+using Genora.MultiTenancy.Features.AppCalendarSlots;
+using Genora.MultiTenancy.Features.AppCustomers;
 using Genora.MultiTenancy.Features.AppCustomerTypes;
 using Genora.MultiTenancy.Features.AppGolfCourses;
 using Genora.MultiTenancy.Features.AppMembershipTiers;
+using Genora.MultiTenancy.Features.AppNewsFeatures;
+using Genora.MultiTenancy.Features.AppSettings;
 using Genora.MultiTenancy.Localization;
 using Genora.MultiTenancy.Permissions;
 using Microsoft.Extensions.DependencyInjection;
@@ -65,8 +68,24 @@ public class MultiTenancyMenuContributor : IMenuContributor
                 await feature.IsEnabledAsync(AppMembershipTierFeatures.Management) &&
                 await perms.IsGrantedAsync(MultiTenancyPermissions.AppMembershipTiers.Default);
 
+            var canSeeCustomers =
+                await feature.IsEnabledAsync(AppCustomerFeatures.Management) &&
+                await perms.IsGrantedAsync(MultiTenancyPermissions.AppCustomers.Default);
+
+            var canSeeCalendarSlots =
+                await feature.IsEnabledAsync(AppCalendarSlotFeatures.Management) &&
+                await perms.IsGrantedAsync(MultiTenancyPermissions.AppCalendarSlots.Default);
+
+            var canSeeNews =
+               await feature.IsEnabledAsync(AppNewsFeatures.Management) &&
+               await perms.IsGrantedAsync(MultiTenancyPermissions.AppNews.Default);
+
+            var canSeeBookings =
+              await feature.IsEnabledAsync(AppBookingFeatures.Management) &&
+              await perms.IsGrantedAsync(MultiTenancyPermissions.AppBookings.Default);
+
             // Nếu không có quyền gì thì khỏi add menu
-            if (canSeeAppSettings || canSeeCustomerTypes || canSeeGolfCourses || canSeeMembershipTiers)
+            if (canSeeAppSettings || canSeeCustomerTypes || canSeeGolfCourses || canSeeMembershipTiers || canSeeCustomers || canSeeCalendarSlots || canSeeNews || canSeeBookings)
             {
                 var miniAppMenu = new ApplicationMenuItem(
                     "MiniAppSetting",
@@ -126,6 +145,54 @@ public class MultiTenancyMenuContributor : IMenuContributor
                     );
                 }
 
+                if (canSeeCustomers)
+                {
+                    miniAppMenu.AddItem(
+                        new ApplicationMenuItem(
+                            name: "AppCustomers",
+                            displayName: l["Menu:AppCustomers"],
+                            url: "/AppCustomers",
+                            icon: "fa fa-user"
+                        ).RequirePermissions(MultiTenancyPermissions.AppCustomers.Default)
+                    );
+                }
+
+                if (canSeeCalendarSlots)
+                {
+                    miniAppMenu.AddItem(
+                        new ApplicationMenuItem(
+                             name: "AppCalendarSlots",
+                            displayName: l["Menu:AppCalendarSlots"],
+                            url: "/AppCalendarSlots",
+                            icon: "fa fa-calendar"
+                        ).RequirePermissions(MultiTenancyPermissions.AppCalendarSlots.Default)
+                    );
+                }
+
+                if (canSeeNews)
+                {
+                    miniAppMenu.AddItem(
+                        new ApplicationMenuItem(
+                             name: "AppNews",
+                            displayName: l["Menu:AppNews"],
+                            url: "/AppNews",
+                            icon: "fa fa-newspaper-o"
+                        ).RequirePermissions(MultiTenancyPermissions.AppNews.Default)
+                    );
+                }
+
+                if (canSeeBookings)
+                {
+                    miniAppMenu.AddItem(
+                        new ApplicationMenuItem(
+                            "AppBookings",
+                            l["Menu:AppBookings"],
+                            icon: "fa fa-calendar-plus-o",
+                            url: "/AppBookings"
+                        ).RequirePermissions(MultiTenancyPermissions.AppBookings.Default)
+                    );
+                }
+
                 context.Menu.AddItem(miniAppMenu);
             }
         }
@@ -154,7 +221,19 @@ public class MultiTenancyMenuContributor : IMenuContributor
             var hostCanMembershipTiers =
                 await perms.IsGrantedAsync(MultiTenancyPermissions.HostAppMembershipTiers.Default);
 
-            if (hostCanAppSettings || hostCanCustomerTypes || hostCanGolfCourses || hostCanMembershipTiers)
+            var hostCanCustomers =
+                await perms.IsGrantedAsync(MultiTenancyPermissions.HostAppCustomers.Default);
+
+            var hostCanCalendarSlots =
+                await perms.IsGrantedAsync(MultiTenancyPermissions.HostAppCalendarSlots.Default);
+
+            var hostCanNews =
+                await perms.IsGrantedAsync(MultiTenancyPermissions.HostAppNews.Default);
+
+            var hostCanBookings =
+                await perms.IsGrantedAsync(MultiTenancyPermissions.HostAppBookings.Default);
+
+            if (hostCanAppSettings || hostCanCustomerTypes || hostCanGolfCourses || hostCanMembershipTiers || hostCanCustomers || hostCanCalendarSlots || hostCanNews || hostCanBookings)
             {
                 var hostMiniAppMenu = new ApplicationMenuItem(
                     "MiniAppSettingHost",
@@ -198,7 +277,7 @@ public class MultiTenancyMenuContributor : IMenuContributor
                         ).RequirePermissions(MultiTenancyPermissions.HostAppGolfCourses.Default)
                     );
                 }
-                
+
                 if (hostCanMembershipTiers)
                 {
                     hostMiniAppMenu.AddItem(
@@ -208,6 +287,54 @@ public class MultiTenancyMenuContributor : IMenuContributor
                             url: "/AppMembershipTiers",
                             icon: "fa fa-medal"
                         ).RequirePermissions(MultiTenancyPermissions.HostAppMembershipTiers.Default)
+                    );
+                }
+
+                if (hostCanCustomers)
+                {
+                    hostMiniAppMenu.AddItem(
+                        new ApplicationMenuItem(
+                            name: "AppCustomersHost",
+                            displayName: l["Menu:AppCustomers"],
+                            url: "/AppCustomers",
+                            icon: "fa fa-user"
+                        ).RequirePermissions(MultiTenancyPermissions.HostAppCustomers.Default)
+                    );
+                }
+
+                if (hostCanCalendarSlots)
+                {
+                    hostMiniAppMenu.AddItem(
+                        new ApplicationMenuItem(
+                            name: "AppCalendarSlotsHost",
+                            displayName: l["Menu:AppCalendarSlots"],
+                            url: "/AppCalendarSlots",
+                            icon: "fa fa-calendar"
+                        ).RequirePermissions(MultiTenancyPermissions.HostAppCalendarSlots.Default)
+                    );
+                }
+
+                if (hostCanNews)
+                {
+                    hostMiniAppMenu.AddItem(
+                        new ApplicationMenuItem(
+                            name: "AppNewsHost",
+                            displayName: l["Menu:AppNews"],
+                            url: "/AppNews",
+                            icon: "fa fa-newspaper-o"
+                        ).RequirePermissions(MultiTenancyPermissions.HostAppNews.Default)
+                    );
+                }
+
+                if (hostCanBookings)
+                {
+                    hostMiniAppMenu.AddItem(
+                        new ApplicationMenuItem(
+                            name: "AppBookingsHost",
+                            displayName: l["Menu:AppBookings"],
+                            url: "/AppBookings",
+                            icon: "fa fa-calendar-plus-o"
+                        ).RequirePermissions(MultiTenancyPermissions.HostAppBookings.Default)
                     );
                 }
 

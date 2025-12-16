@@ -1,0 +1,180 @@
+﻿@page
+@using Genora.MultiTenancy.Localization
+@using Genora.MultiTenancy.Web.Pages.AppBookings
+@using Microsoft.Extensions.Localization
+@using Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.TagHelpers.Modal
+@model EditModalModel
+@inject IStringLocalizer<MultiTenancyResource> L
+
+@{
+    Layout = null;
+}
+
+<form asp-page="/AppBookings/EditModal" method="post" id="EditBookingForm">
+    <input type="hidden" asp-for="Id" />
+
+    <!-- Hidden để preserve các field không cho sửa nhưng vẫn post về -->
+    <input type="hidden" asp-for="Booking.CustomerId" />
+    <input type="hidden" asp-for="Booking.PlayDate" />
+    <input type="hidden" asp-for="Booking.GolfCourseId" />
+    <input type="hidden" asp-for="Booking.CalendarSlotId" />
+    <input type="hidden" asp-for="Booking.NumberOfGolfers" />
+    <input type="hidden" asp-for="Booking.TotalAmount" />
+    <input type="hidden" asp-for="Booking.Source" />
+
+    <abp-modal>
+        <abp-modal-header title="@L["EditAppBooking"]"></abp-modal-header>
+        <abp-modal-body>
+            <!-- Thông tin tổng quan Booking (read-only) -->
+            <div class="mb-3">
+                <strong>@L["BookingCode"]:</strong> @Model.BookingView.BookingCode
+            </div>
+            <div class="mb-3">
+                <strong>@L["BookingCustomer"]:</strong>
+                @Model.BookingView.CustomerName (@Model.BookingView.CustomerPhone)
+            </div>
+            <div class="mb-3">
+                <strong>@L["BookingGolfCourse"]:</strong> @Model.BookingView.GolfCourseName
+            </div>
+            <div class="mb-3">
+                <strong>@L["BookingPlayDate"]:</strong> @Model.BookingView.PlayDate.ToString("dd/MM/yyyy")
+            </div>
+            <div class="mb-3">
+                <strong>@L["BookingGolferCount"]:</strong> @Model.BookingView.NumberOfGolfers
+            </div>
+
+            <hr />
+
+            <!-- Khu vực cho Admin cập nhật -->
+            <div class="mb-3">
+                <label asp-for="Booking.Status" class="form-label">@L["BookingStatus"]</label>
+                <select asp-for="Booking.Status"
+                        asp-items="Model.StatusItems"
+                        class="form-control">
+                </select>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="Booking.PaymentMethod" class="form-label">@L["BookingPaymentMethod"]</label>
+                <select asp-for="Booking.PaymentMethod"
+                        asp-items="Model.PaymentMethodItems"
+                        class="form-control">
+                </select>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="Booking.TotalAmount" class="form-label">@L["BookingTotalPrice"]</label>
+                <abp-input asp-for="Booking.TotalAmount" />
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="Booking.Notes" class="form-label">@L["BookingNotes"]</label>
+                <textarea asp-for="Booking.Notes" class="form-control" rows="3"></textarea>
+            </div>
+
+            <hr />
+
+            <!-- ⭐ Danh sách golfer (BookingPlayers) -->
+            <div class="mb-2 d-flex justify-content-between align-items-center">
+                <h6 class="mb-0">@L["BookingPlayers"]</h6>
+                <button type="button"
+                        class="btn btn-sm btn-outline-primary"
+                        id="AddPlayerRow">
+                    <i class="fa fa-plus"></i> @L["AddPlayer"]
+                </button>
+            </div>
+
+            <div class="table-responsive">
+                <table class="table table-sm table-bordered align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th style="width: 40%">@L["PlayerName"]</th>
+                            <th>@L["Notes"]</th>
+                            <th style="width: 60px" class="text-center">@L["Actions"]</th>
+                        </tr>
+                    </thead>
+                    <tbody id="booking-players-body" data-next-index="@Model.Booking.Players.Count">
+                        @if (Model.Booking.Players != null && Model.Booking.Players.Count > 0)
+                        {
+                            for (var i = 0; i < Model.Booking.Players.Count; i++)
+                            {
+                                <tr>
+                                    <td>
+                                        <input type="hidden"
+                                               asp-for="Booking.Players[@i].CustomerId" />
+                                        <input class="form-control"
+                                               asp-for="Booking.Players[@i].PlayerName" />
+                                    </td>
+                                    <td>
+                                        <input class="form-control"
+                                               asp-for="Booking.Players[@i].Notes" />
+                                    </td>
+                                    <td class="text-center">
+                                        <button type="button"
+                                                class="btn btn-sm btn-outline-danger remove-player">
+                                            <i class="fa fa-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </abp-modal-body>
+        <abp-modal-footer buttons="@(AbpModalButtons.Cancel | AbpModalButtons.Save)"></abp-modal-footer>
+    </abp-modal>
+</form>
+
+<script>
+    $(function () {
+        var $tbody = $('#booking-players-body');
+
+        function getNextIndex() {
+            var current = parseInt($tbody.attr('data-next-index') || '0');
+            return current;
+        }
+
+        function increaseNextIndex() {
+            var current = getNextIndex();
+            $tbody.attr('data-next-index', current + 1);
+        }
+
+        $('#AddPlayerRow').on('click', function (e) {
+            e.preventDefault();
+
+            var index = getNextIndex();
+
+            var rowHtml = ''
+                + '<tr>'
+                + '  <td>'
+                + '    <input type="hidden" '
+                + '           name="Booking.Players[' + index + '].CustomerId" '
+                + '           value="" />'
+                + '    <input class="form-control" '
+                + '           name="Booking.Players[' + index + '].PlayerName" '
+                + '           value="" />'
+                + '  </td>'
+                + '  <td>'
+                + '    <input class="form-control" '
+                + '           name="Booking.Players[' + index + '].Notes" '
+                + '           value="" />'
+                + '  </td>'
+                + '  <td class="text-center">'
+                + '    <button type="button" '
+                + '            class="btn btn-sm btn-outline-danger remove-player">'
+                + '      <i class="fa fa-trash"></i>'
+                + '    </button>'
+                + '  </td>'
+                + '</tr>';
+
+            $tbody.append(rowHtml);
+            increaseNextIndex();
+        });
+
+        $tbody.on('click', '.remove-player', function (e) {
+            e.preventDefault();
+            $(this).closest('tr').remove();
+        });
+    });
+</script>

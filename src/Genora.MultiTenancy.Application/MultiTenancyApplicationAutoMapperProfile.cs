@@ -1,13 +1,22 @@
 ﻿using AutoMapper;
+using Genora.MultiTenancy.AppDtos.AppBookings;
+using Genora.MultiTenancy.AppDtos.AppCalendarSlots;
+using Genora.MultiTenancy.AppDtos.AppCustomers;
 using Genora.MultiTenancy.AppDtos.AppCustomerTypes;
 using Genora.MultiTenancy.AppDtos.AppGolfCourses;
 using Genora.MultiTenancy.AppDtos.AppMembershipTiers;
+using Genora.MultiTenancy.AppDtos.AppNews;
 using Genora.MultiTenancy.Apps.AppSettings;
 using Genora.MultiTenancy.AuditLogs;
+using Genora.MultiTenancy.DomainModels.AppBookings;
+using Genora.MultiTenancy.DomainModels.AppCalendarSlots;
+using Genora.MultiTenancy.DomainModels.AppCustomers;
 using Genora.MultiTenancy.DomainModels.AppCustomerTypes;
 using Genora.MultiTenancy.DomainModels.AppGolfCourses;
 using Genora.MultiTenancy.DomainModels.AppMembershipTiers;
+using Genora.MultiTenancy.DomainModels.AppNews;
 using Volo.Abp.AuditLogging;
+using static Genora.MultiTenancy.Permissions.MultiTenancyPermissions;
 
 namespace Genora.MultiTenancy;
 
@@ -33,6 +42,21 @@ public class MultiTenancyApplicationAutoMapperProfile : Profile
         #region AppMembershipTier auto mapper profile
         CreateMap<MembershipTier, AppMembershipTierDto>();
         CreateMap<CreateUpdateAppMembershipTierDto, MembershipTier>();
+        #endregion
+
+        #region AppCustomer auto mapper profile
+        CreateMap<Customer, AppCustomerDto>();
+        CreateMap<CreateUpdateAppCustomerDto, Customer>();
+        #endregion
+
+        #region AppCalendarSlot auto mapper profile
+        CreateMap<CalendarSlot, AppCalendarSlotDto>();
+        CreateMap<CreateUpdateAppCalendarSlotDto, CalendarSlot>();
+        #endregion
+
+        #region News auto mapper profile
+        CreateMap<News, AppNewsDto>();
+        CreateMap<CreateUpdateAppNewsDto, News>();
         #endregion
 
         CreateMap<AuditLog, AuditLogListDto>()

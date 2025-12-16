@@ -11,7 +11,7 @@ using Volo.Abp.MultiTenancy;
 namespace Genora.MultiTenancy.AppServices;
 
 /// <summary>
-/// CrudAppService +:
+/// CrudAppService Base +:
 /// - Tự map permission Tenant/Host
 /// - Check Feature cho Tenant
 /// </summary>
@@ -98,7 +98,6 @@ public abstract class FeatureProtectedCrudAppService<
     // Override các check policy để:
     // 1) Map permission đúng side
     // 2) Check feature
-
     protected override async Task CheckGetPolicyAsync()
     {
         await AuthorizationService.CheckAsync(MapPermissionForSide(GetPolicyName));

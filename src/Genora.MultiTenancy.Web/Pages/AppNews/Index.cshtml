@@ -1,0 +1,77 @@
+﻿@page
+@using Genora.MultiTenancy.Localization
+@using Genora.MultiTenancy.Permissions
+@using Genora.MultiTenancy.Web.Pages.AppNews
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.Extensions.Localization
+@inject IStringLocalizer<MultiTenancyResource> L
+@inject IAuthorizationService AuthorizationService
+@inject Volo.Abp.MultiTenancy.ICurrentTenant CurrentTenant
+
+@section styles {
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/summernote@0.8.18/dist/summernote-lite.min.css" />
+}
+
+@section scripts {
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://cdn.jsdelivr.net/npm/summernote@0.8.18/dist/summernote-lite.min.js"></script>
+    <abp-script src="/Pages/AppNews/index.js" />
+}
+
+@{
+    var canCreate = CurrentTenant.IsAvailable
+        ? await AuthorizationService.IsGrantedAsync(MultiTenancyPermissions.AppNews.Create)
+        : await AuthorizationService.IsGrantedAsync(MultiTenancyPermissions.HostAppNews.Create);
+}
+
+<abp-card>
+    <abp-card-header>
+        <abp-row>
+            <abp-column size-md="_6">
+                <abp-card-title>@L["AppNews"]</abp-card-title>
+            </abp-column>
+            <abp-column size-md="_6" class="text-end">
+                @if (canCreate)
+                {
+                    <abp-button id="NewNewsButton"
+                                text="@L["NewAppNews"]"
+                                icon="plus"
+                                button-type="Primary" />
+                }
+            </abp-column>
+        </abp-row>
+
+        <abp-row class="mt-3">
+            <abp-column size-md="_4">
+                <div class="mb-3">
+                    <label class="form-label" for="NewsFilterText">@L["NewsFilterText"]</label>
+                    <input id="NewsFilterText" name="NewsFilterText" class="form-control" type="text" />
+                </div>
+            </abp-column>
+            <abp-column size-md="_3">
+                <div class="mb-3">
+                    <label class="form-label" for="NewsStatusFilter">@L["Status"]</label>
+                    <select id="NewsStatusFilter" class="form-select">
+                        <option value="">@L["All"]</option>
+                        <option value="0">@L["NewsStatus:Draft"]</option>
+                        <option value="1">@L["NewsStatus:Published"]</option>
+                        <option value="2">@L["NewsStatus:Hidden"]</option>
+                    </select>
+                </div>
+            </abp-column>
+            <abp-column size-md="_2" class="d-flex align-items-end">
+                <div class="mb-3 h-50">
+                    <abp-button id="SearchNewsButton"
+                                class="h-100"
+                                text="@L["Search"]"
+                                icon="search"
+                                button-type="Primary" />
+                </div>
+            </abp-column>
+        </abp-row>
+    </abp-card-header>
+    <abp-card-body>
+        <abp-table striped-rows="true" id="NewsTable"></abp-table>
+    </abp-card-body>
+</abp-card>

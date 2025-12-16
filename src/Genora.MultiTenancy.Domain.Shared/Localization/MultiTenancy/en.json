@@ -9,6 +9,10 @@
     "Menu:AppCustomerTypes": "Customer types",
     "Menu:AppGolfCourses": "Golf courses",
     "Menu:AppMembershipTiers": "Membership tiers",
+    "Menu:AppCustomers": "Customers",
+    "Menu:AppCalendarSlots": "Manage Play Time",
+    "Menu:AppNews": "News",
+    "Menu:AppBookings": "Bookings",
 
     // Cấu hình bảng Logs
     "Permission:AuditLogs": "Audit Logs",
@@ -83,6 +87,7 @@
     "NewAppGolfCourse": "New golf course",
     "CreateAppGolfCourse": "Create golf course",
     "EditAppGolfCourse": "Edit golf course",
+
     // ====== AppMembershipTiers (Hạng hội viên) ======
     "PermissionGroup:MiniAppMembershipTier": "Membership tiers",
     "PermissionGroup:MiniAppMembershipTierHost": "Membership tiers (Host)",
@@ -108,6 +113,144 @@
     "DisplayOrder": "Display order",
     "MinTotalSpendingMustBePositive": "Minimum total spending must be greater than or equal to 0.",
     "MinRoundsMustBePositive": "Minimum rounds must be greater than or equal to 0.",
+
+    // ====== AppCustomer (Khách hàng) ======
+    "PermissionGroup:MiniAppCustomer": "Customers",
+    "PermissionGroup:MiniAppCustomerHost": "Customers (Host)",
+    "Permission:MiniAppCustomer": "Manage customers",
+    "Permission:MiniAppCustomer.Create": "Create",
+    "Permission:MiniAppCustomer.Edit": "Edit",
+    "Permission:MiniAppCustomer.Delete": "Delete",
+
+    "FeatureGroup:MiniAppCustomer": "Customers",
+    "Feature:MiniAppCustomer": "Enable customer management",
+    "Feature:MiniAppCustomerDesc": "Allows using customer management (create/edit/delete).",
+
+    "AppCustomers": "Customer list",
+    "NewAppCustomer": "New customer",
+    "CreateAppCustomer": "Create customer",
+    "EditAppCustomer": "Edit customer",
+
+    "CustomerPhoneNumber": "Phone number",
+    "CustomerFullName": "Full name",
+    "CustomerType": "Customer type",
+    "CustomerCode": "Customer code",
+    "CustomerStatus": "Status",
+
+    "CustomerFilterText": "Search by name / phone / code",
+    "Search": "Search",
+
+    "Customer:PhoneRequired": "Phone number is required.",
+    "Customer:PhoneAlreadyExists": "Phone number {0} already exists.",
+
+    // ====== AppCustomer (Giờ chơi) ======
+    "PermissionGroup:MiniAppCalendarSlot": "Configure Golf Course Play Time",
+    "PermissionGroup:MiniAppCalendarSlotHost": "Configure Golf Course Play Time (Host)",
+    "Permission:MiniAppCalendarSlot": "Manage Golf Course Play Time",
+    "Permission:MiniAppCalendarSlot.Create": "Create New Time Slot",
+    "Permission:MiniAppCalendarSlot.Edit": "Edit Time Slot",
+    "Permission:MiniAppCalendarSlot.Delete": "Delete Time Slot",
+
+    "FeatureGroup:MiniAppCalendarSlot": "Golf Course Play Time",
+    "Feature:MiniAppCalendarSlot": "Enable Golf Course Play Time Management",
+    "Feature:MiniAppCalendarSlotDesc": "Allows configuring time slots & golf pricing during play time.",
+
+    "AppCalendarSlot": "Manage Play Time Slots",
+    "CalendarSlotDetail": "Time Slot Details",
+    "CalendarSlotPrices": "Prices by Customer Type",
+    "CalendarSlotsForDate": "Configuration for Date",
+    "NewCalendarSlot": "Quick Configuration",
+
+    "CreateCalendarSlot": "Create tee time slot",
+    "EditCalendarSlot": "Edit tee time slot",
+
+    "ApplyDate": "Apply Date",
+    "TimeFrom": "Start Time",
+    "TimeTo": "End Time",
+    "TimeRange": "Time Slot",
+    "PromotionType": "Promotion Type",
+    "MaxSlots": "Maximum Slots",
+    "InternalNote": "Internal Note",
+
+    "GolfCourse": "Golf Course",
+    "ManageCalendar": "Manage Play Time",
+    "SelectGolfCourse": "Select Golf Course",
+    "SelectGolfCourseAndOpenCalendar": "Please select a golf course, then click \"Manage Play Time\" to open the time slots.",
+    "PleaseSelectGolfCourse": "Please select a golf course first.",
+
+    "DeletedSuccessfully": "Time Slot Deleted Successfully.",
+
+    // ====== AppNews (Tin tức) ======
+    "PermissionGroup:MiniAppNews": "Mini App News",
+    "PermissionGroup:MiniAppNewsHost": "Mini App News (Host)",
+    "Permission:MiniAppNews": "Manage news",
+    "Permission:MiniAppNews.Create": "Create news",
+    "Permission:MiniAppNews.Edit": "Edit news",
+    "Permission:MiniAppNews.Delete": "Delete news",
+
+    "FeatureGroup:MiniAppNews": "Mini App News",
+    "Feature:MiniAppNews": "Enable news management",
+    "Feature:MiniAppNewsDesc": "Allows creating, editing and deleting news & promotions displayed on the Mini App.",
+
+    "AppNews": "News management",
+    "NewAppNews": "Add news",
+    "EditAppNews": "Edit news",
+    "NewsFilterText": "Search by title",
+
+    "ThumbnailUrl": "Thumbnail URL",
+    "Content": "Content",
+
+    "NewsStatus:Draft": "Draft",
+    "NewsStatus:Published": "Published",
+    "NewsStatus:Hidden": "Hidden",
+
+    // ====== AppBookings (Booking) ======
+    "PermissionGroup:MiniAppBookings": "Booking management",
+    "PermissionGroup:MiniAppBookingsHost": "Booking management (Host)",
+    "Permission:MiniAppBooking": "Manage bookings",
+    "Permission:MiniAppBooking.Create": "Create booking",
+    "Permission:MiniAppBooking.Edit": "Edit booking",
+    "Permission:MiniAppBooking.Delete": "Delete booking",
+
+    "FeatureGroup:MiniAppBooking": "Mini App Bookings",
+    "Feature:MiniAppBooking": "Enable booking management",
+    "Feature:MiniAppBookingDesc": "Allows monitoring and updating bookings created from Mini App.",
+
+    "AppBookings": "Booking management",
+    "NewAppBooking": "Add booking",
+    "EditAppBooking": "Edit booking",
+
+    "BookingCode": "Booking code",
+    "BookingFilterText": "Search by code / notes",
+    "BookingCustomer": "Customer",
+    "BookingGolfCourse": "Golf course",
+    "BookingPlayDate": "Play date",
+    "BookingNumberOfGolfers": "Golfer count",
+    "BookingPricePerGolfer": "Unit price",
+    "BookingTotalAmount": "Total amount",
+    "BookingPaymentMethod": "Payment method",
+    "BookingStatus": "Status",
+    "BookingSource": "Source",
+    "BookingNotes": "Notes",
+
+    "PaymentMethod:COD": "Pay at course",
+    "PaymentMethod:Online": "Online payment",
+    "PaymentMethod:BankTransfer": "Bank transfer",
+
+    "BookingStatus:Pending": "Pending",
+    "BookingStatus:Confirmed": "Confirmed",
+    "BookingStatus:Paid": "Paid",
+    "BookingStatus:Completed": "Completed",
+    "BookingStatus:CancelledRefund": "Cancelled (refund)",
+    "BookingStatus:CancelledNoRefund": "Cancelled (no refund)",
+
+    "BookingSource:MiniApp": "Mini App",
+    "BookingSource:Hotline": "Hotline",
+    "BookingSource:Agent": "Agent",
+
+    "BookingPlayers": "Players",
+    "AddPlayer": "Add player",
+    "PlayerName": "Player name",
 
     // Cấu hình thông báo
     "AreYouSure": "Are you sure?",

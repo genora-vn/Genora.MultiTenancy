@@ -1,0 +1,49 @@
+﻿@page
+@using Genora.MultiTenancy.Enums
+@using Genora.MultiTenancy.Localization
+@using Genora.MultiTenancy.Web.Helpers
+@using Genora.MultiTenancy.Web.Pages.AppNews
+@using Microsoft.Extensions.Localization
+@using Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.TagHelpers.Modal
+@model EditModalModel
+@inject IStringLocalizer<MultiTenancyResource> L
+
+@{
+    Layout = null;
+    var publishedAtText = Model.News?.PublishedAt.HasValue == true
+       ? Model.News.PublishedAt.Value.ToString("dd/MM/yyyy")
+       : string.Empty;
+}
+
+<form asp-page="/AppNews/EditModal" method="post" id="EditNewsForm">
+    <abp-modal size="ExtraLarge">
+        <abp-modal-header title="@L["EditAppNews"]"></abp-modal-header>
+        <abp-modal-body>
+            <input type="hidden" asp-for="Id" />
+
+            <abp-input asp-for="News.Title" label="@L["Title"]" />
+            <abp-input asp-for="News.ThumbnailUrl" label="@L["ThumbnailUrl"]" />
+
+            <div class="mb-3">
+                <label asp-for="News.ContentHtml" class="form-label">@L["Content"]</label>
+                <textarea asp-for="News.ContentHtml"
+                          class="form-control news-content-editor"
+                          rows="8"></textarea>
+            </div>
+
+            <abp-input asp-for="News.PublishedAt"
+                       label="@L["PublishDate"]"
+                       type="text"
+                       value="@publishedAtText"
+                       autocomplete="off"
+                       class="public-time-input" />
+
+            <abp-select asp-for="News.Status"
+                        label="@L["Status"]"
+                        asp-items="EnumSelectList.GetLocalizedEnumSelectList<NewsStatus>(L)" />
+
+            <abp-input asp-for="News.DisplayOrder" label="@L["DisplayOrder"]" />
+        </abp-modal-body>
+        <abp-modal-footer buttons="@(AbpModalButtons.Cancel | AbpModalButtons.Save)"></abp-modal-footer>
+    </abp-modal>
+</form>

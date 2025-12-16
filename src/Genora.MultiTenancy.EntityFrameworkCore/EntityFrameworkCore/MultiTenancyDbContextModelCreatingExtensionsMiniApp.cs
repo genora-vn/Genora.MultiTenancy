@@ -212,8 +212,6 @@ public static class MultiTenancyDbContextModelCreatingExtensionsMiniApp
             b.ConfigureByConvention();
 
             b.Property(x => x.BookingCode).IsRequired().HasMaxLength(50);
-            b.Property(x => x.PaymentMethod).HasMaxLength(50);
-            b.Property(x => x.Source).HasMaxLength(50);
             b.Property(x => x.PricePerGolfer).HasColumnType("decimal(18,2)");
             b.Property(x => x.TotalAmount).HasColumnType("decimal(18,2)");
 

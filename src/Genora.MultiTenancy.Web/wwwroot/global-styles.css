@@ -6,3 +6,6 @@
     --lpx-logo: url('/images/logo/genora/genora-logo-dark.png');
     background-position: left;
 }
+.note-editable {
+    background-color: white;
+}

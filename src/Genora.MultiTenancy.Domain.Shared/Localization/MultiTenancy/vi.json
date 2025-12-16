@@ -9,6 +9,10 @@
     "Menu:AppCustomerTypes": "Loại khách hàng",
     "Menu:AppGolfCourses": "Sân golf",
     "Menu:AppMembershipTiers": "Hạng hội viên",
+    "Menu:AppCustomers": "Khách hàng",
+    "Menu:AppCalendarSlots": "Giờ chơi",
+    "Menu:AppNews": "Tin tức",
+    "Menu:AppBookings": "Booking",
 
     // Cấu hình bảng Logs
     "Permission:AuditLogs": "Nhật ký hệ thống",
@@ -118,6 +122,141 @@
     "DisplayOrder": "Thứ tự hiển thị",
     "MinTotalSpendingMustBePositive": "Tổng chi tiêu tối thiểu phải lớn hơn hoặc bằng 0.",
     "MinRoundsMustBePositive": "Số vòng tối thiểu phải lớn hơn hoặc bằng 0.",
+
+    // ====== AppCustomer (Khách hàng) ======
+    "PermissionGroup:MiniAppCustomer": "Khách hàng",
+    "PermissionGroup:MiniAppCustomerHost": "Khách hàng (Host)",
+    "Permission:MiniAppCustomer": "Quản lý khách hàng",
+    "Permission:MiniAppCustomer.Create": "Tạo mới",
+    "Permission:MiniAppCustomer.Edit": "Chỉnh sửa",
+    "Permission:MiniAppCustomer.Delete": "Xoá",
+
+    "FeatureGroup:MiniAppCustomer": "Khách hàng",
+    "Feature:MiniAppCustomer": "Bật quản lý khách hàng",
+    "Feature:MiniAppCustomerDesc": "Cho phép sử dụng chức năng quản lý khách hàng (thêm/sửa/xoá).",
+
+    "AppCustomers": "Danh sách khách hàng",
+    "NewAppCustomer": "Thêm khách hàng",
+    "CreateAppCustomer": "Thêm khách hàng",
+    "EditAppCustomer": "Chỉnh sửa khách hàng",
+
+    "CustomerPhoneNumber": "Số điện thoại",
+    "CustomerFullName": "Họ tên",
+    "CustomerType": "Loại khách hàng",
+    "CustomerCode": "Mã khách hàng",
+    "CustomerStatus": "Trạng thái",
+
+    "Customer:PhoneRequired": "Số điện thoại là bắt buộc.",
+    "Customer:PhoneAlreadyExists": "Số điện thoại {0} đã tồn tại trong hệ thống.",
+
+    // ====== AppCustomer (Giờ chơi) ======
+    "PermissionGroup:MiniAppCalendarSlot": "Cấu hình giờ chơi sân golf",
+    "PermissionGroup:MiniAppCalendarSlotHost": "Cấu hình giờ chơi sân golf (Host)",
+    "Permission:MiniAppCalendarSlot": "Quản lý giờ chơi sân golf",
+    "Permission:MiniAppCalendarSlot.Create": "Tạo khung giờ mới",
+    "Permission:MiniAppCalendarSlot.Edit": "Chỉnh sửa khung giờ",
+    "Permission:MiniAppCalendarSlot.Delete": "Xoá khung giờ",
+
+    "FeatureGroup:MiniAppCalendarSlot": "Giờ chơi sân golf",
+    "Feature:MiniAppCalendarSlot": "Bật quản lý giờ chơi sân golf",
+    "Feature:MiniAppCalendarSlotDesc": "Cho phép sử dụng chức năng cấu hình khung giờ & giá golf trên giờ chơi.",
+
+    "AppCalendarSlots": "Quản lý giờ chơi khung giờ",
+    "CalendarSlotDetail": "Chi tiết khung giờ",
+    "CalendarSlotPrices": "Giá theo loại khách",
+    "CalendarSlotsForDate": "Cấu hình của ngày",
+    "NewCalendarSlot": "Cấu hình nhanh",
+
+    "CreateCalendarSlot": "Thêm mới giờ chơi",
+    "EditCalendarSlot": "Sửa giờ chơi",
+
+    "ApplyDate": "Ngày áp dụng",
+    "TimeFrom": "Giờ bắt đầu",
+    "TimeTo": "Giờ kết thúc",
+    "TimeRange": "Khung giờ",
+    "PromotionType": "Loại ưu đãi",
+    "MaxSlots": "Số slot tối đa",
+    "InternalNote": "Ghi chú nội bộ",
+
+    "GolfCourse": "Sân golf",
+    "ManageCalendar": "Quản lý giờ chơi",
+    "SelectGolfCourse": "Chọn sân golf",
+    "SelectGolfCourseAndOpenCalendar": "Vui lòng chọn sân golf, sau đó nhấn \"Quản lý giờ chơi\" để mở giờ chơi khung giờ.",
+    "PleaseSelectGolfCourse": "Vui lòng chọn sân golf trước.",
+
+    "DeletedSuccessfully": "Xoá khung giờ thành công.",
+
+    // ====== AppNews (Tin tức) ======
+    "PermissionGroup:MiniAppNews": "Tin tức Mini App",
+    "PermissionGroup:MiniAppNewsHost": "Tin tức Mini App (Host)",
+    "Permission:MiniAppNews": "Quản lý tin tức",
+    "Permission:MiniAppNews.Create": "Tạo tin mới",
+    "Permission:MiniAppNews.Edit": "Chỉnh sửa tin",
+    "Permission:MiniAppNews.Delete": "Xoá tin",
+
+    "FeatureGroup:MiniAppNews": "Tin tức Mini App",
+    "Feature:MiniAppNews": "Bật quản lý tin tức",
+    "Feature:MiniAppNewsDesc": "Cho phép sử dụng chức năng tạo/sửa/xoá tin tức, chương trình khuyến mãi hiển thị trên Mini App.",
+
+    "AppNews": "Quản lý tin tức",
+    "NewAppNews": "Thêm tin tức",
+    "EditAppNews": "Chỉnh sửa tin tức",
+    "NewsFilterText": "Tìm theo tiêu đề",
+
+    "ThumbnailUrl": "Ảnh đại diện (URL)",
+    "Content": "Nội dung chi tiết",
+
+    "NewsStatus:Draft": "Bản nháp",
+    "NewsStatus:Published": "Đang hiển thị",
+    "NewsStatus:Hidden": "Ẩn",
+
+    // ====== AppBookings (Booking) ======
+    "PermissionGroup:MiniAppBooking": "Quản lý Booking",
+    "PermissionGroup:MiniAppBookingHost": "Quản lý Booking (Host)",
+    "Permission:MiniAppBooking": "Quản lý booking",
+    "Permission:MiniAppBooking.Create": "Tạo booking",
+    "Permission:MiniAppBooking.Edit": "Chỉnh sửa booking",
+    "Permission:MiniAppBooking.Delete": "Xoá booking",
+
+    "FeatureGroup:MiniAppBooking": "Booking Mini App",
+    "Feature:MiniAppBooking": "Bật quản lý booking",
+    "Feature:MiniAppBookingDesc": "Cho phép theo dõi và cập nhật thông tin booking từ Mini App.",
+
+    "AppBookings": "Quản lý booking",
+    "NewAppBooking": "Thêm booking",
+    "EditAppBooking": "Chỉnh sửa booking",
+
+    "BookingCode": "Mã booking",
+    "BookingFilterText": "Tìm theo mã / ghi chú",
+    "BookingCustomer": "Khách hàng",
+    "BookingGolfCourse": "Sân golf",
+    "BookingPlayDate": "Ngày chơi",
+    "BookingNumberOfGolfers": "Số golfer",
+    "BookingPricePerGolfer": "Giá / 1 người",
+    "BookingTotalAmount": "Tổng tiền",
+    "BookingPaymentMethod": "Thanh toán",
+    "BookingStatus": "Trạng thái",
+    "BookingSource": "Nguồn",
+    "BookingNotes": "Ghi chú",
+
+    "PaymentMethod:COD": "Thanh toán tại sân",
+    "PaymentMethod:Online": "Thanh toán online",
+    "PaymentMethod:BankTransfer": "Chuyển khoản",
+
+    "BookingStatus:Pending": "Đang xử lý",
+    "BookingStatus:Confirmed": "Đã xác nhận",
+    "BookingStatus:Paid": "Đã thanh toán",
+    "BookingStatus:Completed": "Hoàn thành",
+    "BookingStatus:CancelledRefund": "Hủy hoàn tiền",
+    "BookingStatus:CancelledNoRefund": "Hủy không hoàn tiền",
+
+    "BookingSource:MiniApp": "Mini App",
+    "BookingSource:Hotline": "Hotline",
+    "BookingSource:Agent": "Đại lý",
+
+    "BookingPlayers": "Danh sách golfer",
+    "AddPlayer": "Thêm golfer",
+    "PlayerName": "Tên golfer",
 
     // Cấu hình thông báo
     "AreYouSure": "Bạn chắc chắn?",

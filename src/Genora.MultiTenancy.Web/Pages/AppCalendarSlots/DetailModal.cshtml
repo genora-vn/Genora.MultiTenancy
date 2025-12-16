@@ -1,0 +1,203 @@
+﻿@page
+@using Genora.MultiTenancy.Enums
+@using Genora.MultiTenancy.Localization
+@using Microsoft.Extensions.Localization
+@using Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.TagHelpers.Modal
+@model Genora.MultiTenancy.Web.Pages.AppCalendarSlots.DetailModalModel
+@inject IStringLocalizer<MultiTenancyResource> L
+
+@{
+    Layout = null;
+
+    var isEdit = Model.Id.HasValue;
+
+    var fromText = Model.Slot?.TimeFrom.ToString(@"hh\:mm") ?? "";
+    var toText = Model.Slot?.TimeTo.ToString(@"hh\:mm") ?? "";
+
+    var applyDateText = Model.Slot?.ApplyDate.ToString("dd/MM/yyyy") ?? "";
+    var applyDateIso = Model.Slot?.ApplyDate.ToString("yyyy-MM-dd") ?? "";
+}
+
+<form asp-page="/AppCalendarSlots/DetailModal" method="post" id="SlotDetailForm">
+    <abp-modal>
+        <abp-modal-header title="@(isEdit? L["EditCalendarSlot"] : L["CreateCalendarSlot"])"></abp-modal-header>
+
+        <abp-modal-body>
+            @* giữ Id để post *@
+            @if (isEdit)
+            {
+                <input type="hidden" asp-for="Id" />
+            }
+
+            <input type="hidden" asp-for="Slot.GolfCourseId" />
+            <input type="hidden" asp-for="Slot.ApplyDate" value="@applyDateIso" />
+
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label class="form-label">@L["ApplyDate"]</label>
+                    <input type="text"
+                           class="form-control"
+                           value="@applyDateText"
+                           readonly />
+                </div>
+
+                <div class="col-md-4">
+                    <label class="form-label">@L["TimeFrom"]</label>
+                    <input name="Slot.TimeFrom"
+                           id="Slot_TimeFrom"
+                           type="text"
+                           class="form-control time-input"
+                           value="@fromText"
+                           autocomplete="off"
+                           @(isEdit ? "readonly" : "") />
+                </div>
+
+                <div class="col-md-4">
+                    <label class="form-label">@L["TimeTo"]</label>
+                    <input name="Slot.TimeTo"
+                           id="Slot_TimeTo"
+                           type="text"
+                           class="form-control time-input"
+                           value="@toText"
+                           autocomplete="off"
+                           @(isEdit ? "readonly" : "") />
+                </div>
+
+                <div class="col-md-4">
+                    <abp-select asp-for="Slot.PromotionType"
+                                label="@L["PromotionType"]"
+                                asp-items="Html.GetEnumSelectList<PromotionType>()" />
+                </div>
+
+                <div class="col-md-4">
+                    <abp-input asp-for="Slot.MaxSlots" label="@L["MaxSlots"]" />
+                </div>
+
+                <div class="col-md-4">
+                    <abp-input asp-for="Slot.IsActive" label="@L["IsActive"]" />
+                </div>
+
+                <div class="col-12">
+                    <abp-input asp-for="Slot.InternalNote" label="@L["InternalNote"]" />
+                </div>
+            </div>
+
+            <hr />
+            <h5 class="mb-2">@L["CalendarSlotPrices"]</h5>
+
+            <table class="table table-sm align-middle">
+                <thead>
+                    <tr>
+                        <th>@L["CustomerType"]</th>
+                        <th class="text-end">@L["Price"]</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @for (var i = 0; i < Model.Slot?.Prices.Count; i++)
+                    {
+                        <tr>
+                            <td style="width: 45%">
+                                <select name="Slot.Prices[@i].CustomerTypeId"
+                                        class="form-select"
+                                        readonly>
+                                    @* show cố định theo loại khách *@
+                                    @foreach (var opt in Model.CustomerTypeItems)
+                                    {
+                                        var selected = opt.Value == Model.Slot.Prices[i].CustomerTypeId.ToString();
+                                        <option value="@opt.Value" selected="@(selected ? "selected" : null)">
+                                            @opt.Text
+                                        </option>
+                                    }
+                                </select>
+                            </td>
+
+                            <td style="width: 55%">
+                                <input name="Slot.Prices[@i].Price"
+                                       type="text"
+                                       class="form-control money-input text-end"
+                                       value="@Model.Slot.Prices[i].Price.ToString("0")"
+                                       inputmode="numeric"
+                                       autocomplete="off" />
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </abp-modal-body>
+
+        <abp-modal-footer buttons="@(AbpModalButtons.Cancel | AbpModalButtons.Save)"></abp-modal-footer>
+    </abp-modal>
+</form>
+
+<script>
+    (function () {
+        // ===== Time picker (Flatpickr) =====
+        function initTimePicker() {
+            if (!window.flatpickr) return;
+
+            ['Slot_TimeFrom', 'Slot_TimeTo'].forEach(function (id) {
+                var el = document.getElementById(id);
+                if (!el) return;
+
+                flatpickr(el, {
+                    enableTime: true,
+                    noCalendar: true,
+                    time_24hr: true,
+                    dateFormat: "H:i",   // hiển thị HH:mm
+                    allowInput: true,
+                    clickOpens: true
+                });
+            });
+        }
+
+        // ===== Money format vi-VN =====
+        function formatMoneyVN(raw) {
+            if (!raw) return '';
+            var n = parseInt(String(raw).replace(/[^\d]/g, ''), 10);
+            if (isNaN(n)) return '';
+            return n.toLocaleString('vi-VN'); // 2.000.000 có thể đổi sang dấu phẩy thập phân
+        }
+
+        function normalizeMoney(raw) {
+            if (!raw) return '';
+            return String(raw).replace(/[^\d]/g, ''); // "2000000"
+        }
+
+        function initMoney() {
+            document.querySelectorAll('.money-input').forEach(function (el) {
+                el.value = formatMoneyVN(el.value);
+
+                el.addEventListener('blur', function () {
+                    el.value = formatMoneyVN(el.value);
+                });
+
+                // Giữ kiểu nhập số khi type vào input click ra ngoài thì sẽ format
+                el.addEventListener('input', function () {
+                    // không format liên tục để tránh nhảy caret, chỉ strip ký tự lạ
+                    el.value = el.value.replace(/[^\d\.]/g, '');
+                });
+            });
+        }
+
+        function hookSubmitNormalize() {
+            var form = document.getElementById('SlotDetailForm');
+            if (!form) return;
+
+            // Trước khi submit thì format lại định dạng
+            form.addEventListener('submit', function () {
+                ['Slot_TimeFrom', 'Slot_TimeTo'].forEach(function (id) {
+                    var el = document.getElementById(id);
+                    if (!el || !el.value) return;
+                    // Định dạng HH:mm
+                    if (/^\d{2}:\d{2}$/.test(el.value)) el.value = el.value;
+                });
+            });
+        }
+
+        // init
+        initTimePicker();
+        initMoney();
+        hookSubmitNormalize();
+
+    })();
+</script>

@@ -1,0 +1,87 @@
+﻿@page
+@using Genora.MultiTenancy.Localization
+@using Genora.MultiTenancy.Permissions
+@using Genora.MultiTenancy.Web.Pages.AppBookings
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.Extensions.Localization
+@inject IStringLocalizer<MultiTenancyResource> L
+@inject IAuthorizationService AuthorizationService
+@inject Volo.Abp.MultiTenancy.ICurrentTenant CurrentTenant
+
+@{
+    var canEdit = CurrentTenant.IsAvailable
+        ? await AuthorizationService.IsGrantedAsync(MultiTenancyPermissions.AppBookings.Edit)
+        : await AuthorizationService.IsGrantedAsync(MultiTenancyPermissions.HostAppBookings.Edit);
+}
+
+@section scripts {
+    <abp-script src="/Pages/AppBookings/index.js" />
+}
+
+<abp-card>
+    <abp-card-header>
+        <abp-row>
+            <abp-column size-md="_6">
+                <abp-card-title>@L["AppBookings"]</abp-card-title>
+            </abp-column>
+            <abp-column size-md="_6" class="text-end">
+                <!-- Hiện tại không cần tạo mới booking từ admin, nên không có nút New -->
+            </abp-column>
+        </abp-row>
+
+        <abp-row class="mb-3">
+            <abp-column size-md="_4">
+                <div class="mb-3">
+                    <label class="form-label" for="BookingFilterText">
+                        @L["BookingFilterText"]
+                    </label>
+                    <input id="BookingFilterText"
+                           name="BookingFilterText"
+                           class="form-control"
+                           type="text" />
+                </div>
+            </abp-column>
+
+            <abp-column size-md="_3">
+                <div class="mb-3">
+                    <label class="form-label" for="BookingStatusFilter">
+                        @L["BookingStatus"]
+                    </label>
+                    <select id="BookingStatusFilter" name="BookingStatusFilter" class="form-control">
+                        <option value="">-- @L["All"] --</option>
+                        <option value="0">@L["BookingStatus:Pending"]</option>
+                        <option value="1">@L["BookingStatus:Confirmed"]</option>
+                        <option value="2">@L["BookingStatus:Paid"]</option>
+                        <option value="3">@L["BookingStatus:Completed"]</option>
+                        <option value="4">@L["BookingStatus:CancelledRefund"]</option>
+                        <option value="5">@L["BookingStatus:CancelledNoRefund"]</option>
+                    </select>
+                </div>
+            </abp-column>
+
+            <abp-column size-md="_3">
+                <div class="mb-3">
+                    <label class="form-label" for="BookingSourceFilter">
+                        @L["BookingSource"]
+                    </label>
+                    <select id="BookingSourceFilter" name="BookingSourceFilter" class="form-control">
+                        <option value="">-- @L["All"] --</option>
+                        <option value="1">@L["BookingSource:MiniApp"]</option>
+                        <option value="2">@L["BookingSource:Hotline"]</option>
+                        <option value="3">@L["BookingSource:Agent"]</option>
+                    </select>
+                </div>
+            </abp-column>
+
+            <abp-column size-md="_2" class="d-flex align-items-end">
+                <abp-button id="SearchBookingButton"
+                            text="@L["Search"]"
+                            icon="search" />
+            </abp-column>
+        </abp-row>
+    </abp-card-header>
+
+    <abp-card-body>
+        <abp-table striped-rows="true" id="BookingsTable"></abp-table>
+    </abp-card-body>
+</abp-card>

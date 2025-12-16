@@ -1,0 +1,91 @@
+﻿@page
+@model Genora.MultiTenancy.Web.Pages.AppCalendarSlots.ViewModalModel
+@using Genora.MultiTenancy.Localization
+@using Microsoft.Extensions.Localization
+@using Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.TagHelpers.Modal
+@inject IStringLocalizer<MultiTenancyResource> L
+
+@{
+    Layout = null;
+
+    var dateText = Model.Slot.ApplyDate.ToString("dd/MM/yyyy");
+    var timeFrom = Model.Slot.TimeFrom.ToString(@"hh\:mm");
+    var timeTo = Model.Slot.TimeTo.ToString(@"hh\:mm");
+    var timeRange = timeFrom + " - " + timeTo;
+}
+
+<form>
+    <abp-modal>
+        <abp-modal-header title="@L["CalendarSlotDetail"]"></abp-modal-header>
+
+        <abp-modal-body>
+
+            <!-- hidden để JS dùng -->
+            <input type="hidden" id="CalendarSlotView_Id" value="@Model.Slot.Id" />
+            <input type="hidden" id="CalendarSlotView_ApplyDate" value="@Model.Slot.ApplyDate.ToString("yyyy-MM-dd")" />
+            <input type="hidden" id="CalendarSlotView_TimeRange" value="@timeRange" />
+
+            <dl class="row">
+                <dt class="col-sm-4">@L["ApplyDate"]</dt>
+                <dd class="col-sm-8">@dateText</dd>
+
+                <dt class="col-sm-4">@L["TimeRange"]</dt>
+                <dd class="col-sm-8">@timeRange</dd>
+
+                <dt class="col-sm-4">@L["PromotionType"]</dt>
+                <dd class="col-sm-8">@Model.Slot.PromotionType.ToString()</dd>
+
+                <dt class="col-sm-4">@L["MaxSlots"]</dt>
+                <dd class="col-sm-8">@Model.Slot.MaxSlots</dd>
+
+                <dt class="col-sm-4">@L["InternalNote"]</dt>
+                <dd class="col-sm-8">@Model.Slot.InternalNote</dd>
+
+                <dt class="col-sm-4">@L["IsActive"]</dt>
+                <dd class="col-sm-8">
+                    @(Model.Slot.IsActive? L["Yes"].Value : L["No"].Value)
+                </dd>
+            </dl>
+
+            <h6 class="mt-3">@L["CalendarSlotPrices"]</h6>
+            <table class="table table-sm">
+                <thead>
+                    <tr>
+                        <th>@L["CustomerType"]</th>
+                        <th class="text-end">@L["Price"]</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var p in Model.Slot.Prices)
+                    {
+                        <tr>
+                            <td>@p.CustomerTypeName</td>
+                            <td class="text-end">@p.Price.ToString("N0")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+
+        </abp-modal-body>
+
+        <abp-modal-footer>
+            <button type="button"
+                    class="btn btn-danger"
+                    id="CalendarSlotView_Delete">
+                <i class="fa fa-trash"></i>
+            </button>
+
+            <button type="button"
+                    class="btn btn-primary"
+                    id="CalendarSlotView_Edit">
+                <i class="fa fa-edit"></i>
+            </button>
+
+            <button type="button"
+                    class="btn btn-secondary"
+                    data-bs-dismiss="modal">
+                @L["Close"]
+            </button>
+        </abp-modal-footer>
+    </abp-modal>
+</form>

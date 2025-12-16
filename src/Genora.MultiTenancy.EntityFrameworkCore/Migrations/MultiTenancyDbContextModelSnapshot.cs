@@ -314,9 +314,8 @@ namespace Genora.MultiTenancy.Migrations
                     b.Property<int>("NumberOfGolfers")
                         .HasColumnType("int");
 
-                    b.Property<string>("PaymentMethod")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
+                    b.Property<byte?>("PaymentMethod")
+                        .HasColumnType("tinyint");
 
                     b.Property<DateTime>("PlayDate")
                         .HasColumnType("datetime2");
@@ -324,9 +323,8 @@ namespace Genora.MultiTenancy.Migrations
                     b.Property<decimal?>("PricePerGolfer")
                         .HasColumnType("decimal(18,2)");
 
-                    b.Property<string>("Source")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
+                    b.Property<byte>("Source")
+                        .HasColumnType("tinyint");
 
                     b.Property<byte>("Status")
                         .HasColumnType("tinyint");

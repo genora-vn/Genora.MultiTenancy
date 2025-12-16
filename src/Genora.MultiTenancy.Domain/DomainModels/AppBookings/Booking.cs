@@ -38,13 +38,11 @@ public class Booking : FullAuditedAggregateRoot<Guid>, IMultiTenant
     public decimal? PricePerGolfer { get; set; }
     public decimal TotalAmount { get; set; }
 
-    [StringLength(50)]
-    public string? PaymentMethod { get; set; }
+    public PaymentMethod? PaymentMethod { get; set; }
 
     public BookingStatus Status { get; set; }
 
-    [StringLength(50)]
-    public string? Source { get; set; }
+    public BookingSource Source { get; set; }
 
     // Navigation
     public virtual ICollection<BookingPlayer> Players { get; set; } = new List<BookingPlayer>();
@@ -52,11 +50,19 @@ public class Booking : FullAuditedAggregateRoot<Guid>, IMultiTenant
 
     protected Booking() { }
 
-    public Booking(Guid id, string bookingCode, Guid customerId, Guid golfCourseId, DateTime playDate) : base(id)
+    public Booking(Guid id, string bookingCode, Guid customerId, Guid golfCourseId, Guid calendarSlotId, DateTime playDate, int numberOfGolfers, 
+        decimal pricePerGolfer, decimal totalAmount, PaymentMethod? paymentMethod, BookingStatus bookingStatus, BookingSource source) : base(id)
     {
         BookingCode = bookingCode;
         CustomerId = customerId;
         GolfCourseId = golfCourseId;
         PlayDate = playDate;
+
+        NumberOfGolfers = numberOfGolfers;
+        PricePerGolfer = pricePerGolfer;
+        TotalAmount = totalAmount;
+        PaymentMethod = paymentMethod;
+        Status = bookingStatus;
+        Source = source;
     }
 }
