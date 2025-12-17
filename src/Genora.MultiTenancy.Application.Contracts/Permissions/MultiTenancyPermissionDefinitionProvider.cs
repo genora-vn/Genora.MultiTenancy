@@ -509,6 +509,41 @@ public class MultiTenancyPermissionDefinitionProvider : PermissionDefinitionProv
         bookingHostDelete.MultiTenancySide = MultiTenancySides.Host;
 
         #endregion
+
+        #region Cấu hình quyền Thêm / Sửa / Xóa cho tính năng quản trị ZaloAuth cho Host
+
+        // HOST (không ràng Feature)
+        var zaloAuthGroupHost = context.AddGroup(
+            "MiniAppZaloAuthHost",
+            L("PermissionGroup:MiniAppZaloAuthHost"));
+
+        var zaloAuthHostRoot = zaloAuthGroupHost.AddPermission(
+            MultiTenancyPermissions.HostAppZaloAuths.Default,
+            L("Permission:MiniAppZaloAuth"));
+
+        zaloAuthHostRoot.MultiTenancySide = MultiTenancySides.Host;
+
+        var zaloAuthHostCreate = zaloAuthHostRoot.AddChild(
+            MultiTenancyPermissions.HostAppZaloAuths.Create,
+            L("Permission:MiniAppZaloAuth.Create"));
+
+        zaloAuthHostCreate.MultiTenancySide = MultiTenancySides.Host;
+
+        var zaloAuthHostEdit = zaloAuthHostRoot.AddChild(
+            MultiTenancyPermissions.HostAppZaloAuths.Edit,
+            L("Permission:MiniAppZaloAuth.Edit"));
+
+        zaloAuthHostEdit.MultiTenancySide = MultiTenancySides.Host;
+
+        var zaloAuthHostDelete = zaloAuthHostRoot.AddChild(
+            MultiTenancyPermissions.HostAppZaloAuths.Delete,
+            L("Permission:MiniAppZaloAuth.Delete"));
+
+        zaloAuthHostDelete.MultiTenancySide = MultiTenancySides.Host;
+
+        zaloAuthGroupHost.AddPermission(MultiTenancyPermissions.HostAppZaloLogs.Default, L("Permission:HostAppZaloLogs"));
+
+        #endregion
     }
 
     private static LocalizableString L(string name)

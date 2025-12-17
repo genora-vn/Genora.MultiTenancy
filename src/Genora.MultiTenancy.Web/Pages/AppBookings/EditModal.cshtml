@@ -40,7 +40,7 @@
                 <strong>@L["BookingPlayDate"]:</strong> @Model.BookingView.PlayDate.ToString("dd/MM/yyyy")
             </div>
             <div class="mb-3">
-                <strong>@L["BookingGolferCount"]:</strong> @Model.BookingView.NumberOfGolfers
+                <strong>@L["BookingNumberOfGolfers"]:</strong> @Model.BookingView.NumberOfGolfers
             </div>
 
             <hr />
@@ -63,13 +63,7 @@
             </div>
 
             <div class="mb-3">
-                <label asp-for="Booking.TotalAmount" class="form-label">@L["BookingTotalPrice"]</label>
                 <abp-input asp-for="Booking.TotalAmount" />
-            </div>
-
-            <div class="mb-3">
-                <label asp-for="Booking.Notes" class="form-label">@L["BookingNotes"]</label>
-                <textarea asp-for="Booking.Notes" class="form-control" rows="3"></textarea>
             </div>
 
             <hr />
@@ -101,14 +95,14 @@
                                 <tr>
                                     <td>
                                         <input type="hidden"
-                                               asp-for="Booking.Players[@i].CustomerId" />
-                                        <input class="form-control"
-                                               asp-for="Booking.Players[@i].PlayerName" />
+                                               asp-for="Booking.Players[i].CustomerId" />
+                                        <input class="form-control" type="text"
+                                               asp-for="Booking.Players[i].PlayerName" />
                                     </td>
                                     <td>
                                         <input class="form-control"
-                                               asp-for="Booking.Players[@i].Notes" />
-                                    </td>
+                                               asp-for="Booking.Players[i].Notes" />
+                                    </td> 
                                     <td class="text-center">
                                         <button type="button"
                                                 class="btn btn-sm btn-outline-danger remove-player">

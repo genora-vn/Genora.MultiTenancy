@@ -149,6 +149,21 @@ public static class MultiTenancyPermissions
     }
     #endregion
 
+    #region Thêm permission cho tính năng quản trị AppZaloAuths, AppZaloLogs
+    public static class HostAppZaloAuths
+    {
+        public const string Default = "MultiTenancy.HostAppZaloAuths";
+        public const string Create = Default + ".Create";
+        public const string Edit = Default + ".Edit";
+        public const string Delete = Default + ".Delete";
+    }
+
+    public static class HostAppZaloLogs
+    {
+        public const string Default = "MultiTenancy.HostAppZaloLogs";
+    }
+    #endregion
+
     //Add your own permission names. Example:
     //public const string MyPermission1 = GroupName + ".MyPermission1";
 }

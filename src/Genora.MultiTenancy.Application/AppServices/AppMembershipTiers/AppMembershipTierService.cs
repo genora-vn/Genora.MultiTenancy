@@ -65,6 +65,4 @@ public class AppMembershipTierService :
             ObjectMapper.Map<List<MembershipTier>, List<AppMembershipTierDto>>(items)
         );
     }
-
-    // Create/Update/Delete/Get dùng mặc định CrudAppService
 }

@@ -1,0 +1,77 @@
+﻿@page
+@using Genora.MultiTenancy.Localization
+@inject Microsoft.Extensions.Localization.IStringLocalizer<MultiTenancyResource> L
+@inject Volo.Abp.MultiTenancy.ICurrentTenant CurrentTenant
+
+@section scripts {
+    <abp-script src="/Pages/AppZaloLogs/index.js" />
+}
+
+@{
+    if (CurrentTenant.IsAvailable)
+    {
+        <div class="alert alert-warning">Host only.</div>
+        return;
+    }
+}
+
+<abp-card>
+    <abp-card-header>
+        <abp-row>
+            <abp-column size-md="_6">
+                <abp-card-title>@L["AppZaloLogs"]</abp-card-title>
+            </abp-column>
+            <abp-column size-md="_6" class="text-end">
+                <a class="btn btn-outline-secondary" href="/AppZaloAuths">
+                    <i class="fa fa-arrow-left"></i> @L["Menu:AppZaloAuths"]
+                </a>
+            </abp-column>
+        </abp-row>
+
+        <abp-row class="mt-3">
+            <abp-column size-md="_3">
+                <label class="form-label">@L["LogAction"]</label>
+                <select id="LogAction" class="form-select">
+                    <option value="">--</option>
+                    <option value="AUTHORIZE_URL">AUTHORIZE_URL</option>
+                    <option value="EXCHANGE_CODE">EXCHANGE_CODE</option>
+                    <option value="REFRESH_TOKEN">REFRESH_TOKEN</option>
+                    <option value="SEND_ZNS">SEND_ZNS</option>
+                    <option value="SEND_OA_MSG">SEND_OA_MSG</option>
+                    <option value="GET_ME">GET_ME</option>
+                </select>
+            </abp-column>
+
+            <abp-column size-md="_2">
+                <label class="form-label">@L["HttpStatus"]</label>
+                <input id="HttpStatus" class="form-control" inputmode="numeric" />
+            </abp-column>
+
+            <abp-column size-md="_3">
+                <label class="form-label">@L["FromDate"]</label>
+                <input id="From" type="date" class="form-control" />
+            </abp-column>
+
+            <abp-column size-md="_3">
+                <label class="form-label">@L["ToDate"]</label>
+                <input id="To" type="date" class="form-control" />
+            </abp-column>
+
+            <abp-column size-md="_1" class="d-flex align-items-end">
+                <abp-button id="SearchButton" text="@L["Search"]" icon="search" button-type="Primary" />
+            </abp-column>
+        </abp-row>
+
+        <abp-row class="mt-2">
+            <abp-column size-md="_6">
+                <label class="form-label">@L["FilterText"]</label>
+                <input id="FilterText" class="form-control" placeholder="endpoint / error..." />
+            </abp-column>
+        </abp-row>
+
+    </abp-card-header>
+
+    <abp-card-body>
+        <abp-table striped-rows="true" id="ZaloLogsTable"></abp-table>
+    </abp-card-body>
+</abp-card>

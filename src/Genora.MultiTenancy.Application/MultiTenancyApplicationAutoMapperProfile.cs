@@ -6,8 +6,11 @@ using Genora.MultiTenancy.AppDtos.AppCustomerTypes;
 using Genora.MultiTenancy.AppDtos.AppGolfCourses;
 using Genora.MultiTenancy.AppDtos.AppMembershipTiers;
 using Genora.MultiTenancy.AppDtos.AppNews;
+using Genora.MultiTenancy.AppDtos.AppSettings;
+using Genora.MultiTenancy.AppDtos.ZaloAuths;
 using Genora.MultiTenancy.Apps.AppSettings;
 using Genora.MultiTenancy.AuditLogs;
+using Genora.MultiTenancy.DomainModels.AppBookingPlayers;
 using Genora.MultiTenancy.DomainModels.AppBookings;
 using Genora.MultiTenancy.DomainModels.AppCalendarSlots;
 using Genora.MultiTenancy.DomainModels.AppCustomers;
@@ -15,6 +18,7 @@ using Genora.MultiTenancy.DomainModels.AppCustomerTypes;
 using Genora.MultiTenancy.DomainModels.AppGolfCourses;
 using Genora.MultiTenancy.DomainModels.AppMembershipTiers;
 using Genora.MultiTenancy.DomainModels.AppNews;
+using Genora.MultiTenancy.DomainModels.AppZaloAuth;
 using Volo.Abp.AuditLogging;
 using static Genora.MultiTenancy.Permissions.MultiTenancyPermissions;
 
@@ -57,6 +61,20 @@ public class MultiTenancyApplicationAutoMapperProfile : Profile
         #region News auto mapper profile
         CreateMap<News, AppNewsDto>();
         CreateMap<CreateUpdateAppNewsDto, News>();
+        #endregion
+
+        #region Booking auto mapper profile
+        CreateMap<Booking, AppBookingDto>();
+        CreateMap<CreateUpdateAppBookingDto, Booking>();
+        CreateMap<BookingPlayer, AppBookingPlayerDto>();
+        #endregion
+
+        #region ZaloAuth, ZaloLog auto mapper profile
+        CreateMap<ZaloAuth, AppZaloAuthDto>();
+        CreateMap<CreateUpdateZaloAuthDto, ZaloAuth>()
+            .ForMember(x => x.Id, opt => opt.Ignore());
+
+        CreateMap<ZaloLog, AppZaloLogDto>();
         #endregion
 
         CreateMap<AuditLog, AuditLogListDto>()

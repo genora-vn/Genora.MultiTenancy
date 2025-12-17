@@ -71,11 +71,10 @@ public class AppCustomerService :
             }
         }
 
-        // Next code
+        // Sinh CustomerCode tiếp theo
         var nextNumber = maxNumber + 1;
         var candidate = $"{prefix}{nextNumber.ToString("D6", CultureInfo.InvariantCulture)}";
 
-        // Double check trùng (trường hợp nhiều server / race condition)
         while (await Repository.AnyAsync(c => c.CustomerCode == candidate))
         {
             nextNumber++;

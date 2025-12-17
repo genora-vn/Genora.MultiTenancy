@@ -57,7 +57,6 @@ public class AppBookingService :
         DeletePolicyName = MultiTenancyPermissions.AppBookings.Delete;
     }
 
-    // LIST cho admin
     [DisableValidation]
     public override async Task<PagedResultDto<AppBookingDto>> GetListAsync(GetBookingListInput input)
     {
@@ -116,7 +115,6 @@ public class AppBookingService :
             query.Skip(input.SkipCount).Take(input.MaxResultCount)
         );
 
-        // Map thủ công + load thêm Customer/GolfCourse nếu cần
         var customerIds = items.Select(x => x.CustomerId).Distinct().ToList();
         var golfCourseIds = items.Select(x => x.GolfCourseId).Distinct().ToList();
 
@@ -205,7 +203,6 @@ public class AppBookingService :
         return dto;
     }
 
-    // Admin Create (ít dùng, chủ yếu Mini App tạo)
     public override async Task<AppBookingDto> CreateAsync(CreateUpdateAppBookingDto input)
     {
         await CheckCreatePolicyAsync();

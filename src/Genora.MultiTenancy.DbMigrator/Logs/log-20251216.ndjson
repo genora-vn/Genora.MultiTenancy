@@ -1,0 +1,363 @@
+2025-12-16 13:39:19.018 +07:00 [INF] Initialized all ABP modules.
+2025-12-16 13:39:19.304 +07:00 [ERR] There is already an existing feature group with name: MiniAppSetting
+Volo.Abp.AbpException: There is already an existing feature group with name: MiniAppSetting
+   at Volo.Abp.Features.FeatureDefinitionContext.AddGroup(String name, ILocalizableString displayName)
+   at Genora.MultiTenancy.Features.AppSettings.AppSettingFeatureDefinitionProvider.Define(IFeatureDefinitionContext context) in D:\Genora\Projects\BE\GitHubs\Genora.MultiTenancy\src\Genora.MultiTenancy.Application.Contracts\Features\AppSettings\AppSettingFeatureDefinitionProvider.cs:line 12
+   at Volo.Abp.Features.StaticFeatureDefinitionStore.CreateFeatureGroupDefinitions()
+   at System.Lazy`1.ViaFactory(LazyThreadSafetyMode mode)
+   at System.Lazy`1.ExecutionAndPublication(LazyHelper executionAndPublication, Boolean useDefaultConstructor)
+   at System.Lazy`1.CreateValue()
+   at Volo.Abp.Features.StaticFeatureDefinitionStore.get_FeatureGroupDefinitions()
+   at Volo.Abp.Features.StaticFeatureDefinitionStore.GetGroupsAsync()
+   at Volo.Abp.FeatureManagement.StaticFeatureSaver.SaveAsync()
+   at Volo.Abp.FeatureManagement.StaticFeatureSaver.SaveAsync()
+   at Volo.Abp.FeatureManagement.AbpFeatureManagementDomainModule.<>c__DisplayClass8_0.<<SaveStaticFeaturesToDatabaseAsync>b__1>d.MoveNext()
+2025-12-16 13:39:19.432 +07:00 [INF] Started database migrations...
+2025-12-16 13:39:20.210 +07:00 [WRN] No store type was specified for the decimal property 'MinTotalSpending' on entity type 'MembershipTier'. This will cause values to be silently truncated if they do not fit in the default precision and scale. Explicitly specify the SQL server column type that can accommodate all the values in 'OnModelCreating' using 'HasColumnType', specify precision and scale using 'HasPrecision', or configure a value converter using 'HasConversion'.
+2025-12-16 13:39:20.249 +07:00 [INF] Migrating DB: GenoraMultiTenancy
+2025-12-16 13:39:20.449 +07:00 [INF] NonQueryExecuting SqlConnection@103.157.218.187,1433/GenoraMultiTenancy Timeout=180sSELECT 1SQL:SELECT 1[]SELECT 1Params:{@Params}
+2025-12-16 13:39:20.468 +07:00 [INF] NonQueryExecuted ElapsedMs=19 RecordsAffected=-1 Scalar=nullSELECT 1SQL:SELECT 1{Sql}
+2025-12-16 13:39:20.475 +07:00 [INF] ScalarExecuting SqlConnection@103.157.218.187,1433/GenoraMultiTenancy Timeout=180sDECLARE @result int;
+EXEC @result = sp_getapplock @Resource = '__EFMigrationsLock', @LockOwner = 'Session', @LockMode = 'Exclusive';
+SELECT @resultSQL:DECLARE @result int;
+EXEC @result = sp_getapplock @Resource = '__EFMigrationsLock', @LockOwner = 'Session', @LockMode = 'Exclusive';
+SELECT @result[]DECLARE @result int;
+EXEC @result = sp_getapplock @Resource = '__EFMigrationsLock', @LockOwner = 'Session', @LockMode = 'Exclusive';
+SELECT @resultParams:{@Params}
+2025-12-16 13:39:20.491 +07:00 [INF] ScalarExecuted ElapsedMs=16 RecordsAffected=null Scalar=0DECLARE @result int;
+EXEC @result = sp_getapplock @Resource = '__EFMigrationsLock', @LockOwner = 'Session', @LockMode = 'Exclusive';
+SELECT @resultSQL:DECLARE @result int;
+EXEC @result = sp_getapplock @Resource = '__EFMigrationsLock', @LockOwner = 'Session', @LockMode = 'Exclusive';
+SELECT @result{Sql}
+2025-12-16 13:39:20.555 +07:00 [INF] NonQueryExecuting SqlConnection@103.157.218.187,1433/GenoraMultiTenancy Timeout=180sIF OBJECT_ID(N'[__EFMigrationsHistory]') IS NULL
+BEGIN
+    CREATE TABLE [__EFMigrationsHistory] (
+        [MigrationId] nvarchar(150) NOT NULL,
+        [ProductVersion] nvarchar(32) NOT NULL,
+        CONSTRAINT [PK___EFMigrationsHistory] PRIMARY KEY ([MigrationId])
+    );
+END;
+
+SQL:IF OBJECT_ID(N'[__EFMigrationsHistory]') IS NULL
+BEGIN
+    CREATE TABLE [__EFMigrationsHistory] (
+        [MigrationId] nvarchar(150) NOT NULL,
+        [ProductVersion] nvarchar(32) NOT NULL,
+        CONSTRAINT [PK___EFMigrationsHistory] PRIMARY KEY ([MigrationId])
+    );
+END;
+
+[]IF OBJECT_ID(N'[__EFMigrationsHistory]') IS NULL
+BEGIN
+    CREATE TABLE [__EFMigrationsHistory] (
+        [MigrationId] nvarchar(150) NOT NULL,
+        [ProductVersion] nvarchar(32) NOT NULL,
+        CONSTRAINT [PK___EFMigrationsHistory] PRIMARY KEY ([MigrationId])
+    );
+END;
+
+Params:{@Params}
+2025-12-16 13:39:20.561 +07:00 [INF] NonQueryExecuted ElapsedMs=5 RecordsAffected=-1 Scalar=nullIF OBJECT_ID(N'[__EFMigrationsHistory]') IS NULL
+BEGIN
+    CREATE TABLE [__EFMigrationsHistory] (
+        [MigrationId] nvarchar(150) NOT NULL,
+        [ProductVersion] nvarchar(32) NOT NULL,
+        CONSTRAINT [PK___EFMigrationsHistory] PRIMARY KEY ([MigrationId])
+    );
+END;
+
+SQL:IF OBJECT_ID(N'[__EFMigrationsHistory]') IS NULL
+BEGIN
+    CREATE TABLE [__EFMigrationsHistory] (
+        [MigrationId] nvarchar(150) NOT NULL,
+        [ProductVersion] nvarchar(32) NOT NULL,
+        CONSTRAINT [PK___EFMigrationsHistory] PRIMARY KEY ([MigrationId])
+    );
+END;
+
+{Sql}
+2025-12-16 13:39:20.584 +07:00 [INF] NonQueryExecuting SqlConnection@103.157.218.187,1433/GenoraMultiTenancy Timeout=180sSELECT 1SQL:SELECT 1[]SELECT 1Params:{@Params}
+2025-12-16 13:39:20.588 +07:00 [INF] NonQueryExecuted ElapsedMs=4 RecordsAffected=-1 Scalar=nullSELECT 1SQL:SELECT 1{Sql}
+2025-12-16 13:39:20.589 +07:00 [INF] ScalarExecuting SqlConnection@103.157.218.187,1433/GenoraMultiTenancy Timeout=180sSELECT OBJECT_ID(N'[__EFMigrationsHistory]');SQL:SELECT OBJECT_ID(N'[__EFMigrationsHistory]');[]SELECT OBJECT_ID(N'[__EFMigrationsHistory]');Params:{@Params}
+2025-12-16 13:39:20.594 +07:00 [INF] ScalarExecuted ElapsedMs=4 RecordsAffected=null Scalar=581577110SELECT OBJECT_ID(N'[__EFMigrationsHistory]');SQL:SELECT OBJECT_ID(N'[__EFMigrationsHistory]');{Sql}
+2025-12-16 13:39:20.595 +07:00 [INF] ReaderExecuting SqlConnection@103.157.218.187,1433/GenoraMultiTenancy Timeout=180sSELECT [MigrationId], [ProductVersion]
+FROM [__EFMigrationsHistory]
+ORDER BY [MigrationId];SQL:SELECT [MigrationId], [ProductVersion]
+FROM [__EFMigrationsHistory]
+ORDER BY [MigrationId];[]SELECT [MigrationId], [ProductVersion]
+FROM [__EFMigrationsHistory]
+ORDER BY [MigrationId];Params:{@Params}
+2025-12-16 13:39:20.601 +07:00 [INF] ReaderExecuted ElapsedMs=5 RecordsAffected=null Scalar=nullSELECT [MigrationId], [ProductVersion]
+FROM [__EFMigrationsHistory]
+ORDER BY [MigrationId];SQL:SELECT [MigrationId], [ProductVersion]
+FROM [__EFMigrationsHistory]
+ORDER BY [MigrationId];{Sql}
+2025-12-16 13:39:20.648 +07:00 [WRN] Savepoints are disabled because Multiple Active Result Sets (MARS) is enabled. If 'SaveChanges' fails, then the transaction cannot be automatically rolled back to a known clean state. Instead, the transaction should be rolled back by the application before retrying 'SaveChanges'. See https://go.microsoft.com/fwlink/?linkid=2149338 for more information and examples. To identify the code which triggers this warning, call 'ConfigureWarnings(w => w.Throw(SqlServerEventId.SavepointsDisabledBecauseOfMARS))'.
+2025-12-16 13:39:20.685 +07:00 [INF] NonQueryExecuting SqlConnection@103.157.218.187,1433/GenoraMultiTenancy Timeout=180sCREATE TABLE [AppZaloAuth] (
+    [Id] uniqueidentifier NOT NULL,
+    [TenantId] uniqueidentifier NULL,
+    [AppId] nvarchar(50) NOT NULL,
+    [CodeChallenge] nvarchar(200) NULL,
+    [CodeVerifier] nvarchar(200) NULL,
+    [State] nvarchar(100) NULL,
+    [AuthorizationCode] nvarchar(max) NULL,
+    [ExpireAuthorizationCodeTime] datetime2 NULL,
+    [AccessToken] nvarchar(max) NULL,
+    [RefreshToken] nvarchar(max) NULL,
+    [ExpireTokenTime] datetime2 NULL,
+    [IsActive] bit NOT NULL,
+    [ExtraProperties] nvarchar(max) NOT NULL,
+    [ConcurrencyStamp] nvarchar(40) NOT NULL,
+    [CreationTime] datetime2 NOT NULL,
+    [CreatorId] uniqueidentifier NULL,
+    [LastModificationTime] datetime2 NULL,
+    [LastModifierId] uniqueidentifier NULL,
+    [IsDeleted] bit NOT NULL DEFAULT CAST(0 AS bit),
+    [DeleterId] uniqueidentifier NULL,
+    [DeletionTime] datetime2 NULL,
+    CONSTRAINT [PK_AppZaloAuth] PRIMARY KEY ([Id])
+);
+SQL:CREATE TABLE [AppZaloAuth] (
+    [Id] uniqueidentifier NOT NULL,
+    [TenantId] uniqueidentifier NULL,
+    [AppId] nvarchar(50) NOT NULL,
+    [CodeChallenge] nvarchar(200) NULL,
+    [CodeVerifier] nvarchar(200) NULL,
+    [State] nvarchar(100) NULL,
+    [AuthorizationCode] nvarchar(max) NULL,
+    [ExpireAuthorizationCodeTime] datetime2 NULL,
+    [AccessToken] nvarchar(max) NULL,
+    [RefreshToken] nvarchar(max) NULL,
+    [ExpireTokenTime] datetime2 NULL,
+    [IsActive] bit NOT NULL,
+    [ExtraProperties] nvarchar(max) NOT NULL,
+    [ConcurrencyStamp] nvarchar(40) NOT NULL,
+    [CreationTime] datetime2 NOT NULL,
+    [CreatorId] uniqueidentifier NULL,
+    [LastModificationTime] datetime2 NULL,
+    [LastModifierId] uniqueidentifier NULL,
+    [IsDeleted] bit NOT NULL DEFAULT CAST(0 AS bit),
+    [DeleterId] uniqueidentifier NULL,
+    [DeletionTime] datetime2 NULL,
+    CONSTRAINT [PK_AppZaloAuth] PRIMARY KEY ([Id])
+);
+[]CREATE TABLE [AppZaloAuth] (
+    [Id] uniqueidentifier NOT NULL,
+    [TenantId] uniqueidentifier NULL,
+    [AppId] nvarchar(50) NOT NULL,
+    [CodeChallenge] nvarchar(200) NULL,
+    [CodeVerifier] nvarchar(200) NULL,
+    [State] nvarchar(100) NULL,
+    [AuthorizationCode] nvarchar(max) NULL,
+    [ExpireAuthorizationCodeTime] datetime2 NULL,
+    [AccessToken] nvarchar(max) NULL,
+    [RefreshToken] nvarchar(max) NULL,
+    [ExpireTokenTime] datetime2 NULL,
+    [IsActive] bit NOT NULL,
+    [ExtraProperties] nvarchar(max) NOT NULL,
+    [ConcurrencyStamp] nvarchar(40) NOT NULL,
+    [CreationTime] datetime2 NOT NULL,
+    [CreatorId] uniqueidentifier NULL,
+    [LastModificationTime] datetime2 NULL,
+    [LastModifierId] uniqueidentifier NULL,
+    [IsDeleted] bit NOT NULL DEFAULT CAST(0 AS bit),
+    [DeleterId] uniqueidentifier NULL,
+    [DeletionTime] datetime2 NULL,
+    CONSTRAINT [PK_AppZaloAuth] PRIMARY KEY ([Id])
+);
+Params:{@Params}
+2025-12-16 13:39:20.696 +07:00 [INF] NonQueryExecuted ElapsedMs=11 RecordsAffected=-1 Scalar=nullCREATE TABLE [AppZaloAuth] (
+    [Id] uniqueidentifier NOT NULL,
+    [TenantId] uniqueidentifier NULL,
+    [AppId] nvarchar(50) NOT NULL,
+    [CodeChallenge] nvarchar(200) NULL,
+    [CodeVerifier] nvarchar(200) NULL,
+    [State] nvarchar(100) NULL,
+    [AuthorizationCode] nvarchar(max) NULL,
+    [ExpireAuthorizationCodeTime] datetime2 NULL,
+    [AccessToken] nvarchar(max) NULL,
+    [RefreshToken] nvarchar(max) NULL,
+    [ExpireTokenTime] datetime2 NULL,
+    [IsActive] bit NOT NULL,
+    [ExtraProperties] nvarchar(max) NOT NULL,
+    [ConcurrencyStamp] nvarchar(40) NOT NULL,
+    [CreationTime] datetime2 NOT NULL,
+    [CreatorId] uniqueidentifier NULL,
+    [LastModificationTime] datetime2 NULL,
+    [LastModifierId] uniqueidentifier NULL,
+    [IsDeleted] bit NOT NULL DEFAULT CAST(0 AS bit),
+    [DeleterId] uniqueidentifier NULL,
+    [DeletionTime] datetime2 NULL,
+    CONSTRAINT [PK_AppZaloAuth] PRIMARY KEY ([Id])
+);
+SQL:CREATE TABLE [AppZaloAuth] (
+    [Id] uniqueidentifier NOT NULL,
+    [TenantId] uniqueidentifier NULL,
+    [AppId] nvarchar(50) NOT NULL,
+    [CodeChallenge] nvarchar(200) NULL,
+    [CodeVerifier] nvarchar(200) NULL,
+    [State] nvarchar(100) NULL,
+    [AuthorizationCode] nvarchar(max) NULL,
+    [ExpireAuthorizationCodeTime] datetime2 NULL,
+    [AccessToken] nvarchar(max) NULL,
+    [RefreshToken] nvarchar(max) NULL,
+    [ExpireTokenTime] datetime2 NULL,
+    [IsActive] bit NOT NULL,
+    [ExtraProperties] nvarchar(max) NOT NULL,
+    [ConcurrencyStamp] nvarchar(40) NOT NULL,
+    [CreationTime] datetime2 NOT NULL,
+    [CreatorId] uniqueidentifier NULL,
+    [LastModificationTime] datetime2 NULL,
+    [LastModifierId] uniqueidentifier NULL,
+    [IsDeleted] bit NOT NULL DEFAULT CAST(0 AS bit),
+    [DeleterId] uniqueidentifier NULL,
+    [DeletionTime] datetime2 NULL,
+    CONSTRAINT [PK_AppZaloAuth] PRIMARY KEY ([Id])
+);
+{Sql}
+2025-12-16 13:39:20.696 +07:00 [INF] NonQueryExecuting SqlConnection@103.157.218.187,1433/GenoraMultiTenancy Timeout=180sCREATE TABLE [AppZaloLog] (
+    [Id] uniqueidentifier NOT NULL,
+    [TenantId] uniqueidentifier NULL,
+    [Action] nvarchar(128) NOT NULL,
+    [Endpoint] nvarchar(512) NOT NULL,
+    [HttpStatus] int NULL,
+    [DurationMs] bigint NOT NULL,
+    [RequestBody] nvarchar(max) NULL,
+    [ResponseBody] nvarchar(max) NULL,
+    [Error] nvarchar(max) NULL,
+    [ExtraProperties] nvarchar(max) NOT NULL,
+    [ConcurrencyStamp] nvarchar(40) NOT NULL,
+    [CreationTime] datetime2 NOT NULL,
+    [CreatorId] uniqueidentifier NULL,
+    [LastModificationTime] datetime2 NULL,
+    [LastModifierId] uniqueidentifier NULL,
+    [IsDeleted] bit NOT NULL DEFAULT CAST(0 AS bit),
+    [DeleterId] uniqueidentifier NULL,
+    [DeletionTime] datetime2 NULL,
+    CONSTRAINT [PK_AppZaloLog] PRIMARY KEY ([Id])
+);
+SQL:CREATE TABLE [AppZaloLog] (
+    [Id] uniqueidentifier NOT NULL,
+    [TenantId] uniqueidentifier NULL,
+    [Action] nvarchar(128) NOT NULL,
+    [Endpoint] nvarchar(512) NOT NULL,
+    [HttpStatus] int NULL,
+    [DurationMs] bigint NOT NULL,
+    [RequestBody] nvarchar(max) NULL,
+    [ResponseBody] nvarchar(max) NULL,
+    [Error] nvarchar(max) NULL,
+    [ExtraProperties] nvarchar(max) NOT NULL,
+    [ConcurrencyStamp] nvarchar(40) NOT NULL,
+    [CreationTime] datetime2 NOT NULL,
+    [CreatorId] uniqueidentifier NULL,
+    [LastModificationTime] datetime2 NULL,
+    [LastModifierId] uniqueidentifier NULL,
+    [IsDeleted] bit NOT NULL DEFAULT CAST(0 AS bit),
+    [DeleterId] uniqueidentifier NULL,
+    [DeletionTime] datetime2 NULL,
+    CONSTRAINT [PK_AppZaloLog] PRIMARY KEY ([Id])
+);
+[]CREATE TABLE [AppZaloLog] (
+    [Id] uniqueidentifier NOT NULL,
+    [TenantId] uniqueidentifier NULL,
+    [Action] nvarchar(128) NOT NULL,
+    [Endpoint] nvarchar(512) NOT NULL,
+    [HttpStatus] int NULL,
+    [DurationMs] bigint NOT NULL,
+    [RequestBody] nvarchar(max) NULL,
+    [ResponseBody] nvarchar(max) NULL,
+    [Error] nvarchar(max) NULL,
+    [ExtraProperties] nvarchar(max) NOT NULL,
+    [ConcurrencyStamp] nvarchar(40) NOT NULL,
+    [CreationTime] datetime2 NOT NULL,
+    [CreatorId] uniqueidentifier NULL,
+    [LastModificationTime] datetime2 NULL,
+    [LastModifierId] uniqueidentifier NULL,
+    [IsDeleted] bit NOT NULL DEFAULT CAST(0 AS bit),
+    [DeleterId] uniqueidentifier NULL,
+    [DeletionTime] datetime2 NULL,
+    CONSTRAINT [PK_AppZaloLog] PRIMARY KEY ([Id])
+);
+Params:{@Params}
+2025-12-16 13:39:20.706 +07:00 [INF] NonQueryExecuted ElapsedMs=9 RecordsAffected=-1 Scalar=nullCREATE TABLE [AppZaloLog] (
+    [Id] uniqueidentifier NOT NULL,
+    [TenantId] uniqueidentifier NULL,
+    [Action] nvarchar(128) NOT NULL,
+    [Endpoint] nvarchar(512) NOT NULL,
+    [HttpStatus] int NULL,
+    [DurationMs] bigint NOT NULL,
+    [RequestBody] nvarchar(max) NULL,
+    [ResponseBody] nvarchar(max) NULL,
+    [Error] nvarchar(max) NULL,
+    [ExtraProperties] nvarchar(max) NOT NULL,
+    [ConcurrencyStamp] nvarchar(40) NOT NULL,
+    [CreationTime] datetime2 NOT NULL,
+    [CreatorId] uniqueidentifier NULL,
+    [LastModificationTime] datetime2 NULL,
+    [LastModifierId] uniqueidentifier NULL,
+    [IsDeleted] bit NOT NULL DEFAULT CAST(0 AS bit),
+    [DeleterId] uniqueidentifier NULL,
+    [DeletionTime] datetime2 NULL,
+    CONSTRAINT [PK_AppZaloLog] PRIMARY KEY ([Id])
+);
+SQL:CREATE TABLE [AppZaloLog] (
+    [Id] uniqueidentifier NOT NULL,
+    [TenantId] uniqueidentifier NULL,
+    [Action] nvarchar(128) NOT NULL,
+    [Endpoint] nvarchar(512) NOT NULL,
+    [HttpStatus] int NULL,
+    [DurationMs] bigint NOT NULL,
+    [RequestBody] nvarchar(max) NULL,
+    [ResponseBody] nvarchar(max) NULL,
+    [Error] nvarchar(max) NULL,
+    [ExtraProperties] nvarchar(max) NOT NULL,
+    [ConcurrencyStamp] nvarchar(40) NOT NULL,
+    [CreationTime] datetime2 NOT NULL,
+    [CreatorId] uniqueidentifier NULL,
+    [LastModificationTime] datetime2 NULL,
+    [LastModifierId] uniqueidentifier NULL,
+    [IsDeleted] bit NOT NULL DEFAULT CAST(0 AS bit),
+    [DeleterId] uniqueidentifier NULL,
+    [DeletionTime] datetime2 NULL,
+    CONSTRAINT [PK_AppZaloLog] PRIMARY KEY ([Id])
+);
+{Sql}
+2025-12-16 13:39:20.706 +07:00 [INF] NonQueryExecuting SqlConnection@103.157.218.187,1433/GenoraMultiTenancy Timeout=180sCREATE INDEX [IX_AppZaloAuth_AppId_State] ON [AppZaloAuth] ([AppId], [State]);
+SQL:CREATE INDEX [IX_AppZaloAuth_AppId_State] ON [AppZaloAuth] ([AppId], [State]);
+[]CREATE INDEX [IX_AppZaloAuth_AppId_State] ON [AppZaloAuth] ([AppId], [State]);
+Params:{@Params}
+2025-12-16 13:39:20.712 +07:00 [INF] NonQueryExecuted ElapsedMs=5 RecordsAffected=-1 Scalar=nullCREATE INDEX [IX_AppZaloAuth_AppId_State] ON [AppZaloAuth] ([AppId], [State]);
+SQL:CREATE INDEX [IX_AppZaloAuth_AppId_State] ON [AppZaloAuth] ([AppId], [State]);
+{Sql}
+2025-12-16 13:39:20.712 +07:00 [INF] NonQueryExecuting SqlConnection@103.157.218.187,1433/GenoraMultiTenancy Timeout=180sCREATE INDEX [IX_AppZaloLog_CreationTime] ON [AppZaloLog] ([CreationTime]);
+SQL:CREATE INDEX [IX_AppZaloLog_CreationTime] ON [AppZaloLog] ([CreationTime]);
+[]CREATE INDEX [IX_AppZaloLog_CreationTime] ON [AppZaloLog] ([CreationTime]);
+Params:{@Params}
+2025-12-16 13:39:20.719 +07:00 [INF] NonQueryExecuted ElapsedMs=7 RecordsAffected=-1 Scalar=nullCREATE INDEX [IX_AppZaloLog_CreationTime] ON [AppZaloLog] ([CreationTime]);
+SQL:CREATE INDEX [IX_AppZaloLog_CreationTime] ON [AppZaloLog] ([CreationTime]);
+{Sql}
+2025-12-16 13:39:20.719 +07:00 [INF] NonQueryExecuting SqlConnection@103.157.218.187,1433/GenoraMultiTenancy Timeout=180sINSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion])
+VALUES (N'20251216063852_Add_ZaloAuth_ZaloLog', N'9.0.5');
+SQL:INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion])
+VALUES (N'20251216063852_Add_ZaloAuth_ZaloLog', N'9.0.5');
+[]INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion])
+VALUES (N'20251216063852_Add_ZaloAuth_ZaloLog', N'9.0.5');
+Params:{@Params}
+2025-12-16 13:39:20.725 +07:00 [INF] NonQueryExecuted ElapsedMs=5 RecordsAffected=1 Scalar=nullINSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion])
+VALUES (N'20251216063852_Add_ZaloAuth_ZaloLog', N'9.0.5');
+SQL:INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion])
+VALUES (N'20251216063852_Add_ZaloAuth_ZaloLog', N'9.0.5');
+{Sql}
+2025-12-16 13:39:20.731 +07:00 [INF] ScalarExecuting SqlConnection@103.157.218.187,1433/GenoraMultiTenancy Timeout=180sDECLARE @result int;
+EXEC @result = sp_releaseapplock @Resource = '__EFMigrationsLock', @LockOwner = 'Session';
+SELECT @resultSQL:DECLARE @result int;
+EXEC @result = sp_releaseapplock @Resource = '__EFMigrationsLock', @LockOwner = 'Session';
+SELECT @result[]DECLARE @result int;
+EXEC @result = sp_releaseapplock @Resource = '__EFMigrationsLock', @LockOwner = 'Session';
+SELECT @resultParams:{@Params}
+2025-12-16 13:39:20.740 +07:00 [INF] ScalarExecuted ElapsedMs=9 RecordsAffected=null Scalar=0DECLARE @result int;
+EXEC @result = sp_releaseapplock @Resource = '__EFMigrationsLock', @LockOwner = 'Session';
+SELECT @resultSQL:DECLARE @result int;
+EXEC @result = sp_releaseapplock @Resource = '__EFMigrationsLock', @LockOwner = 'Session';
+SELECT @result{Sql}
+2025-12-16 13:39:20.742 +07:00 [INF] Migrated DB OK: GenoraMultiTenancy

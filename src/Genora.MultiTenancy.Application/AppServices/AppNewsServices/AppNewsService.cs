@@ -27,7 +27,6 @@ public class AppNewsService :
         CreateUpdateAppNewsDto>,
     IAppNewsService
 {
-    // === GIỐNG PATTERN CỦA AppCalendarSlotService ===
     protected override string FeatureName => AppNewsFeatures.Management;
     protected override string TenantDefaultPermission => MultiTenancyPermissions.AppNews.Default;
     protected override string HostDefaultPermission => MultiTenancyPermissions.HostAppNews.Default;
@@ -38,7 +37,6 @@ public class AppNewsService :
         IFeatureChecker featureChecker)
         : base(repository, currentTenant, featureChecker)
     {
-        // policy TENANT (Host sẽ được FeatureProtectedCrudAppService map qua HostNews.*)
         GetPolicyName = MultiTenancyPermissions.AppNews.Default;
         GetListPolicyName = MultiTenancyPermissions.AppNews.Default;
         CreatePolicyName = MultiTenancyPermissions.AppNews.Create;
@@ -46,7 +44,6 @@ public class AppNewsService :
         DeletePolicyName = MultiTenancyPermissions.AppNews.Delete;
     }
 
-    // Nếu muốn tránh validate kỳ quặc như bên CustomerList thì có thể thêm DisableValidation
     [DisableValidation]
     public override async Task<PagedResultDto<AppNewsDto>> GetListAsync(GetNewsListInput input)
     {
@@ -106,7 +103,6 @@ public class AppNewsService :
 
         var entity = ObjectMapper.Map<CreateUpdateAppNewsDto, News>(input);
 
-        // auto set thời gian publish nếu status = Published mà chưa set
         if (!entity.PublishedAt.HasValue && entity.Status == (byte)NewsStatus.Published)
         {
             entity.PublishedAt = Clock.Now;

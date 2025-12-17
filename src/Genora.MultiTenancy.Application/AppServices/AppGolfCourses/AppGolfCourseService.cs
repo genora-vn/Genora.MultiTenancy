@@ -66,5 +66,5 @@ public class AppGolfCourseService :
         );
     }
 
-    // Create/Update/Delete/Get dùng mặc định của CrudAppService (đã check permission & feature)
+    // Note: Create/Update/Delete/Get dùng mặc định của CrudAppService (đã check permission & feature)
 }

@@ -233,7 +233,12 @@ public class MultiTenancyMenuContributor : IMenuContributor
             var hostCanBookings =
                 await perms.IsGrantedAsync(MultiTenancyPermissions.HostAppBookings.Default);
 
-            if (hostCanAppSettings || hostCanCustomerTypes || hostCanGolfCourses || hostCanMembershipTiers || hostCanCustomers || hostCanCalendarSlots || hostCanNews || hostCanBookings)
+            var hostCanZaloAuths =
+                await perms.IsGrantedAsync(MultiTenancyPermissions.HostAppZaloAuths.Default);
+            var hostCanZaloLogs =
+               await perms.IsGrantedAsync(MultiTenancyPermissions.HostAppZaloLogs.Default);
+
+            if (hostCanAppSettings || hostCanCustomerTypes || hostCanGolfCourses || hostCanMembershipTiers || hostCanCustomers || hostCanCalendarSlots || hostCanNews || hostCanBookings || hostCanZaloAuths || hostCanZaloLogs)
             {
                 var hostMiniAppMenu = new ApplicationMenuItem(
                     "MiniAppSettingHost",
@@ -335,6 +340,17 @@ public class MultiTenancyMenuContributor : IMenuContributor
                             url: "/AppBookings",
                             icon: "fa fa-calendar-plus-o"
                         ).RequirePermissions(MultiTenancyPermissions.HostAppBookings.Default)
+                    );
+                }
+
+                if (hostCanZaloAuths || hostCanZaloLogs)
+                {
+                    hostMiniAppMenu.AddItem(
+                        new ApplicationMenuItem("Zalo", l["Menu:AppZalo"], icon: "fa fa-shield-alt")
+                            .AddItem(new ApplicationMenuItem("AppZaloAuths", l["Menu:AppZaloAuths"], "/AppZaloAuths")
+                                .RequirePermissions(MultiTenancyPermissions.HostAppZaloAuths.Default))
+                            .AddItem(new ApplicationMenuItem("AppZaloLogs", l["Menu:AppZaloLogs"], "/AppZaloLogs")
+                                .RequirePermissions(MultiTenancyPermissions.HostAppZaloLogs.Default))
                     );
                 }
 

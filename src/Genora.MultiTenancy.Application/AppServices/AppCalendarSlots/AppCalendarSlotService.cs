@@ -104,16 +104,12 @@ public class AppCalendarSlotService :
         var slots = await AsyncExecuter.ToListAsync(
             query.Skip(input.SkipCount).Take(input.MaxResultCount)
         );
-
-        // Nếu màn list chỉ cần dữ liệu cơ bản (không cần Prices / GolfCourseName)
-        // ta map đơn giản:
         var dtoList = slots
             .Select(slot => new AppCalendarSlotDto
             {
                 Id = slot.Id,
                 TenantId = slot.TenantId,
                 GolfCourseId = slot.GolfCourseId,
-                // GolfCourseName có thể để trống hoặc lấy thêm sau nếu cần
                 ApplyDate = slot.ApplyDate,
                 TimeFrom = slot.TimeFrom,
                 TimeTo = slot.TimeTo,
@@ -265,7 +261,6 @@ public class AppCalendarSlotService :
 
         var entity = await Repository.GetAsync(id);
 
-        // Map tay các field cho rõ ràng
         entity.GolfCourseId = input.GolfCourseId;
         entity.ApplyDate = input.ApplyDate;
         entity.TimeFrom = input.TimeFrom;
@@ -361,7 +356,6 @@ public class AppCalendarSlotService :
             x.ApplyDate.Date == input.ApplyDate.Date &&
             (!currentId.HasValue || x.Id != currentId.Value));
 
-        // overlap: [from, to] giao nhau
         query = query.Where(x =>
             (input.TimeFrom < x.TimeTo) && (input.TimeTo > x.TimeFrom));
 
@@ -377,62 +371,45 @@ public class AppCalendarSlotService :
 
     private async Task SavePricesAsync(Guid calendarSlotId, List<CreateUpdateCalendarSlotPriceDto> inputPrices)
     {
-        // normalize input + remove duplicates CustomerTypeId
         var normalized = (inputPrices ?? new List<CreateUpdateCalendarSlotPriceDto>())
             .Where(x => x.CustomerTypeId != Guid.Empty)
             .GroupBy(x => x.CustomerTypeId)
             .Select(g => g.Last())
             .ToList();
 
-        // NOTE:
-        // - Host: CurrentTenant.Id == null
-        // - Tenant: CurrentTenant.Id != null
-        // Ta phải lấy đúng existing prices theo slotId (kể cả TenantId null)
-        //using (CurrentUnitOfWork?.DisableFilter(Volo.Abp.Data.AbpDataFilters.MayHaveTenant))
-        //using (CurrentUnitOfWork?.DisableFilter(Volo.Abp.Data.AbpDataFilters.MustHaveTenant))
-        //{
-            var existing = await _priceRepository.GetListAsync(x => x.CalendarSlotId == calendarSlotId);
+        var existing = await _priceRepository.GetListAsync(x => x.CalendarSlotId == calendarSlotId);
 
-            // 1) Delete các dòng DB không còn trong input
-            var inputCtIds = normalized.Select(x => x.CustomerTypeId).ToHashSet();
-            var toDelete = existing.Where(x => !inputCtIds.Contains(x.CustomerTypeId)).ToList();
-            if (toDelete.Count > 0)
+        // 1) Delete các dòng DB không còn trong input
+        var inputCtIds = normalized.Select(x => x.CustomerTypeId).ToHashSet();
+        var toDelete = existing.Where(x => !inputCtIds.Contains(x.CustomerTypeId)).ToList();
+        if (toDelete.Count > 0)
+        {
+            await _priceRepository.DeleteManyAsync(toDelete, autoSave: true);
+        }
+
+        // 2) Upsert từng dòng
+        foreach (var p in normalized)
+        {
+            var row = existing.FirstOrDefault(x => x.CustomerTypeId == p.CustomerTypeId);
+
+            if (row == null)
             {
-                await _priceRepository.DeleteManyAsync(toDelete, autoSave: true);
+                var newRow = new CalendarSlotPrice(
+                    GuidGenerator.Create(),
+                    calendarSlotId,
+                    p.CustomerTypeId,
+                    p.Price
+                );
+                newRow.TenantId = CurrentTenant.Id;
+                await _priceRepository.InsertAsync(newRow, autoSave: true);
             }
-
-            // 2) Upsert từng dòng
-            foreach (var p in normalized)
+            else
             {
-                var row = existing.FirstOrDefault(x => x.CustomerTypeId == p.CustomerTypeId);
-
-                if (row == null)
-                {
-                    var newRow = new CalendarSlotPrice(
-                        GuidGenerator.Create(),
-                        calendarSlotId,
-                        p.CustomerTypeId,
-                        p.Price
-                    );
-
-                    // đồng bộ tenant id:
-                    // - Tenant: set tenant id
-                    // - Host: để null
-                    newRow.TenantId = CurrentTenant.Id;
-
-                    await _priceRepository.InsertAsync(newRow, autoSave: true);
-                }
-                else
-                {
-                    row.Price = p.Price;
-
-                    // đảm bảo tenant id đúng side
-                    row.TenantId = CurrentTenant.Id;
-
-                    await _priceRepository.UpdateAsync(row, autoSave: true);
-                }
+                row.Price = p.Price;
+                row.TenantId = CurrentTenant.Id;
+                await _priceRepository.UpdateAsync(row, autoSave: true);
             }
-        //}
+        }
     }
 
 }

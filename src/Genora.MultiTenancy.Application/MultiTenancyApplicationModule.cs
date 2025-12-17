@@ -1,14 +1,16 @@
-﻿using Volo.Abp.PermissionManagement;
-using Volo.Abp.SettingManagement;
-using Volo.Abp.Account;
-using Volo.Abp.Identity;
-using Volo.Abp.AutoMapper;
-using Volo.Abp.FeatureManagement;
-using Volo.Abp.Modularity;
-using Volo.Abp.TenantManagement;
-using Volo.Abp.Domain.Entities.Caching;
-using System;
+﻿using Genora.MultiTenancy.AppDtos.AppSettings;
 using Genora.MultiTenancy.Apps.AppSettings;
+using System;
+using Volo.Abp.Account;
+using Volo.Abp.AspNetCore.ExceptionHandling;
+using Volo.Abp.AutoMapper;
+using Volo.Abp.Domain.Entities.Caching;
+using Volo.Abp.FeatureManagement;
+using Volo.Abp.Identity;
+using Volo.Abp.Modularity;
+using Volo.Abp.PermissionManagement;
+using Volo.Abp.SettingManagement;
+using Volo.Abp.TenantManagement;
 
 namespace Genora.MultiTenancy;
 
@@ -29,6 +31,12 @@ public class MultiTenancyApplicationModule : AbpModule
         Configure<AbpAutoMapperOptions>(options =>
         {
             options.AddMaps<MultiTenancyApplicationModule>();
+        });
+
+        Configure<AbpExceptionHandlingOptions>(options =>
+        {
+            options.SendExceptionsDetailsToClients = true;
+            options.SendStackTraceToClients = true;
         });
 
         context.Services.AddEntityCache<AppSetting, AppSettingDto, Guid>();

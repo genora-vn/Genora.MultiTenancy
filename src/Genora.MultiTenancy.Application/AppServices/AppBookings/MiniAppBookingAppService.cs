@@ -30,14 +30,11 @@ public class MiniAppBookingAppService : ApplicationService, IMiniAppBookingAppSe
 
     public async Task<AppBookingDto> CreateFromMiniAppAsync(MiniAppCreateBookingDto input)
     {
-        // TODO (optional): validate calendar slot tồn tại / price / max slots...
-
         var customer = await _customerRepo.GetAsync(input.CustomerId);
 
         // BookingCode: CustomerCode + ddMMyy + serial/day (reset theo ngày)
         var datePart = input.PlayDate.ToString("ddMMyy");
 
-        // serial theo ngày (toàn hệ thống). Nếu bạn muốn theo sân/tenant -> đổi predicate
         var countInDay = await _bookingRepo.CountAsync(x => x.PlayDate.Date == input.PlayDate.Date);
         var serial = (countInDay + 1).ToString("D3");
 
@@ -123,7 +120,6 @@ public class MiniAppBookingAppService : ApplicationService, IMiniAppBookingAppSe
 
         var dto = ObjectMapper.Map<Booking, AppBookingDto>(booking);
 
-        // include players
         var players = await _playerRepo.GetListAsync(x => x.BookingId == id);
         dto.Players = ObjectMapper.Map<System.Collections.Generic.List<BookingPlayer>, System.Collections.Generic.List<AppBookingPlayerDto>>(players);
 

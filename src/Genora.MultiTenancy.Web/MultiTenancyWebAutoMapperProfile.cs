@@ -6,7 +6,8 @@ using Genora.MultiTenancy.AppDtos.AppCustomerTypes;
 using Genora.MultiTenancy.AppDtos.AppGolfCourses;
 using Genora.MultiTenancy.AppDtos.AppMembershipTiers;
 using Genora.MultiTenancy.AppDtos.AppNews;
-using Genora.MultiTenancy.Apps.AppSettings;
+using Genora.MultiTenancy.AppDtos.AppSettings;
+using Genora.MultiTenancy.AppDtos.ZaloAuths;
 
 namespace Genora.MultiTenancy.Web;
 
@@ -23,6 +24,8 @@ public class MultiTenancyWebAutoMapperProfile : Profile
         CreateMap<AppCalendarSlotDto, CreateUpdateAppCalendarSlotDto>();
         CreateMap<AppNewsDto, CreateUpdateAppNewsDto>();
         CreateMap<AppBookingDto, CreateUpdateAppBookingDto>();
+
+        CreateMap<AppZaloAuthDto, CreateUpdateZaloAuthDto>();
         //Define your object mappings here, for the Web project
     }
 }

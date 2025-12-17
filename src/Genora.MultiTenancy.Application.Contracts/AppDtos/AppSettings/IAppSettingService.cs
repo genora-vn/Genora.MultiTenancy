@@ -2,7 +2,7 @@
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Application.Services;
 
-namespace Genora.MultiTenancy.Apps.AppSettings;
+namespace Genora.MultiTenancy.AppDtos.AppSettings;
 
 public interface IAppSettingService :
     ICrudAppService< //Defines CRUD methods

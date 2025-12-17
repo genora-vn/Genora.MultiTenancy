@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace Genora.MultiTenancy.Apps.AppSettings;
+namespace Genora.MultiTenancy.AppDtos.AppSettings;
 
 public class CreateUpdateAppSettingDto
 {

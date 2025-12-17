@@ -47,8 +47,5 @@ public class CreateUpdateAppBookingDto
     [Required]
     public BookingSource Source { get; set; }
 
-    [StringLength(500)]
-    public string Notes { get; set; }
-
     public List<CreateUpdateBookingPlayerDto> Players { get; set; } = new();
 }

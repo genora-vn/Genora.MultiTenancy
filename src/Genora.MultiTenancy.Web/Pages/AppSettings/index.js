@@ -1,5 +1,6 @@
 ﻿$(function () {
     var l = abp.localization.getResource('MultiTenancy');
+    var service = genora.multiTenancy.appServices.appSettings.appSetting;
     var createModal = new abp.ModalManager(abp.appPath + 'AppSettings/CreateModal');
     var editModal = new abp.ModalManager(abp.appPath + 'AppSettings/EditModal');
 
@@ -10,7 +11,7 @@
             order: [[1, "asc"]],
             searching: false,
             scrollX: true,
-            ajax: abp.libs.datatables.createAjax(genora.multiTenancy.apps.appSettings.appSetting.getList),
+            ajax: abp.libs.datatables.createAjax(service.getList),
             columnDefs: [
                 {
                     title: l('Actions'),

@@ -12,6 +12,7 @@ namespace Genora.MultiTenancy.Controllers;
 [RemoteService(false)]
 [Area("MultiTenancy")]
 [Route("api/mini-app")]
+[Authorize(AuthenticationSchemes = "MiniAppJwt", Policy = "MiniAppOnly")]
 public class MiniAppController : MultiTenancyController
 {
     private readonly IMiniAppBookingAppService _miniBooking;

@@ -1,4 +1,6 @@
-﻿using Genora.MultiTenancy.AuditLogs;
+﻿using Genora.MultiTenancy.AppDtos.AppZaloAuths;
+using Genora.MultiTenancy.AppServices.AppZaloAuths;
+using Genora.MultiTenancy.AuditLogs;
 using Genora.MultiTenancy.EntityFrameworkCore;
 using Genora.MultiTenancy.Localization;
 using Genora.MultiTenancy.TenantManagement;
@@ -15,12 +17,14 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
+using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using OpenIddict.Server.AspNetCore;
 using OpenIddict.Validation.AspNetCore;
 using System;
 using System.Globalization;
 using System.IO;
+using System.Text;
 using Volo.Abp;
 using Volo.Abp.Account.Web;
 using Volo.Abp.AspNetCore.MultiTenancy;
@@ -73,6 +77,42 @@ public class MultiTenancyWebModule : AbpModule
     {
         var hostingEnvironment = context.Services.GetHostingEnvironment();
         var configuration = context.Services.GetConfiguration();
+
+        context.Services.AddAuthentication()
+        .AddJwtBearer("MiniAppJwt", options =>
+        {
+            options.RequireHttpsMetadata = false;
+            options.SaveToken = true;
+
+            var issuer = configuration["MiniAppAuth:Issuer"];
+            var audience = configuration["MiniAppAuth:Audience"];
+            var key = configuration["MiniAppAuth:SigningKey"];
+
+            options.TokenValidationParameters = new TokenValidationParameters
+            {
+                ValidateIssuer = true,
+                ValidIssuer = issuer,
+
+                ValidateAudience = true,
+                ValidAudience = audience,
+
+                ValidateIssuerSigningKey = true,
+                IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key)),
+
+                ValidateLifetime = true,
+                ClockSkew = TimeSpan.FromSeconds(30)
+            };
+        });
+
+        context.Services.AddAuthorization(options =>
+        {
+            options.AddPolicy("MiniAppOnly", policy =>
+            {
+                policy.AddAuthenticationSchemes("MiniAppJwt");
+                policy.RequireAuthenticatedUser();
+                policy.RequireClaim("typ", "miniapp");
+            });
+        });
 
         context.Services.PreConfigure<AbpMvcDataAnnotationsLocalizationOptions>(options =>
         {
@@ -170,6 +210,13 @@ public class MultiTenancyWebModule : AbpModule
 
         // ✅ Replace auditing store
         context.Services.Replace(ServiceDescriptor.Transient<IAuditingStore, HostRedirectAuditingStore>());
+
+        // Register DI Zalo Service
+        context.Services.AddHttpClient();
+
+        context.Services.AddTransient<IZaloOAuthClient, ZaloOAuthClient>();
+        context.Services.AddTransient<IZaloTokenProvider, ZaloTokenProvider>();
+        context.Services.AddTransient<IZaloApiClient, ZaloApiClient>();
 
         ConfigureBundles();
         ConfigureUrls(configuration);

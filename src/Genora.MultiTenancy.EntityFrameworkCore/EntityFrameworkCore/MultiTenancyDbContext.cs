@@ -11,6 +11,7 @@ using Genora.MultiTenancy.DomainModels.AppCustomerTypes;
 using Genora.MultiTenancy.DomainModels.AppGolfCourses;
 using Genora.MultiTenancy.DomainModels.AppMembershipTiers;
 using Genora.MultiTenancy.DomainModels.AppNews;
+using Genora.MultiTenancy.DomainModels.AppZaloAuth;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Hosting;
 using Volo.Abp.AuditLogging.EntityFrameworkCore;
@@ -56,6 +57,8 @@ public class MultiTenancyDbContext :
     public DbSet<Booking> Booking { get; set; }
     public DbSet<BookingPlayer> BookingPlayer { get; set; }
     public DbSet<BookingStatusHistory> BookingStatusHistory { get; set; }
+    public DbSet<ZaloAuth> ZaloAuths { get; set; }
+    public DbSet<ZaloLog> ZaloLogs { get; set; }  // nếu có
 
     // Identity
     public DbSet<IdentityUser> Users { get; set; }
@@ -127,5 +130,25 @@ public class MultiTenancyDbContext :
 
         // Mini App domain module
         builder.ConfigureMiniAppModule();
+
+        builder.Entity<ZaloAuth>(b =>
+        {
+            b.ToTable("AppZaloAuth");
+            b.ConfigureByConvention();
+            b.Property(x => x.AppId).IsRequired().HasMaxLength(50);
+            b.Property(x => x.State).HasMaxLength(100);
+            b.Property(x => x.CodeChallenge).HasMaxLength(200);
+            b.Property(x => x.CodeVerifier).HasMaxLength(200);
+            b.HasIndex(x => new { x.AppId, x.State });
+        });
+
+        builder.Entity<ZaloLog>(b =>
+        {
+            b.ToTable("AppZaloLog");
+            b.ConfigureByConvention();
+            b.Property(x => x.Action).HasMaxLength(128);
+            b.Property(x => x.Endpoint).HasMaxLength(512);
+            b.HasIndex(x => x.CreationTime);
+        });
     }
 }

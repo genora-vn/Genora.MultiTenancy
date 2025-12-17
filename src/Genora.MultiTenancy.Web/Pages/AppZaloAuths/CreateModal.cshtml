@@ -1,0 +1,35 @@
+﻿@page
+@using Genora.MultiTenancy.Localization
+@using Microsoft.Extensions.Localization
+@using Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.TagHelpers.Modal
+@model Genora.MultiTenancy.Web.Pages.AppZaloAuths.CreateModalModel
+@inject IStringLocalizer<MultiTenancyResource> L
+@{
+    Layout = null;
+}
+
+<form asp-page="/AppZaloAuths/CreateModal" method="post" id="CreateZaloAuthForm">
+    <abp-modal size="Large">
+        <abp-modal-header title="@L["NewAppZaloAuth"]"></abp-modal-header>
+        <abp-modal-body>
+
+            <abp-input asp-for="Auth.AppId" label="@L["AppId"]" />
+
+            <abp-input asp-for="Auth.AccessToken" label="@L["AccessToken"]" />
+            <abp-input asp-for="Auth.RefreshToken" label="@L["RefreshToken"]" />
+            <abp-input asp-for="Auth.ExpireTokenTime" label="@L["ExpiresAt"]" type="datetime-local" />
+
+            <hr />
+
+            <abp-input asp-for="Auth.State" label="@L["State"]" />
+            <abp-input asp-for="Auth.CodeChallenge" label="CodeChallenge" />
+            <abp-input asp-for="Auth.CodeVerifier" label="CodeVerifier" />
+            <abp-input asp-for="Auth.AuthorizationCode" label="AuthorizationCode" />
+            <abp-input asp-for="Auth.ExpireAuthorizationCodeTime" label="ExpireAuthorizationCodeTime" type="datetime-local" />
+
+            <abp-input asp-for="Auth.IsActive" label="@L["IsActive"]" />
+
+        </abp-modal-body>
+        <abp-modal-footer buttons="@(AbpModalButtons.Cancel | AbpModalButtons.Save)"></abp-modal-footer>
+    </abp-modal>
+</form>

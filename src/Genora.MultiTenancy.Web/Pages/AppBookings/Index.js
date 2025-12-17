@@ -1,8 +1,6 @@
 ﻿$(function () {
     var l = abp.localization.getResource('MultiTenancy');
 
-    // JS proxy ABP cho AppBookingService
-    // chỉnh namespace nếu cần theo proxy thực tế
     var service = genora.multiTenancy.appServices.appBookings.appBooking;
 
     var editModal = new abp.ModalManager('/AppBookings/EditModal');
@@ -31,8 +29,8 @@
                             {
                                 text: l('Edit'),
                                 visible: function () {
-                                    return abp.auth.isGranted('MultiTenancy.Bookings.Edit') ||
-                                        abp.auth.isGranted('MultiTenancy.HostBookings.Edit');
+                                    return abp.auth.isGranted('MultiTenancy.AppBookings.Edit') ||
+                                        abp.auth.isGranted('MultiTenancy.HostAppBookings.Edit');
                                 },
                                 action: function (data) {
                                     editModal.open({ id: data.record.id });
@@ -63,7 +61,7 @@
                         return luxon.DateTime.fromISO(data).toFormat('dd/MM/yyyy');
                     }
                 },
-                { title: l('BookingGolferCount'), data: "golferCount" },
+                { title: l('BookingNumberOfGolfers'), data: "numberOfGolfers" },
                 {
                     title: l('BookingTotalPrice'),
                     data: "totalPrice",
@@ -78,9 +76,9 @@
                     data: "paymentMethod",
                     render: function (pm) {
                         switch (pm) {
-                            case 1: return l('PaymentMethod:COD');
-                            case 2: return l('PaymentMethod:Online');
-                            case 3: return l('PaymentMethod:BankTransfer');
+                            case 0: return l('PaymentMethod:COD');
+                            case 1: return l('PaymentMethod:Online');
+                            case 2: return l('PaymentMethod:BankTransfer');
                             default: return '';
                         }
                     }
@@ -105,9 +103,9 @@
                     data: "source",
                     render: function (src) {
                         switch (src) {
-                            case 1: return l('BookingSource:MiniApp');
-                            case 2: return l('BookingSource:Hotline');
-                            case 3: return l('BookingSource:Agent');
+                            case 0: return l('BookingSource:MiniApp');
+                            case 1: return l('BookingSource:Hotline');
+                            case 2: return l('BookingSource:Agent');
                             default: return '';
                         }
                     }

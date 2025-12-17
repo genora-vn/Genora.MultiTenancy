@@ -1,7 +1,7 @@
 ﻿using System;
 using Volo.Abp.Application.Dtos;
 
-namespace Genora.MultiTenancy.Apps.AppSettings;
+namespace Genora.MultiTenancy.AppDtos.AppSettings;
 
 public class AppSettingDto : AuditedEntityDto<Guid>
 {

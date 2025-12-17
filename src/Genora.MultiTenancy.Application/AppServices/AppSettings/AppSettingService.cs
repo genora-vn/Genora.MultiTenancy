@@ -1,5 +1,5 @@
-﻿using AutoMapper.Internal.Mappers;
-using Genora.MultiTenancy.AppServices;
+﻿using Genora.MultiTenancy.AppDtos.AppSettings;
+using Genora.MultiTenancy.Apps.AppSettings;
 using Genora.MultiTenancy.Features.AppSettings;
 using Genora.MultiTenancy.Permissions;
 using Microsoft.AspNetCore.Authorization;
@@ -9,15 +9,14 @@ using System.Linq;
 using System.Linq.Dynamic.Core;
 using System.Threading.Tasks;
 using Volo.Abp.Application.Dtos;
-using Volo.Abp.Application.Services;
-using Volo.Abp.Authorization;
 using Volo.Abp.Domain.Entities.Caching;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Features;
 using Volo.Abp.MultiTenancy;
 
-namespace Genora.MultiTenancy.Apps.AppSettings;
+namespace Genora.MultiTenancy.AppServices.AppSettings;
 
+// Code cũ khi chưa tách FeatureProtectedCrudAppService để dùng chung (cứ để đó)
 //[Authorize]
 //public class AppSettingService : ApplicationService, IAppSettingService
 //{
