@@ -9,13 +9,39 @@
 @{
     Layout = null;
 }
-<abp-dynamic-form abp-model="CustomerType" asp-page="/AppCustomerTypes/EditModal">
+<form abp-model="CustomerType" asp-page="/AppCustomerTypes/EditModal">
     <abp-modal>
         <abp-modal-header title="@L["EditAppCustomerType"].Value"></abp-modal-header>
         <abp-modal-body>
             <abp-input asp-for="Id" />
-            <abp-form-content />
+            @* <abp-form-content /> *@
+            <div class="mb-3">
+                <label asp-for="CustomerType.Code" class="form-label">@L["CustomerTypeCode"]</label>
+                <input asp-for="CustomerType.Code" class="form-control" />
+            </div>
+            <div class="mb-3">
+                <label asp-for="CustomerType.Name" class="form-label">@L["CustomerTypeName"]</label>
+                <input asp-for="CustomerType.Name" class="form-control" />
+            </div>
+            <div class="mb-3">
+                <label asp-for="CustomerType.Description" class="form-label">@L["Description"]</label>
+                <textarea asp-for="CustomerType.Description" class="form-control" rows="3"></textarea>
+            </div>
+            <div class="mb-3" style="display: inline-flex; width: 100%">
+                <label asp-for="CustomerType.ColorCode" class="form-label">@L["ColorCode"]</label>
+                <input asp-for="CustomerType.ColorCode" type="color" class="form-control color-input" />
+            </div>
+            <abp-input asp-for="CustomerType.IsActive" />
         </abp-modal-body>
         <abp-modal-footer buttons="@(AbpModalButtons.Cancel | AbpModalButtons.Save)"></abp-modal-footer>
     </abp-modal>
-</abp-dynamic-form>
+</form>
+
+<style type="text/css">
+    .color-input {
+        width: 60%;
+        height: 50px;
+        padding: 2px;
+        margin-left: 15%;
+    }
+</style>

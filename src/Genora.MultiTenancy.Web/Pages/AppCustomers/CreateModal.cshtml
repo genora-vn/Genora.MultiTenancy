@@ -16,9 +16,9 @@
         <abp-modal-header title="@L["CreateAppCustomer"]"></abp-modal-header>
         <abp-modal-body>
 
-            <abp-input asp-for="Customer.PhoneNumber" label="@L["CustomerPhoneNumber"]" />
-            <abp-input asp-for="Customer.FullName" label="@L["CustomerFullName"]" />
-            <abp-input asp-for="Customer.AvatarUrl" />
+            <abp-input asp-for="Customer.PhoneNumber" placeholder="Nhập số điện thoại đăng nhập" label="@L["CustomerPhoneNumber"]" />
+            <abp-input asp-for="Customer.FullName" placeholder="Nhập họ và tên" label="@L["CustomerFullName"]" />
+            <abp-input asp-for="Customer.AvatarUrl" placeholder="Nhập URL ảnh avatar" />
 
             <abp-select asp-for="Customer.Gender"
                         asp-items="Model.GenderItems"

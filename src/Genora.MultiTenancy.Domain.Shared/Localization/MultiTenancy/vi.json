@@ -86,8 +86,10 @@
     "SettingValue": "Giá trị",
     "SettingType": "Loại cấu hình",
     "Description": "Mô tả",
-    "IsActive": "Trạng thái",
+    //    "IsActive": "Trạng thái",
     "AppSettings": "Cấu hình chung",
+    "UpdateAppsetting": "Cập nhật cấu hình",
+
     // ====== AppCustomerTypes (Loại khách hàng) ======
     "PermissionGroup:MiniAppCustomerType": "Loại khách hàng",
     "PermissionGroup:MiniAppCustomerTypeHost": "Loại khách hàng (Host)",
@@ -95,6 +97,9 @@
     "Permission:MiniAppCustomerType.Create": "Tạo mới",
     "Permission:MiniAppCustomerType.Edit": "Chỉnh sửa",
     "Permission:MiniAppCustomerType.Delete": "Xoá",
+    "CreateAppCustomerType": "Tạo mới loại khách hàng",
+    "ColorCode": "Mã màu",
+    "Code": "Mã",
 
     "FeatureGroup:MiniAppCustomerType": "Loại khách hàng",
     "Feature:MiniAppCustomerType": "Bật quản lý loại khách hàng",
@@ -134,6 +139,15 @@
     "Phone": "Số điện thoại",
     "Website": "Website",
     "InvalidUrl": "Địa chỉ URL không hợp lệ.",
+    "Address": "Địa chỉ",
+    "AvatarUrl": "Ảnh avatar",
+    "BannerUrl": "Ảnh nền banner",
+    "FanpageUrl": "Fanpage",
+    "OpenTime": "Giờ mở cửa",
+    "CloseTime": "Giờ đóng cửa",
+    "ShortDescription": "Mô tả ngắn",
+    "CancellationPolicy": "Chính sách hoãn hủy",
+    "TermsAndConditions": "Điều khoản và điều kiện",
 
     // ====== AppMembershipTiers (Hạng hội viên) ======
     "PermissionGroup:MiniAppMembershipTier": "Hạng hội viên",
@@ -142,6 +156,7 @@
     "Permission:MiniAppMembershipTier.Create": "Tạo mới",
     "Permission:MiniAppMembershipTier.Edit": "Chỉnh sửa",
     "Permission:MiniAppMembershipTier.Delete": "Xoá",
+    "Benefits": "Quyền lợi",
 
     "FeatureGroup:MiniAppMembershipTier": "Hạng hội viên",
     "Feature:MiniAppMembershipTier": "Bật quản lý hạng hội viên",
@@ -183,6 +198,8 @@
     "CustomerType": "Loại khách hàng",
     "CustomerCode": "Mã khách hàng",
     "CustomerStatus": "Trạng thái",
+    "Gender": "Giới tính",
+    "DateOfBirth": "Ngày sinh",
 
     "Customer:PhoneRequired": "Số điện thoại là bắt buộc.",
     "Customer:PhoneAlreadyExists": "Số điện thoại {0} đã tồn tại trong hệ thống.",
@@ -243,6 +260,7 @@
 
     "ThumbnailUrl": "Ảnh đại diện (URL)",
     "Content": "Nội dung chi tiết",
+    "Status ": "Trạng thái",
 
     "NewsStatus:Draft": "Bản nháp",
     "NewsStatus:Published": "Đang hiển thị",

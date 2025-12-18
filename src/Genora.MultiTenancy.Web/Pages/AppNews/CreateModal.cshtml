@@ -12,20 +12,21 @@
     Layout = null;
     var publishedAtText = Model.News?.PublishedAt.HasValue == true
        ? Model.News.PublishedAt.Value.ToString("dd/MM/yyyy")
-       : string.Empty;
+       : DateTime.Now.ToString("dd/MM/yyyy");
 }
 
 <form asp-page="/AppNews/CreateModal" method="post" id="CreateNewsForm">
     <abp-modal size="ExtraLarge">
         <abp-modal-header title="@L["NewAppNews"]"></abp-modal-header>
         <abp-modal-body>
-            <abp-input asp-for="News.Title" label="@L["Title"]" />
-            <abp-input asp-for="News.ThumbnailUrl" label="@L["ThumbnailUrl"]" />
+            <abp-input asp-for="News.Title" placeholder="Tiêu đề tin tức" label="@L["Title"]" />
+            <abp-input asp-for="News.ThumbnailUrl" placeholder="Ảnh hiển thị tin tức" label="@L["ThumbnailUrl"]" />
 
             <div class="mb-3">
                 <label asp-for="News.ContentHtml" class="form-label">@L["Content"]</label>
                 <textarea asp-for="News.ContentHtml"
                           class="form-control news-content-editor"
+                          placeholder="Nội dung tin tức"
                           rows="8"></textarea>
             </div>
 
