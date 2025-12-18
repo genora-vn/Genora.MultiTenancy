@@ -87,7 +87,7 @@
     "SettingType": "Loại cấu hình",
     "Description": "Mô tả",
     "IsActive": "Trạng thái",
-
+    "AppSettings": "Cấu hình chung",
     // ====== AppCustomerTypes (Loại khách hàng) ======
     "PermissionGroup:MiniAppCustomerType": "Loại khách hàng",
     "PermissionGroup:MiniAppCustomerTypeHost": "Loại khách hàng (Host)",
@@ -109,6 +109,7 @@
     "CustomerTypeName": "Tên loại khách hàng",
     "CustomerTypeDescription": "Mô tả",
     "CustomerTypeColorCode": "Màu nhãn",
+    "CustomerFilterText": "Tìm kiếm theo tên/ số điện thoại",
 
     // ====== AppGolfCourses (Cấu hình sân) ======
     "PermissionGroup:MiniAppGolfCourse": "Cấu hình sân golf",
@@ -275,6 +276,7 @@
     "BookingStatus": "Trạng thái",
     "BookingSource": "Nguồn",
     "BookingNotes": "Ghi chú",
+    "BookingTotalPrice": "Tổng giá trị booking",
 
     "PaymentMethod:COD": "Thanh toán tại sân",
     "PaymentMethod:Online": "Thanh toán online",

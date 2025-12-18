@@ -64,7 +64,7 @@
                 { title: l('BookingNumberOfGolfers'), data: "numberOfGolfers" },
                 {
                     title: l('BookingTotalPrice'),
-                    data: "totalPrice",
+                    data: "totalAmount",
                     render: function (amount) {
                         if (amount == null) return '';
                         // format VNĐ chỗ này cho dễ nhìn

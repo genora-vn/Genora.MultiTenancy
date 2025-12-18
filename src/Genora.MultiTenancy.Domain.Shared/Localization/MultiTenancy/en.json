@@ -35,7 +35,7 @@
     "AccessToken": "Access token",
     "RefreshToken": "Refresh token",
     "ExpiresAt": "Expires at",
-    "IsActive": "Status",
+    "IsActive": "Active Status",
     "FilterText": "Filter",
 
     "AppZaloLogs": "Zalo Logs",
@@ -84,7 +84,7 @@
     "SettingValue": "Setting value",
     "SettingType": "Setting type",
     "Description": "Description",
-    "IsActive": "Is Active",
+    "AppSettings": "App Settings",
 
     // ====== AppCustomerTypes (Loại khách hàng) ======
     "PermissionGroup:MiniAppCustomerType": "Customer types",
@@ -107,6 +107,7 @@
     "CustomerTypeName": "Customer type name",
     "CustomerTypeDescription": "Description",
     "CustomerTypeColorCode": "Label color",
+    "CustomerFilterText": "Search for name/phone number",
 
     // ====== AppGolfCourses (Cấu hình sân) ======
     "PermissionGroup:MiniAppGolfCourse": "Golf course settings",
@@ -269,6 +270,7 @@
     "BookingStatus": "Status",
     "BookingSource": "Source",
     "BookingNotes": "Notes",
+    "BookingTotalPrice": "Total price",
 
     "PaymentMethod:COD": "Pay at course",
     "PaymentMethod:Online": "Online payment",

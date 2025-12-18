@@ -1,10 +1,46 @@
-$(function () {
+﻿$(function () {
     var l = abp.localization.getResource('MultiTenancy');
 
     var service = genora.multiTenancy.appServices.appGolfCourses.appGolfCourse;
 
     var createModal = new abp.ModalManager('/AppGolfCourses/CreateModal');
     var editModal = new abp.ModalManager('/AppGolfCourses/EditModal');
+
+    function initNewsEditor(modal) {
+        var $editor = modal.find('.news-content-editor');
+        if (!$editor.length) {
+            return;
+        }
+
+        // Nếu đã init rồi thì không init lại
+        if ($editor.next('.note-editor').length) {
+            return;
+        }
+
+        $editor.summernote({
+            height: 250,
+            minHeight: 150,
+            maxHeight: 600,
+            focus: false,
+            toolbar: [
+                ['style', ['style']],
+                ['font', ['bold', 'italic', 'underline', 'clear']],
+                ['font2', ['superscript', 'subscript']],
+                ['para', ['ul', 'ol', 'paragraph']],
+                ['insert', ['link', 'picture', 'video']],
+                ['view', ['fullscreen', 'codeview', 'help']]
+            ]
+        });
+    }
+    // Khi mở modal tạo mới
+    createModal.onOpen(function () {
+        initNewsEditor(createModal.getModal());
+    });
+
+    // Khi mở modal sửa
+    editModal.onOpen(function () {
+        initNewsEditor(editModal.getModal());
+    });
 
     var dataTable = $('#GolfCoursesTable').DataTable(
         abp.libs.datatables.normalizeConfiguration({

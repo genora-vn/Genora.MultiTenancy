@@ -8,12 +8,123 @@
 @{
     Layout = null;
 }
-<abp-dynamic-form abp-model="GolfCourse" asp-page="/AppGolfCourses/CreateModal">
+<form abp-model="GolfCourse" asp-page="/AppGolfCourses/CreateModal" id="CreateAppGolfCourse">
     <abp-modal>
         <abp-modal-header title="@L["CreateAppGolfCourse"].Value"></abp-modal-header>
         <abp-modal-body>
-            <abp-form-content />
+            @* <abp-form-content /> *@
+            <div class="mb-3 d-inline-flex" style="width: 100%; gap: 10px">
+                <div class="col-md-3">
+                    <label asp-for="GolfCourse.Code" class="form-label">@L["GolfCourseCode"]</label>
+                    <input asp-for="GolfCourse.Code" class="form-control" />
+                </div>
+                <div class="col-md-9">
+                    <label asp-for="GolfCourse.Name" class="form-label">@L["GolfCourseName"]</label>
+                    <input asp-for="GolfCourse.Name" class="form-control" />
+                </div>
+            </div>
+            <div class="mb-3">
+                <label asp-for="GolfCourse.Address" class="form-label">@L["Address"]</label>
+                <input asp-for="GolfCourse.Address" class="form-control" />
+            </div>
+            <div class="mb-3 d-inline-flex" style="width: 100%; gap: 10px">
+                <div class="col-md-6">
+                    <label asp-for="GolfCourse.Province" class="form-label">@L["Province"]</label>
+                    <input asp-for="GolfCourse.Province" class="form-control" />
+                </div>
+                <div class="col-md-6">
+                    <label asp-for="GolfCourse.Phone" class="form-label">@L["Phone"]</label>
+                    <input asp-for="GolfCourse.Phone" class="form-control" />
+                </div>
+            </div>
+            <div class="mb-3 d-inline-flex" style="width: 100%; gap: 10px">
+                <div class="col-md-6">
+                    <label asp-for="GolfCourse.Website" class="form-label">@L["Website"]</label>
+                    <input asp-for="GolfCourse.Website" class="form-control" />
+                </div>
+                <div class="col-md-6">
+                    <label asp-for="GolfCourse.FanpageUrl" class="form-label">@L["Phone"]</label>
+                    <input asp-for="GolfCourse.FanpageUrl" class="form-control" />
+                </div>
+            </div>
+            <div class="mb-3 d-inline-flex" style="width: 100%; gap: 10px">
+                <div class="col-md-6">
+                    <label asp-for="GolfCourse.AvatarUrl" class="form-label">@L["AvatarUrl"]</label>
+                    <input asp-for="GolfCourse.AvatarUrl" class="form-control" />
+                </div>
+                <div class="col-md-6">
+                    <label asp-for="GolfCourse.BannerUrl" class="form-label">@L["BannerUrl"]</label>
+                    <input asp-for="GolfCourse.BannerUrl" class="form-control" />
+                </div>
+            </div>
+            <div class="mb-3 d-inline-flex" style="width: 100%; gap: 10px">
+                <div class="col-md-6">
+                    <label asp-for="GolfCourse.OpenTime" class="form-label">@L["OpenTime"]</label>
+                    <input asp-for="GolfCourse.OpenTime" id="OpenTime" class="form-control" />
+                </div>
+                <div class="col-md-6">
+                    <label asp-for="GolfCourse.CloseTime" class="form-label">@L["CloseTime"]</label>
+                    <input asp-for="GolfCourse.CloseTime" id="CloseTime" class="form-control" />
+                </div>
+            </div>
+            <div class="mb-3">
+                <label asp-for="GolfCourse.ShortDescription" class="form-label">@L["ShortDescription"]</label>
+                <textarea asp-for="GolfCourse.ShortDescription" class="form-control news-content-editor" rows="5"></textarea>
+            </div>
+            <div class="mb-3">
+                <label asp-for="GolfCourse.CancellationPolicy" class="form-label">@L["CancellationPolicy"]</label>
+                <textarea asp-for="GolfCourse.CancellationPolicy" class="form-control news-content-editor" rows="5"></textarea>
+            </div>
+            <div class="mb-3">
+                <label asp-for="GolfCourse.TermsAndConditions" class="form-label">@L["TermsAndConditions"]</label>
+                <textarea asp-for="GolfCourse.TermsAndConditions" class="form-control news-content-editor" rows="5"></textarea>
+            </div>
+
         </abp-modal-body>
         <abp-modal-footer buttons="@(AbpModalButtons.Cancel | AbpModalButtons.Save)"></abp-modal-footer>
     </abp-modal>
-</abp-dynamic-form>
+</form>
+<style type="text/css">
+    .modal-dialog {
+        max-width: 70%;
+    }
+</style>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+            initTimePicker();
+            hookSubmitNormalize();
+        });
+    function hookSubmitNormalize() {
+            var form = document.getElementById('CreateAppGolfCourse');
+            if (!form) return;
+
+            // Trước khi submit thì format lại định dạng
+            form.addEventListener('submit', function () {
+                ['OpenTime', 'CloseTime'].forEach(function (id) {
+                    var el = document.getElementById(id);
+                    if (!el || !el.value) return;
+                    // Định dạng HH:mm
+                    if (/^\d{2}:\d{2}$/.test(el.value)) el.value = el.value;
+                });
+            });
+        }
+
+    function initTimePicker() {
+            if (!window.flatpickr) return;
+
+            ['OpenTime', 'CloseTime'].forEach(function (id) {
+                var el = document.getElementById(id);
+                if (!el) return;
+
+                flatpickr(el, {
+                    enableTime: true,
+                    noCalendar: true,
+                    time_24hr: true,
+                    dateFormat: "H:i",   // hiển thị HH:mm
+                    allowInput: true,
+                    clickOpens: true
+                });
+            });
+        }
+
+</script>
