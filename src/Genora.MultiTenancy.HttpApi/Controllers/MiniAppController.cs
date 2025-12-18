@@ -5,9 +5,11 @@ using Genora.MultiTenancy.AppDtos.AppGolfCourses;
 using Genora.MultiTenancy.AppDtos.AppMembershipTiers;
 using Genora.MultiTenancy.AppDtos.AppNews;
 using Genora.MultiTenancy.AppDtos.AppSettings;
+using Genora.MultiTenancy.AppDtos.AppZaloAuths;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 using Volo.Abp;
 using Volo.Abp.Application.Dtos;
@@ -21,6 +23,7 @@ namespace Genora.MultiTenancy.Controllers;
 [Authorize(AuthenticationSchemes = "MiniAppJwt", Policy = "MiniAppOnly")]
 public class MiniAppController : MultiTenancyController
 {
+    private readonly IZaloApiClient _zaloApiClient;
     private readonly IMiniAppBookingAppService _miniBooking;
     private readonly IMiniAppSettingService _miniAppSetting;
     private readonly IMiniAppCustomerTypeService _miniAppCustomerType;
@@ -28,7 +31,8 @@ public class MiniAppController : MultiTenancyController
     private readonly IMiniAppMembershipTierService _miniAppMembershipTier;
     private readonly IMiniAppNewsService _miniAppNews;
     private readonly IMiniAppCalendarSlotService _miniAppCalendarSlot;
-    public MiniAppController(IMiniAppBookingAppService miniBooking,
+    public MiniAppController(IZaloApiClient zaloApiClient,
+                             IMiniAppBookingAppService miniBooking,
                              IMiniAppSettingService miniAppSetting,
                              IMiniAppCustomerTypeService miniAppCustomerType,
                              IMiniAppGolfCourseService miniAppGolfCourse,
@@ -36,6 +40,7 @@ public class MiniAppController : MultiTenancyController
                              IMiniAppNewsService miniAppNews,
                              IMiniAppCalendarSlotService miniAppCalendarSlot)
     {
+        _zaloApiClient = zaloApiClient;
         _miniBooking = miniBooking;
         _miniAppSetting = miniAppSetting;
         _miniAppCustomerType = miniAppCustomerType;
@@ -106,4 +111,29 @@ public class MiniAppController : MultiTenancyController
     [AllowAnonymous]
     public Task<AppCalendarSlotDto> GetCalendarSlotAsync(Guid id)
         => _miniAppCalendarSlot.GetMiniAppAsync(id);
+
+    [HttpPost("decode-phone")]
+    [AllowAnonymous]
+    public async Task<IActionResult> DecodePhone([FromBody] DecodePhoneRequest body, CancellationToken ct)
+    {
+        var zaloPhoneResponse = new ZaloPhoneResponse();
+
+        if (body == null || string.IsNullOrWhiteSpace(body.Code) || string.IsNullOrWhiteSpace(body.AccessToken))
+        {
+            zaloPhoneResponse.Error = 400;
+            zaloPhoneResponse.Message = "Missing required parameter.";
+            return BadRequest(zaloPhoneResponse);
+        }
+
+        var resp = await _zaloApiClient.DecodePhoneAsync(body.Code, body.AccessToken, ct);
+
+        if (resp == null || resp.Error != 0 || resp.Data == null)
+        {
+            zaloPhoneResponse.Error = resp?.Error ?? -1;
+            zaloPhoneResponse.Message = resp?.Message ?? "DecodePhone failed.";
+            return BadRequest(zaloPhoneResponse);
+        }
+
+        return Ok(resp);
+    }
 }
