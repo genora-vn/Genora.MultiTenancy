@@ -11,7 +11,7 @@ using Volo.Abp.Domain.Repositories;
 
 namespace Genora.MultiTenancy.AppServices.AppMembershipTiers
 {
-    internal class MiniAppMembershipTierService : ApplicationService, IMiniAppMembershipTierService
+    public class MiniAppMembershipTierService : ApplicationService, IMiniAppMembershipTierService
     {
         private readonly IRepository<MembershipTier, Guid> _repository;
 

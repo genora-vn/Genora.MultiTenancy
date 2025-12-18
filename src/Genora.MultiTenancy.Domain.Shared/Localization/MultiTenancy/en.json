@@ -85,7 +85,7 @@
     "SettingType": "Setting type",
     "Description": "Description",
     "AppSettings": "App Settings",
-
+    "UpdateAppsetting": "Update settings",
     // ====== AppCustomerTypes (Loại khách hàng) ======
     "PermissionGroup:MiniAppCustomerType": "Customer types",
     "PermissionGroup:MiniAppCustomerTypeHost": "Customer types (Host)",
@@ -93,6 +93,8 @@
     "Permission:MiniAppCustomerType.Create": "Create",
     "Permission:MiniAppCustomerType.Edit": "Edit",
     "Permission:MiniAppCustomerType.Delete": "Delete",
+    "CreateAppCustomerType": "Create new customer type",
+    "ColorCode": "Color code",
 
     "FeatureGroup:MiniAppCustomerType": "Customer types",
     "Feature:MiniAppCustomerType": "Enable customer type management",
@@ -125,6 +127,9 @@
     "NewAppGolfCourse": "New golf course",
     "CreateAppGolfCourse": "Create golf course",
     "EditAppGolfCourse": "Edit golf course",
+    "AvatarUrl": "Avatar image",
+    "BannerUrl": "Banner image",
+    "FanpageUrl": "Fanpage",
 
     // ====== AppMembershipTiers (Hạng hội viên) ======
     "PermissionGroup:MiniAppMembershipTier": "Membership tiers",
