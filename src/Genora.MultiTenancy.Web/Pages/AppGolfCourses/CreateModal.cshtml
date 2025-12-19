@@ -13,29 +13,24 @@
         <abp-modal-header title="@L["CreateAppGolfCourse"].Value"></abp-modal-header>
         <abp-modal-body>
             @* <abp-form-content /> *@
-            <div class="mb-3 d-inline-flex" style="width: 100%; gap: 10px">
+            <div class="group d-inline-flex" style="width: 100%; gap: 10px">
                 <div class="col-md-3">
-                    <label asp-for="GolfCourse.Code" class="form-label">@L["GolfCourseCode"]</label>
-                    <input asp-for="GolfCourse.Code" class="form-control" placeholder="Nhập mã sân (vd: MASANX)" />
+                    <abp-input asp-for="GolfCourse.Code" placeholder="Nhập mã sân (vd: MASANX)" label="@L["GolfCourseCode"]"/>
                 </div>
                 <div class="col-md-9">
-                    <label asp-for="GolfCourse.Name" class="form-label">@L["GolfCourseName"]</label>
-                    <input asp-for="GolfCourse.Name" class="form-control" placeholder="Nhập tên sân" />
+                    <abp-input asp-for="GolfCourse.Name" placeholder="Nhập tên sân" label="@L["GolfCourseName"]"/>
                 </div>
             </div>
-            <div class="mb-3">
-                <label asp-for="GolfCourse.Address" class="form-label">@L["Address"]</label>
-                <input asp-for="GolfCourse.Address" class="form-control" placeholder="Nhập địa chỉ đầy đủ sân." />
+            <div class="group">
+                <abp-input asp-for="GolfCourse.Address" placeholder="Nhập địa chỉ đầy đủ sân." label="@L["Address"]"/>
             </div>
-            <div class="mb-3 d-inline-flex" style="width: 100%; gap: 10px">
+            <div class="group d-inline-flex" style="width: 100%; gap: 10px">
                 <div class="col-md-4">
-                    <div class="mb-3">
-                        <label asp-for="GolfCourse.Province" class="form-label">@L["Province"]</label>
-                        <input asp-for="GolfCourse.Province" class="form-control" placeholder="Nhập tỉnh địa chỉ sân" />
+                    <div class="form-group">
+                        <abp-input asp-for="GolfCourse.Province" placeholder="Nhập tỉnh địa chỉ sân" label="@L["Province"]"/>
                     </div>
-                    <div class="mb-3">
-                        <label asp-for="GolfCourse.Phone" class="form-label">@L["Phone"]</label>
-                        <input asp-for="GolfCourse.Phone" class="form-control" placeholder="Nhập số điện thoại." />
+                    <div class="form-group">
+                        <abp-input asp-for="GolfCourse.Phone" placeholder="Nhập số điện thoại." label="@L["Phone"]"/>
                     </div>
                 </div>
                 <div class="col-md-4">
@@ -49,30 +44,25 @@
                     </div>
                 </div>
                 <div class="col-md-4" style="padding-right: 20px">
-                    <div class="mb-3">
-                        <label asp-for="GolfCourse.AvatarUrl" class="form-label">@L["AvatarUrl"]</label>
-                        <input asp-for="GolfCourse.AvatarUrl" class="form-control" placeholder="Nhập link hiển thị ảnh." />
+                    <div class="form-group">
+                        <abp-input asp-for="GolfCourse.AvatarUrl" placeholder="Nhập link hiển thị ảnh." label="@L["AvatarUrl"]"/>
                     </div>
-                    <div class="mb-3">
-                        <label asp-for="GolfCourse.BannerUrl" class="form-label">@L["BannerUrl"]</label>
-                        <input asp-for="GolfCourse.BannerUrl" class="form-control" placeholder="Nhập link hiển thị ảnh." />
+                    <div class="form-group">
+                        <abp-input asp-for="GolfCourse.BannerUrl" placeholder="Nhập link hiển thị ảnh." label="@L["BannerUrl"]" />
                     </div>
                 </div>
             </div>
             <div class="mb-3 d-inline-flex" style="width: 100%; gap: 10px">
                 <div class="col-md-6">
-                    <div class="mb-3">
-                        <label asp-for="GolfCourse.Website" class="form-label">@L["Website"]</label>
-                        <input asp-for="GolfCourse.Website" class="form-control" placeholder="Nhập link website sân." />
-                    </div>
-                    <div class="mb-3">
+                    <abp-input asp-for="GolfCourse.Website" placeholder="Nhập link website sân." label="@L["Website"]" />
+                    <div class="form-group">
                         <label asp-for="GolfCourse.FanpageUrl" class="form-label">@L["FanpageUrl"]</label>
                         <input asp-for="GolfCourse.FanpageUrl" class="form-control" placeholder="Nhập link fanpage." />
                     </div>
                 </div>
                 <div class="col-md-6">
                     <label asp-for="GolfCourse.ShortDescription" class="form-label">@L["ShortDescription"]</label>
-                    <textarea asp-for="GolfCourse.ShortDescription" class="form-control" rows="5" placeholder="Nhập mô tả ngắn."></textarea>
+                    <textarea asp-for="GolfCourse.ShortDescription" class="form-control" style="padding-bottom: 20px;" rows="5" placeholder="Nhập mô tả ngắn."></textarea>
                 </div>
             </div>
             <div class="mb-3" style="display: inline-flex; gap: 10px; width: 100%">

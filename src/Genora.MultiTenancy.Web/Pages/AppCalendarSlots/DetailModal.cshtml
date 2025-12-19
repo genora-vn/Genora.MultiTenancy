@@ -78,7 +78,10 @@
                 </div>
 
                 <div class="col-12">
-                    <abp-input asp-for="Slot.InternalNote" label="@L["InternalNote"]" />
+                    <label class="form-label" asp-for="Slot.InternalNote">@L["InternalNote"]</label>
+                    <textarea asp-for="Slot.InternalNote" placeholder="Nhập ghi chú" class="form-control"
+                              rows="3"></textarea>
+                    
                 </div>
             </div>
 

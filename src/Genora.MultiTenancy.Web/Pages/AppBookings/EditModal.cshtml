@@ -46,33 +46,28 @@
             <hr />
 
             <!-- Khu vực cho Admin cập nhật -->
-            <div class="mb-3">
-                <label asp-for="Booking.Status" class="form-label">@L["BookingStatus"]</label>
-                <select asp-for="Booking.Status"
-                        asp-items="Model.StatusItems"
-                        class="form-control">
-                </select>
+            <div class="mb-3 d-inline-flex" style="width: 100%; gap: 10px">
+                <div class="col-md-4">
+                    <label asp-for="Booking.Status" class="form-label">@L["BookingStatus"]</label>
+                    <select asp-for="Booking.Status"
+                            asp-items="Model.StatusItems"
+                            class="form-control">
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label asp-for="Booking.PaymentMethod" class="form-label">@L["BookingPaymentMethod"]</label>
+                    <select asp-for="Booking.PaymentMethod"
+                            asp-items="Model.PaymentMethodItems"
+                            class="form-control">
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label asp-for="Booking.TotalAmount" class="form-label">@L["BookingTotalAmount"]</label>
+                    <input asp-for="Booking.TotalAmount" class="form-control thousand-separator" />
+                </div>
+                
             </div>
-
-            <div class="mb-3">
-                <label asp-for="Booking.PaymentMethod" class="form-label">@L["BookingPaymentMethod"]</label>
-                <select asp-for="Booking.PaymentMethod"
-                        asp-items="Model.PaymentMethodItems"
-                        class="form-control">
-                </select>
-            </div>
-
-            <div class="mb-3">
-                <label asp-for="Booking.TotalAmount" class="form-label">@L["BookingTotalAmount"]</label>
-                <input asp-for="Booking.TotalAmount" class="form-control thousand-separator" />
-                @* <abp-input asp-for="Booking.TotalAmount" /> *@
-                @* <input name="@Model.Booking.TotalAmount"
-                       type="text"
-                       class="form-control money-input text-end"
-                       value="@Model.Booking.TotalAmount.ToString("0")"
-                       inputmode="numeric"
-                       autocomplete="off" /> *@
-            </div>
+        
 
             <hr />
 
@@ -90,7 +85,9 @@
                 <table class="table table-sm table-bordered align-middle mb-0">
                     <thead class="table-light">
                         <tr>
-                            <th style="width: 40%">@L["PlayerName"]</th>
+                            <th style="width: 30%">@L["PlayerName"]</th>
+                            <th style="width: 20%">@L["VGA"]</th>
+                            <th style="width: 20%">@L["Price"]</th>
                             <th>@L["Notes"]</th>
                             <th style="width: 60px" class="text-center">@L["Actions"]</th>
                         </tr>
@@ -106,6 +103,14 @@
                                                asp-for="Booking.Players[i].CustomerId" />
                                         <input class="form-control" type="text"
                                                asp-for="Booking.Players[i].PlayerName" />
+                                    </td>
+                                    <td>
+                                        <input class="form-control"
+                                               asp-for="Booking.Players[i].VGAHandicap" />
+                                    </td>
+                                    <td>
+                                        <input class="form-control thousand-separator"
+                                               asp-for="Booking.Players[i].PriceOfPlayer" />
                                     </td>
                                     <td>
                                         <input class="form-control"
@@ -127,7 +132,11 @@
         <abp-modal-footer buttons="@(AbpModalButtons.Cancel | AbpModalButtons.Save)"></abp-modal-footer>
     </abp-modal>
 </form>
-
+<style type="text/css">
+    .modal-dialog {
+        max-width: 60%;
+    }
+</style>
 <script>
     $(function () {
         var $tbody = $('#booking-players-body');

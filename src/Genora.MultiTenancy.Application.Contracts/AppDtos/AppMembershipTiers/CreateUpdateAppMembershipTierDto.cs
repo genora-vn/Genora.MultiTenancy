@@ -13,7 +13,7 @@ public class CreateUpdateAppMembershipTierDto
     public string Name { get; set; }          // Vàng / Bạc / Đồng...
 
     [StringLength(500)]
-    public string Description { get; set; }
+    public string? Description { get; set; }
 
     public decimal? MinTotalSpending { get; set; }
 
@@ -24,7 +24,7 @@ public class CreateUpdateAppMembershipTierDto
     /// </summary>
     public byte EvaluationPeriod { get; set; }
 
-    public string Benefits { get; set; }
+    public string? Benefits { get; set; }
 
     public bool IsActive { get; set; } = true;
 

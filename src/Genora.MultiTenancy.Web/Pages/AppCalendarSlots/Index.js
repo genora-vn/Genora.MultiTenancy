@@ -23,8 +23,20 @@
         return $('#SelectedGolfCourseId').val();
     }
 
-    function getSelectedApplyDate() {
-        var text = $('#CalendarApplyDate').val();
+    function getSelectedFromDate() {
+        var text = $('#CalendarFromDate').val();
+        if (!text) {
+            return null;
+        }
+        var parts = text.split('/');
+        if (parts.length !== 3) {
+            return null;
+        }
+        // dd/MM/yyyy -> yyyy-MM-dd
+        return parts[2] + '-' + parts[1] + '-' + parts[0];
+    }
+    function getSelectedToDate() {
+        var text = $('#CalendarToDate').val();
         if (!text) {
             return null;
         }
@@ -66,19 +78,20 @@
 
     function loadSlotsForDay() {
         var golfCourseId = getSelectedGolfCourseId();
-        var applyDate = getSelectedApplyDate();
-
-        if (!golfCourseId || !applyDate) {
+        var fromDate = getSelectedFromDate();
+        var toDate = getSelectedToDate();
+        if (!golfCourseId || !fromDate || !toDate) {
             slotsTable.clear().draw();
             $('#SelectedDateText').text('');
             return;
         }
 
-        $('#SelectedDateText').text($('#CalendarApplyDate').val());
+        //$('#SelectedDateText').text($('#CalendarFromDate').val());
 
         service.getByDate({
             golfCourseId: golfCourseId,
-            applyDate: applyDate
+            applyDateFrom: fromDate,
+            applyDateTo: toDate
         }).then(function (result) {
             slotsTable.clear();
             slotsTable.rows.add(result);
@@ -96,16 +109,19 @@
         e.preventDefault();
 
         var golfCourseId = getSelectedGolfCourseId();
-        var applyDate = getSelectedApplyDate(); // yyyy-MM-dd
+        //var applyDate = getSelectedApplyDate(); // yyyy-MM-dd
+        var fromDate = getSelectedFromDate();
+        var toDate = getSelectedToDate();
 
-        if (!golfCourseId || !applyDate) {
+        if (!golfCourseId || !fromDate || !toDate) {
             abp.notify.warn(l('PleaseSelectGolfCourse'));
             return;
         }
 
         detailModal.open({
             golfCourseId: golfCourseId,
-            applyDate: applyDate
+            applyDateFrom: fromDate,
+            applyDateTo: toDate
         });
     });
 
@@ -114,12 +130,15 @@
         var id = String($(this).data('id') || '');
         if (!id) return;
         var golfCourseId = getSelectedGolfCourseId();
-        var applyDate = getSelectedApplyDate();
-
+        //var applyDate = getSelectedApplyDate();
+        var fromDate = getSelectedFromDate();
+        var toDate = getSelectedToDate();
         detailModal.open({
             id: id,
             golfCourseId: golfCourseId,
-            applyDate: applyDate
+            //applyDate: applyDate
+            applyDateFrom: fromDate,
+            applyDateTo: toDate
         });
     });
 

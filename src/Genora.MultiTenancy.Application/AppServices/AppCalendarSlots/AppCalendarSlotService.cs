@@ -134,11 +134,23 @@ public class AppCalendarSlotService :
         // 1) Lấy list slot theo ngày + sân
         var slotQuery = await Repository.GetQueryableAsync();
 
+        if (input.GolfCourseId == Guid.Empty)
+        {
+            throw new BusinessException("CalendarSlot:MissingGolfCourse")
+                .WithData("Message", "GolfCourseId is empty when getting slots by date.");
+        }
+        slotQuery = slotQuery.Where(x => x.GolfCourseId == input.GolfCourseId);
+        if (input.ApplyDateFrom.HasValue)
+        {
+            slotQuery = slotQuery.Where(x => x.ApplyDate.Date >= input.ApplyDateFrom.Value.Date);
+        }
+        if (input.ApplyDateTo.HasValue)
+        {
+            slotQuery = slotQuery.Where(x => x.ApplyDate.Date <= input.ApplyDateTo.Value.Date);
+        }
+
         var slots = await AsyncExecuter.ToListAsync(
             slotQuery
-                .Where(x =>
-                    x.GolfCourseId == input.GolfCourseId &&
-                    x.ApplyDate.Date == input.ApplyDate.Date)
                 .OrderBy(x => x.TimeFrom)
         );
 
