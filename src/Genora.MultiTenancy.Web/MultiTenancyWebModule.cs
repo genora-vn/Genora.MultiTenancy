@@ -78,42 +78,6 @@ public class MultiTenancyWebModule : AbpModule
         var hostingEnvironment = context.Services.GetHostingEnvironment();
         var configuration = context.Services.GetConfiguration();
 
-        context.Services.AddAuthentication()
-        .AddJwtBearer("MiniAppJwt", options =>
-        {
-            options.RequireHttpsMetadata = false;
-            options.SaveToken = true;
-
-            var issuer = configuration["MiniAppAuth:Issuer"];
-            var audience = configuration["MiniAppAuth:Audience"];
-            var key = configuration["MiniAppAuth:SigningKey"];
-
-            options.TokenValidationParameters = new TokenValidationParameters
-            {
-                ValidateIssuer = true,
-                ValidIssuer = issuer,
-
-                ValidateAudience = true,
-                ValidAudience = audience,
-
-                ValidateIssuerSigningKey = true,
-                IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key)),
-
-                ValidateLifetime = true,
-                ClockSkew = TimeSpan.FromSeconds(30)
-            };
-        });
-
-        context.Services.AddAuthorization(options =>
-        {
-            options.AddPolicy("MiniAppOnly", policy =>
-            {
-                policy.AddAuthenticationSchemes("MiniAppJwt");
-                policy.RequireAuthenticatedUser();
-                policy.RequireClaim("typ", "miniapp");
-            });
-        });
-
         context.Services.PreConfigure<AbpMvcDataAnnotationsLocalizationOptions>(options =>
         {
             options.AddAssemblyResource(
@@ -155,6 +119,18 @@ public class MultiTenancyWebModule : AbpModule
     {
         var hostingEnvironment = context.Services.GetHostingEnvironment();
         var configuration = context.Services.GetConfiguration();
+
+        context.Services.AddCors(options =>
+        {
+            options.AddPolicy("ZaloPolicy", builder =>
+            {
+                builder
+                    .WithOrigins("https://h5.zdn.vn")
+                    .AllowAnyHeader()
+                    .AllowAnyMethod()
+                    .AllowCredentials();
+            });
+        });
 
         // 1) Cấu hình ngôn ngữ ABP
         Configure<AbpLocalizationOptions>(options =>
@@ -361,6 +337,8 @@ public class MultiTenancyWebModule : AbpModule
     {
         var app = context.GetApplicationBuilder();
         var env = context.GetEnvironment();
+
+        app.UseCors("ZaloPolicy");
 
         var opts = context.ServiceProvider.GetRequiredService<IOptions<AuditLogCleanupOptions>>().Value;
         if (opts.Enabled)

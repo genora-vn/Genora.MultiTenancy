@@ -77,6 +77,11 @@ public class MultiTenancyApplicationAutoMapperProfile : Profile
         CreateMap<ZaloLog, AppZaloLogDto>();
         #endregion
 
+        #region MiniAppCustomer auto mapper profile
+        CreateMap<Customer, MiniAppCustomerDto>();
+      
+        #endregion
+
         CreateMap<AuditLog, AuditLogListDto>()
             .ForMember(d => d.HasException, o => o.MapFrom(s => !string.IsNullOrEmpty(s.Exceptions)))
             .ForMember(d => d.TenantId, o => o.MapFrom(s => s.TenantId));   // ★

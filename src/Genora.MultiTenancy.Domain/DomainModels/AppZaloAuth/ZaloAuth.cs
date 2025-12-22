@@ -8,7 +8,7 @@ namespace Genora.MultiTenancy.DomainModels.AppZaloAuth;
 [Table("AppZaloAuth")]
 public class ZaloAuth : FullAuditedAggregateRoot<Guid>
 {
-    public Guid? TenantId { get; set; } // HOST quản lý => thường NULL (hoặc bạn vẫn lưu tenant nếu muốn tách theo tenant)
+    public Guid? TenantId { get; set; }
 
     [Required, StringLength(50)]
     public string AppId { get; set; } = null!;
@@ -25,11 +25,9 @@ public class ZaloAuth : FullAuditedAggregateRoot<Guid>
     public string? AuthorizationCode { get; set; }
     public DateTime? ExpireAuthorizationCodeTime { get; set; }
 
-    // Lưu encrypted (khuyến nghị). Nếu bạn chưa dùng encryption thì vẫn chạy được,
-    // nhưng nên encrypt bằng IStringEncryptionService ở Application.
     public string? AccessToken { get; set; }
     public string? RefreshToken { get; set; }
-    public DateTime? ExpireTokenTime { get; set; } // UTC
+    public DateTime? ExpireTokenTime { get; set; }
 
     public bool IsActive { get; set; } = true;
 }

@@ -6,9 +6,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using Volo.Abp.Domain.Repositories;
 
@@ -161,13 +159,5 @@ public class HostZaloAuthController : MultiTenancyController
     public async Task RefreshNowAsync()
     {
         await _tokenProvider.RefreshNowAsync();
-    }
-
-    [HttpGet("me")]
-    [AllowAnonymous]
-    public async Task<object> GetMeAsync([FromServices] IZaloApiClient zaloApiClient)
-    {
-        var me = await zaloApiClient.GetMeAsync();
-        return me;
     }
 }

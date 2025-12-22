@@ -95,7 +95,7 @@ public class Program
                 };
             });
 
-            // ABP pipeline + middleware enrich của bạn
+            // ABP pipeline + middleware enrich
             app.UseRouting();
             app.UseMiddleware<LogEnrichmentMiddleware>(); // đính TenantId, TenantName, UserId, UserName, CorrelationId
             // ... (Auth, Abp, Endpoints)

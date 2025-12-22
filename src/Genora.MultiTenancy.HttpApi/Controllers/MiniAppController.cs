@@ -1,5 +1,6 @@
 ﻿using Genora.MultiTenancy.AppDtos.AppBookings;
 using Genora.MultiTenancy.AppDtos.AppCalendarSlots;
+using Genora.MultiTenancy.AppDtos.AppCustomers;
 using Genora.MultiTenancy.AppDtos.AppCustomerTypes;
 using Genora.MultiTenancy.AppDtos.AppGolfCourses;
 using Genora.MultiTenancy.AppDtos.AppMembershipTiers;
@@ -20,7 +21,6 @@ namespace Genora.MultiTenancy.Controllers;
 [RemoteService(false)]
 [Area("MultiTenancy")]
 [Route("api/mini-app")]
-[Authorize(AuthenticationSchemes = "MiniAppJwt", Policy = "MiniAppOnly")]
 public class MiniAppController : MultiTenancyController
 {
     private readonly IZaloApiClient _zaloApiClient;
@@ -31,6 +31,8 @@ public class MiniAppController : MultiTenancyController
     private readonly IMiniAppMembershipTierService _miniAppMembershipTier;
     private readonly IMiniAppNewsService _miniAppNews;
     private readonly IMiniAppCalendarSlotService _miniAppCalendarSlot;
+    private readonly IMiniAppCustomerAppService _miniCustomer;
+
     public MiniAppController(IZaloApiClient zaloApiClient,
                              IMiniAppBookingAppService miniBooking,
                              IMiniAppSettingService miniAppSetting,
@@ -38,7 +40,8 @@ public class MiniAppController : MultiTenancyController
                              IMiniAppGolfCourseService miniAppGolfCourse,
                              IMiniAppMembershipTierService miniAppMembershipTier,
                              IMiniAppNewsService miniAppNews,
-                             IMiniAppCalendarSlotService miniAppCalendarSlot)
+                             IMiniAppCalendarSlotService miniAppCalendarSlot,
+                             IMiniAppCustomerAppService miniCustomer)
     {
         _zaloApiClient = zaloApiClient;
         _miniBooking = miniBooking;
@@ -48,6 +51,7 @@ public class MiniAppController : MultiTenancyController
         _miniAppMembershipTier = miniAppMembershipTier;
         _miniAppNews = miniAppNews;
         _miniAppCalendarSlot = miniAppCalendarSlot;
+        _miniCustomer = miniCustomer;
     }
 
     [HttpPost("create-booking")]
@@ -112,28 +116,49 @@ public class MiniAppController : MultiTenancyController
     public Task<AppCalendarSlotDto> GetCalendarSlotAsync(Guid id)
         => _miniAppCalendarSlot.GetMiniAppAsync(id);
 
+    // <summary>
+    /// Lấy thông tin user từ Zalo Graph API
+    /// </summary>
+    [HttpGet("get-zalo-me")]
+    [AllowAnonymous]
+    public async Task<IActionResult> GetZaloMe([FromQuery] string accessToken, CancellationToken ct)
+    {
+        if (string.IsNullOrWhiteSpace(accessToken))
+            return BadRequest("Missing accessToken");
+
+        var result = await _zaloApiClient.GetZaloMeAsync(accessToken, ct);
+
+        if (result.Error != 0)
+            return StatusCode(400, result);
+
+        return Ok(result);
+    }
+
+    /// <summary>
+    /// Giải mã số điện thoại từ code
+    /// </summary>
     [HttpPost("decode-phone")]
     [AllowAnonymous]
-    public async Task<IActionResult> DecodePhone([FromBody] DecodePhoneRequest body, CancellationToken ct)
+    public async Task<IActionResult> DecodePhone([FromBody] ZaloDecodePhoneRequest request, CancellationToken ct)
     {
-        var zaloPhoneResponse = new ZaloPhoneResponse();
+        if (string.IsNullOrWhiteSpace(request.Code) || string.IsNullOrWhiteSpace(request.AccessToken))
+            return BadRequest("Missing code or accessToken");
 
-        if (body == null || string.IsNullOrWhiteSpace(body.Code) || string.IsNullOrWhiteSpace(body.AccessToken))
-        {
-            zaloPhoneResponse.Error = 400;
-            zaloPhoneResponse.Message = "Missing required parameter.";
-            return BadRequest(zaloPhoneResponse);
-        }
+        var result = await _zaloApiClient.DecodePhoneAsync(request.Code, request.AccessToken, ct);
 
-        var resp = await _zaloApiClient.DecodePhoneAsync(body.Code, body.AccessToken, ct);
+        if (result.Error != 0)
+            return StatusCode(400, result);
 
-        if (resp == null || resp.Error != 0 || resp.Data == null)
-        {
-            zaloPhoneResponse.Error = resp?.Error ?? -1;
-            zaloPhoneResponse.Message = resp?.Message ?? "DecodePhone failed.";
-            return BadRequest(zaloPhoneResponse);
-        }
-
-        return Ok(resp);
+        return Ok(result);
     }
+
+    [HttpPost("customer/upsert")]
+    [AllowAnonymous]
+    public async Task<IActionResult> UpsertCustomer([FromBody] MiniAppUpsertCustomerRequest input)
+        => Ok(await _miniCustomer.UpsertFromMiniAppAsync(input));
+
+    [HttpGet("customer/by-phone")]
+    [AllowAnonymous]
+    public async Task<IActionResult> GetByPhone([FromQuery] string phoneNumber)
+        => Ok(await _miniCustomer.GetByPhoneAsync(phoneNumber));
 }

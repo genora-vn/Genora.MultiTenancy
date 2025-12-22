@@ -14,7 +14,7 @@ public class AppCustomerDto : AuditedEntityDto<Guid>
     public string FullName { get; set; }
 
     /// <summary>
-    /// 0 = Unknown, 1 = Male, 2 = Female, ... tuỳ enum của bạn
+    /// 0 = Unknown, 1 = Male, 2 = Female
     /// </summary>
     public byte? Gender { get; set; }
 
@@ -26,7 +26,7 @@ public class AppCustomerDto : AuditedEntityDto<Guid>
 
     public string CustomerCode { get; set; }
 
-    public string ZaloUserId { get; set; }        // OA Follower / UserId
+    public string ZaloUserId { get; set; }
 
     public bool IsActive { get; set; }
 }
