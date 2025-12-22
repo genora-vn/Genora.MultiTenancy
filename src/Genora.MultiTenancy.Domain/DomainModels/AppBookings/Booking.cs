@@ -38,6 +38,13 @@ public class Booking : FullAuditedAggregateRoot<Guid>, IMultiTenant
     public decimal? PricePerGolfer { get; set; }
     public decimal TotalAmount { get; set; }
 
+    public short? NumberHole { get; set; }
+
+    [StringLength(20)]
+    public string? Utility { get; set; }
+
+    public bool IsExportInvoice { get; set; }
+
     public PaymentMethod? PaymentMethod { get; set; }
 
     public BookingStatus Status { get; set; }

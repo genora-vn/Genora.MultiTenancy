@@ -150,5 +150,92 @@ public class MultiTenancyDbContext :
             b.Property(x => x.Endpoint).HasMaxLength(512);
             b.HasIndex(x => x.CreationTime);
         });
+
+        // ===== AppCustomers =====
+        builder.Entity<Customer>(b =>
+        {
+            b.ToTable("AppCustomers");
+            b.ConfigureByConvention();
+
+            b.Property(x => x.VgaCode).HasMaxLength(20);
+            b.Property(x => x.Address).HasMaxLength(500);
+
+            b.Property(x => x.IsFollower);
+            b.Property(x => x.IsSensitive);
+
+            b.Property(x => x.BonusPoint).HasColumnType("decimal(18,2)");
+
+            b.HasOne(x => x.MembershipTier)
+             .WithMany()
+             .HasForeignKey(x => x.MembershipTierId)
+             .OnDelete(DeleteBehavior.Restrict);
+            b.HasIndex(x => x.MembershipTierId);
+        });
+
+        // ===== AppGolfCourses =====
+        builder.Entity<GolfCourse>(b =>
+        {
+            b.ToTable("AppGolfCourses");
+            b.ConfigureByConvention();
+
+            b.Property(x => x.FrameTimes).HasMaxLength(50);
+            b.Property(x => x.NumberHoles);
+            b.Property(x => x.Utilities).HasMaxLength(20);
+        });
+
+        // ===== AppBookingPlayers =====
+        builder.Entity<BookingPlayer>(b =>
+        {
+            b.ToTable("AppBookingPlayers");
+            b.ConfigureByConvention();
+
+            b.Property(x => x.PricePerPlayer).HasColumnType("decimal(18,2)");
+            b.Property(x => x.VgaCode).HasMaxLength(50);
+        });
+
+        // ===== AppBookings =====
+        builder.Entity<Booking>(b =>
+        {
+            b.ToTable("AppBookings");
+            b.ConfigureByConvention();
+
+            b.Property(x => x.NumberHole).HasMaxLength(20);
+
+            b.Property(x => x.Utility).HasMaxLength(20).HasColumnName("Ultility");
+
+            b.Property(x => x.IsExportInvoice);
+        });
+
+        builder.Entity<MembershipTier>(b =>
+        {
+            b.ToTable("AppMembershipTiers");
+            b.ConfigureByConvention();
+
+            b.Property(x => x.Code).IsRequired().HasMaxLength(50);
+            b.Property(x => x.Name).IsRequired().HasMaxLength(100);
+            b.Property(x => x.Description).HasMaxLength(500);
+
+            b.Property(x => x.MinTotalSpending).HasColumnType("decimal(18,2)");
+
+            b.HasIndex(x => x.Code);
+        });
+
+        builder.Entity<CustomerMembership>(b =>
+        {
+            b.ToTable("AppCustomerMemberships");
+            b.ConfigureByConvention();
+
+            b.HasOne(x => x.Customer)
+             .WithMany(x => x.Memberships)
+             .HasForeignKey(x => x.CustomerId)
+             .OnDelete(DeleteBehavior.Cascade);
+
+            b.HasOne(x => x.MembershipTier)
+             .WithMany(x => x.CustomerMemberships)
+             .HasForeignKey(x => x.MembershipTierId)
+             .OnDelete(DeleteBehavior.Restrict);
+
+            b.HasIndex(x => new { x.CustomerId, x.IsCurrent });
+        });
     }
 }

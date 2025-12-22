@@ -58,6 +58,15 @@ public class GolfCourse : FullAuditedAggregateRoot<Guid>, IMultiTenant
     /// </summary>
     public byte BookingStatus { get; set; } = 1;
 
+    [StringLength(50)]
+    public string? FrameTimes { get; set; }
+
+    [StringLength(50)]
+    public string? NumberHoles { get; set; }
+
+    [StringLength(20)]
+    public string? Utilities { get; set; }
+
     public bool IsActive { get; set; } = true;
 
     // Navigation

@@ -2,6 +2,7 @@
 using Genora.MultiTenancy.DomainModels.AppBookings;
 using Genora.MultiTenancy.DomainModels.AppCustomerMemberships;
 using Genora.MultiTenancy.DomainModels.AppCustomerTypes;
+using Genora.MultiTenancy.DomainModels.AppMembershipTiers;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
@@ -48,12 +49,26 @@ public class Customer : FullAuditedAggregateRoot<Guid>, IMultiTenant
     [StringLength(100)]
     public string? ZaloFollowerId { get; set; }
 
+    [StringLength(20)]
+    public string? VgaCode { get; set; }
+
+    [StringLength(500)]
+    public string? Address { get; set; }
+
+    public bool IsFollower { get; set; }
+    public bool IsSensitive { get; set; }
+
+    public decimal BonusPoint { get; set; }
+
+    public Guid? MembershipTierId { get; set; }
+
     public bool IsActive { get; set; } = true;
 
     // Navigation
     public virtual ICollection<Booking> Bookings { get; set; } = new List<Booking>();
     public virtual ICollection<BookingPlayer> BookingPlayers { get; set; } = new List<BookingPlayer>();
     public virtual ICollection<CustomerMembership> Memberships { get; set; } = new List<CustomerMembership>();
+    public virtual MembershipTier? MembershipTier { get; set; }
 
     protected Customer() { }
 

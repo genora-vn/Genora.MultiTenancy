@@ -23,6 +23,11 @@ public class BookingPlayer : FullAuditedAggregateRoot<Guid>, IMultiTenant
     [StringLength(150)]
     public string PlayerName { get; set; } = null!;
 
+    public decimal? PricePerPlayer { get; set; }
+
+    [StringLength(50)]
+    public string? VgaCode { get; set; }
+
     [StringLength(500)]
     public string? Notes { get; set; }
 
