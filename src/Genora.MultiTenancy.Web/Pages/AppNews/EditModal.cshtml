@@ -22,7 +22,24 @@
             <input type="hidden" asp-for="Id" />
 
             <abp-input asp-for="News.Title" label="@L["Title"]" />
-            <abp-input asp-for="News.ThumbnailUrl" label="@L["ThumbnailUrl"]" />
+            <div class="mb-3 d-inline-flex" style="width: 100%; gap: 15px">
+                <div class="col-md-8">
+                    <label asp-for="News.ThumbnailUrl" class="form-label">@L["ThumbnailUrl"]</label>
+                    <input asp-for="News.ThumbnailUrl" id="image-input" class="form-control" placeholder="Ảnh hiển thị tin tức" />
+                </div>
+                <div class="col-md-4">
+                    <span class="form-label d-block mb-2">
+                        @if (!string.IsNullOrWhiteSpace(Model.News.ThumbnailUrl))
+                        {
+                            <img src="@Model.News.ThumbnailUrl" id="image-preview" alt="Thumbnail" style="max-width: 200px; max-height: 200px; width: 100%; height: 100%" />
+                        }
+                        else
+                        {
+                            <img src="https://cdn4.iconfinder.com/data/icons/picture-sharing-sites/32/No_Image-1024.png" alt="Thumbnail" id="image-preview" style="max-width: 200px; max-height: 200px; width: 100%; height: 100%" />
+                        }
+                    </span>
+                </div>
+            </div>
 
             <div class="mb-3">
                 <label asp-for="News.ContentHtml" class="form-label">@L["Content"]</label>
@@ -30,20 +47,46 @@
                           class="form-control news-content-editor"
                           rows="8"></textarea>
             </div>
-
-            <abp-input asp-for="News.PublishedAt"
-                       label="@L["PublishDate"]"
-                       type="text"
-                       value="@publishedAtText"
-                       autocomplete="off"
-                       class="public-time-input" />
-
-            <abp-select asp-for="News.Status"
-                        label="@L["Status"]"
-                        asp-items="EnumSelectList.GetLocalizedEnumSelectList<NewsStatus>(L)" />
-
-            <abp-input asp-for="News.DisplayOrder" label="@L["DisplayOrder"]" />
+            <div class="d-inline-flex" style="width: 100%; gap: 10px">
+                <div class="col-md-4">
+                    <abp-input asp-for="News.PublishedAt"
+                               label="@L["PublishDate"]"
+                               type="text"
+                               value="@publishedAtText"
+                               autocomplete="off"
+                               class="public-time-input" />
+                </div>
+                <div class="col-md-4">
+                    <abp-select asp-for="News.Status"
+                                label="@L["Status"]"
+                                asp-items="EnumSelectList.GetLocalizedEnumSelectList<NewsStatus>(L)" />
+                </div>
+                <div class="col-md-4">
+                    <abp-input asp-for="News.DisplayOrder" label="@L["DisplayOrder"]" />
+                </div>
+            </div>
         </abp-modal-body>
         <abp-modal-footer buttons="@(AbpModalButtons.Cancel | AbpModalButtons.Save)"></abp-modal-footer>
     </abp-modal>
 </form>
+
+
+<script>
+    $(document).ready(function () {
+        // Update image preview when ThumbnailUrl changes
+        $('input[asp-for="News.ThumbnailUrl"]').on('input', function () {
+            bindingPreviewImage();
+        });
+        $('#image-input').on('change', function () {
+            bindingPreviewImage();
+        });
+        function bindingPreviewImage() {
+            var imageUrl = $('#image-input').val();
+            if (imageUrl) {
+                $('#image-preview').attr('src', imageUrl);
+            } else {
+                $('#image-preview').attr('src', 'https://cdn4.iconfinder.com/data/icons/picture-sharing-sites/32/No_Image-1024.png');
+            }
+        }
+    });
+</script>

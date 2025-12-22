@@ -68,7 +68,8 @@
     "Type": "Loại",
     "Price": "Giá",
     "CreationTime": "Thời gian tạo",
-
+    "All": "Tất cả",
+    "Notes": "Ghi chú",
     // Cấu hình Mini App
     "PermissionGroup:MiniAppSetting": "Cấu hình Mini App",
     "PermissionGroup:MiniAppSettingHost": "Cấu hình Mini App (Host)",
@@ -148,7 +149,7 @@
     "ShortDescription": "Mô tả ngắn",
     "CancellationPolicy": "Chính sách hoãn hủy",
     "TermsAndConditions": "Điều khoản và điều kiện",
-
+    "CodeRequired": "Trường Mã là bắt buộc",
     // ====== AppMembershipTiers (Hạng hội viên) ======
     "PermissionGroup:MiniAppMembershipTier": "Hạng hội viên",
     "PermissionGroup:MiniAppMembershipTierHost": "Hạng hội viên (Host)",
@@ -261,6 +262,7 @@
     "ThumbnailUrl": "Ảnh đại diện (URL)",
     "Content": "Nội dung chi tiết",
     "Status ": "Trạng thái",
+    "Title": "Tiêu đề",
 
     "NewsStatus:Draft": "Bản nháp",
     "NewsStatus:Published": "Đang hiển thị",

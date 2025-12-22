@@ -13,21 +13,16 @@
         <abp-modal-header title="@L["CreateAppCustomerType"].Value"></abp-modal-header>
         <abp-modal-body>
             @* <abp-form-content /> *@
-            <div class="mb-3">
-                <label asp-for="CustomerType.Code" class="form-label">@L["CustomerTypeCode"]</label>
-                <input asp-for="CustomerType.Code" class="form-control" placeholder="Nhập mã code loại khách hàng" />
-            </div>
-            <div class="mb-3">
-                <label asp-for="CustomerType.Name" class="form-label">@L["CustomerTypeName"]</label>
-                <input asp-for="CustomerType.Name" class="form-control" placeholder="Nhập tên loại khách hàng" />
-            </div>
+            <abp-input asp-for="CustomerType.Code" placeholder="Nhập mã code loại khách hàng" label="@L["CustomerTypeCode"]" />
+            <abp-input asp-for="CustomerType.Name" placeholder="Nhập tên loại khách hàng" label="@L["CustomerTypeName"]" />
             <div class="mb-3">
                 <label asp-for="CustomerType.Description" class="form-label">@L["Description"]</label>
                 <textarea asp-for="CustomerType.Description" class="form-control" rows="3" placeholder="Mô tả loại khách hàng"></textarea>
             </div>
             <div class="mb-3" style="display: inline-flex; width: 100%">
-                <label asp-for="CustomerType.ColorCode" class="form-label">@L["ColorCode"]</label>
-                <input asp-for="CustomerType.ColorCode" type="color" class="form-control color-input" />
+                <label asp-for="CustomerType.ColorCode" class="form-label" style="width: 18%">@L["ColorCode"]</label>
+                <input asp-for="CustomerType.ColorCode" type="text" id="color-code" class="form-control"/>
+                <input id="color-picker" type="color" class="form-control color-input" />
             </div>
             <abp-input asp-for="CustomerType.IsActive" />
         </abp-modal-body>
@@ -37,10 +32,32 @@
 
 <style type="text/css">
     .color-input {
-        width: 60%;
-        height: 50px;
-        padding: 0;
-        margin-left: 15%;
+        width: 45px;
+        height: 47px;
+        padding: 8px;
+        margin-left: 0;
+        border-radius: 0 0.5rem 0.5rem 0;
+    }
+
+    #color-code{
+        border-radius: 0.5rem 0 0 0.5rem;
+        margin-left: 20px;
+        width: 68%;
+        padding-right: 0
     }
 </style>
+<script>
+    $(document).ready(function () {
+        // Khi người dùng chọn màu từ bộ chọn màu
+        $('#color-picker').on('input', function () {
+            var selectedColor = $(this).val();
+            $('#color-code').val(selectedColor);
+        });
+        // Khi người dùng nhập mã màu thủ công
+        $('#color-code').on('input', function () {
+            var inputColor = $(this).val();
+            $('#color-picker').val(inputColor);
+        });
+    });
+</script>
 

@@ -8,12 +8,23 @@
 @{
     Layout = null;
 }
-<abp-dynamic-form abp-model="AppSetting" asp-page="/AppSettings/CreateModal">
+<form abp-model="AppSetting" asp-page="/AppSettings/CreateModal">
     <abp-modal>
         <abp-modal-header title="@L["NewAppSetting"].Value"></abp-modal-header>
         <abp-modal-body>
-            <abp-form-content />
+            @* <abp-form-content /> *@
+            <abp-input asp-for="AppSetting.SettingKey" placeholder="Nhập mã cấu hình (vd: color_background, logo_image,..)" label="@L["SettingKey"]" />
+            <abp-input asp-for="AppSetting.SettingValue" placeholder="Nhập giá trị cấu hình (vd: #FFFFF,https://example.com/logo.img,...)" label="@L["SettingValue"]" />
+            <abp-input asp-for="AppSetting.SettingType" placeholder="Nhập loại cấu hình" label="@L["SettingType"]" />
+            <div class="mb-3">
+                <label asp-for="AppSetting.Description" class="form-label">@L["Description"]</label>
+                <textarea asp-for="AppSetting.Description"
+                          class="form-control"
+                          placeholder="Mô tả cấu hình"
+                          rows="4"></textarea>
+            </div>
+            <abp-input asp-for="AppSetting.IsActive" placeholder="Nhập mã cấu hình" label="@L["IsActive"]" />
         </abp-modal-body>
         <abp-modal-footer buttons="@(AbpModalButtons.Cancel | AbpModalButtons.Save)"></abp-modal-footer>
     </abp-modal>
-</abp-dynamic-form>
+</form>

@@ -12,7 +12,10 @@ public class CreateUpdateBookingPlayerDto
     [StringLength(200)]
     public string PlayerName { get; set; }
     [StringLength(500)]
-    public string Notes { get; set; }
+    public string? VGAHandicap { get; set; }
+    public decimal? PriceOfPlayer { get; set; }
+    [StringLength(500)]
+    public string? Notes { get; set; }
 }
 
 public class CreateUpdateAppBookingDto

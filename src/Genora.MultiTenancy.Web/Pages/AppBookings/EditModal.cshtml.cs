@@ -57,6 +57,8 @@ public class EditModalModel : PageModel
             {
                 CustomerId = p.CustomerId,
                 PlayerName = p.PlayerName,
+                VGAHandicap = "1231234",
+                PriceOfPlayer = dto.TotalAmount / dto.NumberOfGolfers,
                 Notes = p.Notes
             }) ?? new List<CreateUpdateBookingPlayerDto>()
         };
