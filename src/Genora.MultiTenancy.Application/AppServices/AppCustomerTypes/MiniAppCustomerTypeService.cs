@@ -19,6 +19,13 @@ namespace Genora.MultiTenancy.AppServices.AppCustomerTypes
             _customerTypeRepository = customerTypeRepository;
         }
 
+        public async Task<AppCustomerTypeDto> GetCustomerTypeByCode(string code)
+        {
+            var item = await _customerTypeRepository.FirstOrDefaultAsync(x => x.Code == code);
+            var result = ObjectMapper.Map<CustomerType, AppCustomerTypeDto>(item);
+            return result;
+        }
+
         public async Task<PagedResultDto<AppCustomerTypeDto>> GetListAsync(PagedAndSortedResultRequestDto input)
         {
             var query = await _customerTypeRepository.GetQueryableAsync();

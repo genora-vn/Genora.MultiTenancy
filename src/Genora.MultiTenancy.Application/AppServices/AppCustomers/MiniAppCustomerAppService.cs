@@ -1,4 +1,5 @@
 ﻿using Genora.MultiTenancy.AppDtos.AppCustomers;
+using Genora.MultiTenancy.AppDtos.AppCustomerTypes;
 using Genora.MultiTenancy.DomainModels.AppCustomers;
 using System;
 using System.Globalization;
@@ -12,10 +13,12 @@ namespace Genora.MultiTenancy.AppServices.AppCustomers;
 public class MiniAppCustomerAppService : ApplicationService, IMiniAppCustomerAppService
 {
     private readonly IRepository<Customer, Guid> _repo;
+    private readonly IMiniAppCustomerTypeService _customerTypeService;
 
-    public MiniAppCustomerAppService(IRepository<Customer, Guid> repo)
+    public MiniAppCustomerAppService(IRepository<Customer, Guid> repo, IMiniAppCustomerTypeService customerTypeService)
     {
         _repo = repo;
+        _customerTypeService = customerTypeService;
     }
 
     public async Task<MiniAppCustomerDto?> GetByPhoneAsync(string phoneNumber)
@@ -43,11 +46,13 @@ public class MiniAppCustomerAppService : ApplicationService, IMiniAppCustomerApp
             name = "Zalo User"; // fallback
 
         var customer = await _repo.FirstOrDefaultAsync(x => x.PhoneNumber == phone);
+        var customerType = await _customerTypeService.GetCustomerTypeByCode("MEM");
 
         if (customer == null)
         {
             customer = new Customer(GuidGenerator.Create(), phone, name)
             {
+                CustomerTypeId = customerType != null ? customerType?.Id : null,
                 AvatarUrl = input.AvatarUrl,
                 ZaloUserId = input.ZaloUserId,
                 ZaloFollowerId = input.ZaloFollowerId,
