@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 
 namespace Genora.MultiTenancy.AppDtos.AppGolfCourses;
@@ -48,4 +49,30 @@ public class CreateUpdateAppGolfCourseDto
 
     public byte BookingStatus { get; set; } = 1;
     public bool IsActive { get; set; } = true;
+    public string? FrameTimes { get; set; }
+
+    public string? NumberHoles { get; set; }
+
+    public string? Utilities { get; set; }
+    public List<GolfCourseUtilityDto> AvailableUtilities { get; set; } = new List<GolfCourseUtilityDto>();
+    public List<GolfCourseHoleDto> AvailableHoles { get; set; } = new List<GolfCourseHoleDto>();
+    public List<GolfCourseSessionOfDayDto> AvailableSessionsOfDay { get; set; } = new List<GolfCourseSessionOfDayDto>();
+}
+public class GolfCourseUtilityDto
+{
+    public int UtilityId { get; set; }
+    public string UtilityName { get; set; }
+    public bool IsCheck { get; set; } = false;
+}
+public class GolfCourseHoleDto
+{
+    public int Id { get; set; }
+    public string Name { get; set; }
+    public bool IsCheck { get; set; } = false;
+}
+public class GolfCourseSessionOfDayDto
+{
+    public int Id { get; set; }
+    public string Name { get; set; }
+    public bool IsCheck { get; set; } = false;
 }

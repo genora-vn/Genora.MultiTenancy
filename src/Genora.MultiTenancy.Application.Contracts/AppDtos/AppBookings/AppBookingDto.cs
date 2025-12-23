@@ -1,6 +1,7 @@
 ﻿using Genora.MultiTenancy.Enums;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using Volo.Abp.Application.Dtos;
 
 namespace Genora.MultiTenancy.AppDtos.AppBookings;
@@ -11,6 +12,8 @@ public class AppBookingPlayerDto : EntityDto<Guid>
     public Guid? CustomerId { get; set; }
     public string PlayerName { get; set; }
     public string Notes { get; set; }
+    public decimal? PricePerPlayer { get; set; }
+    public string? VgaCode { get; set; }
 }
 
 public class AppBookingDto : FullAuditedEntityDto<Guid>

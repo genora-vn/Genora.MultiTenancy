@@ -1,4 +1,5 @@
 ﻿@page
+@using Genora.MultiTenancy.Enums
 @using Genora.MultiTenancy.Localization
 @using Genora.MultiTenancy.Web.Pages.AppGolfCourses
 @using Microsoft.Extensions.Localization
@@ -15,44 +16,51 @@
         <abp-modal-body>
             <abp-input asp-for="Id" />
             @* <abp-form-content /> *@
-            <div class="group d-inline-flex" style="width: 100%; gap: 10px">
+            <div class="mb-3 d-inline-flex" style="width: 99%; gap: 10px">
+                <div class="col-md-2">
+                    @* <abp-input asp-for="GolfCourse.Code" placeholder="Nhập mã sân (vd: MASANX)" label="@L["GolfCourseCode"]" /> *@
+                    <label asp-for="GolfCourse.Code" class="form-label">@L["GolfCourseCode"]</label>
+                    <input asp-for="GolfCourse.Code" class="form-control" placeholder="Nhập mã sân (vd: MASANX)" />
+                </div>
+                <div class="col-md-5">
+                    @* <abp-input asp-for="GolfCourse.Name" placeholder="Nhập tên sân" label="@L["GolfCourseName"]" /> *@
+                    <label asp-for="GolfCourse.Name" class="form-label">@L["GolfCourseName"]</label>
+                    <input asp-for="GolfCourse.Name" class="form-control" placeholder="Nhập tên sân." />
+                </div>
+                <div class="col-md-5">
+                    @* <abp-input asp-for="GolfCourse.Address" placeholder="Nhập địa chỉ đầy đủ sân." label="@L["Address"]" /> *@
+                    <label asp-for="GolfCourse.Address" class="form-label">@L["Address"]</label>
+                    <input asp-for="GolfCourse.Address" class="form-control" placeholder="Nhập địa chỉ đầy đủ sân." />
+                </div>
+            </div>
+            <div class="mb-3 d-inline-flex" style="width: 98%; gap: 10px">
                 <div class="col-md-3">
-                    <abp-input asp-for="GolfCourse.Code" placeholder="Nhập mã sân (vd: MASANX)" label="@L["GolfCourseCode"]" />
+                    @* <abp-input asp-for="GolfCourse.Province" placeholder="Nhập tỉnh địa chỉ sân" label="" /> *@
+                    <label asp-for="GolfCourse.Province" class="form-label">@L["Province"]</label>
+                    <input asp-for="GolfCourse.Province" class="form-control" placeholder="Nhập tỉnh địa chỉ sân." />
                 </div>
-                <div class="col-md-9">
-                    <abp-input asp-for="GolfCourse.Name" placeholder="Nhập tên sân" label="@L["GolfCourseName"]" />
+                <div class="col-md-3">
+                    @* <abp-input asp-for="GolfCourse.Phone" placeholder="Nhập số điện thoại." label="@L["Phone"]" /> *@
+                    <label asp-for="GolfCourse.Phone" class="form-label">@L["Phone"]</label>
+                    <input asp-for="GolfCourse.Phone" class="form-control" placeholder="Nhập số điện thoại." />
                 </div>
-            </div>
-            <div class="group">
-                <abp-input asp-for="GolfCourse.Address" placeholder="Nhập địa chỉ đầy đủ sân." label="@L["Address"]" />
-            </div>
-            <div class="group d-inline-flex" style="width: 100%; gap: 10px">
-                <div class="col-md-4">
-                    <div class="form-group">
-                        <abp-input asp-for="GolfCourse.Province" placeholder="Nhập tỉnh địa chỉ sân" label="@L["Province"]" />
-                    </div>
-                    <div class="form-group">
-                        <abp-input asp-for="GolfCourse.Phone" placeholder="Nhập số điện thoại." label="@L["Phone"]" />
-                    </div>
+                <div class="col-md-3">
+                    <label asp-for="GolfCourse.OpenTime" class="form-label">@L["OpenTime"]</label>
+                    <input asp-for="GolfCourse.OpenTime" class="form-control input-time" id="OpenTime" type="text" />
                 </div>
-                <div class="col-md-4">
-                    <div class="mb-3">
-                        <label asp-for="GolfCourse.OpenTime" class="form-label">@L["OpenTime"]</label>
-                        <input asp-for="GolfCourse.OpenTime" class="form-control input-time" id="OpenTime" type="text" />
-                    </div>
-                    <div class="mb-3">
-                        <label asp-for="GolfCourse.CloseTime" class="form-label">@L["CloseTime"]</label>
-                        <input asp-for="GolfCourse.CloseTime" class="form-control input-time" id="CloseTime" type="text" />
-                    </div>
+                <div class="col-md-3" style="margin-right: 20px">
+                    <label asp-for="GolfCourse.CloseTime" class="form-label">@L["CloseTime"]</label>
+                    <input asp-for="GolfCourse.CloseTime" class="form-control input-time" id="CloseTime" type="text" />
                 </div>
-                <div class="col-md-4" style="padding-right: 20px">
+
+                @* <div class="col-md-4" style="padding-right: 20px">
                     <div class="form-group">
                         <abp-input asp-for="GolfCourse.AvatarUrl" placeholder="Nhập link hiển thị ảnh." label="@L["AvatarUrl"]" />
                     </div>
                     <div class="form-group">
                         <abp-input asp-for="GolfCourse.BannerUrl" placeholder="Nhập link hiển thị ảnh." label="@L["BannerUrl"]" />
                     </div>
-                </div>
+                </div> *@
             </div>
             <div class="mb-3 d-inline-flex" style="width: 100%; gap: 10px">
                 <div class="col-md-6">
@@ -66,6 +74,119 @@
                     <label asp-for="GolfCourse.ShortDescription" class="form-label">@L["ShortDescription"]</label>
                     <textarea asp-for="GolfCourse.ShortDescription" class="form-control" style="padding-bottom: 20px;" rows="5" placeholder="Nhập mô tả ngắn."></textarea>
                 </div>
+            </div>
+            <div class="group d-inline-flex" style="width: 100%; gap: 10px">
+                <div class="col-md-6">
+                    <label class="section-label">Tiện ích của sân</label>
+                    <div>
+                        @{
+                            var utilities = UlititiesEnum.List().ToList();
+                            var totalRow = utilities.Count / 4;
+                            int count = 0;
+                            if (utilities.Count % 2 > 0)
+                            {
+                                totalRow += 1;
+                            }
+                            for (int i = 0; i < totalRow; i++)
+                            {
+                                <div class="row service-row">
+                                    @{
+                                        for (int k = count; k < count + 4; k++)
+                                        {
+                                            if (k < utilities.Count)
+                                            {
+                                                <div class="col-lg-6 col-md-6" style="margin-bottom: 15px">
+                                                    <label class="golf-checkbox">
+                                                        <i class="@utilities[k].Icon"></i>
+                                                        <input type="hidden" asp-for="GolfCourse.AvailableUtilities[@k].UtilityId" value="@utilities[k].Value" />
+                                                        <input asp-for="GolfCourse.AvailableUtilities[k].IsCheck" type="checkbox" class="hidden-checkbox" />
+                                                        <span class="no-select">@L[@utilities[k].Name]</span>
+                                                    </label>
+                                                </div>
+                                            }
+                                        }
+                                        count = count + 4;
+                                    }
+                                </div>
+                            }
+                        }
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="row">
+                        <label>Số hố sân / Buổi mở cửa</label>
+                        <div>
+                            @{
+                                var holes = GolfCourseNumberHoleEnum.List().ToList();
+                                var totalRows = holes.Count / 4;
+                                int countHole = 0;
+                                if (holes.Count % 4 > 0)
+                                {
+                                    totalRows += 1;
+                                }
+                                for (int i = 0; i < totalRows; i++)
+                                {
+                                    <div class="row service-row">
+                                        @{
+                                            for (int k = countHole; k < countHole + 4; k++)
+                                            {
+                                                if (k < holes.Count)
+                                                {
+                                                    <div class="col-lg-3 col-md-3">
+                                                        <label class="golf-checkbox">
+                                                            @* <i class="@holes[k].Icon"></i>*@
+                                                            <input type="hidden" asp-for="GolfCourse.AvailableHoles[@k].Id" value="@holes[k].Value" />
+                                                            <input asp-for="GolfCourse.AvailableHoles[k].IsCheck" type="checkbox" class="hidden-checkbox" />
+                                                            <span class="no-select">@L[@holes[k].Name]</span>
+                                                        </label>
+                                                    </div>
+                                                }
+                                            }
+                                            countHole = countHole + 4;
+                                        }
+                                    </div>
+                                }
+                            }
+                        </div>
+                    </div>
+                    <div class="row">
+                        @* <label >Buổi trong ngày</label> *@
+                        <div>
+                            @{
+                                var sessions = SessionOfDayEnum.List().ToList();
+                                var rows = holes.Count / 4;
+                                int countSession = 0;
+                                if (sessions.Count % 4 > 0)
+                                {
+                                    rows += 1;
+                                }
+                                for (int i = 0; i < rows; i++)
+                                {
+                                    <div class="row">
+                                        @{
+                                            for (int k = countSession; k < countSession + 4; k++)
+                                            {
+                                                if (k < sessions.Count)
+                                                {
+                                                    <div class="col-lg-3 col-md-3" style="margin-bottom: 10px">
+                                                        <label class="golf-checkbox">
+                                                            @* <i class="@holes[k].Icon"></i>*@
+                                                            <input type="hidden" asp-for="GolfCourse.AvailableSessionsOfDay[@k].Id" value="@sessions[k].Value" />
+                                                            <input asp-for="GolfCourse.AvailableSessionsOfDay[k].IsCheck" type="checkbox" class="hidden-checkbox" />
+                                                            <span class="no-select">@L[@sessions[k].Name]</span>
+                                                        </label>
+                                                    </div>
+                                                }
+                                            }
+                                            countSession = countSession + 4;
+                                        }
+                                    </div>
+                                }
+                            }
+                        </div>
+                    </div>
+                </div>
+
             </div>
             <div class="mb-3" style="display: inline-flex; gap: 10px; width: 100%">
                 <div class="col-md-6">
@@ -86,11 +207,106 @@
     .modal-dialog {
         max-width: 70%;
     }
+
+    .service-row {
+        margin-top: 10px;
+    }
+
+        .service-row:last-child {
+            margin-bottom: 15px;
+        }
+
+    .golf-checkbox input[type="checkbox"] {
+        display: none;
+    }
+
+    .golf-checkbox span:after {
+        font-family: "Ionicons";
+        content: "\f2c7"; /* <--------THE ICON GOES HERE */
+        float: right;
+    }
+
+    .golf-checkbox input[type="checkbox"]:checked ~ span:after {
+        font-family: "Ionicons";
+        content: "\f383"; /* <--------THE ICON GOES HERE */
+        float: right;
+        color: white;
+    }
+
+    .golf-checkbox input[type="checkbox"]:checked ~ span {
+        color: white;
+    }
+
+    .golf-checkbox span {
+        font-size: 13px;
+        letter-spacing: 0px;
+        line-height: 24px;
+        color: rgb(75,78,77);
+        font-family: "Montserrat";
+        font-weight: 500;
+        padding-left: 3px;
+    }
+
+    .golf-checkbox {
+        border: 1px solid #ddd;
+        width: 100%;
+        padding: 4px 12px 4px 12px;
+        border-radius: 15px;
+    }
+
+    .golf-checkbox:hover {
+        background: #d6ecff;
+        color: #00549f !important;
+        cursor: pointer !important;
+    }
+
+    .golf-checkbox:hover span {
+        color: #00549f;
+    }
+
+    .golf-checkbox:hover span:after {
+        color: #00549f;
+    }
+
+    .golf-checkbox-checked {
+        background-color: #00549f !important;
+    }
+
+        .golf-checkbox-checked .fa:before {
+            color: white !important;
+        }
+
+    .no-select {
+        -webkit-touch-callout: none; /* iOS Safari */
+        -webkit-user-select: none; /* Safari */
+        -khtml-user-select: none; /* Konqueror HTML */
+        -moz-user-select: none; /* Firefox */
+        -ms-user-select: none; /* Internet Explorer/Edge */
+        user-select: none; /* Non-prefixed version, currently
+                                          supported by Chrome and Opera */
+    }
 </style>
 
 <script>
     $(document).ready(function () {
         initTimePicker();
+
+         $(".hidden-checkbox").change(function () {
+            if (this.checked) {
+                //Do stuff, kaching, lil' skrrt, then we're done, yeah?
+                $(this).parent().addClass("golf-checkbox-checked");
+            } else {
+                $(this).parent().removeClass("golf-checkbox-checked");
+            }
+        });
+
+
+        $(".hidden-checkbox").each(function () {
+            if (this.checked) {
+                $(this.parentElement).addClass("golf-checkbox-checked");
+            }
+        });
+
     });
     function initTimePicker() {
             if (!window.flatpickr) return;
