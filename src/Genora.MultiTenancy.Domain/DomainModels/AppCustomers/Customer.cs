@@ -52,6 +52,9 @@ public class Customer : FullAuditedAggregateRoot<Guid>, IMultiTenant
     [StringLength(20)]
     public string? VgaCode { get; set; }
 
+    [StringLength(100)]
+    public string? Email { get; set; }
+
     [StringLength(500)]
     public string? Address { get; set; }
 

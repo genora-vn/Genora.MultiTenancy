@@ -13,6 +13,10 @@ public class CustomerData {
     public string CustomerCode { get; set; } = "";
     public string PhoneNumber { get; set; } = "";
     public string FullName { get; set; } = "";
+    public byte? Gender { get; set; }
+    public DateTime? DateOfBirth { get; set; }
+    public string? Email { get; set; }
+    public string? VgaCode { get; set; }
     public string? AvatarUrl { get; set; }
 
     public string? ZaloUserId { get; set; }

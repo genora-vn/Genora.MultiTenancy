@@ -80,9 +80,14 @@ public class MiniAppCustomerAppService : ApplicationService, IMiniAppCustomerApp
         {
             // mapping update (chỉ update nếu có dữ liệu mới)
             customer.FullName = name.IsNullOrWhiteSpace() ? customer.FullName : name;
+            customer.Gender = input.Gender ?? customer.Gender;
+            customer.Email = input.Email ?? customer.Email;
+            customer.VgaCode = input.VgaCode ?? customer.VgaCode;
+            customer.DateOfBirth = input.DateOfBirth ?? customer.DateOfBirth;
             customer.AvatarUrl = input.AvatarUrl ?? customer.AvatarUrl;
             customer.ZaloUserId = input.ZaloUserId ?? customer.ZaloUserId;
             customer.ZaloFollowerId = input.ZaloFollowerId ?? customer.ZaloFollowerId;
+            customer.IsFollower = input.IsFollower ?? customer.IsFollower;
 
             customer = await _repo.UpdateAsync(customer, autoSave: true);
         }

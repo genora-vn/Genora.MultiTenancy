@@ -159,6 +159,7 @@ public class MultiTenancyDbContext :
 
             b.Property(x => x.VgaCode).HasMaxLength(20);
             b.Property(x => x.Address).HasMaxLength(500);
+            b.Property(x => x.Email).HasMaxLength(100);
 
             b.Property(x => x.IsFollower);
             b.Property(x => x.IsSensitive);
