@@ -4,6 +4,7 @@ using Genora.MultiTenancy.DomainModels.AppCustomers;
 using System;
 using System.Globalization;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Volo.Abp;
 using Volo.Abp.Application.Services;
@@ -21,21 +22,32 @@ public class MiniAppCustomerAppService : ApplicationService, IMiniAppCustomerApp
         _customerTypeService = customerTypeService;
     }
 
-    public async Task<MiniAppCustomerDto?> GetByPhoneAsync(string phoneNumber)
+    public async Task<MiniAppCustomerDto?> GetByPhoneAsync(string phoneNumber, CancellationToken ct)
     {
         if (phoneNumber.IsNullOrWhiteSpace())
             throw new BusinessException("Customer:PhoneRequired");
 
         var normalized = phoneNumber.Trim();
         var customer = await _repo.FirstOrDefaultAsync(x => x.PhoneNumber == normalized);
-        return customer == null ? null : ObjectMapper.Map<Customer, MiniAppCustomerDto>(customer);
+        if (customer == null)
+            return null;
+
+        // Map từ entity Customer sang CustomerData
+        var customerData = ObjectMapper.Map<Customer, CustomerData>(customer);
+
+        return new MiniAppCustomerDto
+        {
+            Error = 0,
+            Message = "Success",
+            Data = customerData
+        };
     }
 
     /// <summary>
     /// Nếu tồn tại theo PhoneNumber -> update mapping; chưa có -> tạo mới.
     /// Idempotent theo PhoneNumber.
     /// </summary>
-    public async Task<MiniAppCustomerDto> UpsertFromMiniAppAsync(MiniAppUpsertCustomerRequest input)
+    public async Task<MiniAppCustomerDto> UpsertFromMiniAppAsync(MiniAppUpsertCustomerRequest input, CancellationToken ct)
     {
         if (input.PhoneNumber.IsNullOrWhiteSpace())
             throw new BusinessException("Customer:PhoneRequired");
@@ -56,6 +68,8 @@ public class MiniAppCustomerAppService : ApplicationService, IMiniAppCustomerApp
                 AvatarUrl = input.AvatarUrl,
                 ZaloUserId = input.ZaloUserId,
                 ZaloFollowerId = input.ZaloFollowerId,
+                IsFollower = input.IsFollower ?? false,
+                IsSensitive = input.IsSensitive ?? false,
                 IsActive = true,
                 CustomerCode = await GenerateCustomerCodeNoPermissionAsync()
             };
@@ -74,10 +88,15 @@ public class MiniAppCustomerAppService : ApplicationService, IMiniAppCustomerApp
         }
 
         //var dto = MapToDto(customer);
-        var dto = ObjectMapper.Map<Customer, MiniAppCustomerDto>(customer);
-        dto.IsFollower = input.IsFollower;
-        dto.IsSensitive = input.IsSensitive;
-        return dto;
+        var result = ObjectMapper.Map<Customer, CustomerData>(customer);
+        result.IsFollower = input.IsFollower;
+        result.IsSensitive = input.IsSensitive;
+        return new MiniAppCustomerDto
+        {
+            Error = 0,
+            Message = "Success",
+            Data = result
+        };
     }
 
     // MiniApp service không yêu cầu quyền => generate code bản internal

@@ -1,8 +1,14 @@
-﻿using System;
+﻿using Genora.MultiTenancy.AppDtos.AppZaloAuths;
+using System;
+using System.Text.Json.Serialization;
 
 namespace Genora.MultiTenancy.AppDtos.AppCustomers;
-public class MiniAppCustomerDto
+public class MiniAppCustomerDto : ZaloBaseResponse
 {
+    [JsonPropertyName("data")]
+    public CustomerData? Data { get; set; }
+}
+public class CustomerData {
     public Guid Id { get; set; }
     public string CustomerCode { get; set; } = "";
     public string PhoneNumber { get; set; } = "";

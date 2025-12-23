@@ -79,6 +79,7 @@ public class MultiTenancyApplicationAutoMapperProfile : Profile
 
         #region MiniAppCustomer auto mapper profile
         CreateMap<Customer, MiniAppCustomerDto>();
+        CreateMap<Customer, CustomerData>();
       
         #endregion
 

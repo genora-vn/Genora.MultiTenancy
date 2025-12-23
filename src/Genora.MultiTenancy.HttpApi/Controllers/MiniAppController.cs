@@ -128,9 +128,6 @@ public class MiniAppController : MultiTenancyController
 
         var result = await _zaloApiClient.GetZaloMeAsync(accessToken, ct);
 
-        if (result.Error != 0)
-            return StatusCode(400, result);
-
         return Ok(result);
     }
 
@@ -146,19 +143,30 @@ public class MiniAppController : MultiTenancyController
 
         var result = await _zaloApiClient.DecodePhoneAsync(request.Code, request.AccessToken, ct);
 
-        if (result.Error != 0)
-            return StatusCode(400, result);
-
         return Ok(result);
     }
 
     [HttpPost("customer/upsert")]
     [AllowAnonymous]
-    public async Task<IActionResult> UpsertCustomer([FromBody] MiniAppUpsertCustomerRequest input)
-        => Ok(await _miniCustomer.UpsertFromMiniAppAsync(input));
+    public async Task<IActionResult> UpsertCustomer([FromBody] MiniAppUpsertCustomerRequest input, CancellationToken ct)
+    {
+        if (string.IsNullOrWhiteSpace(input.PhoneNumber) || string.IsNullOrWhiteSpace(input.FullName))
+            return BadRequest("Missing PhoneNumber or FullName");
+
+        var result = await _miniCustomer.UpsertFromMiniAppAsync(input, ct);
+
+        return Ok(result);
+    }
 
     [HttpGet("customer/by-phone")]
     [AllowAnonymous]
-    public async Task<IActionResult> GetByPhone([FromQuery] string phoneNumber)
-        => Ok(await _miniCustomer.GetByPhoneAsync(phoneNumber));
+    public async Task<IActionResult> GetByPhone([FromQuery] string phoneNumber, CancellationToken ct)
+    {
+        if (string.IsNullOrWhiteSpace(phoneNumber))
+            return BadRequest("Missing accessToken");
+
+        var result = await _miniCustomer.GetByPhoneAsync(phoneNumber, ct);
+
+        return Ok(result);
+    }
 }
