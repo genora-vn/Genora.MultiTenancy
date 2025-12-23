@@ -27,4 +27,9 @@ public class AppGolfCourseDto : AuditedEntityDto<Guid>
 
     public byte BookingStatus { get; set; }       // 1 = Đang mở, 2 = Tạm ngừng...
     public bool IsActive { get; set; }
+    public string? FrameTimes { get; set; }
+
+    public string? NumberHoles { get; set; }
+
+    public string? Utilities { get; set; }
 }

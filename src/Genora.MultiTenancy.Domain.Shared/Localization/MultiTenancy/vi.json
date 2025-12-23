@@ -50,6 +50,15 @@
     "ToDate": "Đến ngày",
     "View": "Xem",
     "MaskTokenHint": "Token đã được ẩn bớt để bảo mật.",
+    "StayPlay": "Lưu trú & Tìm hiểu gói Stay & Play",
+    "RentCaddie": "Đặt Caddy",
+    "RentGolfClubs": "Thuê Gậy /Giày",
+    "RentClothes": "Đi cùng khách tham quan",
+    "Morning": "Buổi sáng",
+    "Noon": "Buổi trưa",
+    "Afternoon": "Buổi chiều",
+    "Evening": "Giờ đèn",
+
 
     // Cấu hình bảng Logs
     "Permission:AuditLogs": "Nhật ký hệ thống",
