@@ -80,6 +80,23 @@
                             style="height: 45px"
                             icon="search" />
             </abp-column>
+            <div class="mb-3 d-flex gap-2">
+                <button id="ExportExcelBtn" class="btn btn-outline-success">
+                    <i class="fa fa-file-excel"></i> Export Excel
+                </button>
+
+                <button id="DownloadTemplateBtn" class="btn btn-outline-secondary">
+                    <i class="fa fa-download"></i> Template
+                </button>
+
+                <label class="btn btn-outline-primary mb-0">
+                    <i class="fa fa-upload"></i> Import Excel
+                    <input type="file"
+                           id="ImportExcelInput"
+                           accept=".xlsx"
+                           hidden />
+                </label>
+            </div>
         </abp-row>
     </abp-card-header>
 
