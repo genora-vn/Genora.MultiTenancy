@@ -13,6 +13,26 @@
         };
     }
 
+    // Function handler lỗi import
+    function handleImportError(error) {
+        console.error(error);
+
+        if (error && error.error && error.error.message) {
+            var message = error.error.message;
+            var details = error.error.details;
+
+            if (details) {
+                abp.message.error(details, message);
+            } else {
+                abp.notify.error(message);
+            }
+            return;
+        }
+
+        // Fallback
+        abp.notify.error('Import Excel thất bại. Vui lòng kiểm tra file.');
+    }
+
     var dataTable = $('#BookingsTable').DataTable(
         abp.libs.datatables.normalizeConfiguration({
             processing: true,
@@ -117,6 +137,38 @@
     $('#SearchBookingButton').click(function (e) {
         e.preventDefault();
         dataTable.ajax.reload();
+    });
+
+    // Tải file mẫu: Đang tải dựa trên 
+    $('#DownloadTemplateBtn').click(function () {
+        genora.excel.download(
+            'api/app/app-booking-excel/template'
+        );
+    });
+
+    // Import excel dữ liệu booking(nếu có), hãy xem mẫu để làm cho các form tương tự
+    $('#ImportExcelInput').change(function (e) {
+        if (!window.genora || !genora.excel) {
+            abp.notify.error('Excel helper chưa được load');
+            return;
+        }
+        // Gọi đến function upload đã được tạo trong global-scripts.js
+        genora.excel.upload({
+            url: 'api/app/app-booking-excel/import',
+            fileInput: e.target,
+            onSuccess: function () {
+                $('#BookingsTable').DataTable().ajax.reload();
+            }
+        });
+    });
+
+    // Xuất excel căn cứ vào dữ liệu filter
+    $('#ExportExcelBtn').click(function () {
+        // Gọi đến function download đã được tạo trong global-scripts.js
+        genora.excel.download(
+            'api/app/app-booking-excel/export',
+            getFilter()
+        );
     });
 
     editModal.onResult(function () {

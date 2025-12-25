@@ -3,6 +3,7 @@ using Genora.MultiTenancy.DomainModels.AppBookingPlayers;
 using Genora.MultiTenancy.DomainModels.AppBookings;
 using Genora.MultiTenancy.DomainModels.AppCustomers;
 using Genora.MultiTenancy.DomainModels.AppGolfCourses;
+using Genora.MultiTenancy.Enums;
 using Genora.MultiTenancy.Features.AppBookingFeatures;
 using Genora.MultiTenancy.Permissions;
 using Microsoft.AspNetCore.Authorization;
@@ -11,7 +12,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Dynamic.Core;
 using System.Threading.Tasks;
+using Volo.Abp;
 using Volo.Abp.Application.Dtos;
+using Volo.Abp.Content;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Features;
 using Volo.Abp.MultiTenancy;
@@ -36,6 +39,9 @@ public class AppBookingService :
     private readonly IRepository<Customer, Guid> _customerRepository;
     private readonly IRepository<GolfCourse, Guid> _golfCourseRepository;
     private readonly IRepository<BookingPlayer, Guid> _playerRepository;
+    private readonly AppBookingExcelExporter _excelExporter;
+    private readonly AppBookingExcelImporter _excelImporter;
+    private readonly AppBookingExcelTemplateGenerator _templateGenerator;
 
     public AppBookingService(
         IRepository<Booking, Guid> repository,
@@ -43,7 +49,10 @@ public class AppBookingService :
         IRepository<GolfCourse, Guid> golfCourseRepository,
         IRepository<BookingPlayer, Guid> playerRepository,
         ICurrentTenant currentTenant,
-        IFeatureChecker featureChecker)
+        IFeatureChecker featureChecker,
+        AppBookingExcelExporter excelExporter,
+        AppBookingExcelImporter excelImporter,
+        AppBookingExcelTemplateGenerator templateGenerator)
         : base(repository, currentTenant, featureChecker)
     {
         _customerRepository = customerRepository;
@@ -55,6 +64,9 @@ public class AppBookingService :
         CreatePolicyName = MultiTenancyPermissions.AppBookings.Create;
         UpdatePolicyName = MultiTenancyPermissions.AppBookings.Edit;
         DeletePolicyName = MultiTenancyPermissions.AppBookings.Delete;
+        _excelExporter = excelExporter;
+        _excelImporter = excelImporter;
+        _templateGenerator = templateGenerator;
     }
 
     [DisableValidation]
@@ -319,5 +331,142 @@ public class AppBookingService :
 
             await _playerRepository.InsertAsync(player, autoSave: true);
         }
+    }
+
+    // Tải file mẫu
+    public Task<IRemoteStreamContent> DownloadTemplateAsync()
+    {
+        var rows = new List<AppBookingExcelRowDto>();
+        return Task.FromResult(_excelExporter.Export(rows));
+    }
+
+    public Task<IRemoteStreamContent> DownloadImportTemplateAsync()
+    {
+        return Task.FromResult(_templateGenerator.GenerateTemplate());
+    }
+
+    public async Task ImportExcelAsync(ImportBookingExcelInput input)
+    {
+        await CheckUpdatePolicyAsync();
+
+        using var stream = input.File.GetStream();
+        var rows = _excelImporter.Read(stream);
+
+        foreach (var (rowNumber, r) in rows)
+        {
+            // ===== VALIDATE =====
+            // ===== Check các trường dữ liệu theo đúng entity hoặc cần thì valid các trường bắt buộc, đây là a làm demo cho bảng Booking các bảng khác tương tự =====
+            if (r.PlayDate == null)
+            {
+                throw new UserFriendlyException(
+                    "Import Excel lỗi",
+                    $"Dòng {rowNumber}: PlayDate là bắt buộc"
+                );
+            }
+
+            if (!Enum.TryParse<BookingStatus>(r.Status, out var status))
+                throw new UserFriendlyException(
+                    "Import Excel lỗi",
+                    $"Dòng {rowNumber}: Status không hợp lệ");
+
+            if (!Enum.TryParse<PaymentMethod>(r.PaymentMethod, out var payment))
+                throw new UserFriendlyException(
+                    "Import Excel lỗi",
+                    $"Dòng {rowNumber}: PaymentMethod không hợp lệ");
+
+            if (!Enum.TryParse<BookingSource>(r.Source, out var source))
+                throw new UserFriendlyException(
+                    "Import Excel lỗi",
+                    $"Dòng {rowNumber}: Source không hợp lệ");
+
+            var booking = await Repository.FirstOrDefaultAsync(
+                x => x.BookingCode == r.BookingCode
+            );
+
+            if (booking == null)
+            {
+                var datePart = r.PlayDate.ToString("ddMMyy");
+
+                var countInDay = await Repository.CountAsync(x => x.PlayDate.Date == r.PlayDate.Date);
+                var serial = (countInDay + 1).ToString("D3");
+
+                var bookingCode = $"KH000001-{datePart}-{serial}";
+                // ===== INSERT =====
+                booking = new Booking(
+                    GuidGenerator.Create(),
+                    bookingCode,
+                    new Guid("8DA661EA-D7A2-1692-5B49-3A1E329C52B3"),              // Mapping Customer
+                    new Guid("C38585C6-8996-11C8-B721-3A1E329BAF6E"),              // Mapping GolfCourse
+                    Guid.Empty,                                                    // Mapping Calendar
+                    r.PlayDate,
+                    r.NumberOfGolfers,
+                    0,
+                    r.TotalAmount,
+                    payment,
+                    status,
+                    source
+                );
+
+                await Repository.InsertAsync(booking, autoSave: true);
+            }
+            else
+            {
+                // ===== UPDATE =====
+                booking.NumberOfGolfers = r.NumberOfGolfers;
+                booking.TotalAmount = r.TotalAmount;
+                booking.Status = status;
+                booking.PaymentMethod = payment;
+                booking.Source = source;
+
+                await Repository.UpdateAsync(booking, autoSave: true);
+            }
+        }
+    }
+
+    [DisableValidation]
+    public async Task<IRemoteStreamContent> ExportExcelAsync(GetBookingListInput input)
+    {
+        await CheckGetListPolicyAsync();
+
+        var query = await Repository.GetQueryableAsync();
+
+        if (!input.FilterText.IsNullOrWhiteSpace())
+            query = query.Where(x => x.BookingCode.Contains(input.FilterText));
+
+        if (input.Status.HasValue)
+            query = query.Where(x => x.Status == input.Status.Value);
+
+        if (input.Source.HasValue)
+            query = query.Where(x => x.Source == input.Source.Value);
+
+        var list = await AsyncExecuter.ToListAsync(query);
+
+        var customerIds = list.Select(x => x.CustomerId).Distinct();
+        var golfIds = list.Select(x => x.GolfCourseId).Distinct();
+
+        var customers = await _customerRepository.GetListAsync(x => customerIds.Contains(x.Id));
+        var golfs = await _golfCourseRepository.GetListAsync(x => golfIds.Contains(x.Id));
+
+        var rows = list.Select(b =>
+        {
+            var c = customers.FirstOrDefault(x => x.Id == b.CustomerId);
+            var g = golfs.FirstOrDefault(x => x.Id == b.GolfCourseId);
+
+            return new AppBookingExcelRowDto
+            {
+                BookingCode = b.BookingCode,
+                CustomerName = c?.FullName,
+                CustomerPhone = c?.PhoneNumber,
+                GolfCourseName = g?.Name,
+                PlayDate = b.PlayDate,
+                NumberOfGolfers = b.NumberOfGolfers,
+                TotalAmount = b.TotalAmount,
+                PaymentMethod = b.PaymentMethod?.ToString(),
+                Status = b.Status.ToString(),
+                Source = b.Source.ToString()
+            };
+        }).ToList();
+
+        return _excelExporter.Export(rows);
     }
 }
