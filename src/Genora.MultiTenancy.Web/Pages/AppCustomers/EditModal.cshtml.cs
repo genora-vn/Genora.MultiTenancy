@@ -1,5 +1,6 @@
 ﻿using Genora.MultiTenancy.AppDtos.AppCustomers;
 using Genora.MultiTenancy.AppDtos.AppCustomerTypes;
+using Genora.MultiTenancy.AppDtos.AppMembershipTiers;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using System;
@@ -23,19 +24,27 @@ public class EditModalModel : MultiTenancyPageModel
 
     private readonly IAppCustomerService _customerService;
     private readonly IAppCustomerTypeService _customerTypeService;
+    private readonly IAppMembershipTierService _membershipTierService;
 
     public EditModalModel(
         IAppCustomerService customerService,
-        IAppCustomerTypeService customerTypeService)
+        IAppCustomerTypeService customerTypeService,
+        IAppMembershipTierService membershipTierService)
     {
         _customerService = customerService;
         _customerTypeService = customerTypeService;
+        _membershipTierService = membershipTierService;
     }
 
     public async Task OnGetAsync()
     {
         var dto = await _customerService.GetAsync(Id);
         Customer = ObjectMapper.Map<AppCustomerDto, CreateUpdateAppCustomerDto>(dto);
+        if (Customer.MembershipTierId.HasValue)
+        {
+            var memberShip = await _membershipTierService.GetAsync(Customer.MembershipTierId.Value);
+            Customer.MembershipTierName = memberShip != null ? memberShip.Name : null;
+        }
 
         BuildGenderItems(Customer.Gender);
         await LoadCustomerTypesAsync(selectedId: Customer.CustomerTypeId);

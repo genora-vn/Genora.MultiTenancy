@@ -1,4 +1,5 @@
 ﻿using System;
+using System.ComponentModel.DataAnnotations;
 using Volo.Abp.Application.Dtos;
 
 namespace Genora.MultiTenancy.AppDtos.AppCustomers;
@@ -29,4 +30,15 @@ public class AppCustomerDto : AuditedEntityDto<Guid>
     public string ZaloUserId { get; set; }
 
     public bool IsActive { get; set; }
+    public string? VgaCode { get; set; }
+
+    public string? Email { get; set; }
+
+    public string? Address { get; set; }
+
+    public bool IsFollower { get; set; }
+
+    public decimal BonusPoint { get; set; }
+    public Guid? MembershipTierId { get; set; }
+    public string? MembershipTierName { get; set; }
 }

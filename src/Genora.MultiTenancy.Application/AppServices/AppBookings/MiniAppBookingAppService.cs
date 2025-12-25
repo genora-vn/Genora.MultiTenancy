@@ -1,7 +1,10 @@
-﻿using Genora.MultiTenancy.DomainModels.AppBookingPlayers;
+﻿using Genora.MultiTenancy.AppDtos.AppCustomers;
+using Genora.MultiTenancy.DomainModels.AppBookingPlayers;
 using Genora.MultiTenancy.DomainModels.AppBookings;
 using Genora.MultiTenancy.DomainModels.AppCustomers;
 using System;
+using System.Collections;
+using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Dynamic.Core;
 using System.Threading.Tasks;
@@ -124,5 +127,28 @@ public class MiniAppBookingAppService : ApplicationService, IMiniAppBookingAppSe
         dto.Players = ObjectMapper.Map<System.Collections.Generic.List<BookingPlayer>, System.Collections.Generic.List<AppBookingPlayerDto>>(players);
 
         return dto;
+    }
+    public async Task<PagedResultDto<AppBookingDto>> GetBookingHistoryAsync(GetMiniAppBookingListInput input)
+    {
+        if (input.CustomerId != Guid.Empty) throw new Exception("Vui lòng đăng nhập");
+        var queries = await _bookingRepo.GetQueryableAsync();
+        queries = queries.Where(b => b.CustomerId == input.CustomerId);
+
+        var sorting = string.IsNullOrWhiteSpace(input.Sorting)
+           ? nameof(Customer.CreationTime) + " DESC"
+           : input.Sorting;
+
+        queries = queries.OrderBy(sorting);
+
+        var totalCount = await AsyncExecuter.CountAsync(queries);
+
+        var items = await AsyncExecuter.ToListAsync(
+            queries.Skip(input.SkipCount).Take(input.MaxResultCount)
+        );
+
+        return new PagedResultDto<AppBookingDto>(
+            totalCount,
+            ObjectMapper.Map<List<Booking>, List<AppBookingDto>>(items)
+        );
     }
 }

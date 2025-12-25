@@ -58,7 +58,10 @@
     "Noon": "Buổi trưa",
     "Afternoon": "Buổi chiều",
     "Evening": "Giờ đèn",
-
+    "IsExportInvoice": "Khách hàng yêu cầu xuất hóa đơn",
+    "True": "Có",
+    "False": "Không",
+    "IsFollower": "Folow Zalo OA",
 
     // Cấu hình bảng Logs
     "Permission:AuditLogs": "Nhật ký hệ thống",
@@ -300,13 +303,17 @@
     "BookingPlayDate": "Ngày chơi",
     "BookingNumberOfGolfers": "Số golfer",
     "BookingPricePerGolfer": "Giá / 1 người",
-    "BookingTotalAmount": "Tổng tiền",
+    "TotalAmount": "Tổng tiền",
     "BookingPaymentMethod": "Thanh toán",
     "BookingStatus": "Trạng thái",
     "BookingSource": "Nguồn",
     "BookingNotes": "Ghi chú",
     "BookingTotalPrice": "Tổng giá trị booking",
-
+    "PricePerPlayer": "Giá / người",
+    "Utilities": "Dịch vụ tiện ích",
+    "NumberHoles": "Số hố",
+    "VGA": "Mã hội viên",
+    "ExportExcel": "Xuất excel",
     "PaymentMethod:COD": "Thanh toán tại sân",
     "PaymentMethod:Online": "Thanh toán online",
     "PaymentMethod:BankTransfer": "Chuyển khoản",

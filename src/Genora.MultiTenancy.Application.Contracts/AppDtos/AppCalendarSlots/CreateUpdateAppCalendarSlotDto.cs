@@ -40,7 +40,7 @@ namespace Genora.MultiTenancy.AppDtos.AppCalendarSlots
         public int MaxSlots { get; set; }
 
         [StringLength(500)]
-        public string InternalNote { get; set; }
+        public string? InternalNote { get; set; }
 
         public bool IsActive { get; set; } = true;
 

@@ -16,30 +16,72 @@
         <abp-modal-header title="@L["CreateAppCustomer"]"></abp-modal-header>
         <abp-modal-body>
 
-            <abp-input asp-for="Customer.PhoneNumber" placeholder="Nhập số điện thoại đăng nhập" label="@L["CustomerPhoneNumber"]" />
-            <abp-input asp-for="Customer.FullName" placeholder="Nhập họ và tên" label="@L["CustomerFullName"]" />
-            <abp-input asp-for="Customer.AvatarUrl" placeholder="Nhập URL ảnh avatar" />
+            <div class="row">
+                <div class="col-md-4">
+                    <abp-input asp-for="Customer.PhoneNumber" label="@L["CustomerPhoneNumber"]" />
+                </div>
+                <div class="col-md-4">
+                    <abp-input asp-for="Customer.FullName" label="@L["CustomerFullName"]" />
+                </div>
+                <div class="col-md-4">
+                    <abp-select asp-for="Customer.Gender"
+                                asp-items="Model.GenderItems"
+                                label="@L["Gender"]" />
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-4">
+                    <abp-input asp-for="Customer.DateOfBirth"
+                               label="@L["DateOfBirth"]"
+                               type="text"
+                               value="@dobText"
+                               autocomplete="off"
+                               class="dob-input" />
+                </div>
+                <div class="col-md-4">
+                    <abp-select asp-for="Customer.CustomerTypeId"
+                                asp-items="Model.CustomerTypeItems"
+                                label="@L["CustomerType"]" />
+                </div>
+                <div class="col-md-4">
+                    <abp-input asp-for="Customer.CustomerCode" label="@L["CustomerCode"]" />
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-4">
+                    <abp-input asp-for="Customer.VgaCode"
+                               label="@L["VgaCode"]"
+                               type="text" />
+                </div>
+                <div class="col-md-4">
+                    <abp-input asp-for="Customer.Address"
+                               label="@L["Address"]" type="text" />
+                </div>
+                <div class="col-md-4">
+                    <abp-input asp-for="Customer.Email" label="@L["Email"]" />
+                </div>
+            </div>
+            
+            <abp-input asp-for="Customer.AvatarUrl" />
 
-            <abp-select asp-for="Customer.Gender"
-                        asp-items="Model.GenderItems"
-                        label="@L["Gender"]" />
-
-            <abp-input asp-for="Customer.DateOfBirth"
-                       label="@L["DateOfBirth"]"
-                       type="text"
-                       value="@dobText"
-                       autocomplete="off"
-                       class="dob-input" />
-
-            <abp-select asp-for="Customer.CustomerTypeId"
-                        asp-items="Model.CustomerTypeItems"
-                        label="@L["CustomerType"]" />
-
-            <abp-input asp-for="Customer.CustomerCode" label="@L["CustomerCode"]" />
+            
             <abp-input asp-for="Customer.ZaloUserId" />
-            <abp-input asp-for="Customer.IsActive" />
+            <div class="row">
+                <div class="col-md-6">
+                    <abp-input asp-for="Customer.IsActive" />
+                </div>
+                <div class="col-md-6">
+                    <abp-input asp-for="Customer.IsFollower" disabled/>
+                </div>
+            </div>
 
         </abp-modal-body>
         <abp-modal-footer buttons="@(AbpModalButtons.Cancel | AbpModalButtons.Save)"></abp-modal-footer>
     </abp-modal>
 </form>
+<style type="text/css">
+    .modal-dialog {
+        max-width: 50%;
+    }
+
+</style>

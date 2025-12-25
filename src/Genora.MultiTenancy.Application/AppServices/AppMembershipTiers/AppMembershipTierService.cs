@@ -1,4 +1,5 @@
 ﻿using Genora.MultiTenancy.AppDtos.AppMembershipTiers;
+using Genora.MultiTenancy.DomainModels.AppCustomerMemberships;
 using Genora.MultiTenancy.DomainModels.AppMembershipTiers;
 using Genora.MultiTenancy.Features.AppMembershipTiers;
 using Genora.MultiTenancy.Permissions;
@@ -28,11 +29,12 @@ public class AppMembershipTierService :
     protected override string FeatureName => AppMembershipTierFeatures.Management;
     protected override string TenantDefaultPermission => MultiTenancyPermissions.AppMembershipTiers.Default;
     protected override string HostDefaultPermission => MultiTenancyPermissions.HostAppMembershipTiers.Default;
-
+    private readonly IRepository<CustomerMembership, Guid> _customerMembershipRepo;
     public AppMembershipTierService(
         IRepository<MembershipTier, Guid> repository,
         ICurrentTenant currentTenant,
-        IFeatureChecker featureChecker)
+        IFeatureChecker featureChecker,
+        IRepository<CustomerMembership, Guid> customerMembershipRepo)
         : base(repository, currentTenant, featureChecker)
     {
         GetPolicyName = MultiTenancyPermissions.AppMembershipTiers.Default;

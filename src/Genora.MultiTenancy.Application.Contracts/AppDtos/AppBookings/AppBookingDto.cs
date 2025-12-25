@@ -11,11 +11,16 @@ public class AppBookingPlayerDto : EntityDto<Guid>
     public Guid BookingId { get; set; }
     public Guid? CustomerId { get; set; }
     public string PlayerName { get; set; }
-    public string Notes { get; set; }
+    public string? Notes { get; set; }
     public decimal? PricePerPlayer { get; set; }
     public string? VgaCode { get; set; }
 }
-
+public class BookingFilter
+{
+    public string? filterText { get; set; }
+    public int? status { get; set; }
+    public int? source { get; set; }
+}
 public class AppBookingDto : FullAuditedEntityDto<Guid>
 {
     public Guid? TenantId { get; set; }
@@ -37,7 +42,10 @@ public class AppBookingDto : FullAuditedEntityDto<Guid>
 
     public decimal? PricePerGolfer { get; set; }
     public decimal TotalAmount { get; set; }
-
+    public string? FrameTimes { get; set; }
+    public short? NumberHoles { get; set; }
+    public string? Utilities { get; set; }
+    public bool IsExportInvoice { get; set; }
     public PaymentMethod? PaymentMethod { get; set; }
     public BookingStatus Status { get; set; }
     public BookingSource Source { get; set; }

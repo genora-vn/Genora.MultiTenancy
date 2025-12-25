@@ -1,8 +1,10 @@
 ﻿using Genora.MultiTenancy.AppDtos.AppBookings;
 using Genora.MultiTenancy.Enums;
+using Genora.MultiTenancy.Localization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.Extensions.Localization;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -27,10 +29,11 @@ public class EditModalModel : PageModel
     public List<SelectListItem> SourceItems { get; set; } = new();
 
     private readonly IAppBookingService _bookingService;
-
-    public EditModalModel(IAppBookingService bookingService)
+    private readonly IStringLocalizer<MultiTenancyResource> _L;
+    public EditModalModel(IAppBookingService bookingService, IStringLocalizer<MultiTenancyResource> L)
     {
         _bookingService = bookingService;
+        _L = L;
     }
 
     public async Task OnGetAsync(Guid id)
@@ -52,12 +55,15 @@ public class EditModalModel : PageModel
             PaymentMethod = dto.PaymentMethod,
             Status = dto.Status,
             Source = dto.Source,
+            Utilities = dto.Utilities,
+            IsExportInvoice = dto.IsExportInvoice,
+            NumberHoles = dto.NumberHoles,
             // ⭐ Map Players sang DTO để cho phép sửa
             Players = dto.Players?.ConvertAll(p => new CreateUpdateBookingPlayerDto
             {
                 CustomerId = p.CustomerId,
                 PlayerName = p.PlayerName,
-                VgaCode = "1231234",
+                VgaCode = p.VgaCode,
                 PricePerPlayer = dto.TotalAmount / dto.NumberOfGolfers,
                 Notes = p.Notes
             }) ?? new List<CreateUpdateBookingPlayerDto>()
@@ -65,7 +71,7 @@ public class EditModalModel : PageModel
 
         BuildSelectItems();
     }
-     
+    
     public async Task<IActionResult> OnPostAsync()
     {
         if (!ModelState.IsValid)
@@ -76,7 +82,14 @@ public class EditModalModel : PageModel
             BookingView = await _bookingService.GetAsync(Id);
             return Page();
         }
-
+        if (Booking.Players.Count != Booking.NumberOfGolfers)
+        {
+            ModelState.AddModelError("Booking.NumberOfGolfers", _L["NotMatchPlayerError"]);
+            BuildSelectItems();
+            // load lại view info
+            BookingView = await _bookingService.GetAsync(Id);
+            return Page();
+        }
         await _bookingService.UpdateAsync(Id, Booking);
         return new NoContentResult();
     }

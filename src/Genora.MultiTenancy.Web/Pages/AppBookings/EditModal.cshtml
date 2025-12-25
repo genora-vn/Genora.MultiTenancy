@@ -18,52 +18,76 @@
     <input type="hidden" asp-for="Booking.PlayDate" />
     <input type="hidden" asp-for="Booking.GolfCourseId" />
     <input type="hidden" asp-for="Booking.CalendarSlotId" />
-    <input type="hidden" asp-for="Booking.NumberOfGolfers" />
-    <input type="hidden" asp-for="Booking.TotalAmount" />
+    @* <input type="hidden" asp-for="Booking.NumberOfGolfers" /> *@
+    <input type="hidden" asp-for="Booking.IsExportInvoice" />
     <input type="hidden" asp-for="Booking.Source" />
+    <input type="hidden" asp-for="Booking.IsExportInvoice" />
 
     <abp-modal>
         <abp-modal-header title="@L["EditAppBooking"]"></abp-modal-header>
         <abp-modal-body>
             <!-- Thông tin tổng quan Booking (read-only) -->
-            <div class="mb-3">
-                <strong>@L["BookingCode"]:</strong> @Model.BookingView.BookingCode
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <strong>@L["BookingCode"]:</strong> @Model.BookingView.BookingCode
+                    </div>
+                    <div class="mb-3">
+                        <strong>@L["BookingCustomer"]:</strong>
+                        @Model.BookingView.CustomerName (@Model.BookingView.CustomerPhone)
+                    </div>
+                    <div class="mb-3">
+                        <strong>@L["BookingGolfCourse"]:</strong> @Model.BookingView.GolfCourseName
+                    </div>
+                    <div class="mb-3">
+                        <strong>@L["BookingPlayDate"]:</strong> @Model.BookingView.PlayDate.ToString("dd/MM/yyyy")
+                    </div>
+                    <div class="mb-3">
+                        <strong>@L["IsExportInvoice"]:</strong> @L[@Model.BookingView.IsExportInvoice.ToString()]
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <strong>@L["NumberHoles"]:</strong> @Model.BookingView.NumberHoles
+                    </div>
+                    <div class="mb-3">
+                        <strong>@L["Utilities"]:</strong> 
+                        
+                        @if (!string.IsNullOrEmpty(Model.Booking.Utilities) && Model.Booking.UtilityDto.Count > 0)
+                        {
+                            foreach(var util in Model.Booking.UtilityDto)
+                            {
+                                <div>
+                                    - @L[@util.UtilityName]
+                                </div>
+                            }
+                        }
+                    </div>
+                </div>
             </div>
-            <div class="mb-3">
-                <strong>@L["BookingCustomer"]:</strong>
-                @Model.BookingView.CustomerName (@Model.BookingView.CustomerPhone)
-            </div>
-            <div class="mb-3">
-                <strong>@L["BookingGolfCourse"]:</strong> @Model.BookingView.GolfCourseName
-            </div>
-            <div class="mb-3">
-                <strong>@L["BookingPlayDate"]:</strong> @Model.BookingView.PlayDate.ToString("dd/MM/yyyy")
-            </div>
-            <div class="mb-3">
-                <strong>@L["BookingNumberOfGolfers"]:</strong> @Model.BookingView.NumberOfGolfers
-            </div>
-
             <hr />
 
             <!-- Khu vực cho Admin cập nhật -->
-            <div class="mb-3 d-inline-flex" style="width: 100%; gap: 10px">
-                <div class="col-md-4">
+            <div class="mb-3 d-inline-flex" style="width: 98%; gap: 10px">
+                <div class="col-md-3">
+                    <abp-input asp-for="Booking.NumberOfGolfers" label="@L["BookingNumberOfGolfers"]" class="form-control" />
+                </div>
+                <div class="col-md-3">
                     <label asp-for="Booking.Status" class="form-label">@L["BookingStatus"]</label>
                     <select asp-for="Booking.Status"
                             asp-items="Model.StatusItems"
                             class="form-control">
                     </select>
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-3">
                     <label asp-for="Booking.PaymentMethod" class="form-label">@L["BookingPaymentMethod"]</label>
                     <select asp-for="Booking.PaymentMethod"
                             asp-items="Model.PaymentMethodItems"
                             class="form-control">
                     </select>
                 </div>
-                <div class="col-md-4">
-                    <label asp-for="Booking.TotalAmount" class="form-label">@L["BookingTotalAmount"]</label>
-                    <input asp-for="Booking.TotalAmount" class="form-control thousand-separator" />
+                <div class="col-md-3">
+                    <abp-input asp-for="Booking.TotalAmount" label="@L["TotalAmount"]" class="form-control thousand-separator" />
                 </div>
                 
             </div>
@@ -109,7 +133,7 @@
                                                asp-for="Booking.Players[i].VgaCode" />
                                     </td>
                                     <td>
-                                        <input class="form-control thousand-separator"
+                                        <abp-input class="form-control thousand-separator"
                                                asp-for="Booking.Players[i].PricePerPlayer" />
                                     </td>
                                     <td>
@@ -166,6 +190,14 @@
                 + '           name="Booking.Players[' + index + '].PlayerName" '
                 + '           value="" />'
                 + '  </td>'
+                + '    <input class="form-control" '
+                + '           name="Booking.Players[' + index + '].VgaCode" '
+                + '           value="" />'
+                + '  </td>'
+                + '    <input class="form-control" '
+                + '           name="Booking.Players[' + index + '].PricePerPlayer" '
+                + '           value="" />'
+                + '  </td>'
                 + '  <td>'
                 + '    <input class="form-control" '
                 + '           name="Booking.Players[' + index + '].Notes" '
@@ -181,36 +213,87 @@
 
             $tbody.append(rowHtml);
             increaseNextIndex();
+            setTimeout(function () {
+                $('#booking-players-body .form-control.thousand-separator').not('.formatted')
+                    .addClass('formatted')
+                    .each(function () {
+                        formatNumber(this);
+                        $(this).on('input', function () {
+                            formatNumber(this);
+                        });
+                    });
+            }, 100);
         });
 
         $tbody.on('click', '.remove-player', function (e) {
             e.preventDefault();
             $(this).closest('tr').remove();
         });
-    });
-    document.querySelectorAll('.thousand-separator').forEach(function(input) {
-        // Format khi load trang (display)
-        if (input.value) {
-            let num = parseFloat(input.value);
+
+        function formatNumber(input) {
+            var value = $(input).val().replace(/\./g, '');
+            var num = parseFloat(value);
             if (!isNaN(num)) {
-                input.value = num.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 }).replace(/,/g, '.');
+                $(input).val(num.toLocaleString('en-US').replace(/,/g, '.'));
+            } else if (value === '') {
+                $(input).val('');
             }
         }
 
-        // Format khi user nhập (on input)
-        input.addEventListener('input', function(e) {
-            let value = e.target.value.replace(/\./g, ''); // Xóa dấu chấm cũ
-            let num = parseFloat(value);
-            if (!isNaN(num)) {
-                e.target.value = num.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 }).replace(/,/g, '.');
-            } else if (value === '') {
-                e.target.value = '';
-            }
+        // Áp dụng format cho tất cả thousand-separator hiện tại
+        $('.thousand-separator').each(function () {
+            formatNumber(this);
+
+            $(this).on('input', function () {
+                formatNumber(this);
+            });
         });
 
-        // Khi submit form, chuyển về dạng số thuần để model binding decimal hoạt động
-        input.closest('form').addEventListener('submit', function() {
-            input.value = input.value.replace(/\./g, '');
+        // Clean tất cả dấu chấm TRƯỚC khi submit (để bind decimal đúng)
+        $('#EditBookingForm').on('submit', function () {
+            $('.thousand-separator').each(function () {
+                var value = $(this).val().replace(/\./g, '');
+                $(this).val(value);
+            });
+            // Không preventDefault → để form submit bình thường
         });
+
     });
+    // document.querySelectorAll('.thousand-separator').forEach(function(input) {
+    //     // Format khi load trang (display)
+    //     if (input.value) {
+    //         let num = parseFloat(input.value);
+    //         if (!isNaN(num)) {
+    //             input.value = num.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 }).replace(/,/g, ',');
+    //         }
+    //     }
+
+    //     // Format khi user nhập (on input)
+    //     input.addEventListener('input', function(e) {
+    //         let value = e.target.value.replace(/\./g, ''); // Xóa dấu chấm cũ
+    //         let num = parseFloat(value);
+    //         if (!isNaN(num)) {
+    //             e.target.value = num.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 }).replace(/,/g, ',');
+    //         } else if (value === '') {
+    //             e.target.value = '';
+    //         }
+    //     });
+
+    //     // Khi submit form, chuyển về dạng số thuần để model binding decimal hoạt động
+    //     input.closest('form').addEventListener('submit', function() {
+    //         //input.value = input.value.replace(/\./g, '');
+    //         debugger;
+    //         var amount = $('#Booking_TotalAmount').val();
+    //         let cleanValue = amount.replace(/\,/g, '');
+    //         if (cleanValue !== '') {
+    //             amount = cleanValue; // tạm thời thành số thuần
+    //             $(this).valid(); // trigger validation lại (nếu dùng unobtrusive)
+    //             // Sau đó format lại để hiển thị đẹp
+    //             let num = parseFloat(cleanValue);
+    //             if (!isNaN(num)) {
+    //                 amount = num.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 }).replace(/,/g, ',');
+    //             }
+    //         }
+    //     });
+    // });
 </script>
