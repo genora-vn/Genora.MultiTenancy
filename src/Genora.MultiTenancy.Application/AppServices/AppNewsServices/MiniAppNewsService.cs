@@ -20,13 +20,14 @@ namespace Genora.MultiTenancy.AppServices.AppNewsServices
             _newsRepository = newsRepository;
         }
 
-        public async Task<AppNewsDto> GetAsync(Guid id)
+        public async Task<MiniAppNewsDetailDto> GetAsync(Guid id)
         {
             var news = await _newsRepository.GetAsync(id);
-            return ObjectMapper.Map<News, AppNewsDto>(news);
+            var result = ObjectMapper.Map<News, MiniAppNewsData>(news);
+            return new MiniAppNewsDetailDto { Data = result , Error= 0, Message = "Success"};
         }
 
-        public async Task<PagedResultDto<AppNewsDto>> GetListAsync(GetNewsListInput input)
+        public async Task<MiniAppNewsListDto> GetListAsync(GetMiniAppNewsDto input)
         {
             var queries = await _newsRepository.GetQueryableAsync();
             var query = queries;
@@ -34,21 +35,6 @@ namespace Genora.MultiTenancy.AppServices.AppNewsServices
             {
                 var filter = input.FilterText.Trim();
                 query = query.Where(x => x.Title.Contains(filter));
-            }
-
-            if (input.Status.HasValue)
-            {
-                query = query.Where(x => x.Status == (byte)input.Status.Value);
-            }
-
-            if (input.PublishedAtFrom.HasValue)
-            {
-                query = query.Where(x => x.PublishedAt >= input.PublishedAtFrom.Value);
-            }
-
-            if (input.PublishedAtTo.HasValue)
-            {
-                query = query.Where(x => x.PublishedAt <= input.PublishedAtTo.Value);
             }
 
             var sorting = string.IsNullOrWhiteSpace(input.Sorting)
@@ -60,8 +46,9 @@ namespace Genora.MultiTenancy.AppServices.AppNewsServices
             var total = await AsyncExecuter.CountAsync(query);
             var items = await AsyncExecuter
             .ToListAsync(query.Skip(input.SkipCount).Take(input.MaxResultCount));
-            var dtoList = ObjectMapper.Map<List<News>, List<AppNewsDto>>(items);
-            return new PagedResultDto<AppNewsDto>(total, dtoList);
+            var dtoList = ObjectMapper.Map<List<News>, List<MiniAppNewsData>>(items);
+            var result = new PagedResultDto<MiniAppNewsData>(total, dtoList);
+            return new MiniAppNewsListDto { Data = result , Error = 0, Message = "Success" };
 
         }
     }

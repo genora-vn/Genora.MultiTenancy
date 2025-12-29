@@ -61,6 +61,8 @@ public class MultiTenancyApplicationAutoMapperProfile : Profile
         #region News auto mapper profile
         CreateMap<News, AppNewsDto>();
         CreateMap<CreateUpdateAppNewsDto, News>();
+        CreateMap<MiniAppNewsData, News>();
+        CreateMap<News, MiniAppNewsData>();
         #endregion
 
         #region Booking auto mapper profile

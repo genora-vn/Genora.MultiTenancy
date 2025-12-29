@@ -7,7 +7,7 @@ namespace Genora.MultiTenancy.AppDtos.AppCalendarSlots
 {
     public interface IMiniAppCalendarSlotService : IApplicationService
     {
-        Task<PagedResultDto<AppCalendarSlotDto>> GetListMiniAppAsync(GetCalendarSlotListInput input);
+        Task<MiniAppCalendarSlotDto> GetListMiniAppAsync(GetMiniAppCalendarListInput input);
         Task<AppCalendarSlotDto> GetMiniAppAsync(Guid id);
     }
 }

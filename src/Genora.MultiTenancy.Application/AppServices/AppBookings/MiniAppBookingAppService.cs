@@ -7,6 +7,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Dynamic.Core;
+using System.Net;
 using System.Threading.Tasks;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Application.Services;
@@ -128,27 +129,34 @@ public class MiniAppBookingAppService : ApplicationService, IMiniAppBookingAppSe
 
         return dto;
     }
-    public async Task<PagedResultDto<AppBookingDto>> GetBookingHistoryAsync(GetMiniAppBookingListInput input)
+    public async Task<MiniAppBookingListDto> GetBookingHistoryAsync(GetMiniAppBookingListInput input)
     {
-        if (input.CustomerId != Guid.Empty) throw new Exception("Vui lòng đăng nhập");
-        var queries = await _bookingRepo.GetQueryableAsync();
-        queries = queries.Where(b => b.CustomerId == input.CustomerId);
+        try
+        {
+            if (input.CustomerId == Guid.Empty) throw new Exception("Vui lòng đăng nhập");
+            var queries = await _bookingRepo.GetQueryableAsync();
+            queries = queries.Where(b => b.CustomerId == input.CustomerId);
 
-        var sorting = string.IsNullOrWhiteSpace(input.Sorting)
-           ? nameof(Customer.CreationTime) + " DESC"
-           : input.Sorting;
+            var sorting = string.IsNullOrWhiteSpace(input.Sorting)
+               ? nameof(Customer.CreationTime) + " DESC"
+               : input.Sorting;
 
-        queries = queries.OrderBy(sorting);
+            queries = queries.OrderBy(sorting);
 
-        var totalCount = await AsyncExecuter.CountAsync(queries);
+            var totalCount = await AsyncExecuter.CountAsync(queries);
 
-        var items = await AsyncExecuter.ToListAsync(
-            queries.Skip(input.SkipCount).Take(input.MaxResultCount)
-        );
+            var items = await AsyncExecuter.ToListAsync(
+                queries.Skip(input.SkipCount).Take(input.MaxResultCount)
+            );
 
-        return new PagedResultDto<AppBookingDto>(
-            totalCount,
-            ObjectMapper.Map<List<Booking>, List<AppBookingDto>>(items)
-        );
+            var result = new PagedResultDto<AppBookingDto>(
+                totalCount,
+                ObjectMapper.Map<List<Booking>, List<AppBookingDto>>(items)
+            );
+            return new MiniAppBookingListDto { Data = result, Error = 0, Message = "Success" };
+        }catch (Exception e)
+        {
+            return new MiniAppBookingListDto {  Error = (int)HttpStatusCode.BadRequest, Message = e.Message };
+        }
     }
 }

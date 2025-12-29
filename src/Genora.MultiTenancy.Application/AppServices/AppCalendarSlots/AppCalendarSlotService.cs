@@ -1,8 +1,11 @@
-﻿using Genora.MultiTenancy.AppDtos.AppCalendarSlots;
+﻿using Genora.MultiTenancy.AppDtos.AppBookings;
+using Genora.MultiTenancy.AppDtos.AppCalendarSlots;
+using Genora.MultiTenancy.DomainModels.AppBookings;
 using Genora.MultiTenancy.DomainModels.AppCalendarSlotPrices;
 using Genora.MultiTenancy.DomainModels.AppCalendarSlots;
 using Genora.MultiTenancy.DomainModels.AppCustomerTypes;
 using Genora.MultiTenancy.DomainModels.AppGolfCourses;
+using Genora.MultiTenancy.Enums;
 using Genora.MultiTenancy.Features.AppCalendarSlots;
 using Genora.MultiTenancy.Permissions;
 using Microsoft.AspNetCore.Authorization;
@@ -13,6 +16,7 @@ using System.Linq.Dynamic.Core;
 using System.Threading.Tasks;
 using Volo.Abp;
 using Volo.Abp.Application.Dtos;
+using Volo.Abp.Content;
 using Volo.Abp.Domain.Entities;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Features;
@@ -38,14 +42,15 @@ public class AppCalendarSlotService :
     private readonly IRepository<CalendarSlotPrice, Guid> _priceRepository;
     private readonly IRepository<GolfCourse, Guid> _golfCourseRepository;
     private readonly IRepository<CustomerType, Guid> _customerTypeRepository;
-
+    private readonly AppCalendarExcelTemplateGenerator _generator;
     public AppCalendarSlotService(
         IRepository<CalendarSlot, Guid> repository,
         IRepository<CalendarSlotPrice, Guid> priceRepository,
         IRepository<GolfCourse, Guid> golfCourseRepository,
         IRepository<CustomerType, Guid> customerTypeRepository,
         ICurrentTenant currentTenant,
-        IFeatureChecker featureChecker)
+        IFeatureChecker featureChecker,
+        AppCalendarExcelTemplateGenerator generator)
         : base(repository, currentTenant, featureChecker)
     {
         _priceRepository = priceRepository;
@@ -57,6 +62,7 @@ public class AppCalendarSlotService :
         CreatePolicyName = MultiTenancyPermissions.AppCalendarSlots.Create;
         UpdatePolicyName = MultiTenancyPermissions.AppCalendarSlots.Edit;
         DeletePolicyName = MultiTenancyPermissions.AppCalendarSlots.Delete;
+        _generator = generator;
     }
 
     [DisableValidation]
@@ -422,6 +428,168 @@ public class AppCalendarSlotService :
                 await _priceRepository.UpdateAsync(row, autoSave: true);
             }
         }
+    }
+    public Task<IRemoteStreamContent> DownloadTemplateAsync()
+    {
+        var rows = new List<AppCalendarSlotExcelRowDto>();
+        var exporter = new AppCalendarExcelExporter();
+        return Task.FromResult(exporter.Export(rows));
+    }
+    public async Task<IRemoteStreamContent> ExportExcelAsync(GetCalendarSlotListInput input)
+    {
+        await CheckGetListPolicyAsync();
+        var exporter = new AppCalendarExcelExporter();
+        var query = await Repository.GetQueryableAsync();
+        
+        if (input.GolfCourseId != Guid.Empty)
+            query = query.Where(x => x.GolfCourseId == input.GolfCourseId);
+
+        if (input.ApplyDateFrom.HasValue)
+            query = query.Where(x => x.ApplyDate >= input.ApplyDateFrom.Value);
+
+        if (input.ApplyDateTo.HasValue)
+            query = query.Where(x => x.ApplyDate <= input.ApplyDateTo.Value);
+
+        var list = await AsyncExecuter.ToListAsync(query);
+        var golfCourseId = list.Select(g => g.GolfCourseId).ToList();
+        var golfCourse = await _golfCourseRepository.GetListAsync(gc => golfCourseId.Contains(gc.Id));
+        
+        var rows = list.Select(b =>
+        {
+            return new AppCalendarSlotExcelRowDto
+            {
+                StartTime = b.TimeFrom,
+                EndTime = b.TimeTo,
+                GolfCourseName = golfCourse.FirstOrDefault(g => g.Id == b.GolfCourseId)?.Name,
+                PlayDate = b.ApplyDate,
+                MaxSlots = b.MaxSlots,
+                PromotionType = b.PromotionType.ToString(),
+                InternalNote = b.InternalNote
+            };
+        }).ToList();
+
+        return exporter.Export(rows);
+    }
+    
+    public async Task<IRemoteStreamContent> DownloadImportTemplateAsync()
+    {
+        //var generator = new AppCalendarExcelTemplateGenerator();
+        var customerTypes = await _customerTypeRepository.GetListAsync();
+        var template = _generator.GenerateTemplate(customerTypes.OrderBy(t => t.CreationTime).ToList());
+        return template;
+    }
+    public async Task ImportExcelAsync(ImportCalendarExcelInput input)
+    {
+        await CheckUpdatePolicyAsync();
+        var importer = new AppCalendarExcelImporter();
+        var customerType = await _customerTypeRepository.GetListAsync();
+        using var stream = input.File.GetStream();
+        var rows = importer.Read(stream, customerType.OrderBy(t => t.CreationTime).ToList());
+        var golfCourses = await _golfCourseRepository.GetListAsync();
+        var slotPrices = new List<CalendarSlotPrice>();
+
+        foreach (var (rowNumber, r) in rows)
+        {
+            // ===== VALIDATE =====
+            // ===== Check các trường dữ liệu theo đúng entity hoặc cần thì valid các trường bắt buộc, đây là a làm demo cho bảng Booking các bảng khác tương tự =====
+            if (string.IsNullOrEmpty(r.GolfCourseCode))
+            {
+                throw new UserFriendlyException(
+                    "Import Excel lỗi",
+                    $"Dòng {rowNumber}: GolfCourseCode là bắt buộc"
+                );
+            }
+            if (r.PlayDate == null)
+            {
+                throw new UserFriendlyException(
+                    "Import Excel lỗi",
+                    $"Dòng {rowNumber}: PlayDate là bắt buộc"
+                );
+            }
+            if (r.StartTime == null)
+            {
+                throw new UserFriendlyException(
+                    "Import Excel lỗi",
+                    $"Dòng {rowNumber}: StartTime là bắt buộc"
+                );
+            }
+            if (r.EndTime == null)
+            {
+                throw new UserFriendlyException(
+                    "Import Excel lỗi",
+                    $"Dòng {rowNumber}: EndTime là bắt buộc"
+                );
+            }
+            if (r.MaxSlots == null)
+            {
+                throw new UserFriendlyException(
+                    "Import Excel lỗi",
+                    $"Dòng {rowNumber}: MaxSlots là bắt buộc"
+                );
+            }
+
+            if (!Enum.TryParse<PromotionType>(r.PromotionType, out var promotion))
+                throw new UserFriendlyException(
+                    "Import Excel lỗi",
+                    $"Dòng {rowNumber}: PromotionType không hợp lệ");
+
+            var golfCourse = golfCourses.FirstOrDefault(g => g.Code == r.GolfCourseCode);
+            if (golfCourse == null)
+            {
+                throw new UserFriendlyException($"Mã sân {r.GolfCourseCode} không tìm thấy");
+            }
+            var calendar = await Repository.FirstOrDefaultAsync(
+                x => x.GolfCourseId == golfCourse.Id &&  x.ApplyDate == r.PlayDate && x.TimeFrom == r.StartTime
+            );
+
+            if (calendar == null)
+            {
+                //var datePart = r.PlayDate.ToString("ddMMyy");
+
+                // ===== INSERT =====
+                calendar = new CalendarSlot(
+                    GuidGenerator.Create(),
+                    golfCourse.Id,
+                    r.PlayDate,
+                    r.StartTime,
+                    r.EndTime
+                )
+                {
+                    TenantId = CurrentTenant.Id,
+                    PromotionType = promotion,
+                    MaxSlots = r.MaxSlots,
+                    InternalNote = r.InternalNote,
+                    IsActive = true
+                };
+
+                var insertedCalendar = await Repository.InsertAsync(calendar, autoSave: true);
+                if (r.CustomerTypePrice.Any(p => p.Price > 0))
+                {
+                    var prices = new List<CalendarSlotPrice>();
+                    foreach(var item in r.CustomerTypePrice)
+                    {
+                        if (item.Price == 0) continue;
+                        var type = customerType.FirstOrDefault(t => t.Name == item.CustomerType);
+                        if (type == null) continue;
+                        var price = new CalendarSlotPrice(GuidGenerator.Create(), insertedCalendar.Id, type.Id, (decimal)item.Price);
+                        prices.Add(price);
+                    }
+                    await _priceRepository.InsertManyAsync(prices);
+                }
+            }
+            else
+            {
+                // ===== UPDATE =====
+                calendar.MaxSlots = r.MaxSlots;
+                calendar.InternalNote = r.InternalNote;
+                calendar.PromotionType = promotion;
+                
+                await Repository.UpdateAsync(calendar, autoSave: true);
+            }
+            
+        }
+
+        return;
     }
 
 }

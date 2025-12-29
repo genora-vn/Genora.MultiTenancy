@@ -52,7 +52,7 @@
         abp.libs.datatables.normalizeConfiguration({
             processing: true,
             serverSide: false, // load all cho 1 ngày
-            paging: false,
+            paging: true,
             searching: false,
             info: false,
             autoWidth: false,
@@ -152,7 +152,44 @@
         var url = '/AppCalendarSlots/Calendar?golfCourseId=' + encodeURIComponent(golfCourseId);
         window.open(url, '_blank');
     });
+    function getFilter() {
+        return {
+            golfCourseId: getSelectedGolfCourseId(),
+            applyDateFrom: getSelectedFromDate(),
+            applyDateTo: getSelectedToDate()
+        };
+    }
+    // Tải file mẫu: Đang tải dựa trên 
+    $('#DownloadTemplateBtn').click(function () {
+        genora.excel.download(
+            'api/app/app-calendar-excel/template'
+        );
+    });
+    // Import excel dữ liệu booking(nếu có), hãy xem mẫu để làm cho các form tương tự
+    $('#ImportExcelInput').change(function (e) {
+        if (!window.genora || !genora.excel) {
+            abp.notify.error('Excel helper chưa được load');
+            return;
+        }
+        // Gọi đến function upload đã được tạo trong global-scripts.js
+        genora.excel.upload({
+            url: 'api/app/app-calendar-excel/import',
+            fileInput: e.target,
+            onSuccess: function () {
+                $('#CalendarSlotsTable').DataTable().ajax.reload();
+            }
+        });
+    });
 
+    // Xuất excel căn cứ vào dữ liệu filter
+    $('#ExportExcelBtn').click(function () {
+        // Gọi đến function download đã được tạo trong global-scripts.js
+        var filter = 
+        genora.excel.download(
+            'api/app/app-calendar-excel/export',
+            getFilter()
+        );
+    });
     detailModal.onResult(function () {
         abp.notify.success(l('SavedSuccessfully'));
         loadSlotsForDay();

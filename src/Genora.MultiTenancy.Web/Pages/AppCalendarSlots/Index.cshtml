@@ -27,23 +27,38 @@
 <abp-card>
     <abp-card-header>
         <abp-row>
-            <abp-column size-md="_8">
+            <abp-column size-md="_6">
                 <abp-card-title>@L["AppCalendarSlots"]</abp-card-title>
             </abp-column>
-            <abp-column size-md="_4" class="text-end">
+            <abp-column size-md="_6" class="text-end">
                 @if (canManage)
                 {
                     <abp-button id="AddSlotButton"
                                 text="@L["NewCalendarSlot"]"
                                 icon="plus"
-                                button-type="Primary" />
+                                button-type="Outline_Primary" />
+                    @* <abp-button id="ExportExcelBtn"
+                                text="@L["ExportExcelBtn"]"
+                                icon="file-excel"
+                                button-type="Outline_Success" />*@
+                    <abp-button id="DownloadTemplateBtn"
+                                text="@L["DownloadTemplateBtn"]"
+                                icon="download"
+                                button-type="Outline_Secondary" />
+                    <label class="btn btn-outline-success mb-0">
+                        <i class="fa fa-upload"></i> @L["ImportExcel"]
+                        <input type="file"
+                               id="ImportExcelInput"
+                               accept=".xlsx"
+                               hidden />
+                    </label>
                 }
                 @if (canManage)
                 {
                     <abp-button id="OpenCalendarButton"
                                 text="@L["ManageCalendar"]"
                                 icon="calendar"
-                                button-type="Primary" />
+                                button-type="Outline_Danger" />
                 }
             </abp-column>
         </abp-row>
@@ -53,7 +68,7 @@
                 <abp-select asp-for="SelectedGolfCourseId"
                             asp-items="Model.GolfCourseItems"
                             label="@L["GolfCourse"]">
-                    <option value="">@L["SelectGolfCourse"]</option>
+                    @* <option value="">@L["SelectGolfCourse"]</option> *@
                 </abp-select>
             </abp-column>
             <abp-column size-md="_2">
@@ -79,7 +94,7 @@
                     <abp-button id="FilterSlotsButton"
                                 class="h-100"
                                 text="@L["Search"]"
-                                button-type="Primary"
+                                button-type="Outline_Primary"
                                 icon="search" />
                 </div>
             </abp-column>

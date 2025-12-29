@@ -1,8 +1,12 @@
 ﻿using Genora.MultiTenancy.AppDtos.AppCalendarSlots;
 using Genora.MultiTenancy.DomainModels.AppCalendarSlotPrices;
 using Genora.MultiTenancy.DomainModels.AppCalendarSlots;
+using Genora.MultiTenancy.DomainModels.AppCustomers;
 using Genora.MultiTenancy.DomainModels.AppCustomerTypes;
 using Genora.MultiTenancy.DomainModels.AppGolfCourses;
+using Genora.MultiTenancy.Enums;
+using Genora.MultiTenancy.Localization;
+using Microsoft.Extensions.Localization;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -21,41 +25,66 @@ namespace Genora.MultiTenancy.AppServices.AppCalendarSlots
         private readonly IRepository<CalendarSlotPrice, Guid> _priceRepository;
         private readonly IRepository<GolfCourse, Guid> _golfCourseRepository;
         private readonly IRepository<CustomerType, Guid> _customerTypeRepository;
-        public MiniAppCalendarSlotService(IRepository<CalendarSlot, Guid> calendarSlotRepository, IRepository<CalendarSlotPrice, Guid> priceRepository, IRepository<GolfCourse, Guid> golfCourseRepository, IRepository<CustomerType, Guid> customerTypeRepository)
+        private readonly IRepository<Customer, Guid> _customerRepo;
+        public MiniAppCalendarSlotService(IRepository<CalendarSlot, Guid> calendarSlotRepository, IRepository<CalendarSlotPrice, Guid> priceRepository, IRepository<GolfCourse, Guid> golfCourseRepository, IRepository<CustomerType, Guid> customerTypeRepository, IRepository<Customer, Guid> customerRepo)
         {
+            _customerRepo = customerRepo;
             _calendarSlotRepository = calendarSlotRepository;
             _priceRepository = priceRepository;
             _golfCourseRepository = golfCourseRepository;
             _customerTypeRepository = customerTypeRepository;
         }
 
-        public async Task<PagedResultDto<AppCalendarSlotDto>> GetListMiniAppAsync(GetCalendarSlotListInput input)
+        public async Task<MiniAppCalendarSlotDto> GetListMiniAppAsync(GetMiniAppCalendarListInput input)
         {
+            var result = new MiniAppCalendarSlotDto();
+            result.FrameTimeOfDays = SessionOfDayEnum.List().Select(x => new FrameTimeOfDay { Id = x.Value, Name = x.Name }).ToList();
             var query = await _calendarSlotRepository.GetQueryableAsync();
-
-            if (input.GolfCourseId.HasValue)
+            GolfCourse golfCourse = await _golfCourseRepository.FirstOrDefaultAsync(x => x.Code == input.GolfCourseCode);
+            if (!string.IsNullOrEmpty(input.GolfCourseCode))
             {
-                query = query.Where(x => x.GolfCourseId == input.GolfCourseId.Value);
+                query = query.Where(x => x.GolfCourseId == golfCourse.Id);
             }
-
-            if (input.ApplyDateFrom.HasValue)
+            //if (golfCourse == null) return;
+            if (input.Date.HasValue && input.Date.Value != DateTime.Now.Date)
             {
-                query = query.Where(x => x.ApplyDate >= input.ApplyDateFrom.Value);
+                query = query.Where(x => x.ApplyDate == input.Date.Value.Date);
             }
-
-            if (input.ApplyDateTo.HasValue)
+            else
             {
-                query = query.Where(x => x.ApplyDate <= input.ApplyDateTo.Value);
+                query = query.Where(x => x.ApplyDate == DateTime.Now.Date && x.TimeFrom >= DateTime.Now.TimeOfDay);
             }
 
             if (input.PromotionType.HasValue)
             {
-                query = query.Where(x => x.PromotionType == input.PromotionType.Value);
+                query = query.Where(x => (int)x.PromotionType == input.PromotionType.Value);
             }
 
-            if (input.IsActive.HasValue)
+            if (input.FrameTime.HasValue)
             {
-                query = query.Where(x => x.IsActive == input.IsActive.Value);
+                //query = query.Where(x => x.IsActive == input.IsActive.Value);
+                if (input.FrameTime == SessionOfDayEnum.Morning.Value)
+                {
+                    var to = new TimeSpan(11, 0, 0);
+                    query = query.Where(x => x.TimeTo <= to);
+                }
+                if (input.FrameTime == SessionOfDayEnum.Noon.Value)
+                {
+                    var from = new TimeSpan(11, 0, 0);
+                    var to = new TimeSpan(13, 0, 0);
+                    query = query.Where(x => x.TimeFrom >= from && x.TimeTo <= to);
+                }
+                if (input.FrameTime == SessionOfDayEnum.Afternoon.Value)
+                {
+                    var from = new TimeSpan(13, 0, 0);
+                    var to = new TimeSpan(17, 30, 0);
+                    query = query.Where(x => x.TimeFrom >= from && x.TimeTo <= to);
+                }
+                if (input.FrameTime == SessionOfDayEnum.Evening.Value)
+                {
+                    var from = new TimeSpan(17, 30, 0);
+                    query = query.Where(x => x.TimeFrom >= from);
+                }
             }
 
             var sorting = string.IsNullOrWhiteSpace(input.Sorting)
@@ -69,28 +98,44 @@ namespace Genora.MultiTenancy.AppServices.AppCalendarSlots
             var slots = await AsyncExecuter.ToListAsync(
                 query.Skip(input.SkipCount).Take(input.MaxResultCount)
             );
+
             var dtoList = slots
-            .Select(slot => new AppCalendarSlotDto
+            .Select(slot => new CalendarSlotData
             {
                 Id = slot.Id,
-                TenantId = slot.TenantId,
-                GolfCourseId = slot.GolfCourseId,
-                ApplyDate = slot.ApplyDate,
+                //TenantId = slot.TenantId,
+                GolfCourseCode = golfCourse.Code,
+                PlayDate = slot.ApplyDate,
                 TimeFrom = slot.TimeFrom,
                 TimeTo = slot.TimeTo,
-                PromotionType = slot.PromotionType,
+                PromotionId = (int)slot.PromotionType,
+                PromotionName = Enum.GetName(typeof(PromotionType), slot.PromotionType),
                 MaxSlots = slot.MaxSlots,
-                InternalNote = slot.InternalNote,
-                IsActive = slot.IsActive,
-                CreationTime = slot.CreationTime,
-                CreatorId = slot.CreatorId,
-                LastModificationTime = slot.LastModificationTime,
-                LastModifierId = slot.LastModifierId
             })
             .ToList();
-
-            return new PagedResultDto<AppCalendarSlotDto>(totalCount, dtoList);
+            var calendarIds = dtoList.Select(c => c.Id).ToList();
+            var prices = await _priceRepository.GetListAsync(p => calendarIds.Contains(p.CalendarSlotId));
+            var customerTypes = await _customerTypeRepository.GetListAsync();
+            var user = (input.CustomerId.HasValue && input.CustomerId != Guid.Empty) ? await _customerRepo.FirstOrDefaultAsync(c => c.Id == input.CustomerId) : null;
+            foreach (var item in dtoList)
+            {
+                var customerType = customerTypes.Where(c => c.Code == "VIS").FirstOrDefault();
+                item.VisitorPrice = prices.Where(p => p.CustomerTypeId == customerType.Id).FirstOrDefault()?.Price ?? 0;
+                if (user != null)
+                {
+                    item.CustomerTypePrice = prices.FirstOrDefault(p => p.CustomerTypeId == user.CustomerTypeId)?.Price ?? item.VisitorPrice;
+                    item.DiscountPercent = item.VisitorPrice - item.CustomerTypePrice > 0 ? Math.Round(100 - (item.CustomerTypePrice / item.VisitorPrice) * 100, MidpointRounding.AwayFromZero) : 0;
+                }
+                else
+                {
+                    item.CustomerTypePrice = item.VisitorPrice;
+                    item.DiscountPercent = 0;
+                }
+            }
+            result.Data = new PagedResultDto<CalendarSlotData>(totalCount, dtoList);
+            return result;
         }
+
 
         public async Task<AppCalendarSlotDto> GetMiniAppAsync(Guid id)
         {

@@ -245,7 +245,9 @@
     "PromotionType": "Loại ưu đãi",
     "MaxSlots": "Số slot tối đa",
     "InternalNote": "Ghi chú nội bộ",
-
+    "ExportExcelBtn": "Xuất file Excel",
+    "DownloadTemplateBtn": "Tải file mẫu",
+    "ImportExcel": "Nhập file Excel",
     "GolfCourse": "Sân golf",
     "ManageCalendar": "Quản lý giờ chơi",
     "SelectGolfCourse": "Chọn sân golf",

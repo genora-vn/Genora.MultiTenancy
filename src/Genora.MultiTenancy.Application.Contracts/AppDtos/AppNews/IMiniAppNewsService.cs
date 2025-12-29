@@ -7,7 +7,7 @@ namespace Genora.MultiTenancy.AppDtos.AppNews
 {
     public interface IMiniAppNewsService : IApplicationService
     {
-        Task<PagedResultDto<AppNewsDto>> GetListAsync(GetNewsListInput input);
-        Task<AppNewsDto> GetAsync(Guid id);
+        Task<MiniAppNewsListDto> GetListAsync(GetMiniAppNewsDto input);
+        Task<MiniAppNewsDetailDto> GetAsync(Guid id);
     }
 }

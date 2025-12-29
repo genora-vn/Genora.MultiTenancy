@@ -2,6 +2,7 @@
 using Genora.MultiTenancy.AppDtos.AppBookings;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using Volo.Abp;
 using Volo.Abp.DependencyInjection;
@@ -19,13 +20,13 @@ public class AppBookingExcelImporter : ITransientDependency
         // Bỏ qua row 1,2 bắt đầu từ row 3
         var row = 3;
 
-        while (!ws.Cell(row, 1).IsEmpty())
+        while (!ws.Cell(row, 2).IsEmpty())
         {
             try
             {
                 var dto = new AppBookingExcelRowDto
                 {
-                    PlayDate = ws.Cell(row, 2).GetDateTime(),
+                    PlayDate = DateTime.ParseExact(ws.Cell(row, 2).GetString(),"dd/MM/yyyy HH:mm:ss",CultureInfo.InvariantCulture),
                     NumberOfGolfers = ws.Cell(row, 3).GetValue<int>(),
                     TotalAmount = ws.Cell(row, 4).GetValue<decimal>(),
                     PaymentMethod = ws.Cell(row, 5).GetString(),

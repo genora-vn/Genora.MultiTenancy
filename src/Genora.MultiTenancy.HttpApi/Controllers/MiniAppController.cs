@@ -68,7 +68,10 @@ public class MiniAppController : MultiTenancyController
     [AllowAnonymous]
     public Task<AppBookingDto> GetBookingAsync(Guid id, [FromQuery] Guid customerId)
         => _miniBooking.GetMiniAppAsync(id, customerId);
-
+    [HttpGet("get-booking-histories")]
+    [AllowAnonymous]
+    public Task<MiniAppBookingListDto> GetBookingHistoties([FromQuery] GetMiniAppBookingListInput input)
+        => _miniBooking.GetBookingHistoryAsync(input);
     [HttpGet("app-settings")]
     [AllowAnonymous]
     public Task<PagedResultDto<AppSettingDto>> GetAppSettingsAsync([FromQuery] GetMiniAppSettingListInput input)
@@ -99,17 +102,17 @@ public class MiniAppController : MultiTenancyController
 
     [HttpGet("get-news")]
     [AllowAnonymous]
-    public Task<PagedResultDto<AppNewsDto>> GetNewsAsync([FromQuery] GetNewsListInput input)
+    public Task<MiniAppNewsListDto> GetNewsAsync([FromQuery] GetMiniAppNewsDto input)
         => _miniAppNews.GetListAsync(input);
 
     [HttpGet("get-news/{id}")]
     [AllowAnonymous]
-    public Task<AppNewsDto> GetNewsAsync(Guid id)
+    public Task<MiniAppNewsDetailDto> GetNewsAsync(Guid id)
         => _miniAppNews.GetAsync(id);
 
     [HttpGet("get-calendar-slots")]
     [AllowAnonymous]
-    public Task<PagedResultDto<AppCalendarSlotDto>> GetCalendarSlotsAsync([FromQuery] GetCalendarSlotListInput input)
+    public Task<MiniAppCalendarSlotDto> GetCalendarSlotsAsync([FromQuery] GetMiniAppCalendarListInput input)
         => _miniAppCalendarSlot.GetListMiniAppAsync(input);
     [HttpGet("get-calendar-slots/{id}")]
     [AllowAnonymous]

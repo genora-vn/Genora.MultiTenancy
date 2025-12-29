@@ -190,10 +190,12 @@
                 + '           name="Booking.Players[' + index + '].PlayerName" '
                 + '           value="" />'
                 + '  </td>'
+                + '  <td>'
                 + '    <input class="form-control" '
                 + '           name="Booking.Players[' + index + '].VgaCode" '
                 + '           value="" />'
                 + '  </td>'
+                + '  <td>'
                 + '    <input class="form-control" '
                 + '           name="Booking.Players[' + index + '].PricePerPlayer" '
                 + '           value="" />'
@@ -213,16 +215,7 @@
 
             $tbody.append(rowHtml);
             increaseNextIndex();
-            setTimeout(function () {
-                $('#booking-players-body .form-control.thousand-separator').not('.formatted')
-                    .addClass('formatted')
-                    .each(function () {
-                        formatNumber(this);
-                        $(this).on('input', function () {
-                            formatNumber(this);
-                        });
-                    });
-            }, 100);
+            
         });
 
         $tbody.on('click', '.remove-player', function (e) {

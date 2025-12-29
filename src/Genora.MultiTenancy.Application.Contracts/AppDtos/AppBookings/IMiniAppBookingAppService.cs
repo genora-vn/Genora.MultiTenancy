@@ -11,5 +11,5 @@ public interface IMiniAppBookingAppService : IApplicationService
     Task<PagedResultDto<AppBookingDto>> GetListMiniAppAsync(GetMiniAppBookingListInput input);
 
     Task<AppBookingDto> GetMiniAppAsync(Guid id, Guid customerId);
-    Task<PagedResultDto<AppBookingDto>> GetBookingHistoryAsync(GetMiniAppBookingListInput input);
+    Task<MiniAppBookingListDto> GetBookingHistoryAsync(GetMiniAppBookingListInput input);
 }
