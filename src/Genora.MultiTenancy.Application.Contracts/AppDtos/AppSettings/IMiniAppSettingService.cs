@@ -7,7 +7,7 @@ namespace Genora.MultiTenancy.AppDtos.AppSettings
 {
     public interface IMiniAppSettingService : IApplicationService
     {
-        Task<PagedResultDto<AppSettingDto>> GetListAsync(GetMiniAppSettingListInput input);
-        Task<AppSettingDto> GetAsync(Guid id);
+        Task<MiniAppAppSettingListDto> GetListAsync(GetMiniAppSettingListInput input);
+        Task<MiniAppAppSettingDetailDto> GetAsync(Guid id);
     }
 }

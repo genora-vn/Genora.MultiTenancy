@@ -20,13 +20,14 @@ namespace Genora.MultiTenancy.AppServices.AppMembershipTiers
             _repository = repository;
         }
 
-        public async Task<PagedResultDto<AppMembershipTierDto>> GetListAsync(PagedAndSortedResultRequestDto input)
+        public async Task<MiniAppMembershipTierListDto> GetListAsync(PagedAndSortedResultRequestDto input)
         {
             var query = await _repository.GetQueryableAsync();
             var total = await AsyncExecuter.CountAsync(query);
             var items = await AsyncExecuter.ToListAsync(query.Skip(input.SkipCount).Take(input.MaxResultCount));
             var itemDtos = ObjectMapper.Map<List<MembershipTier>, List<AppMembershipTierDto>>(items);
-            return new PagedResultDto<AppMembershipTierDto>(total, itemDtos);
+            var dto = new PagedResultDto<AppMembershipTierDto>(total, itemDtos);
+            return new MiniAppMembershipTierListDto { Data = dto , Error = 0, Message = "Success"};
         }
     }
 }

@@ -2,6 +2,7 @@
 using Genora.MultiTenancy.DomainModels.AppBookingPlayers;
 using Genora.MultiTenancy.DomainModels.AppBookings;
 using Genora.MultiTenancy.DomainModels.AppCustomers;
+using Genora.MultiTenancy.Helpers;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -88,46 +89,66 @@ public class MiniAppBookingAppService : ApplicationService, IMiniAppBookingAppSe
     }
 
     [DisableValidation]
-    public async Task<PagedResultDto<AppBookingDto>> GetListMiniAppAsync(GetMiniAppBookingListInput input)
+    public async Task<MiniAppBookingListDto> GetListMiniAppAsync(GetMiniAppBookingListInput input)
     {
-        // Mini app chỉ xem booking của chính customer
-        var query = await _bookingRepo.GetQueryableAsync();
-        query = query.Where(x => x.CustomerId == input.CustomerId);
+        try
+        {
+            if (input.CustomerId == Guid.Empty) throw new MemberAccessException("Vui lòng đăng nhập trước khi truy cập");
+            // Mini app chỉ xem booking của chính customer
+            var query = await _bookingRepo.GetQueryableAsync();
+            query = query.Where(x => x.CustomerId == input.CustomerId);
 
-        if (input.PlayDateFrom.HasValue)
-            query = query.Where(x => x.PlayDate >= input.PlayDateFrom.Value.Date);
+            if (input.PlayDateFrom.HasValue)
+                query = query.Where(x => x.PlayDate >= input.PlayDateFrom.Value.Date);
 
-        if (input.PlayDateTo.HasValue)
-            query = query.Where(x => x.PlayDate <= input.PlayDateTo.Value.Date);
+            if (input.PlayDateTo.HasValue)
+                query = query.Where(x => x.PlayDate <= input.PlayDateTo.Value.Date);
 
-        if (input.Status.HasValue)
-            query = query.Where(x => x.Status == input.Status.Value);
+            if (input.Status.HasValue)
+                query = query.Where(x => x.Status == input.Status.Value);
 
-        var sorting = string.IsNullOrWhiteSpace(input.Sorting)
-            ? nameof(Booking.CreationTime) + " desc"
-            : input.Sorting;
+            var sorting = string.IsNullOrWhiteSpace(input.Sorting)
+                ? nameof(Booking.CreationTime) + " desc"
+                : input.Sorting;
 
-        query = query.OrderBy(sorting);
+            query = query.OrderBy(sorting);
 
-        var total = await AsyncExecuter.CountAsync(query);
-        var items = await AsyncExecuter.ToListAsync(query.Skip(input.SkipCount).Take(input.MaxResultCount));
+            var total = await AsyncExecuter.CountAsync(query);
+            var items = await AsyncExecuter.ToListAsync(query.Skip(input.SkipCount).Take(input.MaxResultCount));
 
-        var dto = ObjectMapper.Map<System.Collections.Generic.List<Booking>, System.Collections.Generic.List<AppBookingDto>>(items);
-        return new PagedResultDto<AppBookingDto>(total, dto);
+            var dto = ObjectMapper.Map<System.Collections.Generic.List<Booking>, System.Collections.Generic.List<AppBookingDto>>(items);
+            foreach (var item in dto)
+            {
+                item.VNDayOfWeek = FormatDateTimeHelper.GetVietnameseDayOfWeek(item.PlayDate);
+            }
+            var result = new PagedResultDto<AppBookingDto>(total, dto);
+            return new MiniAppBookingListDto { Data = result, Error = 0, Message = "Success" };
+        }catch (Exception e)
+        {
+            return new MiniAppBookingListDto { Error = 400, Message = e.Message };
+        }
     }
 
-    public async Task<AppBookingDto> GetMiniAppAsync(Guid id, Guid customerId)
+    public async Task<MiniAppBookingDetailDto> GetMiniAppAsync(Guid id, Guid customerId)
     {
-        var booking = await _bookingRepo.FindAsync(x => x.Id == id && x.CustomerId == customerId);
-        if (booking == null)
-            throw new EntityNotFoundException(typeof(Booking), id);
+        try
+        {
+            if (customerId == Guid.Empty) throw new MemberAccessException("Vui lòng đăng nhập trước khi truy cập");
+            var booking = await _bookingRepo.FindAsync(x => x.Id == id);
+            if (booking == null)
+                throw new EntityNotFoundException(typeof(Booking), id);
 
-        var dto = ObjectMapper.Map<Booking, AppBookingDto>(booking);
+            var dto = ObjectMapper.Map<Booking, AppBookingDto>(booking);
+            dto.VNDayOfWeek = FormatDateTimeHelper.GetVietnameseDayOfWeek(dto.PlayDate);
+            var players = await _playerRepo.GetListAsync(x => x.BookingId == id);
+            dto.Players = ObjectMapper.Map<System.Collections.Generic.List<BookingPlayer>, System.Collections.Generic.List<AppBookingPlayerDto>>(players);
 
-        var players = await _playerRepo.GetListAsync(x => x.BookingId == id);
-        dto.Players = ObjectMapper.Map<System.Collections.Generic.List<BookingPlayer>, System.Collections.Generic.List<AppBookingPlayerDto>>(players);
-
-        return dto;
+            return new MiniAppBookingDetailDto { Data = dto, Error = 0, Message = "Success" };
+        }
+        catch (Exception e)
+        {
+            return new MiniAppBookingDetailDto { Error = (int)HttpStatusCode.BadRequest, Message = e.Message };
+        }
     }
     public async Task<MiniAppBookingListDto> GetBookingHistoryAsync(GetMiniAppBookingListInput input)
     {

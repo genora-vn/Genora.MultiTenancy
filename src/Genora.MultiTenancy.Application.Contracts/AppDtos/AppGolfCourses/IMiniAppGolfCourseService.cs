@@ -7,7 +7,7 @@ namespace Genora.MultiTenancy.AppDtos.AppGolfCourses
 {
     public interface IMiniAppGolfCourseService : IApplicationService
     {
-        Task<PagedResultDto<AppGolfCourseDto>> GetListAsync(GetMiniAppGolfCourseListInput input);
-        Task<AppGolfCourseDto> GetAsync(Guid id);
+        Task<MiniAppGolfCourseListDto> GetListAsync(GetMiniAppGolfCourseListInput input);
+        Task<MiniAppGolfCourseDetailDto> GetAsync(Guid id);
     }
 }

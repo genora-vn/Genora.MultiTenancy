@@ -11,6 +11,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Dynamic.Core;
+using System.Net;
 using System.Threading.Tasks;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Application.Services;
@@ -40,6 +41,7 @@ namespace Genora.MultiTenancy.AppServices.AppCalendarSlots
             var result = new MiniAppCalendarSlotDto();
             result.FrameTimeOfDays = SessionOfDayEnum.List().Select(x => new FrameTimeOfDay { Id = x.Value, Name = x.Name }).ToList();
             var query = await _calendarSlotRepository.GetQueryableAsync();
+            if (string.IsNullOrEmpty(input.GolfCourseCode)) return new MiniAppCalendarSlotDto { Error = (int)HttpStatusCode.BadRequest, Message = "Vui lòng nhập mã sân để lấy giờ chơi"};
             GolfCourse golfCourse = await _golfCourseRepository.FirstOrDefaultAsync(x => x.Code == input.GolfCourseCode);
             if (!string.IsNullOrEmpty(input.GolfCourseCode))
             {

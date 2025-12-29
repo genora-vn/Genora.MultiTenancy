@@ -19,13 +19,13 @@ namespace Genora.MultiTenancy.AppServices.AppGolfCourses
             _golfCourseRepository = golfCourseRepository;
         }
 
-        public async Task<AppGolfCourseDto> GetAsync(Guid id)
+        public async Task<MiniAppGolfCourseDetailDto> GetAsync(Guid id)
         {
             var golfCourse = await  _golfCourseRepository.GetAsync(id);
-            return ObjectMapper.Map<GolfCourse, AppGolfCourseDto>(golfCourse);
+            return new MiniAppGolfCourseDetailDto { Data = ObjectMapper.Map<GolfCourse, AppGolfCourseDto>(golfCourse), Error = 0, Message = "Success" };
         }
 
-        public async Task<PagedResultDto<AppGolfCourseDto>> GetListAsync(GetMiniAppGolfCourseListInput input)
+        public async Task<MiniAppGolfCourseListDto> GetListAsync(GetMiniAppGolfCourseListInput input)
         {
             var query = await _golfCourseRepository.GetQueryableAsync();
             if (!string.IsNullOrWhiteSpace(input.GolfCourseSearch))
@@ -33,12 +33,14 @@ namespace Genora.MultiTenancy.AppServices.AppGolfCourses
                 query = query.Where(gc => gc.Name.Contains(input.GolfCourseSearch) ||
                                           gc.Address.Contains(input.GolfCourseSearch) ||
                                           gc.Province.Contains(input.GolfCourseSearch) ||
+                                          gc.Code.Contains(input.GolfCourseSearch) ||
                                           gc.Phone.Contains(input.GolfCourseSearch));
             }
             var total = await AsyncExecuter.CountAsync(query);
             var items = await AsyncExecuter.ToListAsync(query.Skip(input.SkipCount).Take(input.MaxResultCount));
             var itemDtos = ObjectMapper.Map<List<GolfCourse>, List<AppGolfCourseDto>>(items);
-            return new PagedResultDto<AppGolfCourseDto>(total, itemDtos);
+            var dto = new PagedResultDto<AppGolfCourseDto>(total, itemDtos);
+            return new MiniAppGolfCourseListDto { Data = dto , Error = 0, Message = "Success"};
         }
     }
 }

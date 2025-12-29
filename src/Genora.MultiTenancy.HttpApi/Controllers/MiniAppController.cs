@@ -61,43 +61,43 @@ public class MiniAppController : MultiTenancyController
 
     [HttpGet("get-bookings")]
     [AllowAnonymous]
-    public Task<PagedResultDto<AppBookingDto>> GetBookingsAsync([FromQuery] GetMiniAppBookingListInput input)
+    public Task<MiniAppBookingListDto> GetBookingsAsync([FromQuery] GetMiniAppBookingListInput input)
         => _miniBooking.GetListMiniAppAsync(input);
 
     [HttpGet("get-bookings/{id}")]
     [AllowAnonymous]
-    public Task<AppBookingDto> GetBookingAsync(Guid id, [FromQuery] Guid customerId)
+    public Task<MiniAppBookingDetailDto> GetBookingAsync(Guid id, [FromQuery] Guid customerId)
         => _miniBooking.GetMiniAppAsync(id, customerId);
-    [HttpGet("get-booking-histories")]
+    //[HttpGet("get-booking-histories")]
+    //[AllowAnonymous]
+    //public Task<MiniAppBookingListDto> GetBookingHistoties([FromQuery] GetMiniAppBookingListInput input)
+    //    => _miniBooking.GetBookingHistoryAsync(input);
+    [HttpGet("get-app-settings")]
     [AllowAnonymous]
-    public Task<MiniAppBookingListDto> GetBookingHistoties([FromQuery] GetMiniAppBookingListInput input)
-        => _miniBooking.GetBookingHistoryAsync(input);
-    [HttpGet("app-settings")]
-    [AllowAnonymous]
-    public Task<PagedResultDto<AppSettingDto>> GetAppSettingsAsync([FromQuery] GetMiniAppSettingListInput input)
+    public Task<MiniAppAppSettingListDto> GetAppSettingsAsync([FromQuery] GetMiniAppSettingListInput input)
         => _miniAppSetting.GetListAsync(input);
 
-    [HttpGet("app-settings/{id}")]
+    [HttpGet("get-app-settings/{id}")]
     [AllowAnonymous]
-    public Task<AppSettingDto> GetAppSettingAsync(Guid id)
+    public Task<MiniAppAppSettingDetailDto> GetAppSettingAsync(Guid id)
         => _miniAppSetting.GetAsync(id);
 
-    [HttpGet("customer-types")]
+    [HttpGet("get-customer-types")]
     [AllowAnonymous]
     public Task<PagedResultDto<AppCustomerTypeDto>> GetCustomerTypesAsync([FromQuery] PagedAndSortedResultRequestDto input)
         => _miniAppCustomerType.GetListAsync(input);
 
     [HttpGet("get-golf-courses")]
     [AllowAnonymous]
-    public Task<PagedResultDto<AppGolfCourseDto>> GetGolfCoursesAsync([FromQuery] GetMiniAppGolfCourseListInput input)
+    public Task<MiniAppGolfCourseListDto> GetGolfCoursesAsync([FromQuery] GetMiniAppGolfCourseListInput input)
         => _miniAppGolfCourse.GetListAsync(input);
     [HttpGet("get-golf-courses/{id}")]
     [AllowAnonymous]
-    public Task<AppGolfCourseDto> GetGolfCourseAsync(Guid id)
+    public Task<MiniAppGolfCourseDetailDto> GetGolfCourseAsync(Guid id)
         => _miniAppGolfCourse.GetAsync(id);
-    [HttpGet("membership-tiers")]
+    [HttpGet("get-membership-tiers")]
     [AllowAnonymous]
-    public Task<PagedResultDto<AppMembershipTierDto>> GetMembershipTiersAsync([FromQuery] PagedAndSortedResultRequestDto input)
+    public Task<MiniAppMembershipTierListDto> GetMembershipTiersAsync([FromQuery] PagedAndSortedResultRequestDto input)
         => _miniAppMembershipTier.GetListAsync(input);
 
     [HttpGet("get-news")]

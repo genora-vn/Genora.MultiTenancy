@@ -6,6 +6,6 @@ namespace Genora.MultiTenancy.AppDtos.AppMembershipTiers
 {
     public interface IMiniAppMembershipTierService : IApplicationService
     {
-        Task<PagedResultDto<AppMembershipTierDto>> GetListAsync(PagedAndSortedResultRequestDto input);
+        Task<MiniAppMembershipTierListDto> GetListAsync(PagedAndSortedResultRequestDto input);
     }
 }

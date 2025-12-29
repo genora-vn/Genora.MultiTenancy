@@ -49,6 +49,6 @@ public class AppBookingDto : FullAuditedEntityDto<Guid>
     public PaymentMethod? PaymentMethod { get; set; }
     public BookingStatus Status { get; set; }
     public BookingSource Source { get; set; }
-
+    public string VNDayOfWeek { get; set; }
     public List<AppBookingPlayerDto> Players { get; set; } = new();
 }
