@@ -123,11 +123,11 @@ namespace Genora.MultiTenancy.AppServices.AppCalendarSlots
             {
                 item.FrameTime = $"{item.TimeFrom} - {item.TimeTo}";
                 item.IsBestDeal = item.PromotionId == (int)PromotionType.BestDeal;
-                var customerType = customerTypes.Where(c => c.Code == "VIS").FirstOrDefault() ?? customerTypes.OrderByDescending(x => x.CreationTime).FirstOrDefault();
-                item.VisitorPrice = prices.Where(p => p.CustomerTypeId == customerType.Id).FirstOrDefault()?.Price ?? 0;
+                var customerType = customerTypes.Where(c => c.Code == "VIS").FirstOrDefault()?.Id ?? Guid.Empty;
+                item.VisitorPrice = prices.Where(p => p.CustomerTypeId == customerType).FirstOrDefault()?.Price ?? prices.Where(p => p.CalendarSlotId == item.Id).OrderByDescending(x => x.Price).FirstOrDefault()?.Price ?? 0;
                 if (user != null)
                 {
-                    item.CustomerTypePrice = prices.Where(p => p.CalendarSlotId == item.Id && p.CustomerTypeId == user.CustomerTypeId).OrderBy(x => x.Price).FirstOrDefault()?.Price 
+                    item.CustomerTypePrice = prices.Where(p => p.CalendarSlotId == item.Id && p.CustomerTypeId == user?.CustomerTypeId).OrderBy(x => x.Price).FirstOrDefault()?.Price 
                         ?? prices.Where(p => p.CalendarSlotId == item.Id).OrderBy(x => x.Price).FirstOrDefault()?.Price 
                         ?? item.VisitorPrice;   
                 }
