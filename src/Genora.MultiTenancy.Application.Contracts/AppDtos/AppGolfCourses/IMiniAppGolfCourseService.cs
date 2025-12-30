@@ -1,4 +1,6 @@
-﻿using System;
+﻿using Genora.MultiTenancy.DomainModels.AppOptionExtend;
+using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Application.Services;
@@ -9,5 +11,6 @@ namespace Genora.MultiTenancy.AppDtos.AppGolfCourses
     {
         Task<MiniAppGolfCourseListDto> GetListAsync(GetMiniAppGolfCourseListInput input);
         Task<MiniAppGolfCourseDetailDto> GetAsync(Guid id);
+        Task<List<UlitityDto>> GetListUlitities();
     }
 }

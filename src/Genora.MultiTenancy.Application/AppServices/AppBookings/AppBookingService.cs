@@ -202,6 +202,8 @@ public class AppBookingService :
             CreatorId = booking.CreatorId,
             LastModificationTime = booking.LastModificationTime,
             LastModifierId = booking.LastModifierId,
+            Utilities = booking.Utility,
+            NumberHoles = booking.NumberHole,
             Players = players.Select(p => new AppBookingPlayerDto
             {
                 Id = p.Id,

@@ -1,5 +1,7 @@
 ﻿using Genora.MultiTenancy.AppDtos.AppGolfCourses;
 using Genora.MultiTenancy.DomainModels.AppGolfCourses;
+using Genora.MultiTenancy.DomainModels.AppOptionExtend;
+using Genora.MultiTenancy.Enums;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -22,7 +24,7 @@ namespace Genora.MultiTenancy.AppServices.AppGolfCourses
         public async Task<MiniAppGolfCourseDetailDto> GetAsync(Guid id)
         {
             var golfCourse = await  _golfCourseRepository.GetAsync(id);
-            return new MiniAppGolfCourseDetailDto { Data = ObjectMapper.Map<GolfCourse, AppGolfCourseDto>(golfCourse), Error = 0, Message = "Success" };
+            return new MiniAppGolfCourseDetailDto { Data = ObjectMapper.Map<GolfCourse, GolfCourseListData>(golfCourse), Error = 0, Message = "Success" };
         }
 
         public async Task<MiniAppGolfCourseListDto> GetListAsync(GetMiniAppGolfCourseListInput input)
@@ -38,9 +40,15 @@ namespace Genora.MultiTenancy.AppServices.AppGolfCourses
             }
             var total = await AsyncExecuter.CountAsync(query);
             var items = await AsyncExecuter.ToListAsync(query.Skip(input.SkipCount).Take(input.MaxResultCount));
-            var itemDtos = ObjectMapper.Map<List<GolfCourse>, List<AppGolfCourseDto>>(items);
-            var dto = new PagedResultDto<AppGolfCourseDto>(total, itemDtos);
+            var itemDtos = ObjectMapper.Map<List<GolfCourse>, List<GolfCourseListData>>(items);
+
+            var dto = new PagedResultDto<GolfCourseListData>(total, itemDtos);
             return new MiniAppGolfCourseListDto { Data = dto , Error = 0, Message = "Success"};
+        }
+        public async Task<List<UlitityDto>> GetListUlitities()
+        {
+            var ulitities = UlititiesEnum.List().Select(x => new UlitityDto { Id = x.Value, Name = x.Name}).ToList();
+            return ulitities;
         }
     }
 }

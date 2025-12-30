@@ -14,8 +14,25 @@
         <abp-modal-body>
             @* <abp-form-content /> *@
             <abp-input asp-for="AppSetting.SettingKey" placeholder="Nhập mã cấu hình (vd: color_background, logo_image,..)" label="@L["SettingKey"]" />
-            <abp-input asp-for="AppSetting.SettingValue" placeholder="Nhập giá trị cấu hình (vd: #FFFFF,https://example.com/logo.img,...)" label="@L["SettingValue"]" />
-            <abp-input asp-for="AppSetting.SettingType" placeholder="Nhập loại cấu hình" label="@L["SettingType"]" />
+            <abp-input asp-for="AppSetting.IsImageInput" id="IsImageInput" label="@L["IsImageInput"]" />
+
+            <abp-input asp-for="AppSetting.SettingType" id="setting-type" placeholder="Nhập loại cấu hình" label="@L["SettingType"]" />
+
+            <div class="group" id="input-value">
+                <abp-input asp-for="AppSetting.SettingValue" placeholder="Nhập giá trị cấu hình (vd: #FFFFF,https://example.com/logo.img,...)" label="@L["SettingValue"]" />
+            </div>
+            
+            <div class="mb-3" style="display: none" id="input-image">
+                <div class="image-upload-group">
+                    <label for="images">Upload ảnh (có thể chọn nhiều):</label>
+                    <div class="drop-zone" id="dropZone">
+                        <p>Kéo thả ảnh vào đây hoặc click để chọn</p>
+                        <input asp-for="AppSetting.Images" type="file" id="images" accept="image/*" multiple style="display: none;">
+                    </div>
+
+                    <div class="preview-grid" id="previewGrid"></div>
+                </div>
+            </div>
             <div class="mb-3">
                 <label asp-for="AppSetting.Description" class="form-label">@L["Description"]</label>
                 <textarea asp-for="AppSetting.Description"
@@ -28,3 +45,161 @@
         <abp-modal-footer buttons="@(AbpModalButtons.Cancel | AbpModalButtons.Save)"></abp-modal-footer>
     </abp-modal>
 </form>
+<style type="text/css">
+    .image-upload-group {
+        margin: 20px 0;
+    }
+
+    .drop-zone {
+        border: 3px dashed #ccc;
+        border-radius: 10px;
+        padding: 20px;
+        text-align: center;
+        cursor: pointer;
+        transition: border-color 0.3s;
+        background-color: #f9f9f9;
+    }
+
+        .drop-zone:hover {
+            border-color: #999;
+        }
+
+        .drop-zone.drag-over {
+            border-color: #007bff;
+            background-color: #e9f7ff;
+        }
+
+    .preview-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        gap: 15px;
+        margin-top: 20px;
+    }
+
+    .preview-item {
+        position: relative;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+
+        .preview-item img {
+            width: 100%;
+            height: 150px;
+            object-fit: cover;
+        }
+
+    .remove-btn {
+        position: absolute;
+        top: 5px;
+        right: 5px;
+        background: rgba(255,0,0,0.7);
+        color: white;
+        border: none;
+        border-radius: 50%;
+        width: 25px;
+        height: 25px;
+        cursor: pointer;
+        font-size: 16px;
+    }
+</style>
+
+<script>
+    
+    const fileInput = document.getElementById('images');
+    const dropZone = document.getElementById('dropZone');
+    const previewGrid = document.getElementById('previewGrid');
+    const inputValue = document.getElementById('input-value');
+    const inputImage = document.getElementById('input-image');
+    const isImageInput = document.getElementById('IsImageInput');
+    const valueType = document.getElementById('setting-type');
+    let selectedFiles = [];
+
+    isImageInput.addEventListener('change', function(){
+      if (this.checked) {
+          inputValue.style.display = 'none';   
+          inputImage.style.display = 'block';
+          valueType.value = 'image';
+      } else {
+          inputValue.style.display = 'block';  
+          inputImage.style.display = 'none';
+      }
+    });
+        // Click vào vùng drop để mở dialog chọn file
+    dropZone.addEventListener('click', () => fileInput.click());
+
+        // Hiệu ứng drag over
+    dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('drag-over');
+    });
+
+    dropZone.addEventListener('dragleave', () => {
+            dropZone.classList.remove('drag-over');
+    });
+
+        // Xử lý khi thả file
+    dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('drag-over');
+            handleFiles(e.dataTransfer.files);
+    });
+
+        // Xử lý khi chọn file qua input
+    fileInput.addEventListener('change', () => {
+            if (fileInput.files.length > 0) {
+                handleFiles(fileInput.files);
+            }
+    });
+
+    function handleFiles(files) {
+            for (let file of files) {
+                if (file.type.startsWith('image/')) {
+                    if (selectedFiles.some(f => f.name === file.name && f.size === file.size)) {
+                        return; // bỏ qua nếu đã có
+                    }
+
+                    selectedFiles.push(file);
+
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        createPreview(e.target.result, file.name);
+                    };
+                    reader.readAsDataURL(file);
+                }
+            }
+    }
+
+    function createPreview(src, name) {
+            const item = document.createElement('div');
+            item.className = 'preview-item';
+            item.dataset.filename = name;
+
+            const img = document.createElement('img');
+            img.src = src;
+            img.alt = name;
+
+            const removeBtn = document.createElement('button');
+            removeBtn.type = 'button';
+            removeBtn.textContent = '×';
+            removeBtn.className = 'remove-btn';
+            removeBtn.onclick = () => {
+                // Xóa khỏi mảng selectedFiles
+                selectedFiles = selectedFiles.filter(f => f !== file);
+                item.remove();
+                // Cập nhật lại input file (xóa file đã bị remove)
+                updateFileInput();
+            };
+
+            item.appendChild(img);
+            item.appendChild(removeBtn);
+            previewGrid.appendChild(item);
+    }
+
+    function updateFileInput() {
+        const dt = new DataTransfer();
+        selectedFiles.forEach(file => dt.items.add(file));
+        fileInput.files = dt.files;
+    }
+</script>

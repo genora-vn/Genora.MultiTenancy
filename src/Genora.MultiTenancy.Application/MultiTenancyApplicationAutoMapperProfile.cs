@@ -40,6 +40,7 @@ public class MultiTenancyApplicationAutoMapperProfile : Profile
 
         #region AppGolfCourse auto mapper profile
         CreateMap<GolfCourse, AppGolfCourseDto>();
+        CreateMap<GolfCourse, GolfCourseListData>();
         CreateMap<CreateUpdateAppGolfCourseDto, GolfCourse>();
         #endregion
 
@@ -67,6 +68,8 @@ public class MultiTenancyApplicationAutoMapperProfile : Profile
 
         #region Booking auto mapper profile
         CreateMap<Booking, AppBookingDto>();
+        CreateMap<Booking, BookingDetailData>();
+        CreateMap<Booking, BookingListData>();
         CreateMap<CreateUpdateAppBookingDto, Booking>();
         CreateMap<BookingPlayer, AppBookingPlayerDto>();
         #endregion

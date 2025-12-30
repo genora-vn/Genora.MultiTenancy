@@ -1,7 +1,9 @@
-﻿using Genora.MultiTenancy.Enums;
+﻿using Genora.MultiTenancy.AppDtos.AppGolfCourses;
+using Genora.MultiTenancy.Enums;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.Linq;
 using Volo.Abp.Application.Dtos;
 
 namespace Genora.MultiTenancy.AppDtos.AppBookings;
@@ -51,4 +53,10 @@ public class AppBookingDto : FullAuditedEntityDto<Guid>
     public BookingSource Source { get; set; }
     public string VNDayOfWeek { get; set; }
     public List<AppBookingPlayerDto> Players { get; set; } = new();
+    public List<GolfCourseUtilityDto>? UtilityDto => string.IsNullOrEmpty(Utilities) ? new List<GolfCourseUtilityDto>() : Utilities.Split(",").Select(u => new GolfCourseUtilityDto
+    {
+        UtilityId = int.Parse(u),
+        UtilityName = Enums.UlititiesEnum.From(int.Parse(u)).Name ?? string.Empty,
+        IsCheck = true,
+    }).ToList();
 }

@@ -54,7 +54,7 @@ namespace Genora.MultiTenancy.AppServices.AppCalendarSlots
             }
             else
             {
-                query = query.Where(x => x.ApplyDate == DateTime.Now.Date && x.TimeFrom >= DateTime.Now.TimeOfDay);
+                query = query.Where(x => (x.ApplyDate == DateTime.Now.Date) || (x.ApplyDate > DateTime.Now.Date || x.TimeFrom >= DateTime.Now.TimeOfDay));
             }
 
             if (input.PromotionType.HasValue)
@@ -108,8 +108,8 @@ namespace Genora.MultiTenancy.AppServices.AppCalendarSlots
                 //TenantId = slot.TenantId,
                 GolfCourseCode = golfCourse.Code,
                 PlayDate = slot.ApplyDate,
-                TimeFrom = slot.TimeFrom,
-                TimeTo = slot.TimeTo,
+                TimeFrom = slot.TimeFrom.ToString(@"hh\:mm"),
+                TimeTo = slot.TimeTo.ToString(@"hh\:mm"),
                 PromotionId = (int)slot.PromotionType,
                 PromotionName = Enum.GetName(typeof(PromotionType), slot.PromotionType),
                 MaxSlots = slot.MaxSlots,
@@ -121,18 +121,21 @@ namespace Genora.MultiTenancy.AppServices.AppCalendarSlots
             var user = (input.CustomerId.HasValue && input.CustomerId != Guid.Empty) ? await _customerRepo.FirstOrDefaultAsync(c => c.Id == input.CustomerId) : null;
             foreach (var item in dtoList)
             {
-                var customerType = customerTypes.Where(c => c.Code == "VIS").FirstOrDefault();
+                item.FrameTime = $"{item.TimeFrom} - {item.TimeTo}";
+                item.IsBestDeal = item.PromotionId == (int)PromotionType.BestDeal;
+                var customerType = customerTypes.Where(c => c.Code == "VIS").FirstOrDefault() ?? customerTypes.OrderByDescending(x => x.CreationTime).FirstOrDefault();
                 item.VisitorPrice = prices.Where(p => p.CustomerTypeId == customerType.Id).FirstOrDefault()?.Price ?? 0;
                 if (user != null)
                 {
-                    item.CustomerTypePrice = prices.FirstOrDefault(p => p.CustomerTypeId == user.CustomerTypeId)?.Price ?? item.VisitorPrice;
-                    item.DiscountPercent = item.VisitorPrice - item.CustomerTypePrice > 0 ? Math.Round(100 - (item.CustomerTypePrice / item.VisitorPrice) * 100, MidpointRounding.AwayFromZero) : 0;
+                    item.CustomerTypePrice = prices.Where(p => p.CalendarSlotId == item.Id && p.CustomerTypeId == user.CustomerTypeId).OrderBy(x => x.Price).FirstOrDefault()?.Price 
+                        ?? prices.Where(p => p.CalendarSlotId == item.Id).OrderBy(x => x.Price).FirstOrDefault()?.Price 
+                        ?? item.VisitorPrice;   
                 }
                 else
                 {
-                    item.CustomerTypePrice = item.VisitorPrice;
-                    item.DiscountPercent = 0;
+                    item.CustomerTypePrice = prices.Where(p => p.CalendarSlotId == item.Id).OrderBy(x => x.Price).FirstOrDefault()?.Price ?? item.VisitorPrice;
                 }
+                item.DiscountPercent = item.VisitorPrice - item.CustomerTypePrice > 0 ? Math.Round(100 - (item.CustomerTypePrice / item.VisitorPrice) * 100, MidpointRounding.AwayFromZero) : 0;
             }
             result.Data = new PagedResultDto<CalendarSlotData>(totalCount, dtoList);
             return result;

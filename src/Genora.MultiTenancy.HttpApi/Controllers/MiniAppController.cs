@@ -7,8 +7,10 @@ using Genora.MultiTenancy.AppDtos.AppMembershipTiers;
 using Genora.MultiTenancy.AppDtos.AppNews;
 using Genora.MultiTenancy.AppDtos.AppSettings;
 using Genora.MultiTenancy.AppDtos.AppZaloAuths;
+using Genora.MultiTenancy.Localization;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Localization;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
@@ -32,7 +34,7 @@ public class MiniAppController : MultiTenancyController
     private readonly IMiniAppNewsService _miniAppNews;
     private readonly IMiniAppCalendarSlotService _miniAppCalendarSlot;
     private readonly IMiniAppCustomerAppService _miniCustomer;
-
+    private readonly IStringLocalizer<MultiTenancyResource> _localizer;
     public MiniAppController(IZaloApiClient zaloApiClient,
                              IMiniAppBookingAppService miniBooking,
                              IMiniAppSettingService miniAppSetting,
@@ -41,6 +43,7 @@ public class MiniAppController : MultiTenancyController
                              IMiniAppMembershipTierService miniAppMembershipTier,
                              IMiniAppNewsService miniAppNews,
                              IMiniAppCalendarSlotService miniAppCalendarSlot,
+                             IStringLocalizer<MultiTenancyResource> localizer,
                              IMiniAppCustomerAppService miniCustomer)
     {
         _zaloApiClient = zaloApiClient;
@@ -52,6 +55,7 @@ public class MiniAppController : MultiTenancyController
         _miniAppNews = miniAppNews;
         _miniAppCalendarSlot = miniAppCalendarSlot;
         _miniCustomer = miniCustomer;
+        _localizer = localizer;
     }
 
     [HttpPost("create-booking")]
@@ -112,8 +116,19 @@ public class MiniAppController : MultiTenancyController
 
     [HttpGet("get-calendar-slots")]
     [AllowAnonymous]
-    public Task<MiniAppCalendarSlotDto> GetCalendarSlotsAsync([FromQuery] GetMiniAppCalendarListInput input)
-        => _miniAppCalendarSlot.GetListMiniAppAsync(input);
+    public async Task<MiniAppCalendarSlotDto> GetCalendarSlotsAsync([FromQuery] GetMiniAppCalendarListInput input)
+    {
+        var result = await _miniAppCalendarSlot.GetListMiniAppAsync(input);
+        if (result.FrameTimeOfDays != null)
+        {
+            foreach(var item in result.FrameTimeOfDays)
+            {
+                item.Name = _localizer[item.Name];
+            }
+        }
+        return result;
+    }
+        
     [HttpGet("get-calendar-slots/{id}")]
     [AllowAnonymous]
     public Task<AppCalendarSlotDto> GetCalendarSlotAsync(Guid id)
@@ -170,6 +185,17 @@ public class MiniAppController : MultiTenancyController
 
         var result = await _miniCustomer.GetByPhoneAsync(phoneNumber, ct);
 
+        return Ok(result);
+    }
+    [HttpGet("get-ulitities")]
+    [AllowAnonymous]
+    public async Task<IActionResult> GetUlitities()
+    {
+        var result = await _miniAppGolfCourse.GetListUlitities();
+        foreach (var item in result)
+        {
+            item.Name = _localizer[item.Name];
+        }
         return Ok(result);
     }
 }

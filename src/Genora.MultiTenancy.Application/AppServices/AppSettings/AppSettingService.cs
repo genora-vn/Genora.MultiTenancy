@@ -1,4 +1,5 @@
-﻿using Genora.MultiTenancy.AppDtos.AppSettings;
+﻿using Genora.MultiTenancy.AppDtos.AppImages;
+using Genora.MultiTenancy.AppDtos.AppSettings;
 using Genora.MultiTenancy.Apps.AppSettings;
 using Genora.MultiTenancy.Features.AppSettings;
 using Genora.MultiTenancy.Permissions;
@@ -9,10 +10,12 @@ using System.Linq;
 using System.Linq.Dynamic.Core;
 using System.Threading.Tasks;
 using Volo.Abp.Application.Dtos;
+using Volo.Abp.Domain.Entities;
 using Volo.Abp.Domain.Entities.Caching;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Features;
 using Volo.Abp.MultiTenancy;
+using Volo.Abp.ObjectMapping;
 
 namespace Genora.MultiTenancy.AppServices.AppSettings;
 
@@ -115,7 +118,7 @@ namespace Genora.MultiTenancy.AppServices.AppSettings;
 public class AppSettingService : FeatureProtectedCrudAppService<AppSetting, AppSettingDto, Guid, PagedAndSortedResultRequestDto, CreateUpdateAppSettingDto>, IAppSettingService
 {
     private readonly IEntityCache<AppSettingDto, Guid> _appSettingCache;
-
+    private readonly IManageImageService _manageImageService;
     protected override string FeatureName => AppSettingFeatures.Management;
     protected override string TenantDefaultPermission => MultiTenancyPermissions.AppSettings.Default;
     protected override string HostDefaultPermission => MultiTenancyPermissions.HostAppSettings.Default;
@@ -124,10 +127,12 @@ public class AppSettingService : FeatureProtectedCrudAppService<AppSetting, AppS
         IRepository<AppSetting, Guid> repository,
         IEntityCache<AppSettingDto, Guid> appSettingCache,
         ICurrentTenant currentTenant,
-        IFeatureChecker featureChecker)
+        IFeatureChecker featureChecker,
+        IManageImageService manageImageService)
         : base(repository, currentTenant, featureChecker)
     {
         _appSettingCache = appSettingCache;
+        _manageImageService = manageImageService;
 
         GetPolicyName = MultiTenancyPermissions.AppSettings.Default;
         GetListPolicyName = MultiTenancyPermissions.AppSettings.Default;
@@ -170,16 +175,39 @@ public class AppSettingService : FeatureProtectedCrudAppService<AppSetting, AppS
     public override async Task<AppSettingDto> CreateAsync(CreateUpdateAppSettingDto input)
     {
         await CheckCreatePolicyAsync();
-
-        var entity = ObjectMapper.Map<CreateUpdateAppSettingDto, AppSetting>(input);
-        entity = await Repository.InsertAsync(entity, autoSave: true);
-        return ObjectMapper.Map<AppSetting, AppSettingDto>(entity);
+        if (input.Images != null && input.Images.Count > 0)
+        {
+            List<CreateUpdateAppSettingDto> inputs = new List<CreateUpdateAppSettingDto>();
+            foreach (var image in input.Images)
+            {
+                var upload = await _manageImageService.UploadImageAsync(image, CurrentTenant.Id.ToString());
+                if (upload != null)
+                {
+                    var dto = new CreateUpdateAppSettingDto { SettingKey = input.SettingKey, SettingType = input.SettingType, SettingValue = upload, Description = input.Description, IsActive = input.IsActive };
+                    inputs.Add(dto);
+                }
+            }
+            var entities = ObjectMapper.Map<List<CreateUpdateAppSettingDto>, List<AppSetting>>(inputs);
+            await Repository.InsertManyAsync(entities);
+            return ObjectMapper.Map<AppSetting, AppSettingDto>(entities.FirstOrDefault());
+        }
+        else
+        {
+            var entity = ObjectMapper.Map<CreateUpdateAppSettingDto, AppSetting>(input);
+            entity = await Repository.InsertAsync(entity, autoSave: true);
+            return ObjectMapper.Map<AppSetting, AppSettingDto>(entity);
+        }
     }
 
     public override async Task<AppSettingDto> UpdateAsync(Guid id, CreateUpdateAppSettingDto input)
     {
         await CheckUpdatePolicyAsync();
-
+        if (input.Images != null && input.Images.Count > 0)
+        {
+            await _manageImageService.DeleteFileAsync(input.SettingValue);
+            var upload = await _manageImageService.UploadImageAsync(input.Images.FirstOrDefault(), CurrentTenant.Id.ToString());
+            input.SettingValue = upload;
+        }
         var entity = await Repository.GetAsync(id);
         ObjectMapper.Map(input, entity);
         entity = await Repository.UpdateAsync(entity, autoSave: true);

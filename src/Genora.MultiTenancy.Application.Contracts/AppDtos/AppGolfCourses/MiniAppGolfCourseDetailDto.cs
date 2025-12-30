@@ -6,6 +6,6 @@ namespace Genora.MultiTenancy.AppDtos.AppGolfCourses
 {
     public class MiniAppGolfCourseDetailDto : ZaloBaseResponse
     {
-        public AppGolfCourseDto Data { get; set; }
+        public GolfCourseListData Data { get; set; }
     }
 }
