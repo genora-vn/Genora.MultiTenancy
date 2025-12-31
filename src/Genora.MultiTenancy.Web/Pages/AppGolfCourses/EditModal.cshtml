@@ -1,4 +1,5 @@
 ﻿@page
+@using Genora.MultiTenancy.AppDtos.AppGolfCourses
 @using Genora.MultiTenancy.Enums
 @using Genora.MultiTenancy.Localization
 @using Genora.MultiTenancy.Web.Pages.AppGolfCourses
@@ -78,18 +79,20 @@
             <div class="group d-inline-flex" style="width: 100%; gap: 10px">
                 <div class="col-md-6">
                     <label class="section-label">Tiện ích của sân</label>
-                    <div>
+                    <div id="utility-setting">
                         @{
-                            var utilities = UlititiesEnum.List().ToList();
-                            var totalRow = utilities.Count / 4;
+                            var utilities = Model.UtilityDtos;//UlititiesEnum.List().ToList();
+                            var totalRow = utilities.Count / 2;
                             int count = 0;
+
                             if (utilities.Count % 2 > 0)
                             {
                                 totalRow += 1;
                             }
+                      
                             for (int i = 0; i < totalRow; i++)
                             {
-                                <div class="row service-row">
+                                <div class="row service-row row-utility">
                                     @{
                                         for (int k = count; k < count + 4; k++)
                                         {
@@ -97,18 +100,41 @@
                                             {
                                                 <div class="col-lg-6 col-md-6" style="margin-bottom: 15px">
                                                     <label class="golf-checkbox">
-                                                        <i class="@utilities[k].Icon"></i>
-                                                        <input type="hidden" asp-for="GolfCourse.AvailableUtilities[@k].UtilityId" value="@utilities[k].Value" />
+                                                        <i class="fa fa-plus-square"></i>
+                                                        <input type="hidden" asp-for="GolfCourse.AvailableUtilities[@k].UtilityId" value="@utilities[k].UtilityId" />
                                                         <input asp-for="GolfCourse.AvailableUtilities[k].IsCheck" type="checkbox" class="hidden-checkbox" />
-                                                        <span class="no-select">@L[@utilities[k].Name]</span>
+                                                        <span class="no-select">@L[@utilities[k].UtilityName]</span>
                                                     </label>
                                                 </div>
                                             }
                                         }
                                         count = count + 4;
+                                        if(i == totalRow-1)
+                                        {
+                                            <div class="col-lg-6 col-md-6" style="margin-bottom: 15px">
+                                                <label class="golf-checkbox">
+                                                    <i class="fa fa-plus-square"></i>
+                                                    <input class="border-0" id="add-new-input" placeholder="Thêm mới dịch vụ" />
+                                                    <button class="float-end" id="add-new-btn" type="button" style="display: none; background-color: white; border-color: white">+</button>
+                                                </label>
+                                            </div>
+                                        }
                                     }
                                 </div>
                             }
+                            if(totalRow == 0)
+                            {
+                                <div class="row service-row row-utility">
+                                    <div class="col-lg-6 col-md-6" style="margin-bottom: 15px">
+                                        <label class="golf-checkbox">
+                                            <i class="fa fa-plus-square"></i>
+                                            <input class="border-0" id="add-new-input" placeholder="Thêm mới dịch vụ" />
+                                            <button class="float-end" id="add-new-btn" type="button" style="display: none; background-color: white; border-color: white">+</button>
+                                        </label>
+                                    </div>
+                                </div>
+                            }
+
                         }
                     </div>
                 </div>
@@ -290,22 +316,92 @@
 <script>
     $(document).ready(function () {
         initTimePicker();
-
-         $(".hidden-checkbox").change(function () {
+        let objUtility = @Json.Serialize(Model.GolfCourse.AvailableUtilities);
+        
+         $(document).on('change', '.hidden-checkbox', function () {
             if (this.checked) {
-                //Do stuff, kaching, lil' skrrt, then we're done, yeah?
                 $(this).parent().addClass("golf-checkbox-checked");
             } else {
                 $(this).parent().removeClass("golf-checkbox-checked");
             }
         });
 
-
         $(".hidden-checkbox").each(function () {
             if (this.checked) {
                 $(this.parentElement).addClass("golf-checkbox-checked");
             }
         });
+        const inputUtility = document.getElementById('add-new-input');
+        const buttonUtility = document.getElementById('add-new-btn');
+        
+
+        inputUtility.addEventListener('input', () => {
+            if(inputUtility.value.trim() !==''){
+                buttonUtility.style.display = 'block'
+            }else{
+                buttonUtility.style.display = 'none'
+            }
+        })
+        buttonUtility.addEventListener('click',(e) =>{
+            e.preventDefault();
+            debugger;
+            if(inputUtility.value.trim() !==''){
+                var util = {
+                    utilityId : 0,
+                    utilityName: inputUtility.value.trim(),
+                    isCheck: true
+                }
+                objUtility.push(util);
+                addUtilityLabel(util, objUtility.length - 1);
+            }
+            inputUtility.value = '';
+            buttonUtility.style.display = 'none'
+        })
+        function addUtilityLabel(util, index){
+            debugger;
+            const divs = document.querySelectorAll("div.row-utility");
+            const parent = document.getElementById('utility-setting');
+            let lastDiv;
+            if (divs.length === 0) {
+                lastDiv = document.createElement("div");
+                lastDiv.className = "row service-row row-utility";
+                parent.appendChild(lastDiv);
+            } else {
+                lastDiv = divs[divs.length - 1];
+            }
+
+             var rowHtml = ''
+                + '<div class="col-lg-6 col-md-6" style="margin-bottom: 15px">'
+                + '<label class="golf-checkbox">'
+                + '<i class="fa fa-plus-square"></i>'
+                + '<input type="hidden" name="GolfCourse.AvailableUtilities['+ index +'].UtilityId" value="'+util.utilityId+'" />'
+                + '<input type="hidden" name="GolfCourse.AvailableUtilities[' + index + '].UtilityName" value="' + util.utilityName + '" />'
+                + '<input name="GolfCourse.AvailableUtilities['+ index +'].IsCheck" type="checkbox" class="hidden-checkbox" />'
+                + '<span class="no-select">'+util.utilityName+'</span>'
+                + '</label>'
+                + '</div>';
+
+            // Tạo element từ rowHtml
+            const temp = document.createElement("div");
+            temp.innerHTML = rowHtml;
+            const newNode = temp.firstElementChild;
+
+            // Chèn trước phần tử "add new" (thường là child cuối cùng)
+            const children = lastDiv.children;
+            if (children.length > 0) {
+                lastDiv.insertBefore(newNode, children[children.length - 1]);
+            } else {
+                lastDiv.appendChild(newNode);
+            }
+
+             //lastDiv.insertAdjacentHTML('beforeend', rowHtml);
+        }
+
+        // $(".hidden-checkbox").each(function () {
+        //     if (this.checked) {
+        //         $(this.parentElement).addClass("golf-checkbox-checked");
+        //     }
+        // });
 
     });
     function initTimePicker() {

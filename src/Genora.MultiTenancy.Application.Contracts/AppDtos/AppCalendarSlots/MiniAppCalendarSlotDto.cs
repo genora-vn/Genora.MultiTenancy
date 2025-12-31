@@ -16,6 +16,7 @@ namespace Genora.MultiTenancy.AppDtos.AppCalendarSlots
     public class CalendarSlotData
     {
         public Guid Id { get; set; }
+        public Guid GolfCourseId { get; set; }
         public string? GolfCourseCode { get; set; }
         public string? FrameTime { get; set; }
         public int FrameTimeOfDayId { get; set; }

@@ -5,6 +5,7 @@ using Genora.MultiTenancy.AppDtos.AppCustomerTypes;
 using Genora.MultiTenancy.AppDtos.AppGolfCourses;
 using Genora.MultiTenancy.AppDtos.AppMembershipTiers;
 using Genora.MultiTenancy.AppDtos.AppNews;
+using Genora.MultiTenancy.AppDtos.AppOptionExtend;
 using Genora.MultiTenancy.AppDtos.AppSettings;
 using Genora.MultiTenancy.AppDtos.AppZaloAuths;
 using Genora.MultiTenancy.Localization;
@@ -35,6 +36,7 @@ public class MiniAppController : MultiTenancyController
     private readonly IMiniAppCalendarSlotService _miniAppCalendarSlot;
     private readonly IMiniAppCustomerAppService _miniCustomer;
     private readonly IStringLocalizer<MultiTenancyResource> _localizer;
+    private readonly IOptionExtendService _optionExtendService;
     public MiniAppController(IZaloApiClient zaloApiClient,
                              IMiniAppBookingAppService miniBooking,
                              IMiniAppSettingService miniAppSetting,
@@ -44,7 +46,8 @@ public class MiniAppController : MultiTenancyController
                              IMiniAppNewsService miniAppNews,
                              IMiniAppCalendarSlotService miniAppCalendarSlot,
                              IStringLocalizer<MultiTenancyResource> localizer,
-                             IMiniAppCustomerAppService miniCustomer)
+                             IMiniAppCustomerAppService miniCustomer,
+                             IOptionExtendService optionExtendService)
     {
         _zaloApiClient = zaloApiClient;
         _miniBooking = miniBooking;
@@ -56,6 +59,7 @@ public class MiniAppController : MultiTenancyController
         _miniAppCalendarSlot = miniAppCalendarSlot;
         _miniCustomer = miniCustomer;
         _localizer = localizer;
+        _optionExtendService = optionExtendService;
     }
 
     [HttpPost("create-booking")]
@@ -191,11 +195,7 @@ public class MiniAppController : MultiTenancyController
     [AllowAnonymous]
     public async Task<IActionResult> GetUlitities()
     {
-        var result = await _miniAppGolfCourse.GetListUlitities();
-        foreach (var item in result)
-        {
-            item.Name = _localizer[item.Name];
-        }
+        var result = await _optionExtendService.GetUtilitiesAsync();
         return Ok(result);
     }
 }

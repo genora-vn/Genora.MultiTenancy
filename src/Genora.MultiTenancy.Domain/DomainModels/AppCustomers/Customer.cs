@@ -3,6 +3,7 @@ using Genora.MultiTenancy.DomainModels.AppBookings;
 using Genora.MultiTenancy.DomainModels.AppCustomerMemberships;
 using Genora.MultiTenancy.DomainModels.AppCustomerTypes;
 using Genora.MultiTenancy.DomainModels.AppMembershipTiers;
+using Genora.MultiTenancy.Enums;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
@@ -66,7 +67,7 @@ public class Customer : FullAuditedAggregateRoot<Guid>, IMultiTenant
     public Guid? MembershipTierId { get; set; }
 
     public bool IsActive { get; set; } = true;
-
+    public CustomerSource CustomerSource { get; set; }
     // Navigation
     public virtual ICollection<Booking> Bookings { get; set; } = new List<Booking>();
     public virtual ICollection<BookingPlayer> BookingPlayers { get; set; } = new List<BookingPlayer>();

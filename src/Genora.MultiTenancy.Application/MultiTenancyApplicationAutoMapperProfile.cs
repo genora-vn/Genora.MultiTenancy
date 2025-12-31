@@ -6,6 +6,7 @@ using Genora.MultiTenancy.AppDtos.AppCustomerTypes;
 using Genora.MultiTenancy.AppDtos.AppGolfCourses;
 using Genora.MultiTenancy.AppDtos.AppMembershipTiers;
 using Genora.MultiTenancy.AppDtos.AppNews;
+using Genora.MultiTenancy.AppDtos.AppOptionExtend;
 using Genora.MultiTenancy.AppDtos.AppSettings;
 using Genora.MultiTenancy.AppDtos.ZaloAuths;
 using Genora.MultiTenancy.Apps.AppSettings;
@@ -18,6 +19,7 @@ using Genora.MultiTenancy.DomainModels.AppCustomerTypes;
 using Genora.MultiTenancy.DomainModels.AppGolfCourses;
 using Genora.MultiTenancy.DomainModels.AppMembershipTiers;
 using Genora.MultiTenancy.DomainModels.AppNews;
+using Genora.MultiTenancy.DomainModels.AppOptionExtend;
 using Genora.MultiTenancy.DomainModels.AppZaloAuth;
 using Volo.Abp.AuditLogging;
 using static Genora.MultiTenancy.Permissions.MultiTenancyPermissions;
@@ -97,5 +99,7 @@ public class MultiTenancyApplicationAutoMapperProfile : Profile
         CreateMap<EntityChange, EntityChangeDto>()
             .ForMember(d => d.ChangeType, o => o.MapFrom(s => s.ChangeType.ToString()));
         CreateMap<EntityPropertyChange, EntityPropertyChangeDto>();
+
+        CreateMap<OptionExtend, AppOptionExtendDto>();
     }
 }

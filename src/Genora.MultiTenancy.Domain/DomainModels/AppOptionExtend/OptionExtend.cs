@@ -6,10 +6,19 @@ namespace Genora.MultiTenancy.DomainModels.AppOptionExtend
 {
     public class OptionExtend : FullAuditedAggregateRoot<Guid>, IMultiTenant
     {
-        public string Key { get; set; }
-        public string Value { get; set; }
+        public int OptionId { get; set; }
+        public string OptionName { get; set; }
         public int Type { get; set; }
         public string? Description { get; set; }
         public Guid? TenantId { get; set; }
+        
+        protected OptionExtend() { }
+        public OptionExtend(int optionId, string optionName, int type, string? description)
+        {
+            OptionId = optionId;
+            OptionName = optionName;
+            Type = type;
+            Description = description;
+        }
     }
 }

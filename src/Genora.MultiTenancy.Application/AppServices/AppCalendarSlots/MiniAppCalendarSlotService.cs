@@ -107,6 +107,7 @@ namespace Genora.MultiTenancy.AppServices.AppCalendarSlots
             {
                 Id = slot.Id,
                 //TenantId = slot.TenantId,
+                GolfCourseId = slot.GolfCourseId,
                 GolfCourseCode = golfCourse.Code,
                 PlayDate = slot.ApplyDate,
                 TimeFrom = slot.TimeFrom,
