@@ -5,6 +5,7 @@ using Genora.MultiTenancy.DomainModels.AppCustomers;
 using Genora.MultiTenancy.DomainModels.AppCustomerTypes;
 using Genora.MultiTenancy.DomainModels.AppGolfCourses;
 using Genora.MultiTenancy.Enums;
+using Genora.MultiTenancy.Helpers;
 using Genora.MultiTenancy.Localization;
 using Microsoft.Extensions.Localization;
 using System;
@@ -108,8 +109,8 @@ namespace Genora.MultiTenancy.AppServices.AppCalendarSlots
                 //TenantId = slot.TenantId,
                 GolfCourseCode = golfCourse.Code,
                 PlayDate = slot.ApplyDate,
-                TimeFrom = slot.TimeFrom.ToString(@"hh\:mm"),
-                TimeTo = slot.TimeTo.ToString(@"hh\:mm"),
+                TimeFrom = slot.TimeFrom,
+                TimeTo = slot.TimeTo,
                 PromotionId = (int)slot.PromotionType,
                 PromotionName = Enum.GetName(typeof(PromotionType), slot.PromotionType),
                 MaxSlots = slot.MaxSlots,
@@ -136,6 +137,8 @@ namespace Genora.MultiTenancy.AppServices.AppCalendarSlots
                     item.CustomerTypePrice = prices.Where(p => p.CalendarSlotId == item.Id).OrderBy(x => x.Price).FirstOrDefault()?.Price ?? item.VisitorPrice;
                 }
                 item.DiscountPercent = item.VisitorPrice - item.CustomerTypePrice > 0 ? Math.Round(100 - (item.CustomerTypePrice / item.VisitorPrice) * 100, MidpointRounding.AwayFromZero) : 0;
+                item.FrameTimeOfDayId = FormatSessionOfDayHelper.DateTimeToSessionOfDay(item.TimeFrom.Value).Value;
+                item.FrameTimeOfDayName = FormatSessionOfDayHelper.DateTimeToSessionOfDay(item.TimeFrom.Value).Name;
             }
             result.Data = new PagedResultDto<CalendarSlotData>(totalCount, dtoList);
             return result;
