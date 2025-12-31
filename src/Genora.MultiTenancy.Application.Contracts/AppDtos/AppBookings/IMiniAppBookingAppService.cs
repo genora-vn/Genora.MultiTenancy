@@ -6,7 +6,7 @@ using Volo.Abp.Application.Services;
 namespace Genora.MultiTenancy.AppDtos.AppBookings;
 public interface IMiniAppBookingAppService : IApplicationService
 {
-    Task<AppBookingDto> CreateFromMiniAppAsync(MiniAppCreateBookingDto input);
+    Task<MiniAppBookingDetailDto> CreateFromMiniAppAsync(MiniAppCreateBookingDto input);
 
     Task<MiniAppBookingListDto> GetListMiniAppAsync(GetMiniAppBookingListInput input);
 

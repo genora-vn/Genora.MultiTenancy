@@ -64,7 +64,7 @@ public class Booking : FullAuditedAggregateRoot<Guid>, IMultiTenant
         CustomerId = customerId;
         GolfCourseId = golfCourseId;
         PlayDate = playDate;
-
+        CalendarSlotId = calendarSlotId;
         NumberOfGolfers = numberOfGolfers;
         PricePerGolfer = pricePerGolfer;
         TotalAmount = totalAmount;

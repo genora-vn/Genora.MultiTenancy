@@ -12,7 +12,9 @@ public class MiniAppBookingPlayerInput
     [StringLength(200)]
     public string PlayerName { get; set; }
     [StringLength(500)]
-    public string Notes { get; set; }
+    public string? Notes { get; set; }
+    [StringLength(100)]
+    public string? VgaCode { get; set; }
 }
 
 public class MiniAppCreateBookingDto
@@ -60,4 +62,9 @@ public class MiniAppCreateBookingDto
     /// <summary>Nguồn: 1: MiniApp, 2: Hotline, 3: Agent (MiniApp mặc định = 1)</summary>
     [Required]
     public BookingSource Source { get; set; } = BookingSource.MiniApp;
+    public List<int>? Utilities { get; set; }
+    [Required]
+    public short NumberHoles { get; set; }
+    [Required]
+    public bool IsExportInvoice { get; set; }
 }

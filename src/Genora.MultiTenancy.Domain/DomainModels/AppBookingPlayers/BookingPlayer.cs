@@ -33,7 +33,7 @@ public class BookingPlayer : FullAuditedAggregateRoot<Guid>, IMultiTenant
 
     protected BookingPlayer() { }
 
-    public BookingPlayer(Guid id, Guid bookingId, Guid? customerId, string playerName, string notes) : base(id)
+    public BookingPlayer(Guid id, Guid bookingId, Guid? customerId, string playerName, string notes = "") : base(id)
     {
         BookingId = bookingId;
         CustomerId = customerId;
