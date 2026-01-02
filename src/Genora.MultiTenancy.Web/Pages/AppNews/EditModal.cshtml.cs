@@ -2,6 +2,7 @@ using Genora.MultiTenancy.AppDtos.AppNews;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Threading.Tasks;
+using Volo.Abp.ObjectMapping;
 
 namespace Genora.MultiTenancy.Web.Pages.AppNews;
 
@@ -23,15 +24,18 @@ public class EditModalModel : MultiTenancyPageModel
     public async Task OnGetAsync()
     {
         var dto = await _newsService.GetAsync(Id);
-        News = new CreateUpdateAppNewsDto
-        {
-            Title = dto.Title,
-            ContentHtml = dto.ContentHtml,
-            ThumbnailUrl = dto.ThumbnailUrl,
-            PublishedAt = dto.PublishedAt,
-            Status = dto.Status,
-            DisplayOrder = dto.DisplayOrder
-        };
+        News = ObjectMapper.Map<AppNewsDto, CreateUpdateAppNewsDto>(dto);
+        //News = new CreateUpdateAppNewsDto
+        //{
+        //    Title = dto.Title,
+        //    ContentHtml = dto.ContentHtml,
+        //    ThumbnailUrl = dto.ThumbnailUrl,
+        //    PublishedAt = dto.PublishedAt,
+        //    Status = dto.Status,
+        //    DisplayOrder = dto.DisplayOrder,
+        //    ShortDescription = dto.ShortDescription,
+        //    IsActive = 
+        //};
     }
 
     public async Task<IActionResult> OnPostAsync()
