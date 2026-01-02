@@ -32,6 +32,7 @@
 
         // 1) CLICK ngày ở month view (không có giờ) -> default 06:00-06:30
         dateClick: function (info) {
+            //debugger;
             lastViewedSlotId = null;
 
             function pad(n) { return n < 10 ? "0" + n : "" + n; }
@@ -66,7 +67,7 @@
             // Nếu user chỉ click 1 điểm (không kéo), FullCalendar vẫn trả start/end theo slot nhỏ nhất
             var start = info.start;
             var end = info.end;
-
+            //debugger;
             // ApplyDate lấy theo start (yyyy-MM-dd)
             var applyDate = start.toISOString().substring(0, 10);
 
@@ -144,7 +145,7 @@
     // Gắn hành vi Edit/Delete khi ViewModal open
     viewModal.onOpen(function () {
         var modal = viewModal.getModal();
-
+        //debugger;
         // tránh gắn nhiều lần
         modal.off('click', '#CalendarSlotView_Edit');
         modal.off('click', '#CalendarSlotView_Delete');

@@ -8,7 +8,9 @@ public class CreateUpdateAppNewsDto
     [Required]
     [StringLength(200)]
     public string Title { get; set; }
-
+    [Required]
+    [StringLength(1000)]
+    public string ShortDescription { get; set; }
     [Required]
     public string ContentHtml { get; set; }
 

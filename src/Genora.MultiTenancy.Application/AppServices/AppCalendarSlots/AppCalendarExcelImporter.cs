@@ -31,7 +31,7 @@ namespace Genora.MultiTenancy.AppServices.AppCalendarSlots
                     var dto = new AppCalendarSlotExcelRowDto
                     {
                         GolfCourseCode = ws.Cell(row, 1).GetString(),
-                        PlayDate = DateTime.ParseExact(ws.Cell(row, 2).GetString(), "dd/MM/yyyy", CultureInfo.InvariantCulture),
+                        PlayDate = DateTime.ParseExact(ws.Cell(row, 2).GetString(), "dd/MM/yyyy", new CultureInfo("vi-VN")),
                         StartTime = ws.Cell(row, 3).GetValue<TimeSpan>(),
                         EndTime = ws.Cell(row, 4).GetValue<TimeSpan>(),
                         PromotionType = ws.Cell(row, 5).GetString(),
@@ -41,7 +41,7 @@ namespace Genora.MultiTenancy.AppServices.AppCalendarSlots
                     if (results.Any(x => x.Item2.GolfCourseCode == dto.GolfCourseCode && x.Item2.PlayDate == dto.PlayDate && x.Item2.StartTime == dto.StartTime)) continue;
                     var index = 0;
                     var priceColsIndex = 8;
-                    for (var priceCols = priceColsIndex; priceCols < (totalCustomerTypes + 8 - 1); priceCols++)
+                    for (var priceCols = priceColsIndex; priceCols < (totalCustomerTypes + 8); priceCols++)
                     {
                         if (!ws.Cell(row, priceCols).IsEmpty())
                         {

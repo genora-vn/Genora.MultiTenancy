@@ -20,7 +20,7 @@ public class News : FullAuditedAggregateRoot<Guid>, IMultiTenant
     public string Title { get; set; } = null!;
     [Required]
     [StringLength(1000)]
-    public string ShortDescription { get; set; } = null!;
+    public string ShortDescription { get; set; }
 
     public string ContentHtml { get; set; } = null!;
 

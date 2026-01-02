@@ -20,9 +20,9 @@ public class DetailModalModel : MultiTenancyPageModel
     public Guid? GolfCourseId { get; set; }     // từ JS truyền lên
 
     [BindProperty(SupportsGet = true)]
-    public DateTime? ApplyDateFrom { get; set; }    // từ JS truyền lên (yyyy-MM-dd)
-    [BindProperty(SupportsGet = true)]
-    public DateTime? ApplyDateTo { get; set; }    // từ JS truyền lên (yyyy-MM-dd)
+    public DateTime? ApplyDate { get; set; }    // từ JS truyền lên (yyyy-MM-dd)
+    //[BindProperty(SupportsGet = true)]
+    //public DateTime? ApplyDateTo { get; set; }    // từ JS truyền lên (yyyy-MM-dd)
 
     [BindProperty(SupportsGet = true)]
     public string? TimeFrom { get; set; }       // "HH:mm"
@@ -88,17 +88,17 @@ public class DetailModalModel : MultiTenancyPageModel
         {
             return BadRequest("Missing golfCourseId");
         }
-        if (!ApplyDateFrom.HasValue)
+        if (!ApplyDate.HasValue)
         {
-            return BadRequest("Missing ApplyDateFrom");
+            return BadRequest("Missing ApplyDate");
         }
-        if (!ApplyDateTo.HasValue)
-        {
-            return BadRequest("Missing ApplyDateTo");
-        }
+        //if (!ApplyDateTo.HasValue)
+        //{
+        //    return BadRequest("Missing ApplyDateTo");
+        //}
 
         var gcId = GolfCourseId ?? Guid.Empty;
-        var date = ApplyDateTo?.Date ?? DateTime.Today;
+        var date = ApplyDate?.Date ?? DateTime.Today;
 
         var tf = ParseTimeOrDefault(TimeFrom, new TimeSpan(6, 0, 0));
         var tt = ParseTimeOrDefault(TimeTo, tf.Add(TimeSpan.FromMinutes(30)));
