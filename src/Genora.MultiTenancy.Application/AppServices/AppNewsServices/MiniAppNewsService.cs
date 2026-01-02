@@ -34,7 +34,7 @@ namespace Genora.MultiTenancy.AppServices.AppNewsServices
             if (!input.FilterText.IsNullOrWhiteSpace())
             {
                 var filter = input.FilterText.Trim();
-                query = query.Where(x => x.Title.Contains(filter));
+                query = query.Where(x => x.Title.Contains(filter) || x.ShortDescription.Contains(filter));
             }
 
             var sorting = string.IsNullOrWhiteSpace(input.Sorting)
