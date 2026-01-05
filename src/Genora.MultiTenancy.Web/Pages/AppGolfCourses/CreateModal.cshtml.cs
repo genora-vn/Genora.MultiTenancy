@@ -1,4 +1,5 @@
 using Genora.MultiTenancy.AppDtos.AppGolfCourses;
+using Genora.MultiTenancy.AppDtos.AppOptionExtend;
 using Microsoft.AspNetCore.Mvc;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -10,22 +11,27 @@ public class CreateModalModel : MultiTenancyPageModel
     [BindProperty]
     public CreateUpdateAppGolfCourseDto GolfCourse { get; set; }
 
-    private readonly IAppGolfCourseService _appGolfCourseService;
+    [BindProperty]
+    public List<GolfCourseUtilityDto> UtilityDtos { get; set; }
 
-    public CreateModalModel(IAppGolfCourseService appGolfCourseService)
+    private readonly IAppGolfCourseService _appGolfCourseService;
+    private readonly IOptionExtendService _extendService;
+    public CreateModalModel(IAppGolfCourseService appGolfCourseService, IOptionExtendService extendService)
     {
         _appGolfCourseService = appGolfCourseService;
+        _extendService = extendService;
     }
 
-    public void OnGet()
+    public async Task OnGet()
     {
         var ulitities = new List<GolfCourseUtilityDto>();
-        foreach (var utility in Enums.UlititiesEnum.List())
+        UtilityDtos = await _extendService.GetUtilitiesAsync();
+        foreach (var utility in UtilityDtos)
         {
             ulitities.Add(new GolfCourseUtilityDto
             {
-                UtilityId = utility.Value,
-                UtilityName = utility.Name,
+                UtilityId = utility.UtilityId,
+                UtilityName = utility.UtilityName,
                 IsCheck = false
             });
         }

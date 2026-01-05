@@ -21,9 +21,10 @@ public class DetailModalModel : MultiTenancyPageModel
 
     [BindProperty(SupportsGet = true)]
     public DateTime? ApplyDate { get; set; }    // từ JS truyền lên (yyyy-MM-dd)
-    //[BindProperty(SupportsGet = true)]
-    //public DateTime? ApplyDateTo { get; set; }    // từ JS truyền lên (yyyy-MM-dd)
-
+    [BindProperty(SupportsGet = true)]
+    public DateTime? ApplyDateTo { get; set; }    // từ JS truyền lên (yyyy-MM-dd)
+    [BindProperty(SupportsGet = true)]
+    public DateTime? ApplyDateFrom { get; set; }    // từ JS truyền lên (yyyy-MM-dd)
     [BindProperty(SupportsGet = true)]
     public string? TimeFrom { get; set; }       // "HH:mm"
 

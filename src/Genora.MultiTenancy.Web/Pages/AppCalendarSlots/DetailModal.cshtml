@@ -30,15 +30,16 @@
             }
 
             <input type="hidden" asp-for="Slot.GolfCourseId" />
-            <input type="hidden" asp-for="Slot.ApplyDate" value="@applyDateIso" />
+            @* <input type="hidden" asp-for="Slot.ApplyDate" value="@applyDateIso" /> *@
 
             <div class="row g-3">
                 <div class="col-md-4">
                     <label class="form-label">@L["ApplyDate"]</label>
-                    <input type="text"
+                    @* <input type="text"
                            class="form-control"
                            value="@applyDateText"
-                           readonly />
+                           readonly /> *@
+                    <input asp-for="Slot.ApplyDate" class="form-control calendar-date-input" type="text" autocomplete="off" value="@applyDateIso" />
                 </div>
 
                 <div class="col-md-4">

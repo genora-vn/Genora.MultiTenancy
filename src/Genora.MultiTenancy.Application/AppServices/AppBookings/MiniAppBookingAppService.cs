@@ -43,6 +43,7 @@ public class MiniAppBookingAppService : ApplicationService, IMiniAppBookingAppSe
 
     public async Task<MiniAppBookingDetailDto> CreateFromMiniAppAsync(MiniAppCreateBookingDto input)
     {
+        
         var customer = await _customerRepo.GetAsync(input.CustomerId);
         if (customer == null) return new MiniAppBookingDetailDto { Error = (int)HttpStatusCode.Unauthorized, Message = "Quý khách chưa đăng nhập dịch vụ"};
         // BookingCode: CustomerCode + ddMMyy + serial/day (reset theo ngày)
@@ -55,6 +56,11 @@ public class MiniAppBookingAppService : ApplicationService, IMiniAppBookingAppSe
         var serial = (countInDay + 1).ToString("D3");
 
         var bookingCode = $"{customer.CustomerCode}-{datePart}-{serial}";
+        if (await _bookingRepo.AnyAsync(b => b.BookingCode == bookingCode))
+        {
+            // trường hợp hiếm: đã có booking cùng mã
+            bookingCode = $"{customer.CustomerCode}-{datePart}-{serial+1}";
+        }
         input.PricePerGolfer = calendarSlot.Prices.FirstOrDefault(x => x.CustomerTypeId== customer.CustomerTypeId)?.Price ?? 0;
         var booking = new Booking(
              GuidGenerator.Create(),

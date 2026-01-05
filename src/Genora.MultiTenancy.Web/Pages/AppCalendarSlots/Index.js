@@ -120,8 +120,8 @@
 
         detailModal.open({
             golfCourseId: golfCourseId,
-            applyDateFrom: fromDate,
-            applyDateTo: toDate
+            applyDate: fromDate,
+            //applyDateTo: toDate
         });
     });
 
