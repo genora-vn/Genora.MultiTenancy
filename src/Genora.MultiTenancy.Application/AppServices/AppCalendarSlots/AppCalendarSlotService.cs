@@ -461,7 +461,7 @@ public class AppCalendarSlotService :
                 StartTime = b.TimeFrom,
                 EndTime = b.TimeTo,
                 GolfCourseName = golfCourse.FirstOrDefault(g => g.Id == b.GolfCourseId)?.Name,
-                PlayDate = b.ApplyDate,
+                FromDate = b.ApplyDate,
                 MaxSlots = b.MaxSlots,
                 PromotionType = b.PromotionType.ToString(),
                 InternalNote = b.InternalNote
@@ -478,118 +478,192 @@ public class AppCalendarSlotService :
         var template = _generator.GenerateTemplate(customerTypes.OrderBy(t => t.CreationTime).ToList());
         return template;
     }
-    public async Task ImportExcelAsync(ImportCalendarExcelInput input)
+    public async Task<int> ImportExcelAsync(ImportCalendarExcelInput input)
     {
-        await CheckUpdatePolicyAsync();
-        var importer = new AppCalendarExcelImporter();
-        var customerType = await _customerTypeRepository.GetListAsync();
-        using var stream = input.File.GetStream();
-        var rows = importer.Read(stream, customerType.OrderBy(t => t.CreationTime).ToList());
-        var golfCourses = await _golfCourseRepository.GetListAsync();
-        var slotPrices = new List<CalendarSlotPrice>();
-
-        foreach (var (rowNumber, r) in rows)
+        try
         {
-            // ===== VALIDATE =====
-            // ===== Check các trường dữ liệu theo đúng entity hoặc cần thì valid các trường bắt buộc, đây là a làm demo cho bảng Booking các bảng khác tương tự =====
-            if (string.IsNullOrEmpty(r.GolfCourseCode))
-            {
-                throw new UserFriendlyException(
-                    "Import Excel lỗi",
-                    $"Dòng {rowNumber}: GolfCourseCode là bắt buộc"
-                );
-            }
-            if (r.PlayDate == null)
-            {
-                throw new UserFriendlyException(
-                    "Import Excel lỗi",
-                    $"Dòng {rowNumber}: PlayDate là bắt buộc"
-                );
-            }
-            if (r.StartTime == null)
-            {
-                throw new UserFriendlyException(
-                    "Import Excel lỗi",
-                    $"Dòng {rowNumber}: StartTime là bắt buộc"
-                );
-            }
-            if (r.EndTime == null)
-            {
-                throw new UserFriendlyException(
-                    "Import Excel lỗi",
-                    $"Dòng {rowNumber}: EndTime là bắt buộc"
-                );
-            }
-            if (r.MaxSlots == null)
-            {
-                throw new UserFriendlyException(
-                    "Import Excel lỗi",
-                    $"Dòng {rowNumber}: MaxSlots là bắt buộc"
-                );
-            }
+            await CheckUpdatePolicyAsync();
+            var importer = new AppCalendarExcelImporter();
+            var customerType = await _customerTypeRepository.GetListAsync();
+            using var stream = input.File.GetStream();
+            var rows = importer.Read(stream, customerType.OrderBy(t => t.CreationTime).ToList());
+            var golfCourses = await _golfCourseRepository.GetListAsync();
+            var slotPrices = new List<CalendarSlotPrice>();
 
-            if (!Enum.TryParse<PromotionType>(r.PromotionType, out var promotion))
-                throw new UserFriendlyException(
-                    "Import Excel lỗi",
-                    $"Dòng {rowNumber}: PromotionType không hợp lệ");
-
-            var golfCourse = golfCourses.FirstOrDefault(g => g.Code == r.GolfCourseCode);
-            if (golfCourse == null)
+            foreach (var (rowNumber, r) in rows)
             {
-                throw new UserFriendlyException($"Mã sân {r.GolfCourseCode} không tìm thấy");
-            }
-            var calendar = await Repository.FirstOrDefaultAsync(
-                x => x.GolfCourseId == golfCourse.Id &&  x.ApplyDate == r.PlayDate && x.TimeFrom == r.StartTime
-            );
-
-            if (calendar == null)
-            {
-                //var datePart = r.PlayDate.ToString("ddMMyy");
-
-                // ===== INSERT =====
-                calendar = new CalendarSlot(
-                    GuidGenerator.Create(),
-                    golfCourse.Id,
-                    r.PlayDate,
-                    r.StartTime,
-                    r.EndTime
-                )
+                // ===== VALIDATE =====
+                // ===== Check các trường dữ liệu theo đúng entity hoặc cần thì valid các trường bắt buộc, đây là a làm demo cho bảng Booking các bảng khác tương tự =====
+                if (string.IsNullOrEmpty(r.GolfCourseCode))
                 {
-                    TenantId = CurrentTenant.Id,
-                    PromotionType = promotion,
-                    MaxSlots = r.MaxSlots,
-                    InternalNote = r.InternalNote,
-                    IsActive = true
-                };
-
-                var insertedCalendar = await Repository.InsertAsync(calendar, autoSave: true);
-                if (r.CustomerTypePrice.Any(p => p.Price > 0))
-                {
-                    var prices = new List<CalendarSlotPrice>();
-                    foreach(var item in r.CustomerTypePrice)
-                    {
-                        if (item.Price == 0) continue;
-                        var type = customerType.FirstOrDefault(t => t.Name == item.CustomerType);
-                        if (type == null) continue;
-                        var price = new CalendarSlotPrice(GuidGenerator.Create(), insertedCalendar.Id, type.Id, (decimal)item.Price);
-                        prices.Add(price);
-                    }
-                    await _priceRepository.InsertManyAsync(prices);
+                    throw new UserFriendlyException(
+                        "Import Excel lỗi",
+                        $"Dòng {rowNumber}: GolfCourseCode là bắt buộc"
+                    );
                 }
+                if (r.FromDate == null || r.FromDate == DateTime.MinValue)
+                {
+                    throw new UserFriendlyException(
+                        "Import Excel lỗi",
+                        $"Dòng {rowNumber}: FromDate là bắt buộc"
+                    );
+                }
+                if (r.ToDate == null || r.ToDate == DateTime.MinValue)
+                {
+                    throw new UserFriendlyException(
+                        "Import Excel lỗi",
+                        $"Dòng {rowNumber}: ToDate là bắt buộc"
+                    );
+                }
+                if (r.StartTime == null || r.StartTime == TimeSpan.Zero)
+                {
+                    throw new UserFriendlyException(
+                        "Import Excel lỗi",
+                        $"Dòng {rowNumber}: StartTime là bắt buộc"
+                    );
+                }
+                if (r.EndTime == null || r.EndTime == TimeSpan.Zero)
+                {
+                    throw new UserFriendlyException(
+                        "Import Excel lỗi",
+                        $"Dòng {rowNumber}: EndTime là bắt buộc"
+                    );
+                }
+                if (r.MaxSlots == null || r.MaxSlots == 0)
+                {
+                    throw new UserFriendlyException(
+                        "Import Excel lỗi",
+                        $"Dòng {rowNumber}: MaxSlots là bắt buộc và phải lớn hơn 0"
+                    );
+                }
+                if (r.Gap == null || r.Gap == 0)
+                {
+                    throw new UserFriendlyException(
+                        "Import Excel lỗi",
+                        $"Dòng {rowNumber}: Gap là bắt buộc và phải lớn hơn 0"
+                    );
+                }
+
+                if (!Enum.TryParse<PromotionType>(r.PromotionType, out var promotion))
+                    throw new UserFriendlyException(
+                        "Import Excel lỗi",
+                        $"Dòng {rowNumber}: PromotionType không hợp lệ");
+
+                var golfCourse = golfCourses.FirstOrDefault(g => g.Code == r.GolfCourseCode);
+                if (golfCourse == null)
+                {
+                    throw new UserFriendlyException($"Mã sân {r.GolfCourseCode} không tìm thấy");
+                }
+
+                var totalDays = (r.ToDate - r.FromDate).TotalDays;
+                var totalSlots = (int)((r.EndTime - r.StartTime).TotalMinutes / r.Gap);
+
+                var calendars = await Repository.GetListAsync(
+                    x => x.GolfCourseId == golfCourse.Id && x.ApplyDate >= r.FromDate && x.ApplyDate <= r.ToDate
+                );
+                for (int i = 0; i <= totalDays; i++)
+                {
+                    var applyDate = r.FromDate.AddDays(i);
+                    for (int j = 0; j < totalSlots; j++)
+                    {
+                        var timeFrom = r.StartTime.Add(TimeSpan.FromMinutes(r.Gap * j));
+                        var timeTo = timeFrom.Add(TimeSpan.FromMinutes(r.Gap));
+                        var existingCalendar = calendars.FirstOrDefault(c => c.ApplyDate == applyDate && c.TimeFrom == timeFrom);
+                        if (existingCalendar != null)
+                        {
+                            // Cập nhật
+                            existingCalendar.PromotionType = promotion;
+                            existingCalendar.MaxSlots = r.MaxSlots;
+                            existingCalendar.InternalNote = r.InternalNote;
+                            await Repository.UpdateAsync(existingCalendar, autoSave: true);
+                        }
+                        else
+                        {
+                            // Tạo mới
+                            var newCalendar = new CalendarSlot(
+                                GuidGenerator.Create(),
+                                golfCourse.Id,
+                                applyDate,
+                                timeFrom,
+                                timeTo
+                            )
+                            {
+                                PromotionType = promotion,
+                                MaxSlots = r.MaxSlots,
+                                InternalNote = r.InternalNote,
+                                IsActive = true
+                            };
+                            newCalendar = await Repository.InsertAsync(newCalendar, autoSave: true);
+
+                            if (r.CustomerTypePrice.Any(p => p.Price > 0))
+                            {
+                                var prices = new List<CalendarSlotPrice>();
+                                foreach (var item in r.CustomerTypePrice)
+                                {
+                                    if (item.Price == 0) continue;
+                                    var type = customerType.FirstOrDefault(t => t.Name == item.CustomerType);
+                                    if (type == null) continue;
+                                    var price = new CalendarSlotPrice(GuidGenerator.Create(), newCalendar.Id, type.Id, (decimal)item.Price);
+                                    prices.Add(price);
+                                }
+                                await _priceRepository.InsertManyAsync(prices);
+                            }
+                        }
+                    }
+                }
+                //var calendar = calendars.FirstOrDefault();
+                //if (calendar == null)
+                //{
+                //    //var datePart = r.PlayDate.ToString("ddMMyy");
+
+                //    // ===== INSERT =====
+                //    calendar = new CalendarSlot(
+                //        GuidGenerator.Create(),
+                //        golfCourse.Id,
+                //        r.FromDate,
+                //        r.StartTime,
+                //        r.EndTime
+                //    )
+                //    {
+                //        TenantId = CurrentTenant.Id,
+                //        PromotionType = promotion,
+                //        MaxSlots = r.MaxSlots,
+                //        InternalNote = r.InternalNote,
+                //        IsActive = true
+                //    };
+
+                //    var insertedCalendar = await Repository.InsertAsync(calendar, autoSave: true);
+                //    if (r.CustomerTypePrice.Any(p => p.Price > 0))
+                //    {
+                //        var prices = new List<CalendarSlotPrice>();
+                //        foreach (var item in r.CustomerTypePrice)
+                //        {
+                //            if (item.Price == 0) continue;
+                //            var type = customerType.FirstOrDefault(t => t.Name == item.CustomerType);
+                //            if (type == null) continue;
+                //            var price = new CalendarSlotPrice(GuidGenerator.Create(), insertedCalendar.Id, type.Id, (decimal)item.Price);
+                //            prices.Add(price);
+                //        }
+                //        await _priceRepository.InsertManyAsync(prices);
+                //    }
+                //}
+                //else
+                //{
+                //    // ===== UPDATE =====
+                //    calendar.MaxSlots = r.MaxSlots;
+                //    calendar.InternalNote = r.InternalNote;
+                //    calendar.PromotionType = promotion;
+
+                //    await Repository.UpdateAsync(calendar, autoSave: true);
+                //}
+
             }
-            else
-            {
-                // ===== UPDATE =====
-                calendar.MaxSlots = r.MaxSlots;
-                calendar.InternalNote = r.InternalNote;
-                calendar.PromotionType = promotion;
-                
-                await Repository.UpdateAsync(calendar, autoSave: true);
-            }
-            
+
+            return 1;
         }
-
-        return;
+        catch (Exception ex)
+        {
+            throw ex;
+        }
     }
-
 }

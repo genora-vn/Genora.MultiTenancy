@@ -31,17 +31,19 @@ namespace Genora.MultiTenancy.AppServices.AppCalendarSlots
                     var dto = new AppCalendarSlotExcelRowDto
                     {
                         GolfCourseCode = ws.Cell(row, 1).GetString(),
-                        PlayDate = DateTime.ParseExact(ws.Cell(row, 2).GetString(), "dd/MM/yyyy", new CultureInfo("vi-VN")),
-                        StartTime = ws.Cell(row, 3).GetValue<TimeSpan>(),
-                        EndTime = ws.Cell(row, 4).GetValue<TimeSpan>(),
-                        PromotionType = ws.Cell(row, 5).GetString(),
-                        MaxSlots = ws.Cell(row, 6).GetValue<int>(),
-                        InternalNote = ws.Cell(row, 7).GetString(),
+                        FromDate = DateTime.ParseExact(ws.Cell(row, 2).GetString(), "dd/MM/yyyy", new CultureInfo("vi-VN")),
+                        ToDate = DateTime.ParseExact(ws.Cell(row, 3).GetString(), "dd/MM/yyyy", new CultureInfo("vi-VN")),
+                        StartTime = ws.Cell(row, 4).GetValue<TimeSpan>(),
+                        EndTime = ws.Cell(row, 5).GetValue<TimeSpan>(),
+                        PromotionType = ws.Cell(row, 6).GetString(),
+                        MaxSlots = ws.Cell(row, 7).GetValue<int>(),
+                        InternalNote = ws.Cell(row, 8).GetString(),
+                        Gap = ws.Cell(row, 9).GetValue<int>(),
                     };
-                    if (results.Any(x => x.Item2.GolfCourseCode == dto.GolfCourseCode && x.Item2.PlayDate == dto.PlayDate && x.Item2.StartTime == dto.StartTime)) continue;
+                    if (results.Any(x => x.Item2.GolfCourseCode == dto.GolfCourseCode && x.Item2.FromDate == dto.FromDate && x.Item2.StartTime == dto.StartTime)) continue;
                     var index = 0;
-                    var priceColsIndex = 8;
-                    for (var priceCols = priceColsIndex; priceCols < (totalCustomerTypes + 8); priceCols++)
+                    var priceColsIndex = 10;
+                    for (var priceCols = priceColsIndex; priceCols < (totalCustomerTypes + 10); priceCols++)
                     {
                         if (!ws.Cell(row, priceCols).IsEmpty())
                         {

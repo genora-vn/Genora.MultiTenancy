@@ -34,7 +34,7 @@ public class AppCalendarSlotController : AbpController
 
     [HttpPost("import")]
     [DisableValidation]
-    public Task Import([FromForm] ImportCalendarExcelInput input)
+    public Task<int> Import([FromForm] ImportCalendarExcelInput input)
     {
         return _service.ImportExcelAsync(input);
     }

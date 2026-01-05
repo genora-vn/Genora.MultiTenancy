@@ -27,32 +27,36 @@ namespace Genora.MultiTenancy.AppServices.AppCalendarSlots
             ws.Column(1).Width = 15;
             ws.Range(ws.Cell(1, 1).Address, ws.Cell(2, 1).Address).Merge();
             
-            ws.Cell(1, 2).Value = "Ngày chơi (*)";
+            ws.Cell(1, 2).Value = "Ngày bắt đầu(*)";
             ws.Range(ws.Cell(1, 2).Address, ws.Cell(2, 2).Address).Merge();
-            ws.Cell(1, 3).Value = "Giờ bắt đầu (*)";
+            ws.Cell(1, 3).Value = "Ngày kết thúc(*)";
             ws.Range(ws.Cell(1, 3).Address, ws.Cell(2, 3).Address).Merge();
-            ws.Cell(1, 4).Value = "Giờ kết thúc";
+            ws.Cell(1, 4).Value = "Giờ bắt đầu (*)";
             ws.Range(ws.Cell(1, 4).Address, ws.Cell(2, 4).Address).Merge();
-            ws.Cell(1, 5).Value = "Loại ưu đãi (*)";
+            ws.Cell(1, 5).Value = "Giờ kết thúc";
             ws.Range(ws.Cell(1, 5).Address, ws.Cell(2, 5).Address).Merge();
-            ws.Cell(1, 6).Value = "Số slot tối đa";
+            ws.Cell(1, 6).Value = "Loại ưu đãi (*)";
             ws.Range(ws.Cell(1, 6).Address, ws.Cell(2, 6).Address).Merge();
-            ws.Cell(1, 7).Value = "Ghi chú";
+            ws.Cell(1, 7).Value = "Số slot tối đa";
             ws.Range(ws.Cell(1, 7).Address, ws.Cell(2, 7).Address).Merge();
+            ws.Cell(1, 8).Value = "Ghi chú";
+            ws.Range(ws.Cell(1, 8).Address, ws.Cell(2, 8).Address).Merge();
+            ws.Cell(1, 9).Value = "Gap (Tần suất)";
+            ws.Range(ws.Cell(1, 9).Address, ws.Cell(2, 9).Address).Merge();
 
 
             var totalCustomerTypes = customerTypes.Count;
-            ws.Range(ws.Cell(1,8).Address, ws.Cell(1, 8 + totalCustomerTypes-1).Address).Merge();
-            ws.Cell(1, 8).Value = "Bảng giá";
+            ws.Range(ws.Cell(1,10).Address, ws.Cell(1, 10 + totalCustomerTypes-1).Address).Merge();
+            ws.Cell(1, 10).Value = "Bảng giá";
             var index = 0;
-            for (var i = 8; i <= (8 + totalCustomerTypes -1); i++)
+            for (var i = 10; i < (10 + totalCustomerTypes); i++)
             {
                 ws.Cell(2, i).Value = $"Giá {customerTypes[index].Name}";
                 ws.Cell(3, i).Value = $"Giá áp dụng cho {customerTypes[index].Name}";
                 index++;
             }
-            ws.Range(ws.Cell(1, 1).Address, ws.Cell(2, 7 + totalCustomerTypes).Address).Style.Border.OutsideBorder = XLBorderStyleValues.Thin;
-            ws.Range(ws.Cell(1, 1).Address, ws.Cell(2, 7 + totalCustomerTypes).Address).Style.Border.InsideBorder = XLBorderStyleValues.Thin;
+            ws.Range(ws.Cell(1, 1).Address, ws.Cell(2, 9 + totalCustomerTypes).Address).Style.Border.OutsideBorder = XLBorderStyleValues.Thin;
+            ws.Range(ws.Cell(1, 1).Address, ws.Cell(2, 9 + totalCustomerTypes).Address).Style.Border.InsideBorder = XLBorderStyleValues.Thin;
             //ws.Cell(2, 8).Value = "Loại khách hàng";
             //ws.Cell(2, 9).Value = "Giá áp dụng";
 
@@ -66,11 +70,13 @@ namespace Genora.MultiTenancy.AppServices.AppCalendarSlots
             //// ===== MÔ TẢ =====
             ws.Cell(3, 1).Value = "     MONT     ";
             ws.Cell(3, 2).Value = "dd/MM/yyyy";
-            ws.Cell(3, 3).Value = "HH:mm (ex: 6:30)";
+            ws.Cell(3, 3).Value = "dd/MM/yyyy";
             ws.Cell(3, 4).Value = "HH:mm (ex: 6:30)";
-            ws.Cell(3, 5).Value = "Normal/Promotion";
-            ws.Cell(3, 6).Value = "Số nguyên nhỏ hơn 100";
-            ws.Cell(3, 7).Value = "Ghi chú nội bộ";
+            ws.Cell(3, 5).Value = "HH:mm (ex: 6:30)";
+            ws.Cell(3, 6).Value = "Normal/Promotion";
+            ws.Cell(3, 7).Value = "Số nguyên nhỏ hơn 100";
+            ws.Cell(3, 8).Value = "Ghi chú nội bộ";
+            ws.Cell(3, 9).Value = "Khoảng cách 2 teetime";
             //ws.Range(ws.Cell(3, 2).Address, ws.Cell(1000, 2).Address).Style.DateFormat.Format = "dd/MM/yyyy";
             //ws.Range(ws.Cell(3, 3).Address, ws.Cell(1000, 3).Address).Style.NumberFormat.Format = "HH:mm";
             //ws.Range(ws.Cell(3, 4).Address, ws.Cell(1000, 4).Address).Style.NumberFormat.Format = "HH:mm";
@@ -93,7 +99,7 @@ namespace Genora.MultiTenancy.AppServices.AppCalendarSlots
 
             var enumPromation = Enum.GetNames(typeof(PromotionType));
             var sourse = $"\"{string.Join(",", enumPromation)}\"";
-            ws.Range("E4:E1000").SetDataValidation().List(sourse, true);
+            ws.Range("F4:F1000").SetDataValidation().List(sourse, true);
   
             ws.Columns().AdjustToContents();
             

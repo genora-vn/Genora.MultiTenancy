@@ -176,7 +176,8 @@
             url: 'api/app/app-calendar-excel/import',
             fileInput: e.target,
             onSuccess: function () {
-                $('#CalendarSlotsTable').DataTable().ajax.reload();
+                //$('#CalendarSlotsTable').DataTable().ajax.reload();
+                slotsTable.draw();
             }
         });
     });

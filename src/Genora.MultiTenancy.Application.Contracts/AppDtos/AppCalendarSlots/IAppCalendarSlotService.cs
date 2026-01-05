@@ -20,5 +20,5 @@ public interface IAppCalendarSlotService :
     Task<IRemoteStreamContent> ExportExcelAsync(GetCalendarSlotListInput input);
     Task<IRemoteStreamContent> DownloadTemplateAsync();
     Task<IRemoteStreamContent> DownloadImportTemplateAsync();
-    Task ImportExcelAsync(ImportCalendarExcelInput input);
+    Task<int> ImportExcelAsync(ImportCalendarExcelInput input);
 }

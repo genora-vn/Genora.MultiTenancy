@@ -27,12 +27,14 @@ namespace Genora.MultiTenancy.AppServices.AppCalendarSlots
             foreach (var r in rows)
             {
                 ws.Cell(rowIndex, 1).Value = r.GolfCourseName;
-                ws.Cell(rowIndex, 2).Value = r.PlayDate;
+                ws.Cell(rowIndex, 2).Value = r.FromDate;
+                ws.Cell(rowIndex, 3).Value = r.ToDate;
                 ws.Cell(rowIndex, 2).Style.DateFormat.Format = "dd/MM/yyyy";
-                ws.Cell(rowIndex, 3).Value = r.StartTime;
-                ws.Cell(rowIndex, 4).Value = r.EndTime;
-                ws.Cell(rowIndex, 5).Value = r.MaxSlots;
-                ws.Cell(rowIndex, 6).Value = r.PromotionType.ToString();
+                ws.Cell(rowIndex, 3).Style.DateFormat.Format = "dd/MM/yyyy";
+                ws.Cell(rowIndex, 4).Value = r.StartTime;
+                ws.Cell(rowIndex, 5).Value = r.EndTime;
+                ws.Cell(rowIndex, 6).Value = r.MaxSlots;
+                ws.Cell(rowIndex, 7).Value = r.PromotionType.ToString();
 
                 rowIndex++;
             }

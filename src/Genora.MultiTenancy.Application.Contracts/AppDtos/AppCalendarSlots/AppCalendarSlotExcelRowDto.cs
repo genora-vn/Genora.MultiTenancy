@@ -9,11 +9,13 @@ namespace Genora.MultiTenancy.AppDtos.AppCalendarSlots
     {
         public string? GolfCourseName { get; set; }
         public string? GolfCourseCode { get; set; }
-        public DateTime PlayDate { get; set; }
+        public DateTime FromDate { get; set; }
+        public DateTime ToDate { get; set; }
         public TimeSpan StartTime { get; set; }
         public TimeSpan EndTime { get; set; }
         public int MaxSlots { get; set; }
         public string PromotionType { get; set; }
+        public int Gap { get; set; }
         public string InternalNote { get; set; }
         public List<CustomerTypeExcelRowDto> CustomerTypePrice { get; set; } = new List<CustomerTypeExcelRowDto>();
     }
