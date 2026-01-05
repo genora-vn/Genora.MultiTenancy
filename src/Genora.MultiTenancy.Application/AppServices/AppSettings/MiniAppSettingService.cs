@@ -56,6 +56,10 @@ namespace Genora.MultiTenancy.AppServices.AppSettings
         public async Task<MiniAppAppSettingDetailDto> GetAsync(Guid id)
         {
             var record = await _settingRepo.GetAsync(id);
+            if (record.SettingValue.StartsWith("/uploads"))
+            {
+                record.SettingValue = _env.ContentRootPath + "/wwwroot" + record.SettingValue;
+            }
             return new MiniAppAppSettingDetailDto { Data = ObjectMapper.Map<AppSetting, AppSettingDto>(record), Error = 0, Message = "Success" };
         }
     }
