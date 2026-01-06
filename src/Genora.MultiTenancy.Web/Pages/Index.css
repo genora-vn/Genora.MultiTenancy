@@ -12,4 +12,22 @@
     right: 0;
     z-index: 1;
 }
+.lpx-content-container .lpx-content {
+    padding-bottom: 0;
+    padding-top: 0;
+    padding-left: 2rem;
+    padding-right: 2rem;
+}
+.card .card-header{
+    padding-bottom: 0;
+}
+.dt-scroll-body {
+    overflow-y: scroll !important;
+    max-height: 57vh !important;
+    min-height: 57vh !important;
+}
+.modal-body {
+    max-height: 77vh;
+    overflow: auto;
+}
 /* Getting-Started End */
