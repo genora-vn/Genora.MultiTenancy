@@ -99,6 +99,7 @@
     "SettingValue": "Giá trị",
     "SettingType": "Loại cấu hình",
     "Description": "Mô tả",
+    "IsImageInput": "Tải ảnh lên",
     //    "IsActive": "Trạng thái",
     "AppSettings": "Cấu hình chung",
     "UpdateAppsetting": "Cập nhật cấu hình",

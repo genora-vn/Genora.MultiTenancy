@@ -14,7 +14,7 @@
         <abp-modal-body>
             <abp-input asp-for="Id" />
             @* <abp-form-content /> *@
-            <abp-input asp-for="AppSetting.SettingKey" placeholder="Nhập mã cấu hình (vd: color_background, logo_image,..)" label="@L["SettingKey"]" />
+            <abp-input asp-for="AppSetting.SettingKey" placeholder="Nhập mã cấu hình (vd: color_background, logo_image,..)" label="@L["SettingKey"]" readonly="true"/>
             <abp-input asp-for="AppSetting.IsImageInput" id="IsImageInput" label="@L["IsImageInput"]" />
 
             <abp-input asp-for="AppSetting.SettingType" id="setting-type" placeholder="Nhập loại cấu hình" label="@L["SettingType"]" />
@@ -25,7 +25,7 @@
 
             <div class="mb-3" style="display: none" id="input-image">
                 <div class="image-upload-group">
-                    <label for="images">Upload ảnh (có thể chọn nhiều):</label>
+                    <label for="images">Tải ảnh:</label>
                     <div class="drop-zone" id="dropZone">
                         <p>Kéo thả ảnh vào đây hoặc click để chọn</p>
                         <input asp-for="AppSetting.Images" type="file" id="images" accept="image/*" multiple style="display: none;">
