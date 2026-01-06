@@ -1,5 +1,6 @@
 ﻿using Genora.MultiTenancy.AppDtos.AppSettings;
 using Genora.MultiTenancy.Apps.AppSettings;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using System;
 using System.Collections.Generic;
@@ -8,18 +9,20 @@ using System.Net;
 using System.Threading.Tasks;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Application.Services;
+using Volo.Abp.DependencyInjection;
 using Volo.Abp.Domain.Repositories;
+using Volo.Abp.UI.Navigation.Urls;
 
 namespace Genora.MultiTenancy.AppServices.AppSettings
 {
-    public class MiniAppSettingService : ApplicationService, IMiniAppSettingService
+    public class MiniAppSettingService : ApplicationService, IMiniAppSettingService, ITransientDependency
     {
         private readonly IRepository<AppSetting, Guid> _settingRepo;
-        private readonly IHostEnvironment _env;
-        public MiniAppSettingService(IRepository<AppSetting, Guid> settingRepo, IHostEnvironment env)
+        private readonly IConfiguration _configuration;
+        public MiniAppSettingService(IRepository<AppSetting, Guid> settingRepo, IConfiguration configuration)
         {
             _settingRepo = settingRepo;
-            _env = env;
+            _configuration = configuration;
         }
 
         public async Task<MiniAppAppSettingListDto> GetListAsync(GetMiniAppSettingListInput input)
@@ -42,7 +45,7 @@ namespace Genora.MultiTenancy.AppServices.AppSettings
                 {
                     if (item.SettingValue != null && item.SettingValue.StartsWith("/uploads"))
                     {
-                        item.SettingValue = _env.ContentRootPath +"/wwwroot" + item.SettingValue;
+                        item.SettingValue = _configuration["App:SelfUrl"] + item.SettingValue;
                     }
                 }
                 var dto = new PagedResultDto<AppSettingDto>(total, itemDtos);
@@ -58,7 +61,7 @@ namespace Genora.MultiTenancy.AppServices.AppSettings
             var record = await _settingRepo.GetAsync(id);
             if (record.SettingValue.StartsWith("/uploads"))
             {
-                record.SettingValue = _env.ContentRootPath + "/wwwroot" + record.SettingValue;
+                record.SettingValue = _configuration["App:SelfUrl"] + record.SettingValue;
             }
             return new MiniAppAppSettingDetailDto { Data = ObjectMapper.Map<AppSetting, AppSettingDto>(record), Error = 0, Message = "Success" };
         }

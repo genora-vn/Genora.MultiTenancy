@@ -1,5 +1,6 @@
 ﻿using Genora.MultiTenancy.AppDtos.AppNews;
 using Genora.MultiTenancy.DomainModels.AppNews;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using System;
 using System.Collections.Generic;
@@ -15,11 +16,11 @@ namespace Genora.MultiTenancy.AppServices.AppNewsServices
     public class MiniAppNewsService : ApplicationService, IMiniAppNewsService
     {
         private readonly IRepository<News, Guid> _newsRepository;
-        private readonly IHostEnvironment _env;
-        public MiniAppNewsService(IRepository<News, Guid> newsRepository, IHostEnvironment env)
+        private readonly IConfiguration _configuration;
+        public MiniAppNewsService(IRepository<News, Guid> newsRepository, IConfiguration configuration)
         {
             _newsRepository = newsRepository;
-            _env = env;
+            _configuration = configuration;
         }
 
         public async Task<MiniAppNewsDetailDto> GetAsync(Guid id)
@@ -28,7 +29,7 @@ namespace Genora.MultiTenancy.AppServices.AppNewsServices
             var result = ObjectMapper.Map<News, MiniAppNewsData>(news);
             if (!string.IsNullOrEmpty(result.ThumbnailUrl) && result.ThumbnailUrl.StartsWith("/uploads"))
             {
-                result.ThumbnailUrl = _env.ContentRootPath + "/wwwroot" + result.ThumbnailUrl;
+                result.ThumbnailUrl = _configuration["App:SelfUrl"] + result.ThumbnailUrl;
             }
             return new MiniAppNewsDetailDto { Data = result , Error= 0, Message = "Success"};
         }
@@ -57,7 +58,7 @@ namespace Genora.MultiTenancy.AppServices.AppNewsServices
             {
                 if (!string.IsNullOrEmpty(item.ThumbnailUrl) && item.ThumbnailUrl.StartsWith("/uploads"))
                 {
-                    item.ThumbnailUrl = _env.ContentRootPath + "/wwwroot" + item.ThumbnailUrl;
+                    item.ThumbnailUrl = _configuration["App:SelfUrl"] + item.ThumbnailUrl;
                 }
             }
             var result = new PagedResultDto<MiniAppNewsData>(total, dtoList);
