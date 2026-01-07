@@ -16,12 +16,13 @@
         <abp-modal-header title="@L["EditAppGolfCourse"].Value"></abp-modal-header>
         <abp-modal-body>
             <abp-input asp-for="Id" />
+            <input asp-for="GolfCourse.Code" hidden />
             @* <abp-form-content /> *@
             <div class="mb-3 d-inline-flex" style="width: 99%; gap: 10px">
                 <div class="col-md-2">
                     @* <abp-input asp-for="GolfCourse.Code" placeholder="Nhập mã sân (vd: MASANX)" label="@L["GolfCourseCode"]" /> *@
                     <label asp-for="GolfCourse.Code" class="form-label">@L["GolfCourseCode"]</label>
-                    <input asp-for="GolfCourse.Code" class="form-control" placeholder="Nhập mã sân (vd: MASANX)" readonly/>
+                    <input asp-for="GolfCourse.Code" class="form-control" placeholder="Nhập mã sân (vd: MASANX)" disabled/>
                 </div>
                 <div class="col-md-5">
                     @* <abp-input asp-for="GolfCourse.Name" placeholder="Nhập tên sân" label="@L["GolfCourseName"]" /> *@

@@ -154,6 +154,7 @@
     });
 
     function handleFiles(files) {
+        debugger;
             for (let file of files) {
                 if (file.type.startsWith('image/')) {
                     if (selectedFiles.some(f => f.name === file.name && f.size === file.size)) {
@@ -172,6 +173,7 @@
     }
 
     function createPreview(src, name) {
+        debugger;
             const item = document.createElement('div');
             item.className = 'preview-item';
             item.dataset.filename = name;
@@ -186,7 +188,7 @@
             removeBtn.className = 'remove-btn';
             removeBtn.onclick = () => {
                 // Xóa khỏi mảng selectedFiles
-                selectedFiles = selectedFiles.filter(f => f !== file);
+                selectedFiles = selectedFiles.filter(f => f.name !== name);
                 item.remove();
                 // Cập nhật lại input file (xóa file đã bị remove)
                 updateFileInput();

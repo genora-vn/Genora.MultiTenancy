@@ -13,8 +13,9 @@
         <abp-modal-header title="@L["UpdateAppsetting"].Value"></abp-modal-header>
         <abp-modal-body>
             <abp-input asp-for="Id" />
+            <abp-input asp-for="AppSetting.SettingKey" type="hidden"/>
             @* <abp-form-content /> *@
-            <abp-input asp-for="AppSetting.SettingKey" placeholder="Nhập mã cấu hình (vd: color_background, logo_image,..)" label="@L["SettingKey"]" readonly="true"/>
+            <abp-input asp-for="AppSetting.SettingKey" placeholder="Nhập mã cấu hình (vd: color_background, logo_image,..)" label="@L["SettingKey"]" disabled="true"/>
             <abp-input asp-for="AppSetting.IsImageInput" id="IsImageInput" label="@L["IsImageInput"]" />
 
             <abp-input asp-for="AppSetting.SettingType" id="setting-type" placeholder="Nhập loại cấu hình" label="@L["SettingType"]" />
@@ -30,9 +31,10 @@
                         <p>Kéo thả ảnh vào đây hoặc click để chọn</p>
                         <input asp-for="AppSetting.Images" type="file" id="images" accept="image/*" multiple style="display: none;">
                     </div>
-
-                    <div class="preview-grid" id="previewGrid"></div>
                 </div>
+            </div>
+            <div class="mb-3">
+                <div class="preview-grid" id="previewGrid"></div>
             </div>
             <div class="mb-3">
                 <label asp-for="AppSetting.Description" class="form-label">@L["Description"]</label>
@@ -124,7 +126,7 @@
             var filename = url.split('/').pop();
 
             createPreview(url,filename);
-            inputImage.style.display = 'block';
+            //inputImage.style.display = 'block';
             isImageInput.checked;
         }
 
@@ -202,7 +204,11 @@
             removeBtn.className = 'remove-btn';
             removeBtn.onclick = () => {
                 // Xóa khỏi mảng selectedFiles
-                selectedFiles = selectedFiles.filter(f => f !== file);
+                selectedFiles = selectedFiles.filter(f => f.name !== name);
+
+                const settingValueInput = document.querySelector('[name="AppSetting.SettingValue"]');
+                if (settingValueInput) settingValueInput.value = '';
+
                 item.remove();
                 // Cập nhật lại input file (xóa file đã bị remove)
                 updateFileInput();

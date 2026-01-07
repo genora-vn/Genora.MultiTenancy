@@ -16,18 +16,16 @@
         <abp-modal-header title="@L["EditAppCustomer"]"></abp-modal-header>
         <abp-modal-body>
             <input type="hidden" asp-for="Id" />
-
+            <input asp-for="Customer.CustomerCode" hidden />
             <div class="row">
                 <div class="col-md-4">
-                    <abp-input asp-for="Customer.PhoneNumber" label="@L["CustomerPhoneNumber"]" />
+                    <abp-input asp-for="Customer.CustomerCode" label="@L["CustomerCode"]" disabled />
                 </div>
                 <div class="col-md-4">
                     <abp-input asp-for="Customer.FullName" label="@L["CustomerFullName"]" />
                 </div>
                 <div class="col-md-4">
-                    <abp-select asp-for="Customer.Gender"
-                                asp-items="Model.GenderItems"
-                                label="@L["Gender"]" />
+                    <abp-input asp-for="Customer.PhoneNumber" label="@L["CustomerPhoneNumber"]" />
                 </div>
             </div>
             <div class="row">
@@ -45,7 +43,9 @@
                                 label="@L["CustomerType"]" />
                 </div>
                 <div class="col-md-4">
-                    <abp-input asp-for="Customer.CustomerCode" label="@L["CustomerCode"]" readonly="true"/>
+                    <abp-select asp-for="Customer.Gender"
+                                asp-items="Model.GenderItems"
+                                label="@L["Gender"]" />
                 </div>
             </div>
             <div class="row">

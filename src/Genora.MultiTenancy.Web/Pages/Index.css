@@ -30,4 +30,7 @@
     max-height: 77vh;
     overflow: auto;
 }
+.form-control {
+    background-color: white;
+}
 /* Getting-Started End */

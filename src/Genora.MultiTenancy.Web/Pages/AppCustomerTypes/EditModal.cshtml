@@ -14,8 +14,9 @@
         <abp-modal-header title="@L["EditAppCustomerType"].Value"></abp-modal-header>
         <abp-modal-body>
             <abp-input asp-for="Id" />
+            <input asp-for="CustomerType.Code" hidden/>
             @* <abp-form-content /> *@
-            <abp-input asp-for="CustomerType.Code" placeholder="Nhập mã code loại khách hàng" label="@L["CustomerTypeCode"]" readonly="true"/>
+            <abp-input asp-for="CustomerType.Code" placeholder="Nhập mã code loại khách hàng" label="@L["CustomerTypeCode"]" disabled="true"/>
             <abp-input asp-for="CustomerType.Name" placeholder="Nhập tên loại khách hàng" label="@L["CustomerTypeName"]" />
             <div class="mb-3">
                 <label asp-for="CustomerType.Description" class="form-label">@L["Description"]</label>

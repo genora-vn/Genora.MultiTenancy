@@ -13,8 +13,9 @@
         <abp-modal-header title="@L["EditAppMembershipTier"].Value"></abp-modal-header>
         <abp-modal-body>
             <abp-input asp-for="Id" />
+            <input asp-for="MembershipTier.Code" hidden />
             @* <abp-form-content /> *@
-            <abp-input asp-for="MembershipTier.Code" placeholder="Nhập mã hạng (vd: GOLD)" readonly="true"/>
+            <abp-input asp-for="MembershipTier.Code" placeholder="Nhập mã hạng (vd: GOLD)" disabled/>
             <abp-input asp-for="MembershipTier.Name" placeholder="Nhập tên" />
             <div class="mb-3">
                 <label asp-for="MembershipTier.Description" class="form-label"></label>
