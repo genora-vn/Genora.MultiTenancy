@@ -45,7 +45,7 @@ namespace Genora.MultiTenancy.AppServices.AppSettings
                 {
                     if (item.SettingValue != null && item.SettingValue.StartsWith("/uploads"))
                     {
-                        item.SettingValue = _configuration["App:SelfUrl"] + item.SettingValue;
+                        item.SettingValue = _configuration["App:AppUrl"] + item.SettingValue;
                     }
                 }
                 var dto = new PagedResultDto<AppSettingDto>(total, itemDtos);
@@ -61,7 +61,7 @@ namespace Genora.MultiTenancy.AppServices.AppSettings
             var record = await _settingRepo.GetAsync(id);
             if (record.SettingValue.StartsWith("/uploads"))
             {
-                record.SettingValue = _configuration["App:SelfUrl"] + record.SettingValue;
+                record.SettingValue = _configuration["App:AppUrl"] + record.SettingValue;
             }
             return new MiniAppAppSettingDetailDto { Data = ObjectMapper.Map<AppSetting, AppSettingDto>(record), Error = 0, Message = "Success" };
         }

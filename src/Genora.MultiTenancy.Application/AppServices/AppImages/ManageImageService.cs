@@ -1,21 +1,20 @@
-﻿using SixLabors.ImageSharp;
-using Genora.MultiTenancy.AppDtos.AppImages;
+﻿using Genora.MultiTenancy.AppDtos.AppImages;
 using Microsoft.Extensions.Hosting;
+using SixLabors.ImageSharp;
 using System;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using Volo.Abp;
 using Volo.Abp.Content;
 using Volo.Abp.DependencyInjection;
-using SixLabors.ImageSharp.Processing;
-using System.Linq;
 
 namespace Genora.MultiTenancy.AppServices.AppImages
 {
     public class ManageImageService : IManageImageService, ITransientDependency
     {
         private readonly IHostEnvironment _env;
-
+        
         public ManageImageService(IHostEnvironment env)
         {
             _env = env;
@@ -40,8 +39,8 @@ namespace Genora.MultiTenancy.AppServices.AppImages
             if (file == null || file.ContentLength == 0)
                 throw new UserFriendlyException("Vui lòng chọn file ảnh.");
 
-            if (file.ContentLength > 10 * 1024 * 1024)
-                throw new UserFriendlyException("File không được quá 10MB.");
+            //if (file.ContentLength > 10 * 1024 * 1024)
+            //    throw new UserFriendlyException("File không được quá 10MB.");
 
             var ext = Path.GetExtension(file.FileName).ToLowerInvariant();
             allowedExtensions ??= _defaultAllowed;
@@ -50,7 +49,7 @@ namespace Genora.MultiTenancy.AppServices.AppImages
                 throw new UserFriendlyException($"Chỉ chấp nhận định dạng: {string.Join(", ", allowedExtensions)}");
 
             // Tạo thư mục
-            var uploadsRoot = Path.Combine(_env.ContentRootPath,"wwwroot", "uploads", subFolder, tenantId);
+            var uploadsRoot = Path.Combine("wwwroot","uploads", subFolder, tenantId);
             Directory.CreateDirectory(uploadsRoot);
 
             // Tên file duy nhất

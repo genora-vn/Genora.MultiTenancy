@@ -29,7 +29,7 @@ namespace Genora.MultiTenancy.AppServices.AppNewsServices
             var result = ObjectMapper.Map<News, MiniAppNewsData>(news);
             if (!string.IsNullOrEmpty(result.ThumbnailUrl) && result.ThumbnailUrl.StartsWith("/uploads"))
             {
-                result.ThumbnailUrl = _configuration["App:SelfUrl"] + result.ThumbnailUrl;
+                result.ThumbnailUrl = _configuration["App:AppUrl"] + result.ThumbnailUrl;
             }
             return new MiniAppNewsDetailDto { Data = result , Error= 0, Message = "Success"};
         }
@@ -58,7 +58,7 @@ namespace Genora.MultiTenancy.AppServices.AppNewsServices
             {
                 if (!string.IsNullOrEmpty(item.ThumbnailUrl) && item.ThumbnailUrl.StartsWith("/uploads"))
                 {
-                    item.ThumbnailUrl = _configuration["App:SelfUrl"] + item.ThumbnailUrl;
+                    item.ThumbnailUrl = _configuration["App:AppUrl"] + item.ThumbnailUrl;
                 }
             }
             var result = new PagedResultDto<MiniAppNewsData>(total, dtoList);
