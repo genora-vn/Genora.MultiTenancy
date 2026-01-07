@@ -98,6 +98,7 @@ public class Program
             // ABP pipeline + middleware enrich
             app.UseRouting();
             app.UseMiddleware<LogEnrichmentMiddleware>(); // đính TenantId, TenantName, UserId, UserName, CorrelationId
+            app.UseStaticFiles();
             // ... (Auth, Abp, Endpoints)
             await app.InitializeApplicationAsync();
             await app.RunAsync();

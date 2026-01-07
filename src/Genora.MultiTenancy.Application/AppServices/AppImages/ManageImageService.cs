@@ -24,7 +24,7 @@ namespace Genora.MultiTenancy.AppServices.AppImages
         {
             if (string.IsNullOrWhiteSpace(fileUrl)) return Task.CompletedTask;
 
-            var filePath = Path.Combine(_env.ContentRootPath, "wwwroot", fileUrl.TrimStart('/'));
+            var filePath = Path.Combine("wwwroot", fileUrl.TrimStart('/'));
             if (File.Exists(filePath))
             {
                 try { File.Delete(filePath); }
