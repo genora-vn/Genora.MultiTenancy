@@ -138,6 +138,7 @@ public class MultiTenancyDbContext :
             b.ToTable("AppZaloAuth");
             b.ConfigureByConvention();
             b.Property(x => x.AppId).IsRequired().HasMaxLength(50);
+            b.Property(x => x.OaId).HasMaxLength(50);
             b.Property(x => x.State).HasMaxLength(100);
             b.Property(x => x.CodeChallenge).HasMaxLength(200);
             b.Property(x => x.CodeVerifier).HasMaxLength(200);

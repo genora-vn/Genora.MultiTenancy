@@ -96,7 +96,7 @@ public class ZaloTokenProvider : IZaloTokenProvider
         if (string.IsNullOrWhiteSpace(refresh))
             throw new BusinessException("ZaloAuth:MissingRefreshToken");
 
-        var token = await _oauthClient.RefreshTokenAsync(appId, secret, refresh);
+        var token = await _oauthClient.RefreshTokenAsync(appId, secret, refresh, auth.OaId);
 
         auth.AccessToken = EncryptMaybe(token.AccessToken);
         auth.RefreshToken = EncryptMaybe(token.RefreshToken);

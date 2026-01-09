@@ -13,6 +13,9 @@ public class ZaloAuth : FullAuditedAggregateRoot<Guid>
     [Required, StringLength(50)]
     public string AppId { get; set; } = null!;
 
+    [StringLength(50)]
+    public string? OaId { get; set; } // <-- Callback lấy authorize code trả về từ Zalo
+
     [StringLength(200)]
     public string? CodeChallenge { get; set; }
 

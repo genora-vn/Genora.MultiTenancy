@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Net.Http;
 using System.Text.Json;
 using System.Threading.Tasks;
+using Volo.Abp;
 using Volo.Abp.Domain.Repositories;
 
 namespace Genora.MultiTenancy.AppServices.AppZaloAuths;
@@ -20,11 +21,12 @@ public class ZaloOAuthClient : IZaloOAuthClient
         _logRepo = logRepo;
     }
 
-    public async Task<ZaloTokenResponse> ExchangeCodeAsync(string appId, string appSecret, string code, string codeVerifier, string redirectUri)
+    public async Task<ZaloTokenResponse> ExchangeCodeAsync(
+    string appId, string appSecret, string code, string codeVerifier, string redirectUri, string? oaId)
     {
         var client = _httpClientFactory.CreateClient();
-
         var url = "https://oauth.zaloapp.com/v4/oa/access_token";
+
         var form = new Dictionary<string, string>
         {
             ["app_id"] = appId,
@@ -33,6 +35,10 @@ public class ZaloOAuthClient : IZaloOAuthClient
             ["code_verifier"] = codeVerifier,
             ["redirect_uri"] = redirectUri
         };
+
+        // ✅ OA OAuth: bổ sung oa_id nếu có
+        if (!string.IsNullOrWhiteSpace(oaId))
+            form["oa_id"] = oaId;
 
         var req = new HttpRequestMessage(HttpMethod.Post, url)
         {
@@ -54,6 +60,14 @@ public class ZaloOAuthClient : IZaloOAuthClient
             res.EnsureSuccessStatusCode();
 
             using var doc = JsonDocument.Parse(body);
+
+            // Handle khi zalo trả lỗi json
+            if (doc.RootElement.TryGetProperty("error", out var e) && e.GetInt32() != 0)
+            {
+                var msg = doc.RootElement.TryGetProperty("message", out var m) ? m.GetString() : "Zalo error";
+                throw new BusinessException("ZaloOAuth:ExchangeFailed").WithData("Message", msg).WithData("Body", body);
+            }
+
             var access = doc.RootElement.GetProperty("access_token").GetString()!;
             var refresh = doc.RootElement.GetProperty("refresh_token").GetString()!;
             var expires = doc.RootElement.GetProperty("expires_in").GetInt32();
@@ -78,6 +92,7 @@ public class ZaloOAuthClient : IZaloOAuthClient
                 requestBody: JsonSerializer.Serialize(new
                 {
                     app_id = appId,
+                    oa_id = oaId,
                     grant_type = "authorization_code",
                     code = "***",
                     code_verifier = "***",
@@ -90,17 +105,22 @@ public class ZaloOAuthClient : IZaloOAuthClient
         }
     }
 
-    public async Task<ZaloTokenResponse> RefreshTokenAsync(string appId, string appSecret, string refreshToken)
+    public async Task<ZaloTokenResponse> RefreshTokenAsync(
+        string appId, string appSecret, string refreshToken, string? oaId)
     {
         var client = _httpClientFactory.CreateClient();
-
         var url = "https://oauth.zaloapp.com/v4/oa/access_token";
+
         var form = new Dictionary<string, string>
         {
             ["app_id"] = appId,
             ["refresh_token"] = refreshToken,
             ["grant_type"] = "refresh_token"
         };
+
+        // Bắt trường hợp OA refresh cũng cần oa_id
+        if (!string.IsNullOrWhiteSpace(oaId))
+            form["oa_id"] = oaId;
 
         var req = new HttpRequestMessage(HttpMethod.Post, url)
         {
@@ -122,6 +142,12 @@ public class ZaloOAuthClient : IZaloOAuthClient
             res.EnsureSuccessStatusCode();
 
             using var doc = JsonDocument.Parse(body);
+            if (doc.RootElement.TryGetProperty("error", out var e) && e.GetInt32() != 0)
+            {
+                var msg = doc.RootElement.TryGetProperty("message", out var m) ? m.GetString() : "Zalo error";
+                throw new BusinessException("ZaloOAuth:RefreshFailed").WithData("Message", msg).WithData("Body", body);
+            }
+
             var access = doc.RootElement.GetProperty("access_token").GetString()!;
             var refresh = doc.RootElement.GetProperty("refresh_token").GetString()!;
             var expires = doc.RootElement.GetProperty("expires_in").GetInt32();
@@ -146,6 +172,7 @@ public class ZaloOAuthClient : IZaloOAuthClient
                 requestBody: JsonSerializer.Serialize(new
                 {
                     app_id = appId,
+                    oa_id = oaId,
                     grant_type = "refresh_token",
                     refresh_token = "***"
                 }),

@@ -115,41 +115,72 @@ public class HostZaloAuthController : MultiTenancyController
     /// <returns></returns>
     [HttpGet("callback")]
     [AllowAnonymous]
-    public async Task<IActionResult> CallbackAsync([FromQuery] string code, [FromQuery] string state)
+    public async Task<IActionResult> CallbackAsync(
+    [FromQuery] string? code,
+    [FromQuery] string? state,
+    [FromQuery(Name = "oa_id")] string? oaId,
+    [FromQuery] string? error,
+    [FromQuery(Name = "error_code")] string? errorCode)
     {
-        // Lấy cấu hình
+        // Nếu user từ chối / Zalo trả lỗi
+        if (!string.IsNullOrWhiteSpace(error) || !string.IsNullOrWhiteSpace(errorCode))
+        {
+            await ZaloLogHelper.InsertLogAsync(
+                _logRepo,
+                action: "EXCHANGE_CODE",
+                endpoint: "CALLBACK",
+                httpStatus: 400,
+                durationMs: 0,
+                requestBody: null,
+                responseBody: $"error={error}; error_code={errorCode}; state={state}; oa_id={oaId}",
+                error: "Zalo callback returned error",
+                tenantId: null
+            );
+
+            return Redirect("/AppZaloAuths?zaloError=1");
+        }
+
+        if (string.IsNullOrWhiteSpace(code) || string.IsNullOrWhiteSpace(state))
+            return BadRequest("Missing code/state");
+
         var appId = _cfg["Zalo:AppId"]!;
         var secret = _cfg["Zalo:AppSecret"]!;
         var redirectUri = _cfg["Zalo:RedirectUri"]!;
 
-        // Tìm record theo state
+        // tìm record theo state
         var q = await _authRepo.GetQueryableAsync();
+
+        // Match theo appId + state (oaId có thể null ở record tạo trước callback)
         var auth = q.FirstOrDefault(x => x.State == state && x.AppId == appId);
 
         if (auth == null)
             return BadRequest("Invalid state");
 
-        if (auth.ExpireAuthorizationCodeTime.HasValue && auth.ExpireAuthorizationCodeTime.Value < DateTime.UtcNow)
+        if (auth.ExpireAuthorizationCodeTime.HasValue &&
+            auth.ExpireAuthorizationCodeTime.Value < DateTime.UtcNow)
             return BadRequest("State expired");
 
         if (string.IsNullOrWhiteSpace(auth.CodeVerifier))
             return BadRequest("Missing code_verifier");
 
+        // Lưu code + oa_id
         auth.AuthorizationCode = code;
+        auth.OaId = oaId;
 
-        // Call service exchange code -> tokens
-        var token = await _oauth.ExchangeCodeAsync(appId, secret, code, auth.CodeVerifier, redirectUri);
+        // Đổi code -> token (TRUYỀN oa_id)
+        var token = await _oauth.ExchangeCodeAsync(
+            appId, secret, code, auth.CodeVerifier!, redirectUri, oaId
+        );
 
-        // Token provider encrypt trong provider, ở lưu plain trước rồi provider tự decrypt fallback.
         auth.AccessToken = token.AccessToken;
         auth.RefreshToken = token.RefreshToken;
         auth.ExpireTokenTime = DateTime.UtcNow.AddSeconds(token.ExpiresIn);
 
         await _authRepo.UpdateAsync(auth, autoSave: true);
 
-        // Redirect về trang danh sách
-        return Redirect("/ZaloAuths");
+        return Redirect("/AppZaloAuths");
     }
+
 
     /// <summary>
     /// API Refresh lấy lại AcessToken dựa vào Refresh token

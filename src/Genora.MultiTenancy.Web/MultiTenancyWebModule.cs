@@ -24,6 +24,7 @@ using OpenIddict.Validation.AspNetCore;
 using System;
 using System.Globalization;
 using System.IO;
+using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using Volo.Abp;
 using Volo.Abp.Account.Web;
@@ -109,7 +110,16 @@ public class MultiTenancyWebModule : AbpModule
 
             PreConfigure<OpenIddictServerBuilder>(serverBuilder =>
             {
-                serverBuilder.AddProductionEncryptionAndSigningCertificate("openiddict.pfx", configuration["AuthServer:CertificatePassPhrase"]!);
+                var certPath = Path.Combine(hostingEnvironment.ContentRootPath, "openiddict.pfx");
+
+                serverBuilder.AddProductionEncryptionAndSigningCertificate(
+                    certPath,
+                    configuration["AuthServer:CertificatePassPhrase"]!,
+                    X509KeyStorageFlags.MachineKeySet |
+                    X509KeyStorageFlags.PersistKeySet |
+                    X509KeyStorageFlags.Exportable
+                );
+
                 serverBuilder.SetIssuer(new Uri(configuration["AuthServer:Authority"]!));
             });
         }

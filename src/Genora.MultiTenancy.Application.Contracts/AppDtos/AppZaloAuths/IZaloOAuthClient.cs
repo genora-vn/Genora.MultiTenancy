@@ -10,6 +10,9 @@ public record ZaloTokenResponse(string AccessToken, string RefreshToken, int Exp
 
 public interface IZaloOAuthClient
 {
-    Task<ZaloTokenResponse> ExchangeCodeAsync(string appId, string appSecret, string code, string codeVerifier, string redirectUri);
-    Task<ZaloTokenResponse> RefreshTokenAsync(string appId, string appSecret, string refreshToken);
+    Task<ZaloTokenResponse> ExchangeCodeAsync(
+        string appId, string appSecret, string code, string codeVerifier, string redirectUri, string? oaId);
+
+    Task<ZaloTokenResponse> RefreshTokenAsync(
+        string appId, string appSecret, string refreshToken, string? oaId);
 }
