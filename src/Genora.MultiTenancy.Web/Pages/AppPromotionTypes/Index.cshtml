@@ -1,44 +1,42 @@
 ﻿@page
 @using Genora.MultiTenancy.Localization
 @using Genora.MultiTenancy.Permissions
-@using Genora.MultiTenancy.Web.Pages.AppGolfCourses
+@using Genora.MultiTenancy.Web.Pages.AppPromotionTypes
 @using Microsoft.AspNetCore.Authorization
 @using Microsoft.Extensions.Localization
 @inject IStringLocalizer<MultiTenancyResource> L
 @inject IAuthorizationService AuthorizationService
 @inject Volo.Abp.MultiTenancy.ICurrentTenant CurrentTenant
 
-@{
-    var canCreate = CurrentTenant.IsAvailable
-        ? await AuthorizationService.IsGrantedAsync(MultiTenancyPermissions.AppGolfCourses.Create)
-        : await AuthorizationService.IsGrantedAsync(MultiTenancyPermissions.HostAppGolfCourses.Create);
-}
-
 @section styles {
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/summernote@0.8.18/dist/summernote-lite.min.css" />
-    <link rel="stylesheet" href="https://code.ionicframework.com/ionicons/2.0.1/css/ionicons.min.css">
 }
-@section scripts
-{
+
+@section scripts {
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script src="https://cdn.jsdelivr.net/npm/summernote@0.8.18/dist/summernote-lite.min.js"></script>
-    <abp-script src="/Pages/AppGolfCourses/Index.js" />
+    <abp-script src="/Pages/AppPromotionTypes/index.js" />
     <abp-style src="/Pages/Index.css" />
+}
+
+@{
+    var canCreate = CurrentTenant.IsAvailable
+        ? await AuthorizationService.IsGrantedAsync(MultiTenancyPermissions.AppPromotionType.Create)
+        : await AuthorizationService.IsGrantedAsync(MultiTenancyPermissions.HostAppPromotionType.Create);
 }
 
 <abp-card>
     <abp-card-header>
         <abp-row>
             <abp-column size-md="_6">
-                <abp-card-title>@L["AppGolfCourses"]</abp-card-title>
+                <abp-card-title>@L["AppPromotionType"]</abp-card-title>
             </abp-column>
             <abp-column size-md="_6" class="text-end">
-                @* HOST: luôn thấy; TENANT: cần quyền *@
                 @if (canCreate)
                 {
-                    <abp-button id="NewGolfCourseButton"
-                                text="@L["NewAppGolfCourse"].Value"
+                    <abp-button id="NewPromotionType"
+                                text="@L["NewPromotionType"]"
                                 icon="plus"
                                 button-type="Outline_Primary" />
                 }
@@ -46,13 +44,11 @@
         </abp-row>
     </abp-card-header>
     <abp-card-body>
-        <abp-table striped-rows="true" id="GolfCoursesTable"></abp-table>
+        <abp-table striped-rows="true" id="PromotionTypeTable"></abp-table>
     </abp-card-body>
 </abp-card>
-
 <style type="text/css">
-    #GolfCoursesTable_wrapper .dt-scroll-body{
-        max-height: 68vh !important;
-        min-height: 62vh !important;
+    #PromotionTypeTable_wrapper .dt-scroll-body {
+        min-height: 59vh !important;
     }
 </style>

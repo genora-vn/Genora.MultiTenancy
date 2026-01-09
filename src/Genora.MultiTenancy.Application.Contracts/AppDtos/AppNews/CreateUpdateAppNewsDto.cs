@@ -1,6 +1,8 @@
 ﻿using Genora.MultiTenancy.Enums;
 using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using Volo.Abp.Content;
 
 namespace Genora.MultiTenancy.AppDtos.AppNews;
 public class CreateUpdateAppNewsDto
@@ -25,4 +27,6 @@ public class CreateUpdateAppNewsDto
     public int DisplayOrder { get; set; } = 0;
 
     public bool IsActive { get; set; } = true;
+    public IRemoteStreamContent? Images { get; set; }
+    public bool IsUploadImage { get; set; }
 }

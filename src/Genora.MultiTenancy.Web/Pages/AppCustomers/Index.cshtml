@@ -39,7 +39,7 @@
                 }
             </abp-column>
         </abp-row>
-        <abp-row class="mb-3">
+        <abp-row class="mb-3" style="margin-bottom: 0 !important">
             <abp-column size-md="_4">
                 <div class="mb-3">
                     <label class="form-label" for="CustomerFilterText">
@@ -64,3 +64,9 @@
         <abp-table striped-rows="true" id="CustomersTable"></abp-table>
     </abp-card-body>
 </abp-card>
+<style type="text/css">
+    #CustomersTable_wrapper .dt-scroll-body{
+        min-height: 55vh !important;
+    }
+    
+</style>

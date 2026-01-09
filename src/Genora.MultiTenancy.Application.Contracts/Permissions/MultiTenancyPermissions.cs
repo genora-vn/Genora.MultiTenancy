@@ -164,6 +164,24 @@ public static class MultiTenancyPermissions
     }
     #endregion
 
+    #region Thêm permission cho tính năng quản trị PromotionType
+    public static class AppPromotionType
+    {
+        public const string Default = "MultiTenancy.AppPromotionType";
+        public const string Create = Default + ".Create";
+        public const string Edit = Default + ".Edit";
+        public const string Delete = Default + ".Delete";
+    }
+
+    public static class HostAppPromotionType
+    {
+        public const string Default = "MultiTenancy.HostAppPromotionType";
+        public const string Create = Default + ".Create";
+        public const string Edit = Default + ".Edit";
+        public const string Delete = Default + ".Delete";
+    }
+    #endregion
+
     //Add your own permission names. Example:
     //public const string MyPermission1 = GroupName + ".MyPermission1";
 }

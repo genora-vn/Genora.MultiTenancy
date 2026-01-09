@@ -5,6 +5,7 @@ using Genora.MultiTenancy.Features.AppCustomerTypes;
 using Genora.MultiTenancy.Features.AppGolfCourses;
 using Genora.MultiTenancy.Features.AppMembershipTiers;
 using Genora.MultiTenancy.Features.AppNewsFeatures;
+using Genora.MultiTenancy.Features.AppPromotionTypes;
 using Genora.MultiTenancy.Features.AppSettings;
 using Genora.MultiTenancy.Localization;
 using Genora.MultiTenancy.Permissions;
@@ -83,9 +84,9 @@ public class MultiTenancyMenuContributor : IMenuContributor
             var canSeeBookings =
               await feature.IsEnabledAsync(AppBookingFeatures.Management) &&
               await perms.IsGrantedAsync(MultiTenancyPermissions.AppBookings.Default);
-
+            var canSeePromotionType = await feature.IsEnabledAsync(AppPromotionTypeFeature.Management) && await perms.IsGrantedAsync(MultiTenancyPermissions.AppPromotionType.Default);
             // Nếu không có quyền gì thì khỏi add menu
-            if (canSeeAppSettings || canSeeCustomerTypes || canSeeGolfCourses || canSeeMembershipTiers || canSeeCustomers || canSeeCalendarSlots || canSeeNews || canSeeBookings)
+            if (canSeeAppSettings || canSeeCustomerTypes || canSeeGolfCourses || canSeeMembershipTiers || canSeeCustomers || canSeeCalendarSlots || canSeeNews || canSeeBookings || canSeePromotionType)
             {
                 var miniAppMenu = new ApplicationMenuItem(
                     "MiniAppSetting",
@@ -192,6 +193,17 @@ public class MultiTenancyMenuContributor : IMenuContributor
                         ).RequirePermissions(MultiTenancyPermissions.AppBookings.Default)
                     );
                 }
+                if (canSeePromotionType)
+                {
+                    miniAppMenu.AddItem(
+                        new ApplicationMenuItem(
+                            "AppPromotionTypes",
+                            l["Menu:AppPromotionTypes"],
+                            icon: "fa fa-calendar-plus-o",
+                            url: "/AppPromotionTypes"
+                        ).RequirePermissions(MultiTenancyPermissions.AppPromotionType.Default)
+                    );
+                }
 
                 context.Menu.AddItem(miniAppMenu);
             }
@@ -237,8 +249,8 @@ public class MultiTenancyMenuContributor : IMenuContributor
                 await perms.IsGrantedAsync(MultiTenancyPermissions.HostAppZaloAuths.Default);
             var hostCanZaloLogs =
                await perms.IsGrantedAsync(MultiTenancyPermissions.HostAppZaloLogs.Default);
-
-            if (hostCanAppSettings || hostCanCustomerTypes || hostCanGolfCourses || hostCanMembershipTiers || hostCanCustomers || hostCanCalendarSlots || hostCanNews || hostCanBookings || hostCanZaloAuths || hostCanZaloLogs)
+            var hostPromotionType = await perms.IsGrantedAsync(MultiTenancyPermissions.HostAppPromotionType.Default);
+            if (hostCanAppSettings || hostCanCustomerTypes || hostCanGolfCourses || hostCanMembershipTiers || hostCanCustomers || hostCanCalendarSlots || hostCanNews || hostCanBookings || hostCanZaloAuths || hostCanZaloLogs || hostPromotionType)
             {
                 var hostMiniAppMenu = new ApplicationMenuItem(
                     "MiniAppSettingHost",
@@ -351,6 +363,17 @@ public class MultiTenancyMenuContributor : IMenuContributor
                                 .RequirePermissions(MultiTenancyPermissions.HostAppZaloAuths.Default))
                             .AddItem(new ApplicationMenuItem("AppZaloLogs", l["Menu:AppZaloLogs"], "/AppZaloLogs")
                                 .RequirePermissions(MultiTenancyPermissions.HostAppZaloLogs.Default))
+                    );
+                }
+                if (hostPromotionType)
+                {
+                    hostMiniAppMenu.AddItem(
+                        new ApplicationMenuItem(
+                            name: "AppPromotionTypeHost",
+                            displayName: l["Menu:AppPromotionTypes"],
+                            url: "/AppPromotionTypes",
+                            icon: "fa fa-calendar-plus-o"
+                        ).RequirePermissions(MultiTenancyPermissions.HostAppPromotionType.Default)
                     );
                 }
 

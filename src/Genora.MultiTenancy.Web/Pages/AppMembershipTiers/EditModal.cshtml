@@ -15,28 +15,51 @@
             <abp-input asp-for="Id" />
             <input asp-for="MembershipTier.Code" hidden />
             @* <abp-form-content /> *@
-            <abp-input asp-for="MembershipTier.Code" placeholder="Nhập mã hạng (vd: GOLD)" disabled/>
-            <abp-input asp-for="MembershipTier.Name" placeholder="Nhập tên" />
+            <div class="d-inline-flex" style="width: 97%; gap: 15px">
+                <div class="col-md-2">
+                    <abp-input asp-for="MembershipTier.Code" placeholder="Nhập mã hạng (vd: GOLD)" disabled/>
+                </div>
+                <div class="col-md-8">
+                    <abp-input asp-for="MembershipTier.Name" placeholder="Nhập tên" />
+                </div>
+                <div class="col-md-2" style="display:flex; align-items: anchor-center; margin-left: 10px">
+                    <abp-input asp-for="MembershipTier.IsActive" />
+                </div>
+            </div>
+
             <div class="mb-3">
                 <label asp-for="MembershipTier.Description" class="form-label"></label>
-                <textarea asp-for="MembershipTier.Description" placeholder="Mô tả chi tiết xếp hạng" rows="4" class="form-control"></textarea>
+                <textarea asp-for="MembershipTier.Description" placeholder="Mô tả chi tiết xếp hạng" rows="3" class="form-control"></textarea>
             </div>
-            <abp-input asp-for="MembershipTier.MinTotalSpending" placeholder="Nhập doanh thu tối thiểu" />
-            <abp-input asp-for="MembershipTier.MinRounds" placeholder="Nhập lượi chơi tối thiểu" />
-            <abp-input asp-for="MembershipTier.EvaluationPeriod" placeholder="Chu kỳ xét tăng hạng" />
-            <abp-input asp-for="MembershipTier.Benefits" placeholder="Nhập quyền lợi của khách hàng đạt rank" />
-            <div class="group d-inline-flex" style="width: 100%">
-                <div class="col-md-8">
+            <div class="d-inline-flex" style="width: 97%; gap: 15px">
+                <div class="col-md-4">
+                    <abp-input asp-for="MembershipTier.MinTotalSpending" placeholder="Nhập doanh thu tối thiểu" />
+                </div>
+                <div class="col-md-4">
+                    <abp-input asp-for="MembershipTier.MinRounds" placeholder="Nhập lượi chơi tối thiểu" />
+                </div>
+                <div class="col-md-4">
+                    <abp-input asp-for="MembershipTier.EvaluationPeriod" placeholder="Chu kỳ xét tăng hạng" />
+                </div>
+
+            </div>
+            <div class="d-inline-flex" style="width: 98%; gap: 15px">
+                <div class="col-md-6">
                     <abp-input asp-for="MembershipTier.DisplayOrder" />
                 </div>
-                <div class="col-md-4" style="display:flex; align-items: anchor-center; margin-left: 10px">
-                    <abp-input asp-for="MembershipTier.IsActive" />
+                <div class="col-md-6">
+                    <abp-input asp-for="MembershipTier.Benefits" placeholder="Nhập quyền lợi của khách hàng đạt rank" />
                 </div>
             </div>
         </abp-modal-body>
         <abp-modal-footer buttons="@(AbpModalButtons.Cancel | AbpModalButtons.Save)"></abp-modal-footer>
     </abp-modal>
 </form>
+<style type="text/css">
+    .modal-dialog {
+        max-width: 50%;
+    }
+</style>
 <script>
     document.querySelector('input[name="MembershipTier.MinTotalSpending"]').classList.add('thousand-separator');
     // Thêm định dạng dấu chấm ngăn cách hàng nghìn cho các input có class 'thousand-separator'

@@ -4,7 +4,7 @@
     // Cấu hình Menu language
     "AppName": "Genora CX Flatform",
     "Menu:Home": "Trang chủ",
-    "Menu:MiniAppSetting": "Mini App",
+    "Menu:MiniAppSetting": "Quản lý sân golf",
     "Menu:AppSettings": "Cấu hình chung",
     "Menu:AppCustomerTypes": "Loại khách hàng",
     "Menu:AppGolfCourses": "Sân golf",

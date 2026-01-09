@@ -13,7 +13,7 @@
     z-index: 1;
 }
 .lpx-content-container .lpx-content {
-    padding-bottom: 0;
+    padding-bottom: 0rem;
     padding-top: 0;
     padding-left: 2rem;
     padding-right: 2rem;
@@ -27,10 +27,22 @@
     min-height: 57vh !important;
 }
 .modal-body {
-    max-height: 77vh;
+    max-height: 68vh;
+    min-height: 67vh;
     overflow: auto;
 }
 .form-control {
     background-color: white;
 }
+@media (min-height: 700px) {
+    .lpx-content-container .lpx-content {
+        padding-bottom: 0.3rem;
+    }
+    .dt-scroll-body {
+        overflow-y: scroll !important;
+        max-height: 50vh !important;
+        min-height: calc(50vh - 20px) !important;
+    }
+}
+
 /* Getting-Started End */

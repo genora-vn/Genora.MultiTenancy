@@ -1,4 +1,5 @@
-﻿using Genora.MultiTenancy.AppDtos.AppNews;
+﻿using Genora.MultiTenancy.AppDtos.AppImages;
+using Genora.MultiTenancy.AppDtos.AppNews;
 using Genora.MultiTenancy.DomainModels.AppNews;
 using Genora.MultiTenancy.Enums;
 using Genora.MultiTenancy.Features.AppNewsFeatures;
@@ -30,11 +31,12 @@ public class AppNewsService :
     protected override string FeatureName => AppNewsFeatures.Management;
     protected override string TenantDefaultPermission => MultiTenancyPermissions.AppNews.Default;
     protected override string HostDefaultPermission => MultiTenancyPermissions.HostAppNews.Default;
-
+    private readonly IManageImageService _manageImageService;
     public AppNewsService(
         IRepository<News, Guid> repository,
         ICurrentTenant currentTenant,
-        IFeatureChecker featureChecker)
+        IFeatureChecker featureChecker,
+        IManageImageService manageImageService)
         : base(repository, currentTenant, featureChecker)
     {
         GetPolicyName = MultiTenancyPermissions.AppNews.Default;
@@ -42,6 +44,7 @@ public class AppNewsService :
         CreatePolicyName = MultiTenancyPermissions.AppNews.Create;
         UpdatePolicyName = MultiTenancyPermissions.AppNews.Edit;
         DeletePolicyName = MultiTenancyPermissions.AppNews.Delete;
+        _manageImageService = manageImageService;
     }
 
     [DisableValidation]
@@ -107,7 +110,11 @@ public class AppNewsService :
         {
             entity.PublishedAt = Clock.Now;
         }
-
+        if(input.Images != null)
+        {
+            var upload = await _manageImageService.UploadImageAsync(input.Images);
+            entity.ThumbnailUrl = upload;
+        }
         entity = await Repository.InsertAsync(entity, autoSave: true);
 
         return ObjectMapper.Map<News, AppNewsDto>(entity);
@@ -125,7 +132,12 @@ public class AppNewsService :
         {
             entity.PublishedAt = Clock.Now;
         }
-
+        if (input.Images != null)
+        {
+            if (entity.ThumbnailUrl != null && entity.ThumbnailUrl.StartsWith("/upload")) await _manageImageService.DeleteFileAsync(entity.ThumbnailUrl);
+            var upload = await _manageImageService.UploadImageAsync(input.Images);
+            entity.ThumbnailUrl = upload;
+        }
         entity = await Repository.UpdateAsync(entity, autoSave: true);
 
         return ObjectMapper.Map<News, AppNewsDto>(entity);

@@ -21,28 +21,50 @@
         <abp-modal-body>
             <input type="hidden" asp-for="Id" />
 
-            <abp-input asp-for="News.Title" label="@L["Title"]" />
-            <div class="mb-3">
-                <label asp-for="News.ShortDescription">@L["ShortDescription"]</label>
-                <textarea asp-for="News.ShortDescription" class="form-control" rows="4"></textarea>
-                <span class="text-danger field-validation-valid" data-valmsg-for="News.ShortDescription" data-valmsg-replace="true"></span>
-            </div>
-            <div class="mb-3 d-inline-flex" style="width: 100%; gap: 15px">
+            <div class="d-inline-flex" style="width: 97%; gap: 15px">
                 <div class="col-md-8">
-                    <label asp-for="News.ThumbnailUrl" class="form-label">@L["ThumbnailUrl"]</label>
-                    <input asp-for="News.ThumbnailUrl" id="image-input" class="form-control" placeholder="Ảnh hiển thị tin tức" />
+                    <abp-input asp-for="News.Title" placeholder="Nhập tiêu đề tin tức" label="@L["Title"]" />
+                </div>
+                <div class="col-md-2">
+                    <abp-select asp-for="News.Status"
+                                label="@L["Status"]"
+                                asp-items="EnumSelectList.GetLocalizedEnumSelectList<NewsStatus>(L)" />
+                </div>
+                <div class="col-md-2">
+                    <abp-input asp-for="News.DisplayOrder" label="@L["DisplayOrder"]" />
+                </div>
+            </div>
+
+            <div class="mb-3 d-inline-flex" style="width: 97%; gap: 15px">
+                <div class="col-md-5">
+                    <label asp-for="News.ShortDescription">@L["ShortDescription"]</label>
+                    <textarea asp-for="News.ShortDescription" class="form-control" rows="5"></textarea>
+                    <span class="text-danger field-validation-valid" data-valmsg-for="News.ShortDescription" data-valmsg-replace="true"></span>
                 </div>
                 <div class="col-md-4">
-                    <span class="form-label d-block mb-2">
-                        @if (!string.IsNullOrWhiteSpace(Model.News.ThumbnailUrl))
-                        {
-                            <img src="@Model.News.ThumbnailUrl" id="image-preview" alt="Thumbnail" style="max-width: 200px; max-height: 200px; width: 100%; height: 100%" />
-                        }
-                        else
-                        {
-                            <img src="https://cdn4.iconfinder.com/data/icons/picture-sharing-sites/32/No_Image-1024.png" alt="Thumbnail" id="image-preview" style="max-width: 200px; max-height: 200px; width: 100%; height: 100%" />
-                        }
-                    </span>
+                    <div class="input-type" style="margin-top: 18px">
+                        <abp-input asp-for="News.IsUploadImage" class="form-control" id="isUpload" label="@L["IsImageInput"]" />
+                    </div>
+                    <div class="url-group" id="input-url">
+                        <label asp-for="News.ThumbnailUrl" class="form-label">@L["ThumbnailUrl"]</label>
+                        <input asp-for="News.ThumbnailUrl" id="image-input" class="form-control" placeholder="Dán link ảnh đại diện tin tức" />
+                    </div>
+                    <div class="group-image" id="input-image" style="display: none;">
+                        <div class="image-upload-group">
+                            <label for="images">Upload ảnh:</label>
+                            <div class="drop-zone" id="dropZone">
+                                <p>Kéo thả ảnh vào đây hoặc click để chọn</p>
+                                <input asp-for="News.Images" type="file" id="images" style="display:none" />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="preview-grid" id="previewGrid">
+                        <div class="preview-item">
+                            <img src="images\getting-started\no-photo-square.png" id="image-preview" alt="Alternate Text" />
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -50,31 +72,74 @@
                 <label asp-for="News.ContentHtml" class="form-label">@L["Content"]</label>
                 <textarea asp-for="News.ContentHtml"
                           class="form-control news-content-editor"
+                          placeholder="Nội dung tin tức"
                           rows="8"></textarea>
-            </div>
-            <div class="d-inline-flex" style="width: 100%; gap: 10px">
-                <div class="col-md-4">
-                    <abp-input asp-for="News.PublishedAt"
-                               label="@L["PublishDate"]"
-                               type="text"
-                               value="@publishedAtText"
-                               autocomplete="off"
-                               class="public-time-input" />
-                </div>
-                <div class="col-md-4">
-                    <abp-select asp-for="News.Status"
-                                label="@L["Status"]"
-                                asp-items="EnumSelectList.GetLocalizedEnumSelectList<NewsStatus>(L)" />
-                </div>
-                <div class="col-md-4">
-                    <abp-input asp-for="News.DisplayOrder" label="@L["DisplayOrder"]" />
-                </div>
             </div>
         </abp-modal-body>
         <abp-modal-footer buttons="@(AbpModalButtons.Cancel | AbpModalButtons.Save)"></abp-modal-footer>
     </abp-modal>
 </form>
 
+<style type="text/css">
+    .image-upload-group {
+        margin: 20px 0;
+    }
+
+    .drop-zone {
+        border: 3px dashed #ccc;
+        border-radius: 10px;
+        padding: 20px;
+        text-align: center;
+        cursor: pointer;
+        transition: border-color 0.3s;
+        background-color: #f9f9f9;
+    }
+
+        .drop-zone:hover {
+            border-color: #999;
+        }
+
+        .drop-zone.drag-over {
+            border-color: #007bff;
+            background-color: #e9f7ff;
+        }
+
+    .preview-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        gap: 15px;
+        /* margin-top: 20px; */
+        /* margin-right: 20px; */
+    }
+
+    .preview-item {
+        position: relative;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+
+        .preview-item img {
+            width: 100%;
+            height: 150px;
+            object-fit: cover;
+        }
+
+    .remove-btn {
+        position: absolute;
+        top: 5px;
+        right: 5px;
+        background: rgba(255,0,0,0.7);
+        color: white;
+        border: none;
+        border-radius: 50%;
+        width: 25px;
+        height: 25px;
+        cursor: pointer;
+        font-size: 16px;
+    }
+</style>
 
 <script>
     $(document).ready(function () {
@@ -85,13 +150,83 @@
         $('#image-input').on('change', function () {
             bindingPreviewImage();
         });
+        bindingPreviewImage();
         function bindingPreviewImage() {
             var imageUrl = $('#image-input').val();
             if (imageUrl) {
                 $('#image-preview').attr('src', imageUrl);
             } else {
-                $('#image-preview').attr('src', 'https://cdn4.iconfinder.com/data/icons/picture-sharing-sites/32/No_Image-1024.png');
+                $('#image-preview').attr('src', 'images\getting-started\no-photo-square.png');
             }
         }
+
+        const fileInput = document.getElementById('images');
+        const dropZone = document.getElementById('dropZone');
+        const previewGrid = document.getElementById('previewGrid');
+        const isUpload = document.getElementById('isUpload');
+        const inputUrl = document.getElementById('input-url');
+        const inputUpload = document.getElementById('input-image');
+        let selectedFiles = [];
+
+        isUpload.addEventListener('change', function(){
+          if (this.checked) {
+              inputUrl.style.display = 'none';
+              inputUpload.style.display = 'block';
+          } else {
+              inputUrl.style.display = 'block';
+              inputUpload.style.display = 'none';
+          }
+        });
+            // Click vào vùng drop để mở dialog chọn file
+        dropZone.addEventListener('click', () => fileInput.click());
+
+            // Hiệu ứng drag over
+        dropZone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                dropZone.classList.add('drag-over');
+        });
+
+        dropZone.addEventListener('dragleave', () => {
+                dropZone.classList.remove('drag-over');
+        });
+
+            // Xử lý khi thả file
+        dropZone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                dropZone.classList.remove('drag-over');
+                handleFiles(e.dataTransfer.files);
+        });
+
+            // Xử lý khi chọn file qua input
+        fileInput.addEventListener('change', () => {
+                if (fileInput.files.length > 0) {
+                    handleFiles(fileInput.files);
+                }
+        });
+
+        function handleFiles(file) {
+                debugger
+                    if (file.length > 0) {
+                        const reader = new FileReader();
+                        reader.onload = (e) => {
+                            createPreview(e.target.result, file[0].name);
+                        };
+                        reader.readAsDataURL(file[0]);
+                    }
+        }
+
+        function createPreview(src, name) {
+            $('#image-preview').attr('src', src);
+            $('#image-preview').attr('alt', name);
+        }
+
+        function updateFileInput() {
+            const dt = new DataTransfer();
+            selectedFiles.forEach(file => dt.items.add(file));
+            fileInput.files = dt.files;
+        }
+
     });
+
+
 </script>

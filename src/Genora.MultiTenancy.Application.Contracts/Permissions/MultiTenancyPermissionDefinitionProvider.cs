@@ -6,6 +6,7 @@ using Genora.MultiTenancy.Features.AppCustomerTypes;
 using Genora.MultiTenancy.Features.AppGolfCourses;
 using Genora.MultiTenancy.Features.AppMembershipTiers;
 using Genora.MultiTenancy.Features.AppNewsFeatures;
+using Genora.MultiTenancy.Features.AppPromotionTypes;
 using Genora.MultiTenancy.Features.AppSettings;
 using Genora.MultiTenancy.Localization;
 using Volo.Abp.Authorization.Permissions;
@@ -542,6 +543,73 @@ public class MultiTenancyPermissionDefinitionProvider : PermissionDefinitionProv
         zaloAuthHostDelete.MultiTenancySide = MultiTenancySides.Host;
 
         zaloAuthGroupHost.AddPermission(MultiTenancyPermissions.HostAppZaloLogs.Default, L("Permission:HostAppZaloLogs"));
+
+        #endregion
+
+        #region Cấu hình quyền Thêm / Sửa / Xóa cho tính năng quản trị AppPromotionType
+        var appPromotionTypeGroup = context.AddGroup(
+            "MiniAppPromotionType",
+            L("PermissionGroup:MiniAppPromotionType")
+        );
+
+        // ========== TENANT (bị ràng bởi Feature) ==========
+        var appPromotionTypeTenantRoot = appPromotionTypeGroup.AddPermission(
+            MultiTenancyPermissions.AppPromotionType.Default,
+            L("Permission:MiniAppPromotionType"));
+
+        appPromotionTypeTenantRoot.MultiTenancySide = MultiTenancySides.Tenant;
+        appPromotionTypeTenantRoot.RequireFeatures(AppPromotionTypeFeature.Management);
+
+        var appPromotionTypeTenantCreate = appPromotionTypeTenantRoot.AddChild(
+            MultiTenancyPermissions.AppPromotionType.Create,
+            L("Permission:MiniAppPromotionType.Create"));
+
+        appPromotionTypeTenantCreate.MultiTenancySide = MultiTenancySides.Tenant;
+        appPromotionTypeTenantCreate.RequireFeatures(AppPromotionTypeFeature.Management);
+
+        var appPromotionTypeTenantEdit = appPromotionTypeTenantRoot.AddChild(
+            MultiTenancyPermissions.AppPromotionType.Edit,
+            L("Permission:MiniAppPromotionType.Edit"));
+
+        appCustomerTypeTenantEdit.MultiTenancySide = MultiTenancySides.Tenant;
+        appCustomerTypeTenantEdit.RequireFeatures(AppPromotionTypeFeature.Management);
+
+        var appPromotionTypeTenantDelete = appPromotionTypeTenantRoot.AddChild(
+            MultiTenancyPermissions.AppPromotionType.Delete,
+            L("Permission:MiniAppPromotionType.Delete"));
+
+        appCustomerTypeTenantDelete.MultiTenancySide = MultiTenancySides.Tenant;
+        appCustomerTypeTenantDelete.RequireFeatures(AppPromotionTypeFeature.Management);
+
+        // ========== HOST (không ràng Feature) ==========
+        var appPromotionTypeGroupHost = context.AddGroup(
+            "MiniAppPromotionTypeHost",
+            L("PermissionGroup:MiniAppPromotionTypeHost")
+        );
+
+        var appPromotionTypeHostRoot = appPromotionTypeGroupHost.AddPermission(
+            MultiTenancyPermissions.HostAppPromotionType.Default,
+            L("Permission:MiniAppPromotionType"));
+
+        appPromotionTypeHostRoot.MultiTenancySide = MultiTenancySides.Host;
+
+        var appPromotionTypeHostCreate = appPromotionTypeHostRoot.AddChild(
+            MultiTenancyPermissions.HostAppPromotionType.Create,
+            L("Permission:MiniAppPromotionType.Create"));
+
+        appPromotionTypeHostCreate.MultiTenancySide = MultiTenancySides.Host;
+
+        var appPromotionTypeHostEdit = appPromotionTypeHostRoot.AddChild(
+            MultiTenancyPermissions.HostAppPromotionType.Edit,
+            L("Permission:MiniAppPromotionType.Edit"));
+
+        appPromotionTypeHostEdit.MultiTenancySide = MultiTenancySides.Host;
+
+        var appPromotionTypeHostDelete = appPromotionTypeHostRoot.AddChild(
+            MultiTenancyPermissions.HostAppPromotionType.Delete,
+            L("Permission:MiniAppPromotionType.Delete"));
+
+        appPromotionTypeHostDelete.MultiTenancySide = MultiTenancySides.Host;
 
         #endregion
     }

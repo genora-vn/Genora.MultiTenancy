@@ -31,18 +31,12 @@
 
             <input type="hidden" asp-for="Slot.GolfCourseId" />
             @* <input type="hidden" asp-for="Slot.ApplyDate" value="@applyDateIso" /> *@
-
-            <div class="row g-3">
-                <div class="col-md-4">
+            <abp-row>
+                <abp-column size-md="_4">
                     <label class="form-label">@L["ApplyDate"]</label>
-                    @* <input type="text"
-                           class="form-control"
-                           value="@applyDateText"
-                           readonly /> *@
-                    <input asp-for="Slot.ApplyDate" class="form-control calendar-date-input" type="text" autocomplete="off" value="@applyDateIso" />
-                </div>
-
-                <div class="col-md-4">
+                    <input asp-for="Slot.ApplyDate" class="form-control calendar-date-input" type="text" autocomplete="off" value="@applyDateIso" tabindex="1" />
+                </abp-column>
+                <abp-column size-md="_4">
                     <label class="form-label">@L["TimeFrom"]</label>
                     <input name="Slot.TimeFrom"
                            id="Slot_TimeFrom"
@@ -50,10 +44,9 @@
                            class="form-control time-input"
                            value="@fromText"
                            autocomplete="off"
-                           @(isEdit ? "readonly" : "") />
-                </div>
-
-                <div class="col-md-4">
+                           @(isEdit ? "readonly" : "") tabindex="2" />
+                </abp-column>
+                <abp-column size-md="_4">
                     <label class="form-label">@L["TimeTo"]</label>
                     <input name="Slot.TimeTo"
                            id="Slot_TimeTo"
@@ -61,33 +54,31 @@
                            class="form-control time-input"
                            value="@toText"
                            autocomplete="off"
-                           @(isEdit ? "readonly" : "") />
-                </div>
-
-                <div class="col-md-4">
+                           @(isEdit ? "readonly" : "") tabindex="3" />
+                </abp-column>
+            </abp-row>
+            <abp-row>
+                <abp-column size-md="_4">
                     <abp-select asp-for="Slot.PromotionType"
                                 label="@L["PromotionType"]"
-                                asp-items="Html.GetEnumSelectList<PromotionType>()" />
-                </div>
-
-                <div class="col-md-4">
-                    <abp-input asp-for="Slot.MaxSlots" label="@L["MaxSlots"]" />
-                </div>
-
-                <div class="col-md-4" style="display: flex; align-items: anchor-center">
-                    <abp-input asp-for="Slot.IsActive" label="@L["IsActive"]" />
-                </div>
-
-                <div class="col-12">
-                    <label class="form-label" asp-for="Slot.InternalNote">@L["InternalNote"]</label>
-                    <textarea asp-for="Slot.InternalNote" placeholder="Nhập ghi chú" class="form-control"
-                              rows="3"></textarea>
-                    
-                </div>
+                                asp-items="Html.GetEnumSelectList<PromotionType>()" tabindex="4" />
+                </abp-column>
+                <abp-column size-md="_4">
+                    <abp-input asp-for="Slot.MaxSlots" label="@L["MaxSlots"]" tabindex="5" />
+                </abp-column>
+                <abp-column size-md="_4" style="display: flex; align-items: anchor-center">
+                    <abp-input asp-for="Slot.IsActive" label="@L["IsActive"]" tabindex="6" />
+                </abp-column>
+            </abp-row>
+            <abp-row>
+                <label class="form-label" asp-for="Slot.InternalNote">@L["InternalNote"]</label>
+                <textarea asp-for="Slot.InternalNote" placeholder="Nhập ghi chú" style="width: 98%" class="form-control"
+                          rows="2" tabindex="7"></textarea>
+            </abp-row>
+            <div style="display:inline-flex; margin-top: 20px; width: 100%">
+                <h5 style="margin-top:13px">@L["CalendarSlotPrices"] </h5>
+                <hr style="width: 85%"/>
             </div>
-
-            <hr />
-            <h5 class="mb-2">@L["CalendarSlotPrices"]</h5>
 
             <table class="table table-sm align-middle">
                 <thead>
@@ -114,14 +105,14 @@
                                     }
                                 </select>
                             </td>
-
+                             
                             <td style="width: 55%">
                                 <input name="Slot.Prices[@i].Price"
                                        type="text"
                                        class="form-control money-input text-end"
                                        value="@Model.Slot.Prices[i].Price.ToString("0")"
                                        inputmode="numeric"
-                                       autocomplete="off" />
+                                       autocomplete="off" tabindex="@(i + 8)"/>
                             </td>
                         </tr>
                     }
@@ -132,7 +123,11 @@
         <abp-modal-footer buttons="@(AbpModalButtons.Cancel | AbpModalButtons.Save)"></abp-modal-footer>
     </abp-modal>
 </form>
-
+<style type="text/css">
+    .modal-dialog {
+        max-width: 50%;
+    }
+</style>
 <script>
     (function () {
         // ===== Time picker (Flatpickr) =====
