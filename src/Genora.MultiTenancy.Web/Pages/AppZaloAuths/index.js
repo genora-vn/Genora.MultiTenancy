@@ -6,6 +6,23 @@
     var createModal = new abp.ModalManager('/AppZaloAuths/CreateModal');
     var editModal = new abp.ModalManager('/AppZaloAuths/EditModal');
 
+    async function copyText(text) {
+        if (!text) return;
+        if (navigator.clipboard && window.isSecureContext) {
+            await navigator.clipboard.writeText(text);
+            return;
+        }
+        var ta = document.createElement('textarea');
+        ta.value = text;
+        ta.style.position = 'fixed';
+        ta.style.left = '-9999px';
+        document.body.appendChild(ta);
+        ta.focus();
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+    }
+
     function getFilter() {
         var isActiveRaw = $('#IsActive').val();
         return {
@@ -50,6 +67,36 @@
                 },
                 { title: l('AppId'), data: "appId" },
                 { title: l('State'), data: "state" },
+                {
+                    title: l('AccessToken'),
+                    data: "accessTokenMasked",
+                    render: function (v, type, row) {
+                        var masked = v || '';
+                        return `
+        <div class="d-flex align-items-center gap-2">
+          <code class="text-truncate" style="max-width:220px">${masked}</code>
+          <button type="button" class="btn btn-sm btn-outline-primary js-copy-token"
+              data-id="${row.id}" data-kind="access">
+              <i class="fa fa-copy"></i>
+          </button>
+        </div>`;
+                    }
+                },
+                {
+                    title: l('RefreshToken'),
+                    data: "refreshTokenMasked",
+                    render: function (v, type, row) {
+                        var masked = v || '';
+                        return `
+        <div class="d-flex align-items-center gap-2">
+          <code class="text-truncate" style="max-width:220px">${masked}</code>
+          <button type="button" class="btn btn-sm btn-outline-primary js-copy-token"
+              data-id="${row.id}" data-kind="refresh">
+              <i class="fa fa-copy"></i>
+          </button>
+        </div>`;
+                    }
+                },
                 {
                     title: l('ExpiresAt'),
                     data: "expireTokenTime",
@@ -107,5 +154,19 @@
     editModal.onResult(function () {
         abp.notify.success(l('SavedSuccessfully'));
         table.ajax.reload();
+    });
+
+    $('#ZaloAuthTable').on('click', '.js-copy-token', function () {
+        var id = $(this).data('id');
+        var kind = $(this).data('kind');
+
+        abp.ajax({
+            url: '/api/host/zalo-auth/' + id + '/token?kind=' + kind,
+            type: 'GET'
+        }).done(async function (res) {
+            // ✅ res = { token: "..." }
+            await copyText(res.token);
+            abp.notify.success('Copied');
+        });
     });
 });

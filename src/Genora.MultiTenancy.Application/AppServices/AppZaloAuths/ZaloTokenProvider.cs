@@ -1,6 +1,8 @@
 ﻿using Genora.MultiTenancy.AppDtos.AppZaloAuths;
 using Genora.MultiTenancy.DomainModels.AppZaloAuth;
+using Genora.MultiTenancy.Helpers;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Linq;
 using System.Threading;
@@ -19,17 +21,20 @@ public class ZaloTokenProvider : IZaloTokenProvider
     private readonly IConfiguration _cfg;
     private readonly IZaloOAuthClient _oauthClient;
     private readonly IStringEncryptionService _encrypt;
+    private readonly ILogger<ZaloTokenProvider> _logger;
 
     public ZaloTokenProvider(
         IRepository<ZaloAuth, Guid> authRepo,
         IConfiguration cfg,
         IZaloOAuthClient oauthClient,
-        IStringEncryptionService encrypt)
+        IStringEncryptionService encrypt,
+        ILogger<ZaloTokenProvider> logger)
     {
         _authRepo = authRepo;
         _cfg = cfg;
         _oauthClient = oauthClient;
         _encrypt = encrypt;
+        _logger = logger;
     }
 
     public async Task<string> GetAccessTokenAsync()
@@ -37,7 +42,7 @@ public class ZaloTokenProvider : IZaloTokenProvider
         var auth = await GetActiveAuthAsync();
 
         // Decrypt
-        var access = DecryptMaybe(auth.AccessToken);
+        var access = SecurityHelper.DecryptMaybe(auth.AccessToken, _encrypt);
 
         var skewSeconds = _cfg.GetValue<int>("Zalo:TokenRefreshSkewSeconds", 60);
         var shouldRefresh = !auth.ExpireTokenTime.HasValue
@@ -52,7 +57,7 @@ public class ZaloTokenProvider : IZaloTokenProvider
         {
             // Check lại sau khi đã khóa
             auth = await GetActiveAuthAsync();
-            access = DecryptMaybe(auth.AccessToken);
+            access = SecurityHelper.DecryptMaybe(auth.AccessToken, _encrypt);
 
             shouldRefresh = !auth.ExpireTokenTime.HasValue
                 || auth.ExpireTokenTime.Value <= DateTime.UtcNow.AddSeconds(skewSeconds)
@@ -64,7 +69,7 @@ public class ZaloTokenProvider : IZaloTokenProvider
             await RefreshInternalAsync(auth);
             auth = await GetActiveAuthAsync();
 
-            return DecryptMaybe(auth.AccessToken)!;
+            return SecurityHelper.DecryptMaybe(auth.AccessToken, _encrypt)!;
         }
         finally
         {
@@ -92,14 +97,18 @@ public class ZaloTokenProvider : IZaloTokenProvider
         var appId = _cfg["Zalo:AppId"]!;
         var secret = _cfg["Zalo:AppSecret"]!;
 
-        var refresh = DecryptMaybe(auth.RefreshToken);
+        var refresh = SecurityHelper.DecryptMaybe(auth.RefreshToken, _encrypt);
+
+        _logger.LogInformation("Zalo refresh token len={Len} head={H} tail={T}",
+    refresh.Length, refresh.Substring(0, 4), refresh.Substring(refresh.Length - 4));
+
         if (string.IsNullOrWhiteSpace(refresh))
             throw new BusinessException("ZaloAuth:MissingRefreshToken");
 
         var token = await _oauthClient.RefreshTokenAsync(appId, secret, refresh, auth.OaId);
 
-        auth.AccessToken = EncryptMaybe(token.AccessToken);
-        auth.RefreshToken = EncryptMaybe(token.RefreshToken);
+        auth.AccessToken = SecurityHelper.EncryptMaybe(token.AccessToken, _encrypt);
+        auth.RefreshToken = SecurityHelper.EncryptMaybe(token.RefreshToken, _encrypt);
         auth.ExpireTokenTime = DateTime.UtcNow.AddSeconds(token.ExpiresIn);
 
         await _authRepo.UpdateAsync(auth, autoSave: true);
@@ -114,15 +123,5 @@ public class ZaloTokenProvider : IZaloTokenProvider
             throw new BusinessException("ZaloAuth:NotConfigured");
 
         return auth;
-    }
-
-    private string? EncryptMaybe(string? plain)
-        => string.IsNullOrWhiteSpace(plain) ? plain : _encrypt.Encrypt(plain);
-
-    private string? DecryptMaybe(string? cipher)
-    {
-        if (string.IsNullOrWhiteSpace(cipher)) return cipher;
-        try { return _encrypt.Decrypt(cipher); }
-        catch { return cipher; }
     }
 }

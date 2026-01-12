@@ -8,7 +8,9 @@ using Microsoft.Extensions.Configuration;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
+using Volo.Abp;
 using Volo.Abp.Domain.Repositories;
+using Volo.Abp.Security.Encryption;
 
 namespace Genora.MultiTenancy.Controllers;
 
@@ -22,19 +24,55 @@ public class HostZaloAuthController : MultiTenancyController
     private readonly IZaloOAuthClient _oauth;
     private readonly IZaloTokenProvider _tokenProvider;
     private readonly IRepository<ZaloLog, Guid> _logRepo;
+    private readonly IStringEncryptionService _encrypt;
+    public record TokenValueDto(string token);
 
     public HostZaloAuthController(
         IConfiguration cfg,
         IRepository<ZaloAuth, Guid> authRepo,
         IZaloOAuthClient oauth,
         IZaloTokenProvider tokenProvider,
-        IRepository<ZaloLog, Guid> logRepo)
+        IRepository<ZaloLog, Guid> logRepo,
+        IStringEncryptionService encrypt)
     {
         _cfg = cfg;
         _authRepo = authRepo;
         _oauth = oauth;
         _tokenProvider = tokenProvider;
         _logRepo = logRepo;
+        _encrypt = encrypt;
+    }
+
+
+    /// <summary>
+    /// API lấy ra token
+    /// </summary>
+    /// <param name="id"></param>
+    /// <param name="kind"></param>
+    /// <returns></returns>
+    /// <exception cref="BusinessException"></exception>
+    [HttpGet("{id}/token")]
+    public async Task<ActionResult<TokenValueDto>> GetPlainTokenAsync(Guid id, [FromQuery] string kind)
+    {
+        var q = await _authRepo.GetQueryableAsync();
+        var auth = q.FirstOrDefault(x => x.Id == id);
+        if (auth == null)
+            throw new BusinessException("ZaloAuth:NotFound");
+
+        var raw = kind?.ToLowerInvariant() switch
+        {
+            "access" => auth.AccessToken,
+            "refresh" => auth.RefreshToken,
+            _ => throw new BusinessException("ZaloAuth:InvalidTokenKind")
+        };
+
+        if (string.IsNullOrWhiteSpace(raw))
+            throw new BusinessException("ZaloAuth:TokenEmpty");
+
+        var plain = SecurityHelper.DecryptMaybe(raw, _encrypt)!;
+
+        // trả JSON để abp.ajax không bị parsererror
+        return Ok(new TokenValueDto(plain));
     }
 
     /// <summary>
