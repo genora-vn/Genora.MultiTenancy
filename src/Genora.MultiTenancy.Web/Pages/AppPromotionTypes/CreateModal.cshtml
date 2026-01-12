@@ -14,17 +14,17 @@
         <abp-modal-body>
             <abp-row>
                 <abp-column size-md="_8">
-                    <abp-input asp-for="PromotionType.Code" placeholder="Nhập mã code loại khách hàng" label="@L["PromotionTypeCode"]" />
+                    <abp-input asp-for="PromotionType.Code" placeholder="Nhập mã code loại ưu đãi" label="@L["PromotionTypeCode"]" />
                 </abp-column>
                 <abp-column size-md="_4" style="display: flex; align-content: center; flex-wrap: wrap">
-                    <abp-input asp-for="PromotionType.Status" />
+                    <abp-input asp-for="PromotionType.Status" label="@L["PromotionStatus"]"/>
                 </abp-column>
             </abp-row>
             
-            <abp-input asp-for="PromotionType.Name" placeholder="Nhập tên loại khách hàng" label="@L["PromotionTypeName"]" />
+            <abp-input asp-for="PromotionType.Name" placeholder="Nhập tên loại ưu đãi" label="@L["PromotionTypeName"]" />
             <div class="mb-3">
                 <label asp-for="PromotionType.Description" class="form-label">@L["Description"]</label>
-                <textarea asp-for="PromotionType.Description" class="form-control" rows="2" placeholder="Mô tả loại khách hàng"></textarea>
+                <textarea asp-for="PromotionType.Description" class="form-control" rows="2" placeholder="Mô tả loại ưu đãi"></textarea>
             </div>
             
             <div class="mb-3" style="display: inline-flex; width: 100%">
@@ -61,13 +61,6 @@
                     </div>
                     </abp-column>
             </abp-row>
-            @* <abp-row>
-                <div class="preview-grid" id="previewGrid">
-                    <div class="preview-item">
-                        <img src="images\getting-started\no-photo-square.png" id="image-preview" alt="Alternate Text" />
-                    </div>
-                </div>
-            </abp-row> *@
         </abp-modal-body>
         <abp-modal-footer buttons="@(AbpModalButtons.Cancel | AbpModalButtons.Save)"></abp-modal-footer>
     </abp-modal>

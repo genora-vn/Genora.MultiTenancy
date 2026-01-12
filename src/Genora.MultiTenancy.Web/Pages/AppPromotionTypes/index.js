@@ -21,7 +21,7 @@
                             {
                                 text: l('Edit'),
                                 visible: abp.auth.isGranted('MultiTenancy.AppPromotionType.Edit') ||
-                                    abp.auth.isGranted('MultiTenancy.AppPromotionType.Edit'),
+                                    abp.auth.isGranted('MultiTenancy.HostAppPromotionType.Edit'),
                                 action: function (data) {
                                     editModal.open({ id: data.record.id });
                                 }
@@ -29,7 +29,7 @@
                             {
                                 text: l('Delete'),
                                 visible: abp.auth.isGranted('MultiTenancy.AppPromotionType.Delete') ||
-                                    abp.auth.isGranted('MultiTenancy.AppPromotionType.Delete'),
+                                    abp.auth.isGranted('MultiTenancy.HostAppPromotionType.Delete'),
                                 confirmMessage: function (data) {
                                     return l('AreYouSureToDelete', data.record.name);
                                 },

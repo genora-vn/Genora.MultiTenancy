@@ -4,6 +4,7 @@ using Genora.MultiTenancy.DomainModels.AppCalendarSlots;
 using Genora.MultiTenancy.DomainModels.AppCustomers;
 using Genora.MultiTenancy.DomainModels.AppCustomerTypes;
 using Genora.MultiTenancy.DomainModels.AppGolfCourses;
+using Genora.MultiTenancy.DomainModels.AppPromotionTypes;
 using Genora.MultiTenancy.Enums;
 using Genora.MultiTenancy.Helpers;
 using Genora.MultiTenancy.Localization;
@@ -28,13 +29,15 @@ namespace Genora.MultiTenancy.AppServices.AppCalendarSlots
         private readonly IRepository<GolfCourse, Guid> _golfCourseRepository;
         private readonly IRepository<CustomerType, Guid> _customerTypeRepository;
         private readonly IRepository<Customer, Guid> _customerRepo;
-        public MiniAppCalendarSlotService(IRepository<CalendarSlot, Guid> calendarSlotRepository, IRepository<CalendarSlotPrice, Guid> priceRepository, IRepository<GolfCourse, Guid> golfCourseRepository, IRepository<CustomerType, Guid> customerTypeRepository, IRepository<Customer, Guid> customerRepo)
+        private readonly IRepository<DomainModels.AppPromotionTypes.PromotionType, Guid> _promotionTypeRepository;
+        public MiniAppCalendarSlotService(IRepository<CalendarSlot, Guid> calendarSlotRepository, IRepository<CalendarSlotPrice, Guid> priceRepository, IRepository<GolfCourse, Guid> golfCourseRepository, IRepository<CustomerType, Guid> customerTypeRepository, IRepository<Customer, Guid> customerRepo, IRepository<DomainModels.AppPromotionTypes.PromotionType, Guid> promotionTypeRepository)
         {
             _customerRepo = customerRepo;
             _calendarSlotRepository = calendarSlotRepository;
             _priceRepository = priceRepository;
             _golfCourseRepository = golfCourseRepository;
             _customerTypeRepository = customerTypeRepository;
+            _promotionTypeRepository = promotionTypeRepository;
         }
 
         public async Task<MiniAppCalendarSlotDto> GetListMiniAppAsync(GetMiniAppCalendarListInput input)
@@ -42,6 +45,7 @@ namespace Genora.MultiTenancy.AppServices.AppCalendarSlots
             var result = new MiniAppCalendarSlotDto();
             result.FrameTimeOfDays = SessionOfDayEnum.List().Select(x => new FrameTimeOfDay { Id = x.Value, Name = x.Name }).ToList();
             var query = await _calendarSlotRepository.GetQueryableAsync();
+            var promotion = await _promotionTypeRepository.GetListAsync();
             if (string.IsNullOrEmpty(input.GolfCourseCode)) return new MiniAppCalendarSlotDto { Error = (int)HttpStatusCode.BadRequest, Message = "Vui lòng nhập mã sân để lấy giờ chơi"};
             GolfCourse golfCourse = await _golfCourseRepository.FirstOrDefaultAsync(x => x.Code == input.GolfCourseCode);
             if (!string.IsNullOrEmpty(input.GolfCourseCode))
@@ -60,7 +64,7 @@ namespace Genora.MultiTenancy.AppServices.AppCalendarSlots
 
             if (input.PromotionType.HasValue)
             {
-                query = query.Where(x => (int)x.PromotionType == input.PromotionType.Value);
+                query = query.Where(x => x.PromotionTypeId == input.PromotionType.Value);
             }
 
             if (input.FrameTime.HasValue)
@@ -112,8 +116,8 @@ namespace Genora.MultiTenancy.AppServices.AppCalendarSlots
                 PlayDate = slot.ApplyDate,
                 TimeFrom = slot.TimeFrom,
                 TimeTo = slot.TimeTo,
-                PromotionId = (int)slot.PromotionType,
-                PromotionName = Enum.GetName(typeof(PromotionType), slot.PromotionType),
+                PromotionId = slot.PromotionTypeId,
+                PromotionName = promotion.FirstOrDefault(p => p.Id == slot.PromotionTypeId)?.Name,
                 MaxSlots = slot.MaxSlots,
             })
             .ToList();
@@ -124,14 +128,14 @@ namespace Genora.MultiTenancy.AppServices.AppCalendarSlots
             foreach (var item in dtoList)
             {
                 item.FrameTime = $"{item.TimeFrom} - {item.TimeTo}";
-                item.IsBestDeal = item.PromotionId == (int)PromotionType.BestDeal;
+                item.IsBestDeal = !string.IsNullOrEmpty(item.PromotionName) ? item.PromotionName.ToString() == "Best Deal" : false;
                 var customerType = customerTypes.Where(c => c.Code == "VIS").FirstOrDefault()?.Id ?? Guid.Empty;
                 item.VisitorPrice = prices.Where(p => p.CustomerTypeId == customerType).FirstOrDefault()?.Price ?? prices.Where(p => p.CalendarSlotId == item.Id).OrderByDescending(x => x.Price).FirstOrDefault()?.Price ?? 0;
                 if (user != null)
                 {
                     item.CustomerTypePrice = prices.Where(p => p.CalendarSlotId == item.Id && p.CustomerTypeId == user?.CustomerTypeId).OrderBy(x => x.Price).FirstOrDefault()?.Price 
                         ?? prices.Where(p => p.CalendarSlotId == item.Id).OrderBy(x => x.Price).FirstOrDefault()?.Price 
-                        ?? item.VisitorPrice;   
+                        ?? item.VisitorPrice;
                 }
                 else
                 {
@@ -175,7 +179,7 @@ namespace Genora.MultiTenancy.AppServices.AppCalendarSlots
                 ApplyDate = slot.ApplyDate,
                 TimeFrom = slot.TimeFrom,
                 TimeTo = slot.TimeTo,
-                PromotionType = slot.PromotionType,
+                PromotionTypeId = slot.PromotionTypeId,
                 MaxSlots = slot.MaxSlots,
                 InternalNote = slot.InternalNote,
                 IsActive = slot.IsActive,

@@ -10,22 +10,23 @@
 }
 <form abp-model="PromotionType" asp-page="/AppPromotionTypes/EditModal">
     <abp-modal>
-        <abp-modal-header title="@L["CreatePromotionType"].Value"></abp-modal-header>
+        <abp-modal-header title="@L["EditPromotionType"].Value"></abp-modal-header>
         <abp-modal-body>
             <input asp-for="Id" type="hidden" />
+            <input asp-for="PromotionType.Code" type="hidden" />
             <abp-row>
                 <abp-column size-md="_8">
-                    <abp-input asp-for="PromotionType.Code" placeholder="Nhập mã code loại khách hàng" label="@L["PromotionTypeCode"]" />
+                    <abp-input asp-for="PromotionType.Code" placeholder="Nhập mã code loại ưu đãi" label="@L["PromotionTypeCode"]" disabled/>
                 </abp-column>
                 <abp-column size-md="_4" style="display: flex; align-content: center; flex-wrap: wrap">
-                    <abp-input asp-for="PromotionType.Status" />
+                    <abp-input asp-for="PromotionType.Status" label="@L["PromotionStatus"]" />
                 </abp-column>
             </abp-row>
 
-            <abp-input asp-for="PromotionType.Name" placeholder="Nhập tên loại khách hàng" label="@L["PromotionTypeName"]" />
+            <abp-input asp-for="PromotionType.Name" placeholder="Nhập tên loại ưu đãi" label="@L["PromotionTypeName"]" />
             <div class="mb-3">
                 <label asp-for="PromotionType.Description" class="form-label">@L["Description"]</label>
-                <textarea asp-for="PromotionType.Description" class="form-control" rows="2" placeholder="Mô tả loại khách hàng"></textarea>
+                <textarea asp-for="PromotionType.Description" class="form-control" rows="2" placeholder="Mô tả loại ưu đãi"></textarea>
             </div>
 
             <div class="mb-3" style="display: inline-flex; width: 100%">
@@ -42,7 +43,7 @@
                 <abp-column size-md="_6">
                     <div class="url-group" id="input-url">
                         <label asp-for="PromotionType.IconUrl" class="form-label">@L["PromotionTypeIconUrl"]</label>
-                        <input asp-for="PromotionType.IconUrl" class="form-control" placeholder="Dán đường dẫn ảnh icon" />
+                        <input asp-for="PromotionType.IconUrl" class="form-control" id="icon-input" placeholder="Dán đường dẫn ảnh icon" />
                     </div>
                     <div class="group-image" id="input-image" style="display: none;">
                         <div class="image-upload-group">
@@ -143,6 +144,15 @@
             $('#color-picker').val(inputColor);
         });
 
+        if ($('#color-code').val() !== null && $('#color-code').val() !== ''){
+            $('#color-picker').val($('#color-code').val());
+        }
+
+        if ($('#icon-input').val()  !== null && $('#icon-input').val() !== ''){
+            debugger;
+            bindingPreviewImage();
+        }
+
         $('input[asp-for="PromotionType.IconUrl"]').on('input', function () {
             bindingPreviewImage();
         });
@@ -151,7 +161,7 @@
         });
 
         function bindingPreviewImage() {
-            var imageUrl = $('#image-input').val();
+            var imageUrl = $('#icon-input').val();
             if (imageUrl) {
                 $('#image-preview').attr('src', imageUrl);
             } else {

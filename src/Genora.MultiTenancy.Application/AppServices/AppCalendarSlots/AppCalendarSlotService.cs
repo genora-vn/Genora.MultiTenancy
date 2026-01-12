@@ -5,7 +5,7 @@ using Genora.MultiTenancy.DomainModels.AppCalendarSlotPrices;
 using Genora.MultiTenancy.DomainModels.AppCalendarSlots;
 using Genora.MultiTenancy.DomainModels.AppCustomerTypes;
 using Genora.MultiTenancy.DomainModels.AppGolfCourses;
-using Genora.MultiTenancy.Enums;
+using Genora.MultiTenancy.DomainModels.AppPromotionTypes;
 using Genora.MultiTenancy.Features.AppCalendarSlots;
 using Genora.MultiTenancy.Permissions;
 using Microsoft.AspNetCore.Authorization;
@@ -42,6 +42,7 @@ public class AppCalendarSlotService :
     private readonly IRepository<CalendarSlotPrice, Guid> _priceRepository;
     private readonly IRepository<GolfCourse, Guid> _golfCourseRepository;
     private readonly IRepository<CustomerType, Guid> _customerTypeRepository;
+    private readonly IRepository<PromotionType, Guid> _promotionType;
     private readonly AppCalendarExcelTemplateGenerator _generator;
     public AppCalendarSlotService(
         IRepository<CalendarSlot, Guid> repository,
@@ -50,7 +51,8 @@ public class AppCalendarSlotService :
         IRepository<CustomerType, Guid> customerTypeRepository,
         ICurrentTenant currentTenant,
         IFeatureChecker featureChecker,
-        AppCalendarExcelTemplateGenerator generator)
+        AppCalendarExcelTemplateGenerator generator,
+        IRepository<PromotionType, Guid> promotionType)
         : base(repository, currentTenant, featureChecker)
     {
         _priceRepository = priceRepository;
@@ -63,6 +65,7 @@ public class AppCalendarSlotService :
         UpdatePolicyName = MultiTenancyPermissions.AppCalendarSlots.Edit;
         DeletePolicyName = MultiTenancyPermissions.AppCalendarSlots.Delete;
         _generator = generator;
+        _promotionType = promotionType;
     }
 
     [DisableValidation]
@@ -71,7 +74,7 @@ public class AppCalendarSlotService :
         await CheckGetListPolicyAsync();
 
         var queryable = await Repository.GetQueryableAsync();
-
+        var promotion = await _promotionType.GetListAsync();
         var query = queryable;
 
         if (input.GolfCourseId.HasValue)
@@ -91,7 +94,7 @@ public class AppCalendarSlotService :
 
         if (input.PromotionType.HasValue)
         {
-            query = query.Where(x => x.PromotionType == input.PromotionType.Value);
+            query = query.Where(x => x.PromotionTypeId == input.PromotionType.Value);
         }
 
         if (input.IsActive.HasValue)
@@ -119,7 +122,8 @@ public class AppCalendarSlotService :
                 ApplyDate = slot.ApplyDate,
                 TimeFrom = slot.TimeFrom,
                 TimeTo = slot.TimeTo,
-                PromotionType = slot.PromotionType,
+                PromotionTypeId = slot.PromotionTypeId,
+                PromotionType = promotion.FirstOrDefault(p => p.Id == slot.PromotionTypeId)?.Name,
                 MaxSlots = slot.MaxSlots,
                 InternalNote = slot.InternalNote,
                 IsActive = slot.IsActive,
@@ -139,7 +143,7 @@ public class AppCalendarSlotService :
 
         // 1) Lấy list slot theo ngày + sân
         var slotQuery = await Repository.GetQueryableAsync();
-
+        var promotion = await _promotionType.GetListAsync();
         if (input.GolfCourseId == Guid.Empty)
         {
             throw new BusinessException("CalendarSlot:MissingGolfCourse")
@@ -199,7 +203,8 @@ public class AppCalendarSlotService :
                 ApplyDate = slot.ApplyDate,
                 TimeFrom = slot.TimeFrom,
                 TimeTo = slot.TimeTo,
-                PromotionType = slot.PromotionType,
+                PromotionTypeId = slot.PromotionTypeId,
+                PromotionType = promotion.FirstOrDefault(p => p.Id == slot.PromotionTypeId)?.Name,
                 MaxSlots = slot.MaxSlots,
                 InternalNote = slot.InternalNote,
                 IsActive = slot.IsActive,
@@ -254,7 +259,7 @@ public class AppCalendarSlotService :
             input.TimeTo
         )
         {
-            PromotionType = input.PromotionType,
+            PromotionTypeId = input.PromotionTypeId,
             MaxSlots = input.MaxSlots,
             InternalNote = input.InternalNote,
             IsActive = input.IsActive
@@ -283,7 +288,7 @@ public class AppCalendarSlotService :
         entity.ApplyDate = input.ApplyDate;
         entity.TimeFrom = input.TimeFrom;
         entity.TimeTo = input.TimeTo;
-        entity.PromotionType = input.PromotionType;
+        entity.PromotionTypeId = input.PromotionTypeId;
         entity.MaxSlots = input.MaxSlots;
         entity.InternalNote = input.InternalNote;
         entity.IsActive = input.IsActive;
@@ -328,7 +333,7 @@ public class AppCalendarSlotService :
             ApplyDate = slot.ApplyDate,
             TimeFrom = slot.TimeFrom,
             TimeTo = slot.TimeTo,
-            PromotionType = slot.PromotionType,
+            PromotionTypeId = slot.PromotionTypeId,
             MaxSlots = slot.MaxSlots,
             InternalNote = slot.InternalNote,
             IsActive = slot.IsActive,
@@ -440,6 +445,7 @@ public class AppCalendarSlotService :
         await CheckGetListPolicyAsync();
         var exporter = new AppCalendarExcelExporter();
         var query = await Repository.GetQueryableAsync();
+        var promotion = await _promotionType.GetListAsync();
         
         if (input.GolfCourseId != Guid.Empty)
             query = query.Where(x => x.GolfCourseId == input.GolfCourseId);
@@ -463,7 +469,7 @@ public class AppCalendarSlotService :
                 GolfCourseName = golfCourse.FirstOrDefault(g => g.Id == b.GolfCourseId)?.Name,
                 FromDate = b.ApplyDate,
                 MaxSlots = b.MaxSlots,
-                PromotionType = b.PromotionType.ToString(),
+                PromotionType = promotion.FirstOrDefault(p => p.Id == b.PromotionTypeId)?.Name ?? "",
                 InternalNote = b.InternalNote
             };
         }).ToList();
@@ -475,7 +481,8 @@ public class AppCalendarSlotService :
     {
         //var generator = new AppCalendarExcelTemplateGenerator();
         var customerTypes = await _customerTypeRepository.GetListAsync();
-        var template = _generator.GenerateTemplate(customerTypes.OrderBy(t => t.CreationTime).ToList());
+        var promotion = await _promotionType.GetListAsync();
+        var template = _generator.GenerateTemplate(customerTypes.OrderBy(t => t.CreationTime).ToList(), promotion);
         return template;
     }
     public async Task<int> ImportExcelAsync(ImportCalendarExcelInput input)
@@ -543,8 +550,8 @@ public class AppCalendarSlotService :
                         $"Dòng {rowNumber}: Gap là bắt buộc và phải lớn hơn 0"
                     );
                 }
-
-                if (!Enum.TryParse<PromotionType>(r.PromotionType, out var promotion))
+                var promotion = await _promotionType.FirstOrDefaultAsync(p => p.Code == r.PromotionType);
+                if (promotion == null)
                     throw new UserFriendlyException(
                         "Import Excel lỗi",
                         $"Dòng {rowNumber}: PromotionType không hợp lệ");
@@ -572,7 +579,7 @@ public class AppCalendarSlotService :
                         if (existingCalendar != null)
                         {
                             // Cập nhật
-                            existingCalendar.PromotionType = promotion;
+                            existingCalendar.PromotionTypeId = promotion.Id;
                             existingCalendar.MaxSlots = r.MaxSlots;
                             existingCalendar.InternalNote = r.InternalNote;
                             await Repository.UpdateAsync(existingCalendar, autoSave: true);
@@ -588,7 +595,7 @@ public class AppCalendarSlotService :
                                 timeTo
                             )
                             {
-                                PromotionType = promotion,
+                                PromotionTypeId = promotion.Id,
                                 MaxSlots = r.MaxSlots,
                                 InternalNote = r.InternalNote,
                                 IsActive = true

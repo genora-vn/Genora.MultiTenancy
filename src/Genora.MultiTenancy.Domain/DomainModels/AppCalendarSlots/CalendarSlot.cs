@@ -24,6 +24,7 @@ public class CalendarSlot : FullAuditedAggregateRoot<Guid>, IMultiTenant
     public TimeSpan TimeTo { get; set; }
 
     public PromotionType PromotionType { get; set; }
+    public Guid PromotionTypeId { get; set; }
 
     public int MaxSlots { get; set; }
 

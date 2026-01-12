@@ -34,7 +34,7 @@
             <abp-row>
                 <abp-column size-md="_4">
                     <label class="form-label">@L["ApplyDate"]</label>
-                    <input asp-for="Slot.ApplyDate" class="form-control calendar-date-input" type="text" autocomplete="off" value="@applyDateIso" tabindex="1" />
+                    <input name="Slot.ApplyDate" class="form-control calendar-date-input" type="text" autocomplete="off" value="@applyDateIso" tabindex="1" />
                 </abp-column>
                 <abp-column size-md="_4">
                     <label class="form-label">@L["TimeFrom"]</label>
@@ -59,9 +59,9 @@
             </abp-row>
             <abp-row>
                 <abp-column size-md="_4">
-                    <abp-select asp-for="Slot.PromotionType"
+                    <abp-select asp-for="Slot.PromotionTypeId"
                                 label="@L["PromotionType"]"
-                                asp-items="Html.GetEnumSelectList<PromotionType>()" tabindex="4" />
+                                asp-items="@Model.Promotions" tabindex="4" />
                 </abp-column>
                 <abp-column size-md="_4">
                     <abp-input asp-for="Slot.MaxSlots" label="@L["MaxSlots"]" tabindex="5" />

@@ -1,5 +1,6 @@
 ﻿using Genora.MultiTenancy.AppDtos.AppCalendarSlots;
 using Genora.MultiTenancy.AppDtos.AppCustomerTypes;
+using Genora.MultiTenancy.AppDtos.AppPromotionTypes;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using System;
@@ -30,7 +31,8 @@ public class DetailModalModel : MultiTenancyPageModel
 
     [BindProperty(SupportsGet = true)]
     public string? TimeTo { get; set; }
-
+    [BindProperty]
+    public List<SelectListItem> Promotions { get; set; }
     // ----- Form bind -----
     [BindProperty]
     public CreateUpdateAppCalendarSlotDto Slot { get; set; }
@@ -39,19 +41,29 @@ public class DetailModalModel : MultiTenancyPageModel
 
     private readonly IAppCalendarSlotService _slotService;
     private readonly IAppCustomerTypeService _customerTypeService;
-
+    private readonly IMiniAppPromotionTypeService _promotionType;
     public DetailModalModel(
         IAppCalendarSlotService slotService,
-        IAppCustomerTypeService customerTypeService)
+        IAppCustomerTypeService customerTypeService,
+        IMiniAppPromotionTypeService promotionType)
     {
         _slotService = slotService;
         _customerTypeService = customerTypeService;
+        _promotionType = promotionType;
     }
 
     public async Task<IActionResult> OnGetAsync()
     {
         await LoadCustomerTypesAsync();
-
+        var promotion = await _promotionType.GetAllAsync();
+        if(promotion != null && promotion.Count > 0)
+        {
+            Promotions = promotion.Select(p => new SelectListItem { Value = p.Id.ToString(), Text = p.Name }).ToList();
+        }
+        else
+        {
+            Promotions = new List<SelectListItem>();
+        }
         // EDIT nếu Id có
         if (Id.HasValue)
         {
@@ -70,7 +82,7 @@ public class DetailModalModel : MultiTenancyPageModel
                 ApplyDate = dto.ApplyDate.Date,
                 TimeFrom = dto.TimeFrom,
                 TimeTo = dto.TimeTo,
-                PromotionType = dto.PromotionType,
+                PromotionTypeId = dto.PromotionTypeId,
                 MaxSlots = dto.MaxSlots,
                 InternalNote = dto.InternalNote,
                 IsActive = dto.IsActive,

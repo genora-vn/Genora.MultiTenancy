@@ -11,6 +11,6 @@ public class GetCalendarSlotListInput : PagedAndSortedResultRequestDto
     public DateTime? ApplyDateFrom { get; set; }
     public DateTime? ApplyDateTo { get; set; }
 
-    public PromotionType? PromotionType { get; set; }
+    public Guid? PromotionType { get; set; }
     public bool? IsActive { get; set; }
 }

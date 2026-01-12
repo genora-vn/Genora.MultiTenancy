@@ -34,7 +34,7 @@ namespace Genora.MultiTenancy.AppDtos.AppCalendarSlots
         public TimeSpan TimeTo { get; set; }
 
         [Required]
-        public PromotionType PromotionType { get; set; }
+        public Guid PromotionTypeId { get; set; }
 
         [Range(1, int.MaxValue)]
         public int MaxSlots { get; set; }

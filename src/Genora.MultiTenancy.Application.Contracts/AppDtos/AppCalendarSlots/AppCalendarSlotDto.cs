@@ -19,7 +19,8 @@ public class AppCalendarSlotDto : FullAuditedEntityDto<Guid>
 
     public TimeSpan TimeTo { get; set; }
 
-    public PromotionType PromotionType { get; set; }
+    public Guid PromotionTypeId { get; set; }
+    public string? PromotionType { get; set; }
 
     public int MaxSlots { get; set; }
 

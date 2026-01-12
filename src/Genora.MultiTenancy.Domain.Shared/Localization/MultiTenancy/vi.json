@@ -336,6 +336,18 @@
     "AddPlayer": "Thêm golfer",
     "PlayerName": "Tên golfer",
 
+    //=================Loại ưu đãi=======================
+    "AppPromotionType": "Loại ưu đãi",
+    "CreatePromotionType": "Thêm mới loại ưu đãi",
+    "PromotionTypeCode": "Mã loại ưu đãi",
+    "PromotionTypeName": "Tên loại ưu đãi",
+    "IsUpload": "Tải ảnh lên",
+    "PromotionTypeIconUrl": "Đường dẫn ảnh icon biểu tượng",
+    "PromotionStatus": "Trạng thái",
+    "NewPromotionType": "Thêm mới",
+    "Menu:AppPromotionTypes": "Quản lý loại ưu đãi",
+    "EditPromotionType": "Cập nhật loại ưu đãi",
+
     // Cấu hình thông báo
     "AreYouSure": "Bạn chắc chắn?",
     "AreYouSureToDelete": "Bạn có chắc chắn muốn xóa mục này không??",

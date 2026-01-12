@@ -16,7 +16,7 @@ namespace Genora.MultiTenancy.AppServices.AppCalendarSlots
     public class AppCalendarExcelTemplateGenerator : ITransientDependency
     {
         
-        public IRemoteStreamContent GenerateTemplate(List<CustomerType> customerTypes)
+        public IRemoteStreamContent GenerateTemplate(List<CustomerType> customerTypes, List<DomainModels.AppPromotionTypes.PromotionType> promotions)
         {
             using var workbook = new XLWorkbook();
             var ws = workbook.Worksheets.Add("Danh sách booking");
@@ -97,7 +97,7 @@ namespace Genora.MultiTenancy.AppServices.AppCalendarSlots
             //valC.ErrorMessage = "Vui lòng nhập giờ theo định dạng HH:mm:ss (00:00:00 đến 23:59:59)";
             //valC.IgnoreBlanks = true;
 
-            var enumPromation = Enum.GetNames(typeof(PromotionType));
+            var enumPromation = promotions.Select(p => p.Code).ToList();
             var sourse = $"\"{string.Join(",", enumPromation)}\"";
             ws.Range("F4:F1000").SetDataValidation().List(sourse, true);
   
