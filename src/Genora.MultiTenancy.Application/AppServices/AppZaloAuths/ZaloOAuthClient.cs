@@ -62,7 +62,7 @@ public class ZaloOAuthClient : IZaloOAuthClient
             using var doc = JsonDocument.Parse(body);
 
             // Handle khi zalo trả lỗi json
-            if (doc.RootElement.TryGetProperty("error", out var e) && e.GetInt32() != 0)
+            if (doc.RootElement.TryGetProperty("error", out var e) && e.ValueKind == JsonValueKind.Number && e.GetInt32() != 0)
             {
                 var msg = doc.RootElement.TryGetProperty("message", out var m) ? m.GetString() : "Zalo error";
                 throw new BusinessException("ZaloOAuth:ExchangeFailed").WithData("Message", msg).WithData("Body", body);
@@ -70,7 +70,9 @@ public class ZaloOAuthClient : IZaloOAuthClient
 
             var access = doc.RootElement.GetProperty("access_token").GetString()!;
             var refresh = doc.RootElement.GetProperty("refresh_token").GetString()!;
-            var expires = doc.RootElement.GetProperty("expires_in").GetInt32();
+
+            // ✅ FIX: expires_in có thể là "90000"
+            var expires = JsonHelper.ReadLongFlexible(doc.RootElement, "expires_in", 0);
 
             return new ZaloTokenResponse(access, refresh, expires);
         }
@@ -150,7 +152,7 @@ public class ZaloOAuthClient : IZaloOAuthClient
 
             var access = doc.RootElement.GetProperty("access_token").GetString()!;
             var refresh = doc.RootElement.GetProperty("refresh_token").GetString()!;
-            var expires = doc.RootElement.GetProperty("expires_in").GetInt32();
+            var expires = JsonHelper.ReadLongFlexible(doc.RootElement, "expires_in", 0);
 
             return new ZaloTokenResponse(access, refresh, expires);
         }

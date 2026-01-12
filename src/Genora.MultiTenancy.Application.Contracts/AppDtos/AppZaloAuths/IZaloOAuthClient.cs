@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Genora.MultiTenancy.AppDtos.AppZaloAuths;
 
-public record ZaloTokenResponse(string AccessToken, string RefreshToken, int ExpiresIn);
+public record ZaloTokenResponse(string AccessToken, string RefreshToken, long ExpiresIn);
 
 public interface IZaloOAuthClient
 {
