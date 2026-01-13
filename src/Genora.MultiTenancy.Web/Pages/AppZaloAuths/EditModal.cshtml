@@ -17,8 +17,34 @@
 
             <abp-input asp-for="Auth.AppId" label="@L["AppId"]" />
 
-            <abp-input asp-for="Auth.AccessToken" label="@L["AccessToken"]" />
-            <abp-input asp-for="Auth.RefreshToken" label="@L["RefreshToken"]" />
+            @* <abp-input asp-for="Auth.AccessToken" label="@L["AccessToken"]" /> *@
+            @* <abp-input asp-for="Auth.RefreshToken" label="@L["RefreshToken"]" /> *@
+            <div class="mb-3">
+                <label class="form-label">@L["AccessToken"]</label>
+                <div class="input-group">
+                    <input type="text" class="form-control" value="@Model.AccessTokenMasked" readonly />
+                    <button type="button" class="btn btn-outline-primary js-copy-current" data-kind="access">
+                        <i class="fa fa-copy"></i> Copy
+                    </button>
+                </div>
+                <small class="text-muted">Current token (masked). Copy sẽ lấy token thật từ server.</small>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">@L["RefreshToken"]</label>
+                <div class="input-group">
+                    <input type="text" class="form-control" value="@Model.RefreshTokenMasked" readonly />
+                    <button type="button" class="btn btn-outline-primary js-copy-current" data-kind="refresh">
+                        <i class="fa fa-copy"></i> Copy
+                    </button>
+                </div>
+            </div>
+
+            <hr />
+
+            <abp-input asp-for="Auth.AccessToken" label="New AccessToken (optional)" />
+            <abp-input asp-for="Auth.RefreshToken" label="New RefreshToken (optional)" />
+
             <abp-input asp-for="Auth.ExpireTokenTime" label="@L["ExpiresAt"]" type="datetime-local" />
 
             <hr />
@@ -34,4 +60,39 @@
         </abp-modal-body>
         <abp-modal-footer buttons="@(AbpModalButtons.Cancel | AbpModalButtons.Save)"></abp-modal-footer>
     </abp-modal>
+    <script>
+        (function () {
+            async function copyText(text) {
+                if (!text) return;
+                if (navigator.clipboard && window.isSecureContext) {
+                    await navigator.clipboard.writeText(text);
+                    return;
+                }
+                var ta = document.createElement('textarea');
+                ta.value = text;
+                ta.style.position = 'fixed';
+                ta.style.left = '-9999px';
+                document.body.appendChild(ta);
+                ta.focus();
+                ta.select();
+                document.execCommand('copy');
+                document.body.removeChild(ta);
+            }
+
+            $(function () {
+                $(document).on('click', '.js-copy-current', function () {
+                    var kind = $(this).data('kind');
+                    var id = $('input[name="Id"]').val();
+
+                    abp.ajax({
+                        url: '/api/host/zalo-auth/' + id + '/token?kind=' + kind,
+                        type: 'GET'
+                    }).done(async function (res) {
+                        await copyText(res.token);
+                        abp.notify.success('Copied');
+                    });
+                });
+            });
+        })();
+    </script>
 </form>

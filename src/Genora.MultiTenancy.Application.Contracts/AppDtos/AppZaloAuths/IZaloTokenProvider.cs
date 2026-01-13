@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Threading.Tasks;
 
 namespace Genora.MultiTenancy.AppDtos.AppZaloAuths;
 
@@ -6,4 +7,5 @@ public interface IZaloTokenProvider
 {
     Task<string> GetAccessTokenAsync();
     Task RefreshNowAsync();
+    Task DeactivateOtherActivesAsync(Guid keepId);
 }

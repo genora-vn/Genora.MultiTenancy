@@ -144,7 +144,8 @@ public class ZaloOAuthClient : IZaloOAuthClient
             res.EnsureSuccessStatusCode();
 
             using var doc = JsonDocument.Parse(body);
-            if (doc.RootElement.TryGetProperty("error", out var e) && e.GetInt32() != 0)
+            var errCode = JsonHelper.ReadLongFlexible(doc.RootElement, "error", 0);
+            if (errCode != 0)
             {
                 var msg = doc.RootElement.TryGetProperty("message", out var m) ? m.GetString() : "Zalo error";
                 throw new BusinessException("ZaloOAuth:RefreshFailed").WithData("Message", msg).WithData("Body", body);

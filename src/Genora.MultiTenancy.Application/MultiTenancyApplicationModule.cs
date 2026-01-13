@@ -1,5 +1,8 @@
 ﻿using Genora.MultiTenancy.AppDtos.AppSettings;
+using Genora.MultiTenancy.AppDtos.AppZaloAuths;
 using Genora.MultiTenancy.Apps.AppSettings;
+using Genora.MultiTenancy.AppServices.AppZaloAuths;
+using Microsoft.Extensions.DependencyInjection;
 using System;
 using Volo.Abp.Account;
 using Volo.Abp.AspNetCore.ExceptionHandling;
@@ -40,5 +43,6 @@ public class MultiTenancyApplicationModule : AbpModule
         });
 
         context.Services.AddEntityCache<AppSetting, AppSettingDto, Guid>();
+        context.Services.AddTransient<IZaloZbsClient, ZaloZbsClient>();
     }
 }
