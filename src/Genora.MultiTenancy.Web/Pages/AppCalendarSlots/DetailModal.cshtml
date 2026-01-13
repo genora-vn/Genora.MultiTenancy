@@ -33,28 +33,34 @@
             @* <input type="hidden" asp-for="Slot.ApplyDate" value="@applyDateIso" /> *@
             <abp-row>
                 <abp-column size-md="_4">
-                    <label class="form-label">@L["ApplyDate"]</label>
-                    <input name="Slot.ApplyDate" class="form-control calendar-date-input" type="text" autocomplete="off" value="@applyDateIso" tabindex="1" />
+                    <div class="mb-3">
+                        <label class="form-label">@L["ApplyDate"]</label>
+                        <input name="Slot.ApplyDate" class="form-control calendar-date-input" type="text" autocomplete="off" value="@applyDateIso" tabindex="1" />
+                    </div>
                 </abp-column>
                 <abp-column size-md="_4">
-                    <label class="form-label">@L["TimeFrom"]</label>
-                    <input name="Slot.TimeFrom"
-                           id="Slot_TimeFrom"
-                           type="text"
-                           class="form-control time-input"
-                           value="@fromText"
-                           autocomplete="off"
-                           @(isEdit ? "readonly" : "") tabindex="2" />
+                    <div class="mb-3">
+                        <label class="form-label">@L["TimeFrom"]</label>
+                        <input name="Slot.TimeFrom"
+                               id="Slot_TimeFrom"
+                               type="text"
+                               class="form-control time-input"
+                               value="@fromText"
+                               autocomplete="off"
+                               @(isEdit ? "readonly" : "") tabindex="2" />
+                    </div>
                 </abp-column>
                 <abp-column size-md="_4">
-                    <label class="form-label">@L["TimeTo"]</label>
-                    <input name="Slot.TimeTo"
-                           id="Slot_TimeTo"
-                           type="text"
-                           class="form-control time-input"
-                           value="@toText"
-                           autocomplete="off"
-                           @(isEdit ? "readonly" : "") tabindex="3" />
+                    <div class="mb-3">
+                        <label class="form-label">@L["TimeTo"]</label>
+                        <input name="Slot.TimeTo"
+                               id="Slot_TimeTo"
+                               type="text"
+                               class="form-control time-input"
+                               value="@toText"
+                               autocomplete="off"
+                               @(isEdit ? "readonly" : "") tabindex="3" />
+                    </div>
                 </abp-column>
             </abp-row>
             <abp-row>
@@ -72,7 +78,7 @@
             </abp-row>
             <abp-row>
                 <label class="form-label" asp-for="Slot.InternalNote">@L["InternalNote"]</label>
-                <textarea asp-for="Slot.InternalNote" placeholder="Nhập ghi chú" style="width: 98%" class="form-control"
+                <textarea asp-for="Slot.InternalNote" placeholder="Nhập ghi chú" style="width: 97%; margin-left: 15px" class="form-control"
                           rows="2" tabindex="7"></textarea>
             </abp-row>
             <div style="display:inline-flex; margin-top: 20px; width: 100%">

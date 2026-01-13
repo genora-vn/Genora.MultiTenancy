@@ -97,7 +97,7 @@ namespace Genora.MultiTenancy.AppServices.AppCalendarSlots
             //valC.ErrorMessage = "Vui lòng nhập giờ theo định dạng HH:mm:ss (00:00:00 đến 23:59:59)";
             //valC.IgnoreBlanks = true;
 
-            var enumPromation = promotions.Select(p => p.Code).ToList();
+            var enumPromation = promotions.Select(p => p.Name).ToList();
             var sourse = $"\"{string.Join(",", enumPromation)}\"";
             ws.Range("F4:F1000").SetDataValidation().List(sourse, true);
   

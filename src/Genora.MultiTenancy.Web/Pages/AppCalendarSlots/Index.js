@@ -59,6 +59,14 @@
             ordering: false,
             data: [],
             columnDefs: [
+                {
+                    title: l('PlayDate'),
+                    data: "applyDate",
+                    render: function (data) {
+                        if (!data) return '';
+                        return luxon.DateTime.fromISO(data).toFormat('dd/MM/yyyy');
+                    }
+                },
                 { title: l('TimeFrom'), data: "timeFrom" },
                 { title: l('TimeTo'), data: "timeTo" },
                 { title: l('PromotionType'), data: "promotionType" },

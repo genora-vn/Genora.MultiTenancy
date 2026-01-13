@@ -499,6 +499,7 @@ public class AppCalendarSlotService :
             using var stream = input.File.GetStream();
             var rows = importer.Read(stream, customerType.OrderBy(t => t.CreationTime).ToList());
             var golfCourses = await _golfCourseRepository.GetListAsync();
+            var promotions = await _promotionType.GetListAsync();
             var slotPrices = new List<CalendarSlotPrice>();
             var insertCalendars = new List<CalendarSlot>();
             foreach (var (rowNumber, r) in rows)
@@ -554,7 +555,7 @@ public class AppCalendarSlotService :
                         $"Dòng {rowNumber}: Gap là bắt buộc và phải lớn hơn 0"
                     );
                 }
-                var promotion = await _promotionType.FirstOrDefaultAsync(p => p.Code == r.PromotionType);
+                var promotion = promotions.FirstOrDefault(p => p.Name == r.PromotionType);
                 if (promotion == null)
                     throw new UserFriendlyException(
                         "Import Excel lỗi",

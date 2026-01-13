@@ -27,7 +27,7 @@
                 </div>
                 <div class="col-md-2">
                     <abp-select asp-for="News.Status"
-                                label="@L["Status"]"
+                                label="@L["NewsStatus"]"
                                 asp-items="EnumSelectList.GetLocalizedEnumSelectList<NewsStatus>(L)" />
                 </div>
                 <div class="col-md-2">
@@ -43,9 +43,10 @@
                 </div>
                 <div class="col-md-4">
                     <div class="input-type" style="margin-top: 18px">
-                        <abp-input asp-for="News.IsUploadImage" class="form-control" id="isUpload" label="@L["IsImageInput"]" />
+                        <input name="News.IsUploadImage" class="form-check-input" type="checkbox" id="isUpload" />
+                        <label for="isUpload">@L["IsImageInput"]</label>
                     </div>
-                    <div class="url-group" id="input-url">
+                    <div class="url-group" id="input-url" style="margin-top: 10px">
                         <label asp-for="News.ThumbnailUrl" class="form-label">@L["ThumbnailUrl"]</label>
                         <input asp-for="News.ThumbnailUrl" id="image-input" class="form-control" placeholder="Dán link ảnh đại diện tin tức" />
                     </div>
@@ -73,7 +74,7 @@
                 <textarea asp-for="News.ContentHtml"
                           class="form-control news-content-editor"
                           placeholder="Nội dung tin tức"
-                          rows="8"></textarea>
+                          rows="7"></textarea>
             </div>
         </abp-modal-body>
         <abp-modal-footer buttons="@(AbpModalButtons.Cancel | AbpModalButtons.Save)"></abp-modal-footer>
@@ -81,6 +82,7 @@
 </form>
 
 <style type="text/css">
+
     .image-upload-group {
         margin: 20px 0;
     }
@@ -88,7 +90,7 @@
     .drop-zone {
         border: 3px dashed #ccc;
         border-radius: 10px;
-        padding: 20px;
+        padding: 15px;
         text-align: center;
         cursor: pointer;
         transition: border-color 0.3s;

@@ -61,7 +61,7 @@
     "IsExportInvoice": "Khách hàng yêu cầu xuất hóa đơn",
     "True": "Có",
     "False": "Không",
-    "IsFollower": "Folow Zalo OA",
+    "IsFollower": "Quan tâm Zalo OA",
 
     // Cấu hình bảng Logs
     "Permission:AuditLogs": "Nhật ký hệ thống",
@@ -214,6 +214,10 @@
     "CustomerStatus": "Trạng thái",
     "Gender": "Giới tính",
     "DateOfBirth": "Ngày sinh",
+    "VgaCode": "Mã thành viên",
+    "MembershipTier": "Hạng thành viên",
+    "BonusPoint": "Điểm thưởng",
+    "ZaloUserId": "ID tài khoản Zalo",
 
     "Customer:PhoneRequired": "Số điện thoại là bắt buộc.",
     "Customer:PhoneAlreadyExists": "Số điện thoại {0} đã tồn tại trong hệ thống.",
@@ -254,6 +258,7 @@
     "SelectGolfCourse": "Chọn sân golf",
     "SelectGolfCourseAndOpenCalendar": "Vui lòng chọn sân golf, sau đó nhấn \"Quản lý giờ chơi\" để mở giờ chơi khung giờ.",
     "PleaseSelectGolfCourse": "Vui lòng chọn sân golf trước.",
+    "PlayDate": "Ngày chơi",
 
     "DeletedSuccessfully": "Xoá khung giờ thành công.",
 
@@ -277,6 +282,7 @@
     "ThumbnailUrl": "Ảnh đại diện (URL)",
     "Content": "Nội dung chi tiết",
     "Status ": "Trạng thái",
+    "NewsStatus": "Trạng thái tin",
     "Title": "Tiêu đề",
 
     "NewsStatus:Draft": "Bản nháp",
