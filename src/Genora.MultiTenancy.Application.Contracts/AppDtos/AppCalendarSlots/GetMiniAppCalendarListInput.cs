@@ -11,6 +11,6 @@ namespace Genora.MultiTenancy.AppDtos.AppCalendarSlots
         public string GolfCourseCode { get; set; }
         public DateTime? Date { get; set; }
         public int? FrameTime { get; set; }
-        public Guid? PromotionType { get; set; }
+        public string? PromotionType { get; set; }
     }
 }
