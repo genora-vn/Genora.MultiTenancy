@@ -158,8 +158,17 @@ public class AppZaloAuthAppService :
         if (!string.IsNullOrWhiteSpace(input.RefreshToken))
             entity.RefreshToken = SecurityHelper.EncryptMaybe(input.RefreshToken, _encrypt);
 
+        if (entity.IsActive && entity.ExpireTokenTime.HasValue && entity.ExpireTokenTime.Value <= DateTime.UtcNow)
+        {
+            entity.IsActive = false;
+        }
+
         await Repository.InsertAsync(entity, autoSave: true);
 
+        if (entity.IsActive)
+        {
+            await ZaloAuthActiveNormalizer.SetActiveOnlyAsync(Repository, entity.Id);
+        }
         return ToSafeDto(entity);
     }
 
@@ -191,7 +200,17 @@ public class AppZaloAuthAppService :
         if (input.ExpireTokenTime.HasValue)
             entity.ExpireTokenTime = input.ExpireTokenTime;
 
+        if (entity.IsActive && entity.ExpireTokenTime.HasValue && entity.ExpireTokenTime.Value <= DateTime.UtcNow)
+        {
+            entity.IsActive = false;
+        }
+
         await Repository.UpdateAsync(entity, autoSave: true);
+
+        if (entity.IsActive)
+        {
+            await ZaloAuthActiveNormalizer.SetActiveOnlyAsync(Repository, entity.Id);
+        }
 
         return ToSafeDto(entity);
     }

@@ -1,7 +1,10 @@
 ﻿using Genora.MultiTenancy.AppDtos.AppCustomers;
 using Genora.MultiTenancy.AppDtos.AppCustomerTypes;
+using Genora.MultiTenancy.AppDtos.AppZaloAuths;
 using Genora.MultiTenancy.DomainModels.AppCustomers;
+using Microsoft.Extensions.Logging;
 using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Threading;
@@ -15,11 +18,13 @@ public class MiniAppCustomerAppService : ApplicationService, IMiniAppCustomerApp
 {
     private readonly IRepository<Customer, Guid> _repo;
     private readonly IMiniAppCustomerTypeService _customerTypeService;
+    private readonly IZaloZbsClient _zbsClient;
 
-    public MiniAppCustomerAppService(IRepository<Customer, Guid> repo, IMiniAppCustomerTypeService customerTypeService)
+    public MiniAppCustomerAppService(IRepository<Customer, Guid> repo, IMiniAppCustomerTypeService customerTypeService, IZaloZbsClient zbsClient)
     {
         _repo = repo;
         _customerTypeService = customerTypeService;
+        _zbsClient = zbsClient;
     }
 
     public async Task<MiniAppCustomerDto?> GetByPhoneAsync(string phoneNumber, CancellationToken ct)
@@ -55,13 +60,17 @@ public class MiniAppCustomerAppService : ApplicationService, IMiniAppCustomerApp
         var phone = input.PhoneNumber.Trim();
         var name = (input.FullName ?? "").Trim();
         if (name.IsNullOrWhiteSpace())
-            name = "Zalo User"; // fallback
+            name = "Zalo User";
 
         var customer = await _repo.FirstOrDefaultAsync(x => x.PhoneNumber == phone);
         var customerType = await _customerTypeService.GetCustomerTypeByCode("MEM");
 
+        var isNew = false;
+
         if (customer == null)
         {
+            isNew = true;
+
             customer = new Customer(GuidGenerator.Create(), phone, name)
             {
                 CustomerTypeId = customerType != null ? customerType?.Id : null,
@@ -78,7 +87,6 @@ public class MiniAppCustomerAppService : ApplicationService, IMiniAppCustomerApp
         }
         else
         {
-            // mapping update (chỉ update nếu có dữ liệu mới)
             customer.FullName = name.IsNullOrWhiteSpace() ? customer.FullName : name;
             customer.Gender = input.Gender ?? customer.Gender;
             customer.Email = input.Email ?? customer.Email;
@@ -92,10 +100,16 @@ public class MiniAppCustomerAppService : ApplicationService, IMiniAppCustomerApp
             customer = await _repo.UpdateAsync(customer, autoSave: true);
         }
 
-        //var dto = MapToDto(customer);
+        // ✅ gửi ZNS “Đăng ký thành công” chỉ khi tạo mới
+        if (isNew)
+        {
+            _ = SendRegisterSuccessZnsSafeAsync(customer, ct);
+        }
+
         var result = ObjectMapper.Map<Customer, CustomerData>(customer);
         result.IsFollower = input.IsFollower;
         result.IsSensitive = input.IsSensitive;
+
         return new MiniAppCustomerDto
         {
             Error = 0,
@@ -133,5 +147,41 @@ public class MiniAppCustomerAppService : ApplicationService, IMiniAppCustomerApp
         }
 
         return candidate;
+    }
+
+    private async Task SendRegisterSuccessZnsSafeAsync(Customer customer, CancellationToken ct)
+    {
+        try
+        {
+            var templateId = "TEMPLATE_ID"; // Cấu hình template id lấy từ AppSettings
+
+            var req = new ZaloZbsCallRequest
+            {
+                Api = "zns",
+                Method = "POST",
+                Path = "/message/template",
+                Query = new Dictionary<string, string?>(),
+                Body = new
+                {
+                    phone = customer.PhoneNumber,                 // "8490xxxxxxx" hoặc "090xxxxxxx"
+                    template_id = templateId,
+                    template_data = new
+                    {
+                        customer_name = customer.FullName,
+                        customer_code = customer.CustomerCode,
+                        // thêm field khác
+                    },
+                    tracking_id = customer.Id.ToString()          // để đối soát
+                }
+            };
+
+            await _zbsClient.CallAsync(req, ct);
+        }
+        catch (Exception ex)
+        {
+            // Không làm fail luồng đăng ký. Log DB đã được BaseZaloClient ghi (SEND_ZNS)
+            // Đây là log app-level để truy vết.
+            Logger.LogWarning(ex, "Send ZNS register-success failed for customer {CustomerId}", customer.Id);
+        }
     }
 }

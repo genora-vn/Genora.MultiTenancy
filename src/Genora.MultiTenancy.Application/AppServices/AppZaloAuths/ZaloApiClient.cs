@@ -1,7 +1,9 @@
 ﻿using Genora.MultiTenancy.AppDtos.AppZaloAuths;
 using Genora.MultiTenancy.DomainModels.AppZaloAuth;
+using Genora.MultiTenancy.Enums;
 using Genora.MultiTenancy.Helpers;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Net.Http;
@@ -11,6 +13,7 @@ using System.Threading.Tasks;
 using Volo.Abp.Domain.Repositories;
 
 namespace Genora.MultiTenancy.AppServices.AppZaloAuths;
+
 public class ZaloApiClient : BaseZaloClient, IZaloApiClient
 {
     private readonly IZaloTokenProvider _tokenProvider;
@@ -19,71 +22,73 @@ public class ZaloApiClient : BaseZaloClient, IZaloApiClient
         IHttpClientFactory factory,
         IZaloTokenProvider tokenProvider,
         IRepository<ZaloLog, Guid> logRepo,
-        IConfiguration cfg)
-        : base(factory, cfg, logRepo)
+        IConfiguration cfg,
+        ILogger<BaseZaloClient> logger)
+        : base(factory, cfg, logRepo, logger)
     {
         _tokenProvider = tokenProvider;
     }
 
     public async Task<string> SendZnsAsync(object payload, CancellationToken ct)
     {
-        var endpoint = "https://business.openapi.zalo.me/message/template";
-        return await PostJsonWithTokenAsync("SEND_ZNS", endpoint, payload, ct);
+        var url = "https://business.openapi.zalo.me/message/template";
+        return await PostJsonWithAccessTokenHeaderAsync(ZaloLogActions.SEND_ZNS, url, payload, ct);
     }
 
     public async Task<string> SendOaMessageAsync(object payload, CancellationToken ct)
     {
-        var endpoint = "https://openapi.zalo.me/v3.0/oa/message/cs";
-        return await PostJsonWithTokenAsync("SEND_OA_MSG", endpoint, payload, ct);
+        var url = "https://openapi.zalo.me/v3.0/oa/message/cs";
+        return await PostJsonWithAccessTokenHeaderAsync(ZaloLogActions.SEND_OA_MSG, url, payload, ct);
     }
 
-    private async Task<string> PostJsonWithTokenAsync(string action, string url, object payload, CancellationToken ct)
+    private async Task<string> PostJsonWithAccessTokenHeaderAsync(string action, string url, object payload, CancellationToken ct)
     {
+        // Lần 1
         var token = await _tokenProvider.GetAccessTokenAsync();
-
-        var finalUrl = url.Contains("?")
-            ? $"{url}&access_token={Uri.EscapeDataString(token)}"
-            : $"{url}?access_token={Uri.EscapeDataString(token)}";
-
         var json = JsonSerializer.Serialize(payload);
 
-        var headers = new Dictionary<string, string>(); // không cần thêm vì token đã nằm trong query string
+        var headers = new Dictionary<string, string>
+        {
+            ["access_token"] = token
+        };
 
-        return await SendRequestAsync(
-            url: finalUrl,
-            headers: headers,
-            action: action,
-            requestBody: json,
-            ct: ct
-        );
+        var body = await SendAsync(HttpMethod.Post, url, headers, action, json, ct);
+
+        // Nếu response có dấu hiệu invalid token => refresh + retry 1 lần
+        if (IsLikelyInvalidToken(body))
+        {
+            await _tokenProvider.RefreshNowAsync();
+
+            var token2 = await _tokenProvider.GetAccessTokenAsync();
+            headers["access_token"] = token2;
+
+            body = await SendAsync(HttpMethod.Post, url, headers, action, json, ct);
+        }
+
+        return body;
     }
 
     public async Task<ZaloMeResponse> GetZaloMeAsync(string accessToken, CancellationToken ct)
     {
-        if (string.IsNullOrWhiteSpace(accessToken)) throw new ArgumentException("Missing accessToken", nameof(accessToken));
+        if (string.IsNullOrWhiteSpace(accessToken))
+            throw new ArgumentException("Missing accessToken", nameof(accessToken));
 
         var baseUrl = (_cfg["Zalo:GraphBaseUrl"] ?? "https://graph.zalo.me").TrimEnd('/');
-
         var fields = "id,name,user_id_by_oa,is_sensitive,picture";
         var miniAppId = _cfg["Zalo:MiniAppId"] ?? throw new ArgumentNullException("Zalo:MiniAppId");
-        var zaloMePath = _cfg["Zalo:ZaloMePath"] ?? $"/v2.0/me?fields={fields}&miniapp_id={miniAppId}";
+        var pathTemplate = _cfg["Zalo:ZaloMePath"] ?? "/v2.0/me?fields={0}&miniapp_id={1}";
 
-        // dựng path với tham số động
-        var path = string.Format(zaloMePath, fields, miniAppId);
-
-        // đảm bảo path bắt đầu bằng "/"
+        var path = string.Format(pathTemplate, fields, miniAppId);
         if (!path.StartsWith("/")) path = "/" + path;
 
         var url = $"{baseUrl}{path}";
 
-        if (!path.StartsWith("/")) path = "/" + path;
-
         var headers = new Dictionary<string, string>
         {
-            { "access_token", accessToken }
+            ["access_token"] = accessToken
         };
 
-        var body = await SendRequestAsync(url, headers, "GET_ME", null, ct);
+        var body = await SendAsync(HttpMethod.Get, url, headers, ZaloLogActions.GET_ME, null, ct);
 
         try
         {
@@ -92,14 +97,13 @@ public class ZaloApiClient : BaseZaloClient, IZaloApiClient
             // Nếu có field "error"
             if (doc.RootElement.TryGetProperty("error", out var errProp))
             {
-                var errorCode = errProp.GetInt32();
+                var errorCode = errProp.ValueKind == JsonValueKind.Number ? errProp.GetInt32() : 0;
                 var message = doc.RootElement.TryGetProperty("message", out var msgProp)
                     ? msgProp.GetString()
                     : "Unknown error";
 
                 if (errorCode != 0)
                 {
-                    // Trường hợp lỗi
                     return new ZaloMeResponse
                     {
                         Data = null,
@@ -107,10 +111,8 @@ public class ZaloApiClient : BaseZaloClient, IZaloApiClient
                         Message = message
                     };
                 }
-                // Nếu error=0 thì tiếp tục parse dữ liệu bên dưới
             }
 
-            // Parse dữ liệu thành công
             var root = doc.RootElement;
 
             string id = root.TryGetProperty("id", out var idEl) ? idEl.GetString() ?? "" : "";
@@ -118,11 +120,9 @@ public class ZaloApiClient : BaseZaloClient, IZaloApiClient
             string oaId = root.TryGetProperty("oa_id", out var oaIdEl) ? oaIdEl.GetString() ?? "" : "";
             string userIdByOa = root.TryGetProperty("user_id_by_oa", out var userIdEl) ? userIdEl.GetString() ?? "" : "";
 
-            // bool thì nên kiểm tra tồn tại trước
             bool isFollower = root.TryGetProperty("is_follower", out var followerEl) && followerEl.ValueKind == JsonValueKind.True;
-            bool isSensitive = root.TryGetProperty("is_sensitive", out var sensitiveEl) && sensitiveEl.GetBoolean();
+            bool isSensitive = root.TryGetProperty("is_sensitive", out var sensitiveEl) && sensitiveEl.ValueKind == JsonValueKind.True;
 
-            // avatarUrl lồng nhiều cấp
             string? avatarUrl = root.TryGetProperty("picture", out var pic)
                              && pic.TryGetProperty("data", out var data)
                              && data.TryGetProperty("url", out var urlEl)
@@ -171,9 +171,9 @@ public class ZaloApiClient : BaseZaloClient, IZaloApiClient
 
         var headers = new Dictionary<string, string>
         {
-            { "access_token", accessToken },
-            { "code", code },
-            { "secret_key", appSecret }
+            ["access_token"] = accessToken,
+            ["code"] = code,
+            ["secret_key"] = appSecret
         };
 
         var requestLog = JsonSerializer.Serialize(new
@@ -183,7 +183,7 @@ public class ZaloApiClient : BaseZaloClient, IZaloApiClient
             secret_key = "***"
         });
 
-        var body = await SendRequestAsync(url, headers, "DECODE_PHONE", requestLog, ct);
+        var body = await SendAsync(HttpMethod.Get, url, headers, ZaloLogActions.DECODE_PHONE, requestLog, ct);
 
         return SafeDeserializePhone(body) ?? new ZaloDecodePhoneResponse
         {

@@ -1,4 +1,5 @@
 ﻿using Genora.MultiTenancy.AppDtos.AppZaloAuths;
+using Genora.MultiTenancy.AppServices.AppZaloAuths;
 using Genora.MultiTenancy.DomainModels.AppZaloAuth;
 using Genora.MultiTenancy.Helpers;
 using Genora.MultiTenancy.Permissions;
@@ -25,7 +26,9 @@ public class HostZaloAuthController : MultiTenancyController
     private readonly IZaloTokenProvider _tokenProvider;
     private readonly IRepository<ZaloLog, Guid> _logRepo;
     private readonly IStringEncryptionService _encrypt;
+
     public record TokenValueDto(string token);
+    public record ActiveDto(DateTime? expireTokenTime, bool isExpired);
 
     public HostZaloAuthController(
         IConfiguration cfg,
@@ -43,9 +46,8 @@ public class HostZaloAuthController : MultiTenancyController
         _encrypt = encrypt;
     }
 
-
     /// <summary>
-    /// API lấy ra token
+    /// API lấy lấy ra access_token và refresh_token để decode cho front end (tính năng copy)
     /// </summary>
     /// <param name="id"></param>
     /// <param name="kind"></param>
@@ -56,8 +58,7 @@ public class HostZaloAuthController : MultiTenancyController
     {
         var q = await _authRepo.GetQueryableAsync();
         var auth = q.FirstOrDefault(x => x.Id == id);
-        if (auth == null)
-            throw new BusinessException("ZaloAuth:NotFound");
+        if (auth == null) throw new BusinessException("ZaloAuth:NotFound");
 
         var raw = kind?.ToLowerInvariant() switch
         {
@@ -70,13 +71,11 @@ public class HostZaloAuthController : MultiTenancyController
             throw new BusinessException("ZaloAuth:TokenEmpty");
 
         var plain = SecurityHelper.DecryptMaybe(raw, _encrypt)!;
-
-        // trả JSON để abp.ajax không bị parsererror
         return Ok(new TokenValueDto(plain));
     }
 
     /// <summary>
-    /// API tạo URL để lấy Authorization Code của Zalo
+    /// API xin quyền từ Zalo
     /// </summary>
     /// <returns></returns>
     [HttpGet("authorize-url")]
@@ -104,6 +103,7 @@ public class HostZaloAuthController : MultiTenancyController
 
             var auth = new ZaloAuth()
             {
+                TenantId = null,
                 AppId = appId,
                 CodeVerifier = verifier,
                 CodeChallenge = challenge,
@@ -133,39 +133,41 @@ public class HostZaloAuthController : MultiTenancyController
             sw.Stop();
             await ZaloLogHelper.InsertLogAsync(
                 _logRepo,
-                action: "AUTHORIZE_URL",
+                action: Genora.MultiTenancy.Enums.ZaloLogActions.AUTHORIZE_URL,
                 endpoint: endpoint,
                 httpStatus: err == null ? 200 : 500,
                 durationMs: sw.ElapsedMilliseconds,
                 requestBody: null,
                 responseBody: url,
                 error: err,
-                tenantId: null // host
+                tenantId: null
             );
         }
     }
 
     /// <summary>
-    /// API callback nhận dữ liệu trả về sau khi xin quyền để lấy Access token và Refresh token và lưu vào DB
+    /// API Zalo callback trả thông tin API (AccessToken, RefreshToken,...)
     /// </summary>
-    /// <param name="code">Authorization Code Zalo trả về</param>
-    /// <param name="state">State Zalo trả về</param>
+    /// <param name="code"></param>
+    /// <param name="state"></param>
+    /// <param name="oaId"></param>
+    /// <param name="error"></param>
+    /// <param name="errorCode"></param>
     /// <returns></returns>
     [HttpGet("callback")]
     [AllowAnonymous]
     public async Task<IActionResult> CallbackAsync(
-    [FromQuery] string? code,
-    [FromQuery] string? state,
-    [FromQuery(Name = "oa_id")] string? oaId,
-    [FromQuery] string? error,
-    [FromQuery(Name = "error_code")] string? errorCode)
+        [FromQuery] string? code,
+        [FromQuery] string? state,
+        [FromQuery(Name = "oa_id")] string? oaId,
+        [FromQuery] string? error,
+        [FromQuery(Name = "error_code")] string? errorCode)
     {
-        // Nếu user từ chối / Zalo trả lỗi
         if (!string.IsNullOrWhiteSpace(error) || !string.IsNullOrWhiteSpace(errorCode))
         {
             await ZaloLogHelper.InsertLogAsync(
                 _logRepo,
-                action: "EXCHANGE_CODE",
+                action: Genora.MultiTenancy.Enums.ZaloLogActions.EXCHANGE_CODE,
                 endpoint: "CALLBACK",
                 httpStatus: 400,
                 durationMs: 0,
@@ -185,14 +187,9 @@ public class HostZaloAuthController : MultiTenancyController
         var secret = _cfg["Zalo:AppSecret"]!;
         var redirectUri = _cfg["Zalo:RedirectUri"]!;
 
-        // tìm record theo state
         var q = await _authRepo.GetQueryableAsync();
-
-        // Match theo appId + state (oaId có thể null ở record tạo trước callback)
         var auth = q.FirstOrDefault(x => x.State == state && x.AppId == appId);
-
-        if (auth == null)
-            return BadRequest("Invalid state");
+        if (auth == null) return BadRequest("Invalid state");
 
         if (auth.ExpireAuthorizationCodeTime.HasValue &&
             auth.ExpireAuthorizationCodeTime.Value < DateTime.UtcNow)
@@ -201,32 +198,64 @@ public class HostZaloAuthController : MultiTenancyController
         if (string.IsNullOrWhiteSpace(auth.CodeVerifier))
             return BadRequest("Missing code_verifier");
 
-        // Lưu code + oa_id
         auth.AuthorizationCode = code;
         auth.OaId = oaId;
 
-        // Đổi code -> token (TRUYỀN oa_id)
-        var token = await _oauth.ExchangeCodeAsync(
-            appId, secret, code, auth.CodeVerifier!, redirectUri, oaId
-        );
+        var token = await _oauth.ExchangeCodeAsync(appId, secret, code, auth.CodeVerifier!, redirectUri, oaId);
 
-        auth.AccessToken = token.AccessToken;
-        auth.RefreshToken = token.RefreshToken;
+        // Lưu AccessToken và RefreshToken dưới dạng Encrypt
+        auth.AccessToken = SecurityHelper.EncryptMaybe(token.AccessToken, _encrypt);
+        auth.RefreshToken = SecurityHelper.EncryptMaybe(token.RefreshToken, _encrypt);
         auth.ExpireTokenTime = DateTime.UtcNow.AddSeconds(token.ExpiresIn);
+        auth.IsActive = true;
 
         await _authRepo.UpdateAsync(auth, autoSave: true);
+
+        // Đảm bảo chỉ 1 token đang active
+        await _tokenProvider.DeactivateOtherActivesAsync(auth.Id);
 
         return Redirect("/AppZaloAuths");
     }
 
+    //private async Task DeactivateOtherActivesAsync(Guid keepId)
+    //{
+    //    var q = await _authRepo.GetQueryableAsync();
+    //    var others = q.Where(x => x.IsActive && x.Id != keepId).ToList();
+    //    foreach (var a in others) a.IsActive = false;
+    //    foreach (var a in others) await _authRepo.UpdateAsync(a, autoSave: true);
+    //}
 
-    /// <summary>
-    /// API Refresh lấy lại AcessToken dựa vào Refresh token
-    /// </summary>
-    /// <returns></returns>
     [HttpPost("refresh-now")]
     public async Task RefreshNowAsync()
     {
         await _tokenProvider.RefreshNowAsync();
+    }
+
+    [HttpGet("active")]
+    public async Task<ActiveDto> GetActiveAsync()
+    {
+        // Clean active expired + đảm bảo 1 active non-expired
+        var active = await ZaloAuthActiveNormalizer.EnsureSingleActiveNonExpiredAsync(_authRepo);
+
+        if (active != null)
+            return new ActiveDto(active.ExpireTokenTime, false);
+
+        // Không còn active => lấy record mới nhất để biết "hết hạn lúc nào"
+        var q = await _authRepo.GetQueryableAsync();
+        var latest = q.OrderByDescending(x => x.CreationTime).FirstOrDefault();
+
+        if (latest == null)
+            return new ActiveDto(null, true);
+
+        var isExpired = latest.ExpireTokenTime.HasValue && latest.ExpireTokenTime.Value <= DateTime.UtcNow;
+        return new ActiveDto(latest.ExpireTokenTime, isExpired);
+    }
+
+
+    [HttpGet("active-status")]
+    public async Task<object> GetActiveStatusAsync()
+    {
+        var a = await GetActiveAsync();
+        return new { configured = a.expireTokenTime != null, expired = a.isExpired, expiresAtUtc = a.expireTokenTime };
     }
 }
