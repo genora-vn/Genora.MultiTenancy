@@ -347,7 +347,9 @@
     "NewPromotionType": "Thêm mới",
     "Menu:AppPromotionTypes": "Quản lý loại ưu đãi",
     "EditPromotionType": "Cập nhật loại ưu đãi",
-
+    "FeatureGroup:MiniAppPromotionType": "Loại ưu đãi",
+    "Feature:MiniAppPromotionType": "Bật quản lý loại ưu đãi",
+    "Feature:MiniAppPromotionTypeDesc": "Loại ưu đãi cấu hình giờ chơi",
     // Cấu hình thông báo
     "AreYouSure": "Bạn chắc chắn?",
     "AreYouSureToDelete": "Bạn có chắc chắn muốn xóa mục này không??",

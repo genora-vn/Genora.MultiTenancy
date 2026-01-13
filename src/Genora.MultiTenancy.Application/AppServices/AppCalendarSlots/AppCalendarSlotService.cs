@@ -322,7 +322,7 @@ public class AppCalendarSlotService :
         var customerTypeIds = prices.Select(p => p.CustomerTypeId).Distinct().ToList();
         var customerTypes = await _customerTypeRepository.GetListAsync(ct => customerTypeIds.Contains(ct.Id));
         var ctDict = customerTypes.ToDictionary(ct => ct.Id, ct => ct);
-
+        
         // Map thủ công sang DTO đầy đủ
         var dto = new AppCalendarSlotDto
         {
@@ -343,7 +343,11 @@ public class AppCalendarSlotService :
             LastModifierId = slot.LastModifierId,
             Prices = new List<AppCalendarSlotPriceDto>()
         };
-
+        var promotion = await _promotionType.FirstOrDefaultAsync(p => p.Id == slot.PromotionTypeId);
+        if (promotion != null)
+        {
+            dto.PromotionType = promotion.Name;
+        }
         foreach (var p in prices)
         {
             ctDict.TryGetValue(p.CustomerTypeId, out var ct);
@@ -496,7 +500,7 @@ public class AppCalendarSlotService :
             var rows = importer.Read(stream, customerType.OrderBy(t => t.CreationTime).ToList());
             var golfCourses = await _golfCourseRepository.GetListAsync();
             var slotPrices = new List<CalendarSlotPrice>();
-
+            var insertCalendars = new List<CalendarSlot>();
             foreach (var (rowNumber, r) in rows)
             {
                 // ===== VALIDATE =====
@@ -586,9 +590,10 @@ public class AppCalendarSlotService :
                         }
                         else
                         {
+                            var calendarId = GuidGenerator.Create();
                             // Tạo mới
                             var newCalendar = new CalendarSlot(
-                                GuidGenerator.Create(),
+                                calendarId,
                                 golfCourse.Id,
                                 applyDate,
                                 timeFrom,
@@ -600,8 +605,8 @@ public class AppCalendarSlotService :
                                 InternalNote = r.InternalNote,
                                 IsActive = true
                             };
-                            newCalendar = await Repository.InsertAsync(newCalendar, autoSave: true);
-
+                            //newCalendar = await Repository.InsertAsync(newCalendar, autoSave: true);
+                            insertCalendars.Add(newCalendar);
                             if (r.CustomerTypePrice.Any(p => p.Price > 0))
                             {
                                 var prices = new List<CalendarSlotPrice>();
@@ -610,14 +615,16 @@ public class AppCalendarSlotService :
                                     if (item.Price == 0) continue;
                                     var type = customerType.FirstOrDefault(t => t.Name == item.CustomerType);
                                     if (type == null) continue;
-                                    var price = new CalendarSlotPrice(GuidGenerator.Create(), newCalendar.Id, type.Id, (decimal)item.Price);
+                                    var price = new CalendarSlotPrice(GuidGenerator.Create(), calendarId, type.Id, (decimal)item.Price);
                                     prices.Add(price);
                                 }
-                                await _priceRepository.InsertManyAsync(prices);
+                                //await _priceRepository.InsertManyAsync(prices);
+                                slotPrices.AddRange(prices);
                             }
                         }
                     }
                 }
+
                 //var calendar = calendars.FirstOrDefault();
                 //if (calendar == null)
                 //{
@@ -665,7 +672,8 @@ public class AppCalendarSlotService :
                 //}
 
             }
-
+            await Repository.InsertManyAsync(insertCalendars);
+            await _priceRepository.InsertManyAsync(slotPrices);
             return 1;
         }
         catch (Exception ex)

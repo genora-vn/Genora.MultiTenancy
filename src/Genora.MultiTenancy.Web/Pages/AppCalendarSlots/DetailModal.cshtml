@@ -80,44 +80,57 @@
                 <hr style="width: 85%"/>
             </div>
 
-            <table class="table table-sm align-middle">
-                <thead>
-                    <tr>
-                        <th>@L["CustomerType"]</th>
-                        <th class="text-end">@L["Price"]</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @for (var i = 0; i < Model.Slot?.Prices.Count; i++)
+            <abp-row>
+                @{
+                    var record = Model.Slot?.Prices;
+                    var totalCol = record.Count / 2;
+                    var index = 0;
+                    for (var c = 0; c < totalCol; c++)
                     {
-                        <tr>
-                            <td style="width: 45%">
-                                <select name="Slot.Prices[@i].CustomerTypeId"
-                                        class="form-select"
-                                        readonly>
-                                    @* show cố định theo loại khách *@
-                                    @foreach (var opt in Model.CustomerTypeItems)
+                        <abp-column size-md="_6">
+                            <table class="table table-sm align-middle">
+                                <thead>
+                                    <tr>
+                                        <th>@L["CustomerType"]</th>
+                                        <th class="text-end">@L["Price"]</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @for (var i = index; i < index + 2; i++)
                                     {
-                                        var selected = opt.Value == Model.Slot.Prices[i].CustomerTypeId.ToString();
-                                        <option value="@opt.Value" selected="@(selected ? "selected" : null)">
-                                            @opt.Text
-                                        </option>
+                                        <tr>
+                                            <td style="width: 45%">
+                                                <select name="Slot.Prices[@i].CustomerTypeId"
+                                                        class="form-select"
+                                                        readonly>
+                                                    @* show cố định theo loại khách *@
+                                                    @foreach (var opt in Model.CustomerTypeItems)
+                                                    {
+                                                        var selected = opt.Value == record[i].CustomerTypeId.ToString();
+                                                        <option value="@opt.Value" selected="@(selected ? "selected" : null)">
+                                                            @opt.Text
+                                                        </option>
+                                                    }
+                                                </select>
+                                            </td>
+
+                                            <td style="width: 55%">
+                                                <input name="Slot.Prices[@i].Price"
+                                                       type="text"
+                                                       class="form-control money-input text-end"
+                                                       value="@record[i].Price.ToString("0")"
+                                                       inputmode="numeric"
+                                                       autocomplete="off" tabindex="@(i + 8)" />
+                                            </td>
+                                        </tr>
                                     }
-                                </select>
-                            </td>
-                             
-                            <td style="width: 55%">
-                                <input name="Slot.Prices[@i].Price"
-                                       type="text"
-                                       class="form-control money-input text-end"
-                                       value="@Model.Slot.Prices[i].Price.ToString("0")"
-                                       inputmode="numeric"
-                                       autocomplete="off" tabindex="@(i + 8)"/>
-                            </td>
-                        </tr>
+                                </tbody>
+                            </table>
+                        </abp-column>
+                        index += 2;
                     }
-                </tbody>
-            </table>
+                }
+            </abp-row>
         </abp-modal-body>
 
         <abp-modal-footer buttons="@(AbpModalButtons.Cancel | AbpModalButtons.Save)"></abp-modal-footer>
