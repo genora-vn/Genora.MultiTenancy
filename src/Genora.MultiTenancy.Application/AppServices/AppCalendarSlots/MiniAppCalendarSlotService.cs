@@ -139,16 +139,14 @@ namespace Genora.MultiTenancy.AppServices.AppCalendarSlots
                 item.FrameTime = $"{item.TimeFrom} - {item.TimeTo}";
                 item.IsBestDeal = !string.IsNullOrEmpty(item.PromotionName) ? item.PromotionName.ToString() == "Best Deal" : false;
                 var customerType = customerTypes.Where(c => c.Code == "VIS").FirstOrDefault()?.Id ?? Guid.Empty;
-                item.VisitorPrice = prices.Where(p => p.CustomerTypeId == customerType).FirstOrDefault()?.Price ?? prices.Where(p => p.CalendarSlotId == item.Id).OrderByDescending(x => x.Price).FirstOrDefault()?.Price ?? 0;
+                item.VisitorPrice = prices.Where(p => p.CustomerTypeId == customerType && p.CalendarSlotId == item.Id).FirstOrDefault()?.Price ?? prices.Where(p => p.CalendarSlotId == item.Id).OrderByDescending(x => x.Price).FirstOrDefault()?.Price ?? 0;
                 if (user != null)
                 {
-                    item.CustomerTypePrice = prices.Where(p => p.CalendarSlotId == item.Id && p.CustomerTypeId == user?.CustomerTypeId).OrderBy(x => x.Price).FirstOrDefault()?.Price 
-                        ?? prices.Where(p => p.CalendarSlotId == item.Id).OrderBy(x => x.Price).FirstOrDefault()?.Price 
-                        ?? item.VisitorPrice;
+                    item.CustomerTypePrice = prices.Where(p => p.CalendarSlotId == item.Id && p.CustomerTypeId == user?.CustomerTypeId).OrderBy(x => x.Price).FirstOrDefault()?.Price ?? 0;
                 }
                 else
                 {
-                    item.CustomerTypePrice = prices.Where(p => p.CalendarSlotId == item.Id).OrderBy(x => x.Price).FirstOrDefault()?.Price ?? item.VisitorPrice;
+                    item.CustomerTypePrice = prices.Where(p => p.CalendarSlotId == item.Id).OrderBy(x => x.Price).FirstOrDefault()?.Price ?? 0;
                 }
                 item.DiscountPercent = item.VisitorPrice - item.CustomerTypePrice > 0 ? Math.Round(100 - (item.CustomerTypePrice / item.VisitorPrice) * 100, MidpointRounding.AwayFromZero) : 0;
                 item.FrameTimeOfDayId = FormatSessionOfDayHelper.DateTimeToSessionOfDay(item.TimeFrom.Value).Value;
