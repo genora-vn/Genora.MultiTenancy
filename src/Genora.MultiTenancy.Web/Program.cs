@@ -10,6 +10,7 @@ using Serilog.Exceptions;
 using Serilog.Exceptions.Core;
 using Serilog.Exceptions.SqlServer.Destructurers;
 using System;
+using System.IO;
 using System.Threading.Tasks;
 
 namespace Genora.MultiTenancy.Web;
@@ -74,6 +75,11 @@ public class Program
             await builder.AddApplicationAsync<MultiTenancyWebModule>();
 
             var app = builder.Build();
+
+            app.MapGet("/version", () => new {
+                env = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT"),
+                commit = File.Exists(".git_commit") ? File.ReadAllText(".git_commit") : "missing"
+            });
 
             // Ghi log request (Method, Path, StatusCode, Elapsed…)
             app.UseSerilogRequestLogging(opts =>
