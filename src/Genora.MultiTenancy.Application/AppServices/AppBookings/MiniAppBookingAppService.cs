@@ -1,13 +1,13 @@
-﻿using Genora.MultiTenancy.AppDtos.AppCustomers;
-using Genora.MultiTenancy.DomainModels.AppBookingPlayers;
+﻿using Genora.MultiTenancy.DomainModels.AppBookingPlayers;
 using Genora.MultiTenancy.DomainModels.AppBookings;
+using Genora.MultiTenancy.DomainModels.AppCalendarSlotPrices;
 using Genora.MultiTenancy.DomainModels.AppCalendarSlots;
 using Genora.MultiTenancy.DomainModels.AppCustomers;
+using Genora.MultiTenancy.DomainModels.AppCustomerTypes;
 using Genora.MultiTenancy.DomainModels.AppGolfCourses;
 using Genora.MultiTenancy.Enums;
 using Genora.MultiTenancy.Helpers;
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Dynamic.Core;
@@ -27,18 +27,24 @@ public class MiniAppBookingAppService : ApplicationService, IMiniAppBookingAppSe
     private readonly IRepository<Customer, Guid> _customerRepo;
     private readonly IRepository<GolfCourse, Guid> _golfcourseRepo;
     private readonly IRepository<CalendarSlot, Guid> _calendarSlotRepo;
+    private readonly IRepository<CalendarSlotPrice, Guid> _calendarSlotPriceRepo;
+    private readonly IRepository<CustomerType, Guid> _customerType;
     public MiniAppBookingAppService(
         IRepository<Booking, Guid> bookingRepo,
         IRepository<BookingPlayer, Guid> playerRepo,
         IRepository<Customer, Guid> customerRepo,
         IRepository<GolfCourse, Guid> golfcourseRepo,
-        IRepository<CalendarSlot, Guid> calendarSlotRepo)
+        IRepository<CalendarSlot, Guid> calendarSlotRepo,
+        IRepository<CalendarSlotPrice, Guid> calendarSlotPriceRepo,
+        IRepository<CustomerType, Guid> customerType)
     {
         _bookingRepo = bookingRepo;
         _playerRepo = playerRepo;
         _customerRepo = customerRepo;
         _golfcourseRepo = golfcourseRepo;
         _calendarSlotRepo = calendarSlotRepo;
+        _calendarSlotPriceRepo = calendarSlotPriceRepo;
+        _customerType = customerType;
     }
 
     public async Task<MiniAppBookingDetailDto> CreateFromMiniAppAsync(MiniAppCreateBookingDto input)
@@ -146,7 +152,8 @@ public class MiniAppBookingAppService : ApplicationService, IMiniAppBookingAppSe
             var items = await AsyncExecuter.ToListAsync(query.Skip(input.SkipCount).Take(input.MaxResultCount));
 
             var dto = ObjectMapper.Map<System.Collections.Generic.List<Booking>, System.Collections.Generic.List<BookingListData>>(items);
-            var calendars = await _calendarSlotRepo.GetQueryableAsync(); 
+            var calendars = await _calendarSlotRepo.GetQueryableAsync();
+
             foreach (var item in dto)
             {
                 item.VNDayOfWeek = FormatDateTimeHelper.GetVietnameseDayOfWeek(item.PlayDate);
@@ -183,8 +190,17 @@ public class MiniAppBookingAppService : ApplicationService, IMiniAppBookingAppSe
             dto.Players = ObjectMapper.Map<System.Collections.Generic.List<BookingPlayer>, System.Collections.Generic.List<AppBookingPlayerDto>>(players);
             dto.Utilities = string.IsNullOrEmpty(booking.Utility) ? new List<int>() : booking.Utility.Split(",").Select(int.Parse).ToList();
             dto.NumberHoles = booking.NumberHole;
+            var visCustomerType = await _customerType.FirstOrDefaultAsync(c => c.Code == "VIS");
+            var visCustomerTypeId = visCustomerType?.Id;
+
             if (dto.CalendarSlotId.HasValue && dto.CalendarSlotId.Value != Guid.Empty)
             {
+                var getCalendarPrice = await _calendarSlotPriceRepo.FirstOrDefaultAsync
+                   (x => x.CalendarSlotId == booking.CalendarSlotId
+                            && x.CustomerTypeId == visCustomerTypeId);
+
+                dto.OriginalTotalAmount = getCalendarPrice?.Price * booking?.NumberOfGolfers ?? 0m;
+
                 var calendar = await _calendarSlotRepo.FirstOrDefaultAsync(x => x.Id == dto.CalendarSlotId.Value);
                 if (calendar != null)
                 {

@@ -23,6 +23,7 @@ namespace Genora.MultiTenancy.AppDtos.AppBookings
         public int NumberOfGolfers { get; set; }
 
         public decimal? PricePerGolfer { get; set; }
+        public decimal OriginalTotalAmount { get; set; }
         public decimal TotalAmount { get; set; }
         public string? FrameTimes { get; set; }
         public int? NumberHoles { get; set; }
