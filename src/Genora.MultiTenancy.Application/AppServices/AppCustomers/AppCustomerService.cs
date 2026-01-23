@@ -1,5 +1,7 @@
 ﻿using Genora.MultiTenancy.AppDtos.AppCustomers;
+using Genora.MultiTenancy.AppDtos.AppImages;
 using Genora.MultiTenancy.DomainModels.AppCustomers;
+using Genora.MultiTenancy.DomainModels.AppCustomerTypes;
 using Genora.MultiTenancy.Features.AppCustomers;
 using Genora.MultiTenancy.Permissions;
 using Microsoft.AspNetCore.Authorization;
@@ -11,6 +13,7 @@ using System.Linq.Dynamic.Core;
 using System.Threading.Tasks;
 using Volo.Abp;
 using Volo.Abp.Application.Dtos;
+using Volo.Abp.Content;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Features;
 using Volo.Abp.MultiTenancy;
@@ -32,8 +35,16 @@ public class AppCustomerService :
     protected override string TenantDefaultPermission => MultiTenancyPermissions.AppCustomers.Default;
     protected override string HostDefaultPermission => MultiTenancyPermissions.HostAppCustomers.Default;
 
+    private readonly IRepository<CustomerType, Guid> _customerTypeRepository;
+    private readonly IManageImageService _manageImageService;
+
+    private const int AVATAR_MAX_MB = 15;
+    private const long AVATAR_MAX_BYTES = AVATAR_MAX_MB * 1024L * 1024L;
+
     public AppCustomerService(
         IRepository<Customer, Guid> repository,
+        IRepository<CustomerType, Guid> customerTypeRepository,
+        IManageImageService manageImageService,
         ICurrentTenant currentTenant,
         IFeatureChecker featureChecker)
         : base(repository, currentTenant, featureChecker)
@@ -43,11 +54,14 @@ public class AppCustomerService :
         CreatePolicyName = MultiTenancyPermissions.AppCustomers.Create;
         UpdatePolicyName = MultiTenancyPermissions.AppCustomers.Edit;
         DeletePolicyName = MultiTenancyPermissions.AppCustomers.Delete;
+
+        _customerTypeRepository = customerTypeRepository;
+        _manageImageService = manageImageService;
     }
 
     public async Task<string> GenerateCustomerCodeAsync()
     {
-        await CheckCreatePolicyAsync(); // chỉ ai có quyền Create mới được lấy mã
+        await CheckCreatePolicyAsync();
 
         const string prefix = "KH";
 
@@ -64,14 +78,10 @@ public class AppCustomerService :
             var numberPart = code.Substring(prefix.Length);
             if (int.TryParse(numberPart, NumberStyles.None, CultureInfo.InvariantCulture, out var n))
             {
-                if (n > maxNumber)
-                {
-                    maxNumber = n;
-                }
+                if (n > maxNumber) maxNumber = n;
             }
         }
 
-        // Sinh CustomerCode tiếp theo
         var nextNumber = maxNumber + 1;
         var candidate = $"{prefix}{nextNumber.ToString("D6", CultureInfo.InvariantCulture)}";
 
@@ -89,76 +99,97 @@ public class AppCustomerService :
     {
         await CheckGetListPolicyAsync();
 
-        var queryable = await Repository.GetQueryableAsync();
-        var query = queryable;
+        var customers = await Repository.GetQueryableAsync();
+        var customerTypes = await _customerTypeRepository.GetQueryableAsync();
 
-        // ========== FILTER ==========
-        if (!input.FilterText.IsNullOrWhiteSpace())
+        var query =
+            from c in customers
+            join ct in customerTypes on c.CustomerTypeId equals ct.Id into ctj
+            from ct in ctj.DefaultIfEmpty()
+            select new { c, ct };
+
+        if (!input.Filter.IsNullOrWhiteSpace())
         {
-            var filter = input.FilterText.Trim();
-            query = query.Where(c =>
-                c.FullName.Contains(filter) ||
-                c.PhoneNumber.Contains(filter) ||
-                c.CustomerCode.Contains(filter)
+            var f = input.Filter.Trim();
+            query = query.Where(x =>
+                (x.c.CustomerCode != null && x.c.CustomerCode.Contains(f)) ||
+                (x.c.FullName != null && x.c.FullName.Contains(f)) ||
+                (x.c.PhoneNumber != null && x.c.PhoneNumber.Contains(f)) ||
+                (x.c.VgaCode != null && x.c.VgaCode.Contains(f)) ||
+                (x.ct != null && x.ct.Name != null && x.ct.Name.Contains(f))
             );
         }
 
-        if (!input.PhoneNumber.IsNullOrWhiteSpace())
-        {
-            var phone = input.PhoneNumber.Trim();
-            query = query.Where(c => c.PhoneNumber.Contains(phone));
-        }
-
-        if (!input.FullName.IsNullOrWhiteSpace())
-        {
-            var name = input.FullName.Trim();
-            query = query.Where(c => c.FullName.Contains(name));
-        }
-
         if (input.CustomerTypeId.HasValue)
-        {
-            query = query.Where(c => c.CustomerTypeId == input.CustomerTypeId);
-        }
+            query = query.Where(x => x.c.CustomerTypeId == input.CustomerTypeId);
 
         if (input.IsActive.HasValue)
-        {
-            query = query.Where(c => c.IsActive == input.IsActive.Value);
-        }
+            query = query.Where(x => x.c.IsActive == input.IsActive.Value);
 
-        if (input.BirthDateFrom.HasValue)
-        {
-            query = query.Where(c => c.DateOfBirth >= input.BirthDateFrom.Value);
-        }
+        if (input.CreatedFrom.HasValue)
+            query = query.Where(x => x.c.CreationTime >= input.CreatedFrom.Value);
 
-        if (input.BirthDateTo.HasValue)
-        {
-            query = query.Where(c => c.DateOfBirth <= input.BirthDateTo.Value);
-        }
-
-        // ========== SORT ==========
-        var sorting = string.IsNullOrWhiteSpace(input.Sorting)
-            ? nameof(Customer.CreationTime) + " DESC"
-            : input.Sorting;
-
-        query = query.OrderBy(sorting);
+        if (input.CreatedTo.HasValue)
+            query = query.Where(x => x.c.CreationTime <= input.CreatedTo.Value);
 
         var totalCount = await AsyncExecuter.CountAsync(query);
+
+        var sorting = string.IsNullOrWhiteSpace(input.Sorting)
+            ? "c." + nameof(Customer.CreationTime) + " DESC"
+            : input.Sorting;
+
+        query = query.OrderBy(
+            sorting.StartsWith("c.") || sorting.StartsWith("ct.")
+                ? sorting
+                : "c." + sorting
+        );
 
         var items = await AsyncExecuter.ToListAsync(
             query.Skip(input.SkipCount).Take(input.MaxResultCount)
         );
 
-        return new PagedResultDto<AppCustomerDto>(
-            totalCount,
-            ObjectMapper.Map<List<Customer>, List<AppCustomerDto>>(items)
-        );
+        var dtos = items.Select(x => new AppCustomerDto
+        {
+            Id = x.c.Id,
+            TenantId = x.c.TenantId,
+            PhoneNumber = x.c.PhoneNumber,
+            FullName = x.c.FullName,
+            DateOfBirth = x.c.DateOfBirth,
+            CustomerCode = x.c.CustomerCode ?? "",
+            VgaCode = x.c.VgaCode,
+            IsActive = x.c.IsActive,
+
+            CustomerTypeId = x.c.CustomerTypeId,
+            CustomerTypeName = x.ct != null ? x.ct.Name : "",
+            CustomerTypeCode = x.ct != null ? x.ct.Code : "",
+
+            AvatarUrl = x.c.AvatarUrl ?? "",
+            Gender = x.c.Gender,
+            ZaloUserId = x.c.ZaloUserId ?? "",
+            Email = x.c.Email,
+            Address = x.c.Address,
+            IsFollower = x.c.IsFollower,
+            BonusPoint = x.c.BonusPoint,
+            MembershipTierId = x.c.MembershipTierId,
+            MembershipTierName = x.c.MembershipTier != null ? x.c.MembershipTier.Name : null
+        }).ToList();
+
+        return new PagedResultDto<AppCustomerDto>(totalCount, dtos);
     }
 
-    // ============= UNIQUE PHONE CHECK =============
     public override async Task<AppCustomerDto> CreateAsync(CreateUpdateAppCustomerDto input)
     {
         await CheckCreatePolicyAsync();
         await EnsurePhoneUniqueAsync(input.PhoneNumber, null);
+
+        // ✅ validate + upload avatar (nếu có)
+        if (input.AvatarFile != null)
+        {
+            await ValidateAvatarAsync(input.AvatarFile);
+            var tenantId = CurrentTenant.Id?.ToString() ?? "host";
+            var uploadedUrl = await _manageImageService.UploadImageAsync(input.AvatarFile, tenantId);
+            input.AvatarUrl = uploadedUrl;
+        }
 
         var entity = ObjectMapper.Map<CreateUpdateAppCustomerDto, Customer>(input);
         entity = await Repository.InsertAsync(entity, autoSave: true);
@@ -172,18 +203,73 @@ public class AppCustomerService :
         await EnsurePhoneUniqueAsync(input.PhoneNumber, id);
 
         var entity = await Repository.GetAsync(id);
+
+        // ✅ Nếu có upload avatar mới -> validate + xóa file cũ + upload mới
+        if (input.AvatarFile != null)
+        {
+            await ValidateAvatarAsync(input.AvatarFile);
+
+            if (!string.IsNullOrWhiteSpace(entity.AvatarUrl))
+            {
+                await _manageImageService.DeleteFileAsync(entity.AvatarUrl);
+            }
+
+            var tenantId = CurrentTenant.Id?.ToString() ?? "host";
+            var uploadedUrl = await _manageImageService.UploadImageAsync(input.AvatarFile, tenantId);
+            input.AvatarUrl = uploadedUrl;
+        }
+        else
+        {
+            // ✅ tránh bị ObjectMapper ghi đè AvatarUrl thành null/"" nếu UI không gửi
+            input.AvatarUrl = entity.AvatarUrl;
+        }
+
         ObjectMapper.Map(input, entity);
         entity = await Repository.UpdateAsync(entity, autoSave: true);
 
         return ObjectMapper.Map<Customer, AppCustomerDto>(entity);
     }
 
+    private async Task ValidateAvatarAsync(IRemoteStreamContent file)
+    {
+        // ABP: IRemoteStreamContent thường có ContentLength (nullable)
+        var len = file.ContentLength;
+
+        if (len.HasValue)
+        {
+            if (len.Value > AVATAR_MAX_BYTES)
+            {
+                var mb = (len.Value / (1024d * 1024d)).ToString("0.00", CultureInfo.InvariantCulture);
+                throw new BusinessException("Customer:AvatarTooLarge")
+                    .WithData("MaxMB", AVATAR_MAX_MB)
+                    .WithData("SizeMB", mb);
+            }
+            return;
+        }
+
+        // Fallback: nếu ContentLength null (hiếm) thì đo bằng stream
+        // (đọc stream có thể tốn, nhưng chỉ khi server không cung cấp ContentLength)
+        using var s = file.GetStream();
+        if (s.CanSeek)
+        {
+            if (s.Length > AVATAR_MAX_BYTES)
+            {
+                var mb = (s.Length / (1024d * 1024d)).ToString("0.00", CultureInfo.InvariantCulture);
+                throw new BusinessException("Customer:AvatarTooLarge")
+                    .WithData("MaxMB", AVATAR_MAX_MB)
+                    .WithData("SizeMB", mb);
+            }
+            return;
+        }
+
+        // nếu stream không seek được thì vẫn cho qua (tránh đọc toàn bộ stream)
+        await Task.CompletedTask;
+    }
+
     private async Task EnsurePhoneUniqueAsync(string phoneNumber, Guid? currentId)
     {
         if (phoneNumber.IsNullOrWhiteSpace())
-        {
             throw new BusinessException("Customer:PhoneRequired");
-        }
 
         var normalized = phoneNumber.Trim();
 
@@ -199,18 +285,14 @@ public class AppCustomerService :
         }
     }
 
-    // ============= GET BY PHONE =============
     public async Task<AppCustomerDto> GetByPhoneAsync(string phoneNumber)
     {
         await CheckGetPolicyAsync();
 
         if (phoneNumber.IsNullOrWhiteSpace())
-        {
             throw new BusinessException("Customer:PhoneRequired");
-        }
 
         var normalized = phoneNumber.Trim();
-
         var customer = await Repository.FirstOrDefaultAsync(c => c.PhoneNumber == normalized);
 
         if (customer == null)

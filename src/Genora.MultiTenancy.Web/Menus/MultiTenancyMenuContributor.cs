@@ -2,11 +2,15 @@
 using Genora.MultiTenancy.Features.AppCalendarSlots;
 using Genora.MultiTenancy.Features.AppCustomers;
 using Genora.MultiTenancy.Features.AppCustomerTypes;
+using Genora.MultiTenancy.Features.AppEmails;
 using Genora.MultiTenancy.Features.AppGolfCourses;
 using Genora.MultiTenancy.Features.AppMembershipTiers;
 using Genora.MultiTenancy.Features.AppNewsFeatures;
 using Genora.MultiTenancy.Features.AppPromotionTypes;
 using Genora.MultiTenancy.Features.AppSettings;
+using Genora.MultiTenancy.Features.AppSpecialDates;
+using Genora.MultiTenancy.Features.AppZaloAuths;
+using Genora.MultiTenancy.Features.AppZaloLogs;
 using Genora.MultiTenancy.Localization;
 using Genora.MultiTenancy.Permissions;
 using Microsoft.Extensions.DependencyInjection;
@@ -15,6 +19,7 @@ using Volo.Abp.Authorization.Permissions;
 using Volo.Abp.Features;
 using Volo.Abp.MultiTenancy;
 using Volo.Abp.UI.Navigation;
+using static Genora.MultiTenancy.Permissions.MultiTenancyPermissions;
 
 namespace Genora.MultiTenancy.Web.Menus;
 
@@ -78,15 +83,34 @@ public class MultiTenancyMenuContributor : IMenuContributor
                 await perms.IsGrantedAsync(MultiTenancyPermissions.AppCalendarSlots.Default);
 
             var canSeeNews =
-               await feature.IsEnabledAsync(AppNewsFeatures.Management) &&
-               await perms.IsGrantedAsync(MultiTenancyPermissions.AppNews.Default);
+                await feature.IsEnabledAsync(AppNewsFeatures.Management) &&
+                await perms.IsGrantedAsync(MultiTenancyPermissions.AppNews.Default);
 
             var canSeeBookings =
-              await feature.IsEnabledAsync(AppBookingFeatures.Management) &&
-              await perms.IsGrantedAsync(MultiTenancyPermissions.AppBookings.Default);
-            var canSeePromotionType = await feature.IsEnabledAsync(AppPromotionTypeFeature.Management) && await perms.IsGrantedAsync(MultiTenancyPermissions.AppPromotionType.Default);
+                await feature.IsEnabledAsync(AppBookingFeatures.Management) &&
+                await perms.IsGrantedAsync(MultiTenancyPermissions.AppBookings.Default);
+
+            var canSeePromotionType = await feature.IsEnabledAsync(AppPromotionTypeFeature.Management) &&
+                await perms.IsGrantedAsync(MultiTenancyPermissions.AppPromotionType.Default);
+
+            var canSeeZaloAuths =
+                 await feature.IsEnabledAsync(AppZaloAuthFeatures.Management) &&
+                 await perms.IsGrantedAsync(MultiTenancyPermissions.AppZaloAuths.Default);
+
+            var canSeeZaloLogs =
+                 await feature.IsEnabledAsync(AppZaloLogFeatures.Management) &&
+                 await perms.IsGrantedAsync(MultiTenancyPermissions.AppZaloLogs.Default);
+
+            var canSeeSpecialDates =
+                  await feature.IsEnabledAsync(AppSpecialDateFeatures.Management) &&
+                  await perms.IsGrantedAsync(MultiTenancyPermissions.AppSpecialDates.Default);
+
+            var canSeeEmails =
+              await feature.IsEnabledAsync(AppEmailFeatures.Management) &&
+              await perms.IsGrantedAsync(MultiTenancyPermissions.AppEmails.Default);
+
             // Nếu không có quyền gì thì khỏi add menu
-            if (canSeeAppSettings || canSeeCustomerTypes || canSeeGolfCourses || canSeeMembershipTiers || canSeeCustomers || canSeeCalendarSlots || canSeeNews || canSeeBookings || canSeePromotionType)
+            if (canSeeAppSettings || canSeeCustomerTypes || canSeeGolfCourses || canSeeMembershipTiers || canSeeCustomers || canSeeCalendarSlots || canSeeNews || canSeeBookings || canSeePromotionType || canSeeZaloAuths || canSeeZaloLogs || canSeeSpecialDates || canSeeEmails)
             {
                 var miniAppMenu = new ApplicationMenuItem(
                     "MiniAppSetting",
@@ -205,6 +229,40 @@ public class MultiTenancyMenuContributor : IMenuContributor
                     );
                 }
 
+                if (canSeeZaloAuths || canSeeZaloLogs)
+                {
+                    miniAppMenu.AddItem(
+                        new ApplicationMenuItem("Zalo", l["Menu:AppZalo"], icon: "fa fa-shield-alt")
+                            .AddItem(new ApplicationMenuItem("AppZaloAuths", l["Menu:AppZaloAuths"], "/AppZaloAuths")
+                                .RequirePermissions(MultiTenancyPermissions.AppZaloAuths.Default))
+                            .AddItem(new ApplicationMenuItem("AppZaloLogs", l["Menu:AppZaloLogs"], "/AppZaloLogs")
+                                .RequirePermissions(MultiTenancyPermissions.AppZaloLogs.Default))
+                    );
+                }
+
+                if (canSeeSpecialDates)
+                {
+                    miniAppMenu.AddItem(
+                        new ApplicationMenuItem(
+                            "AppSpecialDates",
+                            l["Menu:AppSpecialDates"],
+                            icon: "fa fa-calendar-plus-o",
+                            url: "/AppSpecialDates"
+                        ).RequirePermissions(MultiTenancyPermissions.AppSpecialDates.Default)
+                    );
+                }
+
+                if ((canSeeEmails))
+                {
+                    miniAppMenu.AddItem(
+                        new ApplicationMenuItem(
+                            "AppEmails",
+                            l["Menu:AppEmails"],
+                            icon: "fa fa-envelope",
+                            url: "/AppEmails"
+                        ).RequirePermissions(MultiTenancyPermissions.AppEmails.Default)
+                    );
+                }
                 context.Menu.AddItem(miniAppMenu);
             }
         }
@@ -247,10 +305,19 @@ public class MultiTenancyMenuContributor : IMenuContributor
 
             var hostCanZaloAuths =
                 await perms.IsGrantedAsync(MultiTenancyPermissions.HostAppZaloAuths.Default);
+
             var hostCanZaloLogs =
                await perms.IsGrantedAsync(MultiTenancyPermissions.HostAppZaloLogs.Default);
+
             var hostPromotionType = await perms.IsGrantedAsync(MultiTenancyPermissions.HostAppPromotionType.Default);
-            if (hostCanAppSettings || hostCanCustomerTypes || hostCanGolfCourses || hostCanMembershipTiers || hostCanCustomers || hostCanCalendarSlots || hostCanNews || hostCanBookings || hostCanZaloAuths || hostCanZaloLogs || hostPromotionType)
+
+            var hostCanSpecialDates =
+               await perms.IsGrantedAsync(MultiTenancyPermissions.HostAppSpecialDates.Default);
+
+            var hostCanEmails =
+              await perms.IsGrantedAsync(MultiTenancyPermissions.HostAppEmails.Default);
+
+            if (hostCanAppSettings || hostCanCustomerTypes || hostCanGolfCourses || hostCanMembershipTiers || hostCanCustomers || hostCanCalendarSlots || hostCanNews || hostCanBookings || hostCanZaloAuths || hostCanZaloLogs || hostPromotionType || hostCanSpecialDates || hostCanEmails)
             {
                 var hostMiniAppMenu = new ApplicationMenuItem(
                     "MiniAppSettingHost",
@@ -365,6 +432,7 @@ public class MultiTenancyMenuContributor : IMenuContributor
                                 .RequirePermissions(MultiTenancyPermissions.HostAppZaloLogs.Default))
                     );
                 }
+
                 if (hostPromotionType)
                 {
                     hostMiniAppMenu.AddItem(
@@ -374,6 +442,30 @@ public class MultiTenancyMenuContributor : IMenuContributor
                             url: "/AppPromotionTypes",
                             icon: "fa fa-calendar-plus-o"
                         ).RequirePermissions(MultiTenancyPermissions.HostAppPromotionType.Default)
+                    );
+                }
+
+                if (hostCanSpecialDates)
+                {
+                    hostMiniAppMenu.AddItem(
+                        new ApplicationMenuItem(
+                            name: "AppSpecialDateHost",
+                            displayName: l["Menu:AppSpecialDates"],
+                            url: "/AppSpecialDates",
+                            icon: "fa fa-calendar-plus-o"
+                        ).RequirePermissions(MultiTenancyPermissions.HostAppSpecialDates.Default)
+                    );
+                }
+
+                if (hostCanEmails)
+                {
+                    hostMiniAppMenu.AddItem(
+                        new ApplicationMenuItem(
+                            name: "AppEmailHost",
+                            displayName: l["Menu:AppEmails"],
+                            url: "/AppEmails",
+                            icon: "fa fa-envelope"
+                        ).RequirePermissions(MultiTenancyPermissions.HostAppEmails.Default)
                     );
                 }
 

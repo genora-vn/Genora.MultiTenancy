@@ -2,13 +2,14 @@
 using Genora.MultiTenancy.AppDtos.ZaloAuths;
 using Genora.MultiTenancy.DomainModels.AppZaloAuth;
 using Genora.MultiTenancy.Helpers;
+using Genora.MultiTenancy.Features.AppZaloAuths;
 using Genora.MultiTenancy.Permissions;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Configuration;
 using System;
 using System.Linq;
 using System.Linq.Dynamic.Core;
 using System.Threading.Tasks;
+using Volo.Abp;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Authorization;
 using Volo.Abp.Domain.Repositories;
@@ -18,7 +19,6 @@ using Volo.Abp.Security.Encryption;
 
 namespace Genora.MultiTenancy.AppServices.AppZaloAuths;
 
-[Authorize(MultiTenancyPermissions.HostAppZaloAuths.Default)]
 public class AppZaloAuthAppService :
     FeatureProtectedCrudAppService<
         ZaloAuth,
@@ -28,8 +28,10 @@ public class AppZaloAuthAppService :
         CreateUpdateZaloAuthDto>,
     IAppZaloAuthAppService
 {
-    protected override string FeatureName => "";
-    protected override string TenantDefaultPermission => MultiTenancyPermissions.HostAppZaloAuths.Default;
+    protected override string FeatureName => AppZaloAuthFeatures.Management;
+
+    // ✅ đúng: tenant dùng AppZaloAuths.*, host dùng HostAppZaloAuths.*
+    protected override string TenantDefaultPermission => MultiTenancyPermissions.AppZaloAuths.Default;
     protected override string HostDefaultPermission => MultiTenancyPermissions.HostAppZaloAuths.Default;
 
     private readonly IStringEncryptionService _encrypt;
@@ -44,18 +46,16 @@ public class AppZaloAuthAppService :
     {
         _encrypt = encrypt;
 
-        GetPolicyName = MultiTenancyPermissions.HostAppZaloAuths.Default;
-        GetListPolicyName = MultiTenancyPermissions.HostAppZaloAuths.Default;
-        CreatePolicyName = MultiTenancyPermissions.HostAppZaloAuths.Create;
-        UpdatePolicyName = MultiTenancyPermissions.HostAppZaloAuths.Edit;
-        DeletePolicyName = MultiTenancyPermissions.HostAppZaloAuths.Delete;
+        // ✅ để base tự chọn permission theo side
+        GetPolicyName = MultiTenancyPermissions.AppZaloAuths.Default;
+        GetListPolicyName = MultiTenancyPermissions.AppZaloAuths.Default;
+        CreatePolicyName = MultiTenancyPermissions.AppZaloAuths.Create;
+        UpdatePolicyName = MultiTenancyPermissions.AppZaloAuths.Edit;
+        DeletePolicyName = MultiTenancyPermissions.AppZaloAuths.Delete;
     }
 
-    private void EnsureHostOnly()
-    {
-        if (CurrentTenant.IsAvailable)
-            throw new AbpAuthorizationException("Host only.");
-    }
+    private Guid? GetScopeTenantId()
+        => CurrentTenant.IsAvailable ? CurrentTenant.Id : null;
 
     private AppZaloAuthDto ToSafeDto(ZaloAuth e)
     {
@@ -91,127 +91,147 @@ public class AppZaloAuthAppService :
 
     public override async Task<PagedResultDto<AppZaloAuthDto>> GetListAsync(GetAppZaloAuthListInput input)
     {
-        EnsureHostOnly();
         await CheckGetListPolicyAsync();
 
-        var query = await Repository.GetQueryableAsync();
+        var scopeTenantId = GetScopeTenantId();
 
-        if (!string.IsNullOrWhiteSpace(input.FilterText))
+        using (CurrentTenant.Change(scopeTenantId))
         {
-            var ft = input.FilterText.Trim();
-            query = query.Where(x =>
-                x.AppId.Contains(ft) ||
-                (x.State != null && x.State.Contains(ft)) ||
-                (x.AuthorizationCode != null && x.AuthorizationCode.Contains(ft))
+            var query = await Repository.GetQueryableAsync();
+
+            // ✅ Tenant: chỉ thấy data của tenant đó
+            // ✅ Host: chỉ thấy data global (TenantId=null)
+            query = query.Where(x => x.TenantId == scopeTenantId);
+
+            if (!string.IsNullOrWhiteSpace(input.FilterText))
+            {
+                var ft = input.FilterText.Trim();
+                query = query.Where(x =>
+                    x.AppId.Contains(ft) ||
+                    (x.State != null && x.State.Contains(ft)) ||
+                    (x.AuthorizationCode != null && x.AuthorizationCode.Contains(ft))
+                );
+            }
+
+            if (input.IsActive.HasValue)
+                query = query.Where(x => x.IsActive == input.IsActive.Value);
+
+            var sorting = string.IsNullOrWhiteSpace(input.Sorting)
+                ? "CreationTime desc"
+                : input.Sorting;
+
+            query = query.OrderBy(sorting);
+
+            var total = await AsyncExecuter.CountAsync(query);
+            var items = await AsyncExecuter.ToListAsync(
+                query.Skip(input.SkipCount).Take(input.MaxResultCount)
             );
+
+            var safeDtos = items.Select(ToSafeDto).ToList();
+            return new PagedResultDto<AppZaloAuthDto>(total, safeDtos);
         }
-
-        if (input.IsActive.HasValue)
-            query = query.Where(x => x.IsActive == input.IsActive.Value);
-
-        var sorting = string.IsNullOrWhiteSpace(input.Sorting)
-            ? "CreationTime desc"
-            : input.Sorting;
-
-        query = query.OrderBy(sorting);
-
-        var total = await AsyncExecuter.CountAsync(query);
-        var items = await AsyncExecuter.ToListAsync(query.Skip(input.SkipCount).Take(input.MaxResultCount));
-
-        var safeDtos = items.Select(ToSafeDto).ToList();
-        return new PagedResultDto<AppZaloAuthDto>(total, safeDtos);
     }
 
     public override async Task<AppZaloAuthDto> GetAsync(Guid id)
     {
-        EnsureHostOnly();
         await CheckGetPolicyAsync();
 
-        var entity = await Repository.GetAsync(id);
-        return ToSafeDto(entity);
+        var scopeTenantId = GetScopeTenantId();
+        using (CurrentTenant.Change(scopeTenantId))
+        {
+            var entity = await Repository.GetAsync(id);
+
+            // ✅ chống đọc chéo scope (phòng trường hợp ai đó gọi API trực tiếp)
+            if (entity.TenantId != scopeTenantId)
+                throw new AbpAuthorizationException("Not allowed.");
+
+            return ToSafeDto(entity);
+        }
     }
 
     public override async Task<AppZaloAuthDto> CreateAsync(CreateUpdateZaloAuthDto input)
     {
-        EnsureHostOnly();
         await CheckCreatePolicyAsync();
 
-        input.TenantId = null;
-
-        var entity = new ZaloAuth
+        var scopeTenantId = GetScopeTenantId();
+        using (CurrentTenant.Change(scopeTenantId))
         {
-            TenantId = null,
-            AppId = input.AppId,
-            OaId = input.OaId,
-            CodeChallenge = input.CodeChallenge,
-            CodeVerifier = input.CodeVerifier,
-            State = input.State,
-            AuthorizationCode = input.AuthorizationCode,
-            ExpireAuthorizationCodeTime = input.ExpireAuthorizationCodeTime,
-            ExpireTokenTime = input.ExpireTokenTime,
-            IsActive = input.IsActive
-        };
+            input.TenantId = scopeTenantId;
 
-        if (!string.IsNullOrWhiteSpace(input.AccessToken))
-            entity.AccessToken = SecurityHelper.EncryptMaybe(input.AccessToken, _encrypt);
+            var entity = new ZaloAuth
+            {
+                TenantId = scopeTenantId,
+                AppId = input.AppId,
+                OaId = input.OaId,
+                CodeChallenge = input.CodeChallenge,
+                CodeVerifier = input.CodeVerifier,
+                State = input.State,
+                AuthorizationCode = input.AuthorizationCode,
+                ExpireAuthorizationCodeTime = input.ExpireAuthorizationCodeTime,
+                ExpireTokenTime = input.ExpireTokenTime,
+                IsActive = input.IsActive
+            };
 
-        if (!string.IsNullOrWhiteSpace(input.RefreshToken))
-            entity.RefreshToken = SecurityHelper.EncryptMaybe(input.RefreshToken, _encrypt);
+            if (!string.IsNullOrWhiteSpace(input.AccessToken))
+                entity.AccessToken = SecurityHelper.EncryptMaybe(input.AccessToken, _encrypt);
 
-        if (entity.IsActive && entity.ExpireTokenTime.HasValue && entity.ExpireTokenTime.Value <= DateTime.UtcNow)
-        {
-            entity.IsActive = false;
+            if (!string.IsNullOrWhiteSpace(input.RefreshToken))
+                entity.RefreshToken = SecurityHelper.EncryptMaybe(input.RefreshToken, _encrypt);
+
+            if (entity.IsActive && entity.ExpireTokenTime.HasValue && entity.ExpireTokenTime.Value <= DateTime.UtcNow)
+                entity.IsActive = false;
+
+            await Repository.InsertAsync(entity, autoSave: true);
+
+            if (entity.IsActive)
+                await ZaloAuthActiveNormalizer.SetActiveOnlyAsync(Repository, entity.Id);
+
+            return ToSafeDto(entity);
         }
-
-        await Repository.InsertAsync(entity, autoSave: true);
-
-        if (entity.IsActive)
-        {
-            await ZaloAuthActiveNormalizer.SetActiveOnlyAsync(Repository, entity.Id);
-        }
-        return ToSafeDto(entity);
     }
 
     public override async Task<AppZaloAuthDto> UpdateAsync(Guid id, CreateUpdateZaloAuthDto input)
     {
-        EnsureHostOnly();
         await CheckUpdatePolicyAsync();
 
-        input.TenantId = null;
-
-        var entity = await Repository.GetAsync(id);
-
-        entity.AppId = input.AppId;
-        entity.OaId = input.OaId;
-        entity.CodeChallenge = input.CodeChallenge;
-        entity.CodeVerifier = input.CodeVerifier;
-        entity.State = input.State;
-        entity.AuthorizationCode = input.AuthorizationCode;
-        entity.ExpireAuthorizationCodeTime = input.ExpireAuthorizationCodeTime;
-        entity.IsActive = input.IsActive;
-
-        // ✅ Token chỉ update khi có nhập (không overwrite nếu trống)
-        if (!string.IsNullOrWhiteSpace(input.AccessToken))
-            entity.AccessToken = SecurityHelper.EncryptMaybe(input.AccessToken, _encrypt);
-
-        if (!string.IsNullOrWhiteSpace(input.RefreshToken))
-            entity.RefreshToken = SecurityHelper.EncryptMaybe(input.RefreshToken, _encrypt);
-
-        if (input.ExpireTokenTime.HasValue)
-            entity.ExpireTokenTime = input.ExpireTokenTime;
-
-        if (entity.IsActive && entity.ExpireTokenTime.HasValue && entity.ExpireTokenTime.Value <= DateTime.UtcNow)
+        var scopeTenantId = GetScopeTenantId();
+        using (CurrentTenant.Change(scopeTenantId))
         {
-            entity.IsActive = false;
+            input.TenantId = scopeTenantId;
+
+            var entity = await Repository.GetAsync(id);
+
+            if (entity.TenantId != scopeTenantId)
+                throw new AbpAuthorizationException("Not allowed.");
+
+            entity.AppId = input.AppId;
+            entity.OaId = input.OaId;
+            entity.CodeChallenge = input.CodeChallenge;
+            entity.CodeVerifier = input.CodeVerifier;
+            entity.State = input.State;
+            entity.AuthorizationCode = input.AuthorizationCode;
+            entity.ExpireAuthorizationCodeTime = input.ExpireAuthorizationCodeTime;
+            entity.IsActive = input.IsActive;
+
+            // ✅ Token chỉ update khi có nhập
+            if (!string.IsNullOrWhiteSpace(input.AccessToken))
+                entity.AccessToken = SecurityHelper.EncryptMaybe(input.AccessToken, _encrypt);
+
+            if (!string.IsNullOrWhiteSpace(input.RefreshToken))
+                entity.RefreshToken = SecurityHelper.EncryptMaybe(input.RefreshToken, _encrypt);
+
+            if (input.ExpireTokenTime.HasValue)
+                entity.ExpireTokenTime = input.ExpireTokenTime;
+
+            if (entity.IsActive && entity.ExpireTokenTime.HasValue && entity.ExpireTokenTime.Value <= DateTime.UtcNow)
+                entity.IsActive = false;
+
+            await Repository.UpdateAsync(entity, autoSave: true);
+
+            if (entity.IsActive)
+                await ZaloAuthActiveNormalizer.SetActiveOnlyAsync(Repository, entity.Id);
+
+            return ToSafeDto(entity);
         }
-
-        await Repository.UpdateAsync(entity, autoSave: true);
-
-        if (entity.IsActive)
-        {
-            await ZaloAuthActiveNormalizer.SetActiveOnlyAsync(Repository, entity.Id);
-        }
-
-        return ToSafeDto(entity);
     }
 }

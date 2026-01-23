@@ -16,15 +16,27 @@
     "Menu:AppZalo": "Zalo OA",
     "Menu:AppZaloAuths": "Zalo OA Auth",
     "Menu:AppZaloLogs": "Zalo Logs",
+    "Menu:AppSpecialDates": "Date settings",
+    "Menu:AppEmails": "Manager Emails",
 
     // Cấu hình bảng Logs
     "Permission:MiniAppZaloAuth": "Zalo Authentication & Authorization Zalo OA management",
     "Permission:MiniAppZaloAuth.Create": "Create",
     "Permission:MiniAppZaloAuth.Edit": "Edit",
     "Permission:MiniAppZaloAuth.Delete": "Delete",
+    "PermissionGroup:MiniAppZaloAuth": "Authorization Zalo OA management",
     "PermissionGroup:MiniAppZaloAuthHost": "Authorization Zalo OA management (Host)",
     "Permission:HostAppZaloAuths": "Manage Zalo OA Auth",
+    "Permission:AppZaloLogs": "View Zalo Logs",
     "Permission:HostAppZaloLogs": "View Zalo Logs",
+
+    "FeatureGroup:MiniAppZaloAuth": "Manage Zalo OA Auth",
+    "Feature:MiniAppZaloAuth": "Enable Zalo OA Auth management",
+    "Feature:MiniAppZaloAuthDesc": "Allow the use of Zalo OA Auth management functions (add/edit/delete).",
+
+    "FeatureGroup:MiniAppZaloLog": "Manage Zalo OA Logs",
+    "Feature:MiniAppZaloLog": "Enable Zalo OA Logs management",
+    "Feature:MiniAppZaloLogDesc": "Allow the use of Zalo OA Logs management functions (add/edit/delete).",
 
     "AppZaloAuths": "Zalo OA Auth",
     "NewAppZaloAuth": "Seed token manually",
@@ -50,6 +62,19 @@
     "ToDate": "To date",
     "View": "View",
     "MaskTokenHint": "Tokens are partially masked for security.",
+    "StayPlay": "Stay & Explore Stay & Play Package",
+    "RentCaddie": "Book Caddie",
+    "RentGolfClubs": "Rent Clubs/ Shoes",
+    "RentClothes": "Accompany Visitor",
+    "Morning": "Morning",
+    "Noon": "Noon",
+    "Afternoon": "Afternoon",
+    "Evening": "Evening",
+    "IsExportInvoice": "Customer Requests Invoice Export",
+    "ExportInvoiceInformation": "Invoice Export Information",
+    "True": "Yes",
+    "False": "No",
+    "IsFollower": "Follow Zalo OA",
 
     // Cấu hình bảng Logs
     "Permission:AuditLogs": "Audit Logs",
@@ -66,6 +91,9 @@
     "Type": "Type",
     "Price": "Price",
     "CreationTime": "Creation time",
+    "All": "All",
+    "Notes": "Notes",
+    "UpdateStatus": "Update status",
 
     // Cấu hình Mini App
     "PermissionGroup:MiniAppSetting": "Mini App Settings",
@@ -109,7 +137,6 @@
     "CustomerTypeName": "Customer type name",
     "CustomerTypeDescription": "Description",
     "CustomerTypeColorCode": "Label color",
-    "CustomerFilterText": "Search for name/phone number",
 
     // ====== AppGolfCourses (Cấu hình sân) ======
     "PermissionGroup:MiniAppGolfCourse": "Golf course settings",
@@ -154,6 +181,7 @@
     "MinRounds": "Minimum rounds",
     "EvaluationPeriod": "Evaluation period",
     "DisplayOrder": "Display order",
+    "Validation:CodeFormat": "The code is not in the correct format",
     "MinTotalSpendingMustBePositive": "Minimum total spending must be greater than or equal to 0.",
     "MinRoundsMustBePositive": "Minimum rounds must be greater than or equal to 0.",
 
@@ -174,11 +202,15 @@
     "CreateAppCustomer": "Create customer",
     "EditAppCustomer": "Edit customer",
 
-    "CustomerPhoneNumber": "Phone number",
-    "CustomerFullName": "Full name",
+    "PhoneNumber": "Phone number",
+    "FullName": "Full name",
     "CustomerType": "Customer type",
     "CustomerCode": "Customer code",
     "CustomerStatus": "Status",
+
+    "Validation:Required": "The {0} field is required.",
+    "Validation:StringMax": "The {0} field must have a maximum of {1} characters.",
+    "Validation:PhoneInvalid": "The phone number is not valid.",
 
     "CustomerFilterText": "Search by name / phone / code",
     "Search": "Search",
@@ -214,6 +246,11 @@
     "PromotionType": "Promotion Type",
     "MaxSlots": "Maximum Slots",
     "InternalNote": "Internal Note",
+
+    "Price9": "9 hole price",
+    "Price18": "18 hole price",
+    "Price27": "27 hole price",
+    "Price36": "36 hole price",
 
     "GolfCourse": "Golf Course",
     "ManageCalendar": "Manage Play Time",
@@ -262,12 +299,14 @@
     "AppBookings": "Booking management",
     "NewAppBooking": "Add booking",
     "EditAppBooking": "Edit booking",
+    "BookingDetail": "Booking detail",
 
     "BookingCode": "Booking code",
     "BookingFilterText": "Search by booking code",
     "BookingCustomer": "Customer",
     "BookingGolfCourse": "Golf course",
     "BookingPlayDate": "Play date",
+    "BookingPlayTime": "Play time",
     "BookingNumberOfGolfers": "Golfer count",
     "BookingPricePerGolfer": "Unit price",
     "BookingTotalAmount": "Total amount",
@@ -281,7 +320,7 @@
     "PaymentMethod:Online": "Online payment",
     "PaymentMethod:BankTransfer": "Bank transfer",
 
-    "BookingStatus:Pending": "Pending",
+    "BookingStatus:Processing": "Pending",
     "BookingStatus:Confirmed": "Confirmed",
     "BookingStatus:Paid": "Paid",
     "BookingStatus:Completed": "Completed",
@@ -295,11 +334,105 @@
     "BookingPlayers": "Players",
     "AddPlayer": "Add player",
     "PlayerName": "Player name",
+    "BookingSuccessfullyDeleted": "Booking deleted successfully",
+
+    //=================Promotion Type=======================
+    "AppPromotionType": "Promotion Type",
+    "CreatePromotionType": "Create New Promotion Type",
+    "PromotionTypeCode": "Promotion Type Code",
+    "PromotionTypeName": "Promotion Type Name",
+    "IsUpload": "Upload Image",
+    "PromotionTypeIconUrl": "Icon Image URL",
+    "PromotionStatus": "Status",
+    "NewPromotionType": "New Promotion Type",
+    "Menu:AppPromotionTypes": "Manage Promotion Types",
+    "EditPromotionType": "Update Promotion Type",
+    "FeatureGroup:MiniAppPromotionType": "Promotion Type",
+    "Feature:MiniAppPromotionType": "Enable Promotion Type Management",
+    "Feature:MiniAppPromotionTypeDesc": "Promotion Type Playtime Configuration",
+    "PermissionGroup:MiniAppPromotionType": "Promotion Type Configuration",
+    "PermissionGroup:MiniAppPromotionTypeHost": "Promotion Type Configuration",
+    "Permission:MiniAppPromotionType": "Promotion Type Configuration",
+    "Permission:MiniAppPromotionType.Create": "Create Promotion Type",
+    "Permission:MiniAppPromotionType.Edit": "Edit Promotion Type",
+    "Permission:MiniAppPromotionType.Delete": "Delete Promotion Type",
+
+    // ====== AppSpecialDate ======
+    "AppSpecialDates": "Date type settings",
+    "NewSpecialDate": "New date type",
+    "EditSpecialDate": "Edit date type",
+    "Feature:MiniAppSpecialDate": "Enable day type configuration",
+    "FeatureGroup:MiniAppSpecialDate": "Day type configuration",
+    "Feature:MiniAppSpecialDateDesc": "Allows using day type configuration features (create/edit/delete).",
+    "PermissionGroup:MiniAppSpecialDate": "Day type configuration",
+    "PermissionGroup:MiniAppSpecialDateHost": "Day type configuration",
+    "Permission:MiniAppSpecialDate": "Day type configuration",
+    "Permission:MiniAppSpecialDate.Create": "Create day type configuration",
+    "Permission:MiniAppSpecialDate.Edit": "Edit day type configuration",
+    "Permission:MiniAppSpecialDate.Delete": "Delete day type configuration",
+
+    // ====== AppSpecialDate ======
+    "AppEmails": "Emails (Mini App)",
+    "NewAppEmail": "New email",
+    "EditAppEmail": "Edit email",
+    "ViewAppEmail": "View email",
+
+    "EmailFilterText": "Keyword",
+    "EmailSubjectPlaceholder": "Enter email subject...",
+    "EmailToPlaceholder": "e.g. a@company.com; b@company.com",
+    "EmailCcPlaceholder": "e.g. cc@company.com",
+    "EmailBccPlaceholder": "e.g. bcc@company.com",
+    "EmailBodyPlaceholder": "Enter email body...",
+
+    "BookingCodePlaceholder": "Enter booking code (optional)...",
+
+    "ToEmails": "To",
+    "CcEmails": "Cc",
+    "BccEmails": "Bcc",
+    "Body": "Body",
+    "Subject": "Subject",
+
+    "EmailMultiSeparatorHint": "You can enter multiple emails separated by ; or ,",
+    "CreateEmailWillQueueHint": "The email will be queued. You can click “Send now” on the list to send immediately.",
+
+    "EmailStatus": "Email status",
+    "EmailStatus:Pending": "Pending",
+    "EmailStatus:Sending": "Sending",
+    "EmailStatus:Sent": "Sent",
+    "EmailStatus:Failed": "Failed",
+    "EmailStatus:Abandoned": "Abandoned",
+
+    "TryCount": "Try count",
+    "SentTime": "Sent time",
+    "LastTryTime": "Last try time",
+    "LastError": "Last error",
+    "ModelJson": "Model JSON",
+
+    "QueuedSuccessfully": "Queued successfully",
+    "AreYouSureToResend": "Are you sure you want to resend this email?",
+
+    "SendNow": "Send now",
+    "Resend": "Resend",
+
+    "FeatureGroup:MiniAppEmail": "Mini App Emails",
+    "Feature:MiniAppEmail": "Enable Mini App Email Management",
+    "Feature:MiniAppEmailDesc": "Allows managing, sending and tracking emails generated from the Mini App.",
+
+    "PermissionGroup:MiniAppEmail": "Mini App Emails (Tenant)",
+    "PermissionGroup:MiniAppEmailHost": "Mini App Emails (Host)",
+    "Permission:MiniAppEmail": "Mini App Email Management",
+    "Permission:MiniAppEmail.Create": "Create email",
+    "Permission:MiniAppEmail.Edit": "Edit email",
+    "Permission:MiniAppEmail.Delete": "Delete email",
+    "Permission:MiniAppEmail.Send": "Send now",
+    "Permission:MiniAppEmail.Resend": "Resend",
+
 
     // Cấu hình thông báo
     "AreYouSure": "Are you sure?",
     "AreYouSureToDelete": "Are you sure you want to delete this item?",
     "AppSettingDeletionConfirmationMessage": "Are you sure to delete the setting '{0}'?",
+    "DeletionBookingConfirmationMessage": "Are you sure you want to cancel the booking",
     "LongWelcomeMessage": "Genora CX Flatform - Welcome to management system",
     "Welcome": "Genora welcome"
   }

@@ -7,6 +7,7 @@
 @inject IStringLocalizer<MultiTenancyResource> L
 @inject IAuthorizationService AuthorizationService
 @inject Volo.Abp.MultiTenancy.ICurrentTenant CurrentTenant
+@model IndexModel;
 
 @{
     var canCreate = CurrentTenant.IsAvailable
@@ -19,6 +20,35 @@
 @section scripts {
     <abp-script src="/Pages/AppCustomers/index.js" />
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script>
+        (function () {
+            function ensureFlatpickr(el) {
+                if (!window.flatpickr) return;
+                if (!el || el._flatpickr) return;
+
+                flatpickr(el, {
+                    dateFormat: "d/m/Y",
+                    allowInput: true,
+                    clickOpens: true
+                });
+            }
+
+            // init cho các input đang có sẵn trên Index (CreatedFrom/CreatedTo)
+            document.addEventListener('DOMContentLoaded', function () {
+                document.querySelectorAll('input.dob-input').forEach(ensureFlatpickr);
+            });
+
+            // ✅ delegation: modal load ajax xong, chỉ cần focus vào input là attach flatpickr
+            document.addEventListener('focusin', function (e) {
+                const el = e.target;
+                if (el && el.matches && el.matches('input.dob-input')) {
+                    ensureFlatpickr(el);
+                    // mở luôn khi vừa focus/click
+                    if (el._flatpickr) el._flatpickr.open();
+                }
+            });
+        })();
+    </script>
     <abp-style src="/Pages/Index.css" />
 }
 
@@ -40,18 +70,45 @@
             </abp-column>
         </abp-row>
         <abp-row class="mb-3" style="margin-bottom: 0 !important">
-            <abp-column size-md="_4">
+            <abp-column size-md="_3">
                 <div class="mb-3">
-                    <label class="form-label" for="CustomerFilterText">
-                        @L["CustomerFilterText"]
-                    </label>
-                    <input id="CustomerFilterText"
-                           name="CustomerFilterText"
-                           class="form-control"
-                           type="text" />
+                    <label class="form-label" for="CustomerTypeId">@L["CustomerType"]</label>
+                    <select id="CustomerTypeId" class="form-select">
+                        <option value="">-- @L["All"] --</option>
+                        @foreach (var item in Model.CustomerTypeItems)
+                        {
+                            <option value="@item.Value">@item.Text</option>
+                        }
+                    </select>
                 </div>
             </abp-column>
-            <abp-column size-md="_2" style="display: flex; align-items: center">
+
+            <abp-column size-md="_2">
+                <div class="mb-3">
+                    <label class="form-label" for="IsActiveFilter">@L["IsActive"]</label>
+                    <select id="IsActiveFilter" class="form-select">
+                        <option value="">-- @L["All"] --</option>
+                        <option value="true">@L["Yes"]</option>
+                        <option value="false">@L["No"]</option>
+                    </select>
+                </div>
+            </abp-column>
+
+            <abp-column size-md="_2">
+                <div class="mb-3">
+                    <label class="form-label" for="CreatedFrom">@L["CreationTime"] (@L["FromDate"])</label>
+                    <input id="CreatedFrom" class="form-control dob-input" type="text" placeholder="dd/MM/yyyy" />
+                </div>
+            </abp-column>
+
+            <abp-column size-md="_2">
+                <div class="mb-3">
+                    <label class="form-label" for="CreatedTo">@L["CreationTime"] (@L["ToDate"])</label>
+                    <input id="CreatedTo" class="form-control dob-input" type="text" placeholder="dd/MM/yyyy" />
+                </div>
+            </abp-column>
+
+            <abp-column size-md="_3" style="display:flex; align-items:center; gap:10px">
                 <abp-button id="SearchCustomerButton"
                             text="@L["Search"]"
                             button-type="Outline_Primary"

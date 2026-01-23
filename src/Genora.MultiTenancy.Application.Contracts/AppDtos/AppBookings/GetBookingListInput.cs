@@ -6,7 +6,7 @@ namespace Genora.MultiTenancy.AppDtos.AppBookings;
 
 public class GetBookingListInput : PagedAndSortedResultRequestDto
 {
-    public string FilterText { get; set; }
+    public string? FilterText { get; set; }
 
     public Guid? CustomerId { get; set; }
     public Guid? GolfCourseId { get; set; }

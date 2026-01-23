@@ -46,9 +46,12 @@ public class EditModalModel : PageModel
         Booking = new CreateUpdateAppBookingDto
         {
             CustomerId = dto.CustomerId,
+            CustomerType = dto.CustomerType,
             PlayDate = dto.PlayDate,
             GolfCourseId = dto.GolfCourseId,
             CalendarSlotId = dto.CalendarSlotId,
+            TimeFrom = dto.TimeFrom,
+            TimeTo = dto.TimeTo,
             NumberOfGolfers = dto.NumberOfGolfers,
             PricePerGolfer = dto.PricePerGolfer,
             TotalAmount = dto.TotalAmount,
@@ -64,14 +67,14 @@ public class EditModalModel : PageModel
                 CustomerId = p.CustomerId,
                 PlayerName = p.PlayerName,
                 VgaCode = p.VgaCode,
-                PricePerPlayer = dto.TotalAmount / dto.NumberOfGolfers,
+                PricePerPlayer = p.PricePerPlayer,
                 Notes = p.Notes
             }) ?? new List<CreateUpdateBookingPlayerDto>()
         };
 
         BuildSelectItems();
     }
-    
+
     public async Task<IActionResult> OnPostAsync()
     {
         if (!ModelState.IsValid)
@@ -97,27 +100,28 @@ public class EditModalModel : PageModel
     private void BuildSelectItems()
     {
         StatusItems = new List<SelectListItem>
-            {
-                new("Processing", ((int)BookingStatus.Processing).ToString()),
-                new("Confirmed", ((int)BookingStatus.Confirmed).ToString()),
-                new("Paid", ((int)BookingStatus.Paid).ToString()),
-                new("Completed", ((int)BookingStatus.Completed).ToString()),
-                new("Cancelled (refund)", ((int)BookingStatus.CancelledRefund).ToString()),
-                new("Cancelled (no refund)", ((int)BookingStatus.CancelledNoRefund).ToString())
-            };
+        {
+            new(_L["BookingStatus:Processing"], ((int)BookingStatus.Processing).ToString()),
+            new(_L["BookingStatus:Confirmed"], ((int)BookingStatus.Confirmed).ToString()),
+            new(_L["BookingStatus:Paid"], ((int)BookingStatus.Paid).ToString()),
+            new(_L["BookingStatus:Completed"], ((int)BookingStatus.Completed).ToString()),
+            new(_L["BookingStatus:CancelledRefund"], ((int)BookingStatus.CancelledRefund).ToString()),
+            new(_L["BookingStatus:CancelledNoRefund"], ((int)BookingStatus.CancelledNoRefund).ToString())
+        };
 
-        PaymentMethodItems = new List<SelectListItem>
-            {
-                new("COD", ((int)PaymentMethod.COD).ToString()),
-                new("Online", ((int)PaymentMethod.Online).ToString()),
-                new("Bank transfer", ((int)PaymentMethod.BankTransfer).ToString())
-            };
+            PaymentMethodItems = new List<SelectListItem>
+        {
+            new(_L["PaymentMethod:COD"], ((int)PaymentMethod.COD).ToString()),
+            new(_L["PaymentMethod:Online"], ((int)PaymentMethod.Online).ToString()),
+            new(_L["PaymentMethod:BankTransfer"], ((int)PaymentMethod.BankTransfer).ToString())
+        };
 
-        SourceItems = new List<SelectListItem>
-            {
-                new("Mini App", ((int)BookingSource.MiniApp).ToString()),
-                new("Hotline", ((int)BookingSource.Hotline).ToString()),
-                new("Agent", ((int)BookingSource.Agent).ToString())
-            };
+            SourceItems = new List<SelectListItem>
+        {
+            new(_L["BookingSource:MiniApp"], ((int)BookingSource.MiniApp).ToString()),
+            new(_L["BookingSource:Hotline"], ((int)BookingSource.Hotline).ToString()),
+            new(_L["BookingSource:Agent"], ((int)BookingSource.Agent).ToString())
+        };
     }
+
 }

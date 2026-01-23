@@ -146,7 +146,10 @@ public static class MultiTenancyDbContextModelCreatingExtensionsMiniApp
             b.ToTable(MultiTenancyConsts.DbTablePrefix + "CalendarSlotPrices", MultiTenancyConsts.DbSchema);
             b.ConfigureByConvention();
 
-            b.Property(x => x.Price).HasColumnType("decimal(18,2)");
+            b.Property(x => x.Price9).HasColumnType("decimal(18,2)").IsRequired(false);
+            b.Property(x => x.Price18).HasColumnType("decimal(18,2)").IsRequired();
+            b.Property(x => x.Price27).HasColumnType("decimal(18,2)").IsRequired(false);
+            b.Property(x => x.Price36).HasColumnType("decimal(18,2)").IsRequired(false);
 
             b.HasOne(x => x.CalendarSlot)
                 .WithMany(x => x.Prices)

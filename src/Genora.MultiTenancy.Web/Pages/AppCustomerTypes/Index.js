@@ -13,7 +13,18 @@
             paging: true,
             searching: true,
             scrollX: true,
-            ajax: abp.libs.datatables.createAjax(service.getList),
+
+            ajax: abp.libs.datatables.createAjax(service.getListWithFilter, function (request) {
+                return {
+                    filter: request.search?.value || null,
+                    skipCount: request.start,
+                    maxResultCount: request.length,
+                    sorting: request.columns?.[request.order?.[0]?.column]?.data
+                        ? request.columns[request.order[0].column].data + ' ' + request.order[0].dir
+                        : null
+                };
+            }),
+
             columnDefs: [
                 {
                     title: l('Actions'),
@@ -23,21 +34,15 @@
                                 text: l('Edit'),
                                 visible: abp.auth.isGranted('MultiTenancy.AppCustomerTypes.Edit') ||
                                     abp.auth.isGranted('MultiTenancy.HostAppCustomerTypes.Edit'),
-                                action: function (data) {
-                                    editModal.open({ id: data.record.id });
-                                }
+                                action: function (data) { editModal.open({ id: data.record.id }); }
                             },
                             {
                                 text: l('Delete'),
                                 visible: abp.auth.isGranted('MultiTenancy.AppCustomerTypes.Delete') ||
                                     abp.auth.isGranted('MultiTenancy.HostAppCustomerTypes.Delete'),
-                                confirmMessage: function (data) {
-                                    return l('AreYouSureToDelete', data.record.name);
-                                },
+                                confirmMessage: function (data) { return l('AreYouSureToDelete', data.record.name); },
                                 action: function (data) {
-                                    service.delete(data.record.id).then(function () {
-                                        dataTable.ajax.reload();
-                                    });
+                                    service.delete(data.record.id).then(function () { dataTable.ajax.reload(); });
                                 }
                             }
                         ]
@@ -59,6 +64,7 @@
             ]
         })
     );
+
 
     createModal.onResult(function () {
         abp.notify.success(l('CreatedSuccessfully'));

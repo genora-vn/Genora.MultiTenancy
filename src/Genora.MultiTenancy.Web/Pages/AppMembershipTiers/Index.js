@@ -13,7 +13,16 @@
             paging: true,
             searching: true,
             scrollX: true,
-            ajax: abp.libs.datatables.createAjax(service.getList),
+            ajax: abp.libs.datatables.createAjax(service.getListWithFilter, function (request) {
+                return {
+                    filter: request.search?.value || null,
+                    skipCount: request.start,
+                    maxResultCount: request.length,
+                    sorting: request.columns?.[request.order?.[0]?.column]?.data
+                        ? request.columns[request.order[0].column].data + ' ' + request.order[0].dir
+                        : null
+                };
+            }),
             columnDefs: [
                 {
                     title: l('Actions'),

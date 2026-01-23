@@ -4,15 +4,17 @@ namespace Genora.MultiTenancy.AppDtos.AppMembershipTiers;
 
 public class CreateUpdateAppMembershipTierDto
 {
-    [Required]
-    [StringLength(50)]
+    [Required(ErrorMessage = "Validation:Required")]
+    [StringLength(50, ErrorMessage = "Validation:StringMax")]
+    [RegularExpression("^[A-Z0-9_-]+$", ErrorMessage = "Validation:CodeFormat")]
+
     public string Code { get; set; }          // GOLD / SILVER / BRONZE...
 
     [Required]
-    [StringLength(100)]
+    [StringLength(100, ErrorMessage = "Validation:StringMax")]
     public string Name { get; set; }          // Vàng / Bạc / Đồng...
 
-    [StringLength(500)]
+    [StringLength(500, ErrorMessage = "Validation:StringMax")]
     public string? Description { get; set; }
 
     public decimal? MinTotalSpending { get; set; }

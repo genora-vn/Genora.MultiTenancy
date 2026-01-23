@@ -9,7 +9,7 @@ namespace Genora.MultiTenancy.Controllers;
 
 [Area("MultiTenancy")]
 [Route("api/host/zalo-zbs")]
-[Authorize(MultiTenancyPermissions.HostAppZaloAuths.Default)]
+//[Authorize(MultiTenancyPermissions.HostAppZaloAuths.Default)]
 public class HostZaloZbsController : MultiTenancyController
 {
     private readonly IZaloZbsClient _client;

@@ -8,9 +8,9 @@ namespace Genora.MultiTenancy.Enums
     {
         public static UlititiesEnum Caddie = new UlititiesEnum(1, "RentCaddie", "fa fa-user");
         public static UlititiesEnum Clothes = new UlititiesEnum(2, "RentClothes", "fa fa-tshirt");
-        public static UlititiesEnum GolfClubs = new UlititiesEnum(3, "RentGolfClubs", "fa fa-golf-club");
-        public static UlititiesEnum Lunch = new UlititiesEnum(4, "Lunch", "fa fa-cutlery");
-        public static UlititiesEnum StayPlay = new UlititiesEnum(5, "StayPlay", "fa fa-cutlery");
+        public static UlititiesEnum GolfClubs = new UlititiesEnum(3, "RentGolfClubs", "fa fa-golf-club");        
+        public static UlititiesEnum StayPlay = new UlititiesEnum(4, "StayPlay", "fa fa-cutlery");
+        public static UlititiesEnum Lunch = new UlititiesEnum(5, "Lunch", "fa fa-cutlery");
 
         public string Icon { get; set; }
 

@@ -34,5 +34,10 @@ namespace Genora.MultiTenancy.AppDtos.AppBookings
         public BookingSource Source { get; set; }
         public string VNDayOfWeek { get; set; }
         public List<AppBookingPlayerDto> Players { get; set; } = new();
+
+        public string? CompanyName { get; set; }
+        public string? TaxCode { get; set; }
+        public string? CompanyAddress { get; set; }
+        public string? InvoiceEmail { get; set; }
     }
 }

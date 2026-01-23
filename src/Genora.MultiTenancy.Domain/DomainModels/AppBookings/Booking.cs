@@ -51,6 +51,18 @@ public class Booking : FullAuditedAggregateRoot<Guid>, IMultiTenant
 
     public BookingSource Source { get; set; }
 
+    [StringLength(200)]
+    public string? CompanyName { get; set; }
+
+    [StringLength(50)]
+    public string? TaxCode { get; set; }
+
+    [StringLength(500)]
+    public string? CompanyAddress { get; set; }
+
+    [StringLength(256)]
+    public string? InvoiceEmail { get; set; }
+
     // Navigation
     public virtual ICollection<BookingPlayer> Players { get; set; } = new List<BookingPlayer>();
     public virtual ICollection<BookingStatusHistory> StatusHistories { get; set; } = new List<BookingStatusHistory>();

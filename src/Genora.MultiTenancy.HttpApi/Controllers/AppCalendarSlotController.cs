@@ -27,9 +27,14 @@ public class AppCalendarSlotController : AbpController
     }
 
     [HttpGet("template")]
-    public async Task<IRemoteStreamContent> Template()
+    [DisableValidation]
+    public Task<IRemoteStreamContent> Template([FromQuery] DownloadImportTemplateInput input)
     {
-        return await _service.DownloadImportTemplateAsync();
+        // Nếu muốn bắt buộc chọn sân thì mở comment dưới
+        // if (!input.GolfCourseId.HasValue || input.GolfCourseId.Value == Guid.Empty)
+        //     throw new Volo.Abp.UserFriendlyException("Vui lòng chọn sân golf trước khi tải file mẫu.");
+
+        return _service.DownloadImportTemplateAsync(input.GolfCourseId);
     }
 
     [HttpPost("import")]

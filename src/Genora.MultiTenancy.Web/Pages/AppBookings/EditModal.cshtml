@@ -18,7 +18,6 @@
     <input type="hidden" asp-for="Booking.PlayDate" />
     <input type="hidden" asp-for="Booking.GolfCourseId" />
     <input type="hidden" asp-for="Booking.CalendarSlotId" />
-    @* <input type="hidden" asp-for="Booking.NumberOfGolfers" /> *@
     <input type="hidden" asp-for="Booking.IsExportInvoice" />
     <input type="hidden" asp-for="Booking.Source" />
     <input type="hidden" asp-for="Booking.IsExportInvoice" />
@@ -26,6 +25,7 @@
     <abp-modal>
         <abp-modal-header title="@L["EditAppBooking"]"></abp-modal-header>
         <abp-modal-body>
+
             <!-- Thông tin tổng quan Booking (read-only) -->
             <div class="row">
                 <div class="col-md-6">
@@ -37,41 +37,68 @@
                         @Model.BookingView.CustomerName (@Model.BookingView.CustomerPhone)
                     </div>
                     <div class="mb-3">
-                        <strong>@L["BookingGolfCourse"]:</strong> @Model.BookingView.GolfCourseName
+                        <strong>@L["AppCustomerTypes"]:</strong> @Model.BookingView.CustomerType
                     </div>
                     <div class="mb-3">
                         <strong>@L["BookingPlayDate"]:</strong> @Model.BookingView.PlayDate.ToString("dd/MM/yyyy")
                     </div>
                     <div class="mb-3">
+                        <strong>@L["BookingPlayTime"]:</strong> @Model.BookingView.TimeFrom?.ToString(@"hh\:mm") - @Model.BookingView.TimeTo?.ToString(@"hh\:mm")
+                    </div>
+                    <div class="mb-3">
                         <strong>@L["IsExportInvoice"]:</strong> @L[@Model.BookingView.IsExportInvoice.ToString()]
                     </div>
                 </div>
+
                 <div class="col-md-6">
                     <div class="mb-3">
                         <strong>@L["NumberHoles"]:</strong> @Model.BookingView.NumberHoles
                     </div>
                     <div class="mb-3">
-                        <strong>@L["Utilities"]:</strong> 
-                        
+                        <strong>@L["Utilities"]:</strong>
+
                         @if (!string.IsNullOrEmpty(Model.Booking.Utilities) && Model.Booking.UtilityDto.Count > 0)
                         {
-                            foreach(var util in Model.Booking.UtilityDto)
+                            foreach (var util in Model.Booking.UtilityDto)
                             {
-                                <div>
-                                    - @L[@util.UtilityName]
-                                </div>
+                                <div>- @L[@util.UtilityName]</div>
                             }
                         }
                     </div>
+                    @if (@Model.BookingView.IsExportInvoice)
+                    {
+                        <div class="mt-3">
+                            <strong>@L["ExportInvoiceInformation"]:</strong>
+                            <div>Tên công ty: @Model.BookingView.CompanyName</div>
+                            <div>Mã số thuế: @Model.BookingView.TaxCode</div>
+                            <div>Địa chỉ: @Model.BookingView.CompanyAddress</div>
+                            <div>Email: @Model.BookingView.InvoiceEmail</div>
+                        </div>
+                    }
                 </div>
             </div>
+
             <hr />
 
             <!-- Khu vực cho Admin cập nhật -->
             <div class="mb-3 d-inline-flex" style="width: 98%; gap: 10px">
                 <div class="col-md-3">
-                    <abp-input asp-for="Booking.NumberOfGolfers" label="@L["BookingNumberOfGolfers"]" class="form-control" />
+                    @* ✅ Hidden numeric thật *@
+                    <input type="hidden" asp-for="Booking.NumberOfGolfers" id="Booking_NumberOfGolfers" />
+
+                    @* ✅ Display text (tránh type=number bị modal-manager select) *@
+                    <label class="form-label" for="Booking_NumberOfGolfers_Display">@L["BookingNumberOfGolfers"]</label>
+                    <input type="text"
+                           id="Booking_NumberOfGolfers_Display"
+                           class="form-control digit-display"
+                           data-target="#Booking_NumberOfGolfers"
+                           data-val="false"
+                           value="@Model.Booking.NumberOfGolfers"
+                           inputmode="numeric"
+                           autocomplete="off"
+                           readonly />
                 </div>
+
                 <div class="col-md-3">
                     <label asp-for="Booking.Status" class="form-label">@L["BookingStatus"]</label>
                     <select asp-for="Booking.Status"
@@ -79,6 +106,8 @@
                             class="form-control">
                     </select>
                 </div>
+
+
                 <div class="col-md-3">
                     <label asp-for="Booking.PaymentMethod" class="form-label">@L["BookingPaymentMethod"]</label>
                     <select asp-for="Booking.PaymentMethod"
@@ -86,12 +115,24 @@
                             class="form-control">
                     </select>
                 </div>
+
                 <div class="col-md-3">
-                    <abp-input asp-for="Booking.TotalAmount" label="@L["TotalAmount"]" class="form-control thousand-separator" />
+                    @* ✅ Hidden numeric thật để binder *@
+                    <input type="hidden" asp-for="Booking.TotalAmount" id="Booking_TotalAmount" />
+
+                    @* ✅ Display input text format VN *@
+                    <label class="form-label" for="Booking_TotalAmount_Display">@L["TotalAmount"]</label>
+                    <input type="text"
+                           id="Booking_TotalAmount_Display"
+                           class="form-control money-display"
+                           data-role="total-amount"
+                           data-target="#Booking_TotalAmount"
+                           data-val="false"
+                           value="@(Model.Booking.TotalAmount.ToString("0"))"
+                           inputmode="numeric"
+                           autocomplete="off" />
                 </div>
-                
             </div>
-        
 
             <hr />
 
@@ -116,33 +157,43 @@
                             <th style="width: 60px" class="text-center">@L["Actions"]</th>
                         </tr>
                     </thead>
+
                     <tbody id="booking-players-body" data-next-index="@Model.Booking.Players.Count">
                         @if (Model.Booking.Players != null && Model.Booking.Players.Count > 0)
                         {
                             for (var i = 0; i < Model.Booking.Players.Count; i++)
                             {
+                                var hidId = $"Booking_Players_{i}__PricePerPlayer";
                                 <tr>
                                     <td>
+                                        <input type="hidden" asp-for="Booking.Players[i].CustomerId" />
+                                        <input class="form-control" type="text" asp-for="Booking.Players[i].PlayerName" />
+                                    </td>
+                                    <td>
+                                        <input class="form-control" asp-for="Booking.Players[i].VgaCode" />
+                                    </td>
+                                    <td>
+                                        @* ✅ Hidden numeric thật *@
                                         <input type="hidden"
-                                               asp-for="Booking.Players[i].CustomerId" />
-                                        <input class="form-control" type="text"
-                                               asp-for="Booking.Players[i].PlayerName" />
+                                               id="@hidId"
+                                               name="Booking.Players[@i].PricePerPlayer"
+                                               value="@(Model.Booking.Players[i].PricePerPlayer.HasValue ? Model.Booking.Players[i].PricePerPlayer.Value.ToString("0") : "")" />
+
+                                        @* ✅ Display money VN *@
+                                        <input type="text"
+                                               class="form-control money-display text-end"
+                                               data-role="player-price"
+                                               data-target="#@hidId"
+                                               data-val="false"
+                                               value="@(Model.Booking.Players[i].PricePerPlayer.HasValue ? Model.Booking.Players[i].PricePerPlayer.Value.ToString("0") : "")"
+                                               inputmode="numeric"
+                                               autocomplete="off" />
                                     </td>
                                     <td>
-                                        <input class="form-control"
-                                               asp-for="Booking.Players[i].VgaCode" />
+                                        <input class="form-control" asp-for="Booking.Players[i].Notes" />
                                     </td>
-                                    <td>
-                                        <abp-input class="form-control thousand-separator"
-                                               asp-for="Booking.Players[i].PricePerPlayer" />
-                                    </td>
-                                    <td>
-                                        <input class="form-control"
-                                               asp-for="Booking.Players[i].Notes" />
-                                    </td> 
                                     <td class="text-center">
-                                        <button type="button"
-                                                class="btn btn-sm btn-outline-danger remove-player">
+                                        <button type="button" class="btn btn-sm btn-outline-danger remove-player">
                                             <i class="fa fa-trash"></i>
                                         </button>
                                     </td>
@@ -152,62 +203,206 @@
                     </tbody>
                 </table>
             </div>
+
         </abp-modal-body>
+
         <abp-modal-footer buttons="@(AbpModalButtons.Cancel | AbpModalButtons.Save)"></abp-modal-footer>
     </abp-modal>
 </form>
+
 <style type="text/css">
     .modal-dialog {
         max-width: 60%;
     }
 </style>
+
 <script>
+    (function () {
+        // ✅ PATCH ngay trong modal (phòng trường hợp chưa dán global-scripts.js)
+        if (window.HTMLInputElement && !HTMLInputElement.prototype.__patchedSetSelectionRangeForNumber) {
+            var _orig = HTMLInputElement.prototype.setSelectionRange;
+            if (typeof _orig === "function") {
+                HTMLInputElement.prototype.__patchedSetSelectionRangeForNumber = true;
+                HTMLInputElement.prototype.setSelectionRange = function (start, end, direction) {
+                    try {
+                        var t = (this.type || "").toLowerCase();
+                        if (t === "number") return;
+                        return _orig.call(this, start, end, direction);
+                    } catch (e) {
+                        var t2 = (this.type || "").toLowerCase();
+                        if (t2 === "number") return;
+                        throw e;
+                    }
+                };
+            }
+        }
+    })();
+
     $(function () {
+        var $form = $('#EditBookingForm');
         var $tbody = $('#booking-players-body');
 
         function getNextIndex() {
-            var current = parseInt($tbody.attr('data-next-index') || '0');
-            return current;
+            return parseInt($tbody.attr('data-next-index') || '0', 10);
         }
-
         function increaseNextIndex() {
-            var current = getNextIndex();
-            $tbody.attr('data-next-index', current + 1);
+            $tbody.attr('data-next-index', getNextIndex() + 1);
         }
 
+        // ===== Money helpers vi-VN =====
+        function normalizeMoney(raw) {
+            if (!raw) return '';
+            return String(raw).replace(/[^\d]/g, '');
+        }
+        function formatMoneyVN(raw) {
+            var n = parseInt(normalizeMoney(raw), 10);
+            if (isNaN(n)) return '';
+            return n.toLocaleString('vi-VN');
+        }
+
+        function normalizeDigits(raw) {
+            if (!raw) return '';
+            return String(raw).replace(/[^\d]/g, '');
+        }
+
+        // Copy display -> hidden
+        function syncDisplayToHidden($display) {
+            var target = $display.attr('data-target');
+            if (!target) return;
+            var $hidden = $form.find(target);
+            if ($hidden.length === 0) return;
+
+            if ($display.hasClass('money-display')) {
+                $hidden.val(normalizeMoney($display.val()));
+            } else if ($display.hasClass('digit-display')) {
+                $hidden.val(normalizeDigits($display.val()));
+            } else {
+                $hidden.val($display.val());
+            }
+        }
+
+        // ===== Auto TotalAmount = sum player prices =====
+        function recalcTotalAmountFromPlayers() {
+            recalcNumberOfGolfersFromPlayers();
+
+            var total = 0;
+
+            $form.find('input.money-display[data-role="player-price"]').each(function () {
+                var $d = $(this);
+                syncDisplayToHidden($d);
+
+                var target = $d.attr('data-target');
+                if (!target) return;
+                var v = $form.find(target).val();
+                var n = parseInt(String(v || '0'), 10);
+                if (!isNaN(n)) total += n;
+            });
+
+            // set to hidden + display
+            $('#Booking_TotalAmount').val(String(total));
+            $('#Booking_TotalAmount_Display').val(formatMoneyVN(String(total)));
+        }
+
+        function recalcNumberOfGolfersFromPlayers() {
+            // đếm số <tr> trong tbody (mỗi dòng là 1 golfer)
+            var cnt = $tbody.find('tr').length;
+
+            // set hidden + display
+            $('#Booking_NumberOfGolfers').val(String(cnt));
+            $('#Booking_NumberOfGolfers_Display').val(String(cnt));
+
+            return cnt;
+        }
+
+        function initMoney(scope) {
+            scope = scope || document;
+
+            $(scope).find('.money-display').each(function () {
+                var el = this;
+
+                // format on load
+                el.value = formatMoneyVN(el.value);
+
+                el.addEventListener('focus', function () {
+                    el.value = normalizeMoney(el.value);
+                    // tránh select on number, nhưng đây là text rồi -> ok
+                    try { el.setSelectionRange(0, el.value.length); } catch (_) { }
+                });
+
+                el.addEventListener('input', function () {
+                    el.value = normalizeMoney(el.value);
+                });
+
+                el.addEventListener('blur', function () {
+                    el.value = formatMoneyVN(el.value);
+
+                    // ✅ nếu là giá golfer thì recalc total
+                    var $this = $(el);
+                    syncDisplayToHidden($this);
+
+                    if ($this.attr('data-role') === 'player-price') {
+                        recalcTotalAmountFromPlayers();
+                    }
+                });
+            });
+        }
+
+        function initDigits(scope) {
+            scope = scope || document;
+
+            $(scope).find('.digit-display').each(function () {
+                var el = this;
+
+                el.addEventListener('focus', function () {
+                    el.value = normalizeDigits(el.value);
+                    try { el.setSelectionRange(0, el.value.length); } catch (_) { }
+                });
+
+                el.addEventListener('input', function () {
+                    el.value = normalizeDigits(el.value);
+                });
+
+                el.addEventListener('blur', function () {
+                    var $this = $(el);
+                    syncDisplayToHidden($this);
+                });
+            });
+        }
+
+        // init existing
+        initMoney($form[0]);
+        initDigits($form[0]);
+
+        // tính lại total ngay khi mở modal (nếu muốn luôn đúng theo list)
+        recalcTotalAmountFromPlayers();
+
+        // Add row
         $('#AddPlayerRow').on('click', function (e) {
             e.preventDefault();
 
             var index = getNextIndex();
+            var hidId = 'Booking_Players_' + index + '__PricePerPlayer';
 
             var rowHtml = ''
                 + '<tr>'
                 + '  <td>'
-                + '    <input type="hidden" '
-                + '           name="Booking.Players[' + index + '].CustomerId" '
-                + '           value="" />'
-                + '    <input class="form-control" '
-                + '           name="Booking.Players[' + index + '].PlayerName" '
-                + '           value="" />'
+                + '    <input type="hidden" name="Booking.Players[' + index + '].CustomerId" value="" />'
+                + '    <input class="form-control" name="Booking.Players[' + index + '].PlayerName" value="" />'
                 + '  </td>'
                 + '  <td>'
-                + '    <input class="form-control" '
-                + '           name="Booking.Players[' + index + '].VgaCode" '
-                + '           value="" />'
+                + '    <input class="form-control" name="Booking.Players[' + index + '].VgaCode" value="" />'
                 + '  </td>'
                 + '  <td>'
-                + '    <input class="form-control" '
-                + '           name="Booking.Players[' + index + '].PricePerPlayer" '
-                + '           value="" />'
+                + '    <input type="hidden" id="' + hidId + '" name="Booking.Players[' + index + '].PricePerPlayer" value="" />'
+                + '    <input type="text" class="form-control money-display text-end" '
+                + '           data-role="player-price" data-target="#' + hidId + '" data-val="false" '
+                + '           value="" inputmode="numeric" autocomplete="off" />'
                 + '  </td>'
                 + '  <td>'
-                + '    <input class="form-control" '
-                + '           name="Booking.Players[' + index + '].Notes" '
-                + '           value="" />'
+                + '    <input class="form-control" name="Booking.Players[' + index + '].Notes" value="" />'
                 + '  </td>'
                 + '  <td class="text-center">'
-                + '    <button type="button" '
-                + '            class="btn btn-sm btn-outline-danger remove-player">'
+                + '    <button type="button" class="btn btn-sm btn-outline-danger remove-player">'
                 + '      <i class="fa fa-trash"></i>'
                 + '    </button>'
                 + '  </td>'
@@ -215,78 +410,27 @@
 
             $tbody.append(rowHtml);
             increaseNextIndex();
-            
+
+            // init money for new row
+            initMoney($tbody[0]);
+
+            // recalc
+            recalcTotalAmountFromPlayers();
         });
 
+        // Remove row
         $tbody.on('click', '.remove-player', function (e) {
             e.preventDefault();
             $(this).closest('tr').remove();
+            recalcTotalAmountFromPlayers();
         });
 
-        function formatNumber(input) {
-            var value = $(input).val().replace(/\./g, '');
-            var num = parseFloat(value);
-            if (!isNaN(num)) {
-                $(input).val(num.toLocaleString('en-US').replace(/,/g, '.'));
-            } else if (value === '') {
-                $(input).val('');
-            }
-        }
-
-        // Áp dụng format cho tất cả thousand-separator hiện tại
-        $('.thousand-separator').each(function () {
-            formatNumber(this);
-
-            $(this).on('input', function () {
-                formatNumber(this);
+        // Submit: sync all display -> hidden
+        $form.on('submit', function () {
+            $form.find('.money-display, .digit-display').each(function () {
+                syncDisplayToHidden($(this));
             });
+            recalcTotalAmountFromPlayers();
         });
-
-        // Clean tất cả dấu chấm TRƯỚC khi submit (để bind decimal đúng)
-        $('#EditBookingForm').on('submit', function () {
-            $('.thousand-separator').each(function () {
-                var value = $(this).val().replace(/\./g, '');
-                $(this).val(value);
-            });
-            // Không preventDefault → để form submit bình thường
-        });
-
     });
-    // document.querySelectorAll('.thousand-separator').forEach(function(input) {
-    //     // Format khi load trang (display)
-    //     if (input.value) {
-    //         let num = parseFloat(input.value);
-    //         if (!isNaN(num)) {
-    //             input.value = num.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 }).replace(/,/g, ',');
-    //         }
-    //     }
-
-    //     // Format khi user nhập (on input)
-    //     input.addEventListener('input', function(e) {
-    //         let value = e.target.value.replace(/\./g, ''); // Xóa dấu chấm cũ
-    //         let num = parseFloat(value);
-    //         if (!isNaN(num)) {
-    //             e.target.value = num.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 }).replace(/,/g, ',');
-    //         } else if (value === '') {
-    //             e.target.value = '';
-    //         }
-    //     });
-
-    //     // Khi submit form, chuyển về dạng số thuần để model binding decimal hoạt động
-    //     input.closest('form').addEventListener('submit', function() {
-    //         //input.value = input.value.replace(/\./g, '');
-    //         debugger;
-    //         var amount = $('#Booking_TotalAmount').val();
-    //         let cleanValue = amount.replace(/\,/g, '');
-    //         if (cleanValue !== '') {
-    //             amount = cleanValue; // tạm thời thành số thuần
-    //             $(this).valid(); // trigger validation lại (nếu dùng unobtrusive)
-    //             // Sau đó format lại để hiển thị đẹp
-    //             let num = parseFloat(cleanValue);
-    //             if (!isNaN(num)) {
-    //                 amount = num.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 }).replace(/,/g, ',');
-    //             }
-    //         }
-    //     });
-    // });
 </script>

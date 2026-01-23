@@ -11,5 +11,8 @@ public class AppCalendarSlotPriceDto : EntityDto<Guid>
     public string CustomerTypeCode { get; set; }
     public string CustomerTypeName { get; set; }
 
-    public decimal Price { get; set; }
+    public decimal? Price9 { get; set; }
+    public decimal Price18 { get; set; }
+    public decimal? Price27 { get; set; }
+    public decimal? Price36 { get; set; }
 }

@@ -1,0 +1,53 @@
+﻿@page
+@using Genora.MultiTenancy.Localization
+@using Genora.MultiTenancy.Web.Pages.AppEmails
+@using Microsoft.Extensions.Localization
+@using Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.TagHelpers.Modal
+@model CreateModalModel
+@inject IStringLocalizer<MultiTenancyResource> L
+
+@{
+    Layout = null;
+}
+
+<form asp-page="/AppEmails/CreateModal" method="post" id="CreateEmailForm">
+    <abp-modal size="ExtraLarge">
+        <abp-modal-header title="@L["NewAppEmail"]"></abp-modal-header>
+        <abp-modal-body>
+
+            <div class="d-inline-flex" style="width: 97%; gap: 15px">
+                <div class="col-md-8">
+                    <abp-input asp-for="Email.Subject" label="@L["Subject"]" placeholder="@L["EmailSubjectPlaceholder"]" />
+                </div>
+                <div class="col-md-4">
+                    <abp-input asp-for="Email.BookingCode" label="@L["BookingCode"]" placeholder="@L["BookingCodePlaceholder"]" />
+                </div>
+            </div>
+
+            <div class="d-inline-flex" style="width: 97%; gap: 15px">
+                <div class="col-md-6">
+                    <abp-input asp-for="Email.ToEmails" label="@L["ToEmails"]" placeholder="@L["EmailToPlaceholder"]" />
+                    <small class="text-muted d-block mt-1">@L["EmailMultiSeparatorHint"]</small>
+                </div>
+                <div class="col-md-3">
+                    <abp-input asp-for="Email.CcEmails" label="@L["CcEmails"]" placeholder="@L["EmailCcPlaceholder"]" />
+                </div>
+                <div class="col-md-3">
+                    <abp-input asp-for="Email.BccEmails" label="@L["BccEmails"]" placeholder="@L["EmailBccPlaceholder"]" />
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">@L["Body"]</label>
+                <textarea asp-for="Email.Body" class="form-control" rows="10" placeholder="@L["EmailBodyPlaceholder"]"></textarea>
+            </div>
+
+            <div class="alert alert-info">
+                <i class="fa fa-info-circle"></i>
+                @L["CreateEmailWillQueueHint"]
+            </div>
+
+        </abp-modal-body>
+        <abp-modal-footer buttons="@(AbpModalButtons.Cancel | AbpModalButtons.Save)"></abp-modal-footer>
+    </abp-modal>
+</form>

@@ -9,9 +9,21 @@
             serverSide: true,
             paging: true,
             order: [[1, "asc"]],
-            searching: false,
+            searching: true,          // ✅ bật search box
             scrollX: true,
-            ajax: abp.libs.datatables.createAjax(service.getList),
+
+            // ✅ gọi method mới + map search.value -> SettingKey
+            ajax: abp.libs.datatables.createAjax(service.getListWithFilter, function (request) {
+                return {
+                    settingKey: request.search?.value || null,
+                    skipCount: request.start,
+                    maxResultCount: request.length,
+                    sorting: request.columns?.[request.order?.[0]?.column]?.data
+                        ? request.columns[request.order[0].column].data + ' ' + request.order[0].dir
+                        : null
+                };
+            }),
+
             columnDefs: [
                 {
                     title: l('Actions'),
@@ -21,9 +33,7 @@
                                 text: l('Edit'),
                                 visible: abp.auth.isGranted('MultiTenancy.AppSettings.Edit') ||
                                     abp.auth.isGranted('MultiTenancy.HostAppSettings.Edit'),
-                                action: function (data) {
-                                    editModal.open({ id: data.record.id });
-                                }
+                                action: function (data) { editModal.open({ id: data.record.id }); }
                             },
                             {
                                 text: l('Delete'),

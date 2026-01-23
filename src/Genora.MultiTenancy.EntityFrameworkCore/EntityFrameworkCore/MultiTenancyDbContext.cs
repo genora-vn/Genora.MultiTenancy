@@ -8,11 +8,13 @@ using Genora.MultiTenancy.DomainModels.AppCalendarSlots;
 using Genora.MultiTenancy.DomainModels.AppCustomerMemberships;
 using Genora.MultiTenancy.DomainModels.AppCustomers;
 using Genora.MultiTenancy.DomainModels.AppCustomerTypes;
+using Genora.MultiTenancy.DomainModels.AppEmails;
 using Genora.MultiTenancy.DomainModels.AppGolfCourses;
 using Genora.MultiTenancy.DomainModels.AppMembershipTiers;
 using Genora.MultiTenancy.DomainModels.AppNews;
 using Genora.MultiTenancy.DomainModels.AppOptionExtend;
 using Genora.MultiTenancy.DomainModels.AppPromotionTypes;
+using Genora.MultiTenancy.DomainModels.AppSpecialDates;
 using Genora.MultiTenancy.DomainModels.AppZaloAuth;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Hosting;
@@ -61,6 +63,8 @@ public class MultiTenancyDbContext :
     public DbSet<BookingStatusHistory> BookingStatusHistory { get; set; }
     public DbSet<ZaloAuth> ZaloAuths { get; set; }
     public DbSet<ZaloLog> ZaloLogs { get; set; }  // nếu có
+    public DbSet<SpecialDate> SpecialDates { get; set; }  // nếu có
+    public DbSet<Email> AppEmails { get; set; }
 
     // Identity
     public DbSet<IdentityUser> Users { get; set; }
@@ -209,6 +213,12 @@ public class MultiTenancyDbContext :
             b.Property(x => x.Utility).HasMaxLength(20).HasColumnName("Ultility");
 
             b.Property(x => x.IsExportInvoice);
+
+            // ✅ Invoice fields (new)
+            b.Property(x => x.CompanyName).HasMaxLength(200);
+            b.Property(x => x.TaxCode).HasMaxLength(50);
+            b.Property(x => x.CompanyAddress).HasMaxLength(500);
+            b.Property(x => x.InvoiceEmail).HasMaxLength(256);
         });
 
         builder.Entity<MembershipTier>(b =>
@@ -241,6 +251,55 @@ public class MultiTenancyDbContext :
              .OnDelete(DeleteBehavior.Restrict);
 
             b.HasIndex(x => new { x.CustomerId, x.IsCurrent });
+        });
+
+        // ===== AppCalendarSlotPrices =====
+        builder.Entity<CalendarSlotPrice>(b =>
+        {
+            b.ToTable("AppCalendarSlotPrices");
+            b.ConfigureByConvention();
+
+            // Price theo số hố
+            b.Property(x => x.Price9).HasColumnType("decimal(18,2)").IsRequired(false);
+            b.Property(x => x.Price18).HasColumnType("decimal(18,2)").IsRequired();     // non-null
+            b.Property(x => x.Price27).HasColumnType("decimal(18,2)").IsRequired(false);
+            b.Property(x => x.Price36).HasColumnType("decimal(18,2)").IsRequired(false);
+
+            // Nếu muốn đảm bảo unique theo (CalendarSlotId, CustomerTypeId)
+            b.HasIndex(x => new { x.CalendarSlotId, x.CustomerTypeId }).IsUnique();
+        });
+
+        // ===== AppSpecialDates =====
+        builder.Entity<SpecialDate>(b =>
+        {
+            b.ToTable("AppSpecialDates");
+            b.ConfigureByConvention();
+
+            b.Property(x => x.Name).IsRequired().HasMaxLength(50);
+            b.Property(x => x.Description).HasMaxLength(500);
+
+            // tránh tạo trùng config (TenantId + GolfCourseId + Name)
+            b.HasIndex(x => new { x.TenantId, x.GolfCourseId, x.Name }).IsUnique();
+        });
+
+        // ===== AppEmails =====
+        builder.Entity<Email>(b =>
+        {
+            b.ConfigureByConvention();
+            b.ToTable("AppEmails");
+
+            b.Property(x => x.TemplateName).IsRequired().HasMaxLength(256);
+            b.Property(x => x.Subject).IsRequired().HasMaxLength(512);
+            b.Property(x => x.ToEmails).IsRequired().HasMaxLength(2048);
+            b.Property(x => x.CcEmails).HasMaxLength(2048);
+            b.Property(x => x.BccEmails).HasMaxLength(2048);
+
+            b.Property(x => x.BookingCode).HasMaxLength(128);
+            b.Property(x => x.LastError).HasMaxLength(4000);
+
+            b.HasIndex(x => new { x.TenantId, x.Status, x.CreationTime });
+            b.HasIndex(x => new { x.TenantId, x.BookingId });
+            b.HasIndex(x => new { x.TenantId, x.BookingCode });
         });
     }
 }

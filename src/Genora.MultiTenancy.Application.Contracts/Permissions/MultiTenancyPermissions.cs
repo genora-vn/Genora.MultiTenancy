@@ -150,12 +150,24 @@ public static class MultiTenancyPermissions
     #endregion
 
     #region Thêm permission cho tính năng quản trị AppZaloAuths, AppZaloLogs
+    public static class AppZaloAuths
+    {
+        public const string Default = GroupName + ".AppZaloAuths";
+        public const string Create = Default + ".Create";
+        public const string Edit = Default + ".Edit";
+        public const string Delete = Default + ".Delete";
+    }
     public static class HostAppZaloAuths
     {
         public const string Default = "MultiTenancy.HostAppZaloAuths";
         public const string Create = Default + ".Create";
         public const string Edit = Default + ".Edit";
         public const string Delete = Default + ".Delete";
+    }
+
+    public static class AppZaloLogs
+    {
+        public const string Default = "MultiTenancy.AppZaloLogs";
     }
 
     public static class HostAppZaloLogs
@@ -179,6 +191,46 @@ public static class MultiTenancyPermissions
         public const string Create = Default + ".Create";
         public const string Edit = Default + ".Edit";
         public const string Delete = Default + ".Delete";
+    }
+    #endregion
+
+    #region Thêm permission cho tính năng quản trị AppSpecialDates
+    public static class AppSpecialDates
+    {
+        public const string Default = GroupName + ".AppSpecialDates";
+        public const string Create = Default + ".Create";
+        public const string Edit = Default + ".Edit";
+        public const string Delete = Default + ".Delete";
+    }
+
+    public static class HostAppSpecialDates
+    {
+        public const string Default = GroupName + ".HostAppSpecialDates";
+        public const string Create = Default + ".Create";
+        public const string Edit = Default + ".Edit";
+        public const string Delete = Default + ".Delete";
+    }
+    #endregion
+
+    #region Thêm permission cho tính năng quản trị AppEmails
+    public static class AppEmails
+    {
+        public const string Default = GroupName + ".AppEmails";
+        public const string Create = Default + ".Create";
+        public const string Edit = Default + ".Edit";
+        public const string Delete = Default + ".Delete";
+        public const string Send = Default + ".Send";
+        public const string Resend = Default + ".Resend";
+    }
+
+    public static class HostAppEmails
+    {
+        public const string Default = GroupName + ".HostAppEmails";
+        public const string Create = Default + ".Create";
+        public const string Edit = Default + ".Edit";
+        public const string Delete = Default + ".Delete";
+        public const string Send = Default + ".Send";
+        public const string Resend = Default + ".Resend";
     }
     #endregion
 

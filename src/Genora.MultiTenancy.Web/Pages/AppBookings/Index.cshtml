@@ -14,7 +14,12 @@
         : await AuthorizationService.IsGrantedAsync(MultiTenancyPermissions.HostAppBookings.Edit);
 }
 
+@section styles {
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
+}
+
 @section scripts {
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <abp-script src="/Pages/AppBookings/index.js" />
     <abp-style src="/Pages/Index.css" />
 }
@@ -66,7 +71,7 @@
         </abp-row>
 
         <abp-row class="mb-3" style="margin-bottom: 0 !important">
-            <abp-column size-md="_4">
+            <abp-column size-md="_3">
                 <div class="mb-3">
                     <label class="form-label" for="BookingFilterText">
                         @L["BookingFilterText"]
@@ -78,14 +83,14 @@
                 </div>
             </abp-column>
 
-            <abp-column size-md="_3">
+            <abp-column size-md="_2">
                 <div class="mb-3">
                     <label class="form-label" for="BookingStatusFilter">
                         @L["BookingStatus"]
                     </label>
                     <select id="BookingStatusFilter" name="BookingStatusFilter" class="form-control">
                         <option value="">-- @L["All"] --</option>
-                        <option value="0">@L["BookingStatus:Pending"]</option>
+                        <option value="0">@L["BookingStatus:Processing"]</option>
                         <option value="1">@L["BookingStatus:Confirmed"]</option>
                         <option value="2">@L["BookingStatus:Paid"]</option>
                         <option value="3">@L["BookingStatus:Completed"]</option>
@@ -95,7 +100,7 @@
                 </div>
             </abp-column>
 
-            <abp-column size-md="_3">
+            <abp-column size-md="_2">
                 <div class="mb-3">
                     <label class="form-label" for="BookingSourceFilter">
                         @L["BookingSource"]
@@ -109,14 +114,33 @@
                 </div>
             </abp-column>
 
-            <abp-column size-md="_2" style="display: flex; align-items: center">
+            <abp-column size-md="_2">
+                <div class="mb-3">
+                    <label class="form-label" for="PlayDateFrom">@L["FromDate"]</label>
+                    <input id="PlayDateFrom"
+                           name="PlayDateFrom"
+                           class="form-control calendar-date-input"
+                           type="text" autocomplete="off" />
+                </div>
+            </abp-column>
+
+            <abp-column size-md="_2">
+                <div class="mb-3">
+                    <label class="form-label" for="PlayDateTo">@L["ToDate"]</label>
+                    <input id="PlayDateTo"
+                           name="PlayDateTo"
+                           class="form-control calendar-date-input"
+                           type="text" autocomplete="off" />
+                </div>
+            </abp-column>
+
+            <abp-column size-md="_1" style="display:flex;align-items:center">
                 <abp-button id="SearchBookingButton"
                             text="@L["Search"]"
                             button-type="Outline_Primary"
                             style="height: 45px"
                             icon="search" />
             </abp-column>
-            
         </abp-row>
     </abp-card-header>
 

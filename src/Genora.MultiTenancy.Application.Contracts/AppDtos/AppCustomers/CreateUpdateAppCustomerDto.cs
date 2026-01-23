@@ -1,13 +1,14 @@
 ﻿using System;
 using System.ComponentModel.DataAnnotations;
+using Volo.Abp.Content;
 
 namespace Genora.MultiTenancy.AppDtos.AppCustomers;
 
 public class CreateUpdateAppCustomerDto
 {
-    [Required]
-    [Phone]
-    [StringLength(20)]
+    [Required(ErrorMessage = "Validation:Required")]
+    [StringLength(20, ErrorMessage = "Validation:StringMax")]
+    [RegularExpression(@"^(?:\+84|0)\d{9,10}$", ErrorMessage = "Validation:PhoneInvalid")]
     public string PhoneNumber { get; set; }
 
     [Required]
@@ -15,7 +16,8 @@ public class CreateUpdateAppCustomerDto
     public string FullName { get; set; }
 
     [StringLength(500)]
-    public string AvatarUrl { get; set; }
+    public string? AvatarUrl { get; set; }
+    public IRemoteStreamContent? AvatarFile { get; set; }
 
     public byte? Gender { get; set; }
 
@@ -29,7 +31,7 @@ public class CreateUpdateAppCustomerDto
     public string CustomerCode { get; set; }
 
     [StringLength(100)]
-    public string ZaloUserId { get; set; }
+    public string? ZaloUserId { get; set; }
 
     public bool IsActive { get; set; } = true;
     public string? VgaCode { get; set; }

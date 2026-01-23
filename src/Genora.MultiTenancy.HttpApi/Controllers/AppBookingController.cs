@@ -26,6 +26,7 @@ public class AppBookingController : AbpController
     [DisableValidation]
     public Task<IRemoteStreamContent> Export([FromQuery] GetBookingListInput input)
     {
+        input.FilterText ??= string.Empty;
         return _service.ExportExcelAsync(input);
     }
 

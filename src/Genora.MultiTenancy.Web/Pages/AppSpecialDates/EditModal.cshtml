@@ -1,0 +1,150 @@
+﻿@page
+@using Genora.MultiTenancy.Localization
+@using Microsoft.Extensions.Localization
+@using Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.TagHelpers.Modal
+@model Genora.MultiTenancy.Web.Pages.AppSpecialDates.EditModalModel
+@inject IStringLocalizer<MultiTenancyResource> L
+@{
+    Layout = null;
+}
+
+<form id="SpecialDateEditForm" abp-model="SpecialDate" asp-page="/AppSpecialDates/EditModal">
+    <abp-modal>
+        <abp-modal-header title="@L["EditSpecialDate"].Value"></abp-modal-header>
+
+        <abp-modal-body>
+            <div class="mb-12 mt-0">
+                <input asp-for="Id" hidden />
+                <input asp-for="SpecialDate.Name" hidden />
+            </div>
+            
+            <div class="mb-3">
+                <label class="form-label">@L["Name"]</label>
+                <input class="form-control"
+                       asp-for="SpecialDate.Name"
+                       id="NameInput"
+                       placeholder="Nhập: Ngày trong tuần / Ngày cuối tuần / Ngày lễ" disabled />
+                <span class="text-danger" asp-validation-for="SpecialDate.Name"></span>
+            </div>
+
+            <abp-input asp-for="SpecialDate.Description" label="@L["Description"]" />
+            <abp-select asp-for="SpecialDate.GolfCourseId"
+                        asp-items="Model.GolfCourseItems"
+                        label="@L["GolfCourse"]">
+            </abp-select>
+
+            <div class="mb-3" id="DatesBlock" style="display:none">
+                <label class="form-label">@L["Dates"]</label>
+                <textarea class="form-control" id="DatesTextarea" rows="8"
+                          placeholder="Mỗi dòng 1 ngày. Ví dụ:
+01/01/2026
+29/01/2026
+30/01/2026"></textarea>
+                <small class="text-muted">Chỉ áp dụng khi Name = "Ngày lễ".</small>
+            </div>
+            <abp-input asp-for="SpecialDate.IsActive" label="@L["IsActive"]" />
+
+        </abp-modal-body>
+
+        <abp-modal-footer buttons="@(AbpModalButtons.Cancel | AbpModalButtons.Save)"></abp-modal-footer>
+    </abp-modal>
+</form>
+
+<script>
+    (function () {
+        var form = document.getElementById('SpecialDateEditForm');
+        var nameInput = document.getElementById('NameInput');
+        var datesBlock = document.getElementById('DatesBlock');
+        var datesTextarea = document.getElementById('DatesTextarea');
+
+        function normalizeName(x) {
+            x = (x || '').trim();
+            // chuẩn hóa đúng 3 giá trị
+            if (x.toLowerCase() === 'ngày trong tuần') return 'Ngày trong tuần';
+            if (x.toLowerCase() === 'ngày cuối tuần') return 'Ngày cuối tuần';
+            if (x.toLowerCase() === 'ngày lễ' || x.toLowerCase() === 'ngay le') return 'Ngày lễ';
+            return x;
+        }
+
+        function toggleDates() {
+            var name = normalizeName(nameInput.value);
+            datesBlock.style.display = (name === 'Ngày lễ') ? 'block' : 'none';
+        }
+
+        function toDdMMyyyy(dateStr) {
+            // dateStr có thể là ISO hoặc string DateTime từ server
+            var d = new Date(dateStr);
+            if (isNaN(d.getTime())) return null;
+            var dd = String(d.getDate()).padStart(2, '0');
+            var mm = String(d.getMonth() + 1).padStart(2, '0');
+            var yy = d.getFullYear();
+            return dd + '/' + mm + '/' + yy;
+        }
+
+        function parseDdMMyyyy(s) {
+            s = (s || '').trim();
+            if (!s) return null;
+
+            var m = s.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+            if (!m) return null;
+
+            var dd = parseInt(m[1], 10);
+            var mm = parseInt(m[2], 10);
+            var yy = parseInt(m[3], 10);
+
+            var d = new Date(yy, mm - 1, dd);
+            if (d.getFullYear() !== yy || (d.getMonth() + 1) !== mm || d.getDate() !== dd) return null;
+
+            return yy + '-' + String(mm).padStart(2, '0') + '-' + String(dd).padStart(2, '0'); // ISO date-only
+        }
+
+        function fillDatesFromModel() {
+            var dates = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(
+                                Model.SpecialDate?.Dates ?? new System.Collections.Generic.List<System.DateTime>()
+                        ));
+
+            if (!dates || !dates.length) return;
+
+            var lines = dates.map(function (x) { return toDdMMyyyy(x); }).filter(Boolean);
+            datesTextarea.value = lines.join('\n');
+        }
+
+        // INIT
+        nameInput.value = normalizeName(nameInput.value);
+        toggleDates();
+        fillDatesFromModel();
+
+        nameInput.addEventListener('input', function () {
+            nameInput.value = normalizeName(nameInput.value);
+            toggleDates();
+        });
+
+        // BEFORE SUBMIT: build SpecialDate.Dates[] hidden inputs
+        form.addEventListener('submit', function (e) {
+            // remove old dynamic inputs
+            var old = form.querySelectorAll('input[name="SpecialDate.Dates"]');
+            old.forEach(function (x) { x.remove(); });
+
+            var name = normalizeName(nameInput.value);
+            if (name !== 'Ngày lễ') return;
+
+            var text = datesTextarea.value || '';
+            var lines = text.split(/\r?\n/).map(function (x) { return x.trim(); }).filter(Boolean);
+
+            for (var i = 0; i < lines.length; i++) {
+                var iso = parseDdMMyyyy(lines[i]);
+                if (!iso) {
+                    if (window.abp?.notify?.error) abp.notify.error("Ngày không hợp lệ ở dòng " + (i + 1) + ": " + lines[i]);
+                    e.preventDefault();
+                    return;
+                }
+
+                var inp = document.createElement('input');
+                inp.type = 'hidden';
+                inp.name = 'SpecialDate.Dates';
+                inp.value = iso;
+                form.appendChild(inp);
+            }
+        });
+    })();
+</script>

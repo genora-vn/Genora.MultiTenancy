@@ -1,21 +1,21 @@
 ﻿using Genora.MultiTenancy.AppDtos.AppZaloAuths;
 using Genora.MultiTenancy.AppDtos.ZaloAuths;
 using Genora.MultiTenancy.DomainModels.AppZaloAuth;
+using Genora.MultiTenancy.Features.AppZaloLogs;
 using Genora.MultiTenancy.Permissions;
 using Microsoft.AspNetCore.Authorization;
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Dynamic.Core;
 using System.Threading.Tasks;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Application.Services;
+using Volo.Abp.Authorization;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.MultiTenancy;
 
 namespace Genora.MultiTenancy.AppServices.AppZaloAuths;
 
-[Authorize(MultiTenancyPermissions.HostAppZaloLogs.Default)]
 public class AppZaloLogAppService : ApplicationService, IAppZaloLogAppService
 {
     private readonly IRepository<ZaloLog, Guid> _repo;
@@ -27,13 +27,34 @@ public class AppZaloLogAppService : ApplicationService, IAppZaloLogAppService
         _currentTenant = currentTenant;
     }
 
+    private async Task CheckViewPolicyAsync()
+    {
+        if (_currentTenant.IsAvailable)
+        {
+            await AuthorizationService.CheckAsync(MultiTenancyPermissions.AppZaloLogs.Default);
+        }
+        else
+        {
+            await AuthorizationService.CheckAsync(MultiTenancyPermissions.HostAppZaloLogs.Default);
+        }
+    }
+
+    private Guid? GetScopeTenantId()
+        => _currentTenant.IsAvailable ? _currentTenant.Id : null;
+
     public async Task<PagedResultDto<AppZaloLogDto>> GetListAsync(GetZaloLogListInput input)
     {
-        using (_currentTenant.Change(null))
+        await CheckViewPolicyAsync();
+
+        var scopeTenantId = GetScopeTenantId();
+
+        using (_currentTenant.Change(scopeTenantId))
         {
             var query = await _repo.GetQueryableAsync();
 
-            query = query.Where(x => x.TenantId == null);
+            // ✅ Tenant: TenantId == tenant
+            // ✅ Host: TenantId == null
+            query = query.Where(x => x.TenantId == scopeTenantId);
 
             if (!string.IsNullOrWhiteSpace(input.LogAction))
                 query = query.Where(x => x.Action == input.LogAction);
@@ -42,9 +63,7 @@ public class AppZaloLogAppService : ApplicationService, IAppZaloLogAppService
                 query = query.Where(x => x.HttpStatus == input.HttpStatus.Value);
 
             if (input.From.HasValue)
-            {
                 query = query.Where(x => x.CreationTime >= input.From.Value);
-            }
 
             if (input.To.HasValue)
             {
@@ -79,9 +98,17 @@ public class AppZaloLogAppService : ApplicationService, IAppZaloLogAppService
 
     public async Task<AppZaloLogDto> GetAsync(Guid id)
     {
-        using (_currentTenant.Change(null))
+        await CheckViewPolicyAsync();
+
+        var scopeTenantId = GetScopeTenantId();
+
+        using (_currentTenant.Change(scopeTenantId))
         {
             var entity = await _repo.GetAsync(id);
+
+            if (entity.TenantId != scopeTenantId)
+                throw new AbpAuthorizationException("Not allowed.");
+
             return ObjectMapper.Map<ZaloLog, AppZaloLogDto>(entity);
         }
     }

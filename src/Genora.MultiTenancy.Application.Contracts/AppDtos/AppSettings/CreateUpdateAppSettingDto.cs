@@ -10,6 +10,7 @@ public class CreateUpdateAppSettingDto
     [StringLength(100)]
     public string SettingKey { get; set; }
 
+    [Required]
     public string? SettingValue { get; set; }
 
     [Required]

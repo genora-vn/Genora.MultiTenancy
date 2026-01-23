@@ -7,6 +7,7 @@ using Genora.MultiTenancy.AppDtos.AppGolfCourses;
 using Genora.MultiTenancy.AppDtos.AppMembershipTiers;
 using Genora.MultiTenancy.AppDtos.AppNews;
 using Genora.MultiTenancy.AppDtos.AppSettings;
+using Genora.MultiTenancy.AppDtos.AppSpecialDates;
 using Genora.MultiTenancy.AppDtos.ZaloAuths;
 
 namespace Genora.MultiTenancy.Web;
@@ -26,6 +27,7 @@ public class MultiTenancyWebAutoMapperProfile : Profile
         CreateMap<AppBookingDto, CreateUpdateAppBookingDto>();
 
         CreateMap<AppZaloAuthDto, CreateUpdateZaloAuthDto>();
+        CreateMap<SpecialDateDto, CreateUpdateSpecialDateDto>().ReverseMap();
         //Define your object mappings here, for the Web project
     }
 }

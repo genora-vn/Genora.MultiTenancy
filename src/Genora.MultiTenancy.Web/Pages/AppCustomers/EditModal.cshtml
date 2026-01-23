@@ -10,78 +10,151 @@
     var dobText = Model.Customer?.DateOfBirth.HasValue == true
         ? Model.Customer.DateOfBirth.Value.ToString("dd/MM/yyyy")
         : string.Empty;
+
+    var avatarSrc = !string.IsNullOrWhiteSpace(Model.Customer?.AvatarUrl)
+        ? Model.Customer.AvatarUrl
+        : "images\\getting-started\\no-photo-square.png";
 }
-<form asp-page="/AppCustomers/EditModal" method="post" id="EditCustomerForm">
+
+<form asp-page="/AppCustomers/EditModal" method="post" id="EditCustomerForm" enctype="multipart/form-data">
     <abp-modal>
         <abp-modal-header title="@L["EditAppCustomer"]"></abp-modal-header>
         <abp-modal-body>
             <input type="hidden" asp-for="Id" />
-            <input asp-for="Customer.CustomerCode" hidden />
-            <div class="row">
-                <div class="col-md-4">
-                    <abp-input asp-for="Customer.CustomerCode" label="@L["CustomerCode"]" disabled />
+            <input type="hidden" asp-for="Customer.CustomerCode" />
+
+            <div class="row g-3">
+                <div class="col-md-3">
+                    <abp-input asp-for="Customer.CustomerCode"
+                               label="@L["CustomerCode"]"
+                               readonly="true"
+                               class="readonly-gray" />
                 </div>
                 <div class="col-md-4">
-                    <abp-input asp-for="Customer.FullName" label="@L["CustomerFullName"]" />
+                    <abp-input asp-for="Customer.FullName" label="@L["CustomerFullName"]" placeholder="Nguyễn Văn A" />
                 </div>
-                <div class="col-md-4">
-                    <abp-input asp-for="Customer.PhoneNumber" label="@L["CustomerPhoneNumber"]" />
+                <div class="col-md-2">
+                    <label asp-for="Customer.DateOfBirth" class="form-label">@L["DateOfBirth"]</label>
+                    <input asp-for="Customer.DateOfBirth"
+                           type="text"
+                           class="form-control dob-input"
+                           value="@dobText"
+                           placeholder="01/01/1980"
+                           autocomplete="off" />
                 </div>
-            </div>
-            <div class="row">
-                <div class="col-md-4">
-                    <abp-input asp-for="Customer.DateOfBirth"
-                               label="@L["DateOfBirth"]"
-                               type="text"
-                               value="@dobText"
-                               autocomplete="off"
-                               class="dob-input" />
-                </div>
-                <div class="col-md-4">
-                    <abp-select asp-for="Customer.CustomerTypeId"
-                                asp-items="Model.CustomerTypeItems"
-                                label="@L["CustomerType"]" />
-                </div>
-                <div class="col-md-4">
+                <div class="col-md-3">
                     <abp-select asp-for="Customer.Gender"
                                 asp-items="Model.GenderItems"
                                 label="@L["Gender"]" />
                 </div>
             </div>
-            <div class="row">
-                <div class="col-md-4">
-                    <abp-input asp-for="Customer.VgaCode"
-                               label="@L["VgaCode"]"
-                               type="text" />
+
+            <div class="row g-3">
+                <div class="col-md-2">
+                    <abp-input asp-for="Customer.PhoneNumber" label="@L["CustomerPhoneNumber"]" placeholder="0912345678" />
                 </div>
                 <div class="col-md-4">
-                    <abp-input asp-for="Customer.Address"
-                               label="@L["Address"]" type="text" />
+                    <abp-input asp-for="Customer.Email" label="@L["Email"]" placeholder="abc@xyz.com" />
                 </div>
                 <div class="col-md-4">
-                    <abp-input asp-for="Customer.Email" label="@L["Email"]" />
+                    <abp-input asp-for="Customer.Address" label="@L["Address"]" type="text" placeholder="Đường A, phường B, thành phố D,..." />
+                </div>
+                <div class="col-md-2">
+                    <abp-input asp-for="Customer.VgaCode" label="@L["VgaCode"]" type="text" placeholder="ABC12345" />
                 </div>
             </div>
-            <div class="row">
-                <div class="col-md-6">
+
+            <div class="row g-3">
+
+
+                <div class="col-md-4">
+                    <abp-select asp-for="Customer.CustomerTypeId"
+                                asp-items="Model.CustomerTypeItems"
+                                label="@L["CustomerType"]" />
+                </div>
+                <div class="col-md-2">
+                    <abp-input asp-for="Customer.ZaloUserId" label="@L["ZaloUserId"]" placeholder="1234567890" />
+                </div>
+
+                <div class="col-md-4">
+                    <div class="form-check mt-4 pt-1">
+                        <input class="form-check-input js-isfollower"
+                               type="checkbox"
+                               id="IsFollower"
+                               name="Customer.IsFollower"
+                               value="true"
+                               @(Model.Customer?.IsFollower == true ? "checked" : "") />
+
+                        <label class="form-check-label js-isfollower-label"
+                               for="IsFollower"
+                               data-on="Đã quan tâm Zalo OA"
+                               data-off="Chưa quan tâm Zalo OA"></label>
+
+                        <input type="hidden" name="Customer.IsFollower" value="false" />
+                    </div>
+                </div>
+
+                <div class="col-md-2">
+                    <div class="mt-4 pt-1">
+                        <abp-input asp-for="Customer.IsActive" />
+                    </div>
+                </div>
+            </div>
+
+            @* ===== Avatar Upload (15MB) ===== *@
+            <div class="row g-3">
+                <div class="col-md-12">
+                    <div class="avatar-upload-wrapper">
+                        <label class="form-label mb-1">@L["Avatar"] (chọn ảnh)</label>
+                        <small class="text-muted d-block mb-2">
+                            Tối đa <span class="maxAvatarSizeLabel"></span>/ảnh. Định dạng: JPG/PNG/WebP.
+                        </small>
+
+                        <div class="avatar-area">
+                            <div class="avatar-drop-zone js-avatar-drop" id="avatarDropZone">
+                                <div class="avatar-drop-text">
+                                    <div class="fw-semibold">Kéo thả ảnh vào đây hoặc click để chọn</div>
+                                    <div class="text-muted small">Ảnh mới sẽ ghi đè ảnh cũ</div>
+                                </div>
+                                <input asp-for="Customer.AvatarFile"
+                                       type="file"
+                                       class="js-avatar-file"
+                                       id="avatarFile"
+                                       accept="image/*"
+                                       style="display:none;" />
+                            </div>
+
+                            <div class="avatar-preview">
+                                <div class="preview-box js-avatar-previewbox @(avatarSrc.Contains("no-photo-square") ? "" : "has-image")">
+                                    <img class="preview-img js-avatar-preview"
+                                         id="avatarPreviewImg"
+                                         src="@avatarSrc"
+                                         alt="avatar" />
+                                    <button type="button"
+                                            class="btn-remove-avatar js-avatar-remove"
+                                            id="removeAvatarBtn"
+                                            title="Remove">
+                                        ×
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row g-3">
+                <div class="col-md-8">
+                    <abp-input asp-for="Customer.AvatarUrl" label="@L["AvatarUrl"] (hoặc dán URL)" type="text" placeholder="URL ảnh đại diện" />
+                </div>
+                <div class="col-md-2">
                     <abp-input asp-for="Customer.MembershipTierName"
                                label="@L["MembershipTier"]"
-                               type="text" readonly="true"/>
+                               type="text" readonly="true" class="readonly-gray" />
                 </div>
-                <div class="col-md-6">
+                <div class="col-md-2">
                     <abp-input asp-for="Customer.BonusPoint"
-                               label="@L["BonusPoint"]" type="number" readonly="true"/>
-                </div>
-            </div>
-            <abp-input asp-for="Customer.AvatarUrl" />
-
-            <abp-input asp-for="Customer.ZaloUserId" label="@L["ZaloUserId"]" />
-            <div class="row">
-                <div class="col-md-6">
-                    <abp-input asp-for="Customer.IsActive" />
-                </div>
-                <div class="col-md-6">
-                    <abp-input asp-for="Customer.IsFollower" disabled/>
+                               label="@L["BonusPoint"]"
+                               type="number" readonly="true" class="readonly-gray" />
                 </div>
             </div>
         </abp-modal-body>
@@ -89,10 +162,222 @@
     </abp-modal>
 </form>
 
-@* ❌ XÓA script flatpickr trong file này *@
 <style type="text/css">
     .modal-dialog {
-        max-width: 50%;
+        max-width: 55%;
     }
 
+    /* IsFollower label auto text (NO JS) */
+    .js-isfollower-label::after {
+        content: attr(data-off);
+    }
+
+    .js-isfollower:checked + .js-isfollower-label::after {
+        content: attr(data-on);
+    }
+
+    .readonly-gray input[readonly] {
+        background: #e0e0e0 !important;
+        color: #555 !important;
+        font-weight: 600;
+        cursor: not-allowed;
+    }
+
+    .avatar-upload-wrapper {
+        margin-top: 6px;
+    }
+
+    .avatar-area {
+        display: grid;
+        grid-template-columns: 1.4fr .6fr;
+        gap: 14px;
+        align-items: start;
+        margin-bottom: 12px;
+    }
+
+        .avatar-area .avatar-preview {
+            display: flex;
+            justify-content: center;
+        }
+
+    .avatar-drop-zone {
+        border: 2px dashed #cfcfcf;
+        border-radius: 10px;
+        padding: 16px;
+        background: #fafafa;
+        cursor: pointer;
+        transition: all .2s ease;
+        min-height: 110px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+    }
+
+        .avatar-drop-zone:hover {
+            border-color: #999;
+            background: #f6f6f6;
+        }
+
+        .avatar-drop-zone.drag-over {
+            border-color: #0d6efd;
+            background: #eef6ff;
+        }
+
+    .preview-box {
+        position: relative;
+        border: 1px solid #e6e6e6;
+        border-radius: 10px;
+        overflow: hidden;
+        background: #fff;
+        box-shadow: 0 2px 8px rgba(0,0,0,.06);
+        width: 100%;
+        max-width: max-content;
+        max-height: 8em;
+        aspect-ratio: 1/1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .preview-img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .btn-remove-avatar {
+        position: absolute;
+        top: 6px;
+        right: 6px;
+        width: 28px;
+        height: 28px;
+        border-radius: 999px;
+        border: none;
+        background: rgba(220,53,69,.9);
+        color: #fff;
+        font-size: 18px;
+        line-height: 28px;
+        cursor: pointer;
+        display: none;
+    }
+
+    .preview-box.has-image .btn-remove-avatar {
+        display: block;
+    }
 </style>
+
+@* ✅ Script upload dùng chung (guard 1 lần) — có thể copy y hệt create *@
+<script>
+    (function () {
+        if (window.__appCustomerAvatarInit === true) return;
+        window.__appCustomerAvatarInit = true;
+
+        const MAX_FILE_MB = 15;
+        const MAX_FILE_BYTES = MAX_FILE_MB * 1024 * 1024;
+        const PLACEHOLDER = 'images\\getting-started\\no-photo-square.png';
+
+        function notifyWarn(msg) {
+            if (window.abp?.notify?.warn) abp.notify.warn(msg);
+            else alert(msg);
+        }
+
+        function getWrap(el) {
+            return el?.closest?.('.avatar-upload-wrapper');
+        }
+
+        function setPreview(wrap, src, hasImage) {
+            const img = wrap?.querySelector('.js-avatar-preview');
+            const box = wrap?.querySelector('.js-avatar-previewbox');
+            if (img) img.src = src;
+            if (box) box.classList.toggle('has-image', !!hasImage);
+        }
+
+        function clearAvatar(wrap) {
+            const input = wrap?.querySelector('.js-avatar-file');
+            if (input) input.value = '';
+            setPreview(wrap, PLACEHOLDER, false);
+        }
+
+        function handleFile(wrap, file) {
+            if (!file || !file.type || !file.type.startsWith('image/')) return;
+
+            if (file.size > MAX_FILE_BYTES) {
+                const mb = (file.size / (1024 * 1024)).toFixed(2);
+                notifyWarn(`"${file.name}" (${mb}MB) vượt quá ${MAX_FILE_MB}MB. Vui lòng chọn ảnh nhỏ hơn.`);
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = (e) => setPreview(wrap, e.target.result, true);
+            reader.readAsDataURL(file);
+        }
+
+        document.addEventListener('shown.bs.modal', function (e) {
+            const modal = e.target;
+            modal.querySelectorAll('.maxAvatarSizeLabel').forEach(x => x.textContent = `${MAX_FILE_MB}MB`);
+
+            modal.querySelectorAll('.avatar-upload-wrapper').forEach(wrap => {
+                const img = wrap.querySelector('.js-avatar-preview');
+                const box = wrap.querySelector('.js-avatar-previewbox');
+                if (!img || !box) return;
+                const src = img.getAttribute('src') || '';
+                if (src && !src.includes('no-photo-square')) box.classList.add('has-image');
+            });
+        });
+
+        document.addEventListener('click', function (e) {
+            const dz = e.target.closest?.('.js-avatar-drop');
+            if (!dz) return;
+            const wrap = getWrap(dz);
+            const input = wrap?.querySelector('.js-avatar-file');
+            if (input) input.click();
+        });
+
+        document.addEventListener('change', function (e) {
+            const input = e.target;
+            if (!input || !input.classList?.contains('js-avatar-file')) return;
+            const wrap = getWrap(input);
+            const file = input.files?.[0];
+            if (wrap && file) handleFile(wrap, file);
+        });
+
+        document.addEventListener('click', function (e) {
+            const btn = e.target.closest?.('.js-avatar-remove');
+            if (!btn) return;
+            const wrap = getWrap(btn);
+            if (wrap) clearAvatar(wrap);
+        });
+
+        document.addEventListener('dragover', function (e) {
+            const dz = e.target.closest?.('.js-avatar-drop');
+            if (!dz) return;
+            e.preventDefault();
+            dz.classList.add('drag-over');
+        });
+
+        document.addEventListener('dragleave', function (e) {
+            const dz = e.target.closest?.('.js-avatar-drop');
+            if (!dz) return;
+            dz.classList.remove('drag-over');
+        });
+
+        document.addEventListener('drop', function (e) {
+            const dz = e.target.closest?.('.js-avatar-drop');
+            if (!dz) return;
+            e.preventDefault();
+            dz.classList.remove('drag-over');
+
+            const wrap = getWrap(dz);
+            const input = wrap?.querySelector('.js-avatar-file');
+            const file = e.dataTransfer?.files?.[0];
+            if (!wrap || !input || !file) return;
+
+            const dt = new DataTransfer();
+            dt.items.add(file);
+            input.files = dt.files;
+
+            handleFile(wrap, file);
+        });
+    })();
+</script>

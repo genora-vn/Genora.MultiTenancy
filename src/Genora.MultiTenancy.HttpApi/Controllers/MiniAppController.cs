@@ -63,7 +63,7 @@ public class MiniAppController : MultiTenancyController
     }
 
     [HttpPost("create-booking")]
-    [AllowAnonymous] // tạm: sẽ thay bằng custom auth sau
+    [AllowAnonymous]
     public Task<MiniAppBookingDetailDto> CreateBookingAsync([FromBody] MiniAppCreateBookingDto input)
         => _miniBooking.CreateFromMiniAppAsync(input);
 

@@ -30,6 +30,7 @@ public class AppBookingDto : FullAuditedEntityDto<Guid>
     public string BookingCode { get; set; }
 
     public Guid CustomerId { get; set; }
+    public string CustomerType { get; set; }
     public string CustomerName { get; set; }
     public string CustomerPhone { get; set; }
 
@@ -39,6 +40,9 @@ public class AppBookingDto : FullAuditedEntityDto<Guid>
     public Guid? CalendarSlotId { get; set; }
 
     public DateTime PlayDate { get; set; }
+
+    public TimeSpan? TimeFrom { get; set; }
+    public TimeSpan? TimeTo { get; set; }
 
     public int NumberOfGolfers { get; set; }
 
@@ -53,6 +57,11 @@ public class AppBookingDto : FullAuditedEntityDto<Guid>
     public BookingSource Source { get; set; }
     public string VNDayOfWeek { get; set; }
     public List<AppBookingPlayerDto> Players { get; set; } = new();
+
+    public string? CompanyName { get; set; }
+    public string? TaxCode { get; set; }
+    public string? CompanyAddress { get; set; }
+    public string? InvoiceEmail { get; set; }
     public List<GolfCourseUtilityDto>? UtilityDto => string.IsNullOrEmpty(Utilities) ? new List<GolfCourseUtilityDto>() : Utilities.Split(",").Select(u => new GolfCourseUtilityDto
     {
         UtilityId = int.Parse(u),

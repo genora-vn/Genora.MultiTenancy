@@ -1,115 +1,192 @@
-﻿
-using ClosedXML.Excel;
+﻿using ClosedXML.Excel;
 using Genora.MultiTenancy.DomainModels.AppCustomerTypes;
-using Genora.MultiTenancy.DomainModels.AppMembershipTiers;
-using Genora.MultiTenancy.Enums;
+using Genora.MultiTenancy.DomainModels.AppPromotionTypes;
+using Genora.MultiTenancy.DomainModels.AppSpecialDates;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Volo.Abp.Content;
 using Volo.Abp.DependencyInjection;
-using Volo.Abp.Domain.Repositories;
 
 namespace Genora.MultiTenancy.AppServices.AppCalendarSlots
 {
     public class AppCalendarExcelTemplateGenerator : ITransientDependency
     {
-        
-        public IRemoteStreamContent GenerateTemplate(List<CustomerType> customerTypes, List<DomainModels.AppPromotionTypes.PromotionType> promotions)
+        public IRemoteStreamContent GenerateTemplate(
+            List<CustomerType> customerTypes,
+            List<PromotionType> promotions,
+            List<SpecialDate> specialDates)
         {
             using var workbook = new XLWorkbook();
             var ws = workbook.Worksheets.Add("Danh sách booking");
+            var lookup = workbook.Worksheets.Add("Lookup");
+            lookup.Visibility = XLWorksheetVisibility.VeryHidden;
 
-            // ===== TIÊU ĐỀ =====
-            
-            ws.Cell(1, 1).Value = "Mã sân golf";
-            ws.Column(1).Width = 15;
-            ws.Range(ws.Cell(1, 1).Address, ws.Cell(2, 1).Address).Merge();
-            
-            ws.Cell(1, 2).Value = "Ngày bắt đầu(*)";
-            ws.Range(ws.Cell(1, 2).Address, ws.Cell(2, 2).Address).Merge();
-            ws.Cell(1, 3).Value = "Ngày kết thúc(*)";
-            ws.Range(ws.Cell(1, 3).Address, ws.Cell(2, 3).Address).Merge();
-            ws.Cell(1, 4).Value = "Giờ bắt đầu (*)";
-            ws.Range(ws.Cell(1, 4).Address, ws.Cell(2, 4).Address).Merge();
-            ws.Cell(1, 5).Value = "Giờ kết thúc";
-            ws.Range(ws.Cell(1, 5).Address, ws.Cell(2, 5).Address).Merge();
-            ws.Cell(1, 6).Value = "Loại ưu đãi (*)";
-            ws.Range(ws.Cell(1, 6).Address, ws.Cell(2, 6).Address).Merge();
-            ws.Cell(1, 7).Value = "Số slot tối đa";
-            ws.Range(ws.Cell(1, 7).Address, ws.Cell(2, 7).Address).Merge();
-            ws.Cell(1, 8).Value = "Ghi chú";
-            ws.Range(ws.Cell(1, 8).Address, ws.Cell(2, 8).Address).Merge();
-            ws.Cell(1, 9).Value = "Gap (Tần suất)";
-            ws.Range(ws.Cell(1, 9).Address, ws.Cell(2, 9).Address).Merge();
+            // ====== CONFIG ======
+            const int headerTopRow = 1;
+            const int headerBottomRow = 3;
+            const int hintRow = 4;
+            const int dataStartRow = 5;
 
+            // A..J
+            const int colGolfCode = 1;
+            const int colDayType = 2;
+            const int colFromDate = 3;
+            const int colToDate = 4;
+            const int colStartTime = 5;
+            const int colEndTime = 6;
+            const int colPromotion = 7;
+            const int colMaxSlots = 8;
+            const int colNote = 9;
+            const int colGap = 10;
 
-            var totalCustomerTypes = customerTypes.Count;
-            ws.Range(ws.Cell(1,10).Address, ws.Cell(1, 10 + totalCustomerTypes-1).Address).Merge();
-            ws.Cell(1, 10).Value = "Bảng giá";
-            var index = 0;
-            for (var i = 10; i < (10 + totalCustomerTypes); i++)
+            int priceStartCol = 11;
+
+            // ====== HEADER fixed (merge 3 rows) ======
+            ws.Cell(headerTopRow, colGolfCode).Value = "Mã sân golf";
+            ws.Cell(headerTopRow, colDayType).Value = "Loại ngày (*)";
+            ws.Cell(headerTopRow, colFromDate).Value = "Ngày bắt đầu(*)";
+            ws.Cell(headerTopRow, colToDate).Value = "Ngày kết thúc(*)";
+            ws.Cell(headerTopRow, colStartTime).Value = "Giờ bắt đầu (*)";
+            ws.Cell(headerTopRow, colEndTime).Value = "Giờ kết thúc";
+            ws.Cell(headerTopRow, colPromotion).Value = "Loại ưu đãi (*)";
+            ws.Cell(headerTopRow, colMaxSlots).Value = "Số slot tối đa";
+            ws.Cell(headerTopRow, colNote).Value = "Ghi chú";
+            ws.Cell(headerTopRow, colGap).Value = "Gap (Tần suất)";
+
+            for (int c = colGolfCode; c <= colGap; c++)
+                ws.Range(headerTopRow, c, headerBottomRow, c).Merge();
+
+            // widths
+            ws.Column(colGolfCode).Width = 15;
+            ws.Column(colDayType).Width = 20;
+            ws.Column(colFromDate).Width = 16;
+            ws.Column(colToDate).Width = 16;
+            ws.Column(colStartTime).Width = 14;
+            ws.Column(colEndTime).Width = 14;
+            ws.Column(colPromotion).Width = 18;
+            ws.Column(colMaxSlots).Width = 14;
+            ws.Column(colNote).Width = 22;
+            ws.Column(colGap).Width = 14;
+
+            // ====== PRICE HEADER ======
+            var totalCustomerTypes = customerTypes?.Count ?? 0;
+            var priceEndCol = (totalCustomerTypes > 0)
+                ? priceStartCol + (totalCustomerTypes * 4) - 1
+                : colGap;
+
+            if (totalCustomerTypes > 0)
             {
-                ws.Cell(2, i).Value = $"Giá {customerTypes[index].Name}";
-                ws.Cell(3, i).Value = $"Giá áp dụng cho {customerTypes[index].Name}";
-                index++;
+                ws.Range(headerTopRow, priceStartCol, headerTopRow, priceEndCol).Merge();
+                ws.Cell(headerTopRow, priceStartCol).Value = "Bảng giá";
+
+                for (int i = 0; i < totalCustomerTypes; i++)
+                {
+                    int groupStart = priceStartCol + (i * 4);
+                    int groupEnd = groupStart + 3;
+
+                    ws.Range(2, groupStart, 2, groupEnd).Merge();
+                    ws.Cell(2, groupStart).Value = customerTypes[i].Name;
+
+                    ws.Cell(3, groupStart + 0).Value = "Giá 9 hố";
+                    ws.Cell(3, groupStart + 1).Value = "Giá 18 hố (*)";
+                    ws.Cell(3, groupStart + 2).Value = "Giá 27 hố";
+                    ws.Cell(3, groupStart + 3).Value = "Giá 36 hố";
+
+                    ws.Column(groupStart + 0).Width = 14;
+                    ws.Column(groupStart + 1).Width = 14;
+                    ws.Column(groupStart + 2).Width = 14;
+                    ws.Column(groupStart + 3).Width = 14;
+                }
             }
-            ws.Range(ws.Cell(1, 1).Address, ws.Cell(2, 9 + totalCustomerTypes).Address).Style.Border.OutsideBorder = XLBorderStyleValues.Thin;
-            ws.Range(ws.Cell(1, 1).Address, ws.Cell(2, 9 + totalCustomerTypes).Address).Style.Border.InsideBorder = XLBorderStyleValues.Thin;
-            //ws.Cell(2, 8).Value = "Loại khách hàng";
-            //ws.Cell(2, 9).Value = "Giá áp dụng";
 
-            ws.Row(1).Style.Font.Bold = true;
-            ws.Row(1).Style.Fill.BackgroundColor = XLColor.LightGray;
-            ws.Row(1).Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
-            ws.Row(1).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+            // ====== STYLE header ======
+            var headerRange = ws.Range(headerTopRow, 1, headerBottomRow, Math.Max(priceEndCol, colGap));
+            headerRange.Style.Font.Bold = true;
+            headerRange.Style.Fill.BackgroundColor = XLColor.LightGray;
+            headerRange.Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
+            headerRange.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+            headerRange.Style.Border.OutsideBorder = XLBorderStyleValues.Thin;
+            headerRange.Style.Border.InsideBorder = XLBorderStyleValues.Thin;
 
-            ws.Row(2).Style.Font.Bold = true;
-            ws.Row(2).Style.Fill.BackgroundColor = XLColor.LightGray;
-            //// ===== MÔ TẢ =====
-            ws.Cell(3, 1).Value = "     MONT     ";
-            ws.Cell(3, 2).Value = "dd/MM/yyyy";
-            ws.Cell(3, 3).Value = "dd/MM/yyyy";
-            ws.Cell(3, 4).Value = "HH:mm (ex: 6:30)";
-            ws.Cell(3, 5).Value = "HH:mm (ex: 6:30)";
-            ws.Cell(3, 6).Value = "Normal/Promotion";
-            ws.Cell(3, 7).Value = "Số nguyên nhỏ hơn 100";
-            ws.Cell(3, 8).Value = "Ghi chú nội bộ";
-            ws.Cell(3, 9).Value = "Khoảng cách 2 teetime";
-            //ws.Range(ws.Cell(3, 2).Address, ws.Cell(1000, 2).Address).Style.DateFormat.Format = "dd/MM/yyyy";
-            //ws.Range(ws.Cell(3, 3).Address, ws.Cell(1000, 3).Address).Style.NumberFormat.Format = "HH:mm";
-            //ws.Range(ws.Cell(3, 4).Address, ws.Cell(1000, 4).Address).Style.NumberFormat.Format = "HH:mm";
-            ws.Row(3).Style.Font.FontColor = XLColor.DarkGray;
+            // ====== DAY TYPES from SpecialDates ======
+            var dayTypes = (specialDates ?? new List<SpecialDate>())
+                .Where(x => x.IsActive)
+                .Select(x => (x.Name ?? "").Trim())
+                .Where(x => !string.IsNullOrWhiteSpace(x))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .OrderBy(x => x)
+                .ToList();
 
-            //var rangeB = ws.Range("B2:B" + XLHelper.MaxRowNumber);
-            //var valB = rangeB.SetDataValidation();
-            //valB.Date.Between(new DateTime(2000, 1, 1), DateTime.Today);
-            //valB.ErrorTitle = "Ngày không hợp lệ";
-            //valB.ErrorMessage = "Vui lòng nhập ngày theo định dạng dd-MM-yyyy và trong khoảng cho phép";
-            //valB.IgnoreBlanks = true;
+            // fallback nếu chưa cấu hình gì
+            if (dayTypes.Count == 0)
+            {
+                dayTypes = new List<string> { "Ngày trong tuần", "Ngày cuối tuần", "Ngày lễ" };
+            }
 
-            //// Validation cho cột C: Chỉ cho phép giờ (TimeSpan)
-            //var rangeC = ws.Range("C2:C" + XLHelper.MaxRowNumber);
-            //var valC = rangeC.SetDataValidation();
-            //valC.Time.Between(TimeSpan.Zero, TimeSpan.FromHours(23).Add(TimeSpan.FromMinutes(59)).Add(TimeSpan.FromSeconds(59)));
-            //valC.ErrorTitle = "Giờ không hợp lệ";
-            //valC.ErrorMessage = "Vui lòng nhập giờ theo định dạng HH:mm:ss (00:00:00 đến 23:59:59)";
-            //valC.IgnoreBlanks = true;
+            // ====== HINT row ======
+            ws.Cell(hintRow, colGolfCode).Value = "VD: MONT";
+            ws.Cell(hintRow, colDayType).Value = string.Join("/", dayTypes);
+            ws.Cell(hintRow, colFromDate).Value = "dd/MM/yyyy";
+            ws.Cell(hintRow, colToDate).Value = "dd/MM/yyyy";
+            ws.Cell(hintRow, colStartTime).Value = "HH:mm (vd 06:30)";
+            ws.Cell(hintRow, colEndTime).Value = "HH:mm (vd 07:00)";
+            ws.Cell(hintRow, colPromotion).Value = "Chọn từ dropdown";
+            ws.Cell(hintRow, colMaxSlots).Value = "Số nguyên > 0";
+            ws.Cell(hintRow, colNote).Value = "Ghi chú nội bộ";
+            ws.Cell(hintRow, colGap).Value = "Khoảng cách (phút)";
+            ws.Row(hintRow).Style.Font.FontColor = XLColor.DarkGray;
 
-            var enumPromation = promotions.Select(p => p.Name).ToList();
-            var sourse = $"\"{string.Join(",", enumPromation)}\"";
-            ws.Range("F4:F1000").SetDataValidation().List(sourse, true);
-  
+            // format columns for data rows
+            ws.Range(dataStartRow, colFromDate, 1000, colFromDate).Style.DateFormat.Format = "dd/MM/yyyy";
+            ws.Range(dataStartRow, colToDate, 1000, colToDate).Style.DateFormat.Format = "dd/MM/yyyy";
+            ws.Range(dataStartRow, colStartTime, 1000, colStartTime).Style.NumberFormat.Format = "hh:mm";
+            ws.Range(dataStartRow, colEndTime, 1000, colEndTime).Style.NumberFormat.Format = "hh:mm";
+
+            // ====== LOOKUP SHEET + NAMED RANGES ======
+            // DayTypes (from SpecialDates)
+            lookup.Cell(1, 1).Value = "DayTypes";
+            for (int i = 0; i < dayTypes.Count; i++)
+                lookup.Cell(2 + i, 1).Value = dayTypes[i];
+
+            var dayTypeRange = lookup.Range(2, 1, 2 + dayTypes.Count - 1, 1);
+            workbook.NamedRanges.Add("DayTypes", dayTypeRange);
+
+            // Promotions
+            var promotionNames = (promotions ?? new List<PromotionType>())
+                .Select(p => p.Name)
+                .Where(x => !string.IsNullOrWhiteSpace(x))
+                .Distinct()
+                .OrderBy(x => x)
+                .ToList();
+
+            lookup.Cell(1, 2).Value = "PromotionTypes";
+            if (promotionNames.Count == 0)
+            {
+                lookup.Cell(2, 2).Value = "Normal";
+                promotionNames.Add("Normal");
+            }
+
+            for (int i = 0; i < promotionNames.Count; i++)
+                lookup.Cell(2 + i, 2).Value = promotionNames[i];
+
+            var promoRange = lookup.Range(2, 2, 2 + promotionNames.Count - 1, 2);
+            workbook.NamedRanges.Add("PromotionTypes", promoRange);
+
+            // ====== DATA VALIDATION: use named range ======
+            ws.Range($"B{dataStartRow}:B1000").SetDataValidation().List("=DayTypes", true);
+            ws.Range($"G{dataStartRow}:G1000").SetDataValidation().List("=PromotionTypes", true);
+
             ws.Columns().AdjustToContents();
-            
+
             var stream = new MemoryStream();
             workbook.SaveAs(stream);
             stream.Position = 0;
 
             return new RemoteStreamContent(
                 stream,
-                $"Template_Import_Calendar_{DateTime.Now.ToString("yyyyMMdd_HHmmss")}.xlsx",
+                $"Template_Import_Calendar_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx",
                 "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
             );
         }

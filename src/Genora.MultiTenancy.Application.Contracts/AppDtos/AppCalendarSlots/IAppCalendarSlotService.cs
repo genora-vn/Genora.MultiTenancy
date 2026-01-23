@@ -19,6 +19,8 @@ public interface IAppCalendarSlotService :
     Task<List<AppCalendarSlotDto>> GetByDateAsync(GetCalendarSlotByDateInput input);
     Task<IRemoteStreamContent> ExportExcelAsync(GetCalendarSlotListInput input);
     Task<IRemoteStreamContent> DownloadTemplateAsync();
-    Task<IRemoteStreamContent> DownloadImportTemplateAsync();
+    //Task<IRemoteStreamContent> DownloadImportTemplateAsync();
     Task<int> ImportExcelAsync(ImportCalendarExcelInput input);
+    Task<IRemoteStreamContent> DownloadImportTemplateAsync(Guid? golfCourseId);
+    Task<int> UpdateStatusBulkAsync(UpdateCalendarSlotStatusBulkInput input);
 }

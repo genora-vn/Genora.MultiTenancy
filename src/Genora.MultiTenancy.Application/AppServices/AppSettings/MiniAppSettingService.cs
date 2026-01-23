@@ -30,9 +30,9 @@ namespace Genora.MultiTenancy.AppServices.AppSettings
             try
             {
                 var query = await _settingRepo.GetQueryableAsync();
-                if (!string.IsNullOrWhiteSpace(input.SettingKey))
+                if (!string.IsNullOrWhiteSpace(input.Filter))
                 {
-                    query = query.Where(s => s.SettingKey == input.SettingKey);
+                    query = query.Where(s => s.SettingKey == input.Filter);
                 }
                 var sorting = string.IsNullOrWhiteSpace(input.Sorting)
                     ? nameof(AppSetting.CreationTime) + " desc"

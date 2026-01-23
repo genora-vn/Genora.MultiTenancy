@@ -17,13 +17,13 @@ namespace Genora.MultiTenancy.AppServices.AppCustomerTypes;
 
 [Authorize]
 public class AppCustomerTypeService :
-        FeatureProtectedCrudAppService<
-            CustomerType,
-            AppCustomerTypeDto,
-            Guid,
-            PagedAndSortedResultRequestDto,
-            CreateUpdateAppCustomerTypeDto>,
-        IAppCustomerTypeService
+    FeatureProtectedCrudAppService<
+        CustomerType,
+        AppCustomerTypeDto,
+        Guid,
+        PagedAndSortedResultRequestDto,
+        CreateUpdateAppCustomerTypeDto>,
+    IAppCustomerTypeService
 {
     protected override string FeatureName => AppCustomerTypeFeatures.Management;
     protected override string TenantDefaultPermission => MultiTenancyPermissions.AppCustomerTypes.Default;
@@ -42,23 +42,35 @@ public class AppCustomerTypeService :
         DeletePolicyName = MultiTenancyPermissions.AppCustomerTypes.Delete;
     }
 
-    public override async Task<PagedResultDto<AppCustomerTypeDto>> GetListAsync(PagedAndSortedResultRequestDto input)
+    public async Task<PagedResultDto<AppCustomerTypeDto>> GetListWithFilterAsync(GetCustomerTypeInput input)
     {
         await CheckGetListPolicyAsync();
 
         var queryable = await Repository.GetQueryableAsync();
 
+        if (!string.IsNullOrWhiteSpace(input.Filter))
+        {
+            var f = input.Filter.Trim();
+            queryable = queryable.Where(x =>
+                x.Code.Contains(f) ||
+                x.Name.Contains(f) ||
+                (x.Description != null && x.Description.Contains(f)) ||
+                (x.ColorCode != null && x.ColorCode.Contains(f))
+            );
+        }
+
+        var totalCount = await AsyncExecuter.CountAsync(queryable);
+
         var sorting = string.IsNullOrWhiteSpace(input.Sorting)
             ? nameof(CustomerType.Code)
             : input.Sorting;
 
-        var query = queryable
-            .OrderBy(sorting)
-            .Skip(input.SkipCount)
-            .Take(input.MaxResultCount);
-
-        var items = await AsyncExecuter.ToListAsync(query);
-        var totalCount = await AsyncExecuter.CountAsync(queryable);
+        var items = await AsyncExecuter.ToListAsync(
+            queryable
+                .OrderBy(sorting)
+                .Skip(input.SkipCount)
+                .Take(input.MaxResultCount)
+        );
 
         return new PagedResultDto<AppCustomerTypeDto>(
             totalCount,

@@ -17,7 +17,7 @@ namespace Genora.MultiTenancy.Controllers;
 
 [Area("MultiTenancy")]
 [Route("api/host/zalo-auth")]
-[Authorize(MultiTenancyPermissions.HostAppZaloAuths.Default)]
+//[Authorize(MultiTenancyPermissions.HostAppZaloAuths.Default)]
 public class HostZaloAuthController : MultiTenancyController
 {
     private readonly IConfiguration _cfg;

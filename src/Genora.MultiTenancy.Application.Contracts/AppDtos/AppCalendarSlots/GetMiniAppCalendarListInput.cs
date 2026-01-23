@@ -12,5 +12,8 @@ namespace Genora.MultiTenancy.AppDtos.AppCalendarSlots
         public DateTime? Date { get; set; }
         public int? FrameTime { get; set; }
         public string? PromotionType { get; set; }
+        [Required(ErrorMessage = "Vui lòng chọn số hố")]
+        public short NumberHoles { get; set; }
+
     }
 }

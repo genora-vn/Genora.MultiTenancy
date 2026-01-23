@@ -16,15 +16,27 @@
     "Menu:AppZalo": "Zalo OA",
     "Menu:AppZaloAuths": "Zalo OA Auth",
     "Menu:AppZaloLogs": "Nhật ký Zalo",
+    "Menu:AppSpecialDates": "Cấu hình ngày",
+    "Menu:AppEmails": "Quản lý Emails",
 
     // Cấu hình bảng Logs
     "Permission:MiniAppZaloAuth": "Quản lý xác thực & Ủy quyền Zalo OA",
     "Permission:MiniAppZaloAuth.Create": "Tạo mới",
     "Permission:MiniAppZaloAuth.Edit": "Chỉnh sửa",
     "Permission:MiniAppZaloAuth.Delete": "Xóa",
+    "PermissionGroup:MiniAppZaloAuth": "Quản lý xác thực OA",
     "PermissionGroup:MiniAppZaloAuthHost": "Quản lý xác thực OA",
     "Permission:HostAppZaloAuths": "Quản lý Zalo OA Auth",
+    "Permission:AppZaloLogs": "Xem nhật ký Zalo",
     "Permission:HostAppZaloLogs": "Xem nhật ký Zalo",
+
+    "FeatureGroup:MiniAppZaloAuth": "Quản lý Zalo OA Auth",
+    "Feature:MiniAppZaloAuth": "Bật quản lý Zalo OA Auth",
+    "Feature:MiniAppZaloAuthDesc": "Cho phép sử dụng chức năng quản lý Zalo OA Auth (thêm/sửa/xoá).",
+
+    "FeatureGroup:MiniAppZaloLog": "Quản lý Logs Zalo OA Logs",
+    "Feature:MiniAppZaloLog": "Bật quản lý Zalo OA Logs",
+    "Feature:MiniAppZaloLogDesc": "Cho phép sử dụng chức năng quản lý Zalo OA Logs (thêm/sửa/xoá).",
 
     "AppZaloAuths": "Zalo OA Auth",
     "NewAppZaloAuth": "Nhập token thủ công",
@@ -51,14 +63,16 @@
     "View": "Xem",
     "MaskTokenHint": "Token đã được ẩn bớt để bảo mật.",
     "StayPlay": "Lưu trú & Tìm hiểu gói Stay & Play",
-    "RentCaddie": "Đặt Caddy",
-    "RentGolfClubs": "Thuê Gậy /Giày",
+    "RentCaddie": "Đặt trước Caddie",
+    "RentGolfClubs": "Thuê Gậy/ Giày",
     "RentClothes": "Đi cùng khách tham quan",
+    "Lunch": "",
     "Morning": "Buổi sáng",
     "Noon": "Buổi trưa",
     "Afternoon": "Buổi chiều",
     "Evening": "Giờ đèn",
     "IsExportInvoice": "Khách hàng yêu cầu xuất hóa đơn",
+    "ExportInvoiceInformation": "Thông tin xuất hóa đơn",
     "True": "Có",
     "False": "Không",
     "IsFollower": "Quan tâm Zalo OA",
@@ -82,6 +96,7 @@
     "CreationTime": "Thời gian tạo",
     "All": "Tất cả",
     "Notes": "Ghi chú",
+    "UpdateStatus": "Cập nhật trạng thái",
     // Cấu hình Mini App
     "PermissionGroup:MiniAppSetting": "Cấu hình Mini App",
     "PermissionGroup:MiniAppSettingHost": "Cấu hình Mini App (Host)",
@@ -149,12 +164,13 @@
 
     "GolfCourseCode": "Mã sân",
     "GolfCourseName": "Tên sân",
-    "Province": "Tỉnh/Thành",
+    "Province": "Tỉnh/Thành phố",
     "Phone": "Số điện thoại",
     "Website": "Website",
     "InvalidUrl": "Địa chỉ URL không hợp lệ.",
     "Address": "Địa chỉ",
-    "AvatarUrl": "Ảnh avatar",
+    "Avatar": "Ảnh đại diện",
+    "AvatarUrl": "URL ảnh đại diện",
     "BannerUrl": "Ảnh nền banner",
     "FanpageUrl": "Fanpage",
     "OpenTime": "Giờ mở cửa",
@@ -187,6 +203,7 @@
     "MinRounds": "Số vòng tối thiểu",
     "EvaluationPeriod": "Kỳ xét hạng",
     "DisplayOrder": "Thứ tự hiển thị",
+    "Validation:CodeFormat": "Mã hạng không đúng định dạng",
     "MinTotalSpendingMustBePositive": "Tổng chi tiêu tối thiểu phải lớn hơn hoặc bằng 0.",
     "MinRoundsMustBePositive": "Số vòng tối thiểu phải lớn hơn hoặc bằng 0.",
 
@@ -207,8 +224,8 @@
     "CreateAppCustomer": "Thêm khách hàng",
     "EditAppCustomer": "Chỉnh sửa khách hàng",
 
-    "CustomerPhoneNumber": "Số điện thoại",
-    "CustomerFullName": "Họ tên",
+    "PhoneNumber": "Số điện thoại",
+    "FullName": "Họ tên",
     "CustomerType": "Loại khách hàng",
     "CustomerCode": "Mã khách hàng",
     "CustomerStatus": "Trạng thái",
@@ -250,6 +267,12 @@
     "PromotionType": "Loại ưu đãi",
     "MaxSlots": "Số slot tối đa",
     "InternalNote": "Ghi chú nội bộ",
+
+    "Price9": "Giá 9 hố",
+    "Price18": "Giá 18 hố",
+    "Price27": "Giá 27 hố",
+    "Price36": "Giá 36 hố",
+
     "ExportExcelBtn": "Xuất file Excel",
     "DownloadTemplateBtn": "Tải file mẫu",
     "ImportExcel": "Nhập file Excel",
@@ -304,12 +327,14 @@
     "AppBookings": "Quản lý booking",
     "NewAppBooking": "Thêm booking",
     "EditAppBooking": "Chỉnh sửa booking",
+    "BookingDetail": "Chi tiết booking",
 
     "BookingCode": "Mã booking",
     "BookingFilterText": "Tìm theo mã booking",
     "BookingCustomer": "Khách hàng",
     "BookingGolfCourse": "Sân golf",
     "BookingPlayDate": "Ngày chơi",
+    "BookingPlayTime": "Giờ chơi",
     "BookingNumberOfGolfers": "Số golfer",
     "BookingPricePerGolfer": "Giá / 1 người",
     "TotalAmount": "Tổng tiền",
@@ -327,7 +352,7 @@
     "PaymentMethod:Online": "Thanh toán online",
     "PaymentMethod:BankTransfer": "Chuyển khoản",
 
-    "BookingStatus:Pending": "Đang xử lý",
+    "BookingStatus:Processing": "Đang xử lý",
     "BookingStatus:Confirmed": "Đã xác nhận",
     "BookingStatus:Paid": "Đã thanh toán",
     "BookingStatus:Completed": "Hoàn thành",
@@ -341,6 +366,7 @@
     "BookingPlayers": "Danh sách golfer",
     "AddPlayer": "Thêm golfer",
     "PlayerName": "Tên golfer",
+    "BookingSuccessfullyDeleted": "Xóa booking thành công",
 
     //=================Loại ưu đãi=======================
     "AppPromotionType": "Loại ưu đãi",
@@ -350,17 +376,101 @@
     "IsUpload": "Tải ảnh lên",
     "PromotionTypeIconUrl": "Đường dẫn ảnh icon biểu tượng",
     "PromotionStatus": "Trạng thái",
-    "NewPromotionType": "Thêm mới",
+    "NewPromotionType": "Thêm loại ưu đãi",
     "Menu:AppPromotionTypes": "Quản lý loại ưu đãi",
     "EditPromotionType": "Cập nhật loại ưu đãi",
     "FeatureGroup:MiniAppPromotionType": "Loại ưu đãi",
     "Feature:MiniAppPromotionType": "Bật quản lý loại ưu đãi",
     "Feature:MiniAppPromotionTypeDesc": "Loại ưu đãi cấu hình giờ chơi",
+    "PermissionGroup:MiniAppPromotionType": "Cấu hình loại ưu đãi",
+    "PermissionGroup:MiniAppPromotionTypeHost": "Cấu hình loại ưu đãi",
+    "Permission:MiniAppPromotionType": "Cấu hình loại ưu đãi",
+    "Permission:MiniAppPromotionType.Create": "Tạo mới loại ưu đãi",
+    "Permission:MiniAppPromotionType.Edit": "Sửa loại ưu đãi",
+    "Permission:MiniAppPromotionType.Delete": "Xóa loại ưu đãi",
+
+    // ====== AppSpecialDate ======
+    "AppSpecialDates": "Cấu hình các loại ngày",
+    "NewSpecialDate": "Thêm loại ngày",
+    "EditSpecialDate": "Sửa loại ngày",
+    "Feature:MiniAppSpecialDate": "Bật cấu hình các loại ngày",
+    "FeatureGroup:MiniAppSpecialDate": "Cấu hình các loại ngày",
+    "Feature:MiniAppSpecialDateDesc": "Cho phép sử dụng chức năng cấu hình các loại ngày (thêm/sửa/xoá).",
+    "PermissionGroup:MiniAppSpecialDate": "Cấu hình các loại ngày",
+    "PermissionGroup:MiniAppSpecialDateHost": "Cấu hình các loại ngày",
+    "Permission:MiniAppSpecialDate": "Cấu hình các loại ngày",
+    "Permission:MiniAppSpecialDate.Create": "Tạo mới cấu hình loại ngày",
+    "Permission:MiniAppSpecialDate.Edit": "Sửa cấu hình loại ngày",
+    "Permission:MiniAppSpecialDate.Delete": "Xóa cấu hình loại ngày",
+
+    // ====== AppEmail ======
+    "AppEmails": "Email (Mini App)",
+    "NewAppEmail": "Tạo email mới",
+    "EditAppEmail": "Sửa email",
+    "ViewAppEmail": "Xem email",
+
+    "EmailFilterText": "Từ khóa",
+    "EmailSubjectPlaceholder": "Nhập tiêu đề email...",
+    "EmailToPlaceholder": "VD: a@company.com; b@company.com",
+    "EmailCcPlaceholder": "VD: cc@company.com",
+    "EmailBccPlaceholder": "VD: bcc@company.com",
+    "EmailBodyPlaceholder": "Nhập nội dung email...",
+
+    "BookingCodePlaceholder": "Nhập mã booking (nếu có)...",
+
+    "ToEmails": "Người nhận (To)",
+    "CcEmails": "Cc",
+    "BccEmails": "Bcc",
+    "Body": "Nội dung",
+    "Subject": "Tiêu đề",
+
+    "EmailMultiSeparatorHint": "Có thể nhập nhiều email, ngăn cách bằng dấu ; hoặc ,",
+    "CreateEmailWillQueueHint": "Email sẽ được đưa vào hàng đợi gửi. Bạn có thể bấm “Gửi ngay” ở danh sách để gửi lập tức.",
+
+    "EmailStatus": "Trạng thái email",
+    "EmailStatus:Pending": "Chờ gửi",
+    "EmailStatus:Sending": "Đang gửi",
+    "EmailStatus:Sent": "Đã gửi",
+    "EmailStatus:Failed": "Gửi thất bại",
+    "EmailStatus:Abandoned": "Bỏ qua",
+
+    "TryCount": "Số lần thử",
+    "SentTime": "Thời điểm gửi",
+    "LastTryTime": "Lần thử gần nhất",
+    "LastError": "Lỗi gần nhất",
+    "ModelJson": "Model JSON",
+
+    "QueuedSuccessfully": "Đã đưa vào hàng đợi",
+    "AreYouSureToResend": "Bạn có chắc muốn gửi lại email này không?",
+
+    "SendNow": "Gửi ngay",
+    "Resend": "Gửi lại",
+
+    "FeatureGroup:MiniAppEmail": "Email Mini App",
+    "Feature:MiniAppEmail": "Bật quản trị Email Mini App",
+    "Feature:MiniAppEmailDesc": "Cho phép quản trị, gửi và theo dõi email từ Mini App.",
+
+    "PermissionGroup:MiniAppEmail": "Email Mini App (Tenant)",
+    "PermissionGroup:MiniAppEmailHost": "Email Mini App (Host)",
+    "Permission:MiniAppEmail": "Quản trị Email Mini App",
+    "Permission:MiniAppEmail.Create": "Tạo email",
+    "Permission:MiniAppEmail.Edit": "Sửa email",
+    "Permission:MiniAppEmail.Delete": "Xóa email",
+    "Permission:MiniAppEmail.Send": "Gửi ngay",
+    "Permission:MiniAppEmail.Resend": "Gửi lại",
+
     // Cấu hình thông báo
-    "AreYouSure": "Bạn chắc chắn?",
+    "AreYouSure": "Bạn chắc chắn chứ?",
     "AreYouSureToDelete": "Bạn có chắc chắn muốn xóa mục này không??",
     "AppSettingDeletionConfirmationMessage": "Bạn chắc chắn muốn xóa cấu hình '{0}'?",
+    "DeletionBookingConfirmationMessage": "Bạn chắc chắn muốn xóa booking",
     "LongWelcomeMessage": "Genora CX Flatform - Chào mừng bạn đến với hệ thống quản trị",
-    "Welcome": "Genora xin chào"
+    "Welcome": "Genora xin chào",
+
+    // ====== Validator ======
+    "Validation:Required": "Trường {0} là bắt buộc.",
+    "Validation:StringMax": "Trường {0} phải có tối đa {1} ký tự.",
+    "Validation:PhoneInvalid": "Số điện thoại không hợp lệ."
+
   }
 }

@@ -15,7 +15,7 @@
        : DateTime.Now.ToString("dd/MM/yyyy");
 }
 
-<form asp-page="/AppNews/CreateModal" method="post" id="CreateNewsForm">
+<form asp-page="/AppNews/CreateModal" method="post" id="CreateNewsForm" enctype="multipart/form-data">
     <abp-modal size="ExtraLarge">
         <abp-modal-header title="@L["NewAppNews"]"></abp-modal-header>
         <abp-modal-body>
@@ -32,41 +32,51 @@
                     <abp-input asp-for="News.DisplayOrder" label="@L["DisplayOrder"]" />
                 </div>
             </div>
-            
+
             <div class="mb-3 d-inline-flex" style="width: 97%; gap: 15px">
                 <div class="col-md-5">
                     <label asp-for="News.ShortDescription">@L["ShortDescription"]</label>
                     <textarea asp-for="News.ShortDescription" class="form-control" rows="5"></textarea>
                     <span class="text-danger field-validation-valid" data-valmsg-for="News.ShortDescription" data-valmsg-replace="true"></span>
                 </div>
+
                 <div class="col-md-4">
                     <div class="input-type" style="margin-top: 18px;">
                         <input name="News.IsUploadImage" class="form-check-input" type="checkbox" id="isUpload" />
                         <label for="isUpload">@L["IsImageInput"]</label>
                     </div>
+
                     <div class="url-group" id="input-url" style="margin-top: 10px">
                         <label asp-for="News.ThumbnailUrl" class="form-label">@L["ThumbnailUrl"]</label>
                         <input asp-for="News.ThumbnailUrl" id="image-input" class="form-control" placeholder="Dán link ảnh đại diện tin tức" />
+                        <small class="text-muted d-block mt-1">Nếu không upload ảnh, vui lòng dán link ảnh đại diện.</small>
                     </div>
+
                     <div class="group-image" id="input-image" style="display: none;">
                         <div class="image-upload-group">
-                            
+                            <label for="images" class="form-label mb-1">
+                                <small class="text-muted d-block">
+                                    Tối đa <span id="maxFileSizeLabel"></span>/ảnh. Định dạng: JPG/PNG/WebP.
+                                </small>
+                            </label>
+
                             <div class="drop-zone" id="dropZone">
                                 <p>Kéo thả ảnh vào đây hoặc click để chọn</p>
-                                <input asp-for="News.Images" type="file" id="images" style="display:none" />
+                                <input asp-for="News.Images" type="file" id="images" accept="image/*" style="display:none" />
                             </div>
                         </div>
                     </div>
                 </div>
+
                 <div class="col-md-3">
                     <div class="preview-grid" id="previewGrid">
                         <div class="preview-item">
-                            <img src="images\getting-started\no-photo-square.png" id="image-preview" alt="Alternate Text" />
+                            <img src="images\getting-started\no-photo-square.png" id="image-preview" alt="Preview" />
                         </div>
                     </div>
                 </div>
             </div>
-    
+
             <div class="mb-3">
                 <label asp-for="News.ContentHtml" class="form-label">@L["Content"]</label>
                 <textarea asp-for="News.ContentHtml"
@@ -78,10 +88,10 @@
         <abp-modal-footer buttons="@(AbpModalButtons.Cancel | AbpModalButtons.Save)"></abp-modal-footer>
     </abp-modal>
 </form>
-<style type="text/css">
 
+<style type="text/css">
     .image-upload-group {
-        margin: 20px 0;
+        margin: 10px 0;
     }
 
     .drop-zone {
@@ -107,8 +117,6 @@
         display: grid;
         grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
         gap: 15px;
-        /* margin-top: 20px; */
-        /* margin-right: 20px; */
     }
 
     .preview-item {
@@ -122,7 +130,6 @@
         .preview-item img {
             width: 100%;
             height: 150px;
-            /* object-fit: cover; */
         }
 
     .remove-btn {
@@ -139,89 +146,101 @@
         font-size: 16px;
     }
 </style>
+
 <script>
     $(document).ready(function () {
-        // Update image preview when ThumbnailUrl changes
-        $('input[asp-for="News.ThumbnailUrl"]').on('input', function () {
-            bindingPreviewImage();
-        });
-        $('#image-input').on('change', function () {
-            bindingPreviewImage();
-        });
+        const MAX_FILE_MB = 15;
+        const MAX_FILE_BYTES = MAX_FILE_MB * 1024 * 1024;
+
+        // label size
+        $('#maxFileSizeLabel').text(`${MAX_FILE_MB}MB`);
 
         function bindingPreviewImage() {
             var imageUrl = $('#image-input').val();
             if (imageUrl) {
                 $('#image-preview').attr('src', imageUrl);
             } else {
-                $('#image-preview').attr('src', 'images\getting-started\no-photo-square.png');
+                $('#image-preview').attr('src', 'images\\getting-started\\no-photo-square.png');
             }
         }
 
-    const fileInput = document.getElementById('images');
-    const dropZone = document.getElementById('dropZone');
-    const previewGrid = document.getElementById('previewGrid');
-    const isUpload = document.getElementById('isUpload');
-    const inputUrl = document.getElementById('input-url');
-    const inputUpload = document.getElementById('input-image');
-    let selectedFiles = [];
+        // Update image preview when ThumbnailUrl changes
+        $('#image-input').on('input change', function () {
+            bindingPreviewImage();
+        });
 
-    isUpload.addEventListener('change', function(){
-      if (this.checked) {
-          inputUrl.style.display = 'none';
-          inputUpload.style.display = 'block';
-      } else {
-          inputUrl.style.display = 'block';
-          inputUpload.style.display = 'none';
-      }
-    });
-        // Click vào vùng drop để mở dialog chọn file
-    dropZone.addEventListener('click', () => fileInput.click());
+        const fileInput = document.getElementById('images');
+        const dropZone = document.getElementById('dropZone');
+        const isUpload = document.getElementById('isUpload');
+        const inputUrl = document.getElementById('input-url');
+        const inputUpload = document.getElementById('input-image');
 
-        // Hiệu ứng drag over
-    dropZone.addEventListener('dragover', (e) => {
+        isUpload.addEventListener('change', function () {
+            if (this.checked) {
+                inputUrl.style.display = 'none';
+                inputUpload.style.display = 'block';
+                // nếu chuyển sang upload thì clear url để tránh nhầm
+                $('#image-input').val('');
+                bindingPreviewImage();
+            } else {
+                inputUrl.style.display = 'block';
+                inputUpload.style.display = 'none';
+            }
+        });
+
+        function notifySizeError(file) {
+            const mb = (file.size / (1024 * 1024)).toFixed(2);
+            const msg = `"${file.name}" (${mb}MB) vượt quá ${MAX_FILE_MB}MB/ảnh. Vui lòng chọn ảnh nhỏ hơn.`;
+            if (window.abp?.notify?.warn) abp.notify.warn(msg);
+            else alert(msg);
+        }
+
+        function handleFiles(files) {
+            if (!files || files.length === 0) return;
+
+            const file = files[0];
+            if (!file.type || !file.type.startsWith('image/')) return;
+
+            if (file.size > MAX_FILE_BYTES) {
+                notifySizeError(file);
+                fileInput.value = ''; // reset
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                $('#image-preview').attr('src', e.target.result);
+                $('#image-preview').attr('alt', file.name);
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // Click drop-zone to open
+        dropZone.addEventListener('click', () => fileInput.click());
+
+        // Drag over effects
+        dropZone.addEventListener('dragover', (e) => {
             e.preventDefault();
             dropZone.classList.add('drag-over');
-    });
+        });
 
-    dropZone.addEventListener('dragleave', () => {
+        dropZone.addEventListener('dragleave', () => {
             dropZone.classList.remove('drag-over');
-    });
+        });
 
-        // Xử lý khi thả file
-    dropZone.addEventListener('drop', (e) => {
+        // Drop files
+        dropZone.addEventListener('drop', (e) => {
             e.preventDefault();
             dropZone.classList.remove('drag-over');
             handleFiles(e.dataTransfer.files);
-    });
+        });
 
-        // Xử lý khi chọn file qua input
-    fileInput.addEventListener('change', () => {
-            if (fileInput.files.length > 0) {
-                handleFiles(fileInput.files);
-            }
-    });
+        // File input change
+        fileInput.addEventListener('change', () => {
+            handleFiles(fileInput.files);
+        });
 
-    function handleFiles(file) {
-            debugger
-                if (file.length > 0) {
-                    const reader = new FileReader();
-                    reader.onload = (e) => {
-                        createPreview(e.target.result, file[0].name);
-                    };
-                    reader.readAsDataURL(file[0]);
-                }
-    }
-
-    function createPreview(src, name) {
-        $('#image-preview').attr('src', src);
-        $('#image-preview').attr('alt', name);
-    }
-
-    function updateFileInput() {
-        const dt = new DataTransfer();
-        selectedFiles.forEach(file => dt.items.add(file));
-        fileInput.files = dt.files;
-    }
+        // init preview
+        bindingPreviewImage();
     });
 </script>

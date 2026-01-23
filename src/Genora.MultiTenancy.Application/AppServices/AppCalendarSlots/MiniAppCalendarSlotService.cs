@@ -134,23 +134,53 @@ namespace Genora.MultiTenancy.AppServices.AppCalendarSlots
             var prices = await _priceRepository.GetListAsync(p => calendarIds.Contains(p.CalendarSlotId));
             var customerTypes = await _customerTypeRepository.GetListAsync();
             var user = (input.CustomerId.HasValue && input.CustomerId != Guid.Empty) ? await _customerRepo.FirstOrDefaultAsync(c => c.Id == input.CustomerId) : null;
+            var holes = ParseHoles(input.NumberHoles); // FE truyền
+            var visCustomerTypeId = customerTypes.FirstOrDefault(c => c.Code == "VIS")?.Id ?? Guid.Empty;
             foreach (var item in dtoList)
             {
                 item.FrameTime = $"{item.TimeFrom} - {item.TimeTo}";
-                item.IsBestDeal = !string.IsNullOrEmpty(item.PromotionName) ? item.PromotionName.ToString() == "Best Deal" : false;
-                var customerType = customerTypes.Where(c => c.Code == "VIS").FirstOrDefault()?.Id ?? Guid.Empty;
-                item.VisitorPrice = prices.Where(p => p.CustomerTypeId == customerType && p.CalendarSlotId == item.Id).FirstOrDefault()?.Price ?? prices.Where(p => p.CalendarSlotId == item.Id).OrderByDescending(x => x.Price).FirstOrDefault()?.Price ?? 0;
+                item.IsBestDeal = item.PromotionName == "Best Deal";
+                item.FrameTimeOfDayId = FormatSessionOfDayHelper.DateTimeToSessionOfDay(item.TimeFrom.Value).Value;
+                item.FrameTimeOfDayName = FormatSessionOfDayHelper.DateTimeToSessionOfDay(item.TimeFrom.Value).Name;
+
+                var slotPrices = prices.Where(p => p.CalendarSlotId == item.Id).ToList();
+
+                // VIS price
+                var visRow = slotPrices.FirstOrDefault(p => p.CustomerTypeId == visCustomerTypeId);
+                var visPrice = visRow != null
+                    ? PriceByHoleHelper.GetPriceByNumberHoles(visRow, input.NumberHoles)
+                    : 0m;
+
+                // fallback: nếu không có VIS thì lấy max theo số hố (hoặc min tùy business)
+                if (visPrice <= 0 && slotPrices.Count > 0)
+                {
+                    visPrice = slotPrices
+                        .Select(p => PriceByHoleHelper.GetPriceByNumberHoles(p, input.NumberHoles))
+                        .DefaultIfEmpty(0m)
+                        .Max();
+                }
+
+                item.VisitorPrice = visPrice;
+
+                // Price theo loại khách hiện tại
+                decimal myPrice;
                 if (user != null)
                 {
-                    item.CustomerTypePrice = prices.Where(p => p.CalendarSlotId == item.Id && p.CustomerTypeId == user?.CustomerTypeId).OrderBy(x => x.Price).FirstOrDefault()?.Price ?? 0;
+                    var myRow = slotPrices.FirstOrDefault(p => p.CustomerTypeId == user.CustomerTypeId);
+                    myPrice = myRow != null
+                        ? PriceByHoleHelper.GetPriceByNumberHoles(myRow, input.NumberHoles)
+                        : slotPrices.Select(p => PriceByHoleHelper.GetPriceByNumberHoles(p, input.NumberHoles)).DefaultIfEmpty(0m).Min();
                 }
                 else
                 {
-                    item.CustomerTypePrice = prices.Where(p => p.CalendarSlotId == item.Id).OrderBy(x => x.Price).FirstOrDefault()?.Price ?? 0;
+                    myPrice = slotPrices.Select(p => PriceByHoleHelper.GetPriceByNumberHoles(p, input.NumberHoles)).DefaultIfEmpty(0m).Min();
                 }
-                item.DiscountPercent = item.VisitorPrice - item.CustomerTypePrice > 0 ? Math.Round(100 - (item.CustomerTypePrice / item.VisitorPrice) * 100, MidpointRounding.AwayFromZero) : 0;
-                item.FrameTimeOfDayId = FormatSessionOfDayHelper.DateTimeToSessionOfDay(item.TimeFrom.Value).Value;
-                item.FrameTimeOfDayName = FormatSessionOfDayHelper.DateTimeToSessionOfDay(item.TimeFrom.Value).Name;
+
+                item.CustomerTypePrice = myPrice;
+
+                item.DiscountPercent = (item.VisitorPrice - item.CustomerTypePrice) > 0 && item.VisitorPrice > 0
+                    ? Math.Round(100 - (item.CustomerTypePrice / item.VisitorPrice) * 100, MidpointRounding.AwayFromZero)
+                    : 0;
             }
             result.Data = new PagedResultDto<CalendarSlotData>(totalCount, dtoList);
             return result;
@@ -208,11 +238,34 @@ namespace Genora.MultiTenancy.AppServices.AppCalendarSlots
                     CustomerTypeId = p.CustomerTypeId,
                     CustomerTypeCode = ct?.Code,
                     CustomerTypeName = ct?.Name,
-                    Price = p.Price
+                    Price9 = p.Price9 ?? 0m,
+                    Price18 = p.Price18,          // decimal NOT NULL
+                    Price27 = p.Price27 ?? 0m,
+                    Price36 = p.Price36 ?? 0m
                 });
             }
 
             return dto;
+        }
+        private static int ParseHoles(object? numberHoles)
+        {
+            if (numberHoles == null) return 18;
+            var s = numberHoles.ToString()?.Trim();
+            if (int.TryParse(s, out var n) && (n == 9 || n == 18 || n == 27 || n == 36))
+                return n;
+            return 18;
+        }
+
+        private static decimal PickPriceByHoles(CalendarSlotPrice row, int holes)
+        {
+            return holes switch
+            {
+                9 => row.Price9 ?? row.Price18,
+                18 => row.Price18,
+                27 => row.Price27 ?? row.Price18,
+                36 => row.Price36 ?? row.Price18,
+                _ => row.Price18
+            };
         }
     }
 }

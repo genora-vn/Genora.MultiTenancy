@@ -100,6 +100,27 @@
                 </div>
             </abp-column>
         </abp-row>
+        <abp-row>
+            <abp-column size-md="_2">
+                <div class="btn-group me-2">
+                    <button type="button" id="BulkStatusDropdownBtn" class="btn btn-outline-primary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false" disabled>
+                        <i class="fa fa-bolt"></i> @L["UpdateStatus"]
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <li>
+                            <a class="dropdown-item js-bulk-status" href="javascript:;" data-active="true">
+                                <i class="fa fa-check text-success"></i> @L["Activate"]
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item js-bulk-status" href="javascript:;" data-active="false">
+                                <i class="fa fa-ban text-danger"></i> @L["Deactivate"]
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </abp-column>
+        </abp-row>
     </abp-card-header>
 
     <abp-card-body>

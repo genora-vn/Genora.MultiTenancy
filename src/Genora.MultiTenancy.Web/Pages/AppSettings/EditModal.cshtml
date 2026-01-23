@@ -8,34 +8,48 @@
 @{
     Layout = null;
 }
-<form abp-model="AppSetting" asp-page="/AppSettings/EditModal">
+<form abp-model="AppSetting" asp-page="/AppSettings/EditModal" enctype="multipart/form-data">
     <abp-modal>
         <abp-modal-header title="@L["UpdateAppsetting"].Value"></abp-modal-header>
         <abp-modal-body>
             <abp-input asp-for="Id" />
-            <abp-input asp-for="AppSetting.SettingKey" type="hidden"/>
-            @* <abp-form-content /> *@
-            <abp-input asp-for="AppSetting.SettingKey" placeholder="Nhập mã cấu hình (vd: color_background, logo_image,..)" label="@L["SettingKey"]" disabled="true"/>
+            <abp-input asp-for="AppSetting.SettingKey" type="hidden" />
+
+            <abp-input asp-for="AppSetting.SettingKey"
+                       placeholder="Nhập mã cấu hình (vd: color_background, logo_image,..)"
+                       label="@L["SettingKey"]" disabled="true" />
+
             <abp-input asp-for="AppSetting.IsImageInput" id="IsImageInput" label="@L["IsImageInput"]" />
 
-            <abp-input asp-for="AppSetting.SettingType" id="setting-type" placeholder="Nhập loại cấu hình" label="@L["SettingType"]" />
+            <abp-input asp-for="AppSetting.SettingType" id="setting-type"
+                       placeholder="Nhập loại cấu hình" label="@L["SettingType"]" />
 
             <div class="group" id="input-value">
-                <abp-input asp-for="AppSetting.SettingValue" placeholder="Nhập giá trị cấu hình (vd: #FFFFF,https://example.com/logo.img,...)" label="@L["SettingValue"]" />
+                <abp-input asp-for="AppSetting.SettingValue"
+                           placeholder="Nhập giá trị cấu hình (vd: #FFFFF,https://example.com/logo.img,...)"
+                           label="@L["SettingValue"]" />
             </div>
 
-            <div class="mb-3" style="display: none" id="input-image">
+            <div class="mb-3" style="display:none" id="input-image">
                 <div class="image-upload-group">
-                    <label for="images">Tải ảnh:</label>
+                    <label for="images" class="form-label mb-1">
+                        Tải ảnh:
+                        <small class="text-muted d-block">
+                            Tối đa <span id="maxFileSizeLabel"></span>/ảnh. Định dạng: JPG/PNG/WebP.
+                        </small>
+                    </label>
+
                     <div class="drop-zone" id="dropZone">
-                        <p>Kéo thả ảnh vào đây hoặc click để chọn</p>
-                        <input asp-for="AppSetting.Images" type="file" id="images" accept="image/*" multiple style="display: none;">
+                        <p class="mb-0">Kéo thả ảnh vào đây hoặc click để chọn</p>
+                        <input asp-for="AppSetting.Images" type="file" id="images" accept="image/*" multiple style="display:none;">
                     </div>
                 </div>
             </div>
+
             <div class="mb-3">
                 <div class="preview-grid" id="previewGrid"></div>
             </div>
+
             <div class="mb-3">
                 <label asp-for="AppSetting.Description" class="form-label">@L["Description"]</label>
                 <textarea asp-for="AppSetting.Description"
@@ -43,6 +57,7 @@
                           placeholder="Mô tả cấu hình"
                           rows="4"></textarea>
             </div>
+
             <abp-input asp-for="AppSetting.IsActive" placeholder="Nhập mã cấu hình" label="@L["IsActive"]" />
         </abp-modal-body>
         <abp-modal-footer buttons="@(AbpModalButtons.Cancel | AbpModalButtons.Save)"></abp-modal-footer>
@@ -106,125 +121,198 @@
         height: 25px;
         cursor: pointer;
         font-size: 16px;
+        line-height: 25px;
+        padding: 0;
     }
 </style>
 
 <script>
-    
-    $(document).ready(function () {
-        const fileInput = document.getElementById('images');
-        const dropZone = document.getElementById('dropZone');
-        const previewGrid = document.getElementById('previewGrid');
-        const inputValue = document.getElementById('input-value');
-        const inputImage = document.getElementById('input-image');
-        const isImageInput = document.getElementById('IsImageInput');
-        const valueType = document.getElementById('setting-type');
-        let selectedFiles = [];
-        if("@Model.AppSetting.SettingType" == "image"){
-            debugger;
-            var url = "@Model.AppSetting.SettingValue";
-            var filename = url.split('/').pop();
+    (function () {
+        const MAX_FILE_MB = 15;
+        const MAX_FILE_BYTES = MAX_FILE_MB * 1024 * 1024;
 
-            createPreview(url,filename);
-            //inputImage.style.display = 'block';
-            isImageInput.checked;
+        // ✅ helper: lấy đúng checkbox ABP render (có thể là hidden + checkbox)
+        function findIsImageCheckbox(form) {
+            // Ưu tiên theo name (ABP thường render đúng name)
+            return form.querySelector('input[type="checkbox"][name="AppSetting.IsImageInput"]')
+                || form.querySelector('input[type="checkbox"][name$=".IsImageInput"]')
+                // fallback theo id (nếu may mắn ABP gán id vào input)
+                || form.querySelector('#IsImageInput[type="checkbox"]')
+                // fallback cuối: tìm trong wrapper có id IsImageInput (ABP có thể gắn id lên container)
+                || form.querySelector('#IsImageInput input[type="checkbox"]');
         }
 
-       
+        function setMode(form, isImage) {
+            const inputValue = form.querySelector('#input-value');
+            const inputImage = form.querySelector('#input-image');
+            const valueType  = form.querySelector('#setting-type');
 
-    isImageInput.addEventListener('change', function(){
-      if (this.checked) {
-          inputValue.style.display = 'none';
-          inputImage.style.display = 'block';
-          valueType.value = 'image';
-      } else {
-          inputValue.style.display = 'block';
-          inputImage.style.display = 'none';
-      }
-    });
-        // Click vào vùng drop để mở dialog chọn file
-    dropZone.addEventListener('click', () => fileInput.click());
-
-        // Hiệu ứng drag over
-    dropZone.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            dropZone.classList.add('drag-over');
-    });
-
-    dropZone.addEventListener('dragleave', () => {
-            dropZone.classList.remove('drag-over');
-    });
-
-        // Xử lý khi thả file
-    dropZone.addEventListener('drop', (e) => {
-            e.preventDefault();
-            dropZone.classList.remove('drag-over');
-            handleFiles(e.dataTransfer.files);
-    });
-
-        // Xử lý khi chọn file qua input
-    fileInput.addEventListener('change', () => {
-            if (fileInput.files.length > 0) {
-                handleFiles(fileInput.files);
+            if (isImage) {
+                if (inputValue) inputValue.style.display = 'none';
+                if (inputImage) inputImage.style.display = 'block';
+                if (valueType) valueType.value = 'image';
+            } else {
+                if (inputValue) inputValue.style.display = 'block';
+                if (inputImage) inputImage.style.display = 'none';
             }
-    });
+        }
 
-    function handleFiles(files) {
-        debugger;
-            for (let file of files) {
-                if (file.type.startsWith('image/')) {
+        // ✅ delegation: luôn bắt được change dù modal inject/replace
+        document.addEventListener('change', function (e) {
+            const t = e.target;
+            if (!t) return;
+
+            // chỉ xử lý checkbox đúng tên
+            const isTarget = (t.matches && (
+                t.matches('input[type="checkbox"][name="AppSetting.IsImageInput"]') ||
+                t.matches('input[type="checkbox"][name$=".IsImageInput"]') ||
+                t.matches('#IsImageInput[type="checkbox"]')
+            ));
+            if (!isTarget) return;
+
+            const form = t.closest('form');
+            if (!form) return;
+
+            setMode(form, t.checked);
+        });
+
+        // ✅ init sau khi modal đã render
+        setTimeout(function () {
+            // tìm form edit trong DOM (modal)
+            const form =
+                document.querySelector('form[asp-page="/AppSettings/EditModal"], form[action*="/AppSettings/EditModal"]')
+                || document.querySelector('form');
+
+            if (!form) return;
+
+            // tránh init nhiều lần
+            if (form.dataset.imageUploadInit === "1") return;
+            form.dataset.imageUploadInit = "1";
+
+            const maxFileSizeLabel = form.querySelector('#maxFileSizeLabel');
+            if (maxFileSizeLabel) maxFileSizeLabel.textContent = `${MAX_FILE_MB}MB`;
+
+            const fileInput = form.querySelector('#images');
+            const dropZone = form.querySelector('#dropZone');
+            const previewGrid = form.querySelector('#previewGrid');
+            if (!fileInput || !dropZone || !previewGrid) return;
+
+            let selectedFiles = [];
+
+            function notifySizeError(file) {
+                const mb = (file.size / (1024 * 1024)).toFixed(2);
+                const msg = `"${file.name}" (${mb}MB) vượt quá ${MAX_FILE_MB}MB/ảnh. Vui lòng chọn ảnh nhỏ hơn.`;
+                if (window.abp?.notify?.warn) abp.notify.warn(msg);
+                else alert(msg);
+            }
+
+            function updateFileInput() {
+                const dt = new DataTransfer();
+                selectedFiles.forEach(f => dt.items.add(f));
+                fileInput.files = dt.files;
+            }
+
+            function createPreview(src, name, isExistingUrl) {
+                // tránh add trùng preview nếu mở modal nhiều lần
+                const safeName = (window.CSS && CSS.escape) ? CSS.escape(name) : name.replace(/"/g, '\\"');
+                if (previewGrid.querySelector(`[data-filename="${safeName}"]`)) return;
+
+                const item = document.createElement('div');
+                item.className = 'preview-item';
+                item.dataset.filename = name;
+
+                const img = document.createElement('img');
+                img.src = src;
+                img.alt = name;
+
+                const removeBtn = document.createElement('button');
+                removeBtn.type = 'button';
+                removeBtn.textContent = '×';
+                removeBtn.className = 'remove-btn';
+                removeBtn.onclick = () => {
+                    selectedFiles = selectedFiles.filter(f => f.name !== name);
+
+                    if (isExistingUrl) {
+                        const settingValueInput = form.querySelector('[name="AppSetting.SettingValue"]');
+                        if (settingValueInput) settingValueInput.value = '';
+                    }
+
+                    item.remove();
+                    updateFileInput();
+                };
+
+                item.appendChild(img);
+                item.appendChild(removeBtn);
+                previewGrid.appendChild(item);
+            }
+
+            function handleFiles(files) {
+                for (let file of files) {
+                    if (!file.type || !file.type.startsWith('image/')) continue;
+
+                    if (file.size > MAX_FILE_BYTES) {
+                        notifySizeError(file);
+                        continue;
+                    }
+
                     if (selectedFiles.some(f => f.name === file.name && f.size === file.size)) {
-                        return; // bỏ qua nếu đã có
+                        continue;
                     }
 
                     selectedFiles.push(file);
 
                     const reader = new FileReader();
-                    reader.onload = (e) => {
-                        createPreview(e.target.result, file.name);
-                    };
+                    reader.onload = (e) => createPreview(e.target.result, file.name, false);
                     reader.readAsDataURL(file);
                 }
-            }
-    }
-
-    function createPreview(src, name) {
-        debugger;
-            const item = document.createElement('div');
-            item.className = 'preview-item';
-            item.dataset.filename = name;
-
-            const img = document.createElement('img');
-            img.src = src;
-            img.alt = name;
-
-            const removeBtn = document.createElement('button');
-            removeBtn.type = 'button';
-            removeBtn.textContent = '×';
-            removeBtn.className = 'remove-btn';
-            removeBtn.onclick = () => {
-                // Xóa khỏi mảng selectedFiles
-                selectedFiles = selectedFiles.filter(f => f.name !== name);
-
-                const settingValueInput = document.querySelector('[name="AppSetting.SettingValue"]');
-                if (settingValueInput) settingValueInput.value = '';
-
-                item.remove();
-                // Cập nhật lại input file (xóa file đã bị remove)
                 updateFileInput();
-            };
+            }
 
-            item.appendChild(img);
-            item.appendChild(removeBtn);
-            previewGrid.appendChild(item);
-    }
+            // init mode theo model (server)
+            const settingType = "@(Model.AppSetting?.SettingType ?? "")";
+            const settingValue = "@(Model.AppSetting?.SettingValue ?? "")";
 
-    function updateFileInput() {
-        const dt = new DataTransfer();
-        selectedFiles.forEach(file => dt.items.add(file));
-        fileInput.files = dt.files;
-    }
+            const chk = findIsImageCheckbox(form);
 
-    });
-    
+            if (settingType === "image") {
+                if (chk) chk.checked = true;
+                setMode(form, true);
+
+                if (settingValue) {
+                    try {
+                        const filename = settingValue.split('/').pop() || "image";
+                        createPreview(settingValue, filename, true);
+                    } catch { }
+                }
+            } else {
+                // đảm bảo đúng trạng thái ban đầu
+                if (chk) setMode(form, chk.checked);
+            }
+
+            // upload handlers
+            dropZone.addEventListener('click', () => fileInput.click());
+
+            dropZone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                dropZone.classList.add('drag-over');
+            });
+
+            dropZone.addEventListener('dragleave', () => {
+                dropZone.classList.remove('drag-over');
+            });
+
+            dropZone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                dropZone.classList.remove('drag-over');
+                handleFiles(e.dataTransfer.files);
+            });
+
+            fileInput.addEventListener('change', () => {
+                if (fileInput.files?.length) handleFiles(fileInput.files);
+            });
+
+            // nếu ABP checkbox đã render nhưng setMode chưa chạy do timing, bắn change giả
+            if (chk) chk.dispatchEvent(new Event('change', { bubbles: true }));
+        }, 0);
+    })();
 </script>

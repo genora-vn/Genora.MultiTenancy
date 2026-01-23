@@ -22,26 +22,32 @@ public class DetailModalModel : MultiTenancyPageModel
 
     [BindProperty(SupportsGet = true)]
     public DateTime? ApplyDate { get; set; }    // từ JS truyền lên (yyyy-MM-dd)
+
     [BindProperty(SupportsGet = true)]
-    public DateTime? ApplyDateTo { get; set; }    // từ JS truyền lên (yyyy-MM-dd)
+    public DateTime? ApplyDateTo { get; set; }  // (nếu dùng sau)
+
     [BindProperty(SupportsGet = true)]
-    public DateTime? ApplyDateFrom { get; set; }    // từ JS truyền lên (yyyy-MM-dd)
+    public DateTime? ApplyDateFrom { get; set; } // (nếu dùng sau)
+
     [BindProperty(SupportsGet = true)]
     public string? TimeFrom { get; set; }       // "HH:mm"
 
     [BindProperty(SupportsGet = true)]
     public string? TimeTo { get; set; }
+
     [BindProperty]
-    public List<SelectListItem> Promotions { get; set; }
+    public List<SelectListItem> Promotions { get; set; } = new();
+
     // ----- Form bind -----
     [BindProperty]
-    public CreateUpdateAppCalendarSlotDto Slot { get; set; }
+    public CreateUpdateAppCalendarSlotDto Slot { get; set; } = new();
 
     public List<SelectListItem> CustomerTypeItems { get; set; } = new();
 
     private readonly IAppCalendarSlotService _slotService;
     private readonly IAppCustomerTypeService _customerTypeService;
     private readonly IMiniAppPromotionTypeService _promotionType;
+
     public DetailModalModel(
         IAppCalendarSlotService slotService,
         IAppCustomerTypeService customerTypeService,
@@ -55,15 +61,12 @@ public class DetailModalModel : MultiTenancyPageModel
     public async Task<IActionResult> OnGetAsync()
     {
         await LoadCustomerTypesAsync();
+
         var promotion = await _promotionType.GetAllAsync();
-        if(promotion != null && promotion.Count > 0)
-        {
-            Promotions = promotion.Select(p => new SelectListItem { Value = p.Id.ToString(), Text = p.Name }).ToList();
-        }
-        else
-        {
-            Promotions = new List<SelectListItem>();
-        }
+        Promotions = (promotion != null && promotion.Count > 0)
+            ? promotion.Select(p => new SelectListItem { Value = p.Id.ToString(), Text = p.Name }).ToList()
+            : new List<SelectListItem>();
+
         // EDIT nếu Id có
         if (Id.HasValue)
         {
@@ -71,10 +74,11 @@ public class DetailModalModel : MultiTenancyPageModel
 
             var allTypes = CustomerTypeItems
                 .Where(x => !string.IsNullOrWhiteSpace(x.Value))
-                .Select(x => Guid.Parse(x.Value))
+                .Select(x => Guid.Parse(x.Value!))
                 .ToList();
 
-            var dtoPriceDict = dto.Prices.ToDictionary(p => p.CustomerTypeId, p => p.Price);
+            // Dict theo CustomerTypeId -> AppCalendarSlotPriceDto
+            var dtoPriceDict = dto.Prices.ToDictionary(p => p.CustomerTypeId, p => p);
 
             Slot = new CreateUpdateAppCalendarSlotDto
             {
@@ -86,10 +90,19 @@ public class DetailModalModel : MultiTenancyPageModel
                 MaxSlots = dto.MaxSlots,
                 InternalNote = dto.InternalNote,
                 IsActive = dto.IsActive,
-                Prices = allTypes.Select(ctId => new CreateUpdateCalendarSlotPriceDto
+
+                Prices = allTypes.Select(ctId =>
                 {
-                    CustomerTypeId = ctId,
-                    Price = dtoPriceDict.TryGetValue(ctId, out var price) ? price : 0
+                    dtoPriceDict.TryGetValue(ctId, out var p);
+
+                    return new CreateUpdateCalendarSlotPriceDto
+                    {
+                        CustomerTypeId = ctId,
+                        Price9 = p?.Price9 ?? 0m,
+                        Price18 = p?.Price18 ?? 0m,
+                        Price27 = p?.Price27 ?? 0m,
+                        Price36 = p?.Price36 ?? 0m
+                    };
                 }).ToList()
             };
 
@@ -98,20 +111,13 @@ public class DetailModalModel : MultiTenancyPageModel
 
         // CREATE
         if (!GolfCourseId.HasValue || GolfCourseId.Value == Guid.Empty)
-        {
             return BadRequest("Missing golfCourseId");
-        }
-        if (!ApplyDate.HasValue)
-        {
-            return BadRequest("Missing ApplyDate");
-        }
-        //if (!ApplyDateTo.HasValue)
-        //{
-        //    return BadRequest("Missing ApplyDateTo");
-        //}
 
-        var gcId = GolfCourseId ?? Guid.Empty;
-        var date = ApplyDate?.Date ?? DateTime.Today;
+        if (!ApplyDate.HasValue)
+            return BadRequest("Missing ApplyDate");
+
+        var gcId = GolfCourseId.Value;
+        var date = ApplyDate.Value.Date;
 
         var tf = ParseTimeOrDefault(TimeFrom, new TimeSpan(6, 0, 0));
         var tt = ParseTimeOrDefault(TimeTo, tf.Add(TimeSpan.FromMinutes(30)));
@@ -123,10 +129,14 @@ public class DetailModalModel : MultiTenancyPageModel
             TimeFrom = tf,
             TimeTo = tt,
             IsActive = true,
+
             Prices = CustomerTypeItems.Select(i => new CreateUpdateCalendarSlotPriceDto
             {
-                CustomerTypeId = Guid.Parse(i.Value),
-                Price = 0
+                CustomerTypeId = Guid.Parse(i.Value!),
+                Price9 = 0m,
+                Price18 = 0m,
+                Price27 = 0m,
+                Price36 = 0m
             }).ToList()
         };
 
@@ -168,7 +178,7 @@ public class DetailModalModel : MultiTenancyPageModel
 
     private static TimeSpan ParseTimeOrDefault(string? text, TimeSpan def)
     {
-        if (text.IsNullOrWhiteSpace()) return def;
+        if (string.IsNullOrWhiteSpace(text)) return def;
 
         // cho phép "HH:mm"
         if (TimeSpan.TryParse(text, out var t)) return t;

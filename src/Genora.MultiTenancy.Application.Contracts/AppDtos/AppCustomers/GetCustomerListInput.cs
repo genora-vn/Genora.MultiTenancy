@@ -8,7 +8,7 @@ public class GetCustomerListInput : PagedAndSortedResultRequestDto
     /// <summary>
     /// Text chung: tìm trong tên / SĐT / mã khách
     /// </summary>
-    public string FilterText { get; set; }
+    public string Filter { get; set; }
 
     public string PhoneNumber { get; set; }
 
@@ -24,4 +24,7 @@ public class GetCustomerListInput : PagedAndSortedResultRequestDto
     /// </summary>
     public DateTime? BirthDateFrom { get; set; }
     public DateTime? BirthDateTo { get; set; }
+
+    public DateTime? CreatedFrom { get; set; }
+    public DateTime? CreatedTo { get; set; }
 }

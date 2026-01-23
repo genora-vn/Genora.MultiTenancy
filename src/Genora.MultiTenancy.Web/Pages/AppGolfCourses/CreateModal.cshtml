@@ -1,6 +1,7 @@
 ﻿@page
 @using Genora.MultiTenancy.Enums
 @using Genora.MultiTenancy.Localization
+@using Genora.MultiTenancy.Web.Helpers
 @using Genora.MultiTenancy.Web.Pages.AppGolfCourses
 @using Microsoft.Extensions.Localization
 @using Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.TagHelpers.Modal
@@ -16,14 +17,12 @@
             @* <abp-form-content /> *@
             <div class="mb-3 d-inline-flex" style="width: 99%; gap: 10px">
                 <div class="col-md-2">
-                    @* <abp-input asp-for="GolfCourse.Code" placeholder="Nhập mã sân (vd: MASANX)" label="@L["GolfCourseCode"]" /> *@
-                    <label asp-for="GolfCourse.Code" class="form-label">@L["GolfCourseCode"]</label>
-                    <input asp-for="GolfCourse.Code" class="form-control" placeholder="Nhập mã sân (vd: MASANX)" />
+                    @* <input asp-for="GolfCourse.Code" class="form-control" placeholder="Nhập mã sân (vd: MASANX)" /> *@
+                    <abp-input asp-for="GolfCourse.Code" placeholder="Nhập mã sân (vd: MONT)" label="@L["GolfCourseCode"]" />
                 </div>
                 <div class="col-md-5">
                     @* <abp-input asp-for="GolfCourse.Name" placeholder="Nhập tên sân" label="@L["GolfCourseName"]" /> *@
-                    <label asp-for="GolfCourse.Name" class="form-label">@L["GolfCourseName"]</label>
-                    <input asp-for="GolfCourse.Name" class="form-control" placeholder="Nhập tên sân." />
+                    <abp-input asp-for="GolfCourse.Name" placeholder="Nhập tên sân (vd: Montgomerie Links)" label="@L["GolfCourseName"]" />
                 </div>
                 <div class="col-md-5">
                     @* <abp-input asp-for="GolfCourse.Address" placeholder="Nhập địa chỉ đầy đủ sân." label="@L["Address"]" /> *@
@@ -34,13 +33,11 @@
             <div class="mb-3 d-inline-flex" style="width: 98%; gap: 10px">
                 <div class="col-md-3">
                     @* <abp-input asp-for="GolfCourse.Province" placeholder="Nhập tỉnh địa chỉ sân" label="" /> *@
-                    <label asp-for="GolfCourse.Province" class="form-label">@L["Province"]</label>
-                    <input asp-for="GolfCourse.Province" class="form-control" placeholder="Nhập tỉnh địa chỉ sân." />
+                    <abp-input asp-for="GolfCourse.Province" placeholder="Nhập tên Tỉnh / Thành phố (vd: Đà Nẵng)" label="@L["Province"]" />
                 </div>
                 <div class="col-md-3">
                     @* <abp-input asp-for="GolfCourse.Phone" placeholder="Nhập số điện thoại." label="@L["Phone"]" /> *@
-                    <label asp-for="GolfCourse.Phone" class="form-label">@L["Phone"]</label>
-                    <input asp-for="GolfCourse.Phone" class="form-control" placeholder="Nhập số điện thoại." />
+                    <abp-input asp-for="GolfCourse.Phone" placeholder="Nhập số điện thoại (vd: 0912345678)" label="@L["Phone"]" />
                 </div>
                 <div class="col-md-3">
                     <label asp-for="GolfCourse.OpenTime" class="form-label">@L["OpenTime"]</label>

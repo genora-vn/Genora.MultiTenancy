@@ -3,16 +3,21 @@ using Genora.MultiTenancy.Features.AppBookingFeatures;
 using Genora.MultiTenancy.Features.AppCalendarSlots;
 using Genora.MultiTenancy.Features.AppCustomers;
 using Genora.MultiTenancy.Features.AppCustomerTypes;
+using Genora.MultiTenancy.Features.AppEmails;
 using Genora.MultiTenancy.Features.AppGolfCourses;
 using Genora.MultiTenancy.Features.AppMembershipTiers;
 using Genora.MultiTenancy.Features.AppNewsFeatures;
 using Genora.MultiTenancy.Features.AppPromotionTypes;
 using Genora.MultiTenancy.Features.AppSettings;
+using Genora.MultiTenancy.Features.AppSpecialDates;
+using Genora.MultiTenancy.Features.AppZaloAuths;
+using Genora.MultiTenancy.Features.AppZaloLogs;
 using Genora.MultiTenancy.Localization;
 using Volo.Abp.Authorization.Permissions;
 using Volo.Abp.Features;
 using Volo.Abp.Localization;
 using Volo.Abp.MultiTenancy;
+using static Genora.MultiTenancy.Permissions.MultiTenancyPermissions;
 
 namespace Genora.MultiTenancy.Permissions;
 
@@ -511,38 +516,91 @@ public class MultiTenancyPermissionDefinitionProvider : PermissionDefinitionProv
 
         #endregion
 
-        #region Cấu hình quyền Thêm / Sửa / Xóa cho tính năng quản trị ZaloAuth cho Host
+        #region Cấu hình quyền Thêm / Sửa / Xóa cho tính năng quản trị ZaloAuth + ZaloLogs
 
+        // =====================
+        // TENANT (bị ràng Feature)
+        // =====================
+        var zaloAuthGroup = context.AddGroup(
+            "MiniAppZaloAuth",
+            L("PermissionGroup:MiniAppZaloAuth")
+        );
+
+        var zaloAuthTenantRoot = zaloAuthGroup.AddPermission(
+            MultiTenancyPermissions.AppZaloAuths.Default,
+            L("Permission:MiniAppZaloAuth")
+        );
+        zaloAuthTenantRoot.MultiTenancySide = MultiTenancySides.Tenant;
+        zaloAuthTenantRoot.RequireFeatures(AppZaloAuthFeatures.Management);
+
+        var zaloAuthTenantCreate = zaloAuthTenantRoot.AddChild(
+            MultiTenancyPermissions.AppZaloAuths.Create,
+            L("Permission:MiniAppZaloAuth.Create")
+        );
+        zaloAuthTenantCreate.MultiTenancySide = MultiTenancySides.Tenant;
+        zaloAuthTenantCreate.RequireFeatures(AppZaloAuthFeatures.Management);
+
+        var zaloAuthTenantEdit = zaloAuthTenantRoot.AddChild(
+            MultiTenancyPermissions.AppZaloAuths.Edit,
+            L("Permission:MiniAppZaloAuth.Edit")
+        );
+        zaloAuthTenantEdit.MultiTenancySide = MultiTenancySides.Tenant;
+        zaloAuthTenantEdit.RequireFeatures(AppZaloAuthFeatures.Management);
+
+        var zaloAuthTenantDelete = zaloAuthTenantRoot.AddChild(
+            MultiTenancyPermissions.AppZaloAuths.Delete,
+            L("Permission:MiniAppZaloAuth.Delete")
+        );
+        zaloAuthTenantDelete.MultiTenancySide = MultiTenancySides.Tenant;
+        zaloAuthTenantDelete.RequireFeatures(AppZaloAuthFeatures.Management);
+
+        // ✅ TENANT: Zalo Logs (bị ràng Feature riêng)
+        var zaloLogTenantView = zaloAuthTenantRoot.AddChild(
+            MultiTenancyPermissions.AppZaloLogs.Default,
+            L("Permission:AppZaloLogs")
+        );
+        zaloLogTenantView.MultiTenancySide = MultiTenancySides.Tenant;
+        zaloLogTenantView.RequireFeatures(AppZaloLogFeatures.Management);
+
+
+        // =====================
         // HOST (không ràng Feature)
+        // =====================
         var zaloAuthGroupHost = context.AddGroup(
             "MiniAppZaloAuthHost",
-            L("PermissionGroup:MiniAppZaloAuthHost"));
+            L("PermissionGroup:MiniAppZaloAuthHost")
+        );
 
         var zaloAuthHostRoot = zaloAuthGroupHost.AddPermission(
             MultiTenancyPermissions.HostAppZaloAuths.Default,
-            L("Permission:MiniAppZaloAuth"));
-
+            L("Permission:MiniAppZaloAuth")
+        );
         zaloAuthHostRoot.MultiTenancySide = MultiTenancySides.Host;
 
         var zaloAuthHostCreate = zaloAuthHostRoot.AddChild(
             MultiTenancyPermissions.HostAppZaloAuths.Create,
-            L("Permission:MiniAppZaloAuth.Create"));
-
+            L("Permission:MiniAppZaloAuth.Create")
+        );
         zaloAuthHostCreate.MultiTenancySide = MultiTenancySides.Host;
 
         var zaloAuthHostEdit = zaloAuthHostRoot.AddChild(
             MultiTenancyPermissions.HostAppZaloAuths.Edit,
-            L("Permission:MiniAppZaloAuth.Edit"));
-
+            L("Permission:MiniAppZaloAuth.Edit")
+        );
         zaloAuthHostEdit.MultiTenancySide = MultiTenancySides.Host;
 
         var zaloAuthHostDelete = zaloAuthHostRoot.AddChild(
             MultiTenancyPermissions.HostAppZaloAuths.Delete,
-            L("Permission:MiniAppZaloAuth.Delete"));
-
+            L("Permission:MiniAppZaloAuth.Delete")
+        );
         zaloAuthHostDelete.MultiTenancySide = MultiTenancySides.Host;
 
-        zaloAuthGroupHost.AddPermission(MultiTenancyPermissions.HostAppZaloLogs.Default, L("Permission:HostAppZaloLogs"));
+        // ✅ HOST: Zalo Logs (set MultiTenancySide=Host để tenant không bị thấy “menu rác”)
+        var zaloLogHostView = zaloAuthHostRoot.AddChild(
+            MultiTenancyPermissions.HostAppZaloLogs.Default,
+            L("Permission:HostAppZaloLogs")
+        );
+        zaloLogHostView.MultiTenancySide = MultiTenancySides.Host;
 
         #endregion
 
@@ -610,6 +668,166 @@ public class MultiTenancyPermissionDefinitionProvider : PermissionDefinitionProv
             L("Permission:MiniAppPromotionType.Delete"));
 
         appPromotionTypeHostDelete.MultiTenancySide = MultiTenancySides.Host;
+
+        #endregion
+
+        #region Cấu hình quyền Thêm / Sửa / Xóa cho tính năng quản trị AppSpecialDates
+
+        // TENANT (bị ràng Feature)
+        var specialDateGroup = context.AddGroup(
+            "MiniAppSpecialDate",
+            L("PermissionGroup:MiniAppSpecialDate")
+        );
+
+        var specialDateTenantRoot = specialDateGroup.AddPermission(
+            MultiTenancyPermissions.AppSpecialDates.Default,
+            L("Permission:MiniAppSpecialDate")
+        );
+        specialDateTenantRoot.MultiTenancySide = MultiTenancySides.Tenant;
+        specialDateTenantRoot.RequireFeatures(AppSpecialDateFeatures.Management);
+
+        var specialDateTenantCreate = specialDateTenantRoot.AddChild(
+            MultiTenancyPermissions.AppSpecialDates.Create,
+            L("Permission:MiniAppSpecialDate.Create")
+        );
+        specialDateTenantCreate.MultiTenancySide = MultiTenancySides.Tenant;
+        specialDateTenantCreate.RequireFeatures(AppSpecialDateFeatures.Management);
+
+        var specialDateTenantEdit = specialDateTenantRoot.AddChild(
+            MultiTenancyPermissions.AppSpecialDates.Edit,
+            L("Permission:MiniAppSpecialDate.Edit")
+        );
+        specialDateTenantEdit.MultiTenancySide = MultiTenancySides.Tenant;
+        specialDateTenantEdit.RequireFeatures(AppSpecialDateFeatures.Management);
+
+        var specialDateTenantDelete = specialDateTenantRoot.AddChild(
+            MultiTenancyPermissions.AppSpecialDates.Delete,
+            L("Permission:MiniAppSpecialDate.Delete")
+        );
+        specialDateTenantDelete.MultiTenancySide = MultiTenancySides.Tenant;
+        specialDateTenantDelete.RequireFeatures(AppSpecialDateFeatures.Management);
+
+        // HOST (không ràng Feature)
+        var specialDateGroupHost = context.AddGroup(
+            "MiniAppSpecialDateHost",
+            L("PermissionGroup:MiniAppSpecialDateHost"));
+
+        var specialDateHostRoot = specialDateGroupHost.AddPermission(
+            MultiTenancyPermissions.HostAppSpecialDates.Default,
+            L("Permission:MiniAppSpecialDate"));
+
+        specialDateHostRoot.MultiTenancySide = MultiTenancySides.Host;
+
+        var specialDateHostCreate = specialDateHostRoot.AddChild(
+            MultiTenancyPermissions.HostAppSpecialDates.Create,
+            L("Permission:MiniAppSpecialDate.Create"));
+
+        specialDateHostCreate.MultiTenancySide = MultiTenancySides.Host;
+
+        var specialDateHostEdit = specialDateHostRoot.AddChild(
+            MultiTenancyPermissions.HostAppSpecialDates.Edit,
+            L("Permission:MiniAppSpecialDate.Edit"));
+
+        specialDateHostEdit.MultiTenancySide = MultiTenancySides.Host;
+
+        var specialDateHostDelete = specialDateHostRoot.AddChild(
+            MultiTenancyPermissions.HostAppSpecialDates.Delete,
+            L("Permission:MiniAppSpecialDate.Delete"));
+
+        specialDateHostDelete.MultiTenancySide = MultiTenancySides.Host;
+
+        #endregion
+
+        #region Cấu hình quyền Thêm / Sửa / Xóa cho tính năng quản trị AppEmails
+
+        // TENANT (bị ràng Feature)
+        var emailGroup = context.AddGroup(
+            "MiniAppEmail",
+            L("PermissionGroup:MiniAppEmail")
+        );
+
+        var emailTenantRoot = emailGroup.AddPermission(
+            MultiTenancyPermissions.AppEmails.Default,
+            L("Permission:MiniAppEmail")
+        );
+        emailTenantRoot.MultiTenancySide = MultiTenancySides.Tenant;
+        specialDateTenantRoot.RequireFeatures(AppEmailFeatures.Management);
+
+        var emailTenantCreate = emailTenantRoot.AddChild(
+            MultiTenancyPermissions.AppEmails.Create,
+            L("Permission:MiniAppEmail.Create")
+        );
+        emailTenantCreate.MultiTenancySide = MultiTenancySides.Tenant;
+        emailTenantCreate.RequireFeatures(AppEmailFeatures.Management);
+
+        var emailTenantEdit = emailTenantRoot.AddChild(
+            MultiTenancyPermissions.AppEmails.Edit,
+            L("Permission:MiniAppEmail.Edit")
+        );
+        emailTenantEdit.MultiTenancySide = MultiTenancySides.Tenant;
+        emailTenantEdit.RequireFeatures(AppEmailFeatures.Management);
+
+        var emailTenantDelete = emailTenantRoot.AddChild(
+            MultiTenancyPermissions.AppEmails.Delete,
+            L("Permission:MiniAppEmail.Delete")
+        );
+        emailTenantDelete.MultiTenancySide = MultiTenancySides.Tenant;
+        emailTenantDelete.RequireFeatures(AppEmailFeatures.Management);
+
+        var emailTenantSend = emailTenantRoot.AddChild(
+            MultiTenancyPermissions.AppEmails.Send,
+            L("Permission:MiniAppEmail.Send")
+        );
+        emailTenantSend.MultiTenancySide = MultiTenancySides.Tenant;
+        emailTenantSend.RequireFeatures(AppEmailFeatures.Management);
+
+        var emailTenantResend = emailTenantRoot.AddChild(
+            MultiTenancyPermissions.AppEmails.Resend,
+            L("Permission:MiniAppEmail.Resend")
+        );
+        emailTenantResend.MultiTenancySide = MultiTenancySides.Tenant;
+        emailTenantResend.RequireFeatures(AppEmailFeatures.Management);
+
+        // HOST (không ràng Feature)
+        var emailGroupHost = context.AddGroup(
+            "MiniAppEmailHost",
+            L("PermissionGroup:MiniAppEmailHost"));
+
+        var emailHostRoot = emailGroupHost.AddPermission(
+            MultiTenancyPermissions.HostAppEmails.Default,
+            L("Permission:MiniAppEmail"));
+
+        emailHostRoot.MultiTenancySide = MultiTenancySides.Host;
+
+        var emailHostCreate = emailHostRoot.AddChild(
+            MultiTenancyPermissions.HostAppEmails.Create,
+            L("Permission:MiniAppEmail.Create"));
+
+        emailHostCreate.MultiTenancySide = MultiTenancySides.Host;
+
+        var emailHostEdit = emailHostRoot.AddChild(
+            MultiTenancyPermissions.HostAppEmails.Edit,
+            L("Permission:MiniAppEmail.Edit"));
+
+        emailHostEdit.MultiTenancySide = MultiTenancySides.Host;
+
+        var emailHostDelete = emailHostRoot.AddChild(
+            MultiTenancyPermissions.HostAppEmails.Delete,
+            L("Permission:MiniAppEmail.Delete"));
+
+        emailHostDelete.MultiTenancySide = MultiTenancySides.Host;
+
+        var emailHostSend = emailHostRoot.AddChild(
+           MultiTenancyPermissions.HostAppEmails.Send,
+           L("Permission:MiniAppEmail.Send"));
+
+        emailHostSend.MultiTenancySide = MultiTenancySides.Host;
+
+        var emailHostResend = emailHostRoot.AddChild(
+           MultiTenancyPermissions.HostAppEmails.Resend,
+           L("Permission:MiniAppEmail.Resend"));
+
+        emailHostResend.MultiTenancySide = MultiTenancySides.Host;
 
         #endregion
     }

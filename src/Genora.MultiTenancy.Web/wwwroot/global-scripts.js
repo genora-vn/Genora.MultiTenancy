@@ -66,3 +66,27 @@
         }
     };
 })();
+(function () {
+    if (!window.HTMLInputElement) return;
+
+    var _orig = HTMLInputElement.prototype.setSelectionRange;
+    if (typeof _orig !== "function") return;
+
+    // tránh patch nhiều lần
+    if (HTMLInputElement.prototype.__patchedSetSelectionRangeForNumber) return;
+    HTMLInputElement.prototype.__patchedSetSelectionRangeForNumber = true;
+
+    HTMLInputElement.prototype.setSelectionRange = function (start, end, direction) {
+        try {
+            // input type=number không support selection -> bỏ qua
+            var t = (this.type || "").toLowerCase();
+            if (t === "number") return;
+            return _orig.call(this, start, end, direction);
+        } catch (e) {
+            // nếu browser vẫn ném, bỏ qua cho type=number
+            var t2 = (this.type || "").toLowerCase();
+            if (t2 === "number") return;
+            throw e;
+        }
+    };
+})();

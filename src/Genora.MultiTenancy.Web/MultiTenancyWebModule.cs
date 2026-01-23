@@ -7,17 +7,19 @@ using Genora.MultiTenancy.TenantManagement;
 using Genora.MultiTenancy.Web.HealthChecks;
 using Genora.MultiTenancy.Web.Menus;
 using Genora.MultiTenancy.Web.Middlewares;
+using Hangfire;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Extensions.DependencyInjection;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Localization;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using OpenIddict.Server.AspNetCore;
 using OpenIddict.Validation.AspNetCore;
@@ -25,7 +27,6 @@ using System;
 using System.Globalization;
 using System.IO;
 using System.Security.Cryptography.X509Certificates;
-using System.Text;
 using Volo.Abp;
 using Volo.Abp.Account.Web;
 using Volo.Abp.AspNetCore.MultiTenancy;
@@ -41,10 +42,15 @@ using Volo.Abp.AspNetCore.Serilog;
 using Volo.Abp.Auditing;
 using Volo.Abp.Autofac;
 using Volo.Abp.AutoMapper;
+using Volo.Abp.BackgroundJobs;
+using Volo.Abp.BackgroundJobs.Hangfire;
 using Volo.Abp.BackgroundWorkers;
+using Volo.Abp.Emailing;              // ✅ ADD: IEmailSender
 using Volo.Abp.FeatureManagement;
+using Volo.Abp.Hangfire;
 using Volo.Abp.Identity.Web;
 using Volo.Abp.Localization;
+using Volo.Abp.MailKit;              // ✅ ADD: AbpMailKitModule (SMTP sender)
 using Volo.Abp.Modularity;
 using Volo.Abp.MultiTenancy;
 using Volo.Abp.OpenIddict;
@@ -64,6 +70,7 @@ namespace Genora.MultiTenancy.Web;
     typeof(MultiTenancyApplicationModule),
     typeof(MultiTenancyEntityFrameworkCoreModule),
     typeof(AbpAutofacModule),
+    typeof(AbpAutoMapperModule),
     typeof(AbpStudioClientAspNetCoreModule),
     typeof(AbpIdentityWebModule),
     typeof(AbpAspNetCoreMvcUiLeptonXLiteThemeModule),
@@ -71,7 +78,10 @@ namespace Genora.MultiTenancy.Web;
     typeof(AbpTenantManagementWebModule),
     typeof(AbpFeatureManagementWebModule),
     typeof(AbpSwashbuckleModule),
-    typeof(AbpAspNetCoreSerilogModule)
+    typeof(AbpAspNetCoreSerilogModule),
+    typeof(AbpMailKitModule), //Bật SMTP EmailSender (thay NullEmailSender)
+    typeof(AbpHangfireModule),
+    typeof(AbpBackgroundJobsHangfireModule)
 )]
 public class MultiTenancyWebModule : AbpModule
 {
@@ -143,6 +153,11 @@ public class MultiTenancyWebModule : AbpModule
             });
         });
 
+        Configure<FormOptions>(options =>
+        {
+            options.MultipartBodyLengthLimit = 20 * 1024 * 1024; // 20MB tổng request
+        });
+
         Configure<AbpMvcLibsOptions>(options =>
         {
             options.CheckLibs = false;
@@ -161,9 +176,9 @@ public class MultiTenancyWebModule : AbpModule
         {
             var supportedCultures = new[]
             {
-            new CultureInfo("vi"),
-            new CultureInfo("en")
-        };
+                new CultureInfo("vi"),
+                new CultureInfo("en")
+            };
 
             options.DefaultRequestCulture = new RequestCulture("vi");
             options.SupportedCultures = supportedCultures;
@@ -185,7 +200,7 @@ public class MultiTenancyWebModule : AbpModule
             {
                 options.DisableTransportSecurityRequirement = true;
             });
-            
+
             Configure<ForwardedHeadersOptions>(options =>
             {
                 options.ForwardedHeaders = ForwardedHeaders.XForwardedProto;
@@ -194,18 +209,34 @@ public class MultiTenancyWebModule : AbpModule
 
         Configure<AbpAuditingOptions>(options =>
         {
-            options.IsEnabled = true;                          // bật auditing
-            options.IsEnabledForAnonymousUsers = false;        // log cho anonymous?
-            options.IsEnabledForGetRequests = false;           // tránh spam GET; bật = true nếu cần
-            options.ApplicationName = "Genora";               // để lọc theo app nếu nhiều service
+            options.IsEnabled = true;
+            options.IsEnabledForAnonymousUsers = false;
+            options.IsEnabledForGetRequests = false;
+            options.ApplicationName = "Genora";
         });
+
+        Configure<AbpBackgroundJobOptions>(options =>
+        {
+            options.IsJobExecutionEnabled = true;
+        });
+
+        Configure<AbpBackgroundWorkerOptions>(options =>
+        {
+            options.IsEnabled = true;
+        });
+
+        context.Services.AddHangfire(config =>
+        {
+            config.UseSqlServerStorage(configuration.GetConnectionString("Default"));
+        });
+
+        context.Services.AddHangfireServer();
 
         // ✅ Replace auditing store
         context.Services.Replace(ServiceDescriptor.Transient<IAuditingStore, HostRedirectAuditingStore>());
 
         // Register DI Zalo Service
         context.Services.AddHttpClient();
-
         context.Services.AddTransient<IZaloOAuthClient, ZaloOAuthClient>();
         context.Services.AddTransient<IZaloTokenProvider, ZaloTokenProvider>();
         context.Services.AddTransient<IZaloApiClient, ZaloApiClient>();
@@ -214,11 +245,11 @@ public class MultiTenancyWebModule : AbpModule
         ConfigureUrls(configuration);
         ConfigureHealthChecks(context);
         ConfigureAuthentication(context);
-        ConfigureAutoMapper();
+        ConfigureAutoMapper(context);
         ConfigureVirtualFileSystem(hostingEnvironment);
         ConfigureNavigationServices();
         ConfigureAutoApiControllers();
-        ConfigureSwaggerServices(context.Services);     
+        ConfigureSwaggerServices(context.Services);
 
         Configure<AbpTenantResolveOptions>(options =>
         {
@@ -244,7 +275,6 @@ public class MultiTenancyWebModule : AbpModule
         });
     }
 
-
     private void ConfigureHealthChecks(ServiceConfigurationContext context)
     {
         context.Services.AddMultiTenancyHealthChecks();
@@ -256,18 +286,12 @@ public class MultiTenancyWebModule : AbpModule
         {
             options.StyleBundles.Configure(
                 LeptonXLiteThemeBundles.Styles.Global,
-                bundle =>
-                {
-                    bundle.AddFiles("/global-styles.css");
-                }
+                bundle => { bundle.AddFiles("/global-styles.css"); }
             );
 
             options.ScriptBundles.Configure(
                 LeptonXLiteThemeBundles.Scripts.Global,
-                bundle =>
-                {
-                    bundle.AddFiles("/global-scripts.js");
-                }
+                bundle => { bundle.AddFiles("/global-scripts.js"); }
             );
         });
     }
@@ -289,11 +313,14 @@ public class MultiTenancyWebModule : AbpModule
         });
     }
 
-    private void ConfigureAutoMapper()
+    private void ConfigureAutoMapper(ServiceConfigurationContext context)
     {
+        // (giữ nguyên logic, chỉ gộp để tránh cấu hình lặp)
+        context.Services.AddAutoMapperObjectMapper<MultiTenancyWebModule>();
         Configure<AbpAutoMapperOptions>(options =>
         {
-            options.AddMaps<MultiTenancyWebModule>();
+            options.AddMaps<MultiTenancyWebModule>(validate: false);
+            options.AddMaps<MultiTenancyApplicationModule>(validate: false);
         });
     }
 
@@ -305,11 +332,16 @@ public class MultiTenancyWebModule : AbpModule
 
             if (hostingEnvironment.IsDevelopment())
             {
-                options.FileSets.ReplaceEmbeddedByPhysical<MultiTenancyDomainSharedModule>(Path.Combine(hostingEnvironment.ContentRootPath, string.Format("..{0}Genora.MultiTenancy.Domain.Shared", Path.DirectorySeparatorChar)));
-                options.FileSets.ReplaceEmbeddedByPhysical<MultiTenancyDomainModule>(Path.Combine(hostingEnvironment.ContentRootPath, string.Format("..{0}Genora.MultiTenancy.Domain", Path.DirectorySeparatorChar)));
-                options.FileSets.ReplaceEmbeddedByPhysical<MultiTenancyApplicationContractsModule>(Path.Combine(hostingEnvironment.ContentRootPath, string.Format("..{0}Genora.MultiTenancy.Application.Contracts", Path.DirectorySeparatorChar)));
-                options.FileSets.ReplaceEmbeddedByPhysical<MultiTenancyApplicationModule>(Path.Combine(hostingEnvironment.ContentRootPath, string.Format("..{0}Genora.MultiTenancy.Application", Path.DirectorySeparatorChar)));
-                options.FileSets.ReplaceEmbeddedByPhysical<MultiTenancyHttpApiModule>(Path.Combine(hostingEnvironment.ContentRootPath, string.Format("..{0}..{0}src{0}Genora.MultiTenancy.HttpApi", Path.DirectorySeparatorChar)));
+                options.FileSets.ReplaceEmbeddedByPhysical<MultiTenancyDomainSharedModule>(
+                    Path.Combine(hostingEnvironment.ContentRootPath, $"..{Path.DirectorySeparatorChar}Genora.MultiTenancy.Domain.Shared"));
+                options.FileSets.ReplaceEmbeddedByPhysical<MultiTenancyDomainModule>(
+                    Path.Combine(hostingEnvironment.ContentRootPath, $"..{Path.DirectorySeparatorChar}Genora.MultiTenancy.Domain"));
+                options.FileSets.ReplaceEmbeddedByPhysical<MultiTenancyApplicationContractsModule>(
+                    Path.Combine(hostingEnvironment.ContentRootPath, $"..{Path.DirectorySeparatorChar}Genora.MultiTenancy.Application.Contracts"));
+                options.FileSets.ReplaceEmbeddedByPhysical<MultiTenancyApplicationModule>(
+                    Path.Combine(hostingEnvironment.ContentRootPath, $"..{Path.DirectorySeparatorChar}Genora.MultiTenancy.Application"));
+                options.FileSets.ReplaceEmbeddedByPhysical<MultiTenancyHttpApiModule>(
+                    Path.Combine(hostingEnvironment.ContentRootPath, $"..{Path.DirectorySeparatorChar}..{Path.DirectorySeparatorChar}src{Path.DirectorySeparatorChar}Genora.MultiTenancy.HttpApi"));
                 options.FileSets.ReplaceEmbeddedByPhysical<MultiTenancyWebModule>(hostingEnvironment.ContentRootPath);
             }
         });
@@ -338,21 +370,27 @@ public class MultiTenancyWebModule : AbpModule
 
     private void ConfigureSwaggerServices(IServiceCollection services)
     {
-        services.AddAbpSwaggerGen(
-            options =>
-            {
-                options.SwaggerDoc("v1", new OpenApiInfo { Title = "MultiTenancy API", Version = "v1" });
-                options.DocInclusionPredicate((docName, description) => true);
-                options.CustomSchemaIds(type => type.FullName);
-            }
-        );
+        services.AddAbpSwaggerGen(options =>
+        {
+            options.SwaggerDoc("v1", new OpenApiInfo { Title = "MultiTenancy API", Version = "v1" });
+            options.DocInclusionPredicate((docName, description) => true);
+            options.CustomSchemaIds(type => type.FullName);
+        });
     }
-
 
     public override void OnApplicationInitialization(ApplicationInitializationContext context)
     {
         var app = context.GetApplicationBuilder();
         var env = context.GetEnvironment();
+
+        // ✅ FIX: log đúng type + đảm bảo dùng IEmailSender thật (MailKit) thay vì NullEmailSender
+        var sp = context.ServiceProvider;
+        var logger = sp.GetRequiredService<ILogger<MultiTenancyWebModule>>();
+        var sender = sp.GetRequiredService<IEmailSender>();
+        logger.LogWarning("IEmailSender implementation = {Type}", sender.GetType().FullName);
+
+        var jobManager = sp.GetRequiredService<IBackgroundJobManager>();
+        logger.LogWarning("IBackgroundJobManager implementation = {Type}", jobManager.GetType().FullName);
 
         app.UseCors("ZaloPolicy");
 
@@ -361,6 +399,8 @@ public class MultiTenancyWebModule : AbpModule
         {
             context.AddBackgroundWorkerAsync<AuditLogCleanupWorker>();
         }
+
+        app.UseHangfireDashboard("/hangfire");
 
         app.UseForwardedHeaders();
 
@@ -384,6 +424,7 @@ public class MultiTenancyWebModule : AbpModule
         {
             app.UseMultiTenancy();
         }
+
         app.UseMiddleware<TenantAutoMigrateMiddleware>();
         app.UseMiddleware<LogEnrichmentMiddleware>();
 
@@ -392,8 +433,6 @@ public class MultiTenancyWebModule : AbpModule
         app.UseAbpSecurityHeaders();
         app.UseAuthentication();
         app.UseAbpOpenIddictValidation();
-
-        
 
         app.UseUnitOfWork();
         app.UseDynamicClaims();

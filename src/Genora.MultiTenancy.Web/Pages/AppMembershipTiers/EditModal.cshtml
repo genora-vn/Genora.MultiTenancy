@@ -16,14 +16,11 @@
             <input asp-for="MembershipTier.Code" hidden />
             @* <abp-form-content /> *@
             <div class="d-inline-flex" style="width: 97%; gap: 15px">
-                <div class="col-md-2">
-                    <abp-input asp-for="MembershipTier.Code" placeholder="Nhập mã hạng (vd: GOLD)" disabled/>
+                <div class="col-md-5">
+                    <abp-input asp-for="MembershipTier.Code" placeholder="Nhập mã hạng (vd: GOLD)" disabled />
                 </div>
-                <div class="col-md-8">
-                    <abp-input asp-for="MembershipTier.Name" placeholder="Nhập tên" />
-                </div>
-                <div class="col-md-2" style="display:flex; align-items: anchor-center; margin-left: 10px">
-                    <abp-input asp-for="MembershipTier.IsActive" />
+                <div class="col-md-7">
+                    <abp-input asp-for="MembershipTier.Name" placeholder="Nhập tên hạng (vd: Đồng, Bạc, Vàng,...)" />
                 </div>
             </div>
 
@@ -32,23 +29,27 @@
                 <textarea asp-for="MembershipTier.Description" placeholder="Mô tả chi tiết xếp hạng" rows="3" class="form-control"></textarea>
             </div>
             <div class="d-inline-flex" style="width: 97%; gap: 15px">
-                <div class="col-md-4">
+                <div class="col-md-5">
                     <abp-input asp-for="MembershipTier.MinTotalSpending" placeholder="Nhập doanh thu tối thiểu" />
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-5">
                     <abp-input asp-for="MembershipTier.MinRounds" placeholder="Nhập lượi chơi tối thiểu" />
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-2">
                     <abp-input asp-for="MembershipTier.EvaluationPeriod" placeholder="Chu kỳ xét tăng hạng" />
                 </div>
 
             </div>
+            <div class="mb-3">
+                <label asp-for="MembershipTier.Benefits" class="form-label"></label>
+                <textarea asp-for="MembershipTier.Benefits" placeholder="Nhập quyền lợi của khách hàng đạt rank" rows="3" class="form-control"></textarea>
+            </div>
             <div class="d-inline-flex" style="width: 98%; gap: 15px">
-                <div class="col-md-6">
+                <div class="col-md-3">
                     <abp-input asp-for="MembershipTier.DisplayOrder" />
                 </div>
-                <div class="col-md-6">
-                    <abp-input asp-for="MembershipTier.Benefits" placeholder="Nhập quyền lợi của khách hàng đạt rank" />
+                <div class="col-md-3 isActive">
+                    <abp-input asp-for="MembershipTier.IsActive" />
                 </div>
             </div>
         </abp-modal-body>
@@ -57,7 +58,12 @@
 </form>
 <style type="text/css">
     .modal-dialog {
-        max-width: 50%;
+        max-width: 30%;
+    }
+
+    .isActive {
+        display: flex;
+        align-items: center;
     }
 </style>
 <script>

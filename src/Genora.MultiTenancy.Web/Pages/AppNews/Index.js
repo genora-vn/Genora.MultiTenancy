@@ -124,7 +124,7 @@
                     }
                 },
                 {
-                    title: l('Status'),
+                    title: l('NewsStatus'),
                     data: "status",
                     render: function (s) {
                         if (s === 0) return '<span class="badge bg-warning">' + l('NewsStatus:Draft') + '</span>';

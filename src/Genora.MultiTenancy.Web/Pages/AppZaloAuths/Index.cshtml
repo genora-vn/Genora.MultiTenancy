@@ -13,13 +13,13 @@
 }
 
 @{
-    if (CurrentTenant.IsAvailable)
-    {
-        <div class="alert alert-warning">Host only.</div>
-        return;
-    }
+    var canManage = CurrentTenant.IsAvailable
+        ? await AuthorizationService.IsGrantedAsync(MultiTenancyPermissions.AppZaloAuths.Default)
+        : await AuthorizationService.IsGrantedAsync(MultiTenancyPermissions.HostAppZaloAuths.Default);
 
-    var canManage = await AuthorizationService.IsGrantedAsync(MultiTenancyPermissions.HostAppZaloAuths.Default);
+    var canViewLogs = CurrentTenant.IsAvailable
+        ? await AuthorizationService.IsGrantedAsync(MultiTenancyPermissions.AppZaloLogs.Default)
+        : await AuthorizationService.IsGrantedAsync(MultiTenancyPermissions.HostAppZaloLogs.Default);
 }
 
 <abp-card>
@@ -38,9 +38,12 @@
                     <abp-button id="ZaloConnectBtn" text="@L["ZaloConnect"]" icon="link" button-type="Primary" />
                     <abp-button id="ZaloRefreshBtn" text="@L["ZaloRefreshNow"]" icon="sync" button-type="Secondary" />
                 }
-                <a class="btn btn-outline-secondary ms-2" href="/AppZaloLogs">
-                    <i class="fa fa-list"></i> @L["Menu:AppZaloLogs"]
-                </a>
+                @if (canViewLogs)
+                {
+                    <a class="btn btn-outline-secondary ms-2" href="/AppZaloLogs">
+                        <i class="fa fa-list"></i> @L["Menu:AppZaloLogs"]
+                    </a>
+                }
             </abp-column>
         </abp-row>
 

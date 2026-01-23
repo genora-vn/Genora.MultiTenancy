@@ -24,6 +24,7 @@ public class CreateUpdateAppBookingDto
 {
     [Required]
     public Guid CustomerId { get; set; }
+    public string? CustomerType { get; set; }
 
     [Required]
     public DateTime PlayDate { get; set; }
@@ -33,6 +34,9 @@ public class CreateUpdateAppBookingDto
 
     [Required]
     public Guid? CalendarSlotId { get; set; }
+
+    public TimeSpan? TimeFrom { get; set; }
+    public TimeSpan? TimeTo { get; set; }
 
     [Range(1, 100)]
     public int NumberOfGolfers { get; set; }

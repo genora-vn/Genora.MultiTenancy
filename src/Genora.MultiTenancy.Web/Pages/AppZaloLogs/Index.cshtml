@@ -8,14 +8,6 @@
     <abp-style src="/Pages/Index.css" />
 }
 
-@{
-    if (CurrentTenant.IsAvailable)
-    {
-        <div class="alert alert-warning">Host only.</div>
-        return;
-    }
-}
-
 <abp-card>
     <abp-card-header>
         <abp-row>

@@ -1,0 +1,144 @@
+﻿@page
+@using Genora.MultiTenancy.Localization
+@using Genora.MultiTenancy.Web.Pages.AppBookings
+@using Microsoft.Extensions.Localization
+@using Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.TagHelpers.Modal
+@model ViewModalModel
+@inject IStringLocalizer<MultiTenancyResource> L
+
+@{
+    Layout = null;
+}
+
+<abp-modal>
+    <abp-modal-header title="@L["BookingDetail"]"></abp-modal-header>
+
+    <abp-modal-body>
+        <!-- Thông tin tổng quan Booking (read-only) -->
+        <div class="row">
+            <div class="col-md-6">
+                <div class="mb-2">
+                    <strong>@L["BookingCode"]:</strong> @Model.Booking.BookingCode
+                </div>
+                <div class="mb-2">
+                    <strong>@L["BookingCustomer"]:</strong>
+                    @Model.Booking.CustomerName (@Model.Booking.CustomerPhone)
+                </div>
+                <div class="mb-2">
+                    <strong>@L["AppCustomerTypes"]:</strong> @Model.Booking.CustomerType
+                </div>
+                <div class="mb-2">
+                    <strong>@L["BookingPlayDate"]:</strong> @Model.Booking.PlayDate.ToString("dd/MM/yyyy")
+                </div>
+                <div class="mb-2">
+                    <strong>@L["BookingPlayTime"]:</strong>
+                    @(Model.Booking.TimeFrom.HasValue? Model.Booking.TimeFrom.Value.ToString(@"hh\:mm") : "")
+                    -
+                    @(Model.Booking.TimeTo.HasValue? Model.Booking.TimeTo.Value.ToString(@"hh\:mm") : "")
+                </div>
+                <div class="mb-2">
+                    <strong>@L["IsExportInvoice"]:</strong> @L[@Model.Booking.IsExportInvoice.ToString()]
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <div class="mb-2">
+                    <strong>@L["NumberHoles"]:</strong> @Model.Booking.NumberHoles
+                </div>
+
+                <div class="mb-2">
+                    <strong>@L["Utilities"]:</strong>
+                    @if (Model.UtilityNames != null && Model.UtilityNames.Count > 0)
+                    {
+                        foreach (var n in Model.UtilityNames)
+                        {
+                            <div>• @n</div>
+                        }
+                    }
+                    else
+                    {
+                        <div>—</div>
+                    }
+                </div>
+
+                @if (Model.Booking.IsExportInvoice)
+                {
+                    <div class="mt-2">
+                        <strong>@L["ExportInvoiceInformation"]:</strong>
+                        <div>• Tên công ty: @Model.Booking.CompanyName</div>
+                        <div>• Mã số thuế: @Model.Booking.TaxCode</div>
+                        <div>• Địa chỉ: @Model.Booking.CompanyAddress</div>
+                        <div>• Email: @Model.Booking.InvoiceEmail</div>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <hr />
+
+        <!-- Thông tin cập nhật (read-only) -->
+        <div class="row">
+            <div class="col-md-4 mb-2">
+                <strong>@L["BookingNumberOfGolfers"]:</strong> @Model.Booking.NumberOfGolfers
+            </div>
+            <div class="col-md-4 mb-2">
+                <strong>@L["BookingStatus"]:</strong> @Model.StatusText
+            </div>
+            <div class="col-md-4 mb-2">
+                <strong>@L["BookingPaymentMethod"]:</strong> @Model.PaymentMethodText
+            </div>
+            <div class="col-md-4 mb-2">
+                <strong>@L["TotalAmount"]:</strong> @Model.TotalAmountText
+            </div>
+            <div class="col-md-4 mb-2">
+                <strong>@L["BookingSource"]:</strong> @Model.SourceText
+            </div>
+        </div>
+
+        <hr />
+
+        <!-- Danh sách golfer -->
+        <div class="mb-2">
+            <h6 class="mb-2">@L["BookingPlayers"]</h6>
+
+            @if (Model.Booking.Players != null && Model.Booking.Players.Count > 0)
+            {
+                <div class="table-responsive">
+                    <table class="table table-sm table-bordered align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th style="width: 30%">@L["PlayerName"]</th>
+                                <th style="width: 20%">@L["VGA"]</th>
+                                <th style="width: 20%">@L["Price"]</th>
+                                <th>@L["Notes"]</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var p in Model.Booking.Players)
+                            {
+                                <tr>
+                                    <td>@p.PlayerName</td>
+                                    <td>@p.VgaCode</td>
+                                    <td class="text-end">@((p.PricePerPlayer ?? 0m).ToString("N0"))</td>
+                                    <td>@p.Notes</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <div>—</div>
+            }
+        </div>
+    </abp-modal-body>
+
+    <abp-modal-footer buttons="@(AbpModalButtons.Cancel)"></abp-modal-footer>
+</abp-modal>
+
+<style>
+    .modal-dialog {
+        max-width: 60%;
+    }
+</style>

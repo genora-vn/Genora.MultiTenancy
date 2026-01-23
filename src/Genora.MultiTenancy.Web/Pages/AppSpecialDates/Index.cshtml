@@ -1,0 +1,51 @@
+﻿@page
+@using Genora.MultiTenancy.Localization
+@using Genora.MultiTenancy.Permissions
+@using Genora.MultiTenancy.Web.Pages.AppSpecialDates
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.Extensions.Localization
+@inject IStringLocalizer<MultiTenancyResource> L
+@inject IAuthorizationService AuthorizationService
+@inject Volo.Abp.MultiTenancy.ICurrentTenant CurrentTenant
+
+@{
+    var canCreate = CurrentTenant.IsAvailable
+        ? await AuthorizationService.IsGrantedAsync(MultiTenancyPermissions.AppSpecialDates.Create)
+        : await AuthorizationService.IsGrantedAsync(MultiTenancyPermissions.HostAppSpecialDates.Create);
+}
+
+@section scripts
+{
+    <abp-script src="/Pages/AppSpecialDates/Index.js" />
+    <abp-style src="/Pages/Index.css" />
+}
+
+<abp-card>
+    <abp-card-header>
+        <abp-row>
+            <abp-column size-md="_6">
+                <abp-card-title>@L["AppSpecialDates"]</abp-card-title>
+            </abp-column>
+            <abp-column size-md="_6" class="text-end">
+               @*  @if (canCreate)
+                {
+                    <abp-button id="NewAppSpecialDateButton"
+                                text="@L["NewSpecialDate"].Value"
+                                icon="plus"
+                                button-type="Outline_Primary" />
+                } *@
+            </abp-column>
+        </abp-row>
+    </abp-card-header>
+
+    <abp-card-body>
+        <abp-table striped-rows="true" id="AppSpecialDatesTable"></abp-table>
+    </abp-card-body>
+</abp-card>
+
+<style type="text/css">
+    #AppSpecialDatesTable_wrapper .dt-scroll-body {
+        max-height: 69vh !important;
+        min-height: 64vh !important;
+    }
+</style>

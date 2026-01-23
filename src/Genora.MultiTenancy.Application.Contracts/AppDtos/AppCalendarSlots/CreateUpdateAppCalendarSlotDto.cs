@@ -13,9 +13,18 @@ namespace Genora.MultiTenancy.AppDtos.AppCalendarSlots
         [Required]
         public Guid CustomerTypeId { get; set; }
 
+        [Range(0, double.MaxValue)]
+        public decimal? Price9 { get; set; }
+
         [Required]
         [Range(0, double.MaxValue)]
-        public decimal Price { get; set; }
+        public decimal Price18 { get; set; }
+
+        [Range(0, double.MaxValue)]
+        public decimal? Price27 { get; set; }
+
+        [Range(0, double.MaxValue)]
+        public decimal? Price36 { get; set; }
     }
 
     public class CreateUpdateAppCalendarSlotDto

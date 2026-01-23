@@ -44,23 +44,34 @@ public class AppMembershipTierService :
         DeletePolicyName = MultiTenancyPermissions.AppMembershipTiers.Delete;
     }
 
-    public override async Task<PagedResultDto<AppMembershipTierDto>> GetListAsync(PagedAndSortedResultRequestDto input)
+    public async Task<PagedResultDto<AppMembershipTierDto>> GetListWithFilterAsync(GetMiniAppAppMembershipTierListInput input)
     {
         await CheckGetListPolicyAsync();
 
         var queryable = await Repository.GetQueryableAsync();
 
+        if (!string.IsNullOrWhiteSpace(input.Filter))
+        {
+            var f = input.Filter.Trim();
+            queryable = queryable.Where(x =>
+                x.Code.Contains(f) ||
+                x.Name.Contains(f) ||
+                (x.Description != null && x.Description.Contains(f))
+            );
+        }
+
+        var totalCount = await AsyncExecuter.CountAsync(queryable);
+
         var sorting = string.IsNullOrWhiteSpace(input.Sorting)
             ? nameof(MembershipTier.DisplayOrder) + "," + nameof(MembershipTier.Code)
             : input.Sorting;
 
-        var query = queryable
-            .OrderBy(sorting)
-            .Skip(input.SkipCount)
-            .Take(input.MaxResultCount);
-
-        var items = await AsyncExecuter.ToListAsync(query);
-        var totalCount = await AsyncExecuter.CountAsync(queryable);
+        var items = await AsyncExecuter.ToListAsync(
+            queryable
+                .OrderBy(sorting)
+                .Skip(input.SkipCount)
+                .Take(input.MaxResultCount)
+        );
 
         return new PagedResultDto<AppMembershipTierDto>(
             totalCount,
