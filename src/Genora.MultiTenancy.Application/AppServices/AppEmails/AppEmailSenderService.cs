@@ -66,7 +66,11 @@ public class AppEmailSenderService : MultiTenancyAppService, IAppEmailSenderServ
         };
 
         await _repo.InsertAsync(email, autoSave: true);
-        await _jobManager.EnqueueAsync(new SendEmailJobArgs { EmailId = email.Id });
+        await _jobManager.EnqueueAsync(new SendEmailJobArgs
+        {
+            EmailId = email.Id,
+            TenantId = CurrentTenant.Id
+        });
         return email.Id;
     }
 

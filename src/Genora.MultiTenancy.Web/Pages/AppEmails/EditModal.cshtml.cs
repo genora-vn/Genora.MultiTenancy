@@ -15,10 +15,8 @@ public class EditModalModel : MultiTenancyPageModel
     [BindProperty]
     public bool IsReadOnly { get; set; }
 
-    // Dùng để hiển thị ở View (Status/TryCount/SentTime/LastError/ModelJson...)
     public AppEmailDto? Email { get; set; }
 
-    // Dùng để submit Update (To/Cc/Bcc/Subject/Body/BookingCode...)
     [BindProperty]
     public CreateUpdateEmailDto EmailInput { get; set; } = new();
 
@@ -36,7 +34,6 @@ public class EditModalModel : MultiTenancyPageModel
 
         Email = await _appEmailService.GetAsync(id);
 
-        // map sang input để edit
         EmailInput = new CreateUpdateEmailDto
         {
             ToEmails = Email.ToEmails,
@@ -53,7 +50,6 @@ public class EditModalModel : MultiTenancyPageModel
     {
         if (IsReadOnly)
         {
-            // View-only: không cho update
             return NoContent();
         }
 

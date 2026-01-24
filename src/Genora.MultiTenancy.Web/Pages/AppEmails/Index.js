@@ -1,22 +1,21 @@
 ﻿$(function () {
     var l = abp.localization.getResource('MultiTenancy');
 
-    // ✅ proxy service
     var service = genora.multiTenancy.appServices.appEmails.appEmail;
 
     var createModal = new abp.ModalManager('/AppEmails/CreateModal');
     var editModal = new abp.ModalManager('/AppEmails/EditModal');
 
     function getFilter() {
+        var statusVal = $('#EmailStatusFilter').val();
         return {
             filterText: $('#EmailFilterText').val(),
-            status: $('#EmailStatusFilter').val(),
+            status: statusVal === "" ? null : parseInt(statusVal),
             bookingCode: $('#BookingCodeFilter').val()
         };
     }
 
     function renderStatusBadge(s) {
-        // EmailStatus: Pending=0, Sending=1, Sent=2, Failed=3, Abandoned=4
         if (s === 0) return '<span class="badge bg-warning">' + l('EmailStatus:Pending') + '</span>';
         if (s === 1) return '<span class="badge bg-info">' + l('EmailStatus:Sending') + '</span>';
         if (s === 2) return '<span class="badge bg-success">' + l('EmailStatus:Sent') + '</span>';
@@ -46,7 +45,7 @@
                             {
                                 text: l('View'),
                                 action: function (data) {
-                                    editModal.open({ id: data.record.id, readonly: true });
+                                    editModal.open({ id: data.record.id, readonlyParam: true });
                                 }
                             },
                             {

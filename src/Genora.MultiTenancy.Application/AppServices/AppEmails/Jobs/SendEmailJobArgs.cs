@@ -5,4 +5,5 @@ namespace Genora.MultiTenancy.AppServices.AppEmails.Jobs;
 public class SendEmailJobArgs
 {
     public Guid EmailId { get; set; }
+    public Guid? TenantId { get; set; }
 }

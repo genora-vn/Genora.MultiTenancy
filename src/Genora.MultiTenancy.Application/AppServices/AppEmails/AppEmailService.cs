@@ -169,6 +169,10 @@ public class AppEmailService :
             return;
 
         await LazyServiceProvider.GetRequiredService<Volo.Abp.BackgroundJobs.IBackgroundJobManager>()
-            .EnqueueAsync(new Genora.MultiTenancy.AppServices.AppEmails.Jobs.SendEmailJobArgs { EmailId = entity.Id });
+        .EnqueueAsync(new Genora.MultiTenancy.AppServices.AppEmails.Jobs.SendEmailJobArgs
+        {
+            EmailId = entity.Id,
+            TenantId = entity.TenantId
+        });
     }
 }

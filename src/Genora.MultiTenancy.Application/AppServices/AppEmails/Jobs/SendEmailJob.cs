@@ -7,9 +7,11 @@ using Volo.Abp.BackgroundJobs;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Emailing;
+using Volo.Abp.MultiTenancy;
 using Volo.Abp.Uow;
 
 namespace Genora.MultiTenancy.AppServices.AppEmails.Jobs;
+
 public class SendEmailJob : AsyncBackgroundJob<SendEmailJobArgs>, ITransientDependency
 {
     private const int MaxTry = 5;
@@ -17,80 +19,87 @@ public class SendEmailJob : AsyncBackgroundJob<SendEmailJobArgs>, ITransientDepe
     private readonly IRepository<Email, Guid> _repo;
     private readonly IEmailSender _emailSender;
     private readonly ILogger<SendEmailJob> _logger;
+    private readonly ICurrentTenant _currentTenant;
 
     public SendEmailJob(
         IRepository<Email, Guid> repo,
         IEmailSender emailSender,
-        ILogger<SendEmailJob> logger)
+        ILogger<SendEmailJob> logger,
+        ICurrentTenant currentTenant)
     {
         _repo = repo;
         _emailSender = emailSender;
         _logger = logger;
+        _currentTenant = currentTenant;
     }
 
     [UnitOfWork(true)]
     public override async Task ExecuteAsync(SendEmailJobArgs args)
     {
-        var mail = await _repo.GetAsync(args.EmailId);
-
-        if (mail.Status == EmailStatus.Sent || mail.Status == EmailStatus.Abandoned)
-            return;
-
-        mail.Status = EmailStatus.Sending;
-        mail.LastTryTime = DateTime.UtcNow;
-        await _repo.UpdateAsync(mail, autoSave: true);
-
-        try
+        using (_currentTenant.Change(args.TenantId))
         {
-            var tos = mail.ToEmails.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+            var mail = await _repo.GetAsync(args.EmailId);
 
-            foreach (var to in tos)
-            {
-                await _emailSender.SendAsync(
-                    to,
-                    mail.Subject,
-                    mail.Body,
-                    isBodyHtml: false
-                );
-            }
+            if (mail.Status == EmailStatus.Sent || mail.Status == EmailStatus.Abandoned)
+                return;
 
-            mail.Status = EmailStatus.Sent;
-            mail.SentTime = DateTime.UtcNow;
-            mail.LastError = null;
-            mail.NextTryTime = null;
-
+            mail.Status = EmailStatus.Sending;
+            mail.LastTryTime = DateTime.UtcNow;
             await _repo.UpdateAsync(mail, autoSave: true);
-        }
-        catch (Exception ex)
-        {
-            mail.TryCount += 1;
-            mail.LastError = ex.ToString();
 
-            if (mail.TryCount >= MaxTry)
+            try
             {
-                mail.Status = EmailStatus.Abandoned;
-                mail.NextTryTime = null;
-            }
-            else
-            {
-                mail.Status = EmailStatus.Failed;
-                var minutes = mail.TryCount switch
+                var tos = mail.ToEmails.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+
+                foreach (var to in tos)
                 {
-                    1 => 1,
-                    2 => 5,
-                    3 => 15,
-                    4 => 60,
-                    _ => 180
-                };
-                mail.NextTryTime = DateTime.UtcNow.AddMinutes(minutes);
+                    await _emailSender.SendAsync(
+                        to,
+                        mail.Subject,
+                        mail.Body,
+                        isBodyHtml: false
+                    );
+                }
+
+                mail.Status = EmailStatus.Sent;
+                mail.SentTime = DateTime.UtcNow;
+                mail.LastError = null;
+                mail.NextTryTime = null;
+
+                await _repo.UpdateAsync(mail, autoSave: true);
             }
+            catch (Exception ex)
+            {
+                mail.TryCount += 1;
+                mail.LastError = ex.ToString();
 
-            await _repo.UpdateAsync(mail, autoSave: true);
+                if (mail.TryCount >= MaxTry)
+                {
+                    mail.Status = EmailStatus.Abandoned;
+                    mail.NextTryTime = null;
+                }
+                else
+                {
+                    mail.Status = EmailStatus.Failed;
+                    var minutes = mail.TryCount switch
+                    {
+                        1 => 1,
+                        2 => 5,
+                        3 => 15,
+                        4 => 60,
+                        _ => 180
+                    };
+                    mail.NextTryTime = DateTime.UtcNow.AddMinutes(minutes);
+                }
 
-            _logger.LogError(ex, "Send email failed. EmailId={EmailId}, Try={TryCount}", mail.Id, mail.TryCount);
+                await _repo.UpdateAsync(mail, autoSave: true);
 
-            // IMPORTANT: throw để Hangfire/ABP retry (Hangfire sẽ tự retry theo config)
-            throw;
+                _logger.LogError(ex,
+                    "Send email failed. TenantId={TenantId}, EmailId={EmailId}, Try={TryCount}",
+                    args.TenantId, mail.Id, mail.TryCount);
+
+                throw;
+            }
         }
     }
 }
