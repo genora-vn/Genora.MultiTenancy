@@ -30,7 +30,6 @@ public class AppZaloAuthAppService :
 {
     protected override string FeatureName => AppZaloAuthFeatures.Management;
 
-    // ✅ đúng: tenant dùng AppZaloAuths.*, host dùng HostAppZaloAuths.*
     protected override string TenantDefaultPermission => MultiTenancyPermissions.AppZaloAuths.Default;
     protected override string HostDefaultPermission => MultiTenancyPermissions.HostAppZaloAuths.Default;
 
@@ -46,7 +45,8 @@ public class AppZaloAuthAppService :
     {
         _encrypt = encrypt;
 
-        // ✅ để base tự chọn permission theo side
+        // ✅ QUAN TRỌNG: không set cứng tenant permission ở đây nữa
+        // base class sẽ tự chọn theo side (Host/Tenant) từ TenantDefaultPermission/HostDefaultPermission
         GetPolicyName = MultiTenancyPermissions.AppZaloAuths.Default;
         GetListPolicyName = MultiTenancyPermissions.AppZaloAuths.Default;
         CreatePolicyName = MultiTenancyPermissions.AppZaloAuths.Create;
@@ -64,7 +64,6 @@ public class AppZaloAuthAppService :
         dto.HasAccessToken = !string.IsNullOrWhiteSpace(e.AccessToken);
         dto.HasRefreshToken = !string.IsNullOrWhiteSpace(e.RefreshToken);
 
-        // access mask
         try
         {
             var accessPlain = SecurityHelper.DecryptMaybe(e.AccessToken, _encrypt);
@@ -75,7 +74,6 @@ public class AppZaloAuthAppService :
             dto.AccessTokenMasked = SecurityHelper.MaskToken(e.AccessToken);
         }
 
-        // refresh mask
         try
         {
             var refreshPlain = SecurityHelper.DecryptMaybe(e.RefreshToken, _encrypt);
@@ -99,8 +97,6 @@ public class AppZaloAuthAppService :
         {
             var query = await Repository.GetQueryableAsync();
 
-            // ✅ Tenant: chỉ thấy data của tenant đó
-            // ✅ Host: chỉ thấy data global (TenantId=null)
             query = query.Where(x => x.TenantId == scopeTenantId);
 
             if (!string.IsNullOrWhiteSpace(input.FilterText))
@@ -141,7 +137,6 @@ public class AppZaloAuthAppService :
         {
             var entity = await Repository.GetAsync(id);
 
-            // ✅ chống đọc chéo scope (phòng trường hợp ai đó gọi API trực tiếp)
             if (entity.TenantId != scopeTenantId)
                 throw new AbpAuthorizationException("Not allowed.");
 
@@ -213,7 +208,6 @@ public class AppZaloAuthAppService :
             entity.ExpireAuthorizationCodeTime = input.ExpireAuthorizationCodeTime;
             entity.IsActive = input.IsActive;
 
-            // ✅ Token chỉ update khi có nhập
             if (!string.IsNullOrWhiteSpace(input.AccessToken))
                 entity.AccessToken = SecurityHelper.EncryptMaybe(input.AccessToken, _encrypt);
 

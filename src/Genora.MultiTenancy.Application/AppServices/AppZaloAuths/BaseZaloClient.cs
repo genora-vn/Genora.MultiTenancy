@@ -1,4 +1,4 @@
-﻿using Genora.MultiTenancy.DomainModels.AppZaloAuth;
+﻿using Genora.MultiTenancy.AppDtos.AppZaloAuths;
 using Genora.MultiTenancy.Helpers;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
@@ -10,29 +10,28 @@ using System.Net.Http.Headers;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using Volo.Abp.Domain.Repositories;
 
 namespace Genora.MultiTenancy.AppServices.AppZaloAuths;
+
 public abstract class BaseZaloClient
 {
     protected readonly IHttpClientFactory _factory;
     protected readonly IConfiguration _cfg;
-    private readonly IRepository<ZaloLog, Guid> _logRepo;
+    private readonly IZaloLogWriter _logWriter;
     private readonly ILogger<BaseZaloClient> _logger;
 
     protected BaseZaloClient(
         IHttpClientFactory factory,
         IConfiguration cfg,
-        IRepository<ZaloLog, Guid> logRepo,
+        IZaloLogWriter logWriter,
         ILogger<BaseZaloClient> logger)
     {
         _factory = factory;
         _cfg = cfg;
-        _logRepo = logRepo;
+        _logWriter = logWriter;
         _logger = logger;
     }
 
-    // Function chuẩn query-string key=value&key=value (không dùng q=)
     protected static string BuildUrl(string baseUrl, string path, IDictionary<string, string?>? query = null)
     {
         baseUrl = (baseUrl ?? "").TrimEnd('/');
@@ -66,7 +65,9 @@ public abstract class BaseZaloClient
         string action,
         string? requestBody,
         CancellationToken ct,
-        string? contentType = "application/json")
+        string? contentType = "application/json",
+        Guid? tenantId = null
+    )
     {
         var client = _factory.CreateClient();
         var sw = Stopwatch.StartNew();
@@ -102,12 +103,10 @@ public abstract class BaseZaloClient
         {
             sw.Stop();
 
-            // Seq (Serilog) sẽ nhận log từ ILogger
             _logger.LogInformation("Zalo {Action} {Method} {Url} -> {Status} in {Elapsed}ms",
                 action, method.Method, ZaloLogHelper.MaskTokens(url), httpStatus, sw.ElapsedMilliseconds);
 
-            await ZaloLogHelper.InsertLogAsync(
-                _logRepo,
+            await _logWriter.WriteAsync(
                 action: action,
                 endpoint: url,
                 httpStatus: httpStatus,
@@ -115,7 +114,7 @@ public abstract class BaseZaloClient
                 requestBody: requestBody,
                 responseBody: body,
                 error: err,
-                tenantId: null
+                tenantId: tenantId
             );
         }
     }
@@ -124,7 +123,6 @@ public abstract class BaseZaloClient
     {
         if (string.IsNullOrWhiteSpace(responseBody)) return false;
 
-        // Message chứa "token" + "không đúng/invalid/expired"
         var s = responseBody.ToLowerInvariant();
         if (!s.Contains("token")) return false;
 

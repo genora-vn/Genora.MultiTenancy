@@ -159,7 +159,7 @@ public static class MultiTenancyPermissions
     }
     public static class HostAppZaloAuths
     {
-        public const string Default = "MultiTenancy.HostAppZaloAuths";
+        public const string Default = GroupName + ".HostAppZaloAuths";
         public const string Create = Default + ".Create";
         public const string Edit = Default + ".Edit";
         public const string Delete = Default + ".Delete";
@@ -167,12 +167,12 @@ public static class MultiTenancyPermissions
 
     public static class AppZaloLogs
     {
-        public const string Default = "MultiTenancy.AppZaloLogs";
+        public const string Default = GroupName + ".AppZaloLogs";
     }
 
     public static class HostAppZaloLogs
     {
-        public const string Default = "MultiTenancy.HostAppZaloLogs";
+        public const string Default = GroupName + ".HostAppZaloLogs";
     }
     #endregion
 

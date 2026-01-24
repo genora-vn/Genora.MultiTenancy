@@ -48,83 +48,87 @@ public abstract class FeatureProtectedCrudAppService<
     }
 
     /// <summary>
-    /// Mặc định: nếu đang ở Host thì map
-    /// (TenantDefault + suffix) → (HostDefault + suffix).
-    /// Có thể override nếu cần custom.
+    /// Mặc định:
+    /// - Tenant side: dùng y nguyên permission
+    /// - Host side: map (TenantDefault + suffix) -> (HostDefault + suffix)
     /// </summary>
     protected virtual string MapPermissionForSide(string tenantPermission)
     {
-        if (CurrentTenant.IsAvailable)
-        {
-            // Đang ở Tenant: dùng đúng permission tenant.
-            return tenantPermission;
-        }
+        // Strict: policy phải có
+        if (string.IsNullOrWhiteSpace(tenantPermission))
+            throw new AbpAuthorizationException("Missing policy name.");
 
-        // Đang ở Host
+        // Tenant side: dùng y nguyên
+        if (CurrentTenant.IsAvailable)
+            return tenantPermission;
+
+        // Host side: map theo prefix nếu có đủ root
         if (string.IsNullOrWhiteSpace(TenantDefaultPermission) ||
             string.IsNullOrWhiteSpace(HostDefaultPermission))
         {
+            // Không có root để map thì trả lại permission gốc (nhưng thường không nên xảy ra)
             return tenantPermission;
         }
 
+        // Map theo prefix
         if (tenantPermission.StartsWith(TenantDefaultPermission))
         {
             var suffix = tenantPermission.Substring(TenantDefaultPermission.Length);
             return HostDefaultPermission + suffix;
         }
 
+        // Không match prefix => fallback host root
         return HostDefaultPermission;
     }
 
     protected virtual async Task EnsureFeatureAsync()
     {
         // Chỉ Tenant mới bị ràng Feature
-        if (!CurrentTenant.IsAvailable)
-        {
-            return;
-        }
+        if (!CurrentTenant.IsAvailable) return;
 
-        if (string.IsNullOrWhiteSpace(FeatureName))
-        {
-            return;
-        }
+        if (string.IsNullOrWhiteSpace(FeatureName)) return;
 
         if (!await FeatureChecker.IsEnabledAsync(FeatureName))
-        {
             throw new AbpAuthorizationException($"Feature '{FeatureName}' is disabled for this tenant.");
-        }
     }
 
-    // Override các check policy để:
-    // 1) Map permission đúng side
-    // 2) Check feature
+    private async Task CheckPolicyRequiredAsync(string? policyName)
+    {
+        // Strict: policy phải có, nếu null/empty => fail rõ
+        if (string.IsNullOrWhiteSpace(policyName))
+            throw new AbpAuthorizationException("Missing policy name.");
+
+        await AuthorizationService.CheckAsync(policyName);
+    }
+
     protected override async Task CheckGetPolicyAsync()
     {
-        await AuthorizationService.CheckAsync(MapPermissionForSide(GetPolicyName));
+        await CheckPolicyRequiredAsync(MapPermissionForSide(GetPolicyName));
         await EnsureFeatureAsync();
     }
 
     protected override async Task CheckGetListPolicyAsync()
     {
-        await AuthorizationService.CheckAsync(MapPermissionForSide(GetListPolicyName ?? GetPolicyName));
+        var policy = GetListPolicyName ?? GetPolicyName;
+        await CheckPolicyRequiredAsync(MapPermissionForSide(policy));
         await EnsureFeatureAsync();
     }
 
     protected override async Task CheckCreatePolicyAsync()
     {
-        await AuthorizationService.CheckAsync(MapPermissionForSide(CreatePolicyName));
+        await CheckPolicyRequiredAsync(MapPermissionForSide(CreatePolicyName));
         await EnsureFeatureAsync();
     }
 
     protected override async Task CheckUpdatePolicyAsync()
     {
-        await AuthorizationService.CheckAsync(MapPermissionForSide(UpdatePolicyName));
+        await CheckPolicyRequiredAsync(MapPermissionForSide(UpdatePolicyName));
         await EnsureFeatureAsync();
     }
 
     protected override async Task CheckDeletePolicyAsync()
     {
-        await AuthorizationService.CheckAsync(MapPermissionForSide(DeletePolicyName));
+        await CheckPolicyRequiredAsync(MapPermissionForSide(DeletePolicyName));
         await EnsureFeatureAsync();
     }
 }

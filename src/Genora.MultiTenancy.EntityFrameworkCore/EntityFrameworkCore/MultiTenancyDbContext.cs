@@ -154,9 +154,12 @@ public class MultiTenancyDbContext :
         {
             b.ToTable("AppZaloLog");
             b.ConfigureByConvention();
+
             b.Property(x => x.Action).HasMaxLength(128);
             b.Property(x => x.Endpoint).HasMaxLength(512);
-            b.HasIndex(x => x.CreationTime);
+
+            // ✅ Index chính phục vụ list theo scope + sort/filter theo thời gian
+            b.HasIndex(x => new { x.TenantId, x.CreationTime });
         });
 
         // ===== AppCustomers =====

@@ -1,15 +1,13 @@
-﻿using Genora.MultiTenancy.DomainModels.AppCustomers;
-using Genora.MultiTenancy.DomainModels.AppGolfCourses;
-using Genora.MultiTenancy.Enums;
-using System;
+﻿using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Volo.Abp.Domain.Entities.Auditing;
+using Volo.Abp.MultiTenancy;
 
 namespace Genora.MultiTenancy.DomainModels.AppZaloAuth;
 
 [Table("AppZaloLog")]
-public class ZaloLog : FullAuditedAggregateRoot<Guid>
+public class ZaloLog : FullAuditedAggregateRoot<Guid>, IMultiTenant
 {
     public Guid? TenantId { get; set; }
 

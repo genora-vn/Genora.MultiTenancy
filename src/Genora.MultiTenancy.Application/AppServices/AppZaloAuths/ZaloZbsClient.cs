@@ -11,6 +11,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Volo.Abp;
 using Volo.Abp.Domain.Repositories;
+using Volo.Abp.MultiTenancy;
 
 namespace Genora.MultiTenancy.AppServices.AppZaloAuths;
 
@@ -45,12 +46,12 @@ public class ZaloZbsClient : BaseZaloClient, IZaloZbsClient
     };
 
     public ZaloZbsClient(
-        IHttpClientFactory factory,
-        IConfiguration cfg,
-        IRepository<ZaloLog, Guid> logRepo,
-        ILogger<BaseZaloClient> logger,
-        IZaloTokenProvider tokenProvider)
-        : base(factory, cfg, logRepo, logger)
+         IHttpClientFactory factory,
+         IConfiguration cfg,
+         IZaloLogWriter logWriter,
+         ILogger<BaseZaloClient> logger,
+         IZaloTokenProvider tokenProvider)
+         : base(factory, cfg, logWriter, logger)
     {
         _tokenProvider = tokenProvider;
     }

@@ -5,11 +5,13 @@
     var createModal = new abp.ModalManager('/AppZaloAuths/CreateModal');
     var editModal = new abp.ModalManager('/AppZaloAuths/EditModal');
 
+    // ✅ base theo host/tenant (Index.cshtml set)
+    var apiBase = window.__zaloAuthApiBase || '/api/host/zalo-auth';
+
     const TZ = 'Asia/Bangkok';
 
     function formatExpireLocal(isoUtc) {
         if (!isoUtc) return '';
-        // isoUtc backend trả UTC ISO string
         return luxon.DateTime
             .fromISO(isoUtc, { zone: 'utc' })
             .setZone(TZ)
@@ -17,11 +19,9 @@
     }
 
     function renderTokenBanner(state) {
-        // state: { expireTokenTime, isExpired }
         var $box = $('#ZaloTokenBanner');
         if (!$box.length) return;
 
-        // reset
         $box.removeClass('alert-success alert-warning alert-danger d-none');
 
         if (!state || !state.expireTokenTime) {
@@ -40,12 +40,11 @@
 
     function refreshTokenBanner() {
         return abp.ajax({
-            url: '/api/host/zalo-auth/active',
+            url: apiBase + '/active',
             type: 'GET'
         }).done(function (st) {
             renderTokenBanner(st);
         }).fail(function () {
-            // nếu lỗi API thì ẩn hoặc báo warning
             renderTokenBanner(null);
         });
     }
@@ -173,12 +172,9 @@
         })
     );
 
-    // ✅ Load banner ngay khi vào trang
     refreshTokenBanner();
 
-    // ✅ Auto refresh banner mỗi 60s
     var tokenBannerInterval = setInterval(function () {
-        // tránh gọi khi tab bị ẩn (tiết kiệm)
         if (document.hidden) return;
         refreshTokenBanner();
     }, 60 * 1000);
@@ -189,7 +185,7 @@
 
     $('#ZaloConnectBtn').click(function () {
         abp.ajax({
-            url: '/api/host/zalo-auth/authorize-url',
+            url: apiBase + '/authorize-url',
             type: 'GET'
         }).done(function (res) {
             window.open(res.authorizeUrl, '_blank');
@@ -198,12 +194,12 @@
 
     $('#ZaloRefreshBtn').click(function () {
         abp.ajax({
-            url: '/api/host/zalo-auth/refresh-now',
+            url: apiBase + '/refresh-now',
             type: 'POST'
         }).done(function () {
             abp.notify.success(l('RefreshedSuccessfully'));
             table.ajax.reload();
-            refreshTokenBanner(); // ✅ update banner sau refresh
+            refreshTokenBanner();
         });
     });
 
@@ -234,7 +230,7 @@
         var kind = $(this).data('kind');
 
         abp.ajax({
-            url: '/api/host/zalo-auth/' + id + '/token?kind=' + kind,
+            url: apiBase + '/' + id + '/token?kind=' + kind,
             type: 'GET'
         }).done(async function (res) {
             await copyText(res.token);

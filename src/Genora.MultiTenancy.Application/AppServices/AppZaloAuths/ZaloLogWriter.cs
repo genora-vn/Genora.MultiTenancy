@@ -1,5 +1,6 @@
 ﻿using Genora.MultiTenancy.AppDtos.AppZaloAuths;
 using Genora.MultiTenancy.DomainModels.AppZaloAuth;
+using Genora.MultiTenancy.Helpers;
 using System;
 using System.Threading.Tasks;
 using Volo.Abp.DependencyInjection;
@@ -8,6 +9,7 @@ using Volo.Abp.Guids;
 using Volo.Abp.MultiTenancy;
 
 namespace Genora.MultiTenancy.AppServices.AppZaloAuths;
+
 public class ZaloLogWriter : IZaloLogWriter, ITransientDependency
 {
     private readonly IRepository<ZaloLog, Guid> _logRepo;
@@ -36,14 +38,18 @@ public class ZaloLogWriter : IZaloLogWriter, ITransientDependency
     {
         var log = new ZaloLog(_guid.Create())
         {
+            // ✅ tenantId truyền vào sẽ override; nếu không truyền thì lấy theo current tenant
             TenantId = tenantId ?? (_currentTenant.IsAvailable ? _currentTenant.Id : null),
+
             Action = action,
             Endpoint = endpoint,
             HttpStatus = httpStatus,
             DurationMs = durationMs,
-            RequestBody = requestBody,
-            ResponseBody = responseBody,
-            Error = error
+
+            // ✅ thống nhất mask + truncate tại 1 nơi
+            RequestBody = ZaloLogHelper.Truncate(ZaloLogHelper.MaskTokens(requestBody)),
+            ResponseBody = ZaloLogHelper.Truncate(ZaloLogHelper.MaskTokens(responseBody)),
+            Error = ZaloLogHelper.Truncate(error)
         };
 
         await _logRepo.InsertAsync(log, autoSave: true);

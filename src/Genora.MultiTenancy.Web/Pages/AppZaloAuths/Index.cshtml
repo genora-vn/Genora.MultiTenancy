@@ -20,7 +20,14 @@
     var canViewLogs = CurrentTenant.IsAvailable
         ? await AuthorizationService.IsGrantedAsync(MultiTenancyPermissions.AppZaloLogs.Default)
         : await AuthorizationService.IsGrantedAsync(MultiTenancyPermissions.HostAppZaloLogs.Default);
+
+    // ✅ api base theo scope
+    var apiBase = CurrentTenant.IsAvailable ? "/api/zalo-auth" : "/api/host/zalo-auth";
 }
+
+<script>
+    window.__zaloAuthApiBase = "@apiBase";
+</script>
 
 <abp-card>
     <abp-card-header>

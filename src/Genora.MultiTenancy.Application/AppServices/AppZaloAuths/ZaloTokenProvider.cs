@@ -8,6 +8,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Volo.Abp;
 using Volo.Abp.Domain.Repositories;
+using Volo.Abp.MultiTenancy;
 using Volo.Abp.Security.Encryption;
 
 namespace Genora.MultiTenancy.AppServices.AppZaloAuths;
@@ -20,18 +21,23 @@ public class ZaloTokenProvider : IZaloTokenProvider
     private readonly IConfiguration _cfg;
     private readonly IZaloOAuthClient _oauthClient;
     private readonly IStringEncryptionService _encrypt;
+    private readonly ICurrentTenant _currentTenant;
 
     public ZaloTokenProvider(
         IRepository<ZaloAuth, Guid> authRepo,
         IConfiguration cfg,
         IZaloOAuthClient oauthClient,
-        IStringEncryptionService encrypt)
+        IStringEncryptionService encrypt,
+        ICurrentTenant currentTenant)
     {
         _authRepo = authRepo;
         _cfg = cfg;
         _oauthClient = oauthClient;
         _encrypt = encrypt;
+        _currentTenant = currentTenant;
     }
+
+    private Guid? ScopeTenantId => _currentTenant.IsAvailable ? _currentTenant.Id : (Guid?)null;
 
     public async Task<string> GetAccessTokenAsync()
     {
@@ -45,7 +51,7 @@ public class ZaloTokenProvider : IZaloTokenProvider
             !auth.ExpireTokenTime.HasValue ||
             auth.ExpireTokenTime.Value <= DateTime.UtcNow.AddSeconds(skewSeconds);
 
-        if (!shouldRefresh && auth.IsActive) // chỉ return nếu record đang active
+        if (!shouldRefresh && auth.IsActive)
             return access!;
 
         await _lock.WaitAsync();
@@ -58,7 +64,7 @@ public class ZaloTokenProvider : IZaloTokenProvider
                 string.IsNullOrWhiteSpace(access) ||
                 !auth.ExpireTokenTime.HasValue ||
                 auth.ExpireTokenTime.Value <= DateTime.UtcNow.AddSeconds(skewSeconds) ||
-                !auth.IsActive; // Nếu không active thì cũng refresh để tạo active mới
+                !auth.IsActive;
 
             if (!shouldRefresh && auth.IsActive)
                 return access!;
@@ -103,7 +109,9 @@ public class ZaloTokenProvider : IZaloTokenProvider
 
         var newAuth = new ZaloAuth
         {
-            TenantId = null,
+            // ✅ giữ đúng tenant scope
+            TenantId = current.TenantId,
+
             AppId = current.AppId,
             OaId = current.OaId,
 
@@ -131,6 +139,10 @@ public class ZaloTokenProvider : IZaloTokenProvider
     public async Task DeactivateOtherActivesAsync(Guid keepId)
     {
         var q = await _authRepo.GetQueryableAsync();
+
+        // ✅ chỉ thao tác trong scope tenant hiện tại
+        q = q.Where(x => x.TenantId == ScopeTenantId);
+
         var actives = q.Where(x => x.IsActive && x.Id != keepId).ToList();
         if (actives.Count == 0) return;
 
@@ -145,8 +157,10 @@ public class ZaloTokenProvider : IZaloTokenProvider
 
         var q = await _authRepo.GetQueryableAsync();
 
-        // chỉ dọn host token
-        var oldIds = q.Where(x => x.TenantId == null && !x.IsActive)
+        // ✅ dọn theo scope hiện tại (tenant hoặc host)
+        q = q.Where(x => x.TenantId == ScopeTenantId);
+
+        var oldIds = q.Where(x => !x.IsActive)
                       .OrderByDescending(x => x.CreationTime)
                       .Skip(maxInactive)
                       .Select(x => x.Id)
@@ -162,14 +176,15 @@ public class ZaloTokenProvider : IZaloTokenProvider
     {
         var q = await _authRepo.GetQueryableAsync();
 
-        // 1) Nếu có active non-expired => ưu tiên dùng
+        // ✅ chỉ lấy token trong scope hiện tại
+        q = q.Where(x => x.TenantId == ScopeTenantId);
+
         var active = q.Where(x => x.IsActive)
                       .OrderByDescending(x => x.CreationTime)
                       .FirstOrDefault();
 
         if (active != null)
         {
-            // Active expired => auto inactive
             if (active.ExpireTokenTime.HasValue && active.ExpireTokenTime.Value <= DateTime.UtcNow)
             {
                 active.IsActive = false;
@@ -181,7 +196,6 @@ public class ZaloTokenProvider : IZaloTokenProvider
             }
         }
 
-        // 2) Không có active usable => lấy record mới nhất có refresh token để refresh
         var candidate = q.OrderByDescending(x => x.CreationTime)
                          .FirstOrDefault(x => !string.IsNullOrWhiteSpace(x.RefreshToken));
 

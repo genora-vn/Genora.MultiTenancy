@@ -1,7 +1,6 @@
 ﻿using Genora.MultiTenancy.AppDtos.AppZaloAuths;
 using Genora.MultiTenancy.AppDtos.ZaloAuths;
 using Genora.MultiTenancy.DomainModels.AppZaloAuth;
-using Genora.MultiTenancy.Features.AppZaloLogs;
 using Genora.MultiTenancy.Permissions;
 using Microsoft.AspNetCore.Authorization;
 using System;
@@ -30,31 +29,36 @@ public class AppZaloLogAppService : ApplicationService, IAppZaloLogAppService
     private async Task CheckViewPolicyAsync()
     {
         if (_currentTenant.IsAvailable)
-        {
             await AuthorizationService.CheckAsync(MultiTenancyPermissions.AppZaloLogs.Default);
-        }
         else
-        {
             await AuthorizationService.CheckAsync(MultiTenancyPermissions.HostAppZaloLogs.Default);
-        }
     }
-
-    private Guid? GetScopeTenantId()
-        => _currentTenant.IsAvailable ? _currentTenant.Id : null;
 
     public async Task<PagedResultDto<AppZaloLogDto>> GetListAsync(GetZaloLogListInput input)
     {
         await CheckViewPolicyAsync();
 
-        var scopeTenantId = GetScopeTenantId();
+        var isTenant = _currentTenant.IsAvailable;
+        var scopeTenantId = isTenant ? _currentTenant.Id : (Guid?)null;
 
         using (_currentTenant.Change(scopeTenantId))
         {
             var query = await _repo.GetQueryableAsync();
 
-            // ✅ Tenant: TenantId == tenant
-            // ✅ Host: TenantId == null
-            query = query.Where(x => x.TenantId == scopeTenantId);
+            // - Tenant: chỉ thấy log của tenant hiện tại
+            // - Host: mặc định chỉ log global (TenantId == null)
+            // - Host + filter TenantId: cho phép xem log của tenant đó (admin view)
+            if (isTenant)
+            {
+                query = query.Where(x => x.TenantId == scopeTenantId);
+            }
+            else
+            {
+                if (input.TenantId.HasValue)
+                    query = query.Where(x => x.TenantId == input.TenantId.Value);
+                else
+                    query = query.Where(x => x.TenantId == null);
+            }
 
             if (!string.IsNullOrWhiteSpace(input.LogAction))
                 query = query.Where(x => x.Action == input.LogAction);
@@ -87,7 +91,9 @@ public class AppZaloLogAppService : ApplicationService, IAppZaloLogAppService
             query = query.OrderBy(sorting);
 
             var total = await AsyncExecuter.CountAsync(query);
-            var items = await AsyncExecuter.ToListAsync(query.Skip(input.SkipCount).Take(input.MaxResultCount));
+            var items = await AsyncExecuter.ToListAsync(
+                query.Skip(input.SkipCount).Take(input.MaxResultCount)
+            );
 
             return new PagedResultDto<AppZaloLogDto>(
                 total,
@@ -100,14 +106,25 @@ public class AppZaloLogAppService : ApplicationService, IAppZaloLogAppService
     {
         await CheckViewPolicyAsync();
 
-        var scopeTenantId = GetScopeTenantId();
+        var isTenant = _currentTenant.IsAvailable;
+        var scopeTenantId = isTenant ? _currentTenant.Id : (Guid?)null;
 
         using (_currentTenant.Change(scopeTenantId))
         {
             var entity = await _repo.GetAsync(id);
 
-            if (entity.TenantId != scopeTenantId)
-                throw new AbpAuthorizationException("Not allowed.");
+            // ✅ Chặn đọc chéo scope
+            if (isTenant)
+            {
+                if (entity.TenantId != scopeTenantId)
+                    throw new AbpAuthorizationException("Not allowed.");
+            }
+            else
+            {
+                // Host: chỉ được đọc log global hoặc tenant
+                // Nếu entity.TenantId != null => host vẫn được xem (admin).
+                // Không block
+            }
 
             return ObjectMapper.Map<ZaloLog, AppZaloLogDto>(entity);
         }

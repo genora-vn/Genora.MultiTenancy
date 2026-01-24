@@ -1,5 +1,4 @@
 ﻿using Genora.MultiTenancy.AppDtos.AppZaloAuths;
-using Genora.MultiTenancy.DomainModels.AppZaloAuth;
 using Genora.MultiTenancy.Helpers;
 using System;
 using System.Collections.Generic;
@@ -7,22 +6,22 @@ using System.Net.Http;
 using System.Text.Json;
 using System.Threading.Tasks;
 using Volo.Abp;
-using Volo.Abp.Domain.Repositories;
 
 namespace Genora.MultiTenancy.AppServices.AppZaloAuths;
+
 public class ZaloOAuthClient : IZaloOAuthClient
 {
     private readonly IHttpClientFactory _httpClientFactory;
-    private readonly IRepository<ZaloLog, Guid> _logRepo;
+    private readonly IZaloLogWriter _logWriter;
 
-    public ZaloOAuthClient(IHttpClientFactory httpClientFactory, IRepository<ZaloLog, Guid> logRepo)
+    public ZaloOAuthClient(IHttpClientFactory httpClientFactory, IZaloLogWriter logWriter)
     {
         _httpClientFactory = httpClientFactory;
-        _logRepo = logRepo;
+        _logWriter = logWriter;
     }
 
     public async Task<ZaloTokenResponse> ExchangeCodeAsync(
-    string appId, string appSecret, string code, string codeVerifier, string redirectUri, string? oaId)
+        string appId, string appSecret, string code, string codeVerifier, string redirectUri, string? oaId)
     {
         var client = _httpClientFactory.CreateClient();
         var url = "https://oauth.zaloapp.com/v4/oa/access_token";
@@ -36,7 +35,6 @@ public class ZaloOAuthClient : IZaloOAuthClient
             ["redirect_uri"] = redirectUri
         };
 
-        // ✅ OA OAuth: bổ sung oa_id nếu có
         if (!string.IsNullOrWhiteSpace(oaId))
             form["oa_id"] = oaId;
 
@@ -61,17 +59,19 @@ public class ZaloOAuthClient : IZaloOAuthClient
 
             using var doc = JsonDocument.Parse(body);
 
-            // Handle khi zalo trả lỗi json
-            if (doc.RootElement.TryGetProperty("error", out var e) && e.ValueKind == JsonValueKind.Number && e.GetInt32() != 0)
+            if (doc.RootElement.TryGetProperty("error", out var e) &&
+                e.ValueKind == JsonValueKind.Number &&
+                e.GetInt32() != 0)
             {
                 var msg = doc.RootElement.TryGetProperty("message", out var m) ? m.GetString() : "Zalo error";
-                throw new BusinessException("ZaloOAuth:ExchangeFailed").WithData("Message", msg).WithData("Body", body);
+                throw new BusinessException("ZaloOAuth:ExchangeFailed")
+                    .WithData("Message", msg)
+                    .WithData("Body", body);
             }
 
             var access = doc.RootElement.GetProperty("access_token").GetString()!;
             var refresh = doc.RootElement.GetProperty("refresh_token").GetString()!;
 
-            // ✅ FIX: expires_in có thể là "90000"
             var expires = JsonHelper.ReadLongFlexible(doc.RootElement, "expires_in", 0);
 
             return new ZaloTokenResponse(access, refresh, expires);
@@ -85,8 +85,7 @@ public class ZaloOAuthClient : IZaloOAuthClient
         {
             sw.Stop();
 
-            await ZaloLogHelper.InsertLogAsync(
-                _logRepo,
+            await _logWriter.WriteAsync(
                 action: "EXCHANGE_CODE",
                 endpoint: url,
                 httpStatus: httpStatus,
@@ -120,7 +119,6 @@ public class ZaloOAuthClient : IZaloOAuthClient
             ["grant_type"] = "refresh_token"
         };
 
-        // Bắt trường hợp OA refresh cũng cần oa_id
         if (!string.IsNullOrWhiteSpace(oaId))
             form["oa_id"] = oaId;
 
@@ -148,7 +146,9 @@ public class ZaloOAuthClient : IZaloOAuthClient
             if (errCode != 0)
             {
                 var msg = doc.RootElement.TryGetProperty("message", out var m) ? m.GetString() : "Zalo error";
-                throw new BusinessException("ZaloOAuth:RefreshFailed").WithData("Message", msg).WithData("Body", body);
+                throw new BusinessException("ZaloOAuth:RefreshFailed")
+                    .WithData("Message", msg)
+                    .WithData("Body", body);
             }
 
             var access = doc.RootElement.GetProperty("access_token").GetString()!;
@@ -166,8 +166,7 @@ public class ZaloOAuthClient : IZaloOAuthClient
         {
             sw.Stop();
 
-            await ZaloLogHelper.InsertLogAsync(
-                _logRepo,
+            await _logWriter.WriteAsync(
                 action: "REFRESH_TOKEN",
                 endpoint: url,
                 httpStatus: httpStatus,

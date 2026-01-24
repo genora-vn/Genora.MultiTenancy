@@ -3,7 +3,6 @@ using Genora.MultiTenancy.AppServices.AppZaloAuths;
 using Genora.MultiTenancy.DomainModels.AppZaloAuth;
 using Genora.MultiTenancy.Enums;
 using Genora.MultiTenancy.Helpers;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using System;
@@ -17,12 +16,11 @@ using Volo.Abp.Security.Encryption;
 namespace Genora.MultiTenancy.Controllers;
 
 [Area("MultiTenancy")]
-[Route("api/host/zalo-auth")]
-public class HostZaloAuthController : MultiTenancyController
+[Route("api/zalo-auth")]
+public class ZaloAuthController : MultiTenancyController
 {
     private readonly IConfiguration _cfg;
     private readonly IRepository<ZaloAuth, Guid> _authRepo;
-    private readonly IZaloOAuthClient _oauth;
     private readonly IZaloTokenProvider _tokenProvider;
     private readonly IZaloLogWriter _logWriter;
     private readonly IStringEncryptionService _encrypt;
@@ -31,10 +29,9 @@ public class HostZaloAuthController : MultiTenancyController
     public record TokenValueDto(string token);
     public record ActiveDto(DateTime? expireTokenTime, bool isExpired);
 
-    public HostZaloAuthController(
+    public ZaloAuthController(
         IConfiguration cfg,
         IRepository<ZaloAuth, Guid> authRepo,
-        IZaloOAuthClient oauth,
         IZaloTokenProvider tokenProvider,
         IZaloLogWriter logWriter,
         IStringEncryptionService encrypt,
@@ -42,7 +39,6 @@ public class HostZaloAuthController : MultiTenancyController
     {
         _cfg = cfg;
         _authRepo = authRepo;
-        _oauth = oauth;
         _tokenProvider = tokenProvider;
         _logWriter = logWriter;
         _encrypt = encrypt;
@@ -76,6 +72,8 @@ public class HostZaloAuthController : MultiTenancyController
         string? err = null;
         const string endpoint = "https://oauth.zaloapp.com/v4/oa/permission";
 
+        var tenantId = _currentTenant.Id;
+
         try
         {
             var appId = _cfg["Zalo:AppId"]!;
@@ -87,17 +85,16 @@ public class HostZaloAuthController : MultiTenancyController
                 ? PkceUtil.CreateCodeChallengeS256(verifier)
                 : verifier;
 
-            var state = "host_" + Guid.NewGuid().ToString("N");
-            var ttl = _cfg.GetValue("Zalo:AuthorizationCodeTtlMinutes", 5);
+            var state = tenantId + "_" + Guid.NewGuid().ToString("N");
 
             await _authRepo.InsertAsync(new ZaloAuth
             {
-                TenantId = null,
+                TenantId = tenantId,
                 AppId = appId,
                 CodeVerifier = verifier,
                 CodeChallenge = challenge,
                 State = state,
-                ExpireAuthorizationCodeTime = DateTime.UtcNow.AddMinutes(ttl),
+                ExpireAuthorizationCodeTime = DateTime.UtcNow.AddMinutes(5),
                 IsActive = true
             }, true);
 
@@ -126,72 +123,9 @@ public class HostZaloAuthController : MultiTenancyController
                 null,
                 url,
                 err,
-                tenantId: null
+                tenantId
             );
         }
-    }
-
-    [HttpGet("callback")]
-    [AllowAnonymous]
-    public async Task<IActionResult> CallbackAsync(
-        [FromQuery] string? code,
-        [FromQuery] string? state,
-        [FromQuery(Name = "oa_id")] string? oaId,
-        [FromQuery] string? error,
-        [FromQuery(Name = "error_code")] string? errorCode)
-    {
-        if (!string.IsNullOrWhiteSpace(error) || !string.IsNullOrWhiteSpace(errorCode))
-        {
-            await _logWriter.WriteAsync(
-                ZaloLogActions.EXCHANGE_CODE,
-                "CALLBACK",
-                400,
-                0,
-                null,
-                $"error={error}; error_code={errorCode}; state={state}",
-                "Zalo callback error",
-                null
-            );
-            return Redirect("/AppZaloAuths?zaloError=1");
-        }
-
-        if (string.IsNullOrWhiteSpace(code) || string.IsNullOrWhiteSpace(state))
-            return BadRequest("Missing code/state");
-
-        Guid? tenantId = null;
-
-        if (!state.StartsWith("host_", StringComparison.OrdinalIgnoreCase))
-        {
-            var head = state.Split('_')[0];
-            if (Guid.TryParse(head, out var tid))
-                tenantId = tid;
-        }
-
-        var appId = _cfg["Zalo:AppId"]!;
-        var secret = _cfg["Zalo:AppSecret"]!;
-        var redirectUri = _cfg["Zalo:RedirectUri"]!;
-
-        using (_currentTenant.Change(tenantId))
-        {
-            var auth = (await _authRepo.GetQueryableAsync())
-                .FirstOrDefault(x => x.State == state && x.AppId == appId);
-
-            if (auth == null) return BadRequest("Invalid state");
-
-            var token = await _oauth.ExchangeCodeAsync(
-                appId, secret, code, auth.CodeVerifier!, redirectUri, oaId);
-
-            auth.OaId = oaId;
-            auth.AccessToken = SecurityHelper.EncryptMaybe(token.AccessToken, _encrypt);
-            auth.RefreshToken = SecurityHelper.EncryptMaybe(token.RefreshToken, _encrypt);
-            auth.ExpireTokenTime = DateTime.UtcNow.AddSeconds(token.ExpiresIn);
-            auth.IsActive = true;
-
-            await _authRepo.UpdateAsync(auth, true);
-            await _tokenProvider.DeactivateOtherActivesAsync(auth.Id);
-        }
-
-        return Redirect("/AppZaloAuths");
     }
 
     [HttpPost("refresh-now")]

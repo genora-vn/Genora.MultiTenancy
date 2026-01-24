@@ -11,6 +11,7 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Volo.Abp.Domain.Repositories;
+using Volo.Abp.MultiTenancy;
 
 namespace Genora.MultiTenancy.AppServices.AppZaloAuths;
 
@@ -21,10 +22,10 @@ public class ZaloApiClient : BaseZaloClient, IZaloApiClient
     public ZaloApiClient(
         IHttpClientFactory factory,
         IZaloTokenProvider tokenProvider,
-        IRepository<ZaloLog, Guid> logRepo,
+        IZaloLogWriter logWriter,
         IConfiguration cfg,
         ILogger<BaseZaloClient> logger)
-        : base(factory, cfg, logRepo, logger)
+        : base(factory, cfg, logWriter, logger)
     {
         _tokenProvider = tokenProvider;
     }
@@ -43,7 +44,6 @@ public class ZaloApiClient : BaseZaloClient, IZaloApiClient
 
     private async Task<string> PostJsonWithAccessTokenHeaderAsync(string action, string url, object payload, CancellationToken ct)
     {
-        // Lần 1
         var token = await _tokenProvider.GetAccessTokenAsync();
         var json = JsonSerializer.Serialize(payload);
 
@@ -54,7 +54,6 @@ public class ZaloApiClient : BaseZaloClient, IZaloApiClient
 
         var body = await SendAsync(HttpMethod.Post, url, headers, action, json, ct);
 
-        // Nếu response có dấu hiệu invalid token => refresh + retry 1 lần
         if (IsLikelyInvalidToken(body))
         {
             await _tokenProvider.RefreshNowAsync();
