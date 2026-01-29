@@ -10,235 +10,749 @@
 
 @{
     Layout = null;
-    var publishedAtText = Model.News?.PublishedAt.HasValue == true
-       ? Model.News.PublishedAt.Value.ToString("dd/MM/yyyy")
-       : string.Empty;
 }
 
 <form asp-page="/AppNews/EditModal" method="post" id="EditNewsForm" enctype="multipart/form-data">
+    <input type="hidden" asp-for="Id" />
+    <input type="hidden" id="IsUploadImageHiddenEdit" asp-for="News.IsUploadImage" value="false" />
+
     <abp-modal size="ExtraLarge">
         <abp-modal-header title="@L["EditAppNews"]"></abp-modal-header>
-        <abp-modal-body>
-            <input type="hidden" asp-for="Id" />
 
-            <div class="d-inline-flex" style="width: 97%; gap: 15px">
-                <div class="col-md-8">
-                    <abp-input asp-for="News.Title" placeholder="Nhập tiêu đề tin tức" label="@L["Title"]" />
-                </div>
-                <div class="col-md-2">
-                    <abp-select asp-for="News.Status"
-                                label="@L["NewsStatus"]"
-                                asp-items="EnumSelectList.GetLocalizedEnumSelectList<NewsStatus>(L)" />
-                </div>
-                <div class="col-md-2">
-                    <abp-input asp-for="News.DisplayOrder" label="@L["DisplayOrder"]" />
-                </div>
-            </div>
-
-            <div class="mb-3 d-inline-flex" style="width: 97%; gap: 15px">
-                <div class="col-md-5">
-                    <label asp-for="News.ShortDescription">@L["ShortDescription"]</label>
-                    <textarea asp-for="News.ShortDescription" class="form-control" rows="5"></textarea>
-                    <span class="text-danger field-validation-valid" data-valmsg-for="News.ShortDescription" data-valmsg-replace="true"></span>
-                </div>
-
-                <div class="col-md-4">
-                    <div class="input-type" style="margin-top: 18px">
-                        <input name="News.IsUploadImage" class="form-check-input" type="checkbox" id="isUpload" />
-                        <label for="isUpload">@L["IsImageInput"]</label>
-                    </div>
-
-                    <div class="url-group" id="input-url" style="margin-top: 10px">
-                        <label asp-for="News.ThumbnailUrl" class="form-label">@L["ThumbnailUrl"]</label>
-                        <input asp-for="News.ThumbnailUrl" id="image-input" class="form-control" placeholder="Dán link ảnh đại diện tin tức" />
-                        <small class="text-muted d-block mt-1">Nếu không upload ảnh, vui lòng dán link ảnh đại diện.</small>
-                    </div>
-
-                    <div class="group-image" id="input-image" style="display: none;">
-                        <div class="image-upload-group">
-                            <label for="images" class="form-label mb-1">
-                                <small class="text-muted d-block">
-                                    Tối đa <span id="maxFileSizeLabel"></span>/ảnh. Định dạng: JPG/PNG/WebP.
-                                </small>
-                            </label>
-
-                            <div class="drop-zone" id="dropZone">
-                                <p>Kéo thả ảnh vào đây hoặc click để chọn</p>
-                                <input asp-for="News.Images" type="file" id="images" accept="image/*" style="display:none" />
+        <abp-modal-body class="news-modal-body">
+            <div class="container-fluid px-0">
+                <div class="row g-3">
+                    <div class="col-12 col-lg-9">
+                        <div class="news-section">
+                            <div class="row g-2 align-items-end">
+                                <div class="col-12 col-md-12">
+                                    <abp-input asp-for="News.Title"
+                                               placeholder="Nhập tiêu đề tin tức"
+                                               label="@L["Title"]"
+                                               id="news-title-edit" />
+                                </div>
                             </div>
                         </div>
-                    </div>
-                </div>
 
-                <div class="col-md-3">
-                    <div class="preview-grid" id="previewGrid">
-                        <div class="preview-item">
-                            <img src="images\getting-started\no-photo-square.png" id="image-preview" alt="Preview" />
+                        <div class="news-section">
+                            <label asp-for="News.ShortDescription" class="form-label fw-semibold">
+                                @L["ShortDescription"] <span class="text-danger">*</span>
+                            </label>
+                            <textarea asp-for="News.ShortDescription"
+                                      class="form-control"
+                                      rows="5"
+                                      id="news-short-edit"
+                                      placeholder="Nhập trích dẫn / mô tả ngắn cho bài viết"></textarea>
+                            <span class="text-danger field-validation-valid"
+                                  data-valmsg-for="News.ShortDescription"
+                                  data-valmsg-replace="true"></span>
+                            <div class="d-flex justify-content-end">
+                                <small class="text-muted"><span id="shortCountEdit">0</span>/1000</small>
+                            </div>
+                        </div>
+
+                        <div class="news-section">
+                            <label asp-for="News.ContentHtml" class="form-label fw-semibold">@L["Content"]</label>
+                            <textarea asp-for="News.ContentHtml"
+                                      class="form-control news-content-editor"
+                                      placeholder="Nội dung tin tức"
+                                      rows="14"></textarea>
                         </div>
                     </div>
+
+                    <div class="col-12 col-lg-3">
+                        <div class="news-sticky">
+                            <div class="card shadow-sm border-0">
+                                <div class="card-body">
+                                    <div class="fw-semibold mb-2">Ảnh/Video đại diện <span class="text-danger">*</span></div>
+
+                                    <div class="tab-content">
+                                        <div class="tab-pane fade show active" id="tabImageEdit" role="tabpanel">
+
+                                            <div class="d-flex align-items-center justify-content-between mb-2">
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="checkbox" id="isUploadEdit" />
+                                                    <label class="form-check-label" for="isUploadEdit">@L["IsImageInput"]</label>
+                                                </div>
+                                                <small class="text-muted">Tối đa <span id="maxFileSizeLabelEdit"></span>/ảnh</small>
+                                            </div>
+
+                                            <div class="url-group" id="input-url-edit">
+                                                <label asp-for="News.ThumbnailUrl" class="form-label">@L["ThumbnailUrl"]</label>
+                                                <input asp-for="News.ThumbnailUrl"
+                                                       id="image-input-edit"
+                                                       class="form-control"
+                                                       placeholder="Dán link ảnh đại diện (https://...)" />
+                                                <small class="text-muted d-block mt-1">
+                                                    Nếu không upload ảnh, vui lòng dán link ảnh đại diện.
+                                                </small>
+                                                <span asp-validation-for="News.ThumbnailUrl" class="text-danger"></span>
+                                            </div>
+
+                                            <div class="group-image mt-3" id="input-image-edit" style="display:none;">
+                                                <div class="drop-zone" id="dropZoneEdit" tabindex="0">
+                                                    <div class="d-flex flex-column align-items-center gap-1 py-2">
+                                                        <div class="fw-semibold">Tải ảnh</div>
+                                                        <div class="text-muted small">Kéo thả ảnh vào đây hoặc bấm để chọn</div>
+                                                        <div class="text-muted small">JPG / PNG / WebP</div>
+                                                    </div>
+                                                    <input asp-for="News.Images" type="file" id="imagesEdit" accept="image/*" style="display:none" />
+                                                </div>
+
+                                                <input type="text"
+                                                       id="UploadGuardEdit"
+                                                       name="UploadGuardEdit"
+                                                       class="sr-only-validate"
+                                                       data-val="true"
+                                                       data-val-required="Vui lòng chọn ảnh để upload trước khi lưu."
+                                                       value="" />
+                                                <span class="text-danger field-validation-valid"
+                                                      data-valmsg-for="UploadGuardEdit"
+                                                      data-valmsg-replace="true"></span>
+
+                                                <span class="text-danger field-validation-valid"
+                                                      data-valmsg-for="News.Images"
+                                                      data-valmsg-replace="true"></span>
+                                            </div>
+
+                                            <span asp-validation-for="News.Images" class="text-danger"></span>
+
+                                            <div class="mt-3">
+                                                <div class="preview-wrap">
+                                                    <img src="images\getting-started\no-photo-square.png" id="image-preview-edit" alt="Preview" />
+                                                    <button type="button" class="btn btn-sm btn-light preview-remove" id="btnRemovePreviewEdit" title="Xóa ảnh preview" style="display:none;">×</button>
+                                                </div>
+                                                <div class="d-flex justify-content-between mt-2">
+                                                    <small class="text-muted" id="fileHintEdit">Chưa chọn ảnh</small>
+                                                </div>
+                                            </div>
+
+                                        </div>
+                                    </div>
+
+                                </div>
+                            </div>
+
+                            <div class="card shadow-sm border-0 mt-3" id="relatedCardEdit">
+                                <div class="card-body">
+                                    <div class="d-flex align-items-center justify-content-between mb-2">
+                                        <div class="fw-semibold">Tin liên quan (<span id="relatedCountEdit">0</span>/6)</div>
+                                        <small class="text-muted">Chọn tối đa 6</small>
+                                    </div>
+
+                                    <input type="text" class="form-control" id="relatedSearchEdit" placeholder="Tìm tin theo tiêu đề..." autocomplete="off" />
+
+                                    <div class="list-group mt-2 d-none" id="relatedResultEdit"></div>
+
+                                    <div class="mt-2 d-flex flex-wrap gap-2" id="relatedChipsEdit"></div>
+
+                                    <span class="text-danger field-validation-valid"
+                                          data-valmsg-for="News.RelatedNewsIds"
+                                          data-valmsg-replace="true"></span>
+
+                                    <div id="relatedHiddenEdit"></div>
+
+                                    @if (Model.News?.RelatedNewsIds != null)
+                                    {
+                                        foreach (var rid in Model.News.RelatedNewsIds)
+                                        {
+                                            var title = Model.RelatedNewsTitles != null && Model.RelatedNewsTitles.TryGetValue(rid, out var t)
+                                            ? t
+                                            : "";
+
+                                            <input type="hidden"
+                                                   name="News.RelatedNewsIds"
+                                                   value="@rid"
+                                                   data-title="@title" />
+                                        }
+                                    }
+                                </div>
+                            </div>
+
+
+                            <div class="row g-2 align-items-end mt-2">
+                                <div class="col-6 col-md-6">
+                                    <abp-select asp-for="News.Status"
+                                                label="@L["NewsStatus"]"
+                                                asp-items="EnumSelectList.GetLocalizedEnumSelectList<NewsStatus>(L)" />
+                                </div>
+
+                                <div class="col-6 col-md-6">
+                                    <abp-input asp-for="News.DisplayOrder" label="@L["DisplayOrder"]" />
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+
                 </div>
             </div>
-
-            <div class="mb-3">
-                <label asp-for="News.ContentHtml" class="form-label">@L["Content"]</label>
-                <textarea asp-for="News.ContentHtml"
-                          class="form-control news-content-editor"
-                          placeholder="Nội dung tin tức"
-                          rows="7"></textarea>
-            </div>
         </abp-modal-body>
+
         <abp-modal-footer buttons="@(AbpModalButtons.Cancel | AbpModalButtons.Save)"></abp-modal-footer>
     </abp-modal>
 </form>
 
 <style type="text/css">
-    .image-upload-group {
-        margin: 10px 0;
+    #EditNewsForm .modal-dialog {
+        max-width: 1200px;
     }
 
-    .drop-zone {
-        border: 3px dashed #ccc;
-        border-radius: 10px;
-        padding: 15px;
+    #EditNewsForm .news-modal-body {
+        max-height: 78vh;
+        overflow: auto;
+        padding: 18px;
+    }
+
+    #EditNewsForm .news-section {
+        padding: 14px 14px 10px 14px;
+    }
+
+    #EditNewsForm .news-sticky {
+        position: sticky;
+        top: 12px;
+    }
+
+
+
+    #EditNewsForm .drop-zone {
+        border: 2px dashed rgba(0,0,0,.2);
+        border-radius: 12px;
+        padding: 12px;
         text-align: center;
         cursor: pointer;
-        transition: border-color 0.3s;
-        background-color: #f9f9f9;
+        transition: border-color .2s, background-color .2s;
+        background: rgba(0,0,0,.02);
+        user-select: none;
+        outline: none;
     }
 
-        .drop-zone:hover {
-            border-color: #999;
-        }
-
-        .drop-zone.drag-over {
-            border-color: #007bff;
-            background-color: #e9f7ff;
-        }
-
-    .preview-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-        gap: 15px;
+    #EditNewsForm .drop-zone:hover {
+        border-color: rgba(0,0,0,.35);
     }
 
-    .preview-item {
+    #EditNewsForm .drop-zone.drag-over {
+        border-color: #0d6efd;
+        background-color: rgba(13,110,253,.08);
+    }
+
+    #EditNewsForm .drop-zone:focus {
+        box-shadow: 0 0 0 .2rem rgba(13,110,253,.15);
+    }
+
+    #EditNewsForm .preview-wrap {
         position: relative;
-        border: 1px solid #ddd;
-        border-radius: 8px;
+        border-radius: 14px;
         overflow: hidden;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        border: 1px solid rgba(0,0,0,.12);
+        background: rgba(0,0,0,.02);
     }
 
-        .preview-item img {
-            width: 100%;
-            height: 150px;
-            object-fit: cover;
-        }
+    #EditNewsForm .preview-wrap img {
+        width: 100%;
+        height: 240px;
+        object-fit: cover;
+        display: block;
+    }
 
-    .remove-btn {
+    #EditNewsForm .preview-remove {
         position: absolute;
-        top: 5px;
-        right: 5px;
-        background: rgba(255,0,0,0.7);
-        color: white;
-        border: none;
-        border-radius: 50%;
-        width: 25px;
-        height: 25px;
-        cursor: pointer;
-        font-size: 16px;
+        top: 8px;
+        right: 8px;
+        width: 34px;
+        height: 34px;
+        border-radius: 999px;
+        line-height: 1;
+        padding: 0;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 6px 16px rgba(0,0,0,.12);
+    }
+
+    .sr-only-validate {
+        position: absolute !important;
+        left: -9999px !important;
+        top: auto !important;
+        width: 1px !important;
+        height: 1px !important;
+        opacity: 0 !important;
+    }
+
+    #relatedChipsCreate, #relatedChipsEdit {
+        display: flex;
+        flex-wrap: wrap;
+        gap: .5rem;
+        align-items: center;
+        max-width: 100%;
+        overflow: hidden;
+    }
+
+    #relatedChipsCreate .badge[data-id],
+    #relatedChipsEdit .badge[data-id] {
+        display: inline-flex;
+        align-items: center;
+        max-width: 100%;
+        padding: .35rem .6rem;
+        border-radius: 999px;
+        border: 1px solid rgba(15, 23, 42, .15);
+        background: #FFFFFF;
+        color: #0F172A;
+        font-weight: 600;
+        font-size: 12.5px;
+        line-height: 1.2;
+        overflow: hidden;
+    }
+
+    #relatedChipsCreate .badge[data-id] > :not(button),
+    #relatedChipsEdit .badge[data-id] > :not(button) {
+        display: inline-block;
+        max-width: calc(100% - 18px);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    #relatedChipsCreate .badge[data-id] button,
+    #relatedChipsEdit .badge[data-id] button {
+        flex: 0 0 auto;
+        margin-left: .4rem;
+        width: 18px;
+        height: 18px;
+        border-radius: 999px;
+        color: #0F172A;
+        opacity: .75;
+    }
+
+    #relatedChipsCreate .badge[data-id] button:hover,
+    #relatedChipsEdit .badge[data-id] button:hover {
+        opacity: 1;
+        background: rgba(15, 23, 42, .08);
+    }
+
+    .related-chip {
+        display: inline-flex;
+        align-items: center;
+        max-width: 100%;
+        gap: .35rem;
+        padding: .35rem .55rem;
+        border: 1px solid rgba(15,23,42,.15);
+        background: #EEF2FF;
+        color: #0F172A;
+        font-weight: 600;
+        font-size: 12.5px;
+        line-height: 1.2;
+        overflow: hidden;
+    }
+
+    .related-chip .chip-text {
+        min-width: 0;
+        max-width: calc(100% - 24px);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .related-chip .chip-remove {
+        flex: 0 0 auto; /* luôn giữ chỗ */
+        width: 18px;
+        height: 18px;
+        padding: 0;
+        border: 0;
+        line-height: 18px;
+        border-radius: 999px;
+        color: inherit;
+        opacity: .8;
+    }
+
+    .related-chip .chip-remove:hover {
+        opacity: 1;
+        background: rgba(15,23,42,.08);
     }
 </style>
 
 <script>
-    $(document).ready(function () {
-        const MAX_FILE_MB = 15;
+    (function () {
+        const MAX_FILE_MB = 20;
         const MAX_FILE_BYTES = MAX_FILE_MB * 1024 * 1024;
 
-        $('#maxFileSizeLabel').text(`${MAX_FILE_MB}MB`);
+        const MAX = 6;
+        const debounce = (fn, ms) => { let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); }; };
 
-        function bindingPreviewImage() {
-            var imageUrl = $('#image-input').val();
-            if (imageUrl) {
-                $('#image-preview').attr('src', imageUrl);
-            } else {
-                $('#image-preview').attr('src', 'images\\getting-started\\no-photo-square.png');
-            }
-        }
+        function initRelatedPicker(suffix, formSelector) {
+            const $form = $(formSelector);
+            if (!$form.length) return;
 
-        // Update preview on url edit
-        $('#image-input').on('input change', function () {
-            bindingPreviewImage();
-        });
+            const $search = $(`#relatedSearch${suffix}`);
+            const $result = $(`#relatedResult${suffix}`);
+            const $chips = $(`#relatedChips${suffix}`);
+            const $hiddenWrap = $(`#relatedHidden${suffix}`);
+            const $count = $(`#relatedCount${suffix}`);
 
-        // init preview from existing url
-        bindingPreviewImage();
+            const currentId = String($form.find('input[name="Id"]').val() || "").toLowerCase();
 
-        const fileInput = document.getElementById('images');
-        const dropZone = document.getElementById('dropZone');
-        const isUpload = document.getElementById('isUpload');
-        const inputUrl = document.getElementById('input-url');
-        const inputUpload = document.getElementById('input-image');
+            function escapeHtml(s) { return $('<div/>').text(s == null ? '' : String(s)).html(); }
+            function toStr(v) { return v == null ? '' : String(v); }
 
-        isUpload.addEventListener('change', function () {
-            if (this.checked) {
-                inputUrl.style.display = 'none';
-                inputUpload.style.display = 'block';
-                // clear url to avoid confusion
-                $('#image-input').val('');
-                bindingPreviewImage();
-            } else {
-                inputUrl.style.display = 'block';
-                inputUpload.style.display = 'none';
-            }
-        });
-
-        function notifySizeError(file) {
-            const mb = (file.size / (1024 * 1024)).toFixed(2);
-            const msg = `"${file.name}" (${mb}MB) vượt quá ${MAX_FILE_MB}MB/ảnh. Vui lòng chọn ảnh nhỏ hơn.`;
-            if (window.abp?.notify?.warn) abp.notify.warn(msg);
-            else alert(msg);
-        }
-
-        function handleFiles(files) {
-            if (!files || files.length === 0) return;
-
-            const file = files[0];
-            if (!file.type || !file.type.startsWith('image/')) return;
-
-            if (file.size > MAX_FILE_BYTES) {
-                notifySizeError(file);
-                fileInput.value = '';
-                return;
+            function $allHiddenInputs() {
+                return $form.find(`input[name="News.RelatedNewsIds"]`);
             }
 
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                $('#image-preview').attr('src', e.target.result);
-                $('#image-preview').attr('alt', file.name);
-            };
-            reader.readAsDataURL(file);
+            function getSelected() {
+                return $allHiddenInputs().map(function () {
+                    return String(this.value || '').toLowerCase();
+                }).get();
+            }
+
+            function setCount() {
+                const n = getSelected().length;
+                $count.text(n);
+                $search.prop('disabled', n >= MAX);
+            }
+
+            function addHidden(id, title) {
+                const lid = String(id).toLowerCase();
+                const ids = getSelected();
+                if (ids.includes(lid)) return;
+
+                const safeTitle = escapeHtml(toStr(title));
+                $hiddenWrap.append(
+                    `<input type="hidden" name="News.RelatedNewsIds" value="${id}" data-title="${safeTitle}" />`
+                );
+            }
+
+            function removeHidden(id) {
+                const lid = String(id).toLowerCase();
+                $allHiddenInputs().filter(function () {
+                    return String(this.value || '').toLowerCase() === lid;
+                }).remove();
+            }
+
+            function renderChip(id, title) {
+                const t = (typeof title === 'string') ? title : String(title ?? '');
+                const safeTitle = t.trim()
+                    ? t.trim()
+                    : `Tin #${String(id).substring(0, 8)}`;
+
+                const chip = `
+                    <span class="badge related-chip rounded-pill" data-id="${id}">
+                        <span class="chip-text">${escapeHtml(safeTitle)}</span>
+                        <button type="button" class="btn btn-sm chip-remove" aria-label="remove" title="Bỏ chọn">×</button>
+                    </span>`;
+                $chips.append(chip);
+            }
+
+            function rebuildChipsFromHidden() {
+                $chips.empty();
+
+                $allHiddenInputs().each(function () {
+                    const id = this.value;
+                    const title = toStr($(this).data('title'));
+                    renderChip(id, title);
+                });
+
+                setCount();
+            }
+
+            function clearResults() {
+                $result.addClass('d-none').empty();
+            }
+
+            $chips.off(`click.related${suffix}`).on(`click.related${suffix}`, 'button', function () {
+                const $chip = $(this).closest('[data-id]');
+                const id = $chip.data('id');
+                removeHidden(id);
+                $chip.remove();
+                setCount();
+            });
+
+            async function fetchList(q) {
+                return await abp.ajax({
+                    url: abp.appPath + 'api/app/app-news',
+                    type: 'GET',
+                    data: {
+                        filterText: q || '',
+                        skipCount: 0,
+                        maxResultCount: 10,
+                        sorting: 'PublishedAt desc'
+                    }
+                });
+            }
+
+            const doSearch = debounce(async function () {
+                const q = ($search.val() || "").trim();
+                if (getSelected().length >= MAX) { clearResults(); return; }
+
+                try {
+                    const res = await fetchList(q);
+                    const items = (res && res.items) ? res.items : [];
+                    const selected = getSelected();
+
+                    const html = items
+                        .filter(x => x && x.id)
+                        .filter(x => String(x.id).toLowerCase() !== currentId)
+                        .filter(x => !selected.includes(String(x.id).toLowerCase()))
+                        .map(x => {
+                            const titleText = toStr(x.title);
+                            const titleHtml = escapeHtml(titleText);
+                            return `
+                                <button type="button" class="list-group-item list-group-item-action"
+                                        data-id="${x.id}">
+                                    <div class="fw-semibold">${titleHtml}</div>
+                                </button>`;
+                        })
+                        .join('');
+
+                    if (!html) { clearResults(); return; }
+
+                    $result.html(html).removeClass('d-none');
+                } catch (e) {
+                    clearResults();
+                }
+            }, 250);
+
+            $search.off(`focus.related${suffix}`).on(`focus.related${suffix}`, function () {
+                if (($search.val() || '').trim().length === 0) doSearch();
+            });
+
+            $search.off(`input.related${suffix}`).on(`input.related${suffix}`, doSearch);
+
+            $result.off(`click.related${suffix}`).on(`click.related${suffix}`, 'button[data-id]', function () {
+                const id = $(this).data('id');
+                const title = ($(this).find('.fw-semibold').text() || '');
+
+                if (getSelected().length >= MAX) {
+                    abp.notify.warn(`Chỉ được chọn tối đa ${MAX} tin liên quan.`);
+                    return;
+                }
+
+                addHidden(id, title);
+                renderChip(id, title);
+                setCount();
+                clearResults();
+                $search.val('').focus();
+            });
+
+            $(document).off(`click.relatedDoc${suffix}`).on(`click.relatedDoc${suffix}`, function (e) {
+                if ($(e.target).closest(`#relatedCard${suffix}`).length === 0) clearResults();
+            });
+
+            rebuildChipsFromHidden();
         }
 
-        dropZone.addEventListener('click', () => fileInput.click());
+        window.initRelatedPicker = initRelatedPicker;
 
-        dropZone.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            dropZone.classList.add('drag-over');
-        });
+        setTimeout(function () {
+            const $form = $('#EditNewsForm');
+            if (!$form.length) return;
 
-        dropZone.addEventListener('dragleave', () => {
-            dropZone.classList.remove('drag-over');
-        });
+            $form.off('.newsEdit');
 
-        dropZone.addEventListener('drop', (e) => {
-            e.preventDefault();
-            dropZone.classList.remove('drag-over');
-            handleFiles(e.dataTransfer.files);
-        });
+            $('#maxFileSizeLabelEdit').text(`${MAX_FILE_MB}MB`);
 
-        fileInput.addEventListener('change', () => {
-            handleFiles(fileInput.files);
-        });
-    });
+            const $short = $form.find('#news-short-edit');
+            function updateCounters() { $('#shortCountEdit').text(($short.val() || '').length); }
+            $short.on('input.newsEdit', updateCounters);
+            updateCounters();
+
+            const $isUpload = $form.find('#isUploadEdit');
+            const $hiddenUpload = $form.find('#IsUploadImageHiddenEdit');
+
+            const $inputUrlWrap = $form.find('#input-url-edit');
+            const $inputUploadWrap = $form.find('#input-image-edit');
+
+            const $thumbInput = $form.find('#image-input-edit');
+            const $uploadGuard = $form.find('#UploadGuardEdit');
+
+            const $previewImg = $form.find('#image-preview-edit');
+            const $removeBtn = $form.find('#btnRemovePreviewEdit');
+            const $fileHint = $form.find('#fileHintEdit');
+
+            const fileInput = document.getElementById('imagesEdit');
+            const dropZone = document.getElementById('dropZoneEdit');
+
+            function resetUnobtrusive() {
+                if ($.validator && $.validator.unobtrusive) {
+                    $form.removeData('validator');
+                    $form.removeData('unobtrusiveValidation');
+                    $.validator.unobtrusive.parse($form);
+                }
+            }
+
+            function clearFieldError(name) {
+                const $el = $form.find(`[name="${name}"]`);
+                $el.removeClass('input-validation-error is-invalid');
+
+                const $msg = $form.find(`[data-valmsg-for="${name}"]`);
+                $msg.removeClass('field-validation-error').addClass('field-validation-valid').text('');
+            }
+
+            function setPreview(src, alt) {
+                $previewImg.attr('src', src);
+                $previewImg.attr('alt', alt || 'Preview');
+                $removeBtn.show();
+            }
+
+            function clearPreview() {
+                $previewImg.attr('src', 'images\\getting-started\\no-photo-square.png');
+                $previewImg.attr('alt', 'Preview');
+                $removeBtn.hide();
+                $fileHint.text('Chưa chọn ảnh');
+            }
+
+            function bindingPreviewFromUrl() {
+                const url = ($thumbInput.val() || '').trim();
+                if (url) {
+                    setPreview(url, 'ThumbnailUrl');
+                    $fileHint.text('Preview từ URL');
+                } else {
+                    clearPreview();
+                }
+            }
+
+            function enableUrlMode() {
+                $hiddenUpload.val('false');
+                $isUpload.prop('checked', false);
+
+                $inputUrlWrap.show();
+                $inputUploadWrap.hide();
+
+                $thumbInput.prop('disabled', false);
+
+                $uploadGuard.val('');
+                $uploadGuard.prop('disabled', true);
+
+                clearFieldError('UploadGuardEdit');
+                clearFieldError('News.Images');
+
+                if (fileInput) fileInput.value = '';
+
+                resetUnobtrusive();
+                bindingPreviewFromUrl();
+
+                if ($thumbInput.rules) $thumbInput.rules('add', { required: true });
+            }
+
+            function enableUploadMode() {
+                $hiddenUpload.val('true');
+                $isUpload.prop('checked', true);
+
+                $inputUrlWrap.hide();
+                $inputUploadWrap.show();
+
+                $thumbInput.val('');
+                $thumbInput.prop('disabled', true);
+                clearFieldError('News.ThumbnailUrl');
+
+                $uploadGuard.prop('disabled', false);
+
+                resetUnobtrusive();
+
+                if ($thumbInput.rules) $thumbInput.rules('remove', 'required');
+                if ($uploadGuard.rules) $uploadGuard.rules('add', { required: true });
+
+                clearPreview();
+            }
+
+            $isUpload.on('change.newsEdit', function () {
+                if (this.checked) enableUploadMode();
+                else enableUrlMode();
+            });
+
+            $form.on('input.newsEdit change.newsEdit', '#image-input-edit', function () {
+                bindingPreviewFromUrl();
+                if ($thumbInput.valid) $thumbInput.valid();
+            });
+
+            $removeBtn.on('click.newsEdit', function () {
+                if ($isUpload.is(':checked')) {
+                    if (fileInput) fileInput.value = '';
+                    $uploadGuard.val('');
+                    if ($uploadGuard.valid) $uploadGuard.valid();
+                    clearPreview();
+                } else {
+                    $thumbInput.val('');
+                    bindingPreviewFromUrl();
+                    if ($thumbInput.valid) $thumbInput.valid();
+                }
+            });
+
+            function notifyWarn(msg) {
+                if (window.abp?.notify?.warn) abp.notify.warn(msg);
+                else alert(msg);
+            }
+
+            function handleFiles(files) {
+                if (!files || files.length === 0) return;
+
+                const file = files[0];
+
+                if (!file.type || !file.type.startsWith('image/')) {
+                    notifyWarn("File không phải ảnh hợp lệ.");
+                    if (fileInput) fileInput.value = '';
+                    $uploadGuard.val('');
+                    if ($uploadGuard.valid) $uploadGuard.valid();
+                    return;
+                }
+
+                if (file.size > MAX_FILE_BYTES) {
+                    notifyWarn(`Ảnh vượt quá ${MAX_FILE_MB}MB. Vui lòng chọn ảnh nhỏ hơn.`);
+                    if (fileInput) fileInput.value = '';
+                    $uploadGuard.val('');
+                    if ($uploadGuard.valid) $uploadGuard.valid();
+                    return;
+                }
+
+                $uploadGuard.val(file.name);
+                if ($uploadGuard.valid) $uploadGuard.valid();
+
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    setPreview(e.target.result, file.name);
+                    $fileHint.text(file.name);
+                };
+                reader.readAsDataURL(file);
+            }
+
+            if (dropZone && fileInput) {
+                dropZone.addEventListener('click', () => fileInput.click());
+
+                dropZone.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    dropZone.classList.add('drag-over');
+                });
+
+                dropZone.addEventListener('dragleave', () => {
+                    dropZone.classList.remove('drag-over');
+                });
+
+                dropZone.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    dropZone.classList.remove('drag-over');
+                    handleFiles(e.dataTransfer.files);
+                });
+
+                fileInput.addEventListener('change', () => {
+                    handleFiles(fileInput.files);
+                });
+            }
+
+            $form.on('submit.newsEdit', function (e) {
+                const v = $form.data('validator');
+                if (v && !$form.valid()) {
+                    e.preventDefault();
+                    e.stopImmediatePropagation();
+                    return false;
+                }
+                return true;
+            });
+
+            const initIsUpload = ($hiddenUpload.val() === 'true');
+            if (initIsUpload) enableUploadMode();
+            else enableUrlMode();
+
+            initRelatedPicker("Edit", "#EditNewsForm");
+        }, 0);
+    })();
 </script>
+

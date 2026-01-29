@@ -27,7 +27,9 @@ using Genora.MultiTenancy.DomainModels.AppOptionExtend;
 using Genora.MultiTenancy.DomainModels.AppPromotionTypes;
 using Genora.MultiTenancy.DomainModels.AppSpecialDates;
 using Genora.MultiTenancy.DomainModels.AppZaloAuth;
+using Genora.MultiTenancy.Enums;
 using Genora.MultiTenancy.Helpers;
+using System.Linq;
 using Volo.Abp.AuditLogging;
 using static Genora.MultiTenancy.Permissions.MultiTenancyPermissions;
 
@@ -69,10 +71,16 @@ public class MultiTenancyApplicationAutoMapperProfile : Profile
         #endregion
 
         #region News auto mapper profile
-        CreateMap<News, AppNewsDto>();
+        CreateMap<News, AppNewsDto>()
+        .ForMember(d => d.RelatedNewsIds,
+            opt => opt.MapFrom(s => s.RelatedNewsLinks.Select(x => x.RelatedNewsId).ToList()));
         CreateMap<CreateUpdateAppNewsDto, News>();
         CreateMap<MiniAppNewsData, News>();
-        CreateMap<News, MiniAppNewsData>();
+        CreateMap<News, MiniAppNewsData>()
+            .ForMember(d => d.Status, opt => opt.MapFrom(s => (NewsStatus)s.Status));
+        CreateMap<News, MiniAppRelatedNewsData>()
+            .ForMember(d => d.Status, opt => opt.MapFrom(s => (NewsStatus)s.Status));
+
         #endregion
 
         #region Booking auto mapper profile
@@ -108,10 +116,10 @@ public class MultiTenancyApplicationAutoMapperProfile : Profile
         CreateMap<EntityPropertyChange, EntityPropertyChangeDto>();
 
         CreateMap<OptionExtend, AppOptionExtendDto>();
-        CreateMap<PromotionType, AppPromotionTypeDto>();
-        CreateMap<AppPromotionTypeDto, PromotionType>();
+        CreateMap<Genora.MultiTenancy.DomainModels.AppPromotionTypes.PromotionType, AppPromotionTypeDto>();
+        CreateMap<AppPromotionTypeDto, Genora.MultiTenancy.DomainModels.AppPromotionTypes.PromotionType>();
         CreateMap<AppPromotionTypeDto, CreateUpdatePromotionTypeDto>();
-        CreateMap<CreateUpdatePromotionTypeDto, PromotionType>();
+        CreateMap<CreateUpdatePromotionTypeDto, Genora.MultiTenancy.DomainModels.AppPromotionTypes.PromotionType>();
 
         #region SpecialDate auto mapper profile
         CreateMap<SpecialDate, SpecialDateDto>()

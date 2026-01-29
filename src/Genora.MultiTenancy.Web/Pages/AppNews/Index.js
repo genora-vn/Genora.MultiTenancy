@@ -12,7 +12,6 @@
             return;
         }
 
-        // Nếu đã init rồi thì không init lại
         if ($editor.next('.note-editor').length) {
             return;
         }
@@ -33,12 +32,10 @@
         });
     }
 
-    // Khi mở modal tạo mới
     createModal.onOpen(function () {
         initNewsEditor(createModal.getModal());
     });
 
-    // Khi mở modal sửa
     editModal.onOpen(function () {
         initNewsEditor(editModal.getModal());
     });
@@ -50,18 +47,16 @@
 
         modalManager.getModal().find('.public-time-input').each(function () {
             flatpickr(this, {
-                dateFormat: "d/m/Y",   // dd/MM/yyyy
+                dateFormat: "d/m/Y",
                 allowInput: true
             });
         });
     }
 
-    // Khi mở modal tạo mới
     createModal.onOpen(function () {
         initPublicDatePicker(createModal);
     });
 
-    // Khi mở modal chỉnh sửa
     editModal.onOpen(function () {
         initPublicDatePicker(editModal);
     });

@@ -1,4 +1,4 @@
-:root {
+﻿:root {
     --lpx-logo: url('/images/logo/genora/genora-logo-light.png');
     --lpx-logo-icon: url('/images/logo/leptonxlite/logo-light-thumbnail.png');
 }
@@ -8,4 +8,28 @@
 }
 .note-editable {
     background-color: white;
+}
+textarea.form-control.ta-rows-4 {
+    height: auto !important;
+    min-height: calc(1.5em * 4);
+}
+
+li.nav-item.disabled > a,
+a.nav-link.disabled,
+.disabled > a,
+.genora-coming-soon > a,
+a.genora-coming-soon {
+    pointer-events: none !important;
+    cursor: not-allowed !important;
+    opacity: .55;
+}
+
+.abp-toast-container .abp-toast .abp-toast-message {
+    white-space: pre-line !important;
+}
+.genora-toast-detail {
+    display: block;
+    margin-top: 4px;
+    font-size: 12px;
+    opacity: 0.9;
 }

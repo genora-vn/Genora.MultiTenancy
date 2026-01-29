@@ -22,7 +22,6 @@
         return val === 'true';
     }
 
-    // dd/MM/yyyy -> yyyy-MM-ddT00:00:00 (binder DateTime OK)
     function parseDateDdMmYyyy(input) {
         input = (input || '').trim();
         if (!input) return null;
@@ -88,7 +87,7 @@
                 {
                     title: l('DateOfBirth'),
                     data: "dateOfBirth",
-                    dataFormat: "date" // ABP format helper nếu đang dùng
+                    dataFormat: "date"
                 },
 
                 { title: l('CustomerType'), data: "customerTypeName" },
@@ -106,7 +105,7 @@
         })
     );
 
-    // ✅ Tắt filter ngay khi gõ search của DataTable: chỉ search khi bấm Search
+    // Tắt filter ngay khi gõ search của DataTable: chỉ search khi bấm Search
     $('#CustomersTable_filter input')
         .off('.DT')
         .on('keydown', function (e) {
@@ -117,7 +116,6 @@
             }
         });
 
-    // ✅ nút Search mới là trigger chính
     $('#SearchCustomerButton').click(function (e) {
         e.preventDefault();
         dataTable.ajax.reload();
@@ -136,5 +134,32 @@
     editModal.onResult(function () {
         abp.notify.success(l('SavedSuccessfully'));
         dataTable.ajax.reload();
+    });
+
+    $('#DownloadCustomerTemplateBtn').click(function () {
+        if (!window.genora || !genora.excel) {
+            abp.notify.error('Excel helper chưa được load');
+            return;
+        }
+
+        genora.excel.download(
+            'api/app/app-customer-excel/template',
+            {}
+        );
+    });
+
+    $('#ImportCustomerExcelInput').change(function (e) {
+        if (!window.genora || !genora.excel) {
+            abp.notify.error('Excel helper chưa được load');
+            return;
+        }
+
+        genora.excel.upload({
+            url: 'api/app/app-customer-excel/import',
+            fileInput: e.target,
+            onSuccess: function () {
+                dataTable.ajax.reload();
+            }
+        });
     });
 });

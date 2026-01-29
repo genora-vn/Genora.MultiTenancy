@@ -73,14 +73,13 @@ public class ZaloApiClient : BaseZaloClient, IZaloApiClient
             throw new ArgumentException("Missing accessToken", nameof(accessToken));
 
         var baseUrl = (_cfg["Zalo:GraphBaseUrl"] ?? "https://graph.zalo.me").TrimEnd('/');
-        var fields = "id,name,user_id_by_oa,is_sensitive,picture";
-        var miniAppId = _cfg["Zalo:MiniAppId"] ?? throw new ArgumentNullException("Zalo:MiniAppId");
-        var pathTemplate = _cfg["Zalo:ZaloMePath"] ?? "/v2.0/me?fields={0}&miniapp_id={1}";
 
-        var path = string.Format(pathTemplate, fields, miniAppId);
-        if (!path.StartsWith("/")) path = "/" + path;
+        var fields = "id,name,picture,oa_id,user_id_by_app,user_id_by_app,followedOA,is_sensitive";
 
-        var url = $"{baseUrl}{path}";
+        var url = BuildUrl(baseUrl, "/v2.0/me", new Dictionary<string, string?>
+        {
+            ["fields"] = fields
+        });
 
         var headers = new Dictionary<string, string>
         {
@@ -92,12 +91,19 @@ public class ZaloApiClient : BaseZaloClient, IZaloApiClient
         try
         {
             using var doc = JsonDocument.Parse(body);
+            var root = doc.RootElement;
 
             // Nếu có field "error"
-            if (doc.RootElement.TryGetProperty("error", out var errProp))
+            if (root.TryGetProperty("error", out var errProp))
             {
-                var errorCode = errProp.ValueKind == JsonValueKind.Number ? errProp.GetInt32() : 0;
-                var message = doc.RootElement.TryGetProperty("message", out var msgProp)
+                var errorCode = errProp.ValueKind switch
+                {
+                    JsonValueKind.Number => errProp.GetInt32(),
+                    JsonValueKind.String when int.TryParse(errProp.GetString(), out var n) => n,
+                    _ => 0
+                };
+
+                var message = root.TryGetProperty("message", out var msgProp)
                     ? msgProp.GetString()
                     : "Unknown error";
 
@@ -107,26 +113,41 @@ public class ZaloApiClient : BaseZaloClient, IZaloApiClient
                     {
                         Data = null,
                         Error = errorCode,
-                        Message = message
+                        Message = message ?? "Error"
                     };
                 }
             }
 
-            var root = doc.RootElement;
+            string id = root.TryGetProperty("id", out var idEl) ? (idEl.GetString() ?? "") : "";
+            string name = root.TryGetProperty("name", out var nameEl) ? (nameEl.GetString() ?? "") : "";
 
-            string id = root.TryGetProperty("id", out var idEl) ? idEl.GetString() ?? "" : "";
-            string name = root.TryGetProperty("name", out var nameEl) ? nameEl.GetString() ?? "" : "";
-            string oaId = root.TryGetProperty("oa_id", out var oaIdEl) ? oaIdEl.GetString() ?? "" : "";
-            string userIdByOa = root.TryGetProperty("user_id_by_oa", out var userIdEl) ? userIdEl.GetString() ?? "" : "";
+            string oaId = root.TryGetProperty("oa_id", out var oaIdEl) ? (oaIdEl.GetString() ?? "") : "";
+            string userIdByOa = root.TryGetProperty("user_id_by_oa", out var userIdEl) ? (userIdEl.GetString() ?? "") : "";
 
             bool isFollower = root.TryGetProperty("is_follower", out var followerEl) && followerEl.ValueKind == JsonValueKind.True;
-            bool isSensitive = root.TryGetProperty("is_sensitive", out var sensitiveEl) && sensitiveEl.ValueKind == JsonValueKind.True;
 
-            string? avatarUrl = root.TryGetProperty("picture", out var pic)
-                             && pic.TryGetProperty("data", out var data)
-                             && data.TryGetProperty("url", out var urlEl)
-                             ? urlEl.GetString()
-                             : null;
+            bool isSensitive = false;
+            if (root.TryGetProperty("is_sensitive", out var sensitiveEl))
+            {
+                isSensitive = sensitiveEl.ValueKind switch
+                {
+                    JsonValueKind.True => true,
+                    JsonValueKind.False => false,
+                    JsonValueKind.Number => sensitiveEl.GetInt32() != 0,
+                    JsonValueKind.String when bool.TryParse(sensitiveEl.GetString(), out var b) => b,
+                    JsonValueKind.String when int.TryParse(sensitiveEl.GetString(), out var n) => n != 0,
+                    _ => false
+                };
+            }
+
+            string? avatarUrl =
+                root.TryGetProperty("picture", out var pic)
+                && pic.ValueKind == JsonValueKind.Object
+                && pic.TryGetProperty("data", out var data)
+                && data.ValueKind == JsonValueKind.Object
+                && data.TryGetProperty("url", out var urlEl)
+                ? urlEl.GetString()
+                : null;
 
             return new ZaloMeResponse
             {
@@ -154,6 +175,7 @@ public class ZaloApiClient : BaseZaloClient, IZaloApiClient
             };
         }
     }
+
 
     public async Task<ZaloDecodePhoneResponse> DecodePhoneAsync(string code, string accessToken, CancellationToken ct)
     {

@@ -4,16 +4,19 @@ using Genora.MultiTenancy.AuditLogs;
 using Genora.MultiTenancy.EntityFrameworkCore;
 using Genora.MultiTenancy.Localization;
 using Genora.MultiTenancy.TenantManagement;
+using Genora.MultiTenancy.Web.HangfireJobs;
 using Genora.MultiTenancy.Web.HealthChecks;
 using Genora.MultiTenancy.Web.Menus;
 using Genora.MultiTenancy.Web.Middlewares;
 using Hangfire;
+using Hangfire.SqlServer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Extensions.DependencyInjection;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Localization;
+using Microsoft.EntityFrameworkCore.Internal;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -27,6 +30,7 @@ using System;
 using System.Globalization;
 using System.IO;
 using System.Security.Cryptography.X509Certificates;
+using System.Threading.Tasks;
 using Volo.Abp;
 using Volo.Abp.Account.Web;
 using Volo.Abp.AspNetCore.MultiTenancy;
@@ -37,20 +41,19 @@ using Volo.Abp.AspNetCore.Mvc.UI.Bundling;
 using Volo.Abp.AspNetCore.Mvc.UI.Theme.LeptonXLite;
 using Volo.Abp.AspNetCore.Mvc.UI.Theme.LeptonXLite.Bundling;
 using Volo.Abp.AspNetCore.Mvc.UI.Theme.Shared;
+using Volo.Abp.AspNetCore.Mvc.UI.Theme.Shared.Bundling;
 using Volo.Abp.AspNetCore.Mvc.UI.Theme.Shared.Toolbars;
 using Volo.Abp.AspNetCore.Serilog;
 using Volo.Abp.Auditing;
 using Volo.Abp.Autofac;
 using Volo.Abp.AutoMapper;
 using Volo.Abp.BackgroundJobs;
-using Volo.Abp.BackgroundJobs.Hangfire;
 using Volo.Abp.BackgroundWorkers;
-using Volo.Abp.Emailing;              // ✅ ADD: IEmailSender
+using Volo.Abp.Emailing;
 using Volo.Abp.FeatureManagement;
-using Volo.Abp.Hangfire;
 using Volo.Abp.Identity.Web;
 using Volo.Abp.Localization;
-using Volo.Abp.MailKit;              // ✅ ADD: AbpMailKitModule (SMTP sender)
+using Volo.Abp.MailKit;
 using Volo.Abp.Modularity;
 using Volo.Abp.MultiTenancy;
 using Volo.Abp.OpenIddict;
@@ -79,9 +82,8 @@ namespace Genora.MultiTenancy.Web;
     typeof(AbpFeatureManagementWebModule),
     typeof(AbpSwashbuckleModule),
     typeof(AbpAspNetCoreSerilogModule),
-    typeof(AbpMailKitModule), //Bật SMTP EmailSender (thay NullEmailSender)
-    typeof(AbpHangfireModule),
-    typeof(AbpBackgroundJobsHangfireModule)
+    typeof(AbpMailKitModule),
+    typeof(AbpBackgroundWorkersModule)
 )]
 public class MultiTenancyWebModule : AbpModule
 {
@@ -155,7 +157,7 @@ public class MultiTenancyWebModule : AbpModule
 
         Configure<FormOptions>(options =>
         {
-            options.MultipartBodyLengthLimit = 20 * 1024 * 1024; // 20MB tổng request
+            options.MultipartBodyLengthLimit = 20 * 1024 * 1024;
         });
 
         Configure<AbpMvcLibsOptions>(options =>
@@ -163,7 +165,6 @@ public class MultiTenancyWebModule : AbpModule
             options.CheckLibs = false;
         });
 
-        // 1) Cấu hình ngôn ngữ ABP
         Configure<AbpLocalizationOptions>(options =>
         {
             options.Languages.Add(new LanguageInfo("vi", "vi", "Tiếng Việt"));
@@ -171,7 +172,6 @@ public class MultiTenancyWebModule : AbpModule
             options.DefaultResourceType = typeof(MultiTenancyResource);
         });
 
-        // 2) Cấu hình culture cho pipeline ASP.NET Core
         Configure<RequestLocalizationOptions>(options =>
         {
             var supportedCultures = new[]
@@ -185,7 +185,6 @@ public class MultiTenancyWebModule : AbpModule
             options.SupportedUICultures = supportedCultures;
         });
 
-        // đọc section từ appsettings.json
         Configure<AuditLogCleanupOptions>(configuration.GetSection("AuditLogCleanup"));
 
         if (!configuration.GetValue<bool>("App:DisablePII"))
@@ -225,12 +224,11 @@ public class MultiTenancyWebModule : AbpModule
             options.IsEnabled = true;
         });
 
-        context.Services.AddHangfire(config =>
+        context.Services.AddHttpClient("ProvincesApi", c =>
         {
-            config.UseSqlServerStorage(configuration.GetConnectionString("Default"));
+            c.BaseAddress = new Uri("https://provinces.open-api.vn");
+            c.Timeout = TimeSpan.FromSeconds(15);
         });
-
-        context.Services.AddHangfireServer();
 
         // ✅ Replace auditing store
         context.Services.Replace(ServiceDescriptor.Transient<IAuditingStore, HostRedirectAuditingStore>());
@@ -240,6 +238,46 @@ public class MultiTenancyWebModule : AbpModule
         context.Services.AddTransient<IZaloOAuthClient, ZaloOAuthClient>();
         context.Services.AddTransient<IZaloTokenProvider, ZaloTokenProvider>();
         context.Services.AddTransient<IZaloApiClient, ZaloApiClient>();
+
+        // =========================
+        // ✅ HANGFIRE
+        // =========================
+        context.Services.AddTransient<BookingReminderZbsCronJob>();
+
+        context.Services.AddHangfire(cfg =>
+        {
+            cfg.SetDataCompatibilityLevel(CompatibilityLevel.Version_180);
+            cfg.UseSimpleAssemblyNameTypeSerializer();
+            cfg.UseRecommendedSerializerSettings();
+
+            cfg.UseSqlServerStorage(
+                configuration.GetConnectionString("Default"),
+                new SqlServerStorageOptions
+                {
+                    PrepareSchemaIfNecessary = true,
+                    CommandBatchMaxTimeout = TimeSpan.FromMinutes(5),
+                    SlidingInvisibilityTimeout = TimeSpan.FromMinutes(5),
+                    QueuePollInterval = TimeSpan.FromSeconds(5),
+                    UseRecommendedIsolationLevel = true,
+                    DisableGlobalLocks = true
+                }
+            );
+        });
+
+        // Queue theo môi trường (default nếu không set)
+        var hangfireQueue = configuration["Hangfire:Queue"];
+        if (string.IsNullOrWhiteSpace(hangfireQueue))
+            hangfireQueue = "default";
+
+        context.Services.AddHangfireServer(options =>
+        {
+            // listen queue theo config, kèm default để không bị lệch
+            options.Queues = new[] { hangfireQueue, "default", "local" };
+            options.WorkerCount = 20;
+
+            // server name có env + guid => dễ phân biệt
+            options.ServerName = $"{Environment.MachineName}:{hostingEnvironment.EnvironmentName}:{Guid.NewGuid():N}";
+        });
 
         ConfigureBundles();
         ConfigureUrls(configuration);
@@ -269,7 +307,7 @@ public class MultiTenancyWebModule : AbpModule
 
         Configure<AbpTenantResolveOptions>(o =>
         {
-            o.TenantResolvers.Add(new DomainTenantResolveContributor("{0}.local")); // test1.local -> "test1"
+            o.TenantResolvers.Add(new DomainTenantResolveContributor("{0}.local"));
             o.TenantResolvers.Add(new HeaderTenantResolveContributor());
             o.TenantResolvers.Add(new QueryStringTenantResolveContributor());
         });
@@ -285,13 +323,19 @@ public class MultiTenancyWebModule : AbpModule
         Configure<AbpBundlingOptions>(options =>
         {
             options.StyleBundles.Configure(
-                LeptonXLiteThemeBundles.Styles.Global,
-                bundle => { bundle.AddFiles("/global-styles.css"); }
+               LeptonXLiteThemeBundles.Styles.Global,
+               bundle => { bundle.AddFiles("/global-styles.css"); }
             );
 
             options.ScriptBundles.Configure(
                 LeptonXLiteThemeBundles.Scripts.Global,
-                bundle => { bundle.AddFiles("/global-scripts.js"); }
+                bundle =>
+                {
+                    bundle.AddFiles("/global-scripts.js");
+
+                    // ✅ add global error handler ở ĐÂY (theme bundle đang dùng)
+                    bundle.AddFiles("/global-error-toast.js");
+                }
             );
         });
     }
@@ -315,7 +359,6 @@ public class MultiTenancyWebModule : AbpModule
 
     private void ConfigureAutoMapper(ServiceConfigurationContext context)
     {
-        // (giữ nguyên logic, chỉ gộp để tránh cấu hình lặp)
         context.Services.AddAutoMapperObjectMapper<MultiTenancyWebModule>();
         Configure<AbpAutoMapperOptions>(options =>
         {
@@ -378,13 +421,13 @@ public class MultiTenancyWebModule : AbpModule
         });
     }
 
-    public override void OnApplicationInitialization(ApplicationInitializationContext context)
+    public override async Task OnApplicationInitializationAsync(ApplicationInitializationContext context)
     {
         var app = context.GetApplicationBuilder();
         var env = context.GetEnvironment();
-
-        // ✅ FIX: log đúng type + đảm bảo dùng IEmailSender thật (MailKit) thay vì NullEmailSender
         var sp = context.ServiceProvider;
+        var config = sp.GetRequiredService<IConfiguration>();
+
         var logger = sp.GetRequiredService<ILogger<MultiTenancyWebModule>>();
         var sender = sp.GetRequiredService<IEmailSender>();
         logger.LogWarning("IEmailSender implementation = {Type}", sender.GetType().FullName);
@@ -392,16 +435,41 @@ public class MultiTenancyWebModule : AbpModule
         var jobManager = sp.GetRequiredService<IBackgroundJobManager>();
         logger.LogWarning("IBackgroundJobManager implementation = {Type}", jobManager.GetType().FullName);
 
-        app.UseCors("ZaloPolicy");
-
-        var opts = context.ServiceProvider.GetRequiredService<IOptions<AuditLogCleanupOptions>>().Value;
+        var opts = sp.GetRequiredService<IOptions<AuditLogCleanupOptions>>().Value;
         if (opts.Enabled)
         {
-            context.AddBackgroundWorkerAsync<AuditLogCleanupWorker>();
+            await context.AddBackgroundWorkerAsync<AuditLogCleanupWorker>();
         }
 
-        app.UseHangfireDashboard("/hangfire");
+        // ✅ Register recurring jobs ONLY when allowed by config
+        var shouldRegisterRecurring = config.GetValue("Hangfire:RegisterRecurringJobs", true);
 
+        // Queue cho recurring job (default nếu không set)
+        var hangfireQueue = config["Hangfire:Queue"];
+        if (string.IsNullOrWhiteSpace(hangfireQueue))
+            hangfireQueue = "default";
+
+        if (shouldRegisterRecurring)
+        {
+            var recurring = sp.GetRequiredService<IRecurringJobManager>();
+
+            recurring.AddOrUpdate<BookingReminderZbsCronJob>(
+                recurringJobId: "booking-reminder-zbs",
+                methodCall: job => job.ExecuteAsync(),
+                cronExpression: "*/1 * * * *",
+                timeZone: TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time"),
+                queue: hangfireQueue
+            );
+
+            logger.LogWarning("Hangfire recurring registered: booking-reminder-zbs (queue={Queue})", hangfireQueue);
+        }
+        else
+        {
+            logger.LogWarning("Hangfire recurring registration skipped (Hangfire:RegisterRecurringJobs=false).");
+        }
+
+        app.UseCors("ZaloPolicy");
+        app.UseHangfireDashboard("/hangfire");
         app.UseForwardedHeaders();
 
         if (env.IsDevelopment())

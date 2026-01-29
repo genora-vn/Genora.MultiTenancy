@@ -1,7 +1,7 @@
-﻿using DocumentFormat.OpenXml.EMMA;
-using Genora.MultiTenancy.AppDtos.AppBookings;
+﻿using Genora.MultiTenancy.AppDtos.AppBookings;
 using Genora.MultiTenancy.AppDtos.AppEmails;
 using Genora.MultiTenancy.AppServices.AppEmails;
+using Genora.MultiTenancy.AppServices.AppZaloAuths;
 using Genora.MultiTenancy.DomainModels.AppBookingPlayers;
 using Genora.MultiTenancy.DomainModels.AppBookings;
 using Genora.MultiTenancy.DomainModels.AppCalendarSlots;
@@ -10,22 +10,24 @@ using Genora.MultiTenancy.DomainModels.AppCustomerTypes;
 using Genora.MultiTenancy.DomainModels.AppGolfCourses;
 using Genora.MultiTenancy.DomainModels.AppOptionExtend;
 using Genora.MultiTenancy.Enums;
+using Genora.MultiTenancy.Enums.ErrorCodes;
 using Genora.MultiTenancy.Features.AppBookingFeatures;
 using Genora.MultiTenancy.Features.AppEmails;
+using Genora.MultiTenancy.Helpers;
 using Genora.MultiTenancy.Localization;
 using Genora.MultiTenancy.Permissions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Localization;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Linq.Dynamic.Core;
-using System.Security.Claims;
 using System.Threading.Tasks;
 using Volo.Abp;
 using Volo.Abp.Application.Dtos;
+using Volo.Abp.BackgroundJobs;
 using Volo.Abp.Content;
-using Volo.Abp.Domain.Entities;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Features;
 using Volo.Abp.MultiTenancy;
@@ -36,13 +38,13 @@ namespace Genora.MultiTenancy.AppServices.AppBookings;
 
 [Authorize]
 public class AppBookingService :
-        FeatureProtectedCrudAppService<
-            Booking,
-            AppBookingDto,
-            Guid,
-            GetBookingListInput,
-            CreateUpdateAppBookingDto>,
-        IAppBookingService
+    FeatureProtectedCrudAppService<
+        Booking,
+        AppBookingDto,
+        Guid,
+        GetBookingListInput,
+        CreateUpdateAppBookingDto>,
+    IAppBookingService
 {
     protected override string FeatureName => AppBookingFeatures.Management;
     protected override string TenantDefaultPermission => MultiTenancyPermissions.AppBookings.Default;
@@ -61,6 +63,13 @@ public class AppBookingService :
     private readonly IRepository<OptionExtend, Guid> _optionExtendRepo;
     private readonly IRepository<CustomerType, Guid> _customerType;
     private readonly ISettingProvider _settingProvider;
+
+    // ✅ enqueue ZBS via Background Job
+    private readonly IBackgroundJobManager _jobManager;
+
+    // NOTE: format yêu cầu bởi Zalo template (không phụ thuộc ngôn ngữ UI)
+    private const string ZaloDateFormat = "dd/MM/yyyy";
+
     public AppBookingService(
         IRepository<Booking, Guid> repository,
         IRepository<Customer, Guid> customerRepository,
@@ -76,7 +85,8 @@ public class AppBookingService :
         IAppEmailSenderService appEmailSenderService,
         IRepository<OptionExtend, Guid> optionExtendRepo,
         IRepository<CustomerType, Guid> customerType,
-        ISettingProvider settingProvider)
+        ISettingProvider settingProvider,
+        IBackgroundJobManager jobManager)
         : base(repository, currentTenant, featureChecker)
     {
         _customerRepository = customerRepository;
@@ -88,6 +98,7 @@ public class AppBookingService :
         CreatePolicyName = MultiTenancyPermissions.AppBookings.Create;
         UpdatePolicyName = MultiTenancyPermissions.AppBookings.Edit;
         DeletePolicyName = MultiTenancyPermissions.AppBookings.Delete;
+
         _excelExporter = excelExporter;
         _excelImporter = excelImporter;
         _templateGenerator = templateGenerator;
@@ -97,7 +108,46 @@ public class AppBookingService :
         _optionExtendRepo = optionExtendRepo;
         _customerType = customerType;
         _settingProvider = settingProvider;
+        _jobManager = jobManager;
     }
+
+    private string NA() => _l["Common:NA"].Value;
+
+    private string CurrencySuffix() => _l["Common:CurrencySuffix"].Value;
+
+    private string F(string code, params object[] args)
+    {
+        var template = _l[code].Value;
+        if (string.IsNullOrWhiteSpace(template)) template = code;
+
+        if (args == null || args.Length == 0) return template;
+
+        try { return string.Format(CultureInfo.CurrentCulture, template, args); }
+        catch { return template; }
+    }
+
+    private string MoneyText(decimal? v)
+    {
+        if (!v.HasValue) return NA();
+        return string.Format(CultureInfo.CurrentCulture, "{0:N0} {1}", v.Value, CurrencySuffix()).Trim();
+    }
+
+    private string CustomerDisplayText(Customer? c)
+    {
+        if (c == null) return NA();
+
+        var name = (c.FullName ?? "").Trim();
+        if (string.IsNullOrWhiteSpace(name)) name = NA();
+
+        var phone = (c.PhoneNumber ?? "").Trim();
+        if (string.IsNullOrWhiteSpace(phone)) return name;
+
+        return F("Common:NameWithPhone", name, phone);
+    }
+
+    private string ToDDMMYYYY(DateTime dt) => dt.ToString(ZaloDateFormat, CultureInfo.InvariantCulture);
+
+    private string ToHHmm(TimeSpan? ts) => ts.HasValue ? ts.Value.ToString(@"hh\:mm") : "";
 
     [DisableValidation]
     public override async Task<PagedResultDto<AppBookingDto>> GetListAsync(GetBookingListInput input)
@@ -113,47 +163,24 @@ public class AppBookingService :
         {
             var filter = input.FilterText.Trim();
             query = query.Where(b =>
-                 b.BookingCode.Contains(filter)
-                 || customerQueryable.Any(c =>
-                     c.Id == b.CustomerId
-                     && (
-                         c.FullName.Contains(filter)
-                         || (c.CustomerCode != null && c.CustomerCode.Contains(filter))
-                         || (c.PhoneNumber != null && c.PhoneNumber.Contains(filter))
-                     )
-                 )
-             );
+                b.BookingCode.Contains(filter)
+                || customerQueryable.Any(c =>
+                    c.Id == b.CustomerId
+                    && (
+                        c.FullName.Contains(filter)
+                        || (c.CustomerCode != null && c.CustomerCode.Contains(filter))
+                        || (c.PhoneNumber != null && c.PhoneNumber.Contains(filter))
+                    )
+                )
+            );
         }
 
-        if (input.CustomerId.HasValue)
-        {
-            query = query.Where(b => b.CustomerId == input.CustomerId.Value);
-        }
-
-        if (input.GolfCourseId.HasValue)
-        {
-            query = query.Where(b => b.GolfCourseId == input.GolfCourseId.Value);
-        }
-
-        if (input.Status.HasValue)
-        {
-            query = query.Where(b => b.Status == input.Status.Value);
-        }
-
-        if (input.Source.HasValue)
-        {
-            query = query.Where(b => b.Source == input.Source.Value);
-        }
-
-        if (input.PlayDateFrom.HasValue)
-        {
-            query = query.Where(b => b.PlayDate >= input.PlayDateFrom.Value);
-        }
-
-        if (input.PlayDateTo.HasValue)
-        {
-            query = query.Where(b => b.PlayDate <= input.PlayDateTo.Value);
-        }
+        if (input.CustomerId.HasValue) query = query.Where(b => b.CustomerId == input.CustomerId.Value);
+        if (input.GolfCourseId.HasValue) query = query.Where(b => b.GolfCourseId == input.GolfCourseId.Value);
+        if (input.Status.HasValue) query = query.Where(b => b.Status == input.Status.Value);
+        if (input.Source.HasValue) query = query.Where(b => b.Source == input.Source.Value);
+        if (input.PlayDateFrom.HasValue) query = query.Where(b => b.PlayDate >= input.PlayDateFrom.Value);
+        if (input.PlayDateTo.HasValue) query = query.Where(b => b.PlayDate <= input.PlayDateTo.Value);
 
         var sorting = input.Sorting.IsNullOrWhiteSpace()
             ? nameof(Booking.CreationTime) + " desc"
@@ -162,10 +189,7 @@ public class AppBookingService :
         query = query.OrderBy(sorting);
 
         var totalCount = await AsyncExecuter.CountAsync(query);
-
-        var items = await AsyncExecuter.ToListAsync(
-            query.Skip(input.SkipCount).Take(input.MaxResultCount)
-        );
+        var items = await AsyncExecuter.ToListAsync(query.Skip(input.SkipCount).Take(input.MaxResultCount));
 
         var customerIds = items.Select(x => x.CustomerId).Distinct().ToList();
         var golfCourseIds = items.Select(x => x.GolfCourseId).Distinct().ToList();
@@ -196,8 +220,11 @@ public class AppBookingService :
             golfDict.TryGetValue(b.GolfCourseId, out var g);
             slotDict.TryGetValue(b.CalendarSlotId ?? Guid.Empty, out var slot);
 
-            var ct = await _customerType.FindAsync(x => x.Id == b.Customer.CustomerTypeId);
-            var ctName = ct?.Name ?? ct?.Code ?? "N/A";
+            var ct = c?.CustomerTypeId.HasValue == true
+                ? await _customerType.FindAsync(x => x.Id == c.CustomerTypeId)
+                : null;
+
+            var ctName = ct?.Name ?? ct?.Code ?? NA();
 
             dtoList.Add(new AppBookingDto
             {
@@ -243,10 +270,15 @@ public class AppBookingService :
         var customer = await _customerRepository.FindAsync(booking.CustomerId);
         var golfCourse = await _golfCourseRepository.FindAsync(booking.GolfCourseId);
         var players = await _playerRepository.GetListAsync(p => p.BookingId == id);
-        var calendarSlot = await _calendarSlotRepository.FindAsync(p => p.Id == booking.CalendarSlotId);
+        var calendarSlot = booking.CalendarSlotId.HasValue
+            ? await _calendarSlotRepository.FindAsync(p => p.Id == booking.CalendarSlotId)
+            : null;
 
-        var ct = await _customerType.FindAsync(x => x.Id == customer.CustomerTypeId);
-        var ctName = ct?.Name ?? ct?.Code ?? "N/A";
+        var ct = customer?.CustomerTypeId.HasValue == true
+            ? await _customerType.FindAsync(x => x.Id == customer.CustomerTypeId)
+            : null;
+
+        var ctName = ct?.Name ?? ct?.Code ?? NA();
 
         var dto = new AppBookingDto
         {
@@ -302,7 +334,10 @@ public class AppBookingService :
         var customer = await _customerRepository.GetAsync(input.CustomerId);
 
         if (!input.CalendarSlotId.HasValue || input.CalendarSlotId.Value == Guid.Empty)
-            throw new UserFriendlyException("CalendarSlotId is required");
+        {
+            throw new BusinessException(BookingErrorCodes.CalendarSlotRequired)
+                .WithData("Field", "CalendarSlotId");
+        }
 
         var calendarSlot = await _calendarSlotRepository.GetAsync(input.CalendarSlotId.Value);
 
@@ -328,43 +363,64 @@ public class AppBookingService :
         await SavePlayersAsync(entity.Id, input.Players);
         await CurrentUnitOfWork.SaveChangesAsync();
 
-        // ✅ Map CustomerTypeSummary chuẩn theo CustomerTypeId
-        var ct = await _customerType.FindAsync(x => x.Id == customer.CustomerTypeId);
-        var ctName = ct?.Name ?? ct?.Code ?? "N/A";
-        var customerTypeSummary = $"{ctName}";
-
-        // ✅ Enqueue email (không block)
         try
         {
-            static string ToHHmm(TimeSpan? ts) => ts.HasValue ? ts.Value.ToString(@"hh\:mm") : "";
-            static string ToDDMMYYYY(DateTime dt) => dt.ToString("dd/MM/yyyy");
+            if (!string.IsNullOrWhiteSpace(customer.PhoneNumber))
+            {
+                await _jobManager.EnqueueAsync(
+                    new ZbsSendJobArgs
+                    {
+                        TenantId = CurrentTenant.Id,
+                        TemplateKey = "BookingCreated",
+                        Phone = customer.PhoneNumber,
+                        TrackingId = entity.Id.ToString(),
+                        TemplateData = new
+                        {
+                            customer_name = customer.FullName,
+                            booking_id = entity.BookingCode,
+                            tee_off_date = entity.PlayDate.ToString(ZaloDateFormat, CultureInfo.InvariantCulture),
+                            tee_off_time = $"{calendarSlot.TimeFrom:hh\\:mm}",
+                            number_of_player = entity.NumberOfGolfers
+                        }
+                    },
+                    priority: BackgroundJobPriority.Normal
+                );
+            }
+        }
+        catch { }
 
+        var ct = await _customerType.FindAsync(x => x.Id == customer.CustomerTypeId);
+        var ctName = ct?.Name ?? ct?.Code ?? NA();
+        var customerTypeSummary = $"{ctName}";
+
+        try
+        {
             var otherRequestsText = await BuildOtherRequestsTextAsync(entity.Utility);
+
+            var paymentText = _l[$"PaymentMethod:{entity.PaymentMethod}"].Value;
+            if (string.IsNullOrWhiteSpace(paymentText) || paymentText.StartsWith("PaymentMethod:", StringComparison.OrdinalIgnoreCase))
+                paymentText = entity.PaymentMethod.ToString();
+
             var model = new BookingNewRequestEmailModelDto
             {
                 BookingCode = entity.BookingCode,
-                BookerName = customer.FullName ?? "N/A",
-                BookerPhone = customer.PhoneNumber ?? "N/A",
+                BookerName = (customer.FullName ?? "").Trim().IsNullOrWhiteSpace() ? NA() : customer.FullName,
+                BookerPhone = (customer.PhoneNumber ?? "").Trim().IsNullOrWhiteSpace() ? NA() : customer.PhoneNumber,
 
-                // giữ DateTime gốc để audit
                 PlayDate = entity.PlayDate,
-                PlayDateText = ToDDMMYYYY(entity.PlayDate),
+                PlayDateText = entity.PlayDate.ToString(ZaloDateFormat, CultureInfo.InvariantCulture),
 
-                // giờ chơi (TimeSpan -> HH:mm)
                 TeeTimeFromText = ToHHmm(calendarSlot?.TimeFrom),
                 TeeTimeToText = ToHHmm(calendarSlot?.TimeTo),
-
-                // nếu vẫn muốn TeeTime gộp
                 TeeTime = $"{ToHHmm(calendarSlot?.TimeFrom)} - {ToHHmm(calendarSlot?.TimeTo)}",
 
                 NumberOfGolfers = entity.NumberOfGolfers,
                 CustomerTypeSummary = customerTypeSummary,
 
                 TotalAmount = entity.TotalAmount,
-                TotalAmountText = $"{entity.TotalAmount:N0} đ",
+                TotalAmountText = MoneyText(entity.TotalAmount),
 
-                PaymentMethod = entity.PaymentMethod.ToString(),
-
+                PaymentMethod = paymentText,
                 OtherRequests = otherRequestsText,
 
                 IsExportInvoice = entity.IsExportInvoice,
@@ -374,14 +430,13 @@ public class AppBookingService :
                 InvoiceEmail = entity.InvoiceEmail
             };
 
-            // lấy cấu hình động theo tenant
             var cfg = await GetEmailConfigAsync(
                 AppEmailSettingNames.BookingNew_ToEmails,
                 AppEmailSettingNames.BookingNew_CcEmails,
                 AppEmailSettingNames.BookingNew_BccEmails,
                 AppEmailSettingNames.BookingNew_SubjectTemplate,
                 entity.BookingCode,
-                fallbackTo: "sales@montgomerielinks.com" // fallback nếu chưa set
+                fallbackTo: "sales@montgomerielinks.com"
             );
 
             await _appEmailSenderService.EnqueueTemplateAsync(
@@ -395,10 +450,7 @@ public class AppBookingService :
                 bookingCode: entity.BookingCode
             );
         }
-        catch
-        {
-            // ✅ không throw để tránh ảnh hưởng kết quả booking của mini app
-        }
+        catch { }
 
         return await GetAsync(entity.Id);
     }
@@ -409,35 +461,40 @@ public class AppBookingService :
 
         var entity = await Repository.GetAsync(id);
 
-        if (entity.Status == BookingStatus.CancelledRefund || entity.Status == BookingStatus.CancelledNoRefund) throw new UserFriendlyException("Booking đã hủy, không thể thao tác.");
+        if (entity.Status == BookingStatus.CancelledRefund || entity.Status == BookingStatus.CancelledNoRefund)
+        {
+            throw new BusinessException(BookingErrorCodes.BookingCancelledReadonly)
+                .WithData("BookingId", id)
+                .WithData("Status", entity.Status.ToString());
+        }
 
-        // ===== BEFORE SNAPSHOT =====
         var oldPlayers = await _playerRepository.GetListAsync(p => p.BookingId == id);
 
         var oldStatus = entity.Status;
         var oldPaymentMethod = entity.PaymentMethod;
         var oldNumberOfGolfers = entity.NumberOfGolfers;
 
-        var oldStatusText = _l[$"BookingStatus:{oldStatus}"];
-        var oldPaymentText = oldPaymentMethod.HasValue
-            ? _l[$"PaymentMethod:{oldPaymentMethod.Value}"]
-            : "N/A";
+        var oldStatusText = _l[$"BookingStatus:{oldStatus}"].Value;
+        if (string.IsNullOrWhiteSpace(oldStatusText) || oldStatusText.StartsWith("BookingStatus:", StringComparison.OrdinalIgnoreCase))
+            oldStatusText = oldStatus.ToString();
 
-        // customer của booking (để giữ nguyên tên KH)
+        var oldPaymentText = oldPaymentMethod.HasValue
+            ? _l[$"PaymentMethod:{oldPaymentMethod.Value}"].Value
+            : NA();
+
+        if (oldPaymentMethod.HasValue && (string.IsNullOrWhiteSpace(oldPaymentText) || oldPaymentText.StartsWith("PaymentMethod:", StringComparison.OrdinalIgnoreCase)))
+            oldPaymentText = oldPaymentMethod.Value.ToString();
+
         var oldCustomer = await _customerRepository.GetAsync(entity.CustomerId);
 
         CalendarSlot? oldSlot = null;
         if (entity.CalendarSlotId.HasValue && entity.CalendarSlotId.Value != Guid.Empty)
             oldSlot = await _calendarSlotRepository.FindAsync(entity.CalendarSlotId.Value);
 
-        static string ToDDMMYYYY(DateTime dt) => dt.ToString("dd/MM/yyyy");
-        static string ToHHmm(TimeSpan? ts) => ts.HasValue ? ts.Value.ToString(@"hh\:mm") : "";
-
-        var oldPlayDateText = ToDDMMYYYY(entity.PlayDate);
+        var oldPlayDateText = entity.PlayDate.ToString(ZaloDateFormat, CultureInfo.InvariantCulture);
         var oldTeeFromText = ToHHmm(oldSlot?.TimeFrom);
         var oldTeeToText = ToHHmm(oldSlot?.TimeTo);
 
-        // ===== APPLY UPDATE =====
         entity.CustomerId = input.CustomerId;
         entity.GolfCourseId = input.GolfCourseId;
         entity.CalendarSlotId = input.CalendarSlotId;
@@ -454,17 +511,22 @@ public class AppBookingService :
         await SavePlayersAsync(entity.Id, input.Players);
         await CurrentUnitOfWork.SaveChangesAsync();
 
-        // ===== AFTER SNAPSHOT =====
         var newPlayers = await _playerRepository.GetListAsync(p => p.BookingId == id);
 
         var newStatus = entity.Status;
         var newPaymentMethod = entity.PaymentMethod;
         var newNumberOfGolfers = entity.NumberOfGolfers;
 
-        var newStatusText = _l[$"BookingStatus:{newStatus}"];
+        var newStatusText = _l[$"BookingStatus:{newStatus}"].Value;
+        if (string.IsNullOrWhiteSpace(newStatusText) || newStatusText.StartsWith("BookingStatus:", StringComparison.OrdinalIgnoreCase))
+            newStatusText = newStatus.ToString();
+
         var newPaymentText = newPaymentMethod.HasValue
-            ? _l[$"PaymentMethod:{newPaymentMethod.Value}"]
-            : "N/A";
+            ? _l[$"PaymentMethod:{newPaymentMethod.Value}"].Value
+            : NA();
+
+        if (newPaymentMethod.HasValue && (string.IsNullOrWhiteSpace(newPaymentText) || newPaymentText.StartsWith("PaymentMethod:", StringComparison.OrdinalIgnoreCase)))
+            newPaymentText = newPaymentMethod.Value.ToString();
 
         var newCustomer = await _customerRepository.GetAsync(entity.CustomerId);
 
@@ -472,11 +534,10 @@ public class AppBookingService :
         if (entity.CalendarSlotId.HasValue && entity.CalendarSlotId.Value != Guid.Empty)
             newSlot = await _calendarSlotRepository.FindAsync(entity.CalendarSlotId.Value);
 
-        var newPlayDateText = ToDDMMYYYY(entity.PlayDate);
+        var newPlayDateText = entity.PlayDate.ToString(ZaloDateFormat, CultureInfo.InvariantCulture);
         var newTeeFromText = ToHHmm(newSlot?.TimeFrom);
         var newTeeToText = ToHHmm(newSlot?.TimeTo);
 
-        // ===== helpers compare =====
         static string PlayersSig(IEnumerable<BookingPlayer> ps) =>
             string.Join("|",
                 ps.Select(p =>
@@ -495,38 +556,55 @@ public class AppBookingService :
             || oldTeeFromText != newTeeFromText
             || oldTeeToText != newTeeToText;
 
-        // ✅ chỉ gửi email hủy khi chuyển từ status KHÁC -> 4/5
-        var becameCancelled = (oldStatus != BookingStatus.CancelledRefund && oldStatus != BookingStatus.CancelledNoRefund)
-                   && (newStatus == BookingStatus.CancelledRefund || newStatus == BookingStatus.CancelledNoRefund);
+        var becameCancelled =
+            (oldStatus != BookingStatus.CancelledRefund && oldStatus != BookingStatus.CancelledNoRefund)
+            && (newStatus == BookingStatus.CancelledRefund || newStatus == BookingStatus.CancelledNoRefund);
 
-        // ===== ENQUEUE EMAIL (NON-BLOCKING) =====
         try
         {
             if (becameCancelled)
             {
-                // ✅ Requester = admin thao tác (CurrentUser), format "FullName (UserName)"
+                if (!string.IsNullOrWhiteSpace(oldCustomer.PhoneNumber))
+                {
+                    await _jobManager.EnqueueAsync(
+                        new ZbsSendJobArgs
+                        {
+                            TenantId = CurrentTenant.Id,
+                            TemplateKey = "BookingCancelled",
+                            Phone = oldCustomer.PhoneNumber,
+                            TrackingId = entity.Id.ToString(),
+                            TemplateData = new
+                            {
+                                customer_name = oldCustomer.FullName,
+                                booking_code = entity.BookingCode,
+                                tee_off_date = newPlayDateText,
+                                tee_off_time = newTeeFromText
+                            }
+                        },
+                        priority: BackgroundJobPriority.Normal
+                    );
+                }
+
                 var fullName = (CurrentUser?.Name ?? "").Trim();
                 var userName = (CurrentUser?.UserName ?? "").Trim();
 
                 string requesterName;
                 if (!string.IsNullOrWhiteSpace(fullName) && !string.IsNullOrWhiteSpace(userName))
-                    requesterName = $"{fullName} ({userName})";
+                    requesterName = F("Common:RequesterNameWithUserName", fullName, userName);
                 else if (!string.IsNullOrWhiteSpace(fullName))
                     requesterName = fullName;
                 else if (!string.IsNullOrWhiteSpace(userName))
                     requesterName = userName;
                 else
-                    requesterName = "N/A";
+                    requesterName = NA();
 
-                var requesterPhone =
-                    CurrentUser?.FindClaim("phone_number")?.Value
+                var requesterPhone = CurrentUser?.FindClaim("phone_number")?.Value
                     ?? CurrentUser?.FindClaim(System.Security.Claims.ClaimTypes.MobilePhone)?.Value
                     ?? CurrentUser?.FindClaim(System.Security.Claims.ClaimTypes.HomePhone)?.Value
-                    ?? "N/A";
+                    ?? NA();
 
-                // ✅ giữ nguyên customer của booking (oldCustomer) để không đổi tên KH
-                var customerName = oldCustomer?.FullName ?? "N/A";
-                var customerPhone = oldCustomer?.PhoneNumber ?? "N/A";
+                var customerName = oldCustomer?.FullName ?? NA();
+                var customerPhone = oldCustomer?.PhoneNumber ?? NA();
 
                 var cancelModel = new BookingCancelRequestEmailModelDto
                 {
@@ -546,7 +624,6 @@ public class AppBookingService :
                     CancelStatusText = newStatusText
                 };
 
-                // lấy cấu hình động theo tenant
                 var cfg = await GetEmailConfigAsync(
                     AppEmailSettingNames.BookingCancel_ToEmails,
                     AppEmailSettingNames.BookingCancel_CcEmails,
@@ -569,11 +646,33 @@ public class AppBookingService :
             }
             else
             {
+                if (!string.IsNullOrWhiteSpace(newCustomer.PhoneNumber))
+                {
+                    await _jobManager.EnqueueAsync(
+                        new ZbsSendJobArgs
+                        {
+                            TenantId = CurrentTenant.Id,
+                            TemplateKey = "BookingChanged",
+                            Phone = newCustomer.PhoneNumber,
+                            TrackingId = entity.Id.ToString(),
+                            TemplateData = new
+                            {
+                                customer_name = newCustomer.FullName,
+                                booking_code = entity.BookingCode,
+                                tee_off_date = newPlayDateText,
+                                tee_off_time = $"{newTeeFromText}",
+                                number_of_player = newNumberOfGolfers
+                            }
+                        },
+                        priority: BackgroundJobPriority.Normal
+                    );
+                }
+
                 var changeModel = new BookingChangeRequestEmailModelDto
                 {
                     BookingCode = entity.BookingCode,
-                    BookerName = newCustomer?.FullName ?? "N/A",
-                    BookerPhone = newCustomer?.PhoneNumber ?? "N/A",
+                    BookerName = newCustomer?.FullName ?? NA(),
+                    BookerPhone = newCustomer?.PhoneNumber ?? NA(),
 
                     OldStatusText = oldStatusText,
                     OldPaymentMethodText = oldPaymentText,
@@ -590,15 +689,14 @@ public class AppBookingService :
                     HasHeaderChanges = hasHeaderChanges
                 };
 
-                // lấy cấu hình động theo tenant
                 var cfg = await GetEmailConfigAsync(
-                   AppEmailSettingNames.BookingChange_ToEmails,
-                   AppEmailSettingNames.BookingChange_CcEmails,
-                   AppEmailSettingNames.BookingChange_BccEmails,
-                   AppEmailSettingNames.BookingChange_SubjectTemplate,
-                   entity.BookingCode,
-                   fallbackTo: "sales@montgomerielinks.com"
-               );
+                    AppEmailSettingNames.BookingChange_ToEmails,
+                    AppEmailSettingNames.BookingChange_CcEmails,
+                    AppEmailSettingNames.BookingChange_BccEmails,
+                    AppEmailSettingNames.BookingChange_SubjectTemplate,
+                    entity.BookingCode,
+                    fallbackTo: "sales@montgomerielinks.com"
+                );
 
                 await _appEmailSenderService.EnqueueTemplateAsync(
                     templateName: AppEmailTemplateNames.BookingChangeRequest,
@@ -625,17 +723,20 @@ public class AppBookingService :
         await CheckDeletePolicyAsync();
 
         var entity = await Repository.GetAsync(id);
-        if (entity.Status == BookingStatus.CancelledRefund || entity.Status == BookingStatus.CancelledNoRefund) throw new UserFriendlyException("Booking đã hủy, không thể thao tác.");
+        if (entity.Status == BookingStatus.CancelledRefund || entity.Status == BookingStatus.CancelledNoRefund)
+        {
+            throw new BusinessException(BookingErrorCodes.BookingCancelledReadonly)
+                .WithData("BookingId", id)
+                .WithData("Status", entity.Status.ToString());
+        }
 
         await _playerRepository.DeleteAsync(p => p.BookingId == id);
         await Repository.DeleteAsync(id);
     }
 
-    // ==== Helper: sinh BookingCode ====
     private async Task<string> GenerateBookingCodeAsync(string customerCode, DateTime playDate)
     {
-        var dayPart = playDate.ToString("ddMMyy"); // 121225
-
+        var dayPart = playDate.ToString("ddMMyy", CultureInfo.InvariantCulture);
         var prefix = $"{customerCode}{dayPart}";
 
         var queryable = await Repository.GetQueryableAsync();
@@ -650,14 +751,11 @@ public class AppBookingService :
         foreach (var code in sameDayCodes)
         {
             var suffix = code.Substring(prefix.Length);
-            if (int.TryParse(suffix, out var n) && n > maxSeq)
-            {
-                maxSeq = n;
-            }
+            if (int.TryParse(suffix, NumberStyles.Integer, CultureInfo.InvariantCulture, out var n) && n > maxSeq) maxSeq = n;
         }
 
         var nextSeq = maxSeq + 1;
-        var seqPart = nextSeq.ToString("D3"); // 001
+        var seqPart = nextSeq.ToString("D3", CultureInfo.InvariantCulture);
 
         return prefix + seqPart;
     }
@@ -666,10 +764,7 @@ public class AppBookingService :
     {
         await _playerRepository.DeleteAsync(p => p.BookingId == bookingId);
 
-        if (players == null || !players.Any())
-        {
-            return;
-        }
+        if (players == null || !players.Any()) return;
 
         foreach (var p in players)
         {
@@ -687,7 +782,6 @@ public class AppBookingService :
         }
     }
 
-    // Tải file mẫu
     public Task<IRemoteStreamContent> DownloadTemplateAsync()
     {
         var rows = new List<AppBookingExcelRowDto>();
@@ -708,50 +802,88 @@ public class AppBookingService :
 
         foreach (var (rowNumber, r) in rows)
         {
-            // ===== VALIDATE =====
-            // ===== Check các trường dữ liệu theo đúng entity hoặc cần thì valid các trường bắt buộc, đây là a làm demo cho bảng Booking các bảng khác tương tự =====
-            if (r.PlayDate == null)
+            if (r.PlayDate == DateTime.MinValue)
             {
-                throw new UserFriendlyException(
-                    "Import Excel lỗi",
-                    $"Dòng {rowNumber}: PlayDate là bắt buộc"
-                );
+                throw ErrorHelper.ImportError(_l, BookingImportErrorCodes.PlayDateRequired, rowNumber, "PlayDate", null);
             }
 
-            if (!Enum.TryParse<BookingStatus>(r.Status, out var status))
-                throw new UserFriendlyException(
-                    "Import Excel lỗi",
-                    $"Dòng {rowNumber}: Status không hợp lệ");
+            if (r.NumberOfGolfers <= 0)
+            {
+                throw ErrorHelper.ImportError(_l, BookingImportErrorCodes.NumberOfGolfersInvalid, rowNumber, "NumberOfGolfers", r.NumberOfGolfers);
+            }
 
-            if (!Enum.TryParse<PaymentMethod>(r.PaymentMethod, out var payment))
-                throw new UserFriendlyException(
-                    "Import Excel lỗi",
-                    $"Dòng {rowNumber}: PaymentMethod không hợp lệ");
+            if (r.TotalAmount <= 0)
+            {
+                throw ErrorHelper.ImportError(_l, BookingImportErrorCodes.TotalAmountInvalid, rowNumber, "TotalAmount", r.TotalAmount);
+            }
 
-            if (!Enum.TryParse<BookingSource>(r.Source, out var source))
-                throw new UserFriendlyException(
-                    "Import Excel lỗi",
-                    $"Dòng {rowNumber}: Source không hợp lệ");
+            var statusRaw = (r.Status ?? "").Trim();
+            if (string.IsNullOrWhiteSpace(statusRaw))
+            {
+                throw ErrorHelper.ImportError(_l, BookingImportErrorCodes.StatusRequired, rowNumber, "Status", null, null);
+            }
 
-            var booking = await Repository.FirstOrDefaultAsync(
-                x => x.BookingCode == r.BookingCode
-            );
+            if (!Enum.TryParse<BookingStatus>(statusRaw, ignoreCase: true, out var status))
+            {
+                var allowed = string.Join(", ", Enum.GetNames(typeof(BookingStatus)));
+                var detail = F("BookingImport:StatusInvalid_Data", statusRaw, allowed);
+
+                throw ErrorHelper.ImportError(_l, BookingImportErrorCodes.StatusInvalid, rowNumber, "Status", statusRaw, detail)
+                    .WithData("Allowed", allowed);
+            }
+
+            var paymentRaw = (r.PaymentMethod ?? "").Trim();
+            if (string.IsNullOrWhiteSpace(paymentRaw))
+            {
+                throw ErrorHelper.ImportError(_l, BookingImportErrorCodes.PaymentMethodRequired, rowNumber, "PaymentMethod", null);
+            }
+
+            if (!Enum.TryParse<PaymentMethod>(paymentRaw, ignoreCase: true, out var payment))
+            {
+                var allowed = string.Join(", ", Enum.GetNames(typeof(PaymentMethod)));
+                var detail = F("BookingImport:PaymentMethodInvalid_Data", paymentRaw, allowed);
+
+                throw ErrorHelper.ImportError(_l, BookingImportErrorCodes.PaymentMethodInvalid, rowNumber, "PaymentMethod", paymentRaw, detail)
+                    .WithData("Allowed", allowed);
+            }
+
+            var sourceRaw = (r.Source ?? "").Trim();
+            if (string.IsNullOrWhiteSpace(sourceRaw))
+            {
+                throw ErrorHelper.ImportError(_l, BookingImportErrorCodes.SourceRequired, rowNumber, "Source", null);
+            }
+
+            if (!Enum.TryParse<BookingSource>(sourceRaw, ignoreCase: true, out var source))
+            {
+                var allowed = string.Join(", ", Enum.GetNames(typeof(BookingSource)));
+                var detail = F("BookingImport:SourceInvalid_Data", sourceRaw, allowed);
+
+                throw ErrorHelper.ImportError(_l, BookingImportErrorCodes.SourceInvalid, rowNumber, "Source", sourceRaw, detail)
+                    .WithData("Allowed", allowed);
+            }
+
+            var bookingCodeInFile = (r.BookingCode ?? "").Trim();
+            Booking? booking = null;
+
+            if (!string.IsNullOrWhiteSpace(bookingCodeInFile))
+            {
+                booking = await Repository.FirstOrDefaultAsync(x => x.BookingCode == bookingCodeInFile);
+            }
 
             if (booking == null)
             {
-                var datePart = r.PlayDate.ToString("ddMMyy");
-
+                var datePart = r.PlayDate.ToString("ddMMyy", CultureInfo.InvariantCulture);
                 var countInDay = await Repository.CountAsync(x => x.PlayDate.Date == r.PlayDate.Date);
-                var serial = (countInDay + 1).ToString("D3");
+                var serial = (countInDay + 1).ToString("D3", CultureInfo.InvariantCulture);
 
                 var bookingCode = $"KH000001-{datePart}-{serial}";
-                // ===== INSERT =====
+
                 booking = new Booking(
                     GuidGenerator.Create(),
                     bookingCode,
-                    new Guid("8DA661EA-D7A2-1692-5B49-3A1E329C52B3"),              // Mapping Customer
-                    new Guid("C38585C6-8996-11C8-B721-3A1E329BAF6E"),              // Mapping GolfCourse
-                    Guid.Empty,                                                    // Mapping Calendar
+                    new Guid("8DA661EA-D7A2-1692-5B49-3A1E329C52B3"),
+                    new Guid("C38585C6-8996-11C8-B721-3A1E329BAF6E"),
+                    Guid.Empty,
                     r.PlayDate,
                     r.NumberOfGolfers,
                     0,
@@ -765,7 +897,6 @@ public class AppBookingService :
             }
             else
             {
-                // ===== UPDATE =====
                 booking.NumberOfGolfers = r.NumberOfGolfers;
                 booking.TotalAmount = r.TotalAmount;
                 booking.Status = status;
@@ -785,7 +916,6 @@ public class AppBookingService :
         var query = await Repository.GetQueryableAsync();
         var customerQueryable = await _customerRepository.GetQueryableAsync();
 
-        // ✅ FilterText: BookingCode OR FullName OR CustomerCode OR Phone
         if (!input.FilterText.IsNullOrWhiteSpace())
         {
             var filter = input.FilterText.Trim();
@@ -803,50 +933,43 @@ public class AppBookingService :
             );
         }
 
-        if (input.Status.HasValue)
-            query = query.Where(x => x.Status == input.Status.Value);
-
-        if (input.Source.HasValue)
-            query = query.Where(x => x.Source == input.Source.Value);
-
-        if (input.PlayDateFrom.HasValue)
-            query = query.Where(x => x.PlayDate >= input.PlayDateFrom.Value);
-
-        if (input.PlayDateTo.HasValue)
-            query = query.Where(x => x.PlayDate <= input.PlayDateTo.Value);
+        if (input.Status.HasValue) query = query.Where(x => x.Status == input.Status.Value);
+        if (input.Source.HasValue) query = query.Where(x => x.Source == input.Source.Value);
+        if (input.PlayDateFrom.HasValue) query = query.Where(x => x.PlayDate >= input.PlayDateFrom.Value);
+        if (input.PlayDateTo.HasValue) query = query.Where(x => x.PlayDate <= input.PlayDateTo.Value);
 
         var list = await AsyncExecuter.ToListAsync(query);
 
-        // Customers
         var customerIds = list.Select(x => x.CustomerId).Distinct().ToList();
-        var customers = customerIds.Count == 0
-            ? new List<Customer>()
-            : await _customerRepository.GetListAsync(x => customerIds.Contains(x.Id));
+        var customers = customerIds.Count == 0 ? new List<Customer>() : await _customerRepository.GetListAsync(x => customerIds.Contains(x.Id));
         var customerDict = customers.ToDictionary(x => x.Id, x => x);
 
-        // Calendar slots (to get TimeFrom/TimeTo)
-        var slotIds = list
-            .Where(x => x.CalendarSlotId.HasValue && x.CalendarSlotId.Value != Guid.Empty)
+        var slotIds = list.Where(x => x.CalendarSlotId.HasValue && x.CalendarSlotId.Value != Guid.Empty)
             .Select(x => x.CalendarSlotId!.Value)
             .Distinct()
             .ToList();
 
-        var slots = slotIds.Count == 0
-            ? new List<CalendarSlot>()
-            : await _calendarSlotRepository.GetListAsync(s => slotIds.Contains(s.Id));
+        var slots = slotIds.Count == 0 ? new List<CalendarSlot>() : await _calendarSlotRepository.GetListAsync(s => slotIds.Contains(s.Id));
         var slotDict = slots.ToDictionary(s => s.Id, s => s);
 
-        static string ToHHmm(TimeSpan? ts)
-            => ts.HasValue ? ts.Value.ToString(@"hh\:mm") : "";
+        string LStatus(BookingStatus s)
+        {
+            var t = _l[$"BookingStatus:{s}"].Value;
+            return (string.IsNullOrWhiteSpace(t) || t.StartsWith("BookingStatus:", StringComparison.OrdinalIgnoreCase)) ? s.ToString() : t;
+        }
 
-        // Localize helpers (tối ưu: map ngay ở Service, ExcelExporter chỉ render text)
-        string LStatus(BookingStatus s) => _l[$"BookingStatus:{s}"];
         string LPayment(PaymentMethod? pm)
         {
             if (!pm.HasValue) return "";
-            return _l[$"PaymentMethod:{pm.Value}"];
+            var t = _l[$"PaymentMethod:{pm.Value}"].Value;
+            return (string.IsNullOrWhiteSpace(t) || t.StartsWith("PaymentMethod:", StringComparison.OrdinalIgnoreCase)) ? pm.Value.ToString() : t;
         }
-        string LSource(BookingSource src) => _l[$"BookingSource:{src}"];
+
+        string LSource(BookingSource src)
+        {
+            var t = _l[$"BookingSource:{src}"].Value;
+            return (string.IsNullOrWhiteSpace(t) || t.StartsWith("BookingSource:", StringComparison.OrdinalIgnoreCase)) ? src.ToString() : t;
+        }
 
         var rows = list.Select(b =>
         {
@@ -856,13 +979,12 @@ public class AppBookingService :
             if (b.CalendarSlotId.HasValue)
                 slotDict.TryGetValue(b.CalendarSlotId.Value, out slot);
 
-            var customerDisplay = (c?.FullName ?? "")
-                + (!string.IsNullOrWhiteSpace(c?.PhoneNumber) ? $" ({c!.PhoneNumber})" : "");
+            var customerDisplay = CustomerDisplayText(c);
 
             var from = ToHHmm(slot?.TimeFrom);
             var to = ToHHmm(slot?.TimeTo);
             var playTime = (!string.IsNullOrWhiteSpace(from) || !string.IsNullOrWhiteSpace(to))
-                ? (string.IsNullOrWhiteSpace(from) ? to : (string.IsNullOrWhiteSpace(to) ? from : $"{from} - {to}"))
+                ? (string.IsNullOrWhiteSpace(from) ? to : (string.IsNullOrWhiteSpace(to) ? from : F("Common:TimeRange", from, to)))
                 : "";
 
             return new AppBookingExcelRowDto
@@ -880,7 +1002,6 @@ public class AppBookingService :
                 CompanyAddress = b.CompanyAddress,
                 InvoiceEmail = b.InvoiceEmail,
 
-                // ✅ Localized text (quan trọng)
                 PaymentMethod = LPayment(b.PaymentMethod),
                 Status = LStatus(b.Status),
                 Source = LSource(b.Source)
@@ -894,12 +1015,6 @@ public class AppBookingService :
     {
         if (string.IsNullOrWhiteSpace(s)) return null;
         return s.Trim();
-    }
-
-    private static string ApplyTemplate(string? template, string bookingCode)
-    {
-        template ??= "[ZALO MINI APP] YÊU CẦU ĐẶT CHỖ MỚI – {BookingCode}";
-        return template.Replace("{BookingCode}", bookingCode ?? "");
     }
 
     private static string ApplySubjectTemplate(string? template, string bookingCode)
@@ -941,17 +1056,10 @@ public class AppBookingService :
     private async Task<string> BuildOtherRequestsTextAsync(string? utility)
     {
         var ids = ParseUtilityIds(utility);
-        if (ids.Count == 0) return ""; // để tpl tự in "Không có"
+        if (ids.Count == 0) return "";
 
         var query = await _optionExtendRepo.GetQueryableAsync();
 
-        // chỉ lấy tiện ích sân golf (Type=1) và match theo OptionId
-        var names = query
-            .Where(x => x.Type == OptionExtendTypeEnum.GolfCourseUlitity.Value && ids.Contains(x.OptionId))
-            .Select(x => x.OptionName)
-            .ToList();
-
-        // giữ thứ tự theo ids (optional)
         var nameDict = query
             .Where(x => x.Type == OptionExtendTypeEnum.GolfCourseUlitity.Value && ids.Contains(x.OptionId))
             .ToDictionary(x => x.OptionId, x => x.OptionName);
@@ -961,40 +1069,33 @@ public class AppBookingService :
             .Select(id => nameDict[id])
             .ToList();
 
-        // format bullet lines
-        return string.Join("\n", ordered.Select(n => $"- {n}"));
+        var prefix = _l["Common:BulletPrefix"].Value;
+        if (string.IsNullOrWhiteSpace(prefix)) prefix = "-";
+
+        return string.Join("\n", ordered.Select(n => $"{prefix} {n}"));
     }
 
-    private static string BuildPlayersText(List<BookingPlayer> players)
+    private string BuildPlayersText(List<BookingPlayer> players)
     {
         if (players == null || players.Count == 0) return "";
 
-        static string Money(decimal? v) => v.HasValue ? $"{v.Value:N0} đ" : "N/A";
-        static string Text(string? s) => string.IsNullOrWhiteSpace(s) ? "N/A" : s.Trim();
+        string Text(string? s) => string.IsNullOrWhiteSpace(s) ? NA() : s.Trim();
 
-        // Format đúng yêu cầu:
-        // Người chơi 1:
-        // • Tên người chơi cũ: ...
-        // • Mã hội viên cũ: ...
-        // • Giá / golfer cũ: ...
-        // • Ghi chú cũ: ...
-        //
-        // Người chơi 2: ...
         var lines = new List<string>();
 
         for (int i = 0; i < players.Count; i++)
         {
             var p = players[i];
-            lines.Add($"Người chơi {i + 1}:");
-            lines.Add($"• Tên người chơi: {Text(p.PlayerName)}");
-            lines.Add($"• Mã hội viên: {Text(p.VgaCode)}");
-            lines.Add($"• Giá / golfer: {Money(p.PricePerPlayer)}");
-            lines.Add($"• Ghi chú: {Text(p.Notes)}");
 
-            if (i < players.Count - 1) lines.Add(""); // ngăn cách giữa các người chơi
+            lines.Add(F("BookingEmail:PlayerBlockTitle", i + 1));
+            lines.Add(F("BookingEmail:PlayerNameLine", Text(p.PlayerName)));
+            lines.Add(F("BookingEmail:PlayerVgaLine", Text(p.VgaCode)));
+            lines.Add(F("BookingEmail:PlayerPriceLine", MoneyText(p.PricePerPlayer)));
+            lines.Add(F("BookingEmail:PlayerNotesLine", Text(p.Notes)));
+
+            if (i < players.Count - 1) lines.Add("");
         }
 
         return string.Join(Environment.NewLine, lines);
     }
-
 }

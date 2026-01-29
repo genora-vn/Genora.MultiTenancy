@@ -32,10 +32,10 @@
 <abp-card>
     <abp-card-header>
         <abp-row>
-            <abp-column size-md="_6">
+            <abp-column size-md="_3">
                 <abp-card-title>@L["AppZaloAuths"]</abp-card-title>
             </abp-column>
-            <abp-column size-md="_6" class="text-end">
+            <abp-column size-md="_9" class="text-end">
                 @if (canManage)
                 {
                     <abp-button id="NewAppZaloAuthButton"
@@ -47,7 +47,7 @@
                 }
                 @if (canViewLogs)
                 {
-                    <a class="btn btn-outline-secondary ms-2" href="/AppZaloLogs">
+                    <a class="btn btn-outline-secondary" href="/AppZaloLogs">
                         <i class="fa fa-list"></i> @L["Menu:AppZaloLogs"]
                     </a>
                 }
@@ -72,7 +72,7 @@
                 </div>
             </abp-column>
             <abp-column size-md="_2" class="d-flex" style="align-items: anchor-center">
-                <abp-button id="SearchButton" text="@L["Search"]" icon="search" button-type="Outline_Primary" />
+                <abp-button id="SearchButton" style="height: 45px" text="@L["Search"]" icon="search" button-type="Outline_Primary" />
             </abp-column>
         </abp-row>
     </abp-card-header>

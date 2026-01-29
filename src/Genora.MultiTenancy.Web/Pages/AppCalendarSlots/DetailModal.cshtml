@@ -22,19 +22,25 @@
         <abp-modal-header title="@(isEdit? L["EditCalendarSlot"] : L["CreateCalendarSlot"])"></abp-modal-header>
 
         <abp-modal-body>
-            @* giữ Id để post *@
             @if (isEdit)
             {
                 <input type="hidden" asp-for="Id" />
             }
-
             <input type="hidden" asp-for="Slot.GolfCourseId" />
-
             <abp-row>
                 <abp-column size-md="_4">
                     <div class="mb-3">
-                        <label class="form-label">@L["ApplyDate"]</label>
-                        <input name="Slot.ApplyDate" class="form-control calendar-date-input" type="text" autocomplete="off" value="@applyDateIso" tabindex="1" />
+                        <label class="form-label">Ngày chơi</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fa-regular fa-calendar"></i></span>
+                            <input name="Slot.ApplyDate"
+                                   id="Slot_ApplyDate"
+                                   class="form-control calendar-date-input"
+                                   type="text"
+                                   autocomplete="off"
+                                   value="@applyDateIso"
+                                   tabindex="1" />
+                        </div>
                     </div>
                 </abp-column>
 
@@ -64,33 +70,31 @@
                     </div>
                 </abp-column>
             </abp-row>
-
             <abp-row>
-                <abp-column size-md="_4">
+                <abp-column size-md="_6">
                     <abp-select asp-for="Slot.PromotionTypeId"
                                 label="@L["PromotionType"]"
                                 asp-items="@Model.Promotions" tabindex="4" />
                 </abp-column>
 
-                <abp-column size-md="_4">
+                <abp-column size-md="_6">
                     <abp-input asp-for="Slot.MaxSlots" label="@L["MaxSlots"]" tabindex="5" />
-                </abp-column>
-
-                <abp-column size-md="_4" style="display:flex; align-items:center">
-                    <abp-input asp-for="Slot.IsActive" label="@L["IsActive"]" tabindex="6" />
                 </abp-column>
             </abp-row>
 
-            <abp-row>
+            <div class="mb-2">
                 <label class="form-label" asp-for="Slot.InternalNote">@L["InternalNote"]</label>
                 <textarea asp-for="Slot.InternalNote"
                           placeholder="Nhập ghi chú"
-                          style="width: 97%; margin-left: 15px"
                           class="form-control"
-                          rows="2" tabindex="7"></textarea>
-            </abp-row>
+                          rows="2" tabindex="6"></textarea>
+            </div>
 
-            <div style="display:inline-flex; margin-top: 20px; width: 100%">
+            <div class="mb-2">
+                <abp-input asp-for="Slot.IsActive" label="Được sử dụng" tabindex="7" />
+            </div>
+
+            <div style="display:inline-flex; margin-top: 14px; width: 100%">
                 <h5 style="margin-top:13px">@L["CalendarSlotPrices"]</h5>
                 <hr style="width: 85%" />
             </div>
@@ -112,7 +116,6 @@
                             var row = Model.Slot.Prices[i];
                             <tr>
                                 <td>
-                                    @* Select bị disabled để khóa chỉnh sửa; thêm hidden để vẫn submit được *@
                                     <input type="hidden" name="Slot.Prices[@i].CustomerTypeId" value="@row.CustomerTypeId" />
                                     <select class="form-select" disabled>
                                         @foreach (var opt in Model.CustomerTypeItems)
@@ -133,12 +136,15 @@
                                 </td>
 
                                 <td>
-                                    <input name="Slot.Prices[@i].Price18"
-                                           type="text"
-                                           class="form-control money-input text-end"
-                                           value="@row.Price18.ToString("0")"
-                                           inputmode="numeric"
-                                           autocomplete="off" />
+                                    <div class="money-cell">
+                                        <input name="Slot.Prices[@i].Price18"
+                                               type="text"
+                                               class="form-control money-input text-end money-required-18"
+                                               value="@(row.Price18 > 0 ? row.Price18.ToString("0") : "")"
+                                               inputmode="numeric"
+                                               autocomplete="off" />
+                                        <div class="invalid-feedback">Giá 18 hố bắt buộc và phải &gt; 0</div>
+                                    </div>
                                 </td>
 
                                 <td>
@@ -173,10 +179,35 @@
     .modal-dialog {
         max-width: 50%;
     }
+
+    .money-input.is-invalid + .invalid-feedback {
+        display: block;
+    }
+
+    .money-cell {
+        position: relative;
+    }
+
+    .money-cell {
+        position: relative;
+    }
 </style>
 
 <script>
     (function () {
+        // ===== Date picker (Flatpickr) =====
+        function initDatePicker() {
+            if (!window.flatpickr) return;
+            var el = document.getElementById('Slot_ApplyDate');
+            if (!el) return;
+
+            flatpickr(el, {
+                dateFormat: "Y-m-d",
+                allowInput: false,
+                clickOpens: true
+            });
+        }
+
         // ===== Time picker (Flatpickr) =====
         function initTimePicker() {
             if (!window.flatpickr) return;
@@ -196,29 +227,68 @@
             });
         }
 
-        // ===== Money format vi-VN =====
-        function formatMoneyVN(raw) {
-            if (!raw) return '';
-            var n = parseInt(String(raw).replace(/[^\d]/g, ''), 10);
-            if (isNaN(n)) return '';
-            return n.toLocaleString('vi-VN');
-        }
-
+        // ===== Money helpers vi-VN =====
         function normalizeMoney(raw) {
             if (!raw) return '';
             return String(raw).replace(/[^\d]/g, '');
         }
 
+        function formatMoneyVN(raw) {
+            var n = parseInt(normalizeMoney(raw), 10);
+            if (isNaN(n)) return '';
+            return n.toLocaleString('vi-VN');
+        }
+
+        function parseMoney(raw) {
+            var n = parseInt(normalizeMoney(raw), 10);
+            return isNaN(n) ? null : n;
+        }
+
+        function setInvalid(el) { el.classList.add('is-invalid'); }
+        function clearInvalid(el) { el.classList.remove('is-invalid'); }
+
+        // Validate only Price18 on blur
+        function validatePrice18Field(el) {
+            var n = parseMoney(el.value);
+            if (n === null || n <= 0) {
+                setInvalid(el);
+                return false;
+            }
+            clearInvalid(el);
+            return true;
+        }
+
+        // Validate all Price18 trước submit
+        function validateAllPrice18() {
+            var ok = true;
+            document.querySelectorAll('.money-required-18').forEach(function (el) {
+                if (!validatePrice18Field(el)) ok = false;
+            });
+            return ok;
+        }
+
         function initMoney() {
             document.querySelectorAll('.money-input').forEach(function (el) {
+                // format lúc load
                 el.value = formatMoneyVN(el.value);
 
-                el.addEventListener('blur', function () {
-                    el.value = formatMoneyVN(el.value);
+                el.addEventListener('focus', function () {
+                    el.value = normalizeMoney(el.value);
                 });
 
                 el.addEventListener('input', function () {
-                    el.value = el.value.replace(/[^\d]/g, '');
+                    el.value = normalizeMoney(el.value);
+                    if (el.classList.contains('money-required-18')) {
+                        var n = parseMoney(el.value);
+                        if (n !== null && n > 0) clearInvalid(el);
+                    }
+                });
+
+                el.addEventListener('blur', function () {
+                    el.value = formatMoneyVN(el.value);
+                    if (el.classList.contains('money-required-18')) {
+                        validatePrice18Field(el);
+                    }
                 });
             });
         }
@@ -227,21 +297,22 @@
             var form = document.getElementById('SlotDetailForm');
             if (!form) return;
 
-            form.addEventListener('submit', function () {
-                // normalize money fields -> số thuần (để binder parse decimal ok)
+            form.addEventListener('submit', function (e) {
+                if (!validateAllPrice18()) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    return false;
+                }
+
                 document.querySelectorAll('.money-input').forEach(function (el) {
                     el.value = normalizeMoney(el.value);
                 });
 
-                // normalize time (HH:mm)
-                ['Slot_TimeFrom', 'Slot_TimeTo'].forEach(function (id) {
-                    var el = document.getElementById(id);
-                    if (!el || !el.value) return;
-                    if (/^\d{2}:\d{2}$/.test(el.value)) el.value = el.value;
-                });
+                return true;
             });
         }
 
+        initDatePicker();
         initTimePicker();
         initMoney();
         hookSubmitNormalize();

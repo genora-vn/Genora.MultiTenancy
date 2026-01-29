@@ -9,9 +9,10 @@ namespace Genora.MultiTenancy.Web.Pages.AppNews;
 public class CreateModalModel : MultiTenancyPageModel
 {
     [BindProperty]
-    public CreateUpdateAppNewsDto News { get; set; }
+    public CreateUpdateAppNewsDto News { get; set; } = new();
 
     private readonly IAppNewsService _newsService;
+
     private const long MaxImageBytes = 20L * 1024 * 1024; // 20MB
 
     public CreateModalModel(IAppNewsService newsService)
@@ -23,39 +24,42 @@ public class CreateModalModel : MultiTenancyPageModel
     {
         News = new CreateUpdateAppNewsDto
         {
-            Status = NewsStatus.Draft
+            Status = NewsStatus.Draft,
+            IsUploadImage = false,
+            Images = null
         };
     }
 
     public async Task<IActionResult> OnPostAsync()
     {
-        if (News.IsUploadImage && News.Images != null)
+        if (News == null) News = new CreateUpdateAppNewsDto();
+
+        if (News.IsUploadImage)
         {
-            if (News.IsUploadImage && News.Images != null)
+            var len = News.Images?.ContentLength ?? 0;
+
+            if (len <= 0)
             {
-                var len = News.Images.ContentLength ?? 0;
-
-                if (len <= 0)
-                {
-                    ModelState.AddModelError("News.Images", "Vui lòng chọn ảnh.");
-                }
-                else if (len > MaxImageBytes)
-                {
-                    ModelState.AddModelError("News.Images", "Ảnh vượt quá 20MB. Vui lòng chọn ảnh nhỏ hơn.");
-                }
-
-                var contentType = News.Images.ContentType ?? "";
-                if (!contentType.StartsWith("image/", StringComparison.OrdinalIgnoreCase))
-                {
-                    ModelState.AddModelError("News.Images", "File không phải ảnh hợp lệ.");
-                }
+                ModelState.AddModelError("News.Images", "Vui lòng chọn ảnh để upload trước khi lưu.");
+            }
+            else if (len > MaxImageBytes)
+            {
+                ModelState.AddModelError("News.Images", "Ảnh vượt quá 20MB. Vui lòng chọn ảnh nhỏ hơn.");
             }
 
-            var ct = News.Images.ContentType ?? "";
-            if (!ct.StartsWith("image/"))
+            var ct = News.Images?.ContentType ?? "";
+            if (len > 0 && !ct.StartsWith("image/", StringComparison.OrdinalIgnoreCase))
             {
                 ModelState.AddModelError("News.Images", "File không phải ảnh hợp lệ.");
             }
+        }
+        else
+        {
+            if (string.IsNullOrWhiteSpace(News.ThumbnailUrl))
+            {
+                ModelState.AddModelError("News.ThumbnailUrl", "Vui lòng nhập URL ảnh đại diện.");
+            }
+            News.Images = null;
         }
 
         if (!ModelState.IsValid)
@@ -64,7 +68,6 @@ public class CreateModalModel : MultiTenancyPageModel
         }
 
         await _newsService.CreateAsync(News);
-
         return NoContent();
     }
 }

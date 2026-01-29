@@ -32,7 +32,6 @@ namespace Genora.MultiTenancy.AppServices.AppCalendarSlots
             var lastCol = FixedCols + totalPriceCols;
             if (lastCol < StartPriceCol) lastCol = StartPriceCol;
 
-            // ===== Fixed headers (merge 3 rows) =====
             ws.Cell(1, 1).Value = "Mã sân golf"; ws.Range(1, 1, 3, 1).Merge();
             ws.Cell(1, 2).Value = "Loại ngày (*)"; ws.Range(1, 2, 3, 2).Merge();
             ws.Cell(1, 3).Value = "Ngày bắt đầu(*)"; ws.Range(1, 3, 3, 3).Merge();
@@ -44,7 +43,6 @@ namespace Genora.MultiTenancy.AppServices.AppCalendarSlots
             ws.Cell(1, 9).Value = "Ghi chú"; ws.Range(1, 9, 3, 9).Merge();
             ws.Cell(1, 10).Value = "Gap (Tần suất)"; ws.Range(1, 10, 3, 10).Merge();
 
-            // ===== Pricing header =====
             if (totalPriceCols > 0)
             {
                 ws.Cell(1, StartPriceCol).Value = "Bảng giá";
@@ -78,7 +76,6 @@ namespace Genora.MultiTenancy.AppServices.AppCalendarSlots
             headerRange.Style.Border.OutsideBorder = XLBorderStyleValues.Thin;
             headerRange.Style.Border.InsideBorder = XLBorderStyleValues.Thin;
 
-            // ===== Row 4 hints =====
             ws.Cell(4, 1).Value = "VD: MONT";
             ws.Cell(4, 2).Value = dayTypes.Count > 0 ? string.Join("/", dayTypes) : "Trong tuần/Cuối tuần/Ngày lễ";
             ws.Cell(4, 3).Value = "dd/MM/yyyy";
@@ -91,7 +88,6 @@ namespace Genora.MultiTenancy.AppServices.AppCalendarSlots
             ws.Cell(4, 10).Value = "Khoảng cách 2 tee time (phút)";
             ws.Row(4).Style.Font.FontColor = XLColor.DarkGray;
 
-            // ===== Data rows start at row 5 =====
             var rowIndex = 5;
             foreach (var r in rows)
             {

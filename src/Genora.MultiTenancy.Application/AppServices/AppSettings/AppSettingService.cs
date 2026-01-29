@@ -1,6 +1,7 @@
 ﻿using Genora.MultiTenancy.AppDtos.AppImages;
 using Genora.MultiTenancy.AppDtos.AppSettings;
 using Genora.MultiTenancy.Apps.AppSettings;
+using Genora.MultiTenancy.Enums.ErrorCodes;
 using Genora.MultiTenancy.Features.AppSettings;
 using Genora.MultiTenancy.Permissions;
 using Microsoft.AspNetCore.Authorization;
@@ -9,116 +10,23 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Dynamic.Core;
 using System.Threading.Tasks;
+using Volo.Abp;
 using Volo.Abp.Application.Dtos;
-using Volo.Abp.Domain.Entities;
 using Volo.Abp.Domain.Entities.Caching;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Features;
 using Volo.Abp.MultiTenancy;
-using Volo.Abp.ObjectMapping;
 
 namespace Genora.MultiTenancy.AppServices.AppSettings;
 
-// Code cũ khi chưa tách FeatureProtectedCrudAppService để dùng chung (cứ để đó)
-//[Authorize]
-//public class AppSettingService : ApplicationService, IAppSettingService
-//{
-//    private readonly IRepository<AppSetting, Guid> _repository;
-//    private readonly IEntityCache<AppSettingDto, Guid> _appSettingCache;
-//    private readonly ICurrentTenant _currentTenant;
-//    private readonly IFeatureChecker _featureChecker;
-
-//    public AppSettingService(
-//        IRepository<AppSetting, Guid> repository,
-//        IEntityCache<AppSettingDto, Guid> appSettingCache,
-//        ICurrentTenant currentTenant,
-//        IFeatureChecker featureChecker)
-//    {
-//        _repository = repository;
-//        _appSettingCache = appSettingCache;
-//        _currentTenant = currentTenant;
-//        _featureChecker = featureChecker;
-//    }
-
-//    // map quyền TENANT -> quyền HOST khi đang ở host
-//    private string MapPermissionForSide(string tenantPermission)
-//        => _currentTenant.IsAvailable
-//            ? tenantPermission
-//            : tenantPermission switch
-//            {
-//                var x when x == MultiTenancyPermissions.AppSettings.Create => MultiTenancyPermissions.HostAppSettings.Create,
-//                var x when x == MultiTenancyPermissions.AppSettings.Edit => MultiTenancyPermissions.HostAppSettings.Edit,
-//                var x when x == MultiTenancyPermissions.AppSettings.Delete => MultiTenancyPermissions.HostAppSettings.Delete,
-//                _ => MultiTenancyPermissions.HostAppSettings.Default
-//            };
-
-//    private async Task EnsureAccessAsync(string tenantPermissionForAction)
-//    {
-//        // 1) Check quyền: Host dùng HostAppSettings.*, Tenant dùng AppSettings.*
-//        await AuthorizationService.CheckAsync(MapPermissionForSide(tenantPermissionForAction));
-
-//        // 2) Chỉ Tenant mới bị ràng buộc Feature
-//        if (_currentTenant.IsAvailable &&
-//            !await _featureChecker.IsEnabledAsync(AppSettingFeatures.Management))
-//        {
-//            throw new AbpAuthorizationException("AppSetting feature is disabled for this tenant.");
-//        }
-//    }
-
-//    public async Task<AppSettingDto> GetAsync(Guid id)
-//    {
-//        await EnsureAccessAsync(MultiTenancyPermissions.AppSettings.Default);
-//        return await _appSettingCache.GetAsync(id);
-//    }
-
-//    public async Task<PagedResultDto<AppSettingDto>> GetListAsync(PagedAndSortedResultRequestDto input)
-//    {
-//        await EnsureAccessAsync(MultiTenancyPermissions.AppSettings.Default);
-
-//        var q = (await _repository.GetQueryableAsync())
-//                .OrderBy(input.Sorting.IsNullOrWhiteSpace() ? "SettingKey" : input.Sorting)
-//                .Skip(input.SkipCount)
-//                .Take(input.MaxResultCount);
-
-//        var items = await AsyncExecuter.ToListAsync(q);
-//        var total = await AsyncExecuter.CountAsync(await _repository.GetQueryableAsync());
-
-//        return new PagedResultDto<AppSettingDto>(total, ObjectMapper.Map<List<AppSetting>, List<AppSettingDto>>(items));
-//    }
-
-//    public async Task<AppSettingDto> CreateAsync(CreateUpdateAppSettingDto input)
-//    {
-//        await EnsureAccessAsync(MultiTenancyPermissions.AppSettings.Create);
-
-//        var appSetting = ObjectMapper.Map<CreateUpdateAppSettingDto, AppSetting>(input);
-//        await _repository.InsertAsync(appSetting);
-//        return ObjectMapper.Map<AppSetting, AppSettingDto>(appSetting);
-//    }
-
-//    public async Task<AppSettingDto> UpdateAsync(Guid id, CreateUpdateAppSettingDto input)
-//    {
-//        await EnsureAccessAsync(MultiTenancyPermissions.AppSettings.Edit);
-
-//        var appSetting = await _repository.GetAsync(id);
-//        ObjectMapper.Map(input, appSetting);
-//        await _repository.UpdateAsync(appSetting);
-//        return ObjectMapper.Map<AppSetting, AppSettingDto>(appSetting);
-//    }
-
-//    public async Task DeleteAsync(Guid id)
-//    {
-//        await EnsureAccessAsync(MultiTenancyPermissions.AppSettings.Delete);
-//        await _repository.DeleteAsync(id);
-//    }
-//}
-/// <summary>
-/// AppSetting Service implement base FeatureProtectedCrudAppService
-/// </summary>
 [Authorize]
-public class AppSettingService : FeatureProtectedCrudAppService<AppSetting, AppSettingDto, Guid, PagedAndSortedResultRequestDto, CreateUpdateAppSettingDto>, IAppSettingService
+public class AppSettingService
+    : FeatureProtectedCrudAppService<AppSetting, AppSettingDto, Guid, PagedAndSortedResultRequestDto, CreateUpdateAppSettingDto>,
+      IAppSettingService
 {
     private readonly IEntityCache<AppSettingDto, Guid> _appSettingCache;
     private readonly IManageImageService _manageImageService;
+
     protected override string FeatureName => AppSettingFeatures.Management;
     protected override string TenantDefaultPermission => MultiTenancyPermissions.AppSettings.Default;
     protected override string HostDefaultPermission => MultiTenancyPermissions.HostAppSettings.Default;
@@ -143,7 +51,6 @@ public class AppSettingService : FeatureProtectedCrudAppService<AppSetting, AppS
 
     public override async Task<AppSettingDto> GetAsync(Guid id)
     {
-        // base class đã check permission & feature
         await CheckGetPolicyAsync();
         return await _appSettingCache.GetAsync(id);
     }
@@ -183,23 +90,106 @@ public class AppSettingService : FeatureProtectedCrudAppService<AppSetting, AppS
         );
     }
 
+    private static BusinessException SettingError(string code, string field, object? value = null)
+    {
+        var ex = new BusinessException(code)
+            .WithData("Field", field);
+
+        if (value != null)
+            ex.WithData("Value", value);
+
+        return ex;
+    }
+
+    private static void ValidateCommon(CreateUpdateAppSettingDto input)
+    {
+        if (string.IsNullOrWhiteSpace(input.SettingKey))
+            throw SettingError(AppSettingErrorCodes.SettingKeyRequired, "SettingKey");
+
+        if (string.IsNullOrWhiteSpace(input.Description))
+            throw SettingError(AppSettingErrorCodes.DescriptionRequired, "Description");
+    }
+
+    private static void ValidateValueOrImageOnCreate(CreateUpdateAppSettingDto input)
+    {
+        var hasImages = input.Images != null && input.Images.Count > 0;
+
+        if (input.IsImageInput)
+        {
+            if (!hasImages)
+            {
+                throw SettingError(AppSettingErrorCodes.ImageRequired, "Images")
+                    .WithData("IsImageInput", input.IsImageInput)
+                    .WithData("SettingKey", input.SettingKey);
+            }
+        }
+        else
+        {
+            if (string.IsNullOrWhiteSpace(input.SettingValue))
+            {
+                throw SettingError(AppSettingErrorCodes.SettingValueRequired, "SettingValue")
+                    .WithData("IsImageInput", input.IsImageInput)
+                    .WithData("SettingKey", input.SettingKey);
+            }
+        }
+    }
+
+    private static void ValidateValueOrImageOnUpdate(CreateUpdateAppSettingDto input)
+    {
+        var hasImages = input.Images != null && input.Images.Count > 0;
+
+        if (input.IsImageInput)
+        {
+            if (!hasImages && string.IsNullOrWhiteSpace(input.SettingValue))
+            {
+                throw SettingError(AppSettingErrorCodes.ImageOrKeepValueRequired, "Images")
+                    .WithData("IsImageInput", input.IsImageInput)
+                    .WithData("SettingKey", input.SettingKey);
+            }
+        }
+        else
+        {
+            if (string.IsNullOrWhiteSpace(input.SettingValue))
+            {
+                throw SettingError(AppSettingErrorCodes.SettingValueRequired, "SettingValue")
+                    .WithData("IsImageInput", input.IsImageInput)
+                    .WithData("SettingKey", input.SettingKey);
+            }
+        }
+    }
+
     public override async Task<AppSettingDto> CreateAsync(CreateUpdateAppSettingDto input)
     {
         await CheckCreatePolicyAsync();
+
+        ValidateCommon(input);
+        ValidateValueOrImageOnCreate(input);
+
         if (input.Images != null && input.Images.Count > 0)
         {
-            List<CreateUpdateAppSettingDto> inputs = new List<CreateUpdateAppSettingDto>();
+            List<CreateUpdateAppSettingDto> inputs = new();
+
             foreach (var image in input.Images)
             {
                 var upload = await _manageImageService.UploadImageAsync(image, CurrentTenant.Id.ToString());
                 if (upload != null)
                 {
-                    var dto = new CreateUpdateAppSettingDto { SettingKey = input.SettingKey, SettingType = input.SettingType, SettingValue = upload, Description = input.Description, IsActive = input.IsActive };
+                    var dto = new CreateUpdateAppSettingDto
+                    {
+                        SettingKey = input.SettingKey,
+                        SettingType = input.SettingType,
+                        SettingValue = upload,
+                        Description = input.Description,
+                        IsActive = input.IsActive,
+                        IsImageInput = input.IsImageInput
+                    };
                     inputs.Add(dto);
                 }
             }
+
             var entities = ObjectMapper.Map<List<CreateUpdateAppSettingDto>, List<AppSetting>>(inputs);
-            await Repository.InsertManyAsync(entities);
+            await Repository.InsertManyAsync(entities, autoSave: true);
+
             return ObjectMapper.Map<AppSetting, AppSettingDto>(entities.FirstOrDefault());
         }
         else
@@ -213,15 +203,25 @@ public class AppSettingService : FeatureProtectedCrudAppService<AppSetting, AppS
     public override async Task<AppSettingDto> UpdateAsync(Guid id, CreateUpdateAppSettingDto input)
     {
         await CheckUpdatePolicyAsync();
+
+        ValidateCommon(input);
+        ValidateValueOrImageOnUpdate(input);
+
         if (input.Images != null && input.Images.Count > 0)
         {
-            await _manageImageService.DeleteFileAsync(input.SettingValue);
+            if (!string.IsNullOrWhiteSpace(input.SettingValue))
+            {
+                await _manageImageService.DeleteFileAsync(input.SettingValue);
+            }
+
             var upload = await _manageImageService.UploadImageAsync(input.Images.FirstOrDefault(), CurrentTenant.Id.ToString());
             input.SettingValue = upload;
         }
+
         var entity = await Repository.GetAsync(id);
         ObjectMapper.Map(input, entity);
         entity = await Repository.UpdateAsync(entity, autoSave: true);
+
         return ObjectMapper.Map<AppSetting, AppSettingDto>(entity);
     }
 

@@ -1,14 +1,12 @@
 ﻿$(function () {
     var l = abp.localization.getResource('MultiTenancy');
 
-    // proxies
     var service = genora.multiTenancy.appServices.appSpecialDates.appSpecialDate;
     var gcService = genora.multiTenancy.appServices.appGolfCourses.appGolfCourse;
 
     var createModal = new abp.ModalManager(abp.appPath + 'AppSpecialDates/CreateModal');
     var editModal = new abp.ModalManager(abp.appPath + 'AppSpecialDates/EditModal');
 
-    // golfCourseId -> name
     var golfCourseMap = {};
 
     function loadGolfCoursesMap() {
@@ -98,7 +96,7 @@
                         data: "golfCourseId",
                         render: function (d) {
                             if (!d) return '';
-                            return golfCourseMap[d] || d; // fallback GUID
+                            return golfCourseMap[d] || d;
                         }
                     },
 
@@ -133,11 +131,9 @@
         });
     }
 
-    // load golfCourse map first, then init table
     loadGolfCoursesMap()
         .then(initDataTable)
         .catch(function (err) {
-            // vẫn init table để không “đứng trang”
             console.error(err);
             initDataTable();
         });

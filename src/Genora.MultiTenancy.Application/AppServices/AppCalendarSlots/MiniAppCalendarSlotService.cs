@@ -151,7 +151,6 @@ namespace Genora.MultiTenancy.AppServices.AppCalendarSlots
                     ? PriceByHoleHelper.GetPriceByNumberHoles(visRow, input.NumberHoles)
                     : 0m;
 
-                // fallback: nếu không có VIS thì lấy max theo số hố (hoặc min tùy business)
                 if (visPrice <= 0 && slotPrices.Count > 0)
                 {
                     visPrice = slotPrices
@@ -206,7 +205,6 @@ namespace Genora.MultiTenancy.AppServices.AppCalendarSlots
             var customerTypes = await _customerTypeRepository.GetListAsync(ct => customerTypeIds.Contains(ct.Id));
             var ctDict = customerTypes.ToDictionary(ct => ct.Id, ct => ct);
 
-            // Map thủ công sang DTO đầy đủ
             var dto = new AppCalendarSlotDto
             {
                 Id = slot.Id,
@@ -239,7 +237,7 @@ namespace Genora.MultiTenancy.AppServices.AppCalendarSlots
                     CustomerTypeCode = ct?.Code,
                     CustomerTypeName = ct?.Name,
                     Price9 = p.Price9 ?? 0m,
-                    Price18 = p.Price18,          // decimal NOT NULL
+                    Price18 = p.Price18,
                     Price27 = p.Price27 ?? 0m,
                     Price36 = p.Price36 ?? 0m
                 });

@@ -3,11 +3,14 @@ using Genora.MultiTenancy.DomainModels.AppCalendarSlotPrices;
 using Genora.MultiTenancy.DomainModels.AppCalendarSlots;
 using Genora.MultiTenancy.DomainModels.AppCustomerTypes;
 using Genora.MultiTenancy.DomainModels.AppGolfCourses;
-using Genora.MultiTenancy.DomainModels.AppPromotionTypes;
 using Genora.MultiTenancy.DomainModels.AppSpecialDates;
+using Genora.MultiTenancy.Enums.ErrorCodes;
 using Genora.MultiTenancy.Features.AppCalendarSlots;
+using Genora.MultiTenancy.Helpers;
+using Genora.MultiTenancy.Localization;
 using Genora.MultiTenancy.Permissions;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.Extensions.Localization;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -44,10 +47,11 @@ public class AppCalendarSlotService :
     private readonly IRepository<CalendarSlotPrice, Guid> _priceRepository;
     private readonly IRepository<GolfCourse, Guid> _golfCourseRepository;
     private readonly IRepository<CustomerType, Guid> _customerTypeRepository;
-    private readonly IRepository<PromotionType, Guid> _promotionType;
+    private readonly IRepository<Genora.MultiTenancy.DomainModels.AppPromotionTypes.PromotionType, Guid> _promotionType;
     private readonly IRepository<SpecialDate, Guid> _specialDateRepository;
     private readonly AppCalendarExcelTemplateGenerator _generator;
     private readonly IDataFilter _dataFilter;
+    private readonly IStringLocalizer<MultiTenancyResource> _l;
 
     public AppCalendarSlotService(
         IRepository<CalendarSlot, Guid> repository,
@@ -57,9 +61,10 @@ public class AppCalendarSlotService :
         ICurrentTenant currentTenant,
         IFeatureChecker featureChecker,
         AppCalendarExcelTemplateGenerator generator,
-        IRepository<PromotionType, Guid> promotionType,
+        IRepository<Genora.MultiTenancy.DomainModels.AppPromotionTypes.PromotionType, Guid> promotionType,
         IRepository<SpecialDate, Guid> specialDateRepository,
-        IDataFilter dataFilter)
+        IDataFilter dataFilter,
+        IStringLocalizer<MultiTenancyResource> l)
         : base(repository, currentTenant, featureChecker)
     {
         _priceRepository = priceRepository;
@@ -76,16 +81,14 @@ public class AppCalendarSlotService :
         _promotionType = promotionType;
         _specialDateRepository = specialDateRepository;
         _dataFilter = dataFilter;
+        _l = l;
     }
 
-    /// <summary>
-    /// Get dữ liệu từ bảng AppSpecialDates thông qua golfCourseId
-    /// </summary>
-    /// <param name="golfCourseId">Mã sân</param>
-    /// <returns></returns>
+    // =========================================================
+    // SpecialDates helpers
+    // =========================================================
     private async Task<List<SpecialDate>> GetSpecialDatesForCourseAsync(Guid golfCourseId)
     {
-        // lấy global + per-course
         var list = await _specialDateRepository.GetListAsync(x =>
             x.IsActive &&
             (x.GolfCourseId == null || x.GolfCourseId == golfCourseId));
@@ -93,11 +96,6 @@ public class AppCalendarSlotService :
         return list ?? new List<SpecialDate>();
     }
 
-    /// <summary>
-    /// Lấy danh sách loại ngày ra, mặc định cấu hình: Ngày trong tuần, ngày cuối tuần, ngày lễ,.. hoặc ngày đặc biệt khác để đổ vào dropdown import khung giờ chơi
-    /// </summary>
-    /// <param name="specialDates">List specialDates</param>
-    /// <returns></returns>
     private static List<string> GetDayTypesFromSpecialDates(List<SpecialDate> specialDates)
     {
         var names = (specialDates ?? new List<SpecialDate>())
@@ -114,45 +112,24 @@ public class AppCalendarSlotService :
         return names;
     }
 
-    /// <summary>
-    /// Validate dữ liệu loại ngày
-    /// </summary>
-    /// <param name="inputDayType"></param>
-    /// <param name="allowedDayTypes"></param>
-    /// <param name="rowNumber"></param>
-    /// <exception cref="UserFriendlyException"></exception>
-    private static void ValidateDayTypeAllowed(string? inputDayType, List<string> allowedDayTypes, int rowNumber)
+    private static string? ValidateDayTypeAllowed(
+     string? inputDayType,
+     List<string> allowedDayTypes)
     {
         var s = (inputDayType ?? "").Trim();
         if (string.IsNullOrWhiteSpace(s))
-            throw new UserFriendlyException("Import Excel lỗi", $"Dòng {rowNumber}: DayType (Loại ngày) là bắt buộc");
+            return "Loại ngày (DayType) không được để trống";
 
-        // match ignore-case
         var ok = allowedDayTypes.Any(x => string.Equals(x, s, StringComparison.OrdinalIgnoreCase));
         if (!ok)
-        {
-            throw new UserFriendlyException(
-                "Import Excel lỗi",
-                $"Dòng {rowNumber}: DayType '{s}' không hợp lệ. Cho phép: {string.Join(", ", allowedDayTypes)}"
-            );
-        }
+            return $"Loại ngày (DayType) không hợp lệ: '{s}'. Giá trị hợp lệ: {string.Join(", ", allowedDayTypes)}";
+
+        return null;
     }
 
-    /// <summary>
-    ///  Record có DatesJson (danh sách ngày) => dùng để match "Ngày lễ"
-    /// </summary>
-    /// <param name="x"></param>
-    /// <returns></returns>
     private static bool LooksLikeHolidayConfig(SpecialDate x)
-    {
-        return x != null && !string.IsNullOrWhiteSpace(x.DatesJson);
-    }
+        => x != null && !string.IsNullOrWhiteSpace(x.DatesJson);
 
-    /// <summary>
-    /// Lấy ra danh sách cấu hình ngày lễ
-    /// </summary>
-    /// <param name="specialDates"></param>
-    /// <returns></returns>
     private static HashSet<DateTime> ParseHolidaySet(List<SpecialDate> specialDates)
     {
         var set = new HashSet<DateTime>();
@@ -164,19 +141,12 @@ public class AppCalendarSlotService :
         foreach (var cfg in holidayConfigs)
         {
             foreach (var d in ParseDatesJson(cfg.DatesJson!))
-            {
                 set.Add(d.Date);
-            }
         }
 
         return set;
     }
 
-    /// <summary>
-    /// Format cấu hình ngày lễ
-    /// </summary>
-    /// <param name="specialDates"></param>
-    /// <returns></returns>
     private static string ResolveHolidayName(List<SpecialDate> specialDates)
     {
         var x = (specialDates ?? new List<SpecialDate>())
@@ -186,11 +156,6 @@ public class AppCalendarSlotService :
         return string.IsNullOrWhiteSpace(name) ? "Ngày lễ" : name;
     }
 
-    /// <summary>
-    /// Xử lý lấy ra đúng cấu hình cuối tuần
-    /// </summary>
-    /// <param name="dayTypes"></param>
-    /// <returns></returns>
     private static string GuessWeekendName(List<string> dayTypes)
     {
         var wk = dayTypes.FirstOrDefault(x =>
@@ -200,18 +165,12 @@ public class AppCalendarSlotService :
         return string.IsNullOrWhiteSpace(wk) ? "Cuối tuần" : wk;
     }
 
-    /// <summary>
-    /// Xử lý lấy ra đúng cấu hình trong tuần
-    /// </summary>
-    /// <param name="dayTypes"></param>
-    /// <returns></returns>
     private static string GuessWeekdayName(List<string> dayTypes)
     {
         var wd = dayTypes.FirstOrDefault(x =>
             x.Contains("trong tuần", StringComparison.OrdinalIgnoreCase) ||
             x.Contains("weekday", StringComparison.OrdinalIgnoreCase));
 
-        // nếu không có thì lấy "dayTypes" đầu tiên khác weekend/holiday
         if (string.IsNullOrWhiteSpace(wd))
         {
             wd = dayTypes.FirstOrDefault(x =>
@@ -224,14 +183,6 @@ public class AppCalendarSlotService :
         return string.IsNullOrWhiteSpace(wd) ? "Trong tuần" : wd;
     }
 
-    /// <summary>
-    /// Check các cấu hình trong tuần, cuối tuần và ngày lễ và lấy ra tên cấu hình
-    /// </summary>
-    /// <param name="applyDate"></param>
-    /// <param name="holidaySet"></param>
-    /// <param name="allowedDayTypes"></param>
-    /// <param name="holidayName"></param>
-    /// <returns></returns>
     private static string ResolveDayTypeNameForExport(
         DateTime applyDate,
         HashSet<DateTime> holidaySet,
@@ -241,20 +192,11 @@ public class AppCalendarSlotService :
         var isHoliday = holidaySet.Contains(applyDate.Date);
         var isWeekend = applyDate.DayOfWeek == DayOfWeek.Saturday || applyDate.DayOfWeek == DayOfWeek.Sunday;
 
-        if (isHoliday)
-            return holidayName;
-
-        if (isWeekend)
-            return GuessWeekendName(allowedDayTypes);
-
+        if (isHoliday) return holidayName;
+        if (isWeekend) return GuessWeekendName(allowedDayTypes);
         return GuessWeekdayName(allowedDayTypes);
     }
 
-    /// <summary>
-    /// Định dạng cấu hình ngày lễ kiểu date linh hoạt - "yyyy-MM-dd" hoặc ISO -> parse
-    /// </summary>
-    /// <param name="json"></param>
-    /// <returns></returns>
     private static List<DateTime> ParseDatesJson(string json)
     {
         try
@@ -278,11 +220,9 @@ public class AppCalendarSlotService :
         }
     }
 
-    /// <summary>
-    /// Lấy danh sách khung giờ chơi
-    /// </summary>
-    /// <param name="input"></param>
-    /// <returns></returns>
+    // =========================================================
+    // CRUD / Queries
+    // =========================================================
     [DisableValidation]
     public override async Task<PagedResultDto<AppCalendarSlotDto>> GetListAsync(GetCalendarSlotListInput input)
     {
@@ -343,11 +283,6 @@ public class AppCalendarSlotService :
         return new PagedResultDto<AppCalendarSlotDto>(totalCount, dtoList);
     }
 
-    /// <summary>
-    /// Lấy danh sách khung giờ chơi theo bộ lọc thời gian
-    /// </summary>
-    /// <param name="input"></param>
-    /// <returns></returns>
     public async Task<List<AppCalendarSlotDto>> GetByDateAsync(GetCalendarSlotByDateInput input)
     {
         await CheckGetListPolicyAsync();
@@ -357,8 +292,8 @@ public class AppCalendarSlotService :
 
         if (input.GolfCourseId == Guid.Empty)
         {
-            throw new BusinessException("CalendarSlot:MissingGolfCourse")
-                .WithData("Message", "GolfCourseId is empty when getting slots by date.");
+            throw new BusinessException(CalendarSlotErrorCodes.MissingGolfCourse)
+                .WithData("GolfCourseId", input.GolfCourseId);
         }
 
         slotQuery = slotQuery.Where(x => x.GolfCourseId == input.GolfCourseId);
@@ -437,20 +372,14 @@ public class AppCalendarSlotService :
         return result;
     }
 
-    /// <summary>
-    /// Tạo khung giờ chơi
-    /// </summary>
-    /// <param name="input"></param>
-    /// <returns></returns>
+    // =========================================================
+    // Create / Update
+    // =========================================================
     public override async Task<AppCalendarSlotDto> CreateAsync(CreateUpdateAppCalendarSlotDto input)
     {
         await CheckCreatePolicyAsync();
 
-        if (input.GolfCourseId == Guid.Empty)
-        {
-            throw new BusinessException("CalendarSlot:MissingGolfCourse")
-                .WithData("Message", "GolfCourseId is empty when creating slot.");
-        }
+        ValidateCreateUpdateInput(input);
 
         await EnsureNoOverlapAsync(input);
 
@@ -476,15 +405,11 @@ public class AppCalendarSlotService :
         return await GetAsync(entity.Id);
     }
 
-    /// <summary>
-    /// Cập nhật thông tin khung giờ chơi
-    /// </summary>
-    /// <param name="id"></param>
-    /// <param name="input"></param>
-    /// <returns></returns>
     public override async Task<AppCalendarSlotDto> UpdateAsync(Guid id, CreateUpdateAppCalendarSlotDto input)
     {
         await CheckUpdatePolicyAsync();
+
+        ValidateCreateUpdateInput(input);
 
         await EnsureNoOverlapAsync(input, id);
 
@@ -507,6 +432,40 @@ public class AppCalendarSlotService :
         return await GetAsync(entity.Id);
     }
 
+    private void ValidateCreateUpdateInput(CreateUpdateAppCalendarSlotDto input)
+    {
+        if (input.GolfCourseId == Guid.Empty)
+        {
+            throw new BusinessException(CalendarSlotErrorCodes.MissingGolfCourse)
+                .WithData("GolfCourseId", input.GolfCourseId);
+        }
+
+        if (input.MaxSlots <= 0)
+        {
+            throw new BusinessException(CalendarSlotErrorCodes.MaxSlotsInvalid)
+                .WithData("MaxSlots", input.MaxSlots);
+        }
+
+        if (input.TimeFrom >= input.TimeTo)
+        {
+            throw new BusinessException(CalendarSlotErrorCodes.TimeRangeInvalid)
+                .WithData("TimeFrom", input.TimeFrom)
+                .WithData("TimeTo", input.TimeTo);
+        }
+
+        // Rule bắt buộc Price18 > 0
+        if (input.Prices == null || input.Prices.Count == 0 || input.Prices.Any(p => p.Price18 <= 0))
+        {
+            var bad = input.Prices?.FirstOrDefault(p => p.Price18 <= 0);
+
+            throw new BusinessException(CalendarSlotErrorCodes.Price18Required)
+                .WithData("CustomerTypeId", bad?.CustomerTypeId);
+        }
+    }
+
+    // =========================================================
+    // Cập nhật lỗi hàng loạt
+    // =========================================================
     public async Task<int> UpdateStatusBulkAsync(UpdateCalendarSlotStatusBulkInput input)
     {
         await CheckUpdatePolicyAsync();
@@ -517,7 +476,10 @@ public class AppCalendarSlotService :
             .ToList();
 
         if (ids.Count == 0)
-            throw new UserFriendlyException("Cập nhật trạng thái lỗi", "Vui lòng chọn ít nhất 1 dòng để cập nhật.");
+        {
+            throw new BusinessException(CalendarSlotErrorCodes.BulkIdsRequired)
+                .WithData("Field", "Ids");
+        }
 
         var slots = await Repository.GetListAsync(x => ids.Contains(x.Id));
 
@@ -525,9 +487,7 @@ public class AppCalendarSlotService :
             return 0;
 
         foreach (var s in slots)
-        {
             s.IsActive = input.IsActive;
-        }
 
         await Repository.UpdateManyAsync(slots, autoSave: false);
         await CurrentUnitOfWork.SaveChangesAsync();
@@ -535,12 +495,9 @@ public class AppCalendarSlotService :
         return slots.Count;
     }
 
-    /// <summary>
-    /// Lấy chi tiết khung giờ chơi theo Id
-    /// </summary>
-    /// <param name="id"></param>
-    /// <returns></returns>
-    /// <exception cref="EntityNotFoundException"></exception>
+    // =========================================================
+    // Get / Delete
+    // =========================================================
     public override async Task<AppCalendarSlotDto> GetAsync(Guid id)
     {
         await CheckGetPolicyAsync();
@@ -601,11 +558,6 @@ public class AppCalendarSlotService :
         return dto;
     }
 
-    /// <summary>
-    /// Xóa khung giờ chơi cấu hình theo Id
-    /// </summary>
-    /// <param name="id"></param>
-    /// <returns></returns>
     public override async Task DeleteAsync(Guid id)
     {
         await CheckDeletePolicyAsync();
@@ -614,12 +566,9 @@ public class AppCalendarSlotService :
         await Repository.DeleteAsync(id);
     }
 
-    /// <summary>
-    /// Xử lý kiểm tra dữ liệu và lọc khung giờ chơi
-    /// </summary>
-    /// <param name="input"></param>
-    /// <param name="currentId"></param>
-    /// <returns></returns>
+    // =========================================================
+    // Check trùng lặp
+    // =========================================================
     private async Task EnsureNoOverlapAsync(CreateUpdateAppCalendarSlotDto input, Guid? currentId = null)
     {
         var queryable = await Repository.GetQueryableAsync();
@@ -633,19 +582,16 @@ public class AppCalendarSlotService :
         var exists = await AsyncExecuter.AnyAsync(query);
         if (exists)
         {
-            throw new BusinessException("CalendarSlot:Overlap")
+            throw new BusinessException(CalendarSlotErrorCodes.Overlap)
                 .WithData("ApplyDate", input.ApplyDate.ToString("yyyy-MM-dd"))
                 .WithData("TimeFrom", input.TimeFrom)
                 .WithData("TimeTo", input.TimeTo);
         }
     }
 
-    /// <summary>
-    /// Lưu dữ liệu cấu hình giá
-    /// </summary>
-    /// <param name="calendarSlotId"></param>
-    /// <param name="inputPrices"></param>
-    /// <returns></returns>
+    // =========================================================
+    // Prices
+    // =========================================================
     private async Task SavePricesAsync(Guid calendarSlotId, List<CreateUpdateCalendarSlotPriceDto> inputPrices)
     {
         var normalized = (inputPrices ?? new List<CreateUpdateCalendarSlotPriceDto>())
@@ -693,24 +639,17 @@ public class AppCalendarSlotService :
         }
     }
 
-    /// <summary>
-    /// Tải file mẫu excel import khung giờ chơi (trước đây mặc định khi không truyền golfCourseId vào)
-    /// </summary>
-    /// <returns></returns>
+    // =========================================================
+    // Templates / Export
+    // =========================================================
     public Task<IRemoteStreamContent> DownloadTemplateAsync()
     {
-        // Template export (file trống) -> dùng format import hướng 2
         var rows = new List<AppCalendarSlotExcelRowDto>();
         var exporter = new AppCalendarExcelExporter();
         var customerTypes = new List<CustomerType>();
         return Task.FromResult(exporter.Export(rows, customerTypes));
     }
 
-    /// <summary>
-    /// Xuất excel khung giờ chơi (đang ẩn đi trên front end)
-    /// </summary>
-    /// <param name="input"></param>
-    /// <returns></returns>
     public async Task<IRemoteStreamContent> ExportExcelAsync(GetCalendarSlotListInput input)
     {
         await CheckGetListPolicyAsync();
@@ -736,7 +675,6 @@ public class AppCalendarSlotService :
         var customerTypes = await _customerTypeRepository.GetListAsync();
         customerTypes = customerTypes.OrderBy(t => t.CreationTime).ToList();
 
-        // Prices
         var slotIds = list.Select(x => x.Id).ToList();
         var prices = await _priceRepository.GetListAsync(p => slotIds.Contains(p.CalendarSlotId));
         var ctNameById = customerTypes.ToDictionary(x => x.Id, x => x.Name);
@@ -764,7 +702,6 @@ public class AppCalendarSlotService :
                     return items;
                 });
 
-        // SpecialDates cache per golfCourseId => dayTypes + holidaySet + holidayName
         var specCache = new Dictionary<Guid, (List<string> DayTypes, HashSet<DateTime> HolidaySet, string HolidayName)>();
 
         async Task<(List<string> DayTypes, HashSet<DateTime> HolidaySet, string HolidayName)> GetSpecAsync(Guid golfCourseId)
@@ -797,7 +734,6 @@ public class AppCalendarSlotService :
 
                 DayType = ResolveDayTypeNameForExport(b.ApplyDate.Date, holidaySet, dayTypes, holidayName),
 
-                // Export format: FromDate/ToDate là date range
                 FromDate = b.ApplyDate,
                 ToDate = b.ApplyDate,
 
@@ -811,7 +747,6 @@ public class AppCalendarSlotService :
             });
         }
 
-        // Nếu export theo 1 sân => lấy đúng dayTypes sân đó
         List<string> dayTypesHint;
 
         if (input.GolfCourseId.HasValue && input.GolfCourseId.Value != Guid.Empty)
@@ -828,11 +763,6 @@ public class AppCalendarSlotService :
         return exporter.Export(rows, customerTypes, dayTypesHint);
     }
 
-    /// <summary>
-    /// Thay bằng hàm download file mẫu khi truyền GolfCOurseId vào
-    /// </summary>
-    /// <param name="input"></param>
-    /// <returns></returns>
     public async Task<IRemoteStreamContent> DownloadImportTemplateAsync(Guid? golfCourseId)
     {
         var customerTypes = await _customerTypeRepository.GetListAsync();
@@ -840,7 +770,6 @@ public class AppCalendarSlotService :
 
         List<SpecialDate> specialDates;
 
-        // Nếu có chọn sân => lấy config theo sân
         if (golfCourseId.HasValue == true && golfCourseId.Value != Guid.Empty)
         {
             specialDates = await GetSpecialDatesForCourseAsync(golfCourseId.Value);
@@ -859,24 +788,14 @@ public class AppCalendarSlotService :
         return template;
     }
 
-
-    // =========================
-    // IMPORT: validate DayType by SpecialDates + apply rule weekday/weekend/holiday
-    // =========================
-
-    /// <summary>
-    /// Import excel cấu hình khung giờ chơi
-    /// Validate DayType theo SpecialDates
-    /// Áp dụng rule weekday/weekend/holiday
-    /// </summary>
-    /// <param name="input"></param>
-    /// <returns></returns>
-    /// <exception cref="UserFriendlyException"></exception>
+    // =========================================================
+    // Chuẩn hóa lỗi
+    // =========================================================
     public async Task<int> ImportExcelAsync(ImportCalendarExcelInput input)
     {
         await CheckUpdatePolicyAsync();
 
-        var importer = new AppCalendarExcelImporter();
+        var importer = new AppCalendarExcelImporter(_l);
         var customerTypes = await _customerTypeRepository.GetListAsync();
         var golfCourses = await _golfCourseRepository.GetListAsync();
         var promotions = await _promotionType.GetListAsync();
@@ -913,16 +832,11 @@ public class AppCalendarSlotService :
             return v;
         }
 
-        // ====== CHECK VÀ XỬ LÝ TRÙNG CẤU HÌNH KHUNG GIỜ CHƠI ======
-        // key: CourseId|ApplyDate|TimeFrom|TimeTo
         var slotKeySet = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         var pendingInsertByKey = new Dictionary<string, CalendarSlot>(StringComparer.OrdinalIgnoreCase);
 
-        // ====== CHECK VÀ XỬ LÝ TRÙNG CẤU HÌNH GIÁ TRÙNG LẶP======
-        // key: SlotId|CustomerTypeId
         var pendingPriceByKey = new Dictionary<string, CalendarSlotPrice>(StringComparer.OrdinalIgnoreCase);
 
-        // Bộ nhớ đệm về giá để tránh việc đọc cơ sở dữ liệu lặp đi lặp lại
         var priceCacheBySlotId = new Dictionary<Guid, List<CalendarSlotPrice>>();
 
         async Task<List<CalendarSlotPrice>> GetPricesOfSlotAsync(Guid slotId)
@@ -939,44 +853,57 @@ public class AppCalendarSlotService :
         static string MakePriceKey(Guid slotId, Guid customerTypeId)
             => $"{slotId:N}|{customerTypeId:N}";
 
-        // ====== VÒNG LẶP XỬ LÝ TỪNG BẢN GHI ======
         foreach (var item in rows)
         {
             var rowNumber = item.Row;
             var r = item.Data;
 
-            // Validate các dòng dữ liệu
+            BusinessException RowError(string detail)
+                => ErrorHelper.ImportError(
+                    _l,
+                    CalendarSlotErrorCodes.UnknownRowError,
+                    rowNumber,
+                    detail,
+                    null
+                );
+
             if (string.IsNullOrWhiteSpace(r.GolfCourseCode))
-                throw new UserFriendlyException("Import Excel lỗi", $"Dòng {rowNumber}: GolfCourseCode là bắt buộc");
+                throw RowError("Mã sân (GolfCourseCode) không được để trống");
 
             if (r.FromDate == DateTime.MinValue)
-                throw new UserFriendlyException("Import Excel lỗi", $"Dòng {rowNumber}: FromDate là bắt buộc");
+                throw RowError("Ngày bắt đầu (FromDate) không được để trống");
 
             if (r.ToDate == DateTime.MinValue)
-                throw new UserFriendlyException("Import Excel lỗi", $"Dòng {rowNumber}: ToDate là bắt buộc");
+                throw RowError("Ngày kết thúc (ToDate) không được để trống");
 
             if (r.StartTime == TimeSpan.Zero)
-                throw new UserFriendlyException("Import Excel lỗi", $"Dòng {rowNumber}: StartTime là bắt buộc");
+                throw RowError("Giờ bắt đầu (StartTime) không được để trống");
 
             if (r.EndTime == TimeSpan.Zero)
-                throw new UserFriendlyException("Import Excel lỗi", $"Dòng {rowNumber}: EndTime là bắt buộc");
+                throw RowError("Giờ kết thúc (EndTime) không được để trống");
 
             if (r.MaxSlots <= 0)
-                throw new UserFriendlyException("Import Excel lỗi", $"Dòng {rowNumber}: MaxSlots phải > 0");
+                throw RowError($"Số slot tối đa (MaxSlots) không hợp lệ: {r.MaxSlots}");
 
             if (r.Gap <= 0)
-                throw new UserFriendlyException("Import Excel lỗi", $"Dòng {rowNumber}: Gap phải > 0");
+                throw RowError($"Khoảng cách tee time (Gap) không hợp lệ: {r.Gap}");
 
-            if (!promoByName.TryGetValue((r.PromotionType ?? "").Trim(), out var promotion))
-                throw new UserFriendlyException("Import Excel lỗi", $"Dòng {rowNumber}: PromotionType không hợp lệ");
+            var promoName = (r.PromotionType ?? "").Trim();
+            if (string.IsNullOrWhiteSpace(promoName))
+                throw RowError("Loại khuyến mãi (PromotionType) không được để trống");
 
-            if (!golfByCode.TryGetValue(r.GolfCourseCode.Trim(), out var golfCourse))
-                throw new UserFriendlyException("Import Excel lỗi", $"Dòng {rowNumber}: Mã sân {r.GolfCourseCode} không tìm thấy");
+            if (!promoByName.TryGetValue(promoName, out var promotion))
+                throw RowError($"Loại khuyến mãi (PromotionType) không hợp lệ: '{promoName}'");
 
-            // Lấy ra cấu hình loại ngày
+            var code = r.GolfCourseCode.Trim();
+            if (!golfByCode.TryGetValue(code, out var golfCourse))
+                throw RowError($"Không tìm thấy sân theo mã (GolfCourseCode): '{code}'");
+
             var (allowedDayTypes, holidaySet, holidayName) = await GetSpecAsync(golfCourse.Id);
 
-            ValidateDayTypeAllowed(r.DayType, allowedDayTypes, rowNumber);
+            var dayTypeError = ValidateDayTypeAllowed(r.DayType, allowedDayTypes);
+            if (!string.IsNullOrWhiteSpace(dayTypeError))
+                throw RowError(dayTypeError);
 
             var selectedDayType = allowedDayTypes.First(x =>
                 string.Equals(x, r.DayType?.Trim(), StringComparison.OrdinalIgnoreCase));
@@ -988,7 +915,6 @@ public class AppCalendarSlotService :
             var totalSlots = (int)((r.EndTime - r.StartTime).TotalMinutes / r.Gap);
             if (totalSlots <= 0) continue;
 
-            // Lấy dữ liệu cấu hình khung giờ đã tồn tại
             var calendars = await Repository.GetListAsync(
                 x => x.GolfCourseId == golfCourse.Id &&
                      x.ApplyDate >= r.FromDate.Date &&
@@ -1003,7 +929,6 @@ public class AppCalendarSlotService :
                 var isWeekend = applyDate.DayOfWeek == DayOfWeek.Saturday || applyDate.DayOfWeek == DayOfWeek.Sunday;
                 var isWeekday = !isWeekend;
 
-                // Ghi đè các ngày lễ
                 bool pass = selectedDayType.Equals(holidayName, StringComparison.OrdinalIgnoreCase)
                     ? isHoliday
                     : selectedDayType.Equals(weekendName, StringComparison.OrdinalIgnoreCase)
@@ -1019,22 +944,17 @@ public class AppCalendarSlotService :
 
                     var slotKey = MakeSlotKey(golfCourse.Id, applyDate, timeFrom, timeTo);
 
-                    // xử lý trùng lặp dữ liệu
                     if (pendingInsertByKey.TryGetValue(slotKey, out var pending))
                     {
-                        // Cập nhật dữ liệu
                         pending.PromotionTypeId = promotion.Id;
                         pending.MaxSlots = r.MaxSlots;
                         pending.InternalNote = r.InternalNote;
                         pending.IsActive = true;
 
-                        // Cập nhật giá cho vị trí đang chờ xử lý trong bộ nhớ
                         UpsertPendingPrices(pending.Id, r.CustomerTypePrice);
-
                         continue;
                     }
 
-                    // Kiểm tra tồn tại trong DB
                     var existingCalendar = calendars.FirstOrDefault(c =>
                         c.ApplyDate == applyDate &&
                         c.TimeFrom == timeFrom &&
@@ -1042,11 +962,8 @@ public class AppCalendarSlotService :
 
                     if (existingCalendar != null)
                     {
-                        // Nếu chúng ta đã xử lý cùng một slotKey cơ sở dữ liệu này trước đó trong lô thì bỏ qua.
                         if (!slotKeySet.Add(slotKey))
-                        {
                             continue;
-                        }
 
                         existingCalendar.PromotionTypeId = promotion.Id;
                         existingCalendar.MaxSlots = r.MaxSlots;
@@ -1055,17 +972,12 @@ public class AppCalendarSlotService :
 
                         await Repository.UpdateAsync(existingCalendar, autoSave: false);
 
-                        // Cập nhật cấu hình giá, không xóa bản ghi cũ vì sẽ lỗi
                         await UpsertPricesAsync(existingCalendar.Id, r.CustomerTypePrice);
-
                         continue;
                     }
 
-                    // Không tồn tại trong cơ sở dữ liệu => tạo slot MỚI, đồng thời loại bỏ trùng lặp theo slotKeySet
                     if (!slotKeySet.Add(slotKey))
-                    {
                         continue;
-                    }
 
                     var calendarId = GuidGenerator.Create();
 
@@ -1091,7 +1003,6 @@ public class AppCalendarSlotService :
             }
         }
 
-        // Lưu vị trí + giá mới 
         if (pendingInsertByKey.Count > 0)
             await Repository.InsertManyAsync(pendingInsertByKey.Values.ToList(), autoSave: false);
 
@@ -1101,12 +1012,10 @@ public class AppCalendarSlotService :
         await CurrentUnitOfWork.SaveChangesAsync();
         return 1;
 
-        // Cập nhật dữ liệu cáu hình giá đang chờ xử lý
         void UpsertPendingPrices(Guid calendarSlotId, List<CustomerTypeExcelRowDto>? inputPrices)
         {
             if (inputPrices == null || inputPrices.Count == 0) return;
 
-            // Loại bỏ dữ liệu trùng lặp theo tên loại khách hàng (lấy tên cuối cùng)
             var normalized = inputPrices
                 .Where(x => x != null && !string.IsNullOrWhiteSpace(x.CustomerType) && x.Price18 > 0)
                 .GroupBy(x => x.CustomerType.Trim(), StringComparer.OrdinalIgnoreCase)
@@ -1127,7 +1036,6 @@ public class AppCalendarSlotService :
 
                 if (pendingPriceByKey.TryGetValue(key, out var existing))
                 {
-                    // cập nhật trong bộ nhớ (loại bỏ trùng lặp)
                     existing.Price9 = price9;
                     existing.Price18 = price18;
                     existing.Price27 = price27;
@@ -1182,7 +1090,6 @@ public class AppCalendarSlotService :
 
                 if (existingByCtId.TryGetValue(ct.Id, out var row))
                 {
-                    // Cập nhật nếu tồn tại
                     row.Price9 = price9;
                     row.Price18 = price18;
                     row.Price27 = price27;
@@ -1193,7 +1100,6 @@ public class AppCalendarSlotService :
                 }
                 else
                 {
-                    // Thêm mới cho mỗi khóa
                     var newRow = new CalendarSlotPrice(
                         GuidGenerator.Create(),
                         calendarSlotId,
@@ -1209,7 +1115,6 @@ public class AppCalendarSlotService :
 
                     toInsert.Add(newRow);
 
-                    // Đồng thời cập nhật bộ nhớ cache để tránh chèn trùng lặp nếu cùng một vị trí xuất hiện lại trong lô
                     existingPrices.Add(newRow);
                     existingByCtId[ct.Id] = newRow;
                 }

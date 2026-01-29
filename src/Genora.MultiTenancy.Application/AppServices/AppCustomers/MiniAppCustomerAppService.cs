@@ -1,43 +1,58 @@
 ﻿using Genora.MultiTenancy.AppDtos.AppCustomers;
 using Genora.MultiTenancy.AppDtos.AppCustomerTypes;
 using Genora.MultiTenancy.AppDtos.AppZaloAuths;
+using Genora.MultiTenancy.AppServices.AppZaloAuths;
 using Genora.MultiTenancy.DomainModels.AppCustomers;
-using Microsoft.Extensions.Logging;
+using Genora.MultiTenancy.Enums;
+using Genora.MultiTenancy.Helpers;
+using Genora.MultiTenancy.Localization;
+using Microsoft.Extensions.Localization;
 using System;
-using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Volo.Abp;
 using Volo.Abp.Application.Services;
+using Volo.Abp.BackgroundJobs;
 using Volo.Abp.Domain.Repositories;
+using Volo.Abp.MultiTenancy;
 
 namespace Genora.MultiTenancy.AppServices.AppCustomers;
+
 public class MiniAppCustomerAppService : ApplicationService, IMiniAppCustomerAppService
 {
     private readonly IRepository<Customer, Guid> _repo;
     private readonly IMiniAppCustomerTypeService _customerTypeService;
-    private readonly IZaloZbsClient _zbsClient;
+    private readonly IStringLocalizer<MultiTenancyResource> _l;
 
-    public MiniAppCustomerAppService(IRepository<Customer, Guid> repo, IMiniAppCustomerTypeService customerTypeService, IZaloZbsClient zbsClient)
+    private readonly IBackgroundJobManager _jobManager;
+    private readonly ICurrentTenant _currentTenant;
+
+    public MiniAppCustomerAppService(
+        IRepository<Customer, Guid> repo,
+        IMiniAppCustomerTypeService customerTypeService,
+        IBackgroundJobManager jobManager,
+        ICurrentTenant currentTenant,
+        IStringLocalizer<MultiTenancyResource> l)
     {
         _repo = repo;
         _customerTypeService = customerTypeService;
-        _zbsClient = zbsClient;
+        _jobManager = jobManager;
+        _currentTenant = currentTenant;
+        _l = l;
     }
 
     public async Task<MiniAppCustomerDto?> GetByPhoneAsync(string phoneNumber, CancellationToken ct)
     {
         if (phoneNumber.IsNullOrWhiteSpace())
-            throw new BusinessException("Customer:PhoneRequired");
+            throw ErrorHelper.BusinessError(_l, "Customer:PhoneRequired");
 
         var normalized = phoneNumber.Trim();
-        var customer = await _repo.FirstOrDefaultAsync(x => x.PhoneNumber == normalized);
+        var customer = await _repo.FirstOrDefaultAsync(x => x.PhoneNumber == normalized, ct);
         if (customer == null)
             return null;
 
-        // Map từ entity Customer sang CustomerData
         var customerData = ObjectMapper.Map<Customer, CustomerData>(customer);
 
         return new MiniAppCustomerDto
@@ -55,15 +70,15 @@ public class MiniAppCustomerAppService : ApplicationService, IMiniAppCustomerApp
     public async Task<MiniAppCustomerDto> UpsertFromMiniAppAsync(MiniAppUpsertCustomerRequest input, CancellationToken ct)
     {
         if (input.PhoneNumber.IsNullOrWhiteSpace())
-            throw new BusinessException("Customer:PhoneRequired");
+            throw ErrorHelper.BusinessError(_l, "Customer:PhoneRequired");
 
         var phone = input.PhoneNumber.Trim();
         var name = (input.FullName ?? "").Trim();
         if (name.IsNullOrWhiteSpace())
             name = "Zalo User";
 
-        var customer = await _repo.FirstOrDefaultAsync(x => x.PhoneNumber == phone);
-        var customerType = await _customerTypeService.GetCustomerTypeByCode("MEM");
+        var customer = await _repo.FirstOrDefaultAsync(x => x.PhoneNumber == phone, ct);
+        var customerType = await _customerTypeService.GetCustomerTypeByCode("VIS");
 
         var isNew = false;
 
@@ -73,17 +88,19 @@ public class MiniAppCustomerAppService : ApplicationService, IMiniAppCustomerApp
 
             customer = new Customer(GuidGenerator.Create(), phone, name)
             {
-                CustomerTypeId = customerType != null ? customerType?.Id : null,
+                CustomerTypeId = customerType?.Id,
                 AvatarUrl = input.AvatarUrl,
                 ZaloUserId = input.ZaloUserId,
                 ZaloFollowerId = input.ZaloFollowerId,
                 IsFollower = input.IsFollower ?? false,
                 IsSensitive = input.IsSensitive ?? false,
                 IsActive = true,
-                CustomerCode = await GenerateCustomerCodeNoPermissionAsync()
+                CustomerCode = await GenerateCustomerCodeNoPermissionAsync(),
             };
 
-            customer = await _repo.InsertAsync(customer, autoSave: true);
+            customer.CustomerSource = CustomerSource.ZaloMiniApp;
+
+            customer = await _repo.InsertAsync(customer, autoSave: true, cancellationToken: ct);
         }
         else
         {
@@ -97,13 +114,36 @@ public class MiniAppCustomerAppService : ApplicationService, IMiniAppCustomerApp
             customer.ZaloFollowerId = input.ZaloFollowerId ?? customer.ZaloFollowerId;
             customer.IsFollower = input.IsFollower ?? customer.IsFollower;
 
-            customer = await _repo.UpdateAsync(customer, autoSave: true);
+            customer.CustomerSource = CustomerSource.ZaloMiniApp;
+
+            customer = await _repo.UpdateAsync(customer, autoSave: true, cancellationToken: ct);
         }
 
-        // ✅ gửi ZNS “Đăng ký thành công” chỉ khi tạo mới
-        if (isNew)
+        // ✅ gửi ZBS “Đăng ký thành công” chỉ khi tạo mới
+        if (isNew && !string.IsNullOrWhiteSpace(customer.PhoneNumber))
         {
-            _ = SendRegisterSuccessZnsSafeAsync(customer, ct);
+            try
+            {
+                await _jobManager.EnqueueAsync(
+                    new ZbsSendJobArgs
+                    {
+                        TenantId = _currentTenant.Id,
+                        TemplateKey = "RegisterSuccess",
+                        Phone = customer.PhoneNumber,
+                        TrackingId = customer.Id.ToString(),
+                        TemplateData = new
+                        {
+                            customer_name = customer.FullName,
+                            customer_id = customer.CustomerCode
+                        }
+                    },
+                    priority: BackgroundJobPriority.Normal
+                );
+            }
+            catch
+            {
+                // không throw để không block luồng đăng ký
+            }
         }
 
         var result = ObjectMapper.Map<Customer, CustomerData>(customer);
@@ -118,7 +158,6 @@ public class MiniAppCustomerAppService : ApplicationService, IMiniAppCustomerApp
         };
     }
 
-    // MiniApp service không yêu cầu quyền => generate code bản internal
     private async Task<string> GenerateCustomerCodeNoPermissionAsync()
     {
         const string prefix = "KH";
@@ -147,41 +186,5 @@ public class MiniAppCustomerAppService : ApplicationService, IMiniAppCustomerApp
         }
 
         return candidate;
-    }
-
-    private async Task SendRegisterSuccessZnsSafeAsync(Customer customer, CancellationToken ct)
-    {
-        try
-        {
-            var templateId = "TEMPLATE_ID"; // Cấu hình template id lấy từ AppSettings
-
-            var req = new ZaloZbsCallRequest
-            {
-                Api = "zns",
-                Method = "POST",
-                Path = "/message/template",
-                Query = new Dictionary<string, string?>(),
-                Body = new
-                {
-                    phone = customer.PhoneNumber,                 // "8490xxxxxxx" hoặc "090xxxxxxx"
-                    template_id = templateId,
-                    template_data = new
-                    {
-                        customer_name = customer.FullName,
-                        customer_code = customer.CustomerCode,
-                        // thêm field khác
-                    },
-                    tracking_id = customer.Id.ToString()          // để đối soát
-                }
-            };
-
-            await _zbsClient.CallAsync(req, ct);
-        }
-        catch (Exception ex)
-        {
-            // Không làm fail luồng đăng ký. Log DB đã được BaseZaloClient ghi (SEND_ZNS)
-            // Đây là log app-level để truy vết.
-            Logger.LogWarning(ex, "Send ZNS register-success failed for customer {CustomerId}", customer.Id);
-        }
     }
 }

@@ -5,6 +5,7 @@ using Genora.MultiTenancy.AppServices.AppEmails;
 using Genora.MultiTenancy.AppServices.AppEmails.Templates;
 using Genora.MultiTenancy.AppServices.AppZaloAuths;
 using Microsoft.Extensions.DependencyInjection;
+using SixLabors.ImageSharp;
 using System;
 using Volo.Abp.Account;
 using Volo.Abp.AspNetCore.ExceptionHandling;
@@ -38,15 +39,17 @@ public class MultiTenancyApplicationModule : AbpModule
 {
     public override void ConfigureServices(ServiceConfigurationContext context)
     {
+        var configuration = context.Services.GetConfiguration();
         Configure<AbpAutoMapperOptions>(options =>
         {
             options.AddMaps<MultiTenancyApplicationModule>();
         });
 
+        // Hiển thị modal lỗi cho client
         Configure<AbpExceptionHandlingOptions>(options =>
         {
-            options.SendExceptionsDetailsToClients = true;
-            options.SendStackTraceToClients = true;
+            options.SendExceptionsDetailsToClients = false;
+            options.SendStackTraceToClients = false;
         });
 
         Configure<AbpVirtualFileSystemOptions>(options =>
@@ -64,7 +67,10 @@ public class MultiTenancyApplicationModule : AbpModule
             options.DefinitionProviders.Add<AppEmailSettingDefinitionProvider>();
         });
 
+        Configure<ZaloZbsOptions>(configuration.GetSection("Zalo:Zbs"));
+
         context.Services.AddEntityCache<AppSetting, AppSettingDto, Guid>();
         context.Services.AddTransient<IZaloZbsClient, ZaloZbsClient>();
+        context.Services.AddTransient<IZaloZbsTemplateResolver, ZaloZbsTemplateResolver>();
     }
 }

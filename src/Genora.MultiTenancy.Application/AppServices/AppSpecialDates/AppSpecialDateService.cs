@@ -1,23 +1,20 @@
-﻿using ClosedXML.Excel;
-using Genora.MultiTenancy.AppDtos.AppSpecialDates;
+﻿using Genora.MultiTenancy.AppDtos.AppSpecialDates;
 using Genora.MultiTenancy.DomainModels.AppGolfCourses;
 using Genora.MultiTenancy.DomainModels.AppMembershipTiers;
 using Genora.MultiTenancy.DomainModels.AppSpecialDates;
+using Genora.MultiTenancy.Enums.ErrorCodes;
 using Genora.MultiTenancy.Features.AppSpecialDates;
 using Genora.MultiTenancy.Permissions;
 using Microsoft.AspNetCore.Authorization;
 using System;
 using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
 using System.Globalization;
-using System.IO;
 using System.Linq;
 using System.Linq.Dynamic.Core;
 using System.Text.Json;
 using System.Threading.Tasks;
 using Volo.Abp;
 using Volo.Abp.Application.Dtos;
-using Volo.Abp.Content;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Features;
 using Volo.Abp.MultiTenancy;
@@ -64,11 +61,19 @@ namespace Genora.MultiTenancy.AppServices.AppSpecialDates
             DeletePolicyName = MultiTenancyPermissions.AppSpecialDates.Delete;
         }
 
+        private static BusinessException Err(string code, string field, object? value = null)
+        {
+            var ex = new BusinessException(code)
+                .WithData("Field", field);
+
+            if (value != null) ex.WithData("Value", value);
+
+            return ex;
+        }
+
         /// <summary>
-        /// Lấy danh sách cấu hình loại ngày (Mặc đinhk: Ngày trong tuần, ngày cuối tuần, ngày lễ,...)
+        /// Lấy danh sách cấu hình loại ngày (Mặc định: Ngày trong tuần, ngày cuối tuần, ngày lễ,...)
         /// </summary>
-        /// <param name="input"></param>
-        /// <returns></returns>
         [DisableValidation]
         public override async Task<PagedResultDto<SpecialDateDto>> GetListAsync(GetSpecialDateListInput input)
         {
@@ -107,8 +112,6 @@ namespace Genora.MultiTenancy.AppServices.AppSpecialDates
         /// <summary>
         /// Tạo mới cấu hình loại ngày
         /// </summary>
-        /// <param name="input"></param>
-        /// <returns></returns>
         public override async Task<SpecialDateDto> CreateAsync(CreateUpdateSpecialDateDto input)
         {
             await CheckCreatePolicyAsync();
@@ -144,12 +147,9 @@ namespace Genora.MultiTenancy.AppServices.AppSpecialDates
             return MapToDto(entity);
         }
 
-       /// <summary>
-       /// Cập nhật cấu hình loại ngày
-       /// </summary>
-       /// <param name="id"></param>
-       /// <param name="input"></param>
-       /// <returns></returns>
+        /// <summary>
+        /// Cập nhật cấu hình loại ngày
+        /// </summary>
         public override async Task<SpecialDateDto> UpdateAsync(Guid id, CreateUpdateSpecialDateDto input)
         {
             await CheckUpdatePolicyAsync();
@@ -170,7 +170,8 @@ namespace Genora.MultiTenancy.AppServices.AppSpecialDates
 
         private static void NormalizeInput(CreateUpdateSpecialDateDto input)
         {
-            if (input == null) throw new UserFriendlyException("Invalid input");
+            if (input == null)
+                throw Err(SpecialDateErrorCodes.InvalidInput, "Input");
 
             input.Name = NormalizeName(input.Name);
 
@@ -186,7 +187,10 @@ namespace Genora.MultiTenancy.AppServices.AppSpecialDates
             input.Name = (input.Name ?? "").Trim();
 
             if (!AllowedNames.Contains(input.Name))
-                throw new UserFriendlyException("Tên cấu hình không hợp lệ. Chỉ nhận: Ngày trong tuần / Ngày cuối tuần / Ngày lễ");
+            {
+                throw Err(SpecialDateErrorCodes.NameInvalid, "Name", input.Name)
+                    .WithData("Allowed", string.Join(" / ", AllowedNames));
+            }
 
             // rule: chỉ "Ngày lễ" mới có Dates
             if (!string.Equals(input.Name, SpecialDateNames.Holiday, StringComparison.OrdinalIgnoreCase))
@@ -202,7 +206,10 @@ namespace Genora.MultiTenancy.AppServices.AppSpecialDates
                     .ToList();
 
                 if (dates.Count == 0)
-                    throw new UserFriendlyException("Ngày lễ phải có ít nhất 1 ngày trong danh sách Dates");
+                {
+                    throw Err(SpecialDateErrorCodes.HolidayDatesRequired, "Dates")
+                        .WithData("Name", input.Name);
+                }
 
                 input.Dates = dates;
             }

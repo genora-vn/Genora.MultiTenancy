@@ -12,24 +12,19 @@
     <abp-modal>
         <abp-modal-header title="@L["UpdateAppsetting"].Value"></abp-modal-header>
         <abp-modal-body>
-            <abp-input asp-for="Id" />
-            <abp-input asp-for="AppSetting.SettingKey" type="hidden" />
-
+            <input asp-for="Id" class="mt-0" />
+            <input asp-for="AppSetting.SettingKey" class="mt-0" type="hidden" />
+            <abp-input asp-for="AppSetting.SettingType" id="setting-type"
+                       placeholder="Nhập loại cấu hình" label="@L["SettingType"]" />
             <abp-input asp-for="AppSetting.SettingKey"
                        placeholder="Nhập mã cấu hình (vd: color_background, logo_image,..)"
                        label="@L["SettingKey"]" disabled="true" />
-
-            <abp-input asp-for="AppSetting.IsImageInput" id="IsImageInput" label="@L["IsImageInput"]" />
-
-            <abp-input asp-for="AppSetting.SettingType" id="setting-type"
-                       placeholder="Nhập loại cấu hình" label="@L["SettingType"]" />
-
             <div class="group" id="input-value">
                 <abp-input asp-for="AppSetting.SettingValue"
                            placeholder="Nhập giá trị cấu hình (vd: #FFFFF,https://example.com/logo.img,...)"
                            label="@L["SettingValue"]" />
             </div>
-
+            <abp-input asp-for="AppSetting.IsImageInput" id="IsImageInput" label="@L["IsImageInput"]" />
             <div class="mb-3" style="display:none" id="input-image">
                 <div class="image-upload-group">
                     <label for="images" class="form-label mb-1">
@@ -45,7 +40,6 @@
                     </div>
                 </div>
             </div>
-
             <div class="mb-3">
                 <div class="preview-grid" id="previewGrid"></div>
             </div>
@@ -57,7 +51,6 @@
                           placeholder="Mô tả cấu hình"
                           rows="4"></textarea>
             </div>
-
             <abp-input asp-for="AppSetting.IsActive" placeholder="Nhập mã cấu hình" label="@L["IsActive"]" />
         </abp-modal-body>
         <abp-modal-footer buttons="@(AbpModalButtons.Cancel | AbpModalButtons.Save)"></abp-modal-footer>
@@ -131,14 +124,10 @@
         const MAX_FILE_MB = 15;
         const MAX_FILE_BYTES = MAX_FILE_MB * 1024 * 1024;
 
-        // ✅ helper: lấy đúng checkbox ABP render (có thể là hidden + checkbox)
         function findIsImageCheckbox(form) {
-            // Ưu tiên theo name (ABP thường render đúng name)
             return form.querySelector('input[type="checkbox"][name="AppSetting.IsImageInput"]')
                 || form.querySelector('input[type="checkbox"][name$=".IsImageInput"]')
-                // fallback theo id (nếu may mắn ABP gán id vào input)
                 || form.querySelector('#IsImageInput[type="checkbox"]')
-                // fallback cuối: tìm trong wrapper có id IsImageInput (ABP có thể gắn id lên container)
                 || form.querySelector('#IsImageInput input[type="checkbox"]');
         }
 
@@ -157,12 +146,10 @@
             }
         }
 
-        // ✅ delegation: luôn bắt được change dù modal inject/replace
         document.addEventListener('change', function (e) {
             const t = e.target;
             if (!t) return;
 
-            // chỉ xử lý checkbox đúng tên
             const isTarget = (t.matches && (
                 t.matches('input[type="checkbox"][name="AppSetting.IsImageInput"]') ||
                 t.matches('input[type="checkbox"][name$=".IsImageInput"]') ||
@@ -176,16 +163,13 @@
             setMode(form, t.checked);
         });
 
-        // ✅ init sau khi modal đã render
         setTimeout(function () {
-            // tìm form edit trong DOM (modal)
             const form =
                 document.querySelector('form[asp-page="/AppSettings/EditModal"], form[action*="/AppSettings/EditModal"]')
                 || document.querySelector('form');
 
             if (!form) return;
 
-            // tránh init nhiều lần
             if (form.dataset.imageUploadInit === "1") return;
             form.dataset.imageUploadInit = "1";
 
@@ -213,7 +197,6 @@
             }
 
             function createPreview(src, name, isExistingUrl) {
-                // tránh add trùng preview nếu mở modal nhiều lần
                 const safeName = (window.CSS && CSS.escape) ? CSS.escape(name) : name.replace(/"/g, '\\"');
                 if (previewGrid.querySelector(`[data-filename="${safeName}"]`)) return;
 
@@ -268,7 +251,6 @@
                 updateFileInput();
             }
 
-            // init mode theo model (server)
             const settingType = "@(Model.AppSetting?.SettingType ?? "")";
             const settingValue = "@(Model.AppSetting?.SettingValue ?? "")";
 
@@ -285,11 +267,9 @@
                     } catch { }
                 }
             } else {
-                // đảm bảo đúng trạng thái ban đầu
                 if (chk) setMode(form, chk.checked);
             }
 
-            // upload handlers
             dropZone.addEventListener('click', () => fileInput.click());
 
             dropZone.addEventListener('dragover', (e) => {
@@ -311,7 +291,6 @@
                 if (fileInput.files?.length) handleFiles(fileInput.files);
             });
 
-            // nếu ABP checkbox đã render nhưng setMode chưa chạy do timing, bắn change giả
             if (chk) chk.dispatchEvent(new Event('change', { bubbles: true }));
         }, 0);
     })();

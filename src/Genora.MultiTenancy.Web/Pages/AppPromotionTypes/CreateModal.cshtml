@@ -13,209 +13,394 @@
         <abp-modal-header title="@L["CreatePromotionType"].Value"></abp-modal-header>
         <abp-modal-body>
             <abp-row>
-                <abp-column size-md="_8">
-                    <abp-input asp-for="PromotionType.Code" placeholder="Nhập mã code loại ưu đãi" label="@L["PromotionTypeCode"]" />
+                <abp-column size-md="_5" class="gc-required">
+                    <abp-input asp-for="PromotionType.Code"
+                               placeholder="VD: VIP_MEMBER (uppercase / snake_case)"
+                               label="@L["PromotionTypeCode"]" />
                 </abp-column>
-                <abp-column size-md="_4" style="display: flex; align-content: center; flex-wrap: wrap">
-                    <abp-input asp-for="PromotionType.Status" label="@L["PromotionStatus"]"/>
+
+                <abp-column size-md="_7" class="gc-required">
+                    <abp-input asp-for="PromotionType.Name"
+                               placeholder="Nhập tên loại ưu đãi"
+                               label="@L["PromotionTypeName"]" />
                 </abp-column>
             </abp-row>
-            
-            <abp-input asp-for="PromotionType.Name" placeholder="Nhập tên loại ưu đãi" label="@L["PromotionTypeName"]" />
-            <div class="mb-3">
-                <label asp-for="PromotionType.Description" class="form-label">@L["Description"]</label>
-                <textarea asp-for="PromotionType.Description" class="form-control" rows="2" placeholder="Mô tả loại ưu đãi"></textarea>
-            </div>
-            
-            <div class="mb-3" style="display: inline-flex; width: 100%">
-                <label asp-for="PromotionType.ColorCode" class="form-label" style="width: 18%">@L["ColorCode"]</label>
-                <input asp-for="PromotionType.ColorCode" type="text" id="color-code" class="form-control" />
-                <input id="color-picker" type="color" class="form-control color-input" />
-            </div>
-            <abp-row>
-                <abp-column size-md="_2">
-                    @* <abp-input asp-for="PromotionType.IsUploadImage" style="height: 30px" class="form-control" id="isUpload" label="@L["IsUpload"]" /> *@
-                    <label for="isUpload" class="form-label">@L["IsUpload"]</label>
-                    <input type="checkbox" class="form-check-input" name="name" id="isUpload" value="" />
-                </abp-column>
-                <abp-column size-md="_6">
-                    <div class="url-group" id="input-url">
-                        <label asp-for="PromotionType.IconUrl" class="form-label">@L["PromotionTypeIconUrl"]</label>
-                        <input asp-for="PromotionType.IconUrl" class="form-control" placeholder="Dán đường dẫn ảnh icon" />
+
+            <div class="row g-3">
+                <div class="col-12">
+                    <label asp-for="PromotionType.Description" class="form-label">@L["Description"]</label>
+                    <textarea asp-for="PromotionType.Description"
+                              class="form-control"
+                              rows="2"
+                              placeholder="Mô tả loại ưu đãi"></textarea>
+                    <span asp-validation-for="PromotionType.Description" class="text-danger"></span>
+                </div>
+
+                <div class="col-md-12">
+                    <label asp-for="PromotionType.ColorCode" class="form-label">@L["ColorCode"]</label>
+                    <div class="color-row">
+                        <input asp-for="PromotionType.ColorCode"
+                               type="text"
+                               id="color-code"
+                               class="form-control"
+                               placeholder="(vd: #FF6B00)"
+                               autocomplete="off" />
+                        <input id="color-picker" type="color" class="form-control color-input" />
                     </div>
-                    <div class="group-image" id="input-image" style="display: none;">
-                        <div class="image-upload-group">
-                            @* <label for="images">Upload ảnh:</label> *@
-                            <div class="drop-zone" id="dropZone">
-                                <p>Kéo thả ảnh hoặc click để chọn</p>
-                                <input asp-for="PromotionType.Images" type="file" id="images" style="display:none" />
+                    <span asp-validation-for="PromotionType.ColorCode" class="text-danger"></span>
+                </div>
+
+                <div class="col-md-12">
+                    <label class="form-label">Icon</label>
+
+                    <div class="icon-picker-wrap">
+                        <input asp-for="PromotionType.IconUrl" type="hidden" id="icon-value" />
+
+                        <div class="d-flex align-items-center gap-2">
+                            <button type="button" class="btn btn-outline-secondary btn-sm" id="btn-open-icon">
+                                Chọn icon
+                            </button>
+
+                            <span id="icon-selected" class="icon-selected">
+                                <i class="fa-regular fa-circle-question"></i>
+                                <span class="icon-selected-text">(Chưa chọn)</span>
+                            </span>
+
+                            <button type="button" class="btn btn-link btn-sm text-decoration-none" id="btn-clear-icon">
+                                Xoá
+                            </button>
+                        </div>
+
+                        <div id="icon-panel" class="icon-panel" style="display:none;">
+                            <div class="p-2 border-bottom">
+                                <input type="text" id="icon-search" class="form-control form-control-sm" placeholder="Tìm icon (vd: tag, gift, star)..." />
+                                <div class="icon-meta" id="icon-meta">Đang tải danh sách icon...</div>
                             </div>
+                            <div id="icon-grid" class="icon-grid"></div>
                         </div>
+
+                        <span asp-validation-for="PromotionType.IconUrl" class="text-danger"></span>
                     </div>
-                </abp-column>
-                <abp-column size-md="_4">
-                    <div class="preview-grid" id="previewGrid">
-                        <div class="preview-item">
-                            <img src="images\getting-started\no-photo-square.png" id="image-preview" alt="Alternate Text" />
-                        </div>
-                    </div>
-                    </abp-column>
-            </abp-row>
+
+                    <input asp-for="PromotionType.Images" type="file" id="images" style="display:none" />
+                </div>
+            </div>
+
+            <div class="col-12 mt-3">
+            <abp-input asp-for="PromotionType.Status" label="@L["IsActive"]" /></div>
+
         </abp-modal-body>
+
         <abp-modal-footer buttons="@(AbpModalButtons.Cancel | AbpModalButtons.Save)"></abp-modal-footer>
     </abp-modal>
 </form>
 
-<style type="text/css">
-    .color-input {
-        width: 45px;
-        height: 47px;
-        padding: 8px;
-        margin-left: 0;
-        border-radius: 0 0.5rem 0.5rem 0;
+<style>
+    .modal-dialog {
+        max-width: 32%;
+    }
+
+    .gc-section {
+        border: 1px solid #e5e7eb;
+        border-radius: 10px;
+        padding: 10px 12px;
+        margin-bottom: 10px;
+        background: #fff;
+    }
+
+    .gc-section-title {
+        font-weight: 700;
+        margin-bottom: 8px;
+        font-size: 13px;
+        color: #111827;
+    }
+
+    .gc-required label::after,
+    .gc-required .form-label::after,
+    .gc-required .col-form-label::after {
+        content: " *";
+        color: #dc3545;
+        font-weight: 700;
+    }
+
+    .color-row {
+        display: flex;
+        gap: 0;
+        width: 100%;
     }
 
     #color-code {
-        border-radius: 0.5rem 0 0 0.5rem;
-        margin-left: 20px;
-        width: 68%;
-        padding-right: 0
+        border-radius: .5rem 0 0 .5rem;
     }
 
-    .image-upload-group {
-        margin: 0 0 10px 0;
+    .color-input {
+        width: 64px;
+        height: auto;
+        padding: 4px;
+        border-radius: 0 .5rem .5rem 0;
     }
 
-    .drop-zone {
-        border: 3px dashed #ccc;
+    .icon-picker-wrap {
+        position: relative;
+    }
+
+    .icon-selected {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 5px 10px;
+        border: 1px solid #e5e7eb;
+        border-radius: 999px;
+        background: #f8fafc;
+        font-size: 12px;
+        max-width: 260px;
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+    }
+
+    .icon-panel {
+        position: absolute;
+        left: 0;
+        top: 40px;
+        width: 100%;
+        min-width: 360px;
+        background: #fff;
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+        box-shadow: 0 10px 30px rgba(0,0,0,.12);
+        z-index: 1056;
+        overflow: hidden;
+    }
+
+    .icon-grid {
+        padding: 10px;
+        display: grid;
+        grid-template-columns: repeat(10, minmax(0, 1fr));
+        gap: 8px;
+        max-height: 240px;
+        overflow: auto;
+    }
+
+    .icon-item {
+        border: 1px solid #e5e7eb;
         border-radius: 10px;
-        padding: 20px;
+        padding: 8px 0;
         text-align: center;
         cursor: pointer;
-        transition: border-color 0.3s;
-        background-color: #f9f9f9;
+        user-select: none;
     }
 
-        .drop-zone:hover {
-            border-color: #999;
+        .icon-item:hover {
+            background: #e9f7ff;
+            border-color: #b6e1ff;
         }
 
-        .drop-zone.drag-over {
-            border-color: #007bff;
-            background-color: #e9f7ff;
-        }
-
-    .preview-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-        gap: 15px;
-        /* margin-top: 20px; */
-        /* margin-right: 20px; */
+    .icon-meta {
+        font-size: 11px;
+        color: #6b7280;
+        margin-top: 6px;
     }
-
-    .preview-item {
-        position: relative;
-        border: 1px solid #ddd;
-        border-radius: 8px;
-        overflow: hidden;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-    }
-
-        .preview-item img {
-            width: 100%;
-            /* height: 150px; */
-            /* object-fit: cover; */
-        }
-
 </style>
+
 <script>
     $(document).ready(function () {
-        // Khi người dùng chọn màu từ bộ chọn màu
-        $('#color-picker').on('input', function () {
+        var $form = $('form[abp-model="PromotionType"]');
+
+        var $status = $form.find('[name="PromotionType.Status"]');
+        if ($status.length && $status.is(':checkbox') && !$status.prop('checked')) {
+            $status.prop('checked', true).trigger('change');
+        }
+
+        var $colorCode = $('#color-code');
+        var $picker = $('#color-picker');
+
+        function normalizeHex(val) {
+            val = (val || "").trim();
+            if (!val) return "";
+            if (!val.startsWith("#")) val = "#" + val;
+            if (/^#([0-9a-fA-F]{3})$/.test(val)) {
+                var r = val[1], g = val[2], b = val[3];
+                val = "#" + r + r + g + g + b + b;
+            }
+            return val;
+        }
+        function isValidHex6(val) { return /^#([0-9a-fA-F]{6})$/.test(val); }
+
+        $picker.on('input', function () {
             var selectedColor = $(this).val();
-            $('#color-code').val(selectedColor);
-        });
-        // Khi người dùng nhập mã màu thủ công
-        $('#color-code').on('input', function () {
-            var inputColor = $(this).val();
-            $('#color-picker').val(inputColor);
+            $colorCode.val(selectedColor).trigger('change');
         });
 
-        $('input[asp-for="PromotionType.IconUrl"]').on('input', function () {
-            bindingPreviewImage();
-        });
-        $('#image-input').on('change', function () {
-            bindingPreviewImage();
+        $colorCode.on('input', function () {
+            var val = normalizeHex($(this).val());
+            $(this).val(val);
+            if (isValidHex6(val)) $picker.val(val);
         });
 
-        function bindingPreviewImage() {
-            var imageUrl = $('#image-input').val();
-            if (imageUrl) {
-                $('#image-preview').attr('src', imageUrl);
-            } else {
-                $('#image-preview').attr('src', 'images\getting-started\no-photo-square.png');
+        if ($.validator) {
+            if (!$.validator.methods.regex) {
+                $.validator.addMethod("regex", function (value, element, pattern) {
+                    if (this.optional(element)) return true;
+                    return pattern.test(value);
+                });
+            }
+
+            $form.removeData('validator');
+            $form.removeData('unobtrusiveValidation');
+            if ($.validator.unobtrusive) $.validator.unobtrusive.parse($form);
+
+            if ($colorCode.rules) {
+                $colorCode.rules('remove');
+                $colorCode.rules('add', {
+                    regex: /^#([0-9a-fA-F]{6})$/,
+                    messages: { regex: "Mã màu phải đúng định dạng #RRGGBB (vd: #FF6B00)." }
+                });
             }
         }
 
-    const fileInput = document.getElementById('images');
-    const dropZone = document.getElementById('dropZone');
-    const previewGrid = document.getElementById('previewGrid');
-    const isUpload = document.getElementById('isUpload');
-    const inputUrl = document.getElementById('input-url');
-    const inputUpload = document.getElementById('input-image');
-    let selectedFiles = [];
+        var $panel = $('#icon-panel');
+        var $grid = $('#icon-grid');
+        var $search = $('#icon-search');
+        var $iconValue = $('#icon-value');
+        var $iconSelected = $('#icon-selected');
+        var $meta = $('#icon-meta');
 
-    isUpload.addEventListener('change', function(){
-      if (this.checked) {
-          inputUrl.style.display = 'none';
-          inputUpload.style.display = 'block';
-      } else {
-          inputUrl.style.display = 'block';
-          inputUpload.style.display = 'none';
-      }
-    });
-        // Click vào vùng drop để mở dialog chọn file
-    dropZone.addEventListener('click', () => fileInput.click());
+        const ICON_NAMES = [
+          "address-book","address-card","align-center","align-justify","align-left","align-right",
+          "anchor","angle-down","angle-left","angle-right","angle-up","angles-down","angles-left","angles-right","angles-up",
+          "ankh","aperture","archive","arrow-down","arrow-down-1-9","arrow-down-9-1","arrow-down-a-z","arrow-down-long","arrow-down-short-wide","arrow-down-up-across-line",
+          "arrow-down-up-lock","arrow-down-wide-short","arrow-down-z-a","arrow-left","arrow-left-long","arrow-pointer","arrow-right","arrow-right-arrow-left","arrow-right-from-bracket",
+          "arrow-right-long","arrow-right-to-bracket","arrow-rotate-left","arrow-rotate-right","arrow-trend-down","arrow-trend-up","arrow-turn-down","arrow-turn-up",
+          "arrow-up","arrow-up-1-9","arrow-up-9-1","arrow-up-a-z","arrow-up-from-bracket","arrow-up-from-ground-water","arrow-up-from-water-pump","arrow-up-long",
+          "arrow-up-right-dots","arrow-up-right-from-square","arrow-up-short-wide","arrow-up-wide-short","arrow-up-z-a","arrows-left-right","arrows-rotate","arrows-up-down",
+          "asterisk","at","atom","award","baby","backward","bag-shopping","bacteria","ban","bandage","barcode","bars","baseball","basket-shopping","bath","battery-empty","battery-full",
+          "battery-half","battery-quarter","battery-three-quarters","bed","bell","bell-concierge","bell-slash","bezier-curve","bicycle","binoculars","biohazard","bitcoin-sign",
+          "blender","bolt","bolt-lightning","bomb","bone","bong","book","book-atlas","book-bookmark","book-open","bookmark","border-all","border-none","border-top-left",
+          "bottle-droplet","bottle-water","bowl-food","bowl-rice","box","box-archive","box-open","boxes-stacked","brain","briefcase","broom","brush","bug","building","bullhorn",
+          "bullseye","burger","bus","bus-simple","cake-candles","calculator","calendar","calendar-check","calendar-day","calendar-days","calendar-minus","calendar-plus","calendar-xmark",
+          "camera","camera-retro","candy-cane","capsules","car","car-battery","car-burst","car-side","caravan","caret-down","caret-left","caret-right","caret-up",
+          "cart-arrow-down","cart-flatbed","cart-plus","cart-shopping","cash-register","cat","certificate","chair","chalkboard","chart-area","chart-bar","chart-column","chart-line",
+          "chart-pie","check","check-double","check-to-slot","cheese","chess","chess-bishop","chess-king","chess-knight","chess-pawn","chess-queen","chess-rook",
+          "chevron-down","chevron-left","chevron-right","chevron-up","child","circle","circle-check","circle-chevron-down","circle-chevron-left","circle-chevron-right","circle-chevron-up",
+          "circle-dollar-to-slot","circle-dot","circle-down","circle-exclamation","circle-h","circle-half-stroke","circle-info","circle-left","circle-minus","circle-notch","circle-pause",
+          "circle-play","circle-plus","circle-question","circle-radiation","circle-right","circle-stop","circle-up","circle-user","circle-xmark",
+          "clipboard","clipboard-check","clipboard-list","clock","clock-rotate-left","clone","closed-captioning","cloud","cloud-arrow-down","cloud-arrow-up","cloud-bolt","cloud-meatball",
+          "cloud-moon","cloud-moon-rain","cloud-rain","cloud-showers-heavy","cloud-snow","cloud-sun","cloud-sun-rain",
+          "code","code-branch","code-commit","code-compare","code-fork","coffee","cog","coins","comment","comment-dots","comment-medical","comment-slash","comments",
+          "compass","compass-drafting","compress","computer","cookie","cookie-bite","copy","copyright","couch","credit-card","crop","crop-simple","cross","crosshairs",
+          "crow","crown","crutch","cube","cubes","database","delete-left","desktop","diagram-project","dial-high","dial-low","dial-max","dial-med","dice","dice-d20","dice-d6",
+          "display","divide","dna","dog","dollar-sign","dolly","door-closed","door-open","download","dragon","droplet","droplet-slash","drum","dumbbell","dumpster","earth-asia",
+          "earth-americas","earth-europe","egg","eject","ellipsis","ellipsis-vertical","envelope","envelope-open","envelopes-bulk","equals","eraser","ethernet","eye","eye-dropper",
+          "eye-slash","face-angry","face-dizzy","face-frown","face-frown-open","face-grimace","face-grin","face-grin-beam","face-grin-hearts","face-grin-squint",
+          "face-grin-squint-tears","face-grin-stars","face-grin-tears","face-grin-tongue","face-grin-tongue-squint","face-grin-tongue-wink","face-grin-wide",
+          "face-grin-wink","face-kiss","face-kiss-beam","face-kiss-wink-heart","face-laugh","face-laugh-beam","face-laugh-squint","face-laugh-wink","face-meh",
+          "face-meh-blank","face-rolling-eyes","face-sad-cry","face-sad-tear","face-smile","face-smile-beam","face-smile-wink","face-surprise","face-tired",
+          "fan","fast-backward","fast-forward","fax","feather","feather-pointed","file","file-arrow-down","file-arrow-up","file-audio","file-code","file-contract","file-csv",
+          "file-excel","file-image","file-invoice","file-lines","file-medical","file-pdf","file-powerpoint","file-prescription","file-signature","file-video","file-word","file-zipper",
+          "fill","fill-drip","film","filter","filter-circle-dollar","fingerprint","fire","fire-burner","fire-extinguisher","flag","flag-checkered","flask","floppy-disk",
+          "folder","folder-open","font","football","forward","frog","futbol","gamepad","gas-pump","gauge","gauge-high","gauge-simple","gavel","gear","gears","gem","genderless",
+          "ghost","gift","gifts","glass-water","glass-water-droplet","glasses","globe","golf-ball-tee","graduation-cap","greater-than","greater-than-equal","grid-2","grid-3",
+          "grip","grip-lines","grip-lines-vertical","guitar","hand","hand-back-fist","hand-holding","hand-holding-dollar","hand-holding-droplet","hand-holding-heart","hand-holding-medical",
+          "hand-lizard","hand-middle-finger","hand-paper","hand-peace","hand-point-down","hand-point-left","hand-point-right","hand-point-up","hand-pointer",
+          "hand-scissors","hand-sparkles","hand-spock","hands","hands-asl-interpreting","hands-bubbles","hands-clapping","hands-holding","hands-praying",
+          "handshake","handshake-angle","handshake-simple","hard-drive","hashtag","hat-wizard","headphones","headset","heart","heart-circle-check","heart-circle-xmark",
+          "heart-pulse","helicopter","helmet-un","highlighter","hippo","hockey-puck","holly-berry","home","house","house-chimney","house-circle-check","house-circle-xmark",
+          "house-fire","house-flag","house-lock","house-medical","house-user","id-badge","id-card","image","images","inbox","indent","industry","infinity","info",
+          "key","keyboard","khanda","kidneys","landmark","language","laptop","laptop-code","layer-group","leaf","lemon","less-than","less-than-equal",
+          "life-ring","lightbulb","link","link-slash","list","list-check","list-ol","list-ul","location-arrow","location-crosshairs","location-dot","location-pin",
+          "lock","lock-open","log-in","log-out","magnifying-glass","magnifying-glass-dollar","magnifying-glass-location","magnifying-glass-minus","magnifying-glass-plus",
+          "manat-sign","map","map-location-dot","map-pin","marker","mars","mask","medal","memory","microchip","microphone","microphone-lines","microphone-lines-slash","microphone-slash",
+          "minus","mobile","mobile-screen","money-bill","money-bill-1","money-bill-1-wave","money-bill-transfer","money-check","money-check-dollar","monument","moon","motorcycle",
+          "mug-hot","mug-saucer","music","network-wired","newspaper","not-equal","note-sticky","object-group","object-ungroup","paint-roller","paintbrush","palette",
+          "paper-plane","paperclip","paste","pause","paw","pen","pen-clip","pen-fancy","pen-nib","pen-ruler","pen-to-square","pencil","people-group","percent","person",
+          "person-biking","person-booth","person-chalkboard","person-circle-check","person-circle-xmark","person-digging","person-hiking","person-running","person-skiing",
+          "person-snowboarding","person-swimming","phone","phone-flip","phone-slash","photo-film","piggy-bank","pizza-slice","plane","plane-arrival","plane-departure","play",
+          "plug","plus","print","puzzle-piece","qrcode","question","quote-left","quote-right","radiation","radio","rainbow","receipt","rectangle-list","rectangle-xmark",
+          "recycle","registered","repeat","reply","reply-all","right-left","rocket","rotate","route","rss","ruler","ruler-combined","ruler-horizontal","ruler-vertical",
+          "sack-dollar","scale-balanced","scissors","screwdriver","screwdriver-wrench","scroll","sd-card","search","seedling","server","share","share-from-square","shield",
+          "shield-heart","shield-virus","ship","shop","shop-lock","shopping-bag","shower","shuffle","signature","sink","sitemap","skull","skull-crossbones","sliders",
+          "smog","snowflake","sort","sort-down","sort-up","spa","spaghetti-monster-flying","speaker-deck","spell-check","spinner","square","square-arrow-up-right","square-caret-down",
+          "square-caret-left","square-caret-right","square-caret-up","square-check","square-envelope","square-full","square-minus","square-parking","square-pen","square-phone",
+          "square-plus","square-poll-horizontal","square-poll-vertical","square-root-variable","square-rss","square-share-nodes","square-up-right","square-user","square-xmark",
+          "stamp","star","star-half","star-half-stroke","stethoscope","stop","stopwatch","store","store-slash","street-view","strikethrough","subscript","suitcase",
+          "sun","superscript","swatchbook","table","tablet","tablet-screen-button","tag","tags","tape","taxi","temperature-high","temperature-low","terminal","text-height",
+          "text-slash","text-width","thumbs-down","thumbs-up","ticket","ticket-simple","timeline","toggle-off","toggle-on","toilet-paper","toolbox","tooth","torii-gate",
+          "tower-broadcast","tractor","train","trash","trash-can","tree","trophy","truck","truck-fast","truck-ramp-box","tty","tv","umbrella","umbrella-beach",
+          "underline","unlock","unlock-keyhole","up-down","upload","user","user-check","user-clock","user-doctor","user-gear","user-group","user-large","user-lock","user-minus",
+          "user-nurse","user-plus","user-secret","user-shield","user-slash","user-tag","user-xmark","users","users-gear","utensils","van-shuttle","vault","venus","video",
+          "virus","virus-covid","voicemail","volleyball","volume-high","volume-low","volume-off","volume-xmark","wallet","wand-magic","warehouse","water","wave-square",
+          "weight-hanging","wheelchair","wifi","wind","wrench","xmark"
+        ];
 
-        // Hiệu ứng drag over
-    dropZone.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            dropZone.classList.add('drag-over');
-    });
+        const ICONS = ICON_NAMES.map(n => `fa-solid fa-${n}`);
 
-    dropZone.addEventListener('dragleave', () => {
-            dropZone.classList.remove('drag-over');
-    });
+        function renderIcons(filter) {
+          $grid.empty();
+          var q = (filter || "").trim().toLowerCase();
 
-        // Xử lý khi thả file
-    dropZone.addEventListener('drop', (e) => {
-            e.preventDefault();
-            dropZone.classList.remove('drag-over');
-            handleFiles(e.dataTransfer.files);
-    });
+          var list = ICONS.filter(function (cls) {
+            if (!q) return true;
+            return cls.toLowerCase().indexOf(q) >= 0;
+          });
 
-        // Xử lý khi chọn file qua input
-    fileInput.addEventListener('change', () => {
-            if (fileInput.files.length > 0) {
-                handleFiles(fileInput.files);
-            }
-    });
+          var max = Math.min(list.length, 500);
+          for (var i = 0; i < max; i++) {
+            (function (cls) {
+              var $item = $('<div class="icon-item" title="' + cls + '"><i class="' + cls + '"></i></div>');
+              $item.on('click', function () {
+                setSelectedIcon(cls);
+                closePanel();
+              });
+              $grid.append($item);
+            })(list[i]);
+          }
+        }
 
-    function handleFiles(file) {
-            debugger
-                if (file.length > 0) {
-                    const reader = new FileReader();
-                    reader.onload = (e) => {
-                        createPreview(e.target.result, file[0].name);
-                    };
-                    reader.readAsDataURL(file[0]);
-                }
-    }
+        function setSelectedIcon(cls) {
+          $iconValue.val(cls).trigger('change');
+          $iconSelected.html('<i class="' + cls + '"></i><span class="icon-selected-text">' + cls + '</span>');
+        }
 
-    function createPreview(src, name) {
-        $('#image-preview').attr('src', src);
-        $('#image-preview').attr('alt', name);
-    }
+        function clearIcon() {
+          $iconValue.val('').trigger('change');
+          $iconSelected.html('<i class="fa-regular fa-circle-question"></i><span class="icon-selected-text">(Chưa chọn)</span>');
+        }
+
+        function openPanel() {
+          $panel.show();
+          $search.val('');
+          $meta.text("Có " + ICONS.length + " icon (FA6 solid).");
+          renderIcons('');
+          setTimeout(function(){ $search.focus(); }, 0);
+        }
+        function closePanel() { $panel.hide(); }
+
+        $('#btn-open-icon').on('click', function () {
+          $panel.is(':visible') ? closePanel() : openPanel();
+        });
+
+        $('#btn-clear-icon').on('click', function () { clearIcon(); });
+
+        $search.on('input', function () { renderIcons($search.val()); });
+
+        $(document).on('mousedown', function (e) {
+          if (!$(e.target).closest('.icon-picker-wrap').length) closePanel();
+        });
+
+        var currentIcon = ($iconValue.val() || "").trim();
+        if (currentIcon) setSelectedIcon(currentIcon); else clearIcon();
+
+        $form.on('submit', function () {
+            var val = normalizeHex($colorCode.val());
+            $colorCode.val(val);
+            if (val && !isValidHex6(val)) return false;
+            if ($form.valid && !$form.valid()) return false;
+            return true;
+        });
+
+        var initColor = normalizeHex($colorCode.val());
+        $colorCode.val(initColor);
+        if (isValidHex6(initColor)) $picker.val(initColor);
     });
 </script>
-

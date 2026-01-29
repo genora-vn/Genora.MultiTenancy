@@ -38,12 +38,10 @@
                 document.querySelectorAll('input.dob-input').forEach(ensureFlatpickr);
             });
 
-            // ✅ delegation: modal load ajax xong, chỉ cần focus vào input là attach flatpickr
             document.addEventListener('focusin', function (e) {
                 const el = e.target;
                 if (el && el.matches && el.matches('input.dob-input')) {
                     ensureFlatpickr(el);
-                    // mở luôn khi vừa focus/click
                     if (el._flatpickr) el._flatpickr.open();
                 }
             });
@@ -66,6 +64,22 @@
                                 text="@L["NewAppCustomer"]"
                                 icon="plus"
                                 button-type="Outline_Primary" />
+                }
+                @if (await AuthorizationService.IsGrantedAsync(MultiTenancyPermissions.AppCustomers.Default) ||
+                                await AuthorizationService.IsGrantedAsync(MultiTenancyPermissions.HostAppCustomers.Default))
+                {
+                    <abp-button id="DownloadCustomerTemplateBtn"
+                                text="@L["DownloadTemplateBtn"]"
+                                icon="download"
+                                button-type="Outline_Secondary" />
+
+                    <label class="btn btn-outline-success mb-0">
+                        <i class="fa fa-upload"></i> @L["ImportExcel"]
+                        <input type="file"
+                               id="ImportCustomerExcelInput"
+                               accept=".xlsx"
+                               hidden />
+                    </label>
                 }
             </abp-column>
         </abp-row>

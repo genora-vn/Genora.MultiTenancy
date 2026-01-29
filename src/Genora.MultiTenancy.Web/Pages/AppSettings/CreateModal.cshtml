@@ -12,7 +12,11 @@
     <abp-modal>
         <abp-modal-header title="@L["NewAppSetting"].Value"></abp-modal-header>
         <abp-modal-body>
+            <abp-input asp-for="AppSetting.SettingType" id="setting-type" placeholder="Nhập loại cấu hình" label="@L["SettingType"]" />
             <abp-input asp-for="AppSetting.SettingKey" placeholder="Nhập mã cấu hình (vd: color_background, logo_image,..)" label="@L["SettingKey"]" />
+            <div class="group" id="input-value">
+                <abp-input asp-for="AppSetting.SettingValue" placeholder="Nhập giá trị cấu hình (vd: #FFFFF,https://example.com/logo.img,...)" label="@L["SettingValue"]" />
+            </div>
             <div class="form-check mb-3">
                 <input class="form-check-input" type="checkbox"
                        id="IsImageInput"
@@ -21,13 +25,6 @@
                 <label class="form-check-label" for="IsImageInput">@L["IsImageInput"]</label>
             </div>
             <input type="hidden" name="AppSetting.IsImageInput" value="false" />
-
-            <abp-input asp-for="AppSetting.SettingType" id="setting-type" placeholder="Nhập loại cấu hình" label="@L["SettingType"]" />
-
-            <div class="group" id="input-value">
-                <abp-input asp-for="AppSetting.SettingValue" placeholder="Nhập giá trị cấu hình (vd: #FFFFF,https://example.com/logo.img,...)" label="@L["SettingValue"]" />
-            </div>
-
             <div class="mb-3" style="display:none" id="input-image">
                 <div class="image-upload-group">
                     <label for="images" class="form-label mb-1">
@@ -45,16 +42,15 @@
                     <div class="preview-grid" id="previewGrid"></div>
                 </div>
             </div>
-
             <div class="mb-3">
                 <label asp-for="AppSetting.Description" class="form-label">@L["Description"]</label>
                 <textarea asp-for="AppSetting.Description"
                           class="form-control"
                           placeholder="Mô tả cấu hình"
                           rows="4"></textarea>
+                <span asp-validation-for="AppSetting.Description" class="text-danger"></span>
             </div>
-
-            <abp-input asp-for="AppSetting.IsActive" placeholder="Nhập mã cấu hình" label="@L["IsActive"]" />
+            <abp-input asp-for="AppSetting.IsActive" label="@L["IsActive"]" />
         </abp-modal-body>
         <abp-modal-footer buttons="@(AbpModalButtons.Cancel | AbpModalButtons.Save)"></abp-modal-footer>
     </abp-modal>
@@ -127,7 +123,6 @@
         const MAX_FILE_MB = 15;
         const MAX_FILE_BYTES = MAX_FILE_MB * 1024 * 1024;
 
-        // Event delegation: luôn bắt được dù modal inject/replace
         document.addEventListener('change', function (e) {
             const t = e.target;
 

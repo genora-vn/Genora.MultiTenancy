@@ -1,6 +1,6 @@
-﻿using DocumentFormat.OpenXml.Vml.Office;
-using Genora.MultiTenancy.AppDtos.AppEmails;
+﻿using Genora.MultiTenancy.AppDtos.AppEmails;
 using Genora.MultiTenancy.AppServices.AppEmails;
+using Genora.MultiTenancy.AppServices.AppZaloAuths;
 using Genora.MultiTenancy.DomainModels.AppBookingPlayers;
 using Genora.MultiTenancy.DomainModels.AppBookings;
 using Genora.MultiTenancy.DomainModels.AppCalendarSlotPrices;
@@ -14,30 +14,35 @@ using Genora.MultiTenancy.Features.AppEmails;
 using Genora.MultiTenancy.Helpers;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Linq.Dynamic.Core;
 using System.Net;
 using System.Threading.Tasks;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Application.Services;
+using Volo.Abp.BackgroundJobs;
 using Volo.Abp.Domain.Entities;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Settings;
 using Volo.Abp.Validation;
 
 namespace Genora.MultiTenancy.AppDtos.AppBookings;
+
 public class MiniAppBookingAppService : ApplicationService, IMiniAppBookingAppService
 {
     private readonly IRepository<Booking, Guid> _bookingRepo;
     private readonly IRepository<BookingPlayer, Guid> _playerRepo;
     private readonly IRepository<Customer, Guid> _customerRepo;
-    private readonly IRepository<GolfCourse, Guid> _golfcourseRepo;
     private readonly IRepository<CalendarSlot, Guid> _calendarSlotRepo;
     private readonly IRepository<CalendarSlotPrice, Guid> _calendarSlotPriceRepo;
     private readonly IRepository<CustomerType, Guid> _customerType;
     private readonly IAppEmailSenderService _appEmailSenderService;
     private readonly IRepository<OptionExtend, Guid> _optionExtendRepo;
     private readonly ISettingProvider _settingProvider;
+
+    private readonly IBackgroundJobManager _jobManager;
+
     public MiniAppBookingAppService(
         IRepository<Booking, Guid> bookingRepo,
         IRepository<BookingPlayer, Guid> playerRepo,
@@ -48,25 +53,26 @@ public class MiniAppBookingAppService : ApplicationService, IMiniAppBookingAppSe
         IRepository<CustomerType, Guid> customerType,
         IAppEmailSenderService appEmailSenderService,
         IRepository<OptionExtend, Guid> optionExtendRepo,
-        ISettingProvider settingProvider)
+        ISettingProvider settingProvider,
+        IBackgroundJobManager jobManager)
     {
         _bookingRepo = bookingRepo;
         _playerRepo = playerRepo;
         _customerRepo = customerRepo;
-        _golfcourseRepo = golfcourseRepo;
         _calendarSlotRepo = calendarSlotRepo;
         _calendarSlotPriceRepo = calendarSlotPriceRepo;
         _customerType = customerType;
         _appEmailSenderService = appEmailSenderService;
         _optionExtendRepo = optionExtendRepo;
         _settingProvider = settingProvider;
+        _jobManager = jobManager;
     }
 
     public async Task<MiniAppBookingDetailDto> CreateFromMiniAppAsync(MiniAppCreateBookingDto input)
     {
-
         var customer = await _customerRepo.GetAsync(input.CustomerId);
-        if (customer == null) return new MiniAppBookingDetailDto { Error = (int)HttpStatusCode.Unauthorized, Message = "Quý khách chưa đăng nhập dịch vụ" };
+        if (customer == null)
+            return new MiniAppBookingDetailDto { Error = (int)HttpStatusCode.Unauthorized, Message = "Quý khách chưa đăng nhập dịch vụ" };
 
         if (input.IsExportInvoice)
         {
@@ -89,7 +95,7 @@ public class MiniAppBookingAppService : ApplicationService, IMiniAppBookingAppSe
         if (calendarSlot == null)
             return new MiniAppBookingDetailDto { Error = (int)HttpStatusCode.NotFound, Message = "Không tìm thấy giờ chơi" };
 
-        var datePart = calendarSlot?.ApplyDate.ToString("ddMMyy");
+        var datePart = calendarSlot.ApplyDate.ToString("ddMMyy");
 
         var countInDay = await _bookingRepo.CountAsync(x => x.PlayDate.Date == input.PlayDate.Date);
         var serial = (countInDay + 1).ToString("D3");
@@ -97,9 +103,9 @@ public class MiniAppBookingAppService : ApplicationService, IMiniAppBookingAppSe
         var bookingCode = $"{customer.CustomerCode}-{datePart}-{serial}";
         if (await _bookingRepo.AnyAsync(b => b.BookingCode == bookingCode))
         {
-            // trường hợp hiếm: đã có booking cùng mã
-            bookingCode = $"{customer.CustomerCode}-{datePart}-{serial + 1}";
+            bookingCode = $"{customer.CustomerCode}-{datePart}-{(countInDay + 2).ToString("D3")}";
         }
+
         // Lấy giá theo loại khách + số hố
         var myPriceRow = calendarSlot.Prices.FirstOrDefault(x => x.CustomerTypeId == customer.CustomerTypeId);
 
@@ -117,22 +123,25 @@ public class MiniAppBookingAppService : ApplicationService, IMiniAppBookingAppSe
         input.PricePerGolfer = myPriceRow != null
             ? PriceByHoleHelper.GetPriceByNumberHoles(myPriceRow, input.NumberHoles)
             : 0m;
+
         // Tổng tiền
         input.TotalAmount = input.PricePerGolfer * input.NumberOfGolfers;
+
         var booking = new Booking(
-             GuidGenerator.Create(),
-             bookingCode,
-             input.CustomerId,
-             input.GolfCourseId,
-             input.CalendarSlotId,
-             calendarSlot.ApplyDate,
-             input.NumberOfGolfers,
-             input.PricePerGolfer,
-              input.TotalAmount,
-             input.PaymentMethod,
-             BookingStatus.Processing,
-             input.Source
-         );
+            GuidGenerator.Create(),
+            bookingCode,
+            input.CustomerId,
+            input.GolfCourseId,
+            input.CalendarSlotId,
+            calendarSlot.ApplyDate,
+            input.NumberOfGolfers,
+            input.PricePerGolfer,
+            input.TotalAmount,
+            input.PaymentMethod,
+            BookingStatus.Processing,
+            input.Source
+        );
+
         booking.Utility = (input.Utilities != null && input.Utilities.Count > 0) ? string.Join(",", input.Utilities) : string.Empty;
         booking.NumberHole = input.NumberHoles;
         booking.IsExportInvoice = input.IsExportInvoice;
@@ -166,6 +175,7 @@ public class MiniAppBookingAppService : ApplicationService, IMiniAppBookingAppSe
                     p.PricePerPlayer,
                     p.Notes
                 );
+
                 player.VgaCode = p.VgaCode;
                 player.PricePerPlayer = booking.PricePerGolfer;
 
@@ -175,12 +185,39 @@ public class MiniAppBookingAppService : ApplicationService, IMiniAppBookingAppSe
 
         await CurrentUnitOfWork.SaveChangesAsync();
 
-        // ✅ Map CustomerTypeSummary chuẩn theo CustomerTypeId
+        try
+        {
+            if (!string.IsNullOrWhiteSpace(customer.PhoneNumber))
+            {
+                await _jobManager.EnqueueAsync(
+                    new ZbsSendJobArgs
+                    {
+                        TenantId = CurrentTenant.Id,
+                        TemplateKey = "BookingCreated",
+                        Phone = customer.PhoneNumber,
+                        TrackingId = booking.Id.ToString(),
+                        TemplateData = new
+                        {
+                            customer_name = customer.FullName,
+                            booking_id = booking.BookingCode,
+                            tee_off_date = booking.PlayDate.ToString("dd/MM/yyyy", CultureInfo.InvariantCulture),
+                            tee_off_time = $"{calendarSlot.TimeFrom:hh\\:mm}",
+                            number_of_player = booking.NumberOfGolfers
+                        }
+                    },
+                    priority: BackgroundJobPriority.Normal
+                );
+            }
+        }
+        catch
+        {
+            // không throw để không ảnh hưởng luồng create booking
+        }
+
         var ct = await _customerType.FindAsync(x => x.Id == customer.CustomerTypeId);
         var ctName = ct?.Name ?? ct?.Code ?? "N/A";
         var customerTypeSummary = $"{ctName}";
 
-        // ✅ Enqueue email (không block)
         try
         {
             static string ToHHmm(TimeSpan? ts) => ts.HasValue ? ts.Value.ToString(@"hh\:mm") : "";
@@ -193,15 +230,11 @@ public class MiniAppBookingAppService : ApplicationService, IMiniAppBookingAppSe
                 BookerName = customer.FullName ?? "N/A",
                 BookerPhone = customer.PhoneNumber ?? "N/A",
 
-                // giữ DateTime gốc để audit
                 PlayDate = booking.PlayDate,
                 PlayDateText = ToDDMMYYYY(booking.PlayDate),
 
-                // giờ chơi (TimeSpan -> HH:mm)
                 TeeTimeFromText = ToHHmm(calendarSlot?.TimeFrom),
                 TeeTimeToText = ToHHmm(calendarSlot?.TimeTo),
-
-                // nếu vẫn muốn TeeTime gộp
                 TeeTime = $"{ToHHmm(calendarSlot?.TimeFrom)} - {ToHHmm(calendarSlot?.TimeTo)}",
 
                 NumberOfGolfers = booking.NumberOfGolfers,
@@ -211,7 +244,6 @@ public class MiniAppBookingAppService : ApplicationService, IMiniAppBookingAppSe
                 TotalAmountText = $"{booking.TotalAmount:N0} đ",
 
                 PaymentMethod = booking.PaymentMethod.ToString(),
-
                 OtherRequests = otherRequestsText,
 
                 IsExportInvoice = booking.IsExportInvoice,
@@ -231,7 +263,7 @@ public class MiniAppBookingAppService : ApplicationService, IMiniAppBookingAppSe
             await _appEmailSenderService.EnqueueTemplateAsync(
                 templateName: AppEmailTemplateNames.BookingNewRequest,
                 model: model,
-                toEmails: toEmails ?? "tandv@baygolf.vn", // fallback nếu chưa set
+                toEmails: toEmails ?? "tandv@baygolf.vn",
                 subject: subject,
                 cc: NullIfEmpty(ccEmails),
                 bcc: NullIfEmpty(bccEmails),
@@ -241,7 +273,7 @@ public class MiniAppBookingAppService : ApplicationService, IMiniAppBookingAppSe
         }
         catch
         {
-            // ✅ không throw để tránh ảnh hưởng kết quả booking của mini app
+            // không throw
         }
 
         // trả về dto đầy đủ (kèm players)
@@ -250,7 +282,7 @@ public class MiniAppBookingAppService : ApplicationService, IMiniAppBookingAppSe
         dto.Utilities = input.Utilities;
         dto.FrameTimes = $"{calendarSlot.TimeFrom} - {calendarSlot.TimeTo}";
         var players = await _playerRepo.GetListAsync(x => x.BookingId == booking.Id);
-        dto.Players = ObjectMapper.Map<System.Collections.Generic.List<BookingPlayer>, System.Collections.Generic.List<AppBookingPlayerDto>>(players);
+        dto.Players = ObjectMapper.Map<List<BookingPlayer>, List<AppBookingPlayerDto>>(players);
 
         return new MiniAppBookingDetailDto { Error = 0, Message = "Success", Data = dto };
     }
@@ -261,18 +293,22 @@ public class MiniAppBookingAppService : ApplicationService, IMiniAppBookingAppSe
         try
         {
             if (input.CustomerId == Guid.Empty) throw new MemberAccessException("Vui lòng đăng nhập trước khi truy cập");
-            // Mini app chỉ xem booking của chính customer
+
             var query = await _bookingRepo.WithDetailsAsync(x => x.CalendarSlot);
             query = query.Where(x => x.CustomerId == input.CustomerId);
 
             if (input.PlayDateFrom.HasValue)
             {
-                query = query.Where(x => (x.PlayDate > input.PlayDateFrom.Value.Date) || (x.CalendarSlotId.HasValue && x.PlayDate.Date == input.PlayDateFrom.Value.Date && x.CalendarSlot.TimeFrom > input.PlayDateFrom.Value.TimeOfDay));
+                query = query.Where(x =>
+                    (x.PlayDate > input.PlayDateFrom.Value.Date)
+                    || (x.CalendarSlotId.HasValue && x.PlayDate.Date == input.PlayDateFrom.Value.Date && x.CalendarSlot.TimeFrom > input.PlayDateFrom.Value.TimeOfDay));
             }
 
             if (input.PlayDateTo.HasValue)
             {
-                query = query.Where(x => (x.PlayDate < input.PlayDateTo.Value.Date) || ((x.CalendarSlotId.HasValue && x.PlayDate.Date == input.PlayDateTo.Value.Date && x.CalendarSlot.TimeFrom < input.PlayDateTo.Value.TimeOfDay)));
+                query = query.Where(x =>
+                    (x.PlayDate < input.PlayDateTo.Value.Date)
+                    || (x.CalendarSlotId.HasValue && x.PlayDate.Date == input.PlayDateTo.Value.Date && x.CalendarSlot.TimeFrom < input.PlayDateTo.Value.TimeOfDay));
             }
 
             if (input.Status.HasValue)
@@ -287,7 +323,7 @@ public class MiniAppBookingAppService : ApplicationService, IMiniAppBookingAppSe
             var total = await AsyncExecuter.CountAsync(query);
             var items = await AsyncExecuter.ToListAsync(query.Skip(input.SkipCount).Take(input.MaxResultCount));
 
-            var dto = ObjectMapper.Map<System.Collections.Generic.List<Booking>, System.Collections.Generic.List<BookingListData>>(items);
+            var dto = ObjectMapper.Map<List<Booking>, List<BookingListData>>(items);
             var calendars = await _calendarSlotRepo.GetQueryableAsync();
 
             foreach (var item in dto)
@@ -297,11 +333,10 @@ public class MiniAppBookingAppService : ApplicationService, IMiniAppBookingAppSe
                 {
                     var calendar = calendars.FirstOrDefault(x => x.Id == item.CalendarSlotId.Value);
                     if (calendar != null)
-                    {
                         item.FrameTimes = $"{calendar.TimeFrom} - {calendar.TimeTo}";
-                    }
                 }
             }
+
             var result = new PagedResultDto<BookingListData>(total, dto);
             return new MiniAppBookingListDto { Data = result, Error = 0, Message = "Success" };
         }
@@ -316,39 +351,43 @@ public class MiniAppBookingAppService : ApplicationService, IMiniAppBookingAppSe
         try
         {
             if (customerId == Guid.Empty) throw new MemberAccessException("Vui lòng đăng nhập trước khi truy cập");
+
             var booking = await _bookingRepo.FindAsync(x => x.Id == id);
             if (booking == null)
                 throw new EntityNotFoundException(typeof(Booking), id);
 
             var dto = ObjectMapper.Map<Booking, BookingDetailData>(booking);
-
             dto.VNDayOfWeek = FormatDateTimeHelper.GetVietnameseDayOfWeek(dto.PlayDate);
+
             var players = await _playerRepo.GetListAsync(x => x.BookingId == id);
-            dto.Players = ObjectMapper.Map<System.Collections.Generic.List<BookingPlayer>, System.Collections.Generic.List<AppBookingPlayerDto>>(players);
-            dto.Utilities = string.IsNullOrEmpty(booking.Utility) ? new List<int>() : booking.Utility.Split(",").Select(int.Parse).ToList();
+            dto.Players = ObjectMapper.Map<List<BookingPlayer>, List<AppBookingPlayerDto>>(players);
+
+            dto.Utilities = string.IsNullOrEmpty(booking.Utility)
+                ? new List<int>()
+                : booking.Utility.Split(",").Select(int.Parse).ToList();
+
             dto.NumberHoles = booking.NumberHole;
+
             var visCustomerType = await _customerType.FirstOrDefaultAsync(c => c.Code == "VIS");
             var visCustomerTypeId = visCustomerType?.Id;
 
             if (dto.CalendarSlotId.HasValue && dto.CalendarSlotId.Value != Guid.Empty)
             {
                 var getCalendarPrice = await _calendarSlotPriceRepo.FirstOrDefaultAsync(
-    x => x.CalendarSlotId == booking.CalendarSlotId
-      && x.CustomerTypeId == visCustomerTypeId
-);
+                    x => x.CalendarSlotId == booking.CalendarSlotId && x.CustomerTypeId == visCustomerTypeId
+                );
 
                 var basePrice = getCalendarPrice != null
                     ? PriceByHoleHelper.GetPriceByNumberHoles(getCalendarPrice, booking.NumberHole)
                     : 0m;
 
-                dto.OriginalTotalAmount = basePrice * (booking?.NumberOfGolfers ?? 0);
+                dto.OriginalTotalAmount = basePrice * (booking.NumberOfGolfers);
 
                 var calendar = await _calendarSlotRepo.FirstOrDefaultAsync(x => x.Id == dto.CalendarSlotId.Value);
                 if (calendar != null)
-                {
                     dto.FrameTimes = $"{calendar.TimeFrom} - {calendar.TimeTo}";
-                }
             }
+
             return new MiniAppBookingDetailDto { Data = dto, Error = 0, Message = "Success" };
         }
         catch (Exception e)
@@ -387,7 +426,6 @@ public class MiniAppBookingAppService : ApplicationService, IMiniAppBookingAppSe
         if (string.IsNullOrWhiteSpace(utilityCsv))
             return string.Empty;
 
-        // parse "1,4" => [1,4]
         var ids = utilityCsv.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
                             .Select(x => int.TryParse(x, out var n) ? (int?)n : null)
                             .Where(x => x.HasValue)
@@ -400,7 +438,6 @@ public class MiniAppBookingAppService : ApplicationService, IMiniAppBookingAppSe
 
         var query = await _optionExtendRepo.GetQueryableAsync();
 
-        // ví dụ Type == OptionExtendTypeEnum.GolfCourseUlitity.Value
         var utilities = query
             .Where(x => ids.Contains(x.OptionId))
             .Select(x => new { x.OptionId, x.OptionName })
@@ -409,45 +446,12 @@ public class MiniAppBookingAppService : ApplicationService, IMiniAppBookingAppSe
         if (utilities.Count == 0)
             return string.Empty;
 
-        // giữ thứ tự theo input ids
         var dict = utilities.ToDictionary(x => x.OptionId, x => x.OptionName);
 
         var lines = ids
             .Where(id => dict.ContainsKey(id))
             .Select(id => $"• {dict[id]}");
 
-        // không dư dòng, join đúng newline
         return string.Join(Environment.NewLine, lines);
     }
-
-    //public async Task<MiniAppBookingListDto> GetBookingHistoryAsync(GetMiniAppBookingListInput input)
-    //{
-    //    try
-    //    {
-    //        if (input.CustomerId == Guid.Empty) throw new Exception("Vui lòng đăng nhập");
-    //        var queries = await _bookingRepo.GetQueryableAsync();
-    //        queries = queries.Where(b => b.CustomerId == input.CustomerId);
-
-    //        var sorting = string.IsNullOrWhiteSpace(input.Sorting)
-    //           ? nameof(Customer.CreationTime) + " DESC"
-    //           : input.Sorting;
-
-    //        queries = queries.OrderBy(sorting);
-
-    //        var totalCount = await AsyncExecuter.CountAsync(queries);
-
-    //        var items = await AsyncExecuter.ToListAsync(
-    //            queries.Skip(input.SkipCount).Take(input.MaxResultCount)
-    //        );
-
-    //        var result = new PagedResultDto<AppBookingDto>(
-    //            totalCount,
-    //            ObjectMapper.Map<List<Booking>, List<AppBookingDto>>(items)
-    //        );
-    //        return new MiniAppBookingListDto { Data = result, Error = 0, Message = "Success" };
-    //    }catch (Exception e)
-    //    {
-    //        return new MiniAppBookingListDto {  Error = (int)HttpStatusCode.BadRequest, Message = e.Message };
-    //    }
-    //}
 }

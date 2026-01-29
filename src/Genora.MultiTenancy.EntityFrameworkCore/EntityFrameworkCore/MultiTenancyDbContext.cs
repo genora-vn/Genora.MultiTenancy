@@ -57,6 +57,7 @@ public class MultiTenancyDbContext :
     public DbSet<CalendarSlot> CalendarSlot { get; set; }
     public DbSet<CalendarSlotPrice> CalendarSlotPrice { get; set; }
     public DbSet<News> News { get; set; }
+    public DbSet<NewsRelated> NewsRelateds { get; set; }
     public DbSet<CustomerMembership> CustomerMembership { get; set; }
     public DbSet<Booking> Booking { get; set; }
     public DbSet<BookingPlayer> BookingPlayer { get; set; }
@@ -182,6 +183,13 @@ public class MultiTenancyDbContext :
              .HasForeignKey(x => x.MembershipTierId)
              .OnDelete(DeleteBehavior.Restrict);
             b.HasIndex(x => x.MembershipTierId);
+            b.Property(x => x.ProvinceCode).HasMaxLength(20);
+            b.HasIndex(x => x.ProvinceCode);
+            // ✅ Unique theo (TenantId, CustomerCode) nhưng CHỈ áp dụng cho record đang active
+            b.HasIndex(x => new { x.TenantId, x.CustomerCode })
+             .IsUnique()
+             .HasDatabaseName("IX_AppCustomers_TenantId_CustomerCode")
+             .HasFilter("[IsActive] = 1 AND [CustomerCode] IS NOT NULL");
         });
 
         // ===== AppGolfCourses =====
@@ -303,6 +311,39 @@ public class MultiTenancyDbContext :
             b.HasIndex(x => new { x.TenantId, x.Status, x.CreationTime });
             b.HasIndex(x => new { x.TenantId, x.BookingId });
             b.HasIndex(x => new { x.TenantId, x.BookingCode });
+        });
+
+        builder.Entity<News>(b =>
+        {
+            b.ToTable("AppNews");
+            b.ConfigureByConvention();
+
+            b.Property(x => x.Title).IsRequired().HasMaxLength(255);
+            b.Property(x => x.ShortDescription).IsRequired().HasMaxLength(1000);
+            b.Property(x => x.ThumbnailUrl).HasMaxLength(500);
+
+            b.HasIndex(x => new { x.TenantId, x.CreationTime });
+        });
+
+        builder.Entity<NewsRelated>(b =>
+        {
+            b.ToTable("AppNewsRelateds");
+            b.ConfigureByConvention();
+
+            b.Property(x => x.NewsId).IsRequired();
+            b.Property(x => x.RelatedNewsId).IsRequired();
+
+            b.HasIndex(x => new { x.TenantId, x.NewsId, x.RelatedNewsId }).IsUnique();
+
+            b.HasOne<News>()
+                .WithMany()
+                .HasForeignKey(x => x.NewsId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            b.HasOne<News>()
+                .WithMany()
+                .HasForeignKey(x => x.RelatedNewsId)
+                .OnDelete(DeleteBehavior.Restrict);
         });
     }
 }

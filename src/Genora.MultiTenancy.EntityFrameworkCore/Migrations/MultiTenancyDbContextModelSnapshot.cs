@@ -829,6 +829,10 @@ namespace Genora.MultiTenancy.Migrations
                         .HasMaxLength(20)
                         .HasColumnType("nvarchar(20)");
 
+                    b.Property<string>("ProvinceCode")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
                     b.Property<Guid?>("TenantId")
                         .HasColumnType("uniqueidentifier")
                         .HasColumnName("TenantId");
@@ -851,10 +855,12 @@ namespace Genora.MultiTenancy.Migrations
 
                     b.HasIndex("MembershipTierId");
 
+                    b.HasIndex("ProvinceCode");
+
                     b.HasIndex("TenantId", "CustomerCode")
                         .IsUnique()
                         .HasDatabaseName("IX_AppCustomers_TenantId_CustomerCode")
-                        .HasFilter("[CustomerCode] IS NOT NULL");
+                        .HasFilter("[IsActive] = 1 AND [CustomerCode] IS NOT NULL");
 
                     b.HasIndex("TenantId", "PhoneNumber")
                         .IsUnique()
@@ -1307,7 +1313,72 @@ namespace Genora.MultiTenancy.Migrations
 
                     b.HasIndex("GolfCourseId");
 
+                    b.HasIndex("TenantId", "CreationTime");
+
                     b.ToTable("AppNews", (string)null);
+                });
+
+            modelBuilder.Entity("Genora.MultiTenancy.DomainModels.AppNews.NewsRelated", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreationTime")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("CreationTime");
+
+                    b.Property<Guid?>("CreatorId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("CreatorId");
+
+                    b.Property<Guid?>("DeleterId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("DeleterId");
+
+                    b.Property<DateTime?>("DeletionTime")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("DeletionTime");
+
+                    b.Property<bool>("IsDeleted")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false)
+                        .HasColumnName("IsDeleted");
+
+                    b.Property<DateTime?>("LastModificationTime")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("LastModificationTime");
+
+                    b.Property<Guid?>("LastModifierId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("LastModifierId");
+
+                    b.Property<Guid>("NewsId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("NewsId1")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("RelatedNewsId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("TenantId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("TenantId");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("NewsId");
+
+                    b.HasIndex("NewsId1");
+
+                    b.HasIndex("RelatedNewsId");
+
+                    b.HasIndex("TenantId", "NewsId", "RelatedNewsId")
+                        .IsUnique()
+                        .HasFilter("[TenantId] IS NOT NULL");
+
+                    b.ToTable("AppNewsRelateds", (string)null);
                 });
 
             modelBuilder.Entity("Genora.MultiTenancy.DomainModels.AppOptionExtend.OptionExtend", b =>
@@ -3713,6 +3784,25 @@ namespace Genora.MultiTenancy.Migrations
                     b.Navigation("GolfCourse");
                 });
 
+            modelBuilder.Entity("Genora.MultiTenancy.DomainModels.AppNews.NewsRelated", b =>
+                {
+                    b.HasOne("Genora.MultiTenancy.DomainModels.AppNews.News", null)
+                        .WithMany()
+                        .HasForeignKey("NewsId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Genora.MultiTenancy.DomainModels.AppNews.News", null)
+                        .WithMany("RelatedNewsLinks")
+                        .HasForeignKey("NewsId1");
+
+                    b.HasOne("Genora.MultiTenancy.DomainModels.AppNews.News", null)
+                        .WithMany()
+                        .HasForeignKey("RelatedNewsId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("Volo.Abp.AuditLogging.AuditLogAction", b =>
                 {
                     b.HasOne("Volo.Abp.AuditLogging.AuditLog", null)
@@ -3906,6 +3996,11 @@ namespace Genora.MultiTenancy.Migrations
             modelBuilder.Entity("Genora.MultiTenancy.DomainModels.AppMembershipTiers.MembershipTier", b =>
                 {
                     b.Navigation("CustomerMemberships");
+                });
+
+            modelBuilder.Entity("Genora.MultiTenancy.DomainModels.AppNews.News", b =>
+                {
+                    b.Navigation("RelatedNewsLinks");
                 });
 
             modelBuilder.Entity("Volo.Abp.AuditLogging.AuditLog", b =>

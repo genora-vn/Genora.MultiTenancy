@@ -8,8 +8,10 @@ using System.Threading;
 using System.Threading.Tasks;
 using Volo.Abp;
 using Volo.Abp.Domain.Repositories;
+using Volo.Abp.Linq;
 using Volo.Abp.MultiTenancy;
 using Volo.Abp.Security.Encryption;
+using Volo.Abp.Uow;
 
 namespace Genora.MultiTenancy.AppServices.AppZaloAuths;
 
@@ -23,24 +25,34 @@ public class ZaloTokenProvider : IZaloTokenProvider
     private readonly IStringEncryptionService _encrypt;
     private readonly ICurrentTenant _currentTenant;
 
+    private readonly IUnitOfWorkManager _uowManager;
+    private readonly IAsyncQueryableExecuter _asyncExecuter;
+
     public ZaloTokenProvider(
         IRepository<ZaloAuth, Guid> authRepo,
         IConfiguration cfg,
         IZaloOAuthClient oauthClient,
         IStringEncryptionService encrypt,
-        ICurrentTenant currentTenant)
+        ICurrentTenant currentTenant,
+        IUnitOfWorkManager uowManager,
+        IAsyncQueryableExecuter asyncExecuter)
     {
         _authRepo = authRepo;
         _cfg = cfg;
         _oauthClient = oauthClient;
         _encrypt = encrypt;
         _currentTenant = currentTenant;
+
+        _uowManager = uowManager;
+        _asyncExecuter = asyncExecuter;
     }
 
     private Guid? ScopeTenantId => _currentTenant.IsAvailable ? _currentTenant.Id : (Guid?)null;
 
     public async Task<string> GetAccessTokenAsync()
     {
+        using var uow = _uowManager.Begin(requiresNew: true, isTransactional: false);
+
         var auth = await GetBestAuthForUseOrRefreshAsync();
 
         var access = SecurityHelper.DecryptMaybe(auth.AccessToken, _encrypt);
@@ -52,7 +64,10 @@ public class ZaloTokenProvider : IZaloTokenProvider
             auth.ExpireTokenTime.Value <= DateTime.UtcNow.AddSeconds(skewSeconds);
 
         if (!shouldRefresh && auth.IsActive)
+        {
+            await uow.CompleteAsync();
             return access!;
+        }
 
         await _lock.WaitAsync();
         try
@@ -67,9 +82,14 @@ public class ZaloTokenProvider : IZaloTokenProvider
                 !auth.IsActive;
 
             if (!shouldRefresh && auth.IsActive)
+            {
+                await uow.CompleteAsync();
                 return access!;
+            }
 
             var newAuth = await RefreshAndRotateAsync(auth);
+            await uow.CompleteAsync();
+
             return SecurityHelper.DecryptMaybe(newAuth.AccessToken, _encrypt)!;
         }
         finally
@@ -80,12 +100,15 @@ public class ZaloTokenProvider : IZaloTokenProvider
 
     public async Task RefreshNowAsync()
     {
+        using var uow = _uowManager.Begin(requiresNew: true, isTransactional: false);
+
         var auth = await GetBestAuthForUseOrRefreshAsync();
 
         await _lock.WaitAsync();
         try
         {
             await RefreshAndRotateAsync(auth);
+            await uow.CompleteAsync();
         }
         finally
         {
@@ -109,7 +132,6 @@ public class ZaloTokenProvider : IZaloTokenProvider
 
         var newAuth = new ZaloAuth
         {
-            // ✅ giữ đúng tenant scope
             TenantId = current.TenantId,
 
             AppId = current.AppId,
@@ -138,16 +160,24 @@ public class ZaloTokenProvider : IZaloTokenProvider
 
     public async Task DeactivateOtherActivesAsync(Guid keepId)
     {
-        var q = await _authRepo.GetQueryableAsync();
+        using var uow = _uowManager.Begin(requiresNew: true, isTransactional: false);
 
-        // ✅ chỉ thao tác trong scope tenant hiện tại
+        var q = await _authRepo.GetQueryableAsync();
         q = q.Where(x => x.TenantId == ScopeTenantId);
 
-        var actives = q.Where(x => x.IsActive && x.Id != keepId).ToList();
-        if (actives.Count == 0) return;
+        var actives = q.Where(x => x.IsActive && x.Id != keepId);
 
-        foreach (var a in actives) a.IsActive = false;
-        foreach (var a in actives) await _authRepo.UpdateAsync(a, autoSave: true);
+        var list = await _asyncExecuter.ToListAsync(actives);
+        if (list.Count == 0)
+        {
+            await uow.CompleteAsync();
+            return;
+        }
+
+        foreach (var a in list) a.IsActive = false;
+        foreach (var a in list) await _authRepo.UpdateAsync(a, autoSave: true);
+
+        await uow.CompleteAsync();
     }
 
     private async Task CleanupInactiveHistoryAsync()
@@ -156,15 +186,14 @@ public class ZaloTokenProvider : IZaloTokenProvider
         if (maxInactive <= 0) return;
 
         var q = await _authRepo.GetQueryableAsync();
-
-        // ✅ dọn theo scope hiện tại (tenant hoặc host)
         q = q.Where(x => x.TenantId == ScopeTenantId);
 
-        var oldIds = q.Where(x => !x.IsActive)
-                      .OrderByDescending(x => x.CreationTime)
-                      .Skip(maxInactive)
-                      .Select(x => x.Id)
-                      .ToList();
+        var oldIdsQuery = q.Where(x => !x.IsActive)
+                           .OrderByDescending(x => x.CreationTime)
+                           .Skip(maxInactive)
+                           .Select(x => x.Id);
+
+        var oldIds = await _asyncExecuter.ToListAsync(oldIdsQuery);
 
         foreach (var id in oldIds)
         {
@@ -176,12 +205,14 @@ public class ZaloTokenProvider : IZaloTokenProvider
     {
         var q = await _authRepo.GetQueryableAsync();
 
-        // ✅ chỉ lấy token trong scope hiện tại
+        // ✅ scope theo tenant hiện tại (tenant hoặc host)
         q = q.Where(x => x.TenantId == ScopeTenantId);
 
-        var active = q.Where(x => x.IsActive)
-                      .OrderByDescending(x => x.CreationTime)
-                      .FirstOrDefault();
+        // ✅ Active mới nhất
+        var activeQuery = q.Where(x => x.IsActive)
+                           .OrderByDescending(x => x.CreationTime);
+
+        var active = await _asyncExecuter.FirstOrDefaultAsync(activeQuery);
 
         if (active != null)
         {
@@ -196,8 +227,11 @@ public class ZaloTokenProvider : IZaloTokenProvider
             }
         }
 
-        var candidate = q.OrderByDescending(x => x.CreationTime)
-                         .FirstOrDefault(x => !string.IsNullOrWhiteSpace(x.RefreshToken));
+        // ✅ candidate có refresh token (mới nhất)
+        var candidateQuery = q.Where(x => !string.IsNullOrWhiteSpace(x.RefreshToken))
+                              .OrderByDescending(x => x.CreationTime);
+
+        var candidate = await _asyncExecuter.FirstOrDefaultAsync(candidateQuery);
 
         if (candidate == null)
             throw new BusinessException("ZaloAuth:NotConfigured");

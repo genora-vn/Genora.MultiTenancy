@@ -1,18 +1,27 @@
 ﻿using ClosedXML.Excel;
 using Genora.MultiTenancy.AppDtos.AppCalendarSlots;
 using Genora.MultiTenancy.DomainModels.AppCustomerTypes;
+using Genora.MultiTenancy.Enums.ErrorCodes;
 using Genora.MultiTenancy.Helpers;
+using Genora.MultiTenancy.Localization;
+using Microsoft.Extensions.Localization;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using Volo.Abp;
 using Volo.Abp.DependencyInjection;
 
 namespace Genora.MultiTenancy.AppServices.AppCalendarSlots
 {
     public class AppCalendarExcelImporter : ITransientDependency
     {
+        private readonly IStringLocalizer<MultiTenancyResource> _l;
+
+        public AppCalendarExcelImporter(IStringLocalizer<MultiTenancyResource> l)
+        {
+            _l = l;
+        }
+
         public List<(int Row, AppCalendarSlotExcelRowDto Data)> Read(
             Stream stream,
             List<CustomerType> customerTypes)
@@ -22,11 +31,10 @@ namespace Genora.MultiTenancy.AppServices.AppCalendarSlots
 
             var results = new List<(int, AppCalendarSlotExcelRowDto)>();
 
-            // Header row: 1..3, hint row: 4, data start: 5
             var row = 5;
             var totalCustomerTypes = customerTypes.Count;
 
-            while (!ws.Cell(row, 1).IsEmpty()) // col A = GolfCourseCode
+            while (!ws.Cell(row, 1).IsEmpty())
             {
                 try
                 {
@@ -42,9 +50,9 @@ namespace Genora.MultiTenancy.AppServices.AppCalendarSlots
                         MaxSlots = ws.Cell(row, 8).GetValue<int>(),
                         InternalNote = ws.Cell(row, 9).GetString(),
                         Gap = ws.Cell(row, 10).GetValue<int>(),
+                        CustomerTypePrice = new List<CustomerTypeExcelRowDto>()
                     };
 
-                    // chống duplicate theo key
                     if (results.Any(x =>
                         x.Item2.GolfCourseCode == dto.GolfCourseCode &&
                         x.Item2.FromDate.Date == dto.FromDate.Date &&
@@ -56,7 +64,7 @@ namespace Genora.MultiTenancy.AppServices.AppCalendarSlots
                     }
 
                     var index = 0;
-                    var startCol = 11; // K: bắt đầu bảng giá
+                    var startCol = 11;
 
                     for (var col = startCol; col < startCol + (totalCustomerTypes * 4); col += 4)
                     {
@@ -99,9 +107,12 @@ namespace Genora.MultiTenancy.AppServices.AppCalendarSlots
                 }
                 catch (Exception ex)
                 {
-                    throw new UserFriendlyException(
-                        "Import Excel lỗi",
-                        $"Dòng {row}: {ex.Message}"
+                    throw ErrorHelper.ImportError(
+                        _l,
+                        CalendarSlotErrorCodes.UnknownRowError,
+                        row,
+                        ex.Message,
+                        ex.StackTrace
                     );
                 }
 

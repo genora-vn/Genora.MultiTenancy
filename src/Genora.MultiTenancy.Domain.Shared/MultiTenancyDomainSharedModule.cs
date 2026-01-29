@@ -65,6 +65,10 @@ public class MultiTenancyDomainSharedModule : AbpModule
         
         Configure<AbpExceptionLocalizationOptions>(options =>
         {
+            options.MapCodeNamespace("Customer", typeof(MultiTenancyResource));
+            options.MapCodeNamespace("Booking", typeof(MultiTenancyResource));
+            options.MapCodeNamespace("CalendarSlot", typeof(MultiTenancyResource));
+            options.MapCodeNamespace("BookingImport", typeof(MultiTenancyResource));
             options.MapCodeNamespace("MultiTenancy", typeof(MultiTenancyResource));
         });
     }

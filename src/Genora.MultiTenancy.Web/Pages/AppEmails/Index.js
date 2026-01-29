@@ -48,61 +48,61 @@
                                     editModal.open({ id: data.record.id, readonlyParam: true });
                                 }
                             },
-                            {
-                                text: l('Edit'),
-                                visible: function () {
-                                    return abp.auth.isGranted('MultiTenancy.AppEmails.Edit') ||
-                                        abp.auth.isGranted('MultiTenancy.HostAppEmails.Edit');
-                                },
-                                action: function (data) {
-                                    editModal.open({ id: data.record.id });
-                                }
-                            },
-                            {
-                                text: l('SendNow'),
-                                visible: function () {
-                                    return abp.auth.isGranted('MultiTenancy.AppEmails.Send') ||
-                                        abp.auth.isGranted('MultiTenancy.HostAppEmails.Send');
-                                },
-                                action: function (data) {
-                                    service.sendNow(data.record.id).then(function () {
-                                        abp.notify.success(l('QueuedSuccessfully'));
-                                        dataTable.ajax.reload();
-                                    });
-                                }
-                            },
-                            {
-                                text: l('Resend'),
-                                visible: function () {
-                                    return abp.auth.isGranted('MultiTenancy.AppEmails.Resend') ||
-                                        abp.auth.isGranted('MultiTenancy.HostAppEmails.Resend');
-                                },
-                                confirmMessage: function () {
-                                    return l('AreYouSureToResend');
-                                },
-                                action: function (data) {
-                                    service.resend(data.record.id).then(function () {
-                                        abp.notify.success(l('QueuedSuccessfully'));
-                                        dataTable.ajax.reload();
-                                    });
-                                }
-                            },
-                            {
-                                text: l('Delete'),
-                                visible: function () {
-                                    return abp.auth.isGranted('MultiTenancy.AppEmails.Delete') ||
-                                        abp.auth.isGranted('MultiTenancy.HostAppEmails.Delete');
-                                },
-                                confirmMessage: function () {
-                                    return l('AreYouSure');
-                                },
-                                action: function (data) {
-                                    service.delete(data.record.id).then(function () {
-                                        abp.notify.success(l('DeletedSuccessfully'));
-                                        dataTable.ajax.reload();
-                                    });
-                                }
-                            }
+                            //{
+                            //    text: l('Edit'),
+                            //    visible: function () {
+                            //        return abp.auth.isGranted('MultiTenancy.AppEmails.Edit') ||
+                            //            abp.auth.isGranted('MultiTenancy.HostAppEmails.Edit');
+                            //    },
+                            //    action: function (data) {
+                            //        editModal.open({ id: data.record.id });
+                            //    }
+                            //},
+                            //{
+                            //    text: l('SendNow'),
+                            //    visible: function () {
+                            //        return abp.auth.isGranted('MultiTenancy.AppEmails.Send') ||
+                            //            abp.auth.isGranted('MultiTenancy.HostAppEmails.Send');
+                            //    },
+                            //    action: function (data) {
+                            //        service.sendNow(data.record.id).then(function () {
+                            //            abp.notify.success(l('QueuedSuccessfully'));
+                            //            dataTable.ajax.reload();
+                            //        });
+                            //    }
+                            //},
+                            //{
+                            //    text: l('Resend'),
+                            //    visible: function () {
+                            //        return abp.auth.isGranted('MultiTenancy.AppEmails.Resend') ||
+                            //            abp.auth.isGranted('MultiTenancy.HostAppEmails.Resend');
+                            //    },
+                            //    confirmMessage: function () {
+                            //        return l('AreYouSureToResend');
+                            //    },
+                            //    action: function (data) {
+                            //        service.resend(data.record.id).then(function () {
+                            //            abp.notify.success(l('QueuedSuccessfully'));
+                            //            dataTable.ajax.reload();
+                            //        });
+                            //    }
+                            //},
+                            //{
+                            //    text: l('Delete'),
+                            //    visible: function () {
+                            //        return abp.auth.isGranted('MultiTenancy.AppEmails.Delete') ||
+                            //            abp.auth.isGranted('MultiTenancy.HostAppEmails.Delete');
+                            //    },
+                            //    confirmMessage: function () {
+                            //        return l('AreYouSure');
+                            //    },
+                            //    action: function (data) {
+                            //        service.delete(data.record.id).then(function () {
+                            //            abp.notify.success(l('DeletedSuccessfully'));
+                            //            dataTable.ajax.reload();
+                            //        });
+                            //    }
+                            //}
                         ]
                     }
                 },

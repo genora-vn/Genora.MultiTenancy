@@ -68,6 +68,9 @@ public class Customer : FullAuditedAggregateRoot<Guid>, IMultiTenant
 
     public bool IsActive { get; set; } = true;
     public CustomerSource CustomerSource { get; set; }
+
+    [StringLength(20)]
+    public string? ProvinceCode { get; set; }
     // Navigation
     public virtual ICollection<Booking> Bookings { get; set; } = new List<Booking>();
     public virtual ICollection<BookingPlayer> BookingPlayers { get; set; } = new List<BookingPlayer>();

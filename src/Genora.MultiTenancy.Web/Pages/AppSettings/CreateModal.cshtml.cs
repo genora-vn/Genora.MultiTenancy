@@ -1,5 +1,4 @@
 using Genora.MultiTenancy.AppDtos.AppSettings;
-using Genora.MultiTenancy.Apps.AppSettings;
 using Microsoft.AspNetCore.Mvc;
 using System.Threading.Tasks;
 

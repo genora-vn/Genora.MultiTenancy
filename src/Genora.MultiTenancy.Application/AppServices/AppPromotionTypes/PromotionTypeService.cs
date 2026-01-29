@@ -64,11 +64,11 @@ namespace Genora.MultiTenancy.AppServices.AppPromotionTypes
             await CheckGetListPolicyAsync();
             var exist = await Repository.FirstOrDefaultAsync(x => x.Code == input.Code);
             if (exist != null) throw new InvalidOperationException("Mã ưu đãi này đã tồn tại");
-            if (input.Images != null)
-            {
-                var upload = await _imageService.UploadImageAsync(input.Images);
-                input.IconUrl = upload;
-            }
+            //if (input.Images != null)
+            //{
+            //    var upload = await _imageService.UploadImageAsync(input.Images);
+            //    input.IconUrl = upload;
+            //}
             var promotion = new PromotionType
             {
                 Code = input.Code,
@@ -87,12 +87,13 @@ namespace Genora.MultiTenancy.AppServices.AppPromotionTypes
             await CheckGetListPolicyAsync();
             var exist = await Repository.FirstOrDefaultAsync( x => x.Id == id);
             if (exist == null) throw new InvalidOperationException("Không tìm thấy loại ưu đãi này");
-            if (input.Images != null)
-            {
-                await _imageService.DeleteFileAsync(exist.IconUrl);
-                var upload = await _imageService.UploadImageAsync (input.Images);
-                exist.IconUrl = upload;
-            }
+            //if (input.Images != null)
+            //{
+            //    await _imageService.DeleteFileAsync(exist.IconUrl);
+            //    var upload = await _imageService.UploadImageAsync (input.Images);
+            //    exist.IconUrl = upload;
+            //}
+            exist.IconUrl = input.IconUrl;
             exist.Name = input.Name;
             exist.Description = input.Description;
             exist.ColorCode = input.ColorCode;

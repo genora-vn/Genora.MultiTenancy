@@ -27,6 +27,8 @@ public class AppCustomerDto : AuditedEntityDto<Guid>
 
     public string CustomerCode { get; set; }
 
+    public string? ProvinceCode { get; set; }
+
     public string ZaloUserId { get; set; }
 
     public bool IsActive { get; set; }

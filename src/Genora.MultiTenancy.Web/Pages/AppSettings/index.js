@@ -9,10 +9,9 @@
             serverSide: true,
             paging: true,
             order: [[1, "asc"]],
-            searching: true,          // ✅ bật search box
+            searching: true,
             scrollX: true,
 
-            // ✅ gọi method mới + map search.value -> SettingKey
             ajax: abp.libs.datatables.createAjax(service.getListWithFilter, function (request) {
                 return {
                     settingKey: request.search?.value || null,
@@ -43,7 +42,7 @@
                                     return l('AppSettingDeletionConfirmationMessage', data.record.settingKey);
                                 },
                                 action: function (data) {
-                                    genora.multiTenancy.apps.appSettings.appSetting
+                                    genora.multiTenancy.appServices.appSettings.appSetting
                                         .delete(data.record.id)
                                         .then(function () {
                                             abp.notify.success(l('DeletedSuccessfully'));

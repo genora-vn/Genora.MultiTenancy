@@ -1,5 +1,6 @@
 ﻿using Genora.MultiTenancy.AppDtos.AppCustomers;
 using Genora.MultiTenancy.AppDtos.AppCustomerTypes;
+using Genora.MultiTenancy.AppDtos.MasterData;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using System.Collections.Generic;
@@ -18,31 +19,39 @@ public class CreateModalModel : MultiTenancyPageModel
 
     private readonly IAppCustomerService _customerService;
     private readonly IAppCustomerTypeService _customerTypeService;
+    private readonly IProvinceLookupAppService _provinceLookup;
+
+    public List<SelectListItem> ProvinceItems { get; set; } = new();
 
     public CreateModalModel(
         IAppCustomerService customerService,
-        IAppCustomerTypeService customerTypeService)
+        IAppCustomerTypeService customerTypeService,
+        IProvinceLookupAppService provinceLookup)
     {
         _customerService = customerService;
         _customerTypeService = customerTypeService;
+        _provinceLookup = provinceLookup;
     }
 
     public async Task OnGetAsync()
     {
-        // Khởi tạo DTO
         Customer = new CreateUpdateAppCustomerDto
         {
             IsActive = true
         };
 
-        // Generate mã khách hàng tự động
         Customer.CustomerCode = await _customerService.GenerateCustomerCodeAsync();
 
-        // Load danh sách giới tính
         BuildGenderItems(selectedGender: null);
 
-        // Load danh sách loại khách hàng
         await LoadCustomerTypesAsync();
+
+        var provinces = await _provinceLookup.GetProvincesAsync();
+        ProvinceItems = provinces
+            .Select(p => new SelectListItem(p.Name, p.Code))
+            .ToList();
+
+        ProvinceItems.Insert(0, new SelectListItem("-- Chọn tỉnh/thành --", ""));
     }
 
     public async Task<IActionResult> OnPostAsync()
@@ -74,13 +83,13 @@ public class CreateModalModel : MultiTenancyPageModel
             new PagedAndSortedResultRequestDto
             {
                 MaxResultCount = 1000,
-                Sorting = "" // nếu AppCustomerType có DisplayOrder
+                Sorting = ""
             }
         );
 
         CustomerTypeItems = result.Items
             .Select(x => new SelectListItem(
-                text: $"{x.Name}",      // hoặc $"{x.Name} ({x.Code})"
+                text: $"{x.Name}",
                 value: x.Id.ToString()
             ))
             .ToList();

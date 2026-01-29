@@ -1,6 +1,7 @@
 ﻿using Genora.MultiTenancy.AppDtos.AppCustomers;
 using Genora.MultiTenancy.AppDtos.AppCustomerTypes;
 using Genora.MultiTenancy.AppDtos.AppMembershipTiers;
+using Genora.MultiTenancy.AppDtos.MasterData;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using System;
@@ -25,15 +26,20 @@ public class EditModalModel : MultiTenancyPageModel
     private readonly IAppCustomerService _customerService;
     private readonly IAppCustomerTypeService _customerTypeService;
     private readonly IAppMembershipTierService _membershipTierService;
+    private readonly IProvinceLookupAppService _provinceLookup;
+
+    public List<SelectListItem> ProvinceItems { get; set; } = new();
 
     public EditModalModel(
         IAppCustomerService customerService,
         IAppCustomerTypeService customerTypeService,
-        IAppMembershipTierService membershipTierService)
+        IAppMembershipTierService membershipTierService,
+        IProvinceLookupAppService provinceLookup)
     {
         _customerService = customerService;
         _customerTypeService = customerTypeService;
         _membershipTierService = membershipTierService;
+        _provinceLookup = provinceLookup;
     }
 
     public async Task OnGetAsync()
@@ -48,6 +54,13 @@ public class EditModalModel : MultiTenancyPageModel
 
         BuildGenderItems(Customer.Gender);
         await LoadCustomerTypesAsync(selectedId: Customer.CustomerTypeId);
+
+        var provinces = await _provinceLookup.GetProvincesAsync();
+        ProvinceItems = provinces
+            .Select(p => new SelectListItem(p.Name, p.Code))
+            .ToList();
+
+        ProvinceItems.Insert(0, new SelectListItem("-- Chọn tỉnh/thành --", ""));
     }
 
     public async Task<IActionResult> OnPostAsync()

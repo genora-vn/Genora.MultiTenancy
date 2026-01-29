@@ -1,5 +1,6 @@
 ﻿using Genora.MultiTenancy.DomainModels.AppGolfCourses;
 using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Volo.Abp.Domain.Entities.Auditing;
@@ -18,9 +19,10 @@ public class News : FullAuditedAggregateRoot<Guid>, IMultiTenant
     [Required]
     [StringLength(255)]
     public string Title { get; set; } = null!;
+
     [Required]
     [StringLength(1000)]
-    public string ShortDescription { get; set; }
+    public string ShortDescription { get; set; } = null!;
 
     public string ContentHtml { get; set; } = null!;
 
@@ -35,6 +37,8 @@ public class News : FullAuditedAggregateRoot<Guid>, IMultiTenant
     public byte Status { get; set; } = 0;
 
     public int DisplayOrder { get; set; }
+
+    public virtual ICollection<NewsRelated> RelatedNewsLinks { get; set; } = new List<NewsRelated>();
 
     protected News() { }
 

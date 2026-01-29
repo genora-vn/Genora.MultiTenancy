@@ -18,13 +18,26 @@
             <div class="mb-3">
                 <label asp-for="CustomerType.Description" class="form-label">@L["Description"]</label>
                 <textarea asp-for="CustomerType.Description" class="form-control" rows="3" placeholder="Mô tả loại khách hàng"></textarea>
+                <span asp-validation-for="CustomerType.Description" class="text-danger"></span>
             </div>
-            <div class="mb-3" style="display: inline-flex; width: 100%">
+            <div style="display: inline-flex; width: 100%">
                 <label asp-for="CustomerType.ColorCode" class="form-label" style="width: 18%">@L["ColorCode"]</label>
-                <input asp-for="CustomerType.ColorCode" type="text" id="color-code" class="form-control"/>
+
+                <input asp-for="CustomerType.ColorCode"
+                       type="text"
+                       id="color-code"
+                       class="form-control"
+                       placeholder="#RRGGBB"
+                       autocomplete="off" />
+
                 <input id="color-picker" type="color" class="form-control color-input" />
+
             </div>
-            <abp-input asp-for="CustomerType.IsActive" />
+            <span asp-validation-for="CustomerType.ColorCode" class="text-danger"></span>
+
+            <div class="mt-2">
+                <abp-input asp-for="CustomerType.IsActive" label="@L["IsActive"]" />
+            </div>
         </abp-modal-body>
         <abp-modal-footer buttons="@(AbpModalButtons.Cancel | AbpModalButtons.Save)"></abp-modal-footer>
     </abp-modal>
@@ -48,16 +61,87 @@
 </style>
 <script>
     $(document).ready(function () {
-        // Khi người dùng chọn màu từ bộ chọn màu
-        $('#color-picker').on('input', function () {
-            var selectedColor = $(this).val();
-            $('#color-code').val(selectedColor);
+        var $form = $('form[abp-model="CustomerType"]');
+        var $desc = $form.find('[name="CustomerType.Description"]');
+        var $colorCode = $form.find('[name="CustomerType.ColorCode"]');
+        var $picker = $('#color-picker');
+
+        function refreshValidation() {
+            $form.removeData('validator');
+            $form.removeData('unobtrusiveValidation');
+            if ($.validator && $.validator.unobtrusive) {
+                $.validator.unobtrusive.parse($form);
+            }
+        }
+
+        $desc.removeAttr('required')
+             .removeAttr('data-val-required');
+
+        refreshValidation();
+
+        if ($.validator) {
+            if (!$.validator.methods.regex) {
+                $.validator.addMethod("regex", function (value, element, pattern) {
+                    if (this.optional(element)) return true;
+                    return pattern.test(value);
+                });
+            }
+        }
+
+        function normalizeHex(val) {
+            val = (val || "").trim();
+            if (!val) return "";
+            if (!val.startsWith("#")) val = "#" + val;
+
+            if (/^#([0-9a-fA-F]{3})$/.test(val)) {
+                var r = val[1], g = val[2], b = val[3];
+                val = "#" + r + r + g + g + b + b;
+            }
+            return val;
+        }
+
+        function isValidHex6(val) {
+            return /^#([0-9a-fA-F]{6})$/.test(val);
+        }
+
+        if ($colorCode.length && $colorCode.rules) {
+            $colorCode.rules('remove');
+            $colorCode.rules('add', {
+                required: true,
+                regex: /^#([0-9a-fA-F]{6})$/,
+                messages: {
+                    required: "Vui lòng nhập mã màu.",
+                    regex: "Mã màu phải đúng định dạng #RRGGBB (vd: #FF6600)."
+                }
+            });
+        }
+
+        $picker.on('input', function () {
+            var selected = $(this).val();
+            $colorCode.val(selected).trigger('change');
         });
-        // Khi người dùng nhập mã màu thủ công
-        $('#color-code').on('input', function () {
-            var inputColor = $(this).val();
-            $('#color-picker').val(inputColor);
+
+        $colorCode.on('input', function () {
+            var val = normalizeHex($(this).val());
+            $(this).val(val);
+
+            if (isValidHex6(val)) {
+                $picker.val(val);
+            }
         });
+
+        $form.on('submit', function () {
+            var val = normalizeHex($colorCode.val());
+            $colorCode.val(val);
+
+            if ($form.valid && !$form.valid()) {
+                return false;
+            }
+            return true;
+        });
+
+        var initVal = normalizeHex($colorCode.val());
+        $colorCode.val(initVal);
+        if (isValidHex6(initVal)) $picker.val(initVal);
     });
 </script>
-

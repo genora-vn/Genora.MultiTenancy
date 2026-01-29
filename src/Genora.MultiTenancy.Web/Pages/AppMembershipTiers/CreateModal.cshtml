@@ -20,11 +20,12 @@
                     <abp-input asp-for="MembershipTier.Name" placeholder="Nhập tên hạng (vd: Đồng, Bạc, Vàng,...)" />
                 </div>
             </div>
-            
+
             <div class="mb-3">
                 <label asp-for="MembershipTier.Description" class="form-label"></label>
                 <textarea asp-for="MembershipTier.Description" placeholder="Mô tả chi tiết xếp hạng" rows="3" class="form-control"></textarea>
             </div>
+
             <div class="d-inline-flex" style="width: 97%; gap: 15px">
                 <div class="col-md-5">
                     <abp-input asp-for="MembershipTier.MinTotalSpending" placeholder="Nhập doanh thu tối thiểu" />
@@ -35,12 +36,13 @@
                 <div class="col-md-2">
                     <abp-input asp-for="MembershipTier.EvaluationPeriod" placeholder="Chu kỳ xét tăng hạng" />
                 </div>
-                
             </div>
+
             <div class="mb-3">
                 <label asp-for="MembershipTier.Benefits" class="form-label"></label>
                 <textarea asp-for="MembershipTier.Benefits" placeholder="Nhập quyền lợi của khách hàng đạt rank" rows="3" class="form-control"></textarea>
             </div>
+
             <div class="d-inline-flex" style="width: 98%; gap: 15px">
                 <div class="col-md-3">
                     <abp-input asp-for="MembershipTier.DisplayOrder" />
@@ -53,6 +55,7 @@
         <abp-modal-footer buttons="@(AbpModalButtons.Cancel | AbpModalButtons.Save)"></abp-modal-footer>
     </abp-modal>
 </form>
+
 <style type="text/css">
     .modal-dialog {
         max-width: 30%;
@@ -63,32 +66,72 @@
         align-items: center;
     }
 </style>
+
 <script>
-    document.querySelector('input[name="MembershipTier.MinTotalSpending"]').classList.add('thousand-separator');
-    // Thêm định dạng dấu chấm ngăn cách hàng nghìn cho các input có class 'thousand-separator'
-    document.querySelectorAll('.thousand-separator').forEach(function(input) {
-        // Format khi load trang (display)
-        if (input.value) {
-            let num = parseFloat(input.value);
-            if (!isNaN(num)) {
-                input.value = num.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 }).replace(/,/g, '.');
-            }
+    (function () {
+        const MONEY_SELECTOR = 'input[name="MembershipTier.MinTotalSpending"]';
+        const WARN_MSG = 'Chỉ được nhập số (0-9) cho Doanh thu tối thiểu (VND).';
+
+        function digitsOnly(str) {
+            return (str || '').replace(/\D+/g, '');
         }
 
-        // Format khi user nhập (on input)
-        input.addEventListener('input', function(e) {
-            let value = e.target.value.replace(/\./g, ''); // Xóa dấu chấm cũ
-            let num = parseFloat(value);
-            if (!isNaN(num)) {
-                e.target.value = num.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 }).replace(/,/g, '.');
-            } else if (value === '') {
-                e.target.value = '';
+        function formatVND(digits) {
+            if (!digits) return '';
+            digits = digits.replace(/^0+(?=\d)/, '');
+            return digits.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+        }
+
+        function showWarnOnce(input, msg) {
+            const now = Date.now();
+            const last = Number(input.dataset.lastWarnAt || 0);
+            if (now - last < 800) return;
+            input.dataset.lastWarnAt = String(now);
+
+            if (window.abp?.notify?.warn) abp.notify.warn(msg);
+            else alert(msg);
+        }
+
+        const input = document.querySelector(MONEY_SELECTOR);
+        if (!input) return;
+
+        input.value = formatVND(digitsOnly(input.value));
+
+        input.addEventListener('focus', function () {
+            input.dataset.hadInvalid = '0';
+            input.value = digitsOnly(input.value);
+        });
+
+        input.addEventListener('input', function () {
+            const raw = input.value;
+            const cleaned = digitsOnly(raw);
+
+            if (raw !== cleaned) {
+                input.dataset.hadInvalid = '1';
+                input.value = cleaned;
             }
         });
 
-        // Khi submit form, chuyển về dạng số thuần để model binding decimal hoạt động
-        input.closest('form').addEventListener('submit', function() {
-            input.value = input.value.replace(/\./g, '');
+        input.addEventListener('blur', function () {
+            const rawDigits = digitsOnly(input.value);
+
+            if (input.dataset.hadInvalid === '1') {
+                showWarnOnce(input, WARN_MSG);
+            }
+
+            input.value = formatVND(rawDigits);
+            input.dataset.hadInvalid = '0';
         });
-    });
+
+        const form = input.closest('form');
+        if (form) {
+            form.addEventListener('submit', function (e) {
+                const digits = digitsOnly(input.value);
+                if (input.value !== digits) {
+                    input.value = digits;
+                }
+                input.value = digits;
+            });
+        }
+    })();
 </script>

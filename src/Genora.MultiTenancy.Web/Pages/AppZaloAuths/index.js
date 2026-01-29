@@ -5,7 +5,6 @@
     var createModal = new abp.ModalManager('/AppZaloAuths/CreateModal');
     var editModal = new abp.ModalManager('/AppZaloAuths/EditModal');
 
-    // ✅ base theo host/tenant (Index.cshtml set)
     var apiBase = window.__zaloAuthApiBase || '/api/host/zalo-auth';
 
     const TZ = 'Asia/Bangkok';

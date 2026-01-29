@@ -5,7 +5,6 @@
         window.genora = {};
     }
 
-    // Sử dụng cấu hình của genora debug vào để thấy nó có những cái gì
     window.genora.excel = {
         download: function (url, query) {
             var finalUrl = abp.appPath + url;
@@ -42,14 +41,12 @@
                 contentType: false
             })
                 .done(function () {
-                    // Các thông báo thì dùng abp.notify để show ra front end
                     abp.notify.success('Import Excel thành công');
                     if (options.onSuccess) {
                         options.onSuccess();
                     }
                 })
                 .fail(function (error) {
-                    // Các thông báo lỗi thì dùng abp.notify để show ra front end
                     if (error?.responseJSON?.error?.message) {
                         abp.message.error(
                             error.responseJSON.error.details,
@@ -72,21 +69,43 @@
     var _orig = HTMLInputElement.prototype.setSelectionRange;
     if (typeof _orig !== "function") return;
 
-    // tránh patch nhiều lần
     if (HTMLInputElement.prototype.__patchedSetSelectionRangeForNumber) return;
     HTMLInputElement.prototype.__patchedSetSelectionRangeForNumber = true;
 
     HTMLInputElement.prototype.setSelectionRange = function (start, end, direction) {
         try {
-            // input type=number không support selection -> bỏ qua
             var t = (this.type || "").toLowerCase();
             if (t === "number") return;
             return _orig.call(this, start, end, direction);
         } catch (e) {
-            // nếu browser vẫn ném, bỏ qua cho type=number
             var t2 = (this.type || "").toLowerCase();
             if (t2 === "number") return;
             throw e;
         }
     };
+})();
+
+(function () {
+    function applyMenuTooltips() {
+        document.querySelectorAll("li.lpx-inner-menu-item").forEach((li) => {
+            const a = li.querySelector("a.lpx-menu-item-link");
+            if (!a) return;
+
+            const textEl = a.querySelector(".lpx-menu-item-text");
+            const text = (textEl?.textContent || "").trim();
+            if (!text) return;
+
+            if (!li.getAttribute("title")) {
+                li.setAttribute("title", text);
+            }
+        });
+    }
+
+    if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", applyMenuTooltips);
+    } else {
+        applyMenuTooltips();
+    }
+
+    document.addEventListener("abp.dynamicScriptsInitialized", applyMenuTooltips);
 })();

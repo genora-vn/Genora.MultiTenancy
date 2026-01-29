@@ -23,13 +23,11 @@ namespace Genora.MultiTenancy.AppServices.AppCalendarSlots
             var lookup = workbook.Worksheets.Add("Lookup");
             lookup.Visibility = XLWorksheetVisibility.VeryHidden;
 
-            // ====== CONFIG ======
             const int headerTopRow = 1;
             const int headerBottomRow = 3;
             const int hintRow = 4;
             const int dataStartRow = 5;
 
-            // A..J
             const int colGolfCode = 1;
             const int colDayType = 2;
             const int colFromDate = 3;
@@ -43,7 +41,6 @@ namespace Genora.MultiTenancy.AppServices.AppCalendarSlots
 
             int priceStartCol = 11;
 
-            // ====== HEADER fixed (merge 3 rows) ======
             ws.Cell(headerTopRow, colGolfCode).Value = "Mã sân golf";
             ws.Cell(headerTopRow, colDayType).Value = "Loại ngày (*)";
             ws.Cell(headerTopRow, colFromDate).Value = "Ngày bắt đầu(*)";
@@ -58,7 +55,6 @@ namespace Genora.MultiTenancy.AppServices.AppCalendarSlots
             for (int c = colGolfCode; c <= colGap; c++)
                 ws.Range(headerTopRow, c, headerBottomRow, c).Merge();
 
-            // widths
             ws.Column(colGolfCode).Width = 15;
             ws.Column(colDayType).Width = 20;
             ws.Column(colFromDate).Width = 16;
@@ -70,7 +66,6 @@ namespace Genora.MultiTenancy.AppServices.AppCalendarSlots
             ws.Column(colNote).Width = 22;
             ws.Column(colGap).Width = 14;
 
-            // ====== PRICE HEADER ======
             var totalCustomerTypes = customerTypes?.Count ?? 0;
             var priceEndCol = (totalCustomerTypes > 0)
                 ? priceStartCol + (totalCustomerTypes * 4) - 1
@@ -101,7 +96,6 @@ namespace Genora.MultiTenancy.AppServices.AppCalendarSlots
                 }
             }
 
-            // ====== STYLE header ======
             var headerRange = ws.Range(headerTopRow, 1, headerBottomRow, Math.Max(priceEndCol, colGap));
             headerRange.Style.Font.Bold = true;
             headerRange.Style.Fill.BackgroundColor = XLColor.LightGray;
@@ -110,7 +104,6 @@ namespace Genora.MultiTenancy.AppServices.AppCalendarSlots
             headerRange.Style.Border.OutsideBorder = XLBorderStyleValues.Thin;
             headerRange.Style.Border.InsideBorder = XLBorderStyleValues.Thin;
 
-            // ====== DAY TYPES from SpecialDates ======
             var dayTypes = (specialDates ?? new List<SpecialDate>())
                 .Where(x => x.IsActive)
                 .Select(x => (x.Name ?? "").Trim())
@@ -119,13 +112,11 @@ namespace Genora.MultiTenancy.AppServices.AppCalendarSlots
                 .OrderBy(x => x)
                 .ToList();
 
-            // fallback nếu chưa cấu hình gì
             if (dayTypes.Count == 0)
             {
                 dayTypes = new List<string> { "Ngày trong tuần", "Ngày cuối tuần", "Ngày lễ" };
             }
 
-            // ====== HINT row ======
             ws.Cell(hintRow, colGolfCode).Value = "VD: MONT";
             ws.Cell(hintRow, colDayType).Value = string.Join("/", dayTypes);
             ws.Cell(hintRow, colFromDate).Value = "dd/MM/yyyy";
@@ -138,14 +129,11 @@ namespace Genora.MultiTenancy.AppServices.AppCalendarSlots
             ws.Cell(hintRow, colGap).Value = "Khoảng cách (phút)";
             ws.Row(hintRow).Style.Font.FontColor = XLColor.DarkGray;
 
-            // format columns for data rows
             ws.Range(dataStartRow, colFromDate, 1000, colFromDate).Style.DateFormat.Format = "dd/MM/yyyy";
             ws.Range(dataStartRow, colToDate, 1000, colToDate).Style.DateFormat.Format = "dd/MM/yyyy";
             ws.Range(dataStartRow, colStartTime, 1000, colStartTime).Style.NumberFormat.Format = "hh:mm";
             ws.Range(dataStartRow, colEndTime, 1000, colEndTime).Style.NumberFormat.Format = "hh:mm";
 
-            // ====== LOOKUP SHEET + NAMED RANGES ======
-            // DayTypes (from SpecialDates)
             lookup.Cell(1, 1).Value = "DayTypes";
             for (int i = 0; i < dayTypes.Count; i++)
                 lookup.Cell(2 + i, 1).Value = dayTypes[i];
@@ -153,7 +141,6 @@ namespace Genora.MultiTenancy.AppServices.AppCalendarSlots
             var dayTypeRange = lookup.Range(2, 1, 2 + dayTypes.Count - 1, 1);
             workbook.NamedRanges.Add("DayTypes", dayTypeRange);
 
-            // Promotions
             var promotionNames = (promotions ?? new List<PromotionType>())
                 .Select(p => p.Name)
                 .Where(x => !string.IsNullOrWhiteSpace(x))
