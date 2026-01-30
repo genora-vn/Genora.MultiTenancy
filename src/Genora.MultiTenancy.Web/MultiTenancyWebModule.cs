@@ -466,6 +466,10 @@ public class MultiTenancyWebModule : AbpModule
             logger.LogWarning("Hangfire recurring registration skipped (Hangfire:RegisterRecurringJobs=false).");
         }
 
+        var vfs = sp.GetRequiredService<Volo.Abp.VirtualFileSystem.IVirtualFileProvider>();
+        var f = vfs.GetFileInfo("/AppServices/AppEmails/Templates/BookingChangeRequest.tpl");
+        logger.LogWarning("TPL exists={Exists}, path={Path}", f.Exists, f.Name);
+
         app.UseCors("ZaloPolicy");
         app.UseForwardedHeaders();
 
