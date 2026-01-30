@@ -17,7 +17,7 @@
                 <input asp-for="Id" hidden />
                 <input asp-for="SpecialDate.Name" hidden />
             </div>
-            
+
             <div class="mb-3">
                 <label class="form-label">@L["Name"]</label>
                 <input class="form-control"
@@ -33,6 +33,35 @@
                         label="@L["GolfCourse"]">
             </abp-select>
 
+            <!-- NEW: Weekdays block -->
+            <div class="mb-3" id="WeekdaysBlock" style="display:none">
+                <label class="form-label">Áp dụng cho</label>
+
+                <div class="border rounded p-3 bg-light">
+                    <div class="form-check mb-2">
+                        <input class="form-check-input" type="checkbox" id="AllWeekdaysChk">
+                        <label class="form-check-label fw-semibold" for="AllWeekdaysChk">Tất cả các thứ trong tuần</label>
+                    </div>
+
+                    <div class="d-flex flex-wrap gap-2" id="WeekdaysChecks">
+                        @{
+                            var labels = new[] { "Thứ 2", "Thứ 3", "Thứ 4", "Thứ 5", "Thứ 6", "Thứ 7", "Chủ nhật" };
+                            for (var i = 0; i < 7; i++)
+                            {
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input wd" type="checkbox" id="Wd_@i" value="@i">
+                                    <label class="form-check-label" for="Wd_@i">@labels[i]</label>
+                                </div>
+                            }
+                        }
+                    </div>
+
+                    <small class="text-muted d-block mt-2">
+                        Chỉ áp dụng khi Name khác "Ngày lễ".
+                    </small>
+                </div>
+            </div>
+
             <div class="mb-3" id="DatesBlock" style="display:none">
                 <label class="form-label">@L["Dates"]</label>
                 <textarea class="form-control" id="DatesTextarea" rows="8"
@@ -42,8 +71,8 @@
 30/01/2026"></textarea>
                 <small class="text-muted">Chỉ áp dụng khi Name = "Ngày lễ".</small>
             </div>
-            <abp-input asp-for="SpecialDate.IsActive" label="@L["IsActive"]" />
 
+            <abp-input asp-for="SpecialDate.IsActive" label="@L["IsActive"]" />
         </abp-modal-body>
 
         <abp-modal-footer buttons="@(AbpModalButtons.Cancel | AbpModalButtons.Save)"></abp-modal-footer>
@@ -54,25 +83,42 @@
     (function () {
         var form = document.getElementById('SpecialDateEditForm');
         var nameInput = document.getElementById('NameInput');
+
         var datesBlock = document.getElementById('DatesBlock');
         var datesTextarea = document.getElementById('DatesTextarea');
 
+        var weekdaysBlock = document.getElementById('WeekdaysBlock');
+        var allChk = document.getElementById('AllWeekdaysChk');
+        var wdChecks = Array.from(document.querySelectorAll('#WeekdaysChecks input.wd'));
+
         function normalizeName(x) {
             x = (x || '').trim();
-            // chuẩn hóa đúng 3 giá trị
             if (x.toLowerCase() === 'ngày trong tuần') return 'Ngày trong tuần';
             if (x.toLowerCase() === 'ngày cuối tuần') return 'Ngày cuối tuần';
             if (x.toLowerCase() === 'ngày lễ' || x.toLowerCase() === 'ngay le') return 'Ngày lễ';
             return x;
         }
 
-        function toggleDates() {
+        function toggleBlocks() {
             var name = normalizeName(nameInput.value);
             datesBlock.style.display = (name === 'Ngày lễ') ? 'block' : 'none';
+            weekdaysBlock.style.display = (name === 'Ngày lễ') ? 'none' : 'block';
+        }
+
+        function setAllMode(on) {
+            if (on) {
+                wdChecks.forEach(function (c) {
+                    c.checked = true;
+                    c.disabled = true;
+                });
+            } else {
+                wdChecks.forEach(function (c) {
+                    c.disabled = false;
+                });
+            }
         }
 
         function toDdMMyyyy(dateStr) {
-            // dateStr có thể là ISO hoặc string DateTime từ server
             var d = new Date(dateStr);
             if (isNaN(d.getTime())) return null;
             var dd = String(d.getDate()).padStart(2, '0');
@@ -95,13 +141,13 @@
             var d = new Date(yy, mm - 1, dd);
             if (d.getFullYear() !== yy || (d.getMonth() + 1) !== mm || d.getDate() !== dd) return null;
 
-            return yy + '-' + String(mm).padStart(2, '0') + '-' + String(dd).padStart(2, '0'); // ISO date-only
+            return yy + '-' + String(mm).padStart(2, '0') + '-' + String(dd).padStart(2, '0');
         }
 
         function fillDatesFromModel() {
             var dates = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(
-                                Model.SpecialDate?.Dates ?? new System.Collections.Generic.List<System.DateTime>()
-                        ));
+                                                                Model.SpecialDate?.Dates ?? new System.Collections.Generic.List<System.DateTime>()
+                                                ));
 
             if (!dates || !dates.length) return;
 
@@ -109,42 +155,100 @@
             datesTextarea.value = lines.join('\n');
         }
 
+        function fillWeekdaysFromModel() {
+            var wds = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(
+                                                                Model.SpecialDate?.Weekdays ?? new System.Collections.Generic.List<int>()
+                                                ));
+
+            // nếu holiday thì bỏ
+            if (normalizeName(nameInput.value) === 'Ngày lễ') return;
+
+            // mặc định All nếu empty
+            if (!wds || !wds.length) {
+                allChk.checked = true;
+                setAllMode(true);
+                return;
+            }
+
+            // nếu đủ 7 ngày => All
+            var set = new Set(wds.map(function (x) { return parseInt(x, 10); }).filter(function (x) { return x>=0 && x<=6; }));
+            if (set.size === 7) {
+                allChk.checked = true;
+                setAllMode(true);
+                return;
+            }
+
+            allChk.checked = false;
+            setAllMode(false);
+            wdChecks.forEach(function (c) {
+                c.checked = set.has(parseInt(c.value, 10));
+            });
+        }
+
         // INIT
         nameInput.value = normalizeName(nameInput.value);
-        toggleDates();
+        toggleBlocks();
         fillDatesFromModel();
+        fillWeekdaysFromModel();
 
-        nameInput.addEventListener('input', function () {
-            nameInput.value = normalizeName(nameInput.value);
-            toggleDates();
+        allChk.addEventListener('change', function () {
+            setAllMode(allChk.checked);
         });
 
-        // BEFORE SUBMIT: build SpecialDate.Dates[] hidden inputs
+        wdChecks.forEach(function (c) {
+            c.addEventListener('change', function () {
+                if (c.disabled) return;
+                if (!c.checked) {
+                    allChk.checked = false;
+                    setAllMode(false);
+                }
+            });
+        });
+
         form.addEventListener('submit', function (e) {
             // remove old dynamic inputs
-            var old = form.querySelectorAll('input[name="SpecialDate.Dates"]');
-            old.forEach(function (x) { x.remove(); });
+            form.querySelectorAll('input[name="SpecialDate.Dates"]').forEach(function (x) { x.remove(); });
+            form.querySelectorAll('input[name="SpecialDate.Weekdays"]').forEach(function (x) { x.remove(); });
 
             var name = normalizeName(nameInput.value);
-            if (name !== 'Ngày lễ') return;
 
-            var text = datesTextarea.value || '';
-            var lines = text.split(/\r?\n/).map(function (x) { return x.trim(); }).filter(Boolean);
+            if (name === 'Ngày lễ') {
+                var text = datesTextarea.value || '';
+                var lines = text.split(/\r?\n/).map(function (x) { return x.trim(); }).filter(Boolean);
 
-            for (var i = 0; i < lines.length; i++) {
-                var iso = parseDdMMyyyy(lines[i]);
-                if (!iso) {
-                    if (window.abp?.notify?.error) abp.notify.error("Ngày không hợp lệ ở dòng " + (i + 1) + ": " + lines[i]);
-                    e.preventDefault();
-                    return;
+                for (var i = 0; i < lines.length; i++) {
+                    var iso = parseDdMMyyyy(lines[i]);
+                    if (!iso) {
+                        if (window.abp?.notify?.error) abp.notify.error("Ngày không hợp lệ ở dòng " + (i + 1) + ": " + lines[i]);
+                        e.preventDefault();
+                        return;
+                    }
+
+                    var inp = document.createElement('input');
+                    inp.type = 'hidden';
+                    inp.name = 'SpecialDate.Dates';
+                    inp.value = iso;
+                    form.appendChild(inp);
                 }
+                return;
+            }
 
+            var selected = [];
+            if (allChk.checked) {
+                selected = [0,1,2,3,4,5,6];
+            } else {
+                selected = wdChecks.filter(function (x) { return x.checked; })
+                                   .map(function (x) { return parseInt(x.value, 10); });
+                if (!selected.length) selected = [0,1,2,3,4,5,6];
+            }
+
+            selected.forEach(function (v) {
                 var inp = document.createElement('input');
                 inp.type = 'hidden';
-                inp.name = 'SpecialDate.Dates';
-                inp.value = iso;
+                inp.name = 'SpecialDate.Weekdays';
+                inp.value = String(v);
                 form.appendChild(inp);
-            }
+            });
         });
     })();
 </script>

@@ -53,6 +53,9 @@ public class AppCalendarSlotService :
     private readonly IDataFilter _dataFilter;
     private readonly IStringLocalizer<MultiTenancyResource> _l;
 
+    // ✅ mask all days (Mon..Sun) with mapping 0..6 = T2..CN
+    private const int AllWeekdaysMask = (1 << 7) - 1; // 127
+
     public AppCalendarSlotService(
         IRepository<CalendarSlot, Guid> repository,
         IRepository<CalendarSlotPrice, Guid> priceRepository,
@@ -113,8 +116,8 @@ public class AppCalendarSlotService :
     }
 
     private static string? ValidateDayTypeAllowed(
-     string? inputDayType,
-     List<string> allowedDayTypes)
+        string? inputDayType,
+        List<string> allowedDayTypes)
     {
         var s = (inputDayType ?? "").Trim();
         if (string.IsNullOrWhiteSpace(s))
@@ -199,17 +202,65 @@ public class AppCalendarSlotService :
 
     private static List<DateTime> ParseDatesJson(string json)
     {
+        if (string.IsNullOrWhiteSpace(json))
+            return new List<DateTime>();
+
         try
         {
-            var arr = JsonSerializer.Deserialize<List<string>>(json) ?? new List<string>();
-            var list = new List<DateTime>();
+            var s = json.Trim();
 
-            foreach (var s in arr)
+            // 1) Try JSON array: ["2026-01-25","2026-04-30",...]
+            List<string>? arr = null;
+            if (s.StartsWith("["))
             {
-                if (DateTime.TryParseExact(s, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var d))
-                    list.Add(d.Date);
-                else if (DateTime.TryParse(s, out d))
-                    list.Add(d.Date);
+                arr = JsonSerializer.Deserialize<List<string>>(s);
+            }
+            else
+            {
+                // 2) Fallback: plain text (old data) - split by newline / comma / semicolon
+                arr = s.Split(new[] { '\r', '\n', ',', ';', '|' }, StringSplitOptions.RemoveEmptyEntries)
+                       .Select(x => x.Trim())
+                       .Where(x => !string.IsNullOrWhiteSpace(x))
+                       .ToList();
+            }
+
+            var list = new List<DateTime>();
+            var formats = new[]
+            {
+            "yyyy-MM-dd",
+            "yyyy/MM/dd",
+            "yyyy/M/d",
+            "dd/MM/yyyy",
+            "d/M/yyyy",
+            "dd-MM-yyyy",
+            "d-M-yyyy"
+        };
+
+            foreach (var raw in arr ?? new List<string>())
+            {
+                var x = (raw ?? "").Trim();
+                if (string.IsNullOrWhiteSpace(x)) continue;
+
+                // exact formats first (culture-independent)
+                if (DateTime.TryParseExact(x, formats, CultureInfo.InvariantCulture, DateTimeStyles.None, out var dExact))
+                {
+                    list.Add(dExact.Date);
+                    continue;
+                }
+
+                // try vi-VN
+                if (DateTime.TryParse(x, new CultureInfo("vi-VN"), DateTimeStyles.None, out var dVi))
+                {
+                    list.Add(dVi.Date);
+                    continue;
+                }
+
+                // fallback invariant
+                if (DateTime.TryParse(x, CultureInfo.InvariantCulture, DateTimeStyles.None, out var dInv))
+                {
+                    list.Add(dInv.Date);
+                    continue;
+                }
             }
 
             return list.Distinct().OrderBy(x => x).ToList();
@@ -218,6 +269,21 @@ public class AppCalendarSlotService :
         {
             return new List<DateTime>();
         }
+    }
+
+    // ✅ map .NET DayOfWeek -> index 0..6 (T2..CN)
+    private static int ToWeekdayIndex0Mon6Sun(DateTime date)
+    {
+        // .NET: Sunday=0, Monday=1, ... Saturday=6
+        // Mask: 0=Mon(T2) ... 5=Sat(T7) ... 6=Sun(CN)
+        return ((int)date.DayOfWeek + 6) % 7;
+    }
+
+    private static bool IsMaskHit(int? mask, DateTime date)
+    {
+        var m = mask ?? AllWeekdaysMask;
+        var idx = ToWeekdayIndex0Mon6Sun(date);
+        return ((m >> idx) & 1) == 1;
     }
 
     // =========================================================
@@ -816,9 +882,16 @@ public class AppCalendarSlotService :
             .Where(x => !string.IsNullOrWhiteSpace(x.Name))
             .ToDictionary(x => x.Name.Trim(), x => x, StringComparer.OrdinalIgnoreCase);
 
-        var specCache = new Dictionary<Guid, (List<string> DayTypes, HashSet<DateTime> HolidaySet, string HolidayName)>();
+        // ✅ spec now includes MaskByName (WeekdaysMask per DayType)
+        var specCache = new Dictionary<Guid, (
+            List<string> DayTypes,
+            HashSet<DateTime> HolidaySet,
+            string HolidayName,
+            Dictionary<string, int?> MaskByName
+        )>();
 
-        async Task<(List<string> DayTypes, HashSet<DateTime> HolidaySet, string HolidayName)> GetSpecAsync(Guid golfCourseId)
+        async Task<(List<string> DayTypes, HashSet<DateTime> HolidaySet, string HolidayName, Dictionary<string, int?> MaskByName)>
+        GetSpecAsync(Guid golfCourseId)
         {
             if (specCache.TryGetValue(golfCourseId, out var v)) return v;
 
@@ -827,14 +900,35 @@ public class AppCalendarSlotService :
             var holidaySet = ParseHolidaySet(spec);
             var holidayName = ResolveHolidayName(spec);
 
-            v = (dayTypes, holidaySet, holidayName);
+            // build mask map by name (prefer course-specific over global)
+            var maskByName = new Dictionary<string, int?>(StringComparer.OrdinalIgnoreCase);
+
+            foreach (var name in dayTypes)
+            {
+                var candidates = (spec ?? new List<SpecialDate>())
+                    .Where(x => x.IsActive && string.Equals((x.Name ?? "").Trim(), name, StringComparison.OrdinalIgnoreCase))
+                    .ToList();
+
+                // holiday config doesn't use mask
+                if (candidates.Any(LooksLikeHolidayConfig))
+                {
+                    maskByName[name] = null;
+                    continue;
+                }
+
+                var pick = candidates.FirstOrDefault(x => x.GolfCourseId == golfCourseId)
+                       ?? candidates.FirstOrDefault(x => x.GolfCourseId == null);
+
+                maskByName[name] = pick?.WeekdaysMask; // null => treat as All
+            }
+
+            v = (dayTypes, holidaySet, holidayName, maskByName);
             specCache[golfCourseId] = v;
             return v;
         }
 
         var slotKeySet = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         var pendingInsertByKey = new Dictionary<string, CalendarSlot>(StringComparer.OrdinalIgnoreCase);
-
         var pendingPriceByKey = new Dictionary<string, CalendarSlotPrice>(StringComparer.OrdinalIgnoreCase);
 
         var priceCacheBySlotId = new Dictionary<Guid, List<CalendarSlotPrice>>();
@@ -899,7 +993,7 @@ public class AppCalendarSlotService :
             if (!golfByCode.TryGetValue(code, out var golfCourse))
                 throw RowError($"Không tìm thấy sân theo mã (GolfCourseCode): '{code}'");
 
-            var (allowedDayTypes, holidaySet, holidayName) = await GetSpecAsync(golfCourse.Id);
+            var (allowedDayTypes, holidaySet, holidayName, maskByName) = await GetSpecAsync(golfCourse.Id);
 
             var dayTypeError = ValidateDayTypeAllowed(r.DayType, allowedDayTypes);
             if (!string.IsNullOrWhiteSpace(dayTypeError))
@@ -907,9 +1001,6 @@ public class AppCalendarSlotService :
 
             var selectedDayType = allowedDayTypes.First(x =>
                 string.Equals(x, r.DayType?.Trim(), StringComparison.OrdinalIgnoreCase));
-
-            var weekendName = GuessWeekendName(allowedDayTypes);
-            var weekdayName = GuessWeekdayName(allowedDayTypes);
 
             var totalDays = (r.ToDate.Date - r.FromDate.Date).TotalDays;
             var totalSlots = (int)((r.EndTime - r.StartTime).TotalMinutes / r.Gap);
@@ -925,17 +1016,23 @@ public class AppCalendarSlotService :
             {
                 var applyDate = r.FromDate.Date.AddDays(i);
 
-                var isHoliday = holidaySet.Contains(applyDate);
-                var isWeekend = applyDate.DayOfWeek == DayOfWeek.Saturday || applyDate.DayOfWeek == DayOfWeek.Sunday;
-                var isWeekday = !isWeekend;
+                var isHoliday = holidaySet.Contains(applyDate.Date);
 
-                bool pass = selectedDayType.Equals(holidayName, StringComparison.OrdinalIgnoreCase)
-                    ? isHoliday
-                    : selectedDayType.Equals(weekendName, StringComparison.OrdinalIgnoreCase)
-                        ? (!isHoliday && isWeekend)
-                        : (!isHoliday && isWeekday);
+                // ✅ NEW: check by config WeekdaysMask
+                if (selectedDayType.Equals(holidayName, StringComparison.OrdinalIgnoreCase))
+                {
+                    // Holiday type: only accept holidays
+                    if (!isHoliday) continue;
+                }
+                else
+                {
+                    // Non-holiday types: never include holidays
+                    if (isHoliday) continue;
 
-                if (!pass) continue;
+                    // Check mask for this DayType (null/missing => All)
+                    maskByName.TryGetValue(selectedDayType, out var mask);
+                    if (!IsMaskHit(mask, applyDate.Date)) continue;
+                }
 
                 for (int j = 0; j < totalSlots; j++)
                 {

@@ -9,6 +9,9 @@ public class SpecialDateDto : FullAuditedEntityDto<Guid>
     public string Name { get; set; } = default!;
     public string? Description { get; set; }
     public List<DateTime>? Dates { get; set; }
+
+    public List<int>? Weekdays { get; set; }
+
     public Guid? GolfCourseId { get; set; }
     public bool IsActive { get; set; }
 }

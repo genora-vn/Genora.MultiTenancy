@@ -1,12 +1,14 @@
 ﻿$(function () {
     var l = abp.localization.getResource('MultiTenancy');
 
+    // proxies
     var service = genora.multiTenancy.appServices.appSpecialDates.appSpecialDate;
     var gcService = genora.multiTenancy.appServices.appGolfCourses.appGolfCourse;
 
     var createModal = new abp.ModalManager(abp.appPath + 'AppSpecialDates/CreateModal');
     var editModal = new abp.ModalManager(abp.appPath + 'AppSpecialDates/EditModal');
 
+    // golfCourseId -> name
     var golfCourseMap = {};
 
     function loadGolfCoursesMap() {
@@ -26,6 +28,34 @@
         var mm = String(dt.getMonth() + 1).padStart(2, '0');
         var yy = dt.getFullYear();
         return dd + '/' + mm + '/' + yy;
+    }
+
+    // ✅ mapping 0..6 = T2..CN (đúng với DB 31/96 của bạn)
+    var weekdayLabels = {
+        0: "T2",
+        1: "T3",
+        2: "T4",
+        3: "T5",
+        4: "T6",
+        5: "T7",
+        6: "CN"
+    };
+
+    function renderApDungCho(name, weekdays) {
+        var n = (name || "").toLowerCase().trim();
+        if (n === "ngày lễ" || n === "ngay le") return "—";
+
+        // nếu server trả [] hoặc null => hiểu là "Tất cả"
+        if (!weekdays || !weekdays.length) return "Tất cả";
+
+        var arr = weekdays
+            .map(function (x) { return parseInt(x, 10); })
+            .filter(function (x) { return x >= 0 && x <= 6; })
+            .sort(function (a, b) { return a - b; })
+            .map(function (x) { return weekdayLabels[x] || String(x); });
+
+        if (!arr.length) return "Tất cả";
+        return arr.join(", ");
     }
 
     function initDataTable() {
@@ -80,6 +110,16 @@
                     { title: l('Name'), data: "name" },
                     { title: l('Description'), data: "description" },
 
+                    // ✅ NEW COLUMN: Áp dụng cho
+                    {
+                        title: "Áp dụng cho",
+                        data: "weekdays",
+                        sortable: false,
+                        render: function (d, type, row) {
+                            return renderApDungCho(row?.name, d);
+                        }
+                    },
+
                     {
                         title: l('Dates'),
                         data: "dates",
@@ -96,7 +136,7 @@
                         data: "golfCourseId",
                         render: function (d) {
                             if (!d) return '';
-                            return golfCourseMap[d] || d;
+                            return golfCourseMap[d] || d; // fallback GUID
                         }
                     },
 

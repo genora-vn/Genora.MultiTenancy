@@ -36,17 +36,16 @@ namespace Genora.MultiTenancy.Web.Pages.AppSpecialDates
 
             var dto = await _service.GetAsync(Id);
 
-            // map manual (đang ổn định)
             SpecialDate = new CreateUpdateSpecialDateDto
             {
                 Name = dto.Name,
                 Description = dto.Description,
                 Dates = dto.Dates,
+                Weekdays = dto.Weekdays, // NEW
                 GolfCourseId = dto.GolfCourseId,
                 IsActive = dto.IsActive
             };
 
-            // nếu record cũ chưa có GolfCourseId thì set default active
             if (!SpecialDate.GolfCourseId.HasValue || SpecialDate.GolfCourseId == Guid.Empty)
             {
                 var defaultId = GetDefaultGolfCourseId();

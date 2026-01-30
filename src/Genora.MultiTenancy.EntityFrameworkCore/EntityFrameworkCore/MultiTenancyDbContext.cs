@@ -95,10 +95,9 @@ public class MultiTenancyDbContext :
     public MultiTenancyDbContext(DbContextOptions<MultiTenancyDbContext> options)
         : base(options)
     {
-        // để trống – OnConfiguring sẽ check null
     }
 
-    // ⬅️ Bật log/diagnostic & interceptor
+    // Bật log/diagnostic & interceptor
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
         base.OnConfiguring(optionsBuilder);
@@ -225,7 +224,6 @@ public class MultiTenancyDbContext :
 
             b.Property(x => x.IsExportInvoice);
 
-            // ✅ Invoice fields (new)
             b.Property(x => x.CompanyName).HasMaxLength(200);
             b.Property(x => x.TaxCode).HasMaxLength(50);
             b.Property(x => x.CompanyAddress).HasMaxLength(500);
@@ -276,7 +274,6 @@ public class MultiTenancyDbContext :
             b.Property(x => x.Price27).HasColumnType("decimal(18,2)").IsRequired(false);
             b.Property(x => x.Price36).HasColumnType("decimal(18,2)").IsRequired(false);
 
-            // Nếu muốn đảm bảo unique theo (CalendarSlotId, CustomerTypeId)
             b.HasIndex(x => new { x.CalendarSlotId, x.CustomerTypeId }).IsUnique();
         });
 
@@ -289,7 +286,9 @@ public class MultiTenancyDbContext :
             b.Property(x => x.Name).IsRequired().HasMaxLength(50);
             b.Property(x => x.Description).HasMaxLength(500);
 
-            // tránh tạo trùng config (TenantId + GolfCourseId + Name)
+            b.Property(x => x.WeekdaysMask).IsRequired(false);
+
+            // Tránh tạo trùng config (TenantId + GolfCourseId + Name)
             b.HasIndex(x => new { x.TenantId, x.GolfCourseId, x.Name }).IsUnique();
         });
 

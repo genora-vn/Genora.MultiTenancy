@@ -16,13 +16,16 @@ public class SpecialDate : FullAuditedAggregateRoot<Guid>, IMultiTenant
     [Required]
     [StringLength(50)]
     public string Name { get; set; } = default!;
-    // "Ngày trong tuần" | "Ngày cuối tuần" | "Ngày lễ"
+    // "Ngày trong tuần" | "Ngày cuối tuần" | "Ngày lễ" | "Member day"
 
     [StringLength(500)]
     public string? Description { get; set; }
 
     // JSON: ["2026-01-01","2026-02-10",...]
     public string? DatesJson { get; set; }
+
+    // NEW: bitmask Mon..Sun (0..6). All = 127. Null when Name = "Ngày lễ".
+    public int? WeekdaysMask { get; set; }
 
     public bool IsActive { get; set; } = true;
 

@@ -37,12 +37,8 @@ namespace Genora.MultiTenancy.AppServices.AppSpecialDates
         private readonly IRepository<GolfCourse, Guid> _golfCourseRepository;
         private readonly ICurrentTenant _currentTenant;
 
-        private static readonly string[] AllowedNames = new[]
-        {
-            SpecialDateNames.Weekday,
-            SpecialDateNames.Weekend,
-            SpecialDateNames.Holiday
-        };
+        // mapping 0..6 = T2..CN  => All = 127
+        private const int AllWeekdaysMask = (1 << 7) - 1;
 
         public AppSpecialDateService(
             IRepository<SpecialDate, Guid> repository,
@@ -61,6 +57,9 @@ namespace Genora.MultiTenancy.AppServices.AppSpecialDates
             DeletePolicyName = MultiTenancyPermissions.AppSpecialDates.Delete;
         }
 
+        // =========================
+        // ERROR HELPERS
+        // =========================
         private static BusinessException Err(string code, string field, object? value = null)
         {
             var ex = new BusinessException(code)
@@ -71,8 +70,25 @@ namespace Genora.MultiTenancy.AppServices.AppSpecialDates
             return ex;
         }
 
+        private static bool IsHolidayName(string? name)
+        {
+            var x = (name ?? "").Trim();
+            return x.Equals(SpecialDateNames.Holiday, StringComparison.OrdinalIgnoreCase)
+                || x.Equals("Ngay le", StringComparison.OrdinalIgnoreCase)
+                || x.Equals("Holiday", StringComparison.OrdinalIgnoreCase);
+        }
+
+        [DisableValidation]
+        public override async Task<SpecialDateDto> GetAsync(Guid id)
+        {
+            await CheckGetPolicyAsync();
+
+            var entity = await Repository.GetAsync(id);
+            return MapToDto(entity);
+        }
+
         /// <summary>
-        /// Lấy danh sách cấu hình loại ngày (Mặc định: Ngày trong tuần, ngày cuối tuần, ngày lễ,...)
+        /// Lấy danh sách cấu hình loại ngày
         /// </summary>
         [DisableValidation]
         public override async Task<PagedResultDto<SpecialDateDto>> GetListAsync(GetSpecialDateListInput input)
@@ -92,8 +108,9 @@ namespace Genora.MultiTenancy.AppServices.AppSpecialDates
 
             var totalCount = await AsyncExecuter.CountAsync(queryable);
 
+            // ✅ sorting ổn định theo Name (đỡ dính MembershipTier)
             var sorting = string.IsNullOrWhiteSpace(input.Sorting)
-                ? nameof(MembershipTier.DisplayOrder) + "," + nameof(MembershipTier.Code)
+                ? nameof(SpecialDate.Name) + " asc"
                 : input.Sorting;
 
             var items = await AsyncExecuter.ToListAsync(
@@ -103,14 +120,14 @@ namespace Genora.MultiTenancy.AppServices.AppSpecialDates
                     .Take(input.MaxResultCount)
             );
 
-            return new PagedResultDto<SpecialDateDto>(
-                totalCount,
-                ObjectMapper.Map<List<SpecialDate>, List<SpecialDateDto>>(items)
-            );
+            var dtoItems = items.Select(MapToDto).ToList();
+            return new PagedResultDto<SpecialDateDto>(totalCount, dtoItems);
         }
 
         /// <summary>
-        /// Tạo mới cấu hình loại ngày
+        /// Tạo mới cấu hình loại ngày (Cho phép thêm loại mới thoải mái)
+        /// - Holiday => bắt buộc Dates
+        /// - Non-holiday => dùng Weekdays (0..6); empty => All
         /// </summary>
         public override async Task<SpecialDateDto> CreateAsync(CreateUpdateSpecialDateDto input)
         {
@@ -118,6 +135,7 @@ namespace Genora.MultiTenancy.AppServices.AppSpecialDates
 
             NormalizeInput(input);
 
+            // Upsert theo (GolfCourseId + Name)
             var existing = await Repository.FirstOrDefaultAsync(x =>
                 x.GolfCourseId == input.GolfCourseId &&
                 x.Name == input.Name);
@@ -126,7 +144,9 @@ namespace Genora.MultiTenancy.AppServices.AppSpecialDates
             {
                 existing.Description = input.Description?.Trim();
                 existing.IsActive = input.IsActive;
+
                 existing.DatesJson = BuildDatesJsonForHoliday(input);
+                existing.WeekdaysMask = BuildWeekdaysMask(input);
 
                 await Repository.UpdateAsync(existing, autoSave: true);
                 return MapToDto(existing);
@@ -140,16 +160,14 @@ namespace Genora.MultiTenancy.AppServices.AppSpecialDates
                 BuildDatesJsonForHoliday(input))
             {
                 TenantId = _currentTenant.Id,
-                IsActive = input.IsActive
+                IsActive = input.IsActive,
+                WeekdaysMask = BuildWeekdaysMask(input)
             };
 
             entity = await Repository.InsertAsync(entity, autoSave: true);
             return MapToDto(entity);
         }
 
-        /// <summary>
-        /// Cập nhật cấu hình loại ngày
-        /// </summary>
         public override async Task<SpecialDateDto> UpdateAsync(Guid id, CreateUpdateSpecialDateDto input)
         {
             await CheckUpdatePolicyAsync();
@@ -162,43 +180,38 @@ namespace Genora.MultiTenancy.AppServices.AppSpecialDates
             entity.Description = input.Description?.Trim();
             entity.GolfCourseId = input.GolfCourseId;
             entity.IsActive = input.IsActive;
+
             entity.DatesJson = BuildDatesJsonForHoliday(input);
+            entity.WeekdaysMask = BuildWeekdaysMask(input);
 
             entity = await Repository.UpdateAsync(entity, autoSave: true);
             return MapToDto(entity);
         }
 
+        /// <summary>
+        /// Normalize + Validate nghiệp vụ nhưng KHÔNG khóa theo whitelist
+        /// </summary>
         private static void NormalizeInput(CreateUpdateSpecialDateDto input)
         {
             if (input == null)
                 throw Err(SpecialDateErrorCodes.InvalidInput, "Input");
 
-            input.Name = NormalizeName(input.Name);
+            // Name required + trim + canonical known names
+            input.Name = CanonicalizeName(input.Name);
 
-            static string NormalizeName(string? name)
-            {
-                var x = (name ?? "").Trim();
-                if (x.Equals("Ngày trong tuần", StringComparison.OrdinalIgnoreCase)) return "Ngày trong tuần";
-                if (x.Equals("Ngày cuối tuần", StringComparison.OrdinalIgnoreCase)) return "Ngày cuối tuần";
-                if (x.Equals("Ngày lễ", StringComparison.OrdinalIgnoreCase) || x.Equals("Ngay le", StringComparison.OrdinalIgnoreCase)) return "Ngày lễ";
-                return "Ngày trong tuần";
-            }
+            if (string.IsNullOrWhiteSpace(input.Name))
+                throw Err(SpecialDateErrorCodes.NameInvalid, "Name", input.Name);
 
-            input.Name = (input.Name ?? "").Trim();
-
-            if (!AllowedNames.Contains(input.Name))
-            {
+            if (input.Name.Length > 50)
                 throw Err(SpecialDateErrorCodes.NameInvalid, "Name", input.Name)
-                    .WithData("Allowed", string.Join(" / ", AllowedNames));
-            }
+                    .WithData("MaxLength", 50);
 
-            // rule: chỉ "Ngày lễ" mới có Dates
-            if (!string.Equals(input.Name, SpecialDateNames.Holiday, StringComparison.OrdinalIgnoreCase))
+            var isHoliday = IsHolidayName(input.Name);
+
+            if (isHoliday)
             {
-                input.Dates = null;
-            }
-            else
-            {
+                input.Weekdays = null;
+
                 var dates = (input.Dates ?? new List<DateTime>())
                     .Select(d => d.Date)
                     .Distinct()
@@ -213,11 +226,43 @@ namespace Genora.MultiTenancy.AppServices.AppSpecialDates
 
                 input.Dates = dates;
             }
+            else
+            {
+                input.Dates = null;
+
+                // Weekdays: accept 0..6 (T2..CN). Empty => All
+                var wd = (input.Weekdays ?? new List<int>())
+                    .Distinct()
+                    .Where(x => x >= 0 && x <= 6)
+                    .OrderBy(x => x)
+                    .ToList();
+
+                input.Weekdays = wd.Count == 0 ? null : wd;
+            }
+        }
+
+        private static string CanonicalizeName(string? name)
+        {
+            var x = (name ?? "").Trim();
+
+            // canonical 3 loại core + Member day
+            if (x.Equals(SpecialDateNames.Weekday, StringComparison.OrdinalIgnoreCase)) return SpecialDateNames.Weekday;
+            if (x.Equals(SpecialDateNames.Weekend, StringComparison.OrdinalIgnoreCase)) return SpecialDateNames.Weekend;
+            if (x.Equals(SpecialDateNames.Holiday, StringComparison.OrdinalIgnoreCase) || x.Equals("Ngay le", StringComparison.OrdinalIgnoreCase)) return SpecialDateNames.Holiday;
+
+            // Member day: cho phép user gõ nhiều kiểu
+            if (x.Equals(SpecialDateNames.MemberDay, StringComparison.OrdinalIgnoreCase)
+                || x.Equals("Memberday", StringComparison.OrdinalIgnoreCase)
+                || x.Equals("Member Day", StringComparison.OrdinalIgnoreCase))
+                return SpecialDateNames.MemberDay;
+
+            // ✅ cho phép mọi loại khác
+            return x;
         }
 
         private static string? BuildDatesJsonForHoliday(CreateUpdateSpecialDateDto input)
         {
-            if (!string.Equals(input.Name, SpecialDateNames.Holiday, StringComparison.OrdinalIgnoreCase))
+            if (!IsHolidayName(input.Name))
                 return null;
 
             var dates = (input.Dates ?? new List<DateTime>())
@@ -227,6 +272,37 @@ namespace Genora.MultiTenancy.AppServices.AppSpecialDates
                 .ToList();
 
             return JsonSerializer.Serialize(dates);
+        }
+
+        private static int? BuildWeekdaysMask(CreateUpdateSpecialDateDto input)
+        {
+            if (IsHolidayName(input.Name))
+                return null;
+
+            var list = (input.Weekdays ?? new List<int>())
+                .Distinct()
+                .Where(x => x >= 0 && x <= 6)
+                .ToList();
+
+            if (list.Count == 0) return AllWeekdaysMask;
+
+            var mask = 0;
+            foreach (var d in list) mask |= (1 << d);
+
+            return mask == 0 ? AllWeekdaysMask : mask;
+        }
+
+        private static List<int> ParseWeekdays(int? mask)
+        {
+            if (!mask.HasValue) return new List<int>();
+            var m = mask.Value;
+
+            var res = new List<int>();
+            for (var i = 0; i <= 6; i++)
+            {
+                if (((m >> i) & 1) == 1) res.Add(i);
+            }
+            return res;
         }
 
         private static List<DateTime> ParseDates(string? datesJson)
@@ -262,6 +338,7 @@ namespace Genora.MultiTenancy.AppServices.AppSpecialDates
                 GolfCourseId = e.GolfCourseId,
                 IsActive = e.IsActive,
                 Dates = ParseDates(e.DatesJson),
+                Weekdays = IsHolidayName(e.Name) ? new List<int>() : ParseWeekdays(e.WeekdaysMask),
                 CreationTime = e.CreationTime,
                 CreatorId = e.CreatorId,
                 LastModificationTime = e.LastModificationTime,
@@ -270,11 +347,11 @@ namespace Genora.MultiTenancy.AppServices.AppSpecialDates
         }
     }
 
-    // ====== Constants ======
     public static class SpecialDateNames
     {
         public const string Weekday = "Ngày trong tuần";
         public const string Weekend = "Ngày cuối tuần";
         public const string Holiday = "Ngày lễ";
+        public const string MemberDay = "Member day";
     }
 }
