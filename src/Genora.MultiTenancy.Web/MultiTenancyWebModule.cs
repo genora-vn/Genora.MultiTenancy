@@ -441,10 +441,8 @@ public class MultiTenancyWebModule : AbpModule
             await context.AddBackgroundWorkerAsync<AuditLogCleanupWorker>();
         }
 
-        // ✅ Register recurring jobs ONLY when allowed by config
         var shouldRegisterRecurring = config.GetValue("Hangfire:RegisterRecurringJobs", true);
 
-        // Queue cho recurring job (default nếu không set)
         var hangfireQueue = config["Hangfire:Queue"];
         if (string.IsNullOrWhiteSpace(hangfireQueue))
             hangfireQueue = "default";
@@ -469,7 +467,6 @@ public class MultiTenancyWebModule : AbpModule
         }
 
         app.UseCors("ZaloPolicy");
-        app.UseHangfireDashboard("/hangfire");
         app.UseForwardedHeaders();
 
         if (env.IsDevelopment())
@@ -499,17 +496,27 @@ public class MultiTenancyWebModule : AbpModule
         app.MapAbpStaticAssets();
         app.UseAbpStudioLink();
         app.UseAbpSecurityHeaders();
+
+        // ✅ Auth trước để dashboard đọc được User principal
         app.UseAuthentication();
         app.UseAbpOpenIddictValidation();
 
         app.UseUnitOfWork();
         app.UseDynamicClaims();
         app.UseAuthorization();
+
+        // ✅ Dashboard đặt SAU auth + có Authorization filter
+        app.UseHangfireDashboard("/hangfire", new DashboardOptions
+        {
+            Authorization = new[] { new HangfireDashboardAuthFilter() }
+        });
+
         app.UseSwagger();
         app.UseAbpSwaggerUI(options =>
         {
             options.SwaggerEndpoint("/swagger/v1/swagger.json", "MultiTenancy API");
         });
+
         app.UseAuditing();
         app.UseAbpSerilogEnrichers();
         app.UseConfiguredEndpoints();

@@ -478,16 +478,24 @@ public class MultiTenancyMenuContributor : IMenuContributor
             administration.AddItem(identityGroup);
 
             // Cài đặt nâng cấp (Setting Management)
-            administration.AddItem(
-                new ApplicationMenuItem(
-                    name: "System.UpgradeSettings",
-                    displayName: l["Menu:SystemUpgradeSettings"],
-                    url: "/SettingManagement",
-                    icon: "fa fa-wrench",
-                    order: 2
-                )
-                .RequirePermissions("SettingManagement.Settings")
-            );
+            var canSeeSettingManagement =
+    await perms.IsGrantedAsync("SettingManagement.Settings") ||
+    await perms.IsGrantedAsync("SettingManagement.Emailing") ||
+    await perms.IsGrantedAsync("SettingManagement.TimeZone");
+
+            if (canSeeSettingManagement)
+            {
+                administration.AddItem(
+                    new ApplicationMenuItem(
+                        name: "System.UpgradeSettings",
+                        displayName: l["Menu:SystemUpgradeSettings"],
+                        url: "/SettingManagement",
+                        icon: "fa fa-wrench",
+                        order: 2
+                    )
+                // ⚠️ không RequirePermissions nữa, vì đã check OR ở trên
+                );
+            }
 
             // Nhật ký hệ thống -> Nhật ký truy cập (coming soon) + Lịch sử gửi email (AppEmails)
             var systemLogs = new ApplicationMenuItem(
@@ -867,14 +875,23 @@ public class MultiTenancyMenuContributor : IMenuContributor
 
             administration.AddItem(identityGroup);
 
-            administration.AddItem(
-                new ApplicationMenuItem(
-                    name: "System.UpgradeSettings",
-                    displayName: l["Menu:SystemUpgradeSettings"],
-                    url: "/SettingManagement",
-                    icon: "fa fa-wrench",
-                    order: 3
-                ).RequirePermissions("SettingManagement.Settings"));
+            var hostCanSeeSettingManagement =
+    await perms.IsGrantedAsync("SettingManagement.Settings") ||
+    await perms.IsGrantedAsync("SettingManagement.Emailing") ||
+    await perms.IsGrantedAsync("SettingManagement.TimeZone");
+
+            if (hostCanSeeSettingManagement)
+            {
+                administration.AddItem(
+                    new ApplicationMenuItem(
+                        name: "System.UpgradeSettings",
+                        displayName: l["Menu:SystemUpgradeSettings"],
+                        url: "/SettingManagement",
+                        icon: "fa fa-wrench",
+                        order: 3
+                    )
+                );
+            }
 
             var systemLogs = new ApplicationMenuItem(
                 name: "System.Logs",

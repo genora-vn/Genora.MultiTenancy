@@ -85,7 +85,7 @@ public class AppEmailSenderService : MultiTenancyAppService, IAppEmailSenderServ
          string? bookingCode = null)
     {
         // ✅ Nếu muốn bật/tắt theo feature thì bỏ comment:
-        //await _featureChecker.CheckEnabledAsync(Features.AppEmails.AppEmailFeatures.Management);
+        await _featureChecker.CheckEnabledAsync(Features.AppEmails.AppEmailFeatures.Management);
 
         // ✅ Ép Scriban giữ PascalCase + biến tên "model"
         var scriptModel = new ScriptObject();
