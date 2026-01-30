@@ -8,7 +8,6 @@ using System;
 using System.Collections.Generic;
 using System.Text.Json;
 using System.Threading.Tasks;
-using Volo.Abp;
 using Volo.Abp.BackgroundJobs;
 using Volo.Abp.Caching;
 using Volo.Abp.Domain.Repositories;
@@ -16,6 +15,7 @@ using Volo.Abp.Features;
 using Volo.Abp.MultiTenancy;
 using Volo.Abp.TenantManagement;
 using Volo.Abp.TextTemplating;
+using Volo.Abp.Uow;
 
 namespace Genora.MultiTenancy.AppServices.AppEmails;
 
@@ -44,6 +44,7 @@ public class AppEmailSenderService : MultiTenancyAppService, IAppEmailSenderServ
         _logger = logger;
     }
 
+    [UnitOfWork(true)]
     public async Task<Guid> EnqueueRawAsync(
         string toEmails,
         string subject,
@@ -53,19 +54,12 @@ public class AppEmailSenderService : MultiTenancyAppService, IAppEmailSenderServ
         Guid? bookingId = null,
         string? bookingCode = null)
     {
-        var tenantId = CurrentTenant.Id; // nullable
-        _logger.LogWarning("[AppEmail] EnqueueRawAsync START TenantId={TenantId} To={To} Subject={Subject} BookingCode={BookingCode}",
-            tenantId, toEmails, subject, bookingCode);
-
-        if (tenantId == null)
-        {
-            // Nếu gọi từ tenant mà TenantId=null => tenant resolve đang fail
-            _logger.LogError("[AppEmail] TenantId is NULL in EnqueueRawAsync. This call will be treated as HOST.");
-        }
+        _logger.LogWarning("[AppEmailSenderService] EnqueueRawAsync START TenantId={TenantId} To={To} Subject={Subject}",
+            CurrentTenant.Id, toEmails, subject);
 
         var email = new Email(GuidGenerator.Create())
         {
-            TenantId = tenantId,
+            TenantId = CurrentTenant.Id,
             TemplateName = "",
             Subject = subject,
             Body = body,
@@ -79,22 +73,35 @@ public class AppEmailSenderService : MultiTenancyAppService, IAppEmailSenderServ
             BookingCode = bookingCode
         };
 
-        await _repo.InsertAsync(email, autoSave: true);
-
-        _logger.LogWarning("[AppEmail] Inserted EmailId={EmailId} TenantId={TenantId} Status={Status}",
-            email.Id, email.TenantId, email.Status);
-
-        await _jobManager.EnqueueAsync(new SendEmailJobArgs
+        try
         {
-            EmailId = email.Id,
-            TenantId = tenantId
-        });
+            await _repo.InsertAsync(email, autoSave: true);
 
-        _logger.LogWarning("[AppEmail] Enqueued SendEmailJob EmailId={EmailId} TenantId={TenantId}", email.Id, tenantId);
+            // ✅ ép commit UoW ngay để loại trừ case chưa flush ra DB
+            await CurrentUnitOfWork.SaveChangesAsync();
 
-        return email.Id;
+            _logger.LogWarning("[AppEmailSenderService] Inserted EmailId={EmailId} TenantId={TenantId}",
+                email.Id, CurrentTenant.Id);
+
+            await _jobManager.EnqueueAsync(new SendEmailJobArgs
+            {
+                EmailId = email.Id,
+                TenantId = CurrentTenant.Id
+            });
+
+            _logger.LogWarning("[AppEmailSenderService] Enqueued SendEmailJob EmailId={EmailId} TenantId={TenantId}",
+                email.Id, CurrentTenant.Id);
+
+            return email.Id;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "[AppEmailSenderService] EnqueueRawAsync FAILED TenantId={TenantId}", CurrentTenant.Id);
+            throw;
+        }
     }
 
+    [UnitOfWork(true)]
     public async Task<Guid> EnqueueTemplateAsync<TModel>(
          string templateName,
          TModel model,
@@ -105,66 +112,65 @@ public class AppEmailSenderService : MultiTenancyAppService, IAppEmailSenderServ
          Guid? bookingId = null,
          string? bookingCode = null)
     {
-        var tenantId = CurrentTenant.Id;
+        _logger.LogWarning("[AppEmailSenderService] EnqueueTemplateAsync START TenantId={TenantId} Template={Template} To={To} Subject={Subject}",
+            CurrentTenant.Id, templateName, toEmails, subject);
 
-        _logger.LogWarning("[AppEmail] EnqueueTemplateAsync START TenantId={TenantId} Template={Template} To={To} Subject={Subject} BookingCode={BookingCode}",
-            tenantId, templateName, toEmails, subject, bookingCode);
-
-        // Nếu tenant chưa bật feature, nó sẽ throw => log để biết rõ
         try
         {
+            // ✅ feature check (nếu fail là biết ngay nhờ log catch)
             await _featureChecker.CheckEnabledAsync(Features.AppEmails.AppEmailFeatures.Management);
+
+            var scriptModel = new ScriptObject();
+            scriptModel.Import(model!, renamer: m => m.Name);
+
+            var body = await _templateRenderer.RenderAsync(
+                templateName,
+                model: null,
+                globalContext: new Dictionary<string, object>
+                {
+                    ["model"] = scriptModel
+                }
+            );
+
+            var email = new Email(GuidGenerator.Create())
+            {
+                TenantId = CurrentTenant.Id,
+                TemplateName = templateName,
+                Subject = subject,
+                Body = body,
+                ToEmails = toEmails,
+                CcEmails = cc,
+                BccEmails = bcc,
+                ModelJson = JsonSerializer.Serialize(model),
+                Status = EmailStatus.Pending,
+                TryCount = 0,
+                BookingId = bookingId,
+                BookingCode = bookingCode
+            };
+
+            await _repo.InsertAsync(email, autoSave: true);
+            await CurrentUnitOfWork.SaveChangesAsync();
+
+            _logger.LogWarning("[AppEmailSenderService] Inserted EmailId={EmailId} TenantId={TenantId}",
+                email.Id, CurrentTenant.Id);
+
+            // ✅ FIX: 반드시 truyền TenantId vào args (trước bạn thiếu chỗ này)
+            await _jobManager.EnqueueAsync(new SendEmailJobArgs
+            {
+                EmailId = email.Id,
+                TenantId = CurrentTenant.Id
+            });
+
+            _logger.LogWarning("[AppEmailSenderService] Enqueued SendEmailJob EmailId={EmailId} TenantId={TenantId}",
+                email.Id, CurrentTenant.Id);
+
+            return email.Id;
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "[AppEmail] Feature disabled or feature check failed. TenantId={TenantId} Template={Template}",
-                tenantId, templateName);
+            _logger.LogError(ex, "[AppEmailSenderService] EnqueueTemplateAsync FAILED TenantId={TenantId} Template={Template}",
+                CurrentTenant.Id, templateName);
             throw;
         }
-
-        // ✅ Ép Scriban giữ PascalCase + biến tên "model"
-        var scriptModel = new ScriptObject();
-        scriptModel.Import(model!, renamer: m => m.Name);
-
-        var body = await _templateRenderer.RenderAsync(
-            templateName,
-            model: null,
-            globalContext: new Dictionary<string, object>
-            {
-                ["model"] = scriptModel
-            }
-        );
-
-        var email = new Email(GuidGenerator.Create())
-        {
-            TenantId = tenantId,
-            TemplateName = templateName,
-            Subject = subject,
-            Body = body,
-            ToEmails = toEmails,
-            CcEmails = cc,
-            BccEmails = bcc,
-            ModelJson = JsonSerializer.Serialize(model),
-            Status = EmailStatus.Pending,
-            TryCount = 0,
-            BookingId = bookingId,
-            BookingCode = bookingCode
-        };
-
-        await _repo.InsertAsync(email, autoSave: true);
-
-        _logger.LogWarning("[AppEmail] Inserted EmailId={EmailId} TenantId={TenantId} Template={Template} Status={Status}",
-            email.Id, email.TenantId, templateName, email.Status);
-
-        // ✅ FIX: luôn truyền TenantId để job chạy đúng scope tenant
-        await _jobManager.EnqueueAsync(new SendEmailJobArgs
-        {
-            EmailId = email.Id,
-            TenantId = tenantId
-        });
-
-        _logger.LogWarning("[AppEmail] Enqueued SendEmailJob EmailId={EmailId} TenantId={TenantId}", email.Id, tenantId);
-
-        return email.Id;
     }
 }
