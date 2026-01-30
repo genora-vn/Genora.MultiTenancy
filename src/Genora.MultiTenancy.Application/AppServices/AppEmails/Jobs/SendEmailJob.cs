@@ -36,12 +36,32 @@ public class SendEmailJob : AsyncBackgroundJob<SendEmailJobArgs>, ITransientDepe
     [UnitOfWork(true)]
     public override async Task ExecuteAsync(SendEmailJobArgs args)
     {
+        _logger.LogWarning("[SendEmailJob] START TenantId={TenantId} EmailId={EmailId}", args.TenantId, args.EmailId);
+
         using (_currentTenant.Change(args.TenantId))
         {
-            var mail = await _repo.GetAsync(args.EmailId);
+            // ✅ tránh throw mù mờ, log rõ mail có tồn tại không
+            var mail = await _repo.FirstOrDefaultAsync(x => x.Id == args.EmailId);
+            if (mail == null)
+            {
+                _logger.LogError("[SendEmailJob] Email not found (or filtered). TenantId={TenantId} EmailId={EmailId}",
+                    args.TenantId, args.EmailId);
+                return;
+            }
+
+            // ✅ check lệch tenant (debug cực nhanh)
+            if (mail.TenantId != args.TenantId)
+            {
+                _logger.LogWarning("[SendEmailJob] Tenant mismatch. ArgsTenantId={ArgsTenantId} MailTenantId={MailTenantId} EmailId={EmailId}",
+                    args.TenantId, mail.TenantId, mail.Id);
+            }
 
             if (mail.Status == EmailStatus.Sent || mail.Status == EmailStatus.Abandoned)
+            {
+                _logger.LogWarning("[SendEmailJob] SKIP Status={Status} TenantId={TenantId} EmailId={EmailId}",
+                    mail.Status, args.TenantId, mail.Id);
                 return;
+            }
 
             mail.Status = EmailStatus.Sending;
             mail.LastTryTime = DateTime.UtcNow;
@@ -49,7 +69,11 @@ public class SendEmailJob : AsyncBackgroundJob<SendEmailJobArgs>, ITransientDepe
 
             try
             {
-                var tos = mail.ToEmails.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+                var tos = (mail.ToEmails ?? "")
+                    .Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+
+                _logger.LogWarning("[SendEmailJob] SENDING ToCount={ToCount} Subject={Subject} TenantId={TenantId} EmailId={EmailId}",
+                    tos.Length, mail.Subject, args.TenantId, mail.Id);
 
                 foreach (var to in tos)
                 {
@@ -57,7 +81,7 @@ public class SendEmailJob : AsyncBackgroundJob<SendEmailJobArgs>, ITransientDepe
                         to,
                         mail.Subject,
                         mail.Body,
-                        isBodyHtml: false
+                        isBodyHtml: false // giữ nguyên như bạn đang dùng
                     );
                 }
 
@@ -67,6 +91,8 @@ public class SendEmailJob : AsyncBackgroundJob<SendEmailJobArgs>, ITransientDepe
                 mail.NextTryTime = null;
 
                 await _repo.UpdateAsync(mail, autoSave: true);
+
+                _logger.LogWarning("[SendEmailJob] SENT OK TenantId={TenantId} EmailId={EmailId}", args.TenantId, mail.Id);
             }
             catch (Exception ex)
             {
@@ -95,10 +121,10 @@ public class SendEmailJob : AsyncBackgroundJob<SendEmailJobArgs>, ITransientDepe
                 await _repo.UpdateAsync(mail, autoSave: true);
 
                 _logger.LogError(ex,
-                    "Send email failed. TenantId={TenantId}, EmailId={EmailId}, Try={TryCount}",
-                    args.TenantId, mail.Id, mail.TryCount);
+                    "[SendEmailJob] FAILED TenantId={TenantId} EmailId={EmailId} Try={TryCount} NextTry={NextTryTime}",
+                    args.TenantId, mail.Id, mail.TryCount, mail.NextTryTime);
 
-                throw;
+                throw; // giữ nguyên để ABP đánh fail job
             }
         }
     }
