@@ -54,7 +54,7 @@ public class MultiTenancyApplicationModule : AbpModule
 
         Configure<AbpVirtualFileSystemOptions>(options =>
         {
-            options.FileSets.AddEmbedded<MultiTenancyApplicationModule>();
+            options.FileSets.AddEmbedded<MultiTenancyApplicationModule>("Genora.MultiTenancy");
         });
 
         Configure<AbpTextTemplatingOptions>(options =>

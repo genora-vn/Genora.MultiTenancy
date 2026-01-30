@@ -6,6 +6,7 @@ using Microsoft.Extensions.Logging;
 using Scriban.Runtime;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
 using Volo.Abp.BackgroundJobs;
@@ -16,6 +17,7 @@ using Volo.Abp.MultiTenancy;
 using Volo.Abp.TenantManagement;
 using Volo.Abp.TextTemplating;
 using Volo.Abp.Uow;
+using Volo.Abp.VirtualFileSystem;
 
 namespace Genora.MultiTenancy.AppServices.AppEmails;
 
@@ -26,6 +28,7 @@ public class AppEmailSenderService : MultiTenancyAppService, IAppEmailSenderServ
     private readonly ITemplateRenderer _templateRenderer;
     private readonly IFeatureChecker _featureChecker;
     private readonly ILogger<AppEmailSenderService> _logger;
+    private readonly IVirtualFileProvider _vfs;
 
     public AppEmailSenderService(
         ITenantRepository tenantRepo,
@@ -35,13 +38,15 @@ public class AppEmailSenderService : MultiTenancyAppService, IAppEmailSenderServ
         ITemplateRenderer templateRenderer,
         IFeatureChecker featureChecker,
         ILogger<AppEmailSenderService> logger
-    ) : base(tenantRepo, tenantCache)
+,
+        IVirtualFileProvider vfs) : base(tenantRepo, tenantCache)
     {
         _repo = repo;
         _jobManager = jobManager;
         _templateRenderer = templateRenderer;
         _featureChecker = featureChecker;
         _logger = logger;
+        _vfs = vfs;
     }
 
     [UnitOfWork(true)]
@@ -122,6 +127,19 @@ public class AppEmailSenderService : MultiTenancyAppService, IAppEmailSenderServ
 
             var scriptModel = new ScriptObject();
             scriptModel.Import(model!, renamer: m => m.Name);
+
+            _logger.LogWarning("[TPL] Checking VFS path: {Path}", "/AppServices/AppEmails/Templates/BookingChangeRequest.tpl");
+            var f = _vfs.GetFileInfo("/AppServices/AppEmails/Templates/BookingChangeRequest.tpl");
+            _logger.LogWarning("[TPL] exists={Exists}, name={Name}", f.Exists, f.Name);
+
+            var asm = typeof(MultiTenancyApplicationModule).Assembly;
+            var names = asm.GetManifestResourceNames()
+                .Where(x => x.Contains("BookingChangeRequest", StringComparison.OrdinalIgnoreCase)
+                         || x.Contains("Templates", StringComparison.OrdinalIgnoreCase))
+                .ToList();
+
+            _logger.LogWarning("[TPL] asm={Asm} resCount={Count}", asm.FullName, names.Count);
+            foreach (var n in names) _logger.LogWarning("[TPL] RES={Res}", n);
 
             var body = await _templateRenderer.RenderAsync(
                 templateName,
