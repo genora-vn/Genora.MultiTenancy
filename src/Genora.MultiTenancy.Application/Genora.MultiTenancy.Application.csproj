@@ -28,6 +28,11 @@
 	</ItemGroup>
 
 	<ItemGroup>
+		<None Remove="AppServices\AppEmails\Templates\**\*.tpl" />
+		<Content Remove="AppServices\AppEmails\Templates\**\*.tpl" />
+	</ItemGroup>
+
+	<ItemGroup>
 		<EmbeddedResource Include="AppServices\AppEmails\Templates\**\*.tpl" />
 	</ItemGroup>
 
