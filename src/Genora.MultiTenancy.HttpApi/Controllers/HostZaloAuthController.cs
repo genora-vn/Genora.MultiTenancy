@@ -4,6 +4,7 @@ using Genora.MultiTenancy.DomainModels.AppZaloAuth;
 using Genora.MultiTenancy.Enums;
 using Genora.MultiTenancy.Helpers;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using System;
@@ -13,6 +14,7 @@ using Volo.Abp;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.MultiTenancy;
 using Volo.Abp.Security.Encryption;
+using Volo.Abp.Settings;
 
 namespace Genora.MultiTenancy.Controllers;
 
@@ -20,33 +22,37 @@ namespace Genora.MultiTenancy.Controllers;
 [Route("api/host/zalo-auth")]
 public class HostZaloAuthController : MultiTenancyController
 {
-    private readonly IConfiguration _cfg;
     private readonly IRepository<ZaloAuth, Guid> _authRepo;
     private readonly IZaloOAuthClient _oauth;
     private readonly IZaloTokenProvider _tokenProvider;
     private readonly IZaloLogWriter _logWriter;
     private readonly IStringEncryptionService _encrypt;
     private readonly ICurrentTenant _currentTenant;
+    private readonly IConfiguration _cfg;
+    private readonly IZaloRuntimeConfigProvider _zaloCfg;
 
     public record TokenValueDto(string token);
     public record ActiveDto(DateTime? expireTokenTime, bool isExpired);
 
     public HostZaloAuthController(
-        IConfiguration cfg,
         IRepository<ZaloAuth, Guid> authRepo,
         IZaloOAuthClient oauth,
         IZaloTokenProvider tokenProvider,
         IZaloLogWriter logWriter,
         IStringEncryptionService encrypt,
-        ICurrentTenant currentTenant)
+        ICurrentTenant currentTenant,
+        ISettingProvider settingProvider,
+        IConfiguration cfg,
+        IZaloRuntimeConfigProvider zaloCfg)
     {
-        _cfg = cfg;
         _authRepo = authRepo;
         _oauth = oauth;
         _tokenProvider = tokenProvider;
         _logWriter = logWriter;
         _encrypt = encrypt;
         _currentTenant = currentTenant;
+        _cfg = cfg;
+        _zaloCfg = zaloCfg;
     }
 
     [HttpGet("{id}/token")]
@@ -78,8 +84,9 @@ public class HostZaloAuthController : MultiTenancyController
 
         try
         {
-            var appId = _cfg["Zalo:AppId"]!;
-            var redirectUri = _cfg["Zalo:RedirectUri"]!;
+            var config = await _zaloCfg.GetAsync();
+            var appId = config.AppId;
+            var redirectUri = config.RedirectUri;
             var method = _cfg.GetValue("Zalo:CodeChallengeMethod", "S256");
 
             var verifier = PkceUtil.CreateCodeVerifier();
@@ -167,12 +174,12 @@ public class HostZaloAuthController : MultiTenancyController
                 tenantId = tid;
         }
 
-        var appId = _cfg["Zalo:AppId"]!;
-        var secret = _cfg["Zalo:AppSecret"]!;
-        var redirectUri = _cfg["Zalo:RedirectUri"]!;
-
         using (_currentTenant.Change(tenantId))
         {
+            var config = await _zaloCfg.GetAsync();
+            var appId = config.AppId;
+            var secret = config.AppSecret;
+            var redirectUri = config.RedirectUri;
             var auth = (await _authRepo.GetQueryableAsync())
                 .FirstOrDefault(x => x.State == state && x.AppId == appId);
 

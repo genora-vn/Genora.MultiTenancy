@@ -18,6 +18,7 @@ using Genora.MultiTenancy.Localization;
 using Genora.MultiTenancy.Permissions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Localization;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -63,6 +64,7 @@ public class AppBookingService :
     private readonly IRepository<OptionExtend, Guid> _optionExtendRepo;
     private readonly IRepository<CustomerType, Guid> _customerType;
     private readonly ISettingProvider _settingProvider;
+    private readonly ILogger<AppBookingService> _logger;
 
     // ✅ enqueue ZBS via Background Job
     private readonly IBackgroundJobManager _jobManager;
@@ -86,7 +88,8 @@ public class AppBookingService :
         IRepository<OptionExtend, Guid> optionExtendRepo,
         IRepository<CustomerType, Guid> customerType,
         ISettingProvider settingProvider,
-        IBackgroundJobManager jobManager)
+        IBackgroundJobManager jobManager,
+        ILogger<AppBookingService> logger)
         : base(repository, currentTenant, featureChecker)
     {
         _customerRepository = customerRepository;
@@ -109,6 +112,7 @@ public class AppBookingService :
         _customerType = customerType;
         _settingProvider = settingProvider;
         _jobManager = jobManager;
+        _logger = logger;
     }
 
     private string NA() => _l["Common:NA"].Value;
@@ -387,7 +391,10 @@ public class AppBookingService :
                 );
             }
         }
-        catch { }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Enqueue EMAIL failed. BookingId={BookingId}, TenantId={TenantId}", entity.Id, CurrentTenant.Id);
+        }
 
         var ct = await _customerType.FindAsync(x => x.Id == customer.CustomerTypeId);
         var ctName = ct?.Name ?? ct?.Code ?? NA();
@@ -450,7 +457,10 @@ public class AppBookingService :
                 bookingCode: entity.BookingCode
             );
         }
-        catch { }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Enqueue ZBS failed. BookingId={BookingId}, TenantId={TenantId}", entity.Id, CurrentTenant.Id);
+        }
 
         return await GetAsync(entity.Id);
     }
@@ -1024,21 +1034,26 @@ public class AppBookingService :
     }
 
     private async Task<(string To, string? Cc, string? Bcc, string Subject)> GetEmailConfigAsync(
-        string toKey, string ccKey, string bccKey, string subjectKey,
-        string bookingCode, string fallbackTo)
+    string toKey, string ccKey, string bccKey, string subjectKey,
+    string bookingCode, string fallbackTo)
     {
         var to = await _settingProvider.GetOrNullAsync(toKey);
         var cc = await _settingProvider.GetOrNullAsync(ccKey);
         var bcc = await _settingProvider.GetOrNullAsync(bccKey);
         var subjectTpl = await _settingProvider.GetOrNullAsync(subjectKey);
 
+        // ✅ fallback nếu null hoặc rỗng
+        var toFinal = EmailHelper.NormalizeEmailList(to);
+        if (string.IsNullOrWhiteSpace(toFinal)) toFinal = EmailHelper.NormalizeEmailList(fallbackTo);
+
         return (
-            To: to ?? fallbackTo,
-            Cc: NullIfEmpty(cc),
-            Bcc: NullIfEmpty(bcc),
+            To: toFinal,
+            Cc: NullIfEmpty(EmailHelper.NormalizeEmailList(cc)),
+            Bcc: NullIfEmpty(EmailHelper.NormalizeEmailList(bcc)),
             Subject: ApplySubjectTemplate(subjectTpl, bookingCode)
         );
     }
+
 
     private static List<int> ParseUtilityIds(string? utility)
     {

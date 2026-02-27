@@ -37,6 +37,11 @@
     "Menu:RewardHistory": "Lịch sử đổi quà",
     "Menu:SystemIdentity": "Quản lý danh tính",
     "Menu:SystemUpgradeSettings": "Cài đặt nâng cấp",
+
+    "Menu:SystemUpgradeSettings.Emailing": "Gửi email",
+    "Menu:SystemUpgradeSettings.ZaloZns": "Cấu hình ZNS/ZBS (Zalo)",
+    "Menu:SystemUpgradeSettings.EmailTemplates": "Cấu hình template Email (Booking)",
+
     "Menu:SystemLogs": "Nhật ký hệ thống",
     "Menu:SystemAccessLogs": "Nhật ký truy cập",
     "Menu:Roles": "Vai trò",
@@ -44,6 +49,7 @@
     "Menu:ComingSoon": "(Chưa phát triển)",
     "Menu:TenantManagement": "Quản lý người thuê",
     "Menu:Tenants": "Người thuê",
+
     "Permission:MiniAppZaloAuth": "Quản lý xác thực & Ủy quyền Zalo OA",
     "Permission:MiniAppZaloAuth.Create": "Tạo mới",
     "Permission:MiniAppZaloAuth.Edit": "Chỉnh sửa",
@@ -104,6 +110,7 @@
     "Yes": "Hoạt động",
     "No": "Không hoạt động",
     "Delete": "Xóa",
+    "Save": "Lưu lại",
     "Edit": "Sửa",
     "PublishDate": "Ngày xuất bản",
     "Name": "Tên",
@@ -499,6 +506,30 @@
     "Welcome": "Genora xin chào",
     "Validation:Required": "Trường {0} là bắt buộc.",
     "Validation:StringMax": "Trường {0} phải có tối đa {1} ký tự.",
-    "Validation:PhoneInvalid": "Số điện thoại không hợp lệ."
+    "Validation:PhoneInvalid": "Số điện thoại không hợp lệ.",
+
+    "UpgradeSettings:EmailTemplates:Title": "Cấu hình template Email (Booking)",
+    "UpgradeSettings:EmailTemplates:Recipients:Title": "Cấu hình email người nhận",
+    "UpgradeSettings:EmailTemplates:Subjects:Title": "Cấu hình tiêu đề email",
+    "UpgradeSettings:Common:ToEmails": "To",
+    "UpgradeSettings:Common:CcEmails": "Cc",
+    "UpgradeSettings:Common:BccEmails": "Bcc",
+    "UpgradeSettings:EmailTemplates:Subject:BookingNew": "Tiêu đề Đặt chỗ mới",
+    "UpgradeSettings:EmailTemplates:Subject:BookingChange": "Tiêu đề Thay đổi đặt chỗ",
+    "UpgradeSettings:EmailTemplates:Subject:BookingCancel": "Tiêu đề Hủy đặt chỗ",
+    "UpgradeSettings:ZaloZns:Title": "Cấu hình ZNS/ZBS (Zalo)",
+    "UpgradeSettings:ZaloZns:AppConfig:Title": "Cấu hình ứng dụng Zalo",
+    "UpgradeSettings:ZaloZns:Templates:Title": "Cấu hình template ZNS/ZBS",
+    "UpgradeSettings:ZaloZns:AppId": "AppId",
+    "UpgradeSettings:ZaloZns:AppSecret": "AppSecret",
+    "UpgradeSettings:ZaloZns:RedirectUri": "RedirectUri",
+    "UpgradeSettings:ZaloZns:MiniAppId": "MiniAppId",
+    "UpgradeSettings:ZaloZns:OaId": "OaId",
+    "UpgradeSettings:ZaloZns:ZbsEnabled": "Bật gửi ZNS/ZBS",
+    "UpgradeSettings:ZaloZns:Template:RegisterSuccess": "Đăng ký thành công TemplateId",
+    "UpgradeSettings:ZaloZns:Template:BookingCreated": "Tạo booking TemplateId",
+    "UpgradeSettings:ZaloZns:Template:BookingCancelled": "Hủy booking TemplateId",
+    "UpgradeSettings:ZaloZns:Template:BookingReminder": "Nhắc lịch chơi TemplateId",
+    "UpgradeSettings:ZaloZns:Template:BookingChanged": "Cập nhật booking TemplateId"
   }
 }

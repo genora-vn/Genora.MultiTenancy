@@ -485,16 +485,48 @@ public class MultiTenancyMenuContributor : IMenuContributor
 
             if (canSeeSettingManagement)
             {
-                administration.AddItem(
+                var upgradeSettings = new ApplicationMenuItem(
+                    name: "System.UpgradeSettings",
+                    displayName: l["Menu:SystemUpgradeSettings"],
+                    url: "/SettingManagement",
+                    icon: "fa fa-wrench",
+                    order: 1
+                );
+
+                // 1) Gửi email (ABP default)
+                upgradeSettings.AddItem(
                     new ApplicationMenuItem(
-                        name: "System.UpgradeSettings",
-                        displayName: l["Menu:SystemUpgradeSettings"],
+                        name: "System.UpgradeSettings.Emailing",
+                        displayName: l["Menu:SystemUpgradeSettings.Emailing"],
                         url: "/SettingManagement",
-                        icon: "fa fa-wrench",
+                        icon: "fa fa-envelope",
+                        order: 1
+                    )
+                );
+
+                // 2) Label / shortcut: ZNS/ZBS (Zalo)
+                upgradeSettings.AddItem(
+                    new ApplicationMenuItem(
+                        name: "System.UpgradeSettings.ZaloZns",
+                        displayName: l["Menu:SystemUpgradeSettings.ZaloZns"],
+                        url: "/UpgradeSettings/ZaloZns",
+                        icon: "fa fa-comments",
                         order: 2
                     )
-                // ⚠️ không RequirePermissions nữa, vì đã check OR ở trên
                 );
+
+                // 3) Label / shortcut: Email templates
+                upgradeSettings.AddItem(
+                    new ApplicationMenuItem(
+                        name: "System.UpgradeSettings.EmailTemplates",
+                        displayName: l["Menu:SystemUpgradeSettings.EmailTemplates"],
+                        url: "/UpgradeSettings/EmailTemplates",
+                        icon: "fa fa-file-text-o",
+                        order: 3
+                    )
+                );
+
+                administration.AddItem(upgradeSettings);
             }
 
             // Nhật ký hệ thống -> Nhật ký truy cập (coming soon) + Lịch sử gửi email (AppEmails)
@@ -882,15 +914,48 @@ public class MultiTenancyMenuContributor : IMenuContributor
 
             if (hostCanSeeSettingManagement)
             {
-                administration.AddItem(
+                var upgradeSettings = new ApplicationMenuItem(
+                    name: "System.UpgradeSettings",
+                    displayName: l["Menu:SystemUpgradeSettings"],
+                    url: "/SettingManagement",
+                    icon: "fa fa-wrench",
+                    order: 1
+                );
+
+                // 1) Gửi email (ABP default)
+                upgradeSettings.AddItem(
                     new ApplicationMenuItem(
-                        name: "System.UpgradeSettings",
-                        displayName: l["Menu:SystemUpgradeSettings"],
+                        name: "System.UpgradeSettings.Emailing",
+                        displayName: l["Menu:SystemUpgradeSettings.Emailing"],
                         url: "/SettingManagement",
-                        icon: "fa fa-wrench",
+                        icon: "fa fa-envelope",
+                        order: 1
+                    )
+                );
+
+                // 2) Label / shortcut: ZNS/ZBS (Zalo)
+                upgradeSettings.AddItem(
+                    new ApplicationMenuItem(
+                        name: "System.UpgradeSettings.ZaloZns",
+                        displayName: l["Menu:SystemUpgradeSettings.ZaloZns"],
+                        url: "/UpgradeSettings/ZaloZns",
+                        icon: "fa fa-comments",
+                        order: 2
+                    )
+                );
+
+                // 3) Label / shortcut: Email templates
+                upgradeSettings.AddItem(
+                    new ApplicationMenuItem(
+                        name: "System.UpgradeSettings.EmailTemplates",
+                        displayName: l["Menu:SystemUpgradeSettings.EmailTemplates"],
+                        url: "/UpgradeSettings/EmailTemplates",
+                        icon: "fa fa-file-text-o",
                         order: 3
                     )
                 );
+
+                administration.AddItem(upgradeSettings);
             }
 
             var systemLogs = new ApplicationMenuItem(

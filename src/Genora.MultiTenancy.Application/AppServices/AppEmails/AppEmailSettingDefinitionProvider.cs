@@ -9,23 +9,35 @@ public class AppEmailSettingDefinitionProvider : SettingDefinitionProvider
         context.Add(
             new SettingDefinition(
                 AppEmailSettingNames.BookingNew_ToEmails,
-                defaultValue: "sales@montgomerielinks.com;fo.mlv@montgomerielinks.com",
+                defaultValue: "",
                 isVisibleToClients: false
+            ).WithProviders(
+                GlobalSettingValueProvider.ProviderName,
+                TenantSettingValueProvider.ProviderName
             ),
             new SettingDefinition(
                 AppEmailSettingNames.BookingNew_CcEmails,
                 defaultValue: "",
                 isVisibleToClients: false
+            ).WithProviders(
+                GlobalSettingValueProvider.ProviderName,
+                TenantSettingValueProvider.ProviderName
             ),
             new SettingDefinition(
                 AppEmailSettingNames.BookingNew_BccEmails,
                 defaultValue: "",
                 isVisibleToClients: false
+            ).WithProviders(
+                GlobalSettingValueProvider.ProviderName,
+                TenantSettingValueProvider.ProviderName
             ),
             new SettingDefinition(
                 AppEmailSettingNames.BookingNew_SubjectTemplate,
-                defaultValue: "[ZALO MINI APP] YÊU CẦU ĐẶT CHỖ MỚI – {BookingCode}",
+                defaultValue: "",
                 isVisibleToClients: false
+            ).WithProviders(
+                GlobalSettingValueProvider.ProviderName,
+                TenantSettingValueProvider.ProviderName
             )
         );
 
@@ -33,23 +45,35 @@ public class AppEmailSettingDefinitionProvider : SettingDefinitionProvider
         context.Add(
             new SettingDefinition(
                 AppEmailSettingNames.BookingChange_ToEmails,
-                defaultValue: "sales@montgomerielinks.com;fo.mlv@montgomerielinks.com",
+                defaultValue: "",
                 isVisibleToClients: false
+            ).WithProviders(
+                GlobalSettingValueProvider.ProviderName,
+                TenantSettingValueProvider.ProviderName
             ),
             new SettingDefinition(
                 AppEmailSettingNames.BookingChange_CcEmails,
                 defaultValue: "",
                 isVisibleToClients: false
+            ).WithProviders(
+                GlobalSettingValueProvider.ProviderName,
+                TenantSettingValueProvider.ProviderName
             ),
             new SettingDefinition(
                 AppEmailSettingNames.BookingChange_BccEmails,
                 defaultValue: "",
                 isVisibleToClients: false
+            ).WithProviders(
+                GlobalSettingValueProvider.ProviderName,
+                TenantSettingValueProvider.ProviderName
             ),
             new SettingDefinition(
                 AppEmailSettingNames.BookingChange_SubjectTemplate,
-                defaultValue: "[ZALO MINI APP] YÊU CẦU THAY ĐỔI ĐẶT CHỖ – {BookingCode}",
+                defaultValue: "",
                 isVisibleToClients: false
+            ).WithProviders(
+                GlobalSettingValueProvider.ProviderName,
+                TenantSettingValueProvider.ProviderName
             )
         );
 
@@ -57,23 +81,35 @@ public class AppEmailSettingDefinitionProvider : SettingDefinitionProvider
         context.Add(
             new SettingDefinition(
                 AppEmailSettingNames.BookingCancel_ToEmails,
-                defaultValue: "sales@montgomerielinks.com;fo.mlv@montgomerielinks.com",
+                defaultValue: "",
                 isVisibleToClients: false
+            ).WithProviders(
+                GlobalSettingValueProvider.ProviderName,
+                TenantSettingValueProvider.ProviderName
             ),
             new SettingDefinition(
                 AppEmailSettingNames.BookingCancel_CcEmails,
                 defaultValue: "",
                 isVisibleToClients: false
+            ).WithProviders(
+                GlobalSettingValueProvider.ProviderName,
+                TenantSettingValueProvider.ProviderName
             ),
             new SettingDefinition(
                 AppEmailSettingNames.BookingCancel_BccEmails,
                 defaultValue: "",
                 isVisibleToClients: false
+            ).WithProviders(
+                GlobalSettingValueProvider.ProviderName,
+                TenantSettingValueProvider.ProviderName
             ),
             new SettingDefinition(
                 AppEmailSettingNames.BookingCancel_SubjectTemplate,
-                defaultValue: "[ZALO MINI APP] YÊU CẦU HỦY ĐẶT CHỖ – {BookingCode}",
+                defaultValue: "",
                 isVisibleToClients: false
+            ).WithProviders(
+                GlobalSettingValueProvider.ProviderName,
+                TenantSettingValueProvider.ProviderName
             )
         );
     }

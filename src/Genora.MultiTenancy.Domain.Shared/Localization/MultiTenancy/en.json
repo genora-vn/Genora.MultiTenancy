@@ -37,6 +37,11 @@
     "Menu:RewardHistory": "Reward History",
     "Menu:SystemIdentity": "Identity Management",
     "Menu:SystemUpgradeSettings": "Advanced Settings",
+
+    "Menu:SystemUpgradeSettings.Emailing": "Emailing",
+    "Menu:SystemUpgradeSettings.ZaloZns": "ZNS/ZBS (Zalo) settings",
+    "Menu:SystemUpgradeSettings.EmailTemplates": "Email templates (Booking)",
+
     "Menu:SystemLogs": "System Logs",
     "Menu:SystemAccessLogs": "Access Logs",
     "Menu:Roles": "Roles",
@@ -44,6 +49,7 @@
     "Menu:ComingSoon": "(Coming soon)",
     "Menu:TenantManagement": "Tenant management",
     "Menu:Tenants": "Tenants",
+
     "Permission:MiniAppZaloAuth": "Zalo Authentication & Authorization Zalo OA management",
     "Permission:MiniAppZaloAuth.Create": "Create",
     "Permission:MiniAppZaloAuth.Edit": "Edit",
@@ -101,6 +107,7 @@
     "Actions": "Actions",
     "Close": "Close",
     "Delete": "Delete",
+    "Save": "Save",
     "Edit": "Edit",
     "PublishDate": "Publish date",
     "Name": "Name",
@@ -462,6 +469,30 @@
     "AppSettingDeletionConfirmationMessage": "Are you sure to delete the setting '{0}'?",
     "DeletionBookingConfirmationMessage": "Are you sure you want to cancel the booking",
     "LongWelcomeMessage": "Genora CX Flatform - Welcome to management system",
-    "Welcome": "Genora welcome"
+    "Welcome": "Genora welcome",
+
+    "UpgradeSettings:EmailTemplates:Title": "Email templates (Booking)",
+    "UpgradeSettings:EmailTemplates:Recipients:Title": "Recipients configuration",
+    "UpgradeSettings:EmailTemplates:Subjects:Title": "Email subject configuration",
+    "UpgradeSettings:Common:ToEmails": "ToEmails",
+    "UpgradeSettings:Common:CcEmails": "CcEmails",
+    "UpgradeSettings:Common:BccEmails": "BccEmails",
+    "UpgradeSettings:EmailTemplates:Subject:BookingNew": "Subject - New booking",
+    "UpgradeSettings:EmailTemplates:Subject:BookingChange": "Subject - Booking change",
+    "UpgradeSettings:EmailTemplates:Subject:BookingCancel": "Subject - Booking cancel",
+    "UpgradeSettings:ZaloZns:Title": "ZNS/ZBS (Zalo) settings",
+    "UpgradeSettings:ZaloZns:AppConfig:Title": "Zalo app configuration",
+    "UpgradeSettings:ZaloZns:Templates:Title": "ZNS/ZBS template configuration",
+    "UpgradeSettings:ZaloZns:AppId": "AppId",
+    "UpgradeSettings:ZaloZns:AppSecret": "AppSecret",
+    "UpgradeSettings:ZaloZns:RedirectUri": "RedirectUri",
+    "UpgradeSettings:ZaloZns:MiniAppId": "MiniAppId",
+    "UpgradeSettings:ZaloZns:OaId": "OA Id",
+    "UpgradeSettings:ZaloZns:ZbsEnabled": "Enable ZNS/ZBS sending",
+    "UpgradeSettings:ZaloZns:Template:RegisterSuccess": "Register success TemplateId",
+    "UpgradeSettings:ZaloZns:Template:BookingCreated": "Booking created TemplateId",
+    "UpgradeSettings:ZaloZns:Template:BookingCancelled": "Booking cancelled TemplateId",
+    "UpgradeSettings:ZaloZns:Template:BookingReminder": "Booking reminder TemplateId",
+    "UpgradeSettings:ZaloZns:Template:BookingChanged": "Booking changed TemplateId"
   }
 }

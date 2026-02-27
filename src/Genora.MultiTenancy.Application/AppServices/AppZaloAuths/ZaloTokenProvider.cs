@@ -4,6 +4,7 @@ using Genora.MultiTenancy.Helpers;
 using Microsoft.Extensions.Configuration;
 using System;
 using System.Linq;
+using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
 using Volo.Abp;
@@ -27,6 +28,7 @@ public class ZaloTokenProvider : IZaloTokenProvider
 
     private readonly IUnitOfWorkManager _uowManager;
     private readonly IAsyncQueryableExecuter _asyncExecuter;
+    private readonly IZaloRuntimeConfigProvider _zaloCfg;
 
     public ZaloTokenProvider(
         IRepository<ZaloAuth, Guid> authRepo,
@@ -35,7 +37,8 @@ public class ZaloTokenProvider : IZaloTokenProvider
         IStringEncryptionService encrypt,
         ICurrentTenant currentTenant,
         IUnitOfWorkManager uowManager,
-        IAsyncQueryableExecuter asyncExecuter)
+        IAsyncQueryableExecuter asyncExecuter,
+        IZaloRuntimeConfigProvider zaloCfg)
     {
         _authRepo = authRepo;
         _cfg = cfg;
@@ -45,6 +48,7 @@ public class ZaloTokenProvider : IZaloTokenProvider
 
         _uowManager = uowManager;
         _asyncExecuter = asyncExecuter;
+        _zaloCfg = zaloCfg;
     }
 
     private Guid? ScopeTenantId => _currentTenant.IsAvailable ? _currentTenant.Id : (Guid?)null;
@@ -118,8 +122,9 @@ public class ZaloTokenProvider : IZaloTokenProvider
 
     private async Task<ZaloAuth> RefreshAndRotateAsync(ZaloAuth current)
     {
-        var appId = _cfg["Zalo:AppId"]!;
-        var secret = _cfg["Zalo:AppSecret"]!;
+        var config = await _zaloCfg.GetAsync();
+        var appId = config.AppId;
+        var secret = config.AppSecret;
 
         var refreshPlain = SecurityHelper.DecryptMaybe(current.RefreshToken, _encrypt);
         if (string.IsNullOrWhiteSpace(refreshPlain))

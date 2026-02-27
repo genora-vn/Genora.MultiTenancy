@@ -1,5 +1,4 @@
 ﻿using Genora.MultiTenancy.AppDtos.AppZaloAuths;
-using Genora.MultiTenancy.DomainModels.AppZaloAuth;
 using Genora.MultiTenancy.Enums;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
@@ -10,7 +9,6 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Volo.Abp;
-using Volo.Abp.Domain.Repositories;
 using Volo.Abp.MultiTenancy;
 
 namespace Genora.MultiTenancy.AppServices.AppZaloAuths;
@@ -18,6 +16,7 @@ namespace Genora.MultiTenancy.AppServices.AppZaloAuths;
 public class ZaloZbsClient : BaseZaloClient, IZaloZbsClient
 {
     private readonly IZaloTokenProvider _tokenProvider;
+    private readonly ICurrentTenant _currentTenant;
 
     // Allowlist OA
     private static readonly HashSet<string> OA_ALLOW = new(StringComparer.OrdinalIgnoreCase)
@@ -46,14 +45,28 @@ public class ZaloZbsClient : BaseZaloClient, IZaloZbsClient
     };
 
     public ZaloZbsClient(
-         IHttpClientFactory factory,
-         IConfiguration cfg,
-         IZaloLogWriter logWriter,
-         ILogger<BaseZaloClient> logger,
-         IZaloTokenProvider tokenProvider)
-         : base(factory, cfg, logWriter, logger)
+        IHttpClientFactory factory,
+        IConfiguration cfg,
+        IZaloLogWriter logWriter,
+        ILogger<BaseZaloClient> logger,
+        IZaloTokenProvider tokenProvider,
+        ICurrentTenant currentTenant)
+        : base(factory, cfg, logWriter, logger)
     {
         _tokenProvider = tokenProvider;
+        _currentTenant = currentTenant;
+    }
+
+    private string GetBaseUrl(string api)
+    {
+        // Base url dùng chung toàn hệ thống => lấy từ AppSettings (global)
+        // "Zalo": { "OpenApiBaseUrl": "...", "ZnsBaseUrl": "..." }
+        return api switch
+        {
+            "oa" => (_cfg["Zalo:OpenApiBaseUrl"] ?? "https://openapi.zalo.me").TrimEnd('/'),
+            "zns" => (_cfg["Zalo:ZnsBaseUrl"] ?? "https://business.openapi.zalo.me").TrimEnd('/'),
+            _ => throw new BusinessException("ZaloZbs:InvalidApi").WithData("Api", api)
+        };
     }
 
     public async Task<string> CallAsync(ZaloZbsCallRequest req, CancellationToken ct)
@@ -63,14 +76,6 @@ public class ZaloZbsClient : BaseZaloClient, IZaloZbsClient
         var api = (req.Api ?? "oa").Trim().ToLowerInvariant();
         var path = (req.Path ?? "/").Trim();
         if (!path.StartsWith("/")) path = "/" + path;
-
-        // base url, đang hadcode điều chỉnh lấy từ AppSetting sau
-        string baseUrl = api switch
-        {
-            "oa" => "https://openapi.zalo.me",
-            "zns" => "https://business.openapi.zalo.me",
-            _ => throw new BusinessException("ZaloZbs:InvalidApi").WithData("Api", api)
-        };
 
         // allowlist validate
         if (api == "oa" && !OA_ALLOW.Contains(path))
@@ -84,6 +89,7 @@ public class ZaloZbsClient : BaseZaloClient, IZaloZbsClient
 
         var token = await _tokenProvider.GetAccessTokenAsync();
 
+        var baseUrl = GetBaseUrl(api);
         var url = BuildUrl(baseUrl, path, req.Query);
 
         // Zalo OA/ZNS truyền token qua header
@@ -99,7 +105,10 @@ public class ZaloZbsClient : BaseZaloClient, IZaloZbsClient
         // Log action theo enum ZaloLogActions
         var action = api == "zns" ? ZaloLogActions.SEND_ZNS : ZaloLogActions.SEND_OA_MSG;
 
-        var resBody = await SendAsync(httpMethod, url, headers, action, requestBody, ct);
+        // Truyền tenantId để log đúng (host => null, tenant => id)
+        var tenantId = _currentTenant.IsAvailable ? _currentTenant.Id : (Guid?)null;
+
+        var resBody = await SendAsync(httpMethod, url, headers, action, requestBody, ct, tenantId: tenantId);
 
         // Nếu token invalid => refresh + retry 1 lần
         if (IsLikelyInvalidToken(resBody))
@@ -108,7 +117,7 @@ public class ZaloZbsClient : BaseZaloClient, IZaloZbsClient
             token = await _tokenProvider.GetAccessTokenAsync();
             headers["access_token"] = token;
 
-            resBody = await SendAsync(httpMethod, url, headers, action, requestBody, ct);
+            resBody = await SendAsync(httpMethod, url, headers, action, requestBody, ct, tenantId: tenantId);
         }
 
         return resBody;

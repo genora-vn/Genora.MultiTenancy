@@ -18,16 +18,19 @@ namespace Genora.MultiTenancy.AppServices.AppZaloAuths;
 public class ZaloApiClient : BaseZaloClient, IZaloApiClient
 {
     private readonly IZaloTokenProvider _tokenProvider;
+    private readonly IZaloRuntimeConfigProvider _zaloCfg;
 
     public ZaloApiClient(
         IHttpClientFactory factory,
         IZaloTokenProvider tokenProvider,
         IZaloLogWriter logWriter,
         IConfiguration cfg,
-        ILogger<BaseZaloClient> logger)
+        ILogger<BaseZaloClient> logger,
+        IZaloRuntimeConfigProvider zaloCfg)
         : base(factory, cfg, logWriter, logger)
     {
         _tokenProvider = tokenProvider;
+        _zaloCfg = zaloCfg;
     }
 
     public async Task<string> SendZnsAsync(object payload, CancellationToken ct)
@@ -182,7 +185,8 @@ public class ZaloApiClient : BaseZaloClient, IZaloApiClient
         if (string.IsNullOrWhiteSpace(code)) throw new ArgumentException("Missing code", nameof(code));
         if (string.IsNullOrWhiteSpace(accessToken)) throw new ArgumentException("Missing accessToken", nameof(accessToken));
 
-        var appSecret = _cfg["Zalo:AppSecret"] ?? throw new ArgumentNullException("Zalo:AppSecret");
+        var config = await _zaloCfg.GetAsync();
+        var appSecret = config.AppSecret;
 
         var baseUrl = (_cfg["Zalo:GraphBaseUrl"] ?? "https://graph.zalo.me").TrimEnd('/');
         var path = _cfg["Zalo:DecodePhonePath"] ?? "/v2.0/me/info";

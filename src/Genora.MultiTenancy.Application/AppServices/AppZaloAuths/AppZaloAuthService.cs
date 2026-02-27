@@ -36,12 +36,11 @@ public class AppZaloAuthAppService :
     private readonly IStringEncryptionService _encrypt;
 
     public AppZaloAuthAppService(
-        IRepository<ZaloAuth, Guid> repository,
-        ICurrentTenant currentTenant,
-        IFeatureChecker featureChecker,
-        IConfiguration configuration,
-        IStringEncryptionService encrypt)
-        : base(repository, currentTenant, featureChecker)
+     IRepository<ZaloAuth, Guid> repository,
+     ICurrentTenant currentTenant,
+     IFeatureChecker featureChecker,
+     IStringEncryptionService encrypt)
+         : base(repository, currentTenant, featureChecker)
     {
         _encrypt = encrypt;
 

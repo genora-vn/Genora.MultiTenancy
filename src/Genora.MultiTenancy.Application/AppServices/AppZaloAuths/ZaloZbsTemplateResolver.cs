@@ -1,29 +1,32 @@
 ﻿using Genora.MultiTenancy.AppDtos.AppZaloAuths;
-using Microsoft.Extensions.Options;
+using System.Threading.Tasks;
+using Volo.Abp.Settings;
 
 namespace Genora.MultiTenancy.AppServices.AppZaloAuths;
-public interface IZaloZbsTemplateResolver
-{
-    string? Resolve(string key);
-}
 
 public class ZaloZbsTemplateResolver : IZaloZbsTemplateResolver
 {
-    private readonly ZaloZbsOptions _options;
+    private readonly ISettingProvider _sp;
 
-    public ZaloZbsTemplateResolver(IOptions<ZaloZbsOptions> options)
+    public ZaloZbsTemplateResolver(ISettingProvider sp)
     {
-        _options = options.Value;
+        _sp = sp;
     }
 
-    public string? Resolve(string key)
-        => key switch
+    public async Task<string?> ResolveAsync(string key)
+    {
+        var enabledStr = await _sp.GetOrNullAsync(ZaloSettingNames.ZbsEnabled);
+        if (bool.TryParse(enabledStr, out var enabled) && !enabled)
+            return null;
+
+        return key switch
         {
-            "RegisterSuccess" => _options.Templates.RegisterSuccess,
-            "BookingCreated" => _options.Templates.BookingCreated,
-            "BookingCancelled" => _options.Templates.BookingCancelled,
-            "BookingReminder" => _options.Templates.BookingReminder,
-            "BookingChanged" => _options.Templates.BookingChanged,
+            "RegisterSuccess" => await _sp.GetOrNullAsync(ZaloSettingNames.ZbsRegisterSuccess),
+            "BookingCreated" => await _sp.GetOrNullAsync(ZaloSettingNames.ZbsBookingCreated),
+            "BookingCancelled" => await _sp.GetOrNullAsync(ZaloSettingNames.ZbsBookingCancelled),
+            "BookingReminder" => await _sp.GetOrNullAsync(ZaloSettingNames.ZbsBookingReminder),
+            "BookingChanged" => await _sp.GetOrNullAsync(ZaloSettingNames.ZbsBookingChanged),
             _ => null
         };
+    }
 }

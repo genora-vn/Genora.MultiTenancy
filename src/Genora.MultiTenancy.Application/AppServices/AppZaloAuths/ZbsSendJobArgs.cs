@@ -27,5 +27,5 @@ public class ZbsSendJobArgs : IMultiTenant
     /// <summary>
     /// template_data (object serialize)
     /// </summary>
-    public object TemplateData { get; set; } = new { };
+    public object? TemplateData { get; set; } = new { };
 }

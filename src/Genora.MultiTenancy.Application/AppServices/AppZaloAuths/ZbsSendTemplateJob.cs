@@ -1,6 +1,5 @@
 ﻿using Genora.MultiTenancy.AppDtos.AppZaloAuths;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using System;
 using System.Threading.Tasks;
 using Volo.Abp.BackgroundJobs;
@@ -14,41 +13,45 @@ public class ZbsSendTemplateJob : AsyncBackgroundJob<ZbsSendJobArgs>, ITransient
     private readonly IZaloZbsClient _zbsClient;
     private readonly IZaloZbsTemplateResolver _resolver;
     private readonly ICurrentTenant _currentTenant;
-    private readonly IOptionsSnapshot<ZaloZbsOptions> _opts;
+    private readonly IZaloZbsToggleProvider _toggleProvider;
     private readonly ILogger<ZbsSendTemplateJob> _logger;
 
     public ZbsSendTemplateJob(
         IZaloZbsClient zbsClient,
         IZaloZbsTemplateResolver resolver,
         ICurrentTenant currentTenant,
-        IOptionsSnapshot<ZaloZbsOptions> opts,
+        IZaloZbsToggleProvider toggleProvider,
         ILogger<ZbsSendTemplateJob> logger)
     {
         _zbsClient = zbsClient;
         _resolver = resolver;
         _currentTenant = currentTenant;
-        _opts = opts;
+        _toggleProvider = toggleProvider;
         _logger = logger;
     }
 
     public override async Task ExecuteAsync(ZbsSendJobArgs args)
     {
-        // Check bật / tắt gửi ZNS hay khôgn
-        if (!_opts.Value.Enabled)
-        {
-            _logger.LogDebug("ZBS disabled. Skip TemplateKey={TemplateKey}, TrackingId={TrackingId}", args.TemplateKey, args.TrackingId);
-            return;
-        }
-
         if (string.IsNullOrWhiteSpace(args.TemplateKey)) return;
         if (string.IsNullOrWhiteSpace(args.Phone)) return;
 
         using (_currentTenant.Change(args.TenantId))
         {
-            var templateId = _resolver.Resolve(args.TemplateKey);
+            // ✅ Check bật/tắt theo tenant (settings)
+            var enabled = await _toggleProvider.IsEnabledAsync();
+            if (!enabled)
+            {
+                _logger.LogDebug("ZBS disabled. Skip TemplateKey={TemplateKey}, TrackingId={TrackingId}, TenantId={TenantId}",
+                    args.TemplateKey, args.TrackingId, args.TenantId);
+                return;
+            }
+
+            var key = args.TemplateKey?.Trim();
+            var templateId = await _resolver.ResolveAsync(key!);
             if (string.IsNullOrWhiteSpace(templateId))
             {
-                _logger.LogWarning("ZBS template id empty. TemplateKey={TemplateKey}", args.TemplateKey);
+                _logger.LogWarning("ZBS template id empty. TemplateKey={TemplateKey}, TenantId={TenantId}",
+                    args.TemplateKey, args.TenantId);
                 return;
             }
 
@@ -61,7 +64,7 @@ public class ZbsSendTemplateJob : AsyncBackgroundJob<ZbsSendJobArgs>, ITransient
                 {
                     phone = args.Phone,
                     template_id = templateId,
-                    template_data = args.TemplateData,
+                    template_data = args.TemplateData ?? new { },
                     tracking_id = string.IsNullOrWhiteSpace(args.TrackingId)
                         ? Guid.NewGuid().ToString("N")
                         : args.TrackingId
@@ -71,9 +74,8 @@ public class ZbsSendTemplateJob : AsyncBackgroundJob<ZbsSendJobArgs>, ITransient
             // Nếu Zalo lỗi -> throw để Hangfire retry
             var res = await _zbsClient.CallAsync(req, default);
 
-            // Log sau khi gửi ZBS
-            _logger.LogInformation("ZBS sent. TemplateKey={TemplateKey}, Phone={Phone}, TrackingId={TrackingId}",
-                args.TemplateKey, args.Phone, args.TrackingId);
+            _logger.LogInformation("ZBS sent. TemplateKey={TemplateKey}, Phone={Phone}, TrackingId={TrackingId}, TenantId={TenantId}",
+                args.TemplateKey, args.Phone, args.TrackingId, args.TenantId);
         }
     }
 }

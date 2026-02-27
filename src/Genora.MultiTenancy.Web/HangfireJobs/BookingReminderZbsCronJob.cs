@@ -1,9 +1,7 @@
 ﻿using Genora.MultiTenancy.AppDtos.AppZaloAuths;
-using Genora.MultiTenancy.AppServices.AppZaloAuths;
 using Genora.MultiTenancy.DomainModels.AppBookings;
 using Genora.MultiTenancy.Enums;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -22,32 +20,32 @@ public class BookingReminderZbsCronJob : IBookingReminderZbsCronJob
     private readonly IRepository<Booking, Guid> _bookingRepo;
     private readonly IZaloZbsClient _zbsClient;
     private readonly IZaloZbsTemplateResolver _resolver;
+    private readonly IZaloZbsToggleProvider _zbsToggle;
     private readonly IClock _clock;
     private readonly IUnitOfWorkManager _uowManager;
     private readonly IAsyncQueryableExecuter _asyncExecuter;
     private readonly ICurrentTenant _currentTenant;
-    private readonly IOptionsSnapshot<ZaloZbsOptions> _zbsOptions;
     private readonly ILogger<BookingReminderZbsCronJob> _logger;
 
     public BookingReminderZbsCronJob(
         IRepository<Booking, Guid> bookingRepo,
         IZaloZbsClient zbsClient,
         IZaloZbsTemplateResolver resolver,
+        IZaloZbsToggleProvider zbsToggle,
         IClock clock,
         IUnitOfWorkManager uowManager,
         IAsyncQueryableExecuter asyncExecuter,
         ICurrentTenant currentTenant,
-        IOptionsSnapshot<ZaloZbsOptions> zbsOptions,
         ILogger<BookingReminderZbsCronJob> logger)
     {
         _bookingRepo = bookingRepo;
         _zbsClient = zbsClient;
         _resolver = resolver;
+        _zbsToggle = zbsToggle;
         _clock = clock;
         _uowManager = uowManager;
         _asyncExecuter = asyncExecuter;
         _currentTenant = currentTenant;
-        _zbsOptions = zbsOptions;
         _logger = logger;
     }
 
@@ -65,23 +63,10 @@ public class BookingReminderZbsCronJob : IBookingReminderZbsCronJob
     public async Task ExecuteAsync()
     {
         _logger.LogWarning(">>> BookingReminderZbsCronJob fired at {Now}", _clock.Now);
-        // ✅ dev có thể tắt ZBS để không block
-        if (!_zbsOptions.Value.Enabled)
-        {
-            _logger.LogDebug("Zbs:Enabled=false => skip BookingReminderZbsCronJob.");
-            return;
-        }
 
         var now = _clock.Now;
         var from = now.AddMinutes(55);
         var to = now.AddMinutes(65);
-
-        var templateId = _resolver.Resolve("BookingReminder");
-        if (string.IsNullOrWhiteSpace(templateId))
-        {
-            _logger.LogDebug("BookingReminder templateId empty => skip.");
-            return;
-        }
 
         List<Candidate> candidates;
 
@@ -110,7 +95,6 @@ public class BookingReminderZbsCronJob : IBookingReminderZbsCronJob
                 });
 
             candidates = await _asyncExecuter.ToListAsync(projected, CancellationToken.None);
-
             await uow.CompleteAsync(CancellationToken.None);
         }
 
@@ -120,6 +104,22 @@ public class BookingReminderZbsCronJob : IBookingReminderZbsCronJob
         {
             using (_currentTenant.Change(tenantGroup.Key))
             {
+                // ✅ per-tenant enable switch
+                var enabled = await _zbsToggle.IsEnabledAsync();
+                if (!enabled)
+                {
+                    _logger.LogDebug("ZBS disabled. Skip tenant {TenantId}", tenantGroup.Key);
+                    continue;
+                }
+
+                // ✅ per-tenant template id
+                var templateId = await _resolver.ResolveAsync("BookingReminder");
+                if (string.IsNullOrWhiteSpace(templateId))
+                {
+                    _logger.LogDebug("BookingReminder templateId empty. Skip tenant {TenantId}", tenantGroup.Key);
+                    continue;
+                }
+
                 foreach (var c in tenantGroup)
                 {
                     var slotTime = c.PlayDate.Date.Add(c.TimeFrom);

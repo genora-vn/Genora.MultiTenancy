@@ -25,6 +25,7 @@ public class ZaloAuthController : MultiTenancyController
     private readonly IZaloLogWriter _logWriter;
     private readonly IStringEncryptionService _encrypt;
     private readonly ICurrentTenant _currentTenant;
+    private readonly IZaloRuntimeConfigProvider _zaloCfg;
 
     public record TokenValueDto(string token);
     public record ActiveDto(DateTime? expireTokenTime, bool isExpired);
@@ -35,7 +36,8 @@ public class ZaloAuthController : MultiTenancyController
         IZaloTokenProvider tokenProvider,
         IZaloLogWriter logWriter,
         IStringEncryptionService encrypt,
-        ICurrentTenant currentTenant)
+        ICurrentTenant currentTenant,
+        IZaloRuntimeConfigProvider zaloCfg)
     {
         _cfg = cfg;
         _authRepo = authRepo;
@@ -43,6 +45,7 @@ public class ZaloAuthController : MultiTenancyController
         _logWriter = logWriter;
         _encrypt = encrypt;
         _currentTenant = currentTenant;
+        _zaloCfg = zaloCfg;
     }
 
     [HttpGet("{id}/token")]
@@ -76,8 +79,9 @@ public class ZaloAuthController : MultiTenancyController
 
         try
         {
-            var appId = _cfg["Zalo:AppId"]!;
-            var redirectUri = _cfg["Zalo:RedirectUri"]!;
+            var config = await _zaloCfg.GetAsync();
+            var appId = config.AppId;
+            var redirectUri = config.RedirectUri;
             var method = _cfg.GetValue("Zalo:CodeChallengeMethod", "S256");
 
             var verifier = PkceUtil.CreateCodeVerifier();

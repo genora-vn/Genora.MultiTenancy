@@ -1,0 +1,51 @@
+﻿@page
+@using Genora.MultiTenancy.Localization
+@using Microsoft.Extensions.Localization
+@inject IStringLocalizer<MultiTenancyResource> L
+@model Genora.MultiTenancy.Web.Pages.UpgradeSettings.EmailTemplatesModel
+
+<abp-card>
+    <abp-card-body>
+        <form method="post" asp-page="/UpgradeSettings/EmailTemplates">
+            <abp-card-body>
+                <abp-row>
+                    <abp-column size-md="_6" class="bor">
+                        <div class="p-2 bg-body-tertiary">
+                            <abp-card-header class="mb-3 p-0"
+                                             title="@L["UpgradeSettings:EmailTemplates:Recipients:Title"].Value">
+                                @L["UpgradeSettings:EmailTemplates:Recipients:Title"].Value
+                            </abp-card-header>
+
+                            <abp-input asp-for="Input.CommonRecipients.To" label="@L["UpgradeSettings:Common:ToEmails"].Value" />
+                            <abp-input asp-for="Input.CommonRecipients.Cc" label="@L["UpgradeSettings:Common:CcEmails"].Value" />
+                            <abp-input asp-for="Input.CommonRecipients.Bcc" label="@L["UpgradeSettings:Common:BccEmails"].Value" />
+                        </div>
+                    </abp-column>
+
+                    <abp-column size-md="_6">
+                        <div class="p-2 bg-body-tertiary">
+                            <abp-card-header class="mb-3 p-0"
+                                             title="@L["UpgradeSettings:EmailTemplates:Subjects:Title"].Value">
+                                @L["UpgradeSettings:EmailTemplates:Subjects:Title"].Value
+                            </abp-card-header>
+
+                            <abp-input asp-for="Input.BookingNewRequest.SubjectTemplate"
+                                       label="@L["UpgradeSettings:EmailTemplates:Subject:BookingNew"].Value" />
+                            <abp-input asp-for="Input.BookingChangeRequest.SubjectTemplate"
+                                       label="@L["UpgradeSettings:EmailTemplates:Subject:BookingChange"].Value" />
+                            <abp-input asp-for="Input.BookingCancelRequest.SubjectTemplate"
+                                       label="@L["UpgradeSettings:EmailTemplates:Subject:BookingCancel"].Value" />
+                        </div>
+                    </abp-column>
+                </abp-row>
+
+                <div class="mt-3">
+                    <button class="btn btn-primary" type="submit">
+                        <i class="fa fa-save"></i>
+                        @L["Save"].Value
+                    </button>
+                </div>
+            </abp-card-body>
+        </form>
+    </abp-card-body>
+</abp-card>

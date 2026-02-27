@@ -65,12 +65,15 @@ public class MultiTenancyApplicationModule : AbpModule
         Configure<AbpSettingOptions>(options =>
         {
             options.DefinitionProviders.Add<AppEmailSettingDefinitionProvider>();
+            options.DefinitionProviders.Add<ZaloSettingDefinitionProvider>();
         });
 
-        Configure<ZaloZbsOptions>(configuration.GetSection("Zalo:Zbs"));
+        //Configure<ZaloZbsOptions>(configuration.GetSection("Zalo:Zbs"));
 
         context.Services.AddEntityCache<AppSetting, AppSettingDto, Guid>();
         context.Services.AddTransient<IZaloZbsClient, ZaloZbsClient>();
         context.Services.AddTransient<IZaloZbsTemplateResolver, ZaloZbsTemplateResolver>();
+        context.Services.AddTransient<IZaloZbsToggleProvider, ZaloZbsToggleProvider>();
+        context.Services.AddTransient<IZaloRuntimeConfigProvider, ZaloRuntimeConfigProvider>();
     }
 }
