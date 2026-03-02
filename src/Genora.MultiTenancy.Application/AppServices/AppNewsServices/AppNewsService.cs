@@ -197,17 +197,44 @@ public class AppNewsService :
     {
         var ids = NormalizeRelatedIds(newsId, relatedIds);
 
-        var old = await _newsRelatedRepo.GetListAsync(x => x.NewsId == newsId);
-        if (old.Count > 0)
-        {
-            await _newsRelatedRepo.DeleteManyAsync(old, autoSave: true);
-        }
-
-        if (ids.Count == 0) return;
-
         var tenantId = CurrentTenant.Id;
 
-        var rows = ids.Select(rid =>
+        var existing = await _newsRelatedRepo.GetListAsync(x =>
+            x.NewsId == newsId && x.TenantId == tenantId);
+
+        var dupGroups = existing
+            .GroupBy(x => x.RelatedNewsId)
+            .Where(g => g.Count() > 1)
+            .ToList();
+
+        if (dupGroups.Count > 0)
+        {
+            var toRemoveDup = dupGroups.SelectMany(g => g.Skip(1)).ToList();
+            await _newsRelatedRepo.DeleteManyAsync(toRemoveDup, autoSave: true);
+            existing = existing.Except(toRemoveDup).ToList();
+        }
+
+        var existingIds = existing
+            .Select(x => x.RelatedNewsId)
+            .Where(x => x != Guid.Empty && x != newsId)
+            .Distinct()
+            .ToHashSet();
+
+        var desiredIds = ids.ToHashSet();
+
+        var toDelete = existing
+            .Where(x => !desiredIds.Contains(x.RelatedNewsId))
+            .ToList();
+
+        if (toDelete.Count > 0)
+        {
+            await _newsRelatedRepo.DeleteManyAsync(toDelete, autoSave: true);
+        }
+
+        var toInsertIds = ids.Where(x => !existingIds.Contains(x)).ToList();
+        if (toInsertIds.Count == 0) return;
+
+        var rows = toInsertIds.Select(rid =>
             new NewsRelated(GuidGenerator.Create(), newsId, rid, tenantId)
         ).ToList();
 
@@ -229,7 +256,7 @@ public class AppNewsService :
 
         if (input.IsUploadImage && input.Images != null && (input.Images.ContentLength ?? 0) > 0)
         {
-            var upload = await _manageImageService.UploadImageAsync(input.Images);
+            var upload = await _manageImageService.UploadImageAsync(input.Images, CurrentTenant.Id.ToString());
             entity.ThumbnailUrl = upload;
         }
 
@@ -263,7 +290,7 @@ public class AppNewsService :
                 await _manageImageService.DeleteFileAsync(entity.ThumbnailUrl);
             }
 
-            var upload = await _manageImageService.UploadImageAsync(input.Images);
+            var upload = await _manageImageService.UploadImageAsync(input.Images, CurrentTenant.Id.ToString());
             entity.ThumbnailUrl = upload;
         }
 
