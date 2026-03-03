@@ -8,6 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.Net.Http;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
 using Volo.Abp.Domain.Repositories;
@@ -189,7 +190,7 @@ public class ZaloApiClient : BaseZaloClient, IZaloApiClient
         var appSecret = config.AppSecret;
 
         var baseUrl = (_cfg["Zalo:GraphBaseUrl"] ?? "https://graph.zalo.me").TrimEnd('/');
-        var path = _cfg["Zalo:DecodePhonePath"] ?? "/v2.0/me/info";
+        var path = _cfg["Zalo:ZaloDecodePath"] ?? "/v2.0/me/info";
         if (!path.StartsWith("/")) path = "/" + path;
 
         var url = $"{baseUrl}{path}";
@@ -210,17 +211,79 @@ public class ZaloApiClient : BaseZaloClient, IZaloApiClient
 
         var body = await SendAsync(HttpMethod.Get, url, headers, ZaloLogActions.DECODE_PHONE, requestLog, ct);
 
-        return SafeDeserializePhone(body) ?? new ZaloDecodePhoneResponse
+        return SafeDeserializePhoneNumber(body) ?? new ZaloDecodePhoneResponse
         {
             Error = 0,
             Message = "Success"
         };
     }
 
-    private static ZaloDecodePhoneResponse? SafeDeserializePhone(string? json)
+    public async Task<ZaloDecodeLocationResponse> DecodeLocationAsync(string code, string accessToken, CancellationToken ct)
+    {
+        if (string.IsNullOrWhiteSpace(code)) throw new ArgumentException("Missing code", nameof(code));
+        if (string.IsNullOrWhiteSpace(accessToken)) throw new ArgumentException("Missing accessToken", nameof(accessToken));
+
+        var config = await _zaloCfg.GetAsync();
+        var appSecret = config.AppSecret;
+
+        var baseUrl = (_cfg["Zalo:GraphBaseUrl"] ?? "https://graph.zalo.me").TrimEnd('/');
+        // Zalo hướng dẫn decode location dùng đúng /v2.0/me/info như decode phone
+        var path = _cfg["Zalo:ZaloDecodePath"] ?? "/v2.0/me/info";
+        if (!path.StartsWith("/")) path = "/" + path;
+
+        var url = $"{baseUrl}{path}";
+
+        var headers = new Dictionary<string, string>
+        {
+            ["access_token"] = accessToken,
+            ["code"] = code,          // token từ getLocation()
+            ["secret_key"] = appSecret
+        };
+
+        var requestLog = JsonSerializer.Serialize(new
+        {
+            code = SecurityHelper.MaskCode(code),
+            accessToken = SecurityHelper.MaskToken(accessToken),
+            secret_key = "***"
+        });
+
+        // ✅ Dùng cùng SendAsync để log + retry (nếu bạn có)
+        var body = await SendAsync(HttpMethod.Get, url, headers, "DECODE_LOCATION", requestLog, ct);
+
+        // ✅ Parse lat/lon từ data
+        var res = SafeDeserializeLocation(body);
+
+        // fallback mềm (không crash)
+        return res ?? new ZaloDecodeLocationResponse
+        {
+            Error = 0,
+            Message = "Success",
+            Data = null
+        };
+    }
+
+    private static ZaloDecodePhoneResponse? SafeDeserializePhoneNumber(string? json)
     {
         if (string.IsNullOrWhiteSpace(json)) return null;
         try { return JsonSerializer.Deserialize<ZaloDecodePhoneResponse>(json); }
         catch { return null; }
+    }
+    private static readonly JsonSerializerOptions _zaloJsonOptions = new()
+    {
+        PropertyNameCaseInsensitive = true,
+        NumberHandling = JsonNumberHandling.AllowReadingFromString
+    };
+
+    private static ZaloDecodeLocationResponse? SafeDeserializeLocation(string? json)
+    {
+        if (string.IsNullOrWhiteSpace(json)) return null;
+        try
+        {
+            return JsonSerializer.Deserialize<ZaloDecodeLocationResponse>(json, _zaloJsonOptions);
+        }
+        catch
+        {
+            return null;
+        }
     }
 }

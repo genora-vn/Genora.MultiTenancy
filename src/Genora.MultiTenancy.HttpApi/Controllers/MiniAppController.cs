@@ -158,12 +158,27 @@ public class MiniAppController : MultiTenancyController
     /// </summary>
     [HttpPost("decode-phone")]
     [AllowAnonymous]
-    public async Task<IActionResult> DecodePhone([FromBody] ZaloDecodePhoneRequest request, CancellationToken ct)
+    public async Task<IActionResult> DecodePhone([FromBody] ZaloDecodeRequest request, CancellationToken ct)
     {
         if (string.IsNullOrWhiteSpace(request.Code) || string.IsNullOrWhiteSpace(request.AccessToken))
             return BadRequest("Missing code or accessToken");
 
         var result = await _zaloApiClient.DecodePhoneAsync(request.Code, request.AccessToken, ct);
+
+        return Ok(result);
+    }
+
+    /// <summary>
+    /// Giải mã vị trí (lat/lon) từ token getLocation()
+    /// </summary>
+    [HttpPost("decode-location")]
+    [AllowAnonymous]
+    public async Task<IActionResult> DecodeLocation([FromBody] ZaloDecodeRequest request, CancellationToken ct)
+    {
+        if (string.IsNullOrWhiteSpace(request.Code) || string.IsNullOrWhiteSpace(request.AccessToken))
+            return BadRequest("Missing code or accessToken");
+
+        var result = await _zaloApiClient.DecodeLocationAsync(request.Code, request.AccessToken, ct);
 
         return Ok(result);
     }

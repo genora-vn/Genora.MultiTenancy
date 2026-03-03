@@ -9,4 +9,5 @@ public interface IZaloApiClient
 
     Task<ZaloMeResponse> GetZaloMeAsync(string accessToken, CancellationToken ct);
     Task<ZaloDecodePhoneResponse> DecodePhoneAsync(string code, string accessToken, CancellationToken ct);
+    Task<ZaloDecodeLocationResponse> DecodeLocationAsync(string code, string accessToken, CancellationToken ct);
 }
