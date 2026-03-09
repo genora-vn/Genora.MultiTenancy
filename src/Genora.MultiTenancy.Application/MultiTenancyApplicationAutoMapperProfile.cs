@@ -5,6 +5,7 @@ using Genora.MultiTenancy.AppDtos.AppCustomers;
 using Genora.MultiTenancy.AppDtos.AppCustomerTypes;
 using Genora.MultiTenancy.AppDtos.AppEmails;
 using Genora.MultiTenancy.AppDtos.AppGolfCourses;
+using Genora.MultiTenancy.AppDtos.AppHomePageConfigs;
 using Genora.MultiTenancy.AppDtos.AppMembershipTiers;
 using Genora.MultiTenancy.AppDtos.AppNews;
 using Genora.MultiTenancy.AppDtos.AppOptionExtend;
@@ -21,6 +22,7 @@ using Genora.MultiTenancy.DomainModels.AppCustomers;
 using Genora.MultiTenancy.DomainModels.AppCustomerTypes;
 using Genora.MultiTenancy.DomainModels.AppEmails;
 using Genora.MultiTenancy.DomainModels.AppGolfCourses;
+using Genora.MultiTenancy.DomainModels.AppHomePageConfigs;
 using Genora.MultiTenancy.DomainModels.AppMembershipTiers;
 using Genora.MultiTenancy.DomainModels.AppNews;
 using Genora.MultiTenancy.DomainModels.AppOptionExtend;
@@ -154,5 +156,11 @@ public class MultiTenancyApplicationAutoMapperProfile : Profile
             .ForMember(x => x.DeleterId, opt => opt.Ignore())
             .ForMember(x => x.DeletionTime, opt => opt.Ignore());
         #endregion
+
+        CreateMap<AppHomePageWidget, HomePageWidgetListItemDto>();
+        CreateMap<AppHomePageWidget, HomePageWidgetDto>();
+        CreateMap<HomePageWidgetDto, UpdateHomePageWidgetDto>();
+        CreateMap<AppHomePageWidgetItem, HomePageWidgetItemDto>();
+        CreateMap<FeatureGridDto, UpdateFeatureGridDto>();
     }
 }

@@ -4,6 +4,7 @@ using Genora.MultiTenancy.Features.AppCustomers;
 using Genora.MultiTenancy.Features.AppCustomerTypes;
 using Genora.MultiTenancy.Features.AppEmails;
 using Genora.MultiTenancy.Features.AppGolfCourses;
+using Genora.MultiTenancy.Features.AppHomePages;
 using Genora.MultiTenancy.Features.AppMembershipTiers;
 using Genora.MultiTenancy.Features.AppNewsFeatures;
 using Genora.MultiTenancy.Features.AppPromotionTypes;
@@ -148,6 +149,11 @@ public class MultiTenancyMenuContributor : IMenuContributor
                 await feature.IsEnabledAsync(AppEmailFeatures.Management) &&
                 await perms.IsGrantedAsync(MultiTenancyPermissions.AppEmails.Default);
 
+            // ===== Home Page Config (Theme + Widgets) =====
+            var canSeeHomePageConfigs =
+                await feature.IsEnabledAsync(AppHomePageFeatures.Management) &&
+                await perms.IsGrantedAsync(MultiTenancyPermissions.AppHomePageConfigs.Default);
+
             // =========================================================
             // 1) Cài đặt Mini App
             // =========================================================
@@ -173,14 +179,29 @@ public class MultiTenancyMenuContributor : IMenuContributor
             }
 
             // Cấu hình Trang chủ (Coming soon)
-            groupMiniAppSetup.AddItem(
-                ComingSoon(
-                    name: "HomePageConfig",
-                    displayName: $"{l["Menu:HomePageConfig"]} {l["Menu:ComingSoon"]}",
-                    icon: "fa fa-th-large",
-                    order: 2
-                )
-            );
+            if (canSeeHomePageConfigs)
+            {
+                groupMiniAppSetup.AddItem(
+                    new ApplicationMenuItem(
+                        name: "AppHomePageConfigs",
+                        displayName: l["Menu:HomePageConfig"],
+                        url: "/AppHomePageConfigs",
+                        icon: "fa fa-th-large",
+                        order: 2
+                    ).RequirePermissions(MultiTenancyPermissions.AppHomePageConfigs.Default)
+                );
+            }
+            else
+            {
+                groupMiniAppSetup.AddItem(
+                    ComingSoon(
+                        name: "AppHomePageConfigComingSoon",
+                        displayName: $"{l["Menu:HomePageConfig"]} {l["Menu:ComingSoon"]}",
+                        icon: "fa fa-th-large",
+                        order: 2
+                    )
+                );
+            }
 
             // Tích hợp Zalo OA (cấp 1) -> cấp 2: Xác thực, Nhật ký
             var zaloIntegration = new ApplicationMenuItem(
@@ -578,6 +599,10 @@ public class MultiTenancyMenuContributor : IMenuContributor
             var hostCanEmails = await perms.IsGrantedAsync(MultiTenancyPermissions.HostAppEmails.Default);
             var hostCanSpecialDates = await perms.IsGrantedAsync(MultiTenancyPermissions.HostAppSpecialDates.Default);
 
+            // ===== Home Page Config (Theme + Widgets) - HOST =====
+            var hostCanSeeHomePageConfigs =
+                await perms.IsGrantedAsync(MultiTenancyPermissions.HostAppHomePageConfigs.Default);
+
             // 1) Cài đặt Mini App
             var groupMiniAppSetup = new ApplicationMenuItem(
                 name: "MenuGroup.MiniAppSetup",
@@ -599,14 +624,29 @@ public class MultiTenancyMenuContributor : IMenuContributor
                 );
             }
 
-            groupMiniAppSetup.AddItem(
-                ComingSoon(
-                    name: "HomePageConfig",
-                    displayName: $"{l["Menu:HomePageConfig"]} {l["Menu:ComingSoon"]}",
-                    icon: "fa fa-th-large",
-                    order: 2
-                )
-            );
+            if (hostCanSeeHomePageConfigs)
+            {
+                groupMiniAppSetup.AddItem(
+                    new ApplicationMenuItem(
+                        name: "AppHomePageConfigHost",
+                        displayName: l["Menu:HomePageConfig"],
+                        url: "/AppHomePageConfigs",
+                        icon: "fa fa-th-large",
+                        order: 2
+                    ).RequirePermissions(MultiTenancyPermissions.HostAppHomePageConfigs.Default)
+                );
+            }
+            else
+            {
+                groupMiniAppSetup.AddItem(
+                    ComingSoon(
+                        name: "AppHomePageConfigHostComingSoon",
+                        displayName: $"{l["Menu:HomePageConfig"]} {l["Menu:ComingSoon"]}",
+                        icon: "fa fa-th-large",
+                        order: 2
+                    )
+                );
+            }
 
             var zaloIntegration = new ApplicationMenuItem(
                 name: "ZaloIntegration",

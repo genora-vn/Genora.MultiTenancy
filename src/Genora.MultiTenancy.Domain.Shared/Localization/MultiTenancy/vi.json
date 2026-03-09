@@ -65,6 +65,7 @@
     "FeatureGroup:MiniAppZaloLog": "Quản lý Logs Zalo OA Logs",
     "Feature:MiniAppZaloLog": "Bật quản lý Zalo OA Logs",
     "Feature:MiniAppZaloLogDesc": "Cho phép sử dụng chức năng quản lý Zalo OA Logs (thêm/sửa/xoá).",
+
     "AppZaloAuths": "Zalo OA Auth",
     "NewAppZaloAuth": "Nhập token thủ công",
     "EditAppZaloAuth": "Cập nhật ZaloAuth",
@@ -530,6 +531,55 @@
     "UpgradeSettings:ZaloZns:Template:BookingCreated": "Tạo booking TemplateId",
     "UpgradeSettings:ZaloZns:Template:BookingCancelled": "Hủy booking TemplateId",
     "UpgradeSettings:ZaloZns:Template:BookingReminder": "Nhắc lịch chơi TemplateId",
-    "UpgradeSettings:ZaloZns:Template:BookingChanged": "Cập nhật booking TemplateId"
+    "UpgradeSettings:ZaloZns:Template:BookingChanged": "Cập nhật booking TemplateId",
+
+    "FeatureGroup:MiniAppHomePage": "Cấu hình Trang chủ",
+    "Feature:MiniAppHomePage": "Bật cấu hình Trang chủ",
+    "Feature:MiniAppHomePageDesc": "Cho phép sử dụng chức năng quản lý cấu hình Trang chủ (sửa, sắp xếp, cấu hình widget tính năng, cập nhật trạng thái)",
+    "Permission:AppHomePageConfig": "Cấu hình Trang chủ",
+    "Permission:AppHomePageConfig.Edit": "Chỉnh sửa",
+    "Permission:HostAppHomePageConfig": "Cấu hình Trang chủ",
+    "Permission:HostAppHomePageConfig.Edit": "Chỉnh sửa",
+    "HomePageConfig:DragHint": "Drag & drop để sắp xếp thứ tự hiển thị widget",
+    "HomePageConfig:SearchPlaceholder": "Tìm kiếm",
+    "HomePageConfig:ToggleOnOff": "Hiển thị (On/Off)",
+
+    "HomePageConfig:WidgetKey": "WidgetKey",
+    "HomePageConfig:Order": "Thứ tự",
+    "HomePageConfig:Module": "Module",
+    "HomePageConfig:Title": "Tiêu đề",
+    "HomePageConfig:Limit": "Giới hạn",
+    "HomePageConfig:IsEnabled": "Được sử dụng",
+
+    "HomePageConfig:UpdateStatus": "Cập nhật trạng thái",
+    "HomePageConfig:EditWidget": "Chỉnh sửa widget",
+    "HomePageConfig:FeatureGrid": "Widget Tính năng",
+    "HomePageConfig:EditFeatureGrid": "Cấu hình Widget Tính năng",
+
+    "HomePageConfig:WidgetNotFound": "Không tìm thấy widget.",
+    "HomePageConfig:WidgetNotInScope": "Widget không thuộc phạm vi cấu hình hiện tại.",
+    "HomePageConfig:NotFeatureGrid": "Widget này không phải FeatureGrid.",
+
+    "HomePageConfig:ItemText": "Nội dung",
+    "HomePageConfig:ItemIcon": "Icon",
+    "HomePageConfig:ItemAction": "Action/Deeplink",
+    "HomePageConfig:ItemOrder": "Thứ tự",
+    "HomePageConfig:AddItem": "Thêm tính năng",
+    "HomePageConfig:RemoveItem": "Xóa",
+    "HomePageConfig:EnableItem": "Bật",
+    "HomePageConfig:DisableItem": "Tắt",
+
+    "HomePageConfig:SaveSuccess": "Lưu cấu hình thành công.",
+    "HomePageConfig:InvalidItemText": "Vui lòng nhập nội dung cho item.",
+
+
+    "HomePageConfig:FeatureGridTitle": "Widget Tính năng",
+    "HomePageConfig:Items": "Danh sách tính năng",
+    "HomePageConfig:Add": "Thêm",
+    "HomePageConfig:Text": "Nội dung",
+    "HomePageConfig:Icon": "Icon",
+    "HomePageConfig:Action": "Action/Deeplink",
+    "HomePageConfig:Enabled": "Bật",
+    "HomePageConfig:HintDisplayOrder": "Gợi ý: DisplayOrder là số tăng dần. Bạn có thể sửa nhanh."
   }
 }

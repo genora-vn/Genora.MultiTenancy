@@ -46,6 +46,21 @@ public class MultiTenancyPermissionDefinitionProvider : PermissionDefinitionProv
         appSettingTenantDelete.MultiTenancySide = MultiTenancySides.Tenant;
         appSettingTenantDelete.RequireFeatures(AppSettingFeatures.Management);
 
+        // AppHomePageConfig (TENANT - bị ràng Feature)
+        var homePageConfig = appSettingGroup.AddPermission(
+            MultiTenancyPermissions.AppHomePageConfigs.Default,
+            L("Permission:AppHomePageConfig")
+        );
+        homePageConfig.MultiTenancySide = MultiTenancySides.Tenant;
+        homePageConfig.RequireFeatures(Genora.MultiTenancy.Features.AppHomePages.AppHomePageFeatures.Management);
+
+        var homePageConfigEdit = homePageConfig.AddChild(
+            MultiTenancyPermissions.AppHomePageConfigs.Edit,
+            L("Permission:AppHomePageConfig.Edit")
+        );
+        homePageConfigEdit.MultiTenancySide = MultiTenancySides.Tenant;
+        homePageConfigEdit.RequireFeatures(Genora.MultiTenancy.Features.AppHomePages.AppHomePageFeatures.Management);
+
         var appSettingGroupHost = context.AddGroup("MiniAppSettingHost", L("PermissionGroup:MiniAppSettingHost"));
         // ========== HOST (không ràng Feature) ==========
         var appSettingHostRoot = appSettingGroupHost.AddPermission(MultiTenancyPermissions.HostAppSettings.Default, L("Permission:MiniAppSetting"));
@@ -59,6 +74,19 @@ public class MultiTenancyPermissionDefinitionProvider : PermissionDefinitionProv
 
         var appSettingHostDelete = appSettingHostRoot.AddChild(MultiTenancyPermissions.HostAppSettings.Delete, L("Permission:MiniAppSetting.Delete"));
         appSettingHostDelete.MultiTenancySide = MultiTenancySides.Host;
+
+        // HostAppHomePageConfig (HOST - không ràng Feature)
+        var homePageConfigHost = appSettingGroupHost.AddPermission(
+            MultiTenancyPermissions.HostAppHomePageConfigs.Default,
+            L("Permission:HostAppHomePageConfig")
+        );
+        homePageConfigHost.MultiTenancySide = MultiTenancySides.Host;
+
+        var homePageConfigHostEdit = homePageConfigHost.AddChild(
+            MultiTenancyPermissions.HostAppHomePageConfigs.Edit,
+            L("Permission:HostAppHomePageConfig.Edit")
+        );
+        homePageConfigHostEdit.MultiTenancySide = MultiTenancySides.Host;
         #endregion
 
         #region Cấu hình quyền Thêm / Sửa / Xóa cho tính năng quản trị AppCustomerTypes

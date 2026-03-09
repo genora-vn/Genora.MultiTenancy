@@ -3,6 +3,7 @@ using Genora.MultiTenancy.AppDtos.AppCalendarSlots;
 using Genora.MultiTenancy.AppDtos.AppCustomers;
 using Genora.MultiTenancy.AppDtos.AppCustomerTypes;
 using Genora.MultiTenancy.AppDtos.AppGolfCourses;
+using Genora.MultiTenancy.AppDtos.AppHomePageConfigs;
 using Genora.MultiTenancy.AppDtos.AppMembershipTiers;
 using Genora.MultiTenancy.AppDtos.AppNews;
 using Genora.MultiTenancy.AppDtos.AppOptionExtend;
@@ -37,6 +38,7 @@ public class MiniAppController : MultiTenancyController
     private readonly IMiniAppCustomerAppService _miniCustomer;
     private readonly IStringLocalizer<MultiTenancyResource> _localizer;
     private readonly IOptionExtendService _optionExtendService;
+    private readonly IMiniAppHomePageConfigService _miniHomePage;
     public MiniAppController(IZaloApiClient zaloApiClient,
                              IMiniAppBookingAppService miniBooking,
                              IMiniAppSettingService miniAppSetting,
@@ -47,7 +49,8 @@ public class MiniAppController : MultiTenancyController
                              IMiniAppCalendarSlotService miniAppCalendarSlot,
                              IStringLocalizer<MultiTenancyResource> localizer,
                              IMiniAppCustomerAppService miniCustomer,
-                             IOptionExtendService optionExtendService)
+                             IOptionExtendService optionExtendService,
+                             IMiniAppHomePageConfigService miniHomePage)
     {
         _zaloApiClient = zaloApiClient;
         _miniBooking = miniBooking;
@@ -60,6 +63,7 @@ public class MiniAppController : MultiTenancyController
         _miniCustomer = miniCustomer;
         _localizer = localizer;
         _optionExtendService = optionExtendService;
+        _miniHomePage = miniHomePage;
     }
 
     [HttpPost("create-booking")]
@@ -213,4 +217,14 @@ public class MiniAppController : MultiTenancyController
         var result = await _optionExtendService.GetUtilitiesAsync();
         return Ok(result);
     }
+
+    [HttpGet("get-home-page-widgets")]
+    [AllowAnonymous]
+    public Task<MiniAppHomePageConfigDto> GetHomePageWidgetsAsync()
+    => _miniHomePage.GetHomePageConfigAsync();
+
+    [HttpGet("get-home-page-feature-grid")]
+    [AllowAnonymous]
+    public Task<FeatureGridDto> GetHomePageFeatureGridAsync([FromQuery] Guid widgetId)
+        => _miniHomePage.GetFeatureGridAsync(widgetId);
 }

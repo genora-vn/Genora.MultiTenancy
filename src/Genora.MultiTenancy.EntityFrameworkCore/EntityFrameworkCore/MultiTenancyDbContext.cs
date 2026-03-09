@@ -10,6 +10,7 @@ using Genora.MultiTenancy.DomainModels.AppCustomers;
 using Genora.MultiTenancy.DomainModels.AppCustomerTypes;
 using Genora.MultiTenancy.DomainModels.AppEmails;
 using Genora.MultiTenancy.DomainModels.AppGolfCourses;
+using Genora.MultiTenancy.DomainModels.AppHomePageConfigs;
 using Genora.MultiTenancy.DomainModels.AppMembershipTiers;
 using Genora.MultiTenancy.DomainModels.AppNews;
 using Genora.MultiTenancy.DomainModels.AppOptionExtend;
@@ -66,6 +67,9 @@ public class MultiTenancyDbContext :
     public DbSet<ZaloLog> ZaloLogs { get; set; }  // nếu có
     public DbSet<SpecialDate> SpecialDates { get; set; }  // nếu có
     public DbSet<Email> AppEmails { get; set; }
+    public DbSet<AppHomePageConfig> AppHomePageConfigs { get; set; }
+    public DbSet<AppHomePageWidget> AppHomePageWidgets { get; set; }
+    public DbSet<AppHomePageWidgetItem> AppHomePageWidgetItems { get; set; }
 
     // Identity
     public DbSet<IdentityUser> Users { get; set; }
@@ -343,6 +347,56 @@ public class MultiTenancyDbContext :
                 .WithMany()
                 .HasForeignKey(x => x.RelatedNewsId)
                 .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        builder.Entity<AppHomePageConfig>(b =>
+        {
+            b.ToTable("AppHomePageConfigs");
+            b.ConfigureByConvention();
+
+            b.Property(x => x.ThemeKey).IsRequired().HasMaxLength(64);
+            b.Property(x => x.IsActive).HasDefaultValue(true);
+
+            b.HasIndex(x => x.TenantId);
+
+            b.HasMany(x => x.Widgets)
+             .WithOne()
+             .HasForeignKey(x => x.AppHomePageConfigId)
+             .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        builder.Entity<AppHomePageWidget>(b =>
+        {
+            b.ToTable("AppHomePageWidgets");
+            b.ConfigureByConvention();
+
+            b.Property(x => x.WidgetKey).IsRequired().HasMaxLength(64);
+            b.Property(x => x.ModuleKey).IsRequired().HasMaxLength(64);
+
+            b.Property(x => x.Title).HasMaxLength(256);
+            b.Property(x => x.ConfigJson).HasColumnType("nvarchar(max)");
+
+            b.HasIndex(x => x.TenantId);
+            b.HasIndex(x => new { x.AppHomePageConfigId, x.DisplayOrder });
+            b.HasIndex(x => new { x.AppHomePageConfigId, x.WidgetKey }).IsUnique(false);
+
+            b.HasMany(x => x.Items)
+             .WithOne()
+             .HasForeignKey(x => x.AppHomePageWidgetId)
+             .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        builder.Entity<AppHomePageWidgetItem>(b =>
+        {
+            b.ToTable("AppHomePageWidgetItems");
+            b.ConfigureByConvention();
+
+            b.Property(x => x.Text).IsRequired().HasMaxLength(128);
+            b.Property(x => x.Icon).HasMaxLength(128);
+            b.Property(x => x.Action).HasMaxLength(512);
+
+            b.HasIndex(x => x.TenantId);
+            b.HasIndex(x => new { x.AppHomePageWidgetId, x.DisplayOrder });
         });
     }
 }

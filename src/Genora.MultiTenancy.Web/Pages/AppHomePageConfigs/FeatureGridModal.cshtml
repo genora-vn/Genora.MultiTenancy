@@ -1,0 +1,262 @@
+﻿@page
+@using Genora.MultiTenancy.Localization
+@using Microsoft.Extensions.Localization
+@using Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.TagHelpers.Modal
+@model Genora.MultiTenancy.Web.Pages.AppHomePageConfigs.FeatureGridModalModel
+@inject IStringLocalizer<MultiTenancyResource> L
+
+@{
+    Layout = null;
+}
+
+<form abp-model="Model" asp-page="/AppHomePageConfigs/FeatureGridModal">
+    <abp-modal size="Large">
+        <abp-modal-header title="@L["HomePageConfig:FeatureGridTitle"]"></abp-modal-header>
+        <abp-modal-body>
+            <input asp-for="WidgetId" />
+
+            <div class="mb-3">
+                <abp-input asp-for="Model.Title" label="@L["Title"]" />
+                <abp-input asp-for="Model.Limit" label="@L["HomePageConfig:Limit"]" />
+            </div>
+
+            <hr />
+
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <strong>@L["HomePageConfig:Items"]</strong>
+                <button type="button" class="btn btn-outline-primary btn-sm" id="btnAddItem">
+                    + @L["HomePageConfig:Add"]
+                </button>
+            </div>
+
+            <div class="table-responsive">
+                <table class="table table-striped align-middle" id="itemsTable">
+                    <thead>
+                        <tr>
+                            <th style="width:34px;"></th>
+                            <th style="width:90px;">@L["HomePageConfig:Order"]</th>
+                            <th>@L["HomePageConfig:Text"]</th>
+                            <th style="width:160px;">@L["HomePageConfig:Icon"]</th>
+                            <th>@L["HomePageConfig:Action"]</th>
+                            <th style="width:90px;" class="text-center">@L["HomePageConfig:Enabled"]</th>
+                            <th style="width:80px;"></th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        @for (var i = 0; i < (Model.Model?.Items?.Count ?? 0); i++)
+                        {
+                            <tr class="fg-row">
+                                <td class="fg-drag-handle" title="Drag">
+                                    <span aria-hidden="true">↕</span>
+                                </td>
+                                <td>
+                                    <input class="form-control fg-order"
+                                           name="Model.Items[@i].DisplayOrder"
+                                           value="@Model.Model.Items[i].DisplayOrder" />
+                                    <input type="hidden" name="Model.Items[@i].Id" value="@Model.Model.Items[i].Id" />
+                                </td>
+                                <td>
+                                    <input class="form-control" name="Model.Items[@i].Text" value="@Model.Model.Items[i].Text" />
+                                </td>
+                                <td>
+                                    <input class="form-control" name="Model.Items[@i].Icon" value="@Model.Model.Items[i].Icon" />
+                                </td>
+                                <td>
+                                    <input class="form-control" name="Model.Items[@i].Action" value="@Model.Model.Items[i].Action" />
+                                </td>
+                                <td class="text-center">
+                                    <input type="checkbox"
+                                           name="Model.Items[@i].IsEnabled"
+                                           value="true"
+                                           @(Model.Model.Items[i].IsEnabled ? "checked" : "") />
+                                    <input type="hidden" name="Model.Items[@i].IsEnabled" value="false" />
+                                </td>
+                                <td class="text-end">
+                                    <button type="button" class="btn btn-sm btn-outline-danger btnRemove">×</button>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            <small class="text-muted">
+                @L["HomePageConfig:HintDisplayOrder"]
+            </small>
+        </abp-modal-body>
+
+        <abp-modal-footer buttons="@(AbpModalButtons.Cancel | AbpModalButtons.Save)"></abp-modal-footer>
+    </abp-modal>
+</form>
+
+<style>
+    #itemsTable tbody tr.fg-row {
+        cursor: all-scroll;
+        user-select: none;
+    }
+
+    #itemsTable tbody td.fg-drag-handle {
+        width: 34px;
+        text-align: center;
+        cursor: grab;
+        opacity: .75;
+    }
+
+    #itemsTable tbody tr.fg-row.dragging {
+        opacity: .55;
+    }
+
+    #itemsTable tbody tr.fg-row.drop-target {
+        outline: 2px dashed #999;
+        outline-offset: -2px;
+    }
+</style>
+
+<script>
+        (function () {
+            var table = document.getElementById('itemsTable');
+            if (!table) return;
+
+            // Tránh init 2 lần khi modal mở/đóng nhiều
+            if (table.dataset.inited === "1") return;
+            table.dataset.inited = "1";
+
+            var tbody = table.querySelector('tbody');
+            var addBtn = document.getElementById('btnAddItem');
+
+            function reindexNames() {
+                var rows = tbody.querySelectorAll('tr');
+                rows.forEach(function (tr, idx) {
+                    tr.querySelectorAll('input, textarea, select').forEach(function (el) {
+                        var name = el.getAttribute('name');
+                        if (!name) return;
+                        el.setAttribute('name', name.replace(/Model\.Items\[\d+\]/g, 'Model.Items[' + idx + ']'));
+                    });
+                });
+            }
+
+            function renumberDisplayOrder() {
+                var rows = tbody.querySelectorAll('tr');
+                rows.forEach(function (tr, idx) {
+                    var orderInput = tr.querySelector('input.fg-order');
+                    if (orderInput) orderInput.value = (idx + 1) * 10;
+                });
+            }
+
+            function normalizeAfterChange() {
+                // Tên input phải đúng index trước khi submit
+                reindexNames();
+                renumberDisplayOrder();
+            }
+
+            function newRowHtml(idx) {
+                return `
+                <tr class="fg-row">
+                  <td class="fg-drag-handle" title="Drag"><span aria-hidden="true">↕</span></td>
+                  <td>
+                    <input class="form-control fg-order" name="Model.Items[${idx}].DisplayOrder" value="${(idx + 1) * 10}" />
+                    <input type="hidden" name="Model.Items[${idx}].Id" value="00000000-0000-0000-0000-000000000000" />
+                  </td>
+                  <td><input class="form-control" name="Model.Items[${idx}].Text" value="" /></td>
+                  <td><input class="form-control" name="Model.Items[${idx}].Icon" value="" /></td>
+                  <td><input class="form-control" name="Model.Items[${idx}].Action" value="" /></td>
+                  <td class="text-center">
+                    <input type="checkbox" name="Model.Items[${idx}].IsEnabled" value="true" checked />
+                    <input type="hidden" name="Model.Items[${idx}].IsEnabled" value="false" />
+                  </td>
+                  <td class="text-end">
+                    <button type="button" class="btn btn-sm btn-outline-danger btnRemove">×</button>
+                  </td>
+                </tr>`;
+            }
+
+            // Add item
+            addBtn && addBtn.addEventListener('click', function () {
+                var idx = tbody.querySelectorAll('tr').length;
+                tbody.insertAdjacentHTML('beforeend', newRowHtml(idx));
+                normalizeAfterChange();
+                makeRowsDraggable();
+            });
+
+            // Remove item
+            tbody.addEventListener('click', function (e) {
+                var btn = e.target.closest('.btnRemove');
+                if (!btn) return;
+                var tr = btn.closest('tr');
+                tr && tr.remove();
+                normalizeAfterChange();
+            });
+
+            // Drag & Drop (HTML5)
+            var draggedRow = null;
+
+            function makeRowsDraggable() {
+                var rows = tbody.querySelectorAll('tr.fg-row');
+                rows.forEach(function (tr) {
+                    tr.setAttribute('draggable', 'true');
+                });
+            }
+
+            function clearDropTargets() {
+                tbody.querySelectorAll('tr.drop-target').forEach(function (tr) {
+                    tr.classList.remove('drop-target');
+                });
+            }
+
+            tbody.addEventListener('dragstart', function (e) {
+                var tr = e.target.closest('tr.fg-row');
+                if (!tr) return;
+
+                draggedRow = tr;
+                tr.classList.add('dragging');
+
+                if (e.dataTransfer) {
+                    e.dataTransfer.effectAllowed = 'move';
+                    try { e.dataTransfer.setData('text/plain', 'drag'); } catch { }
+                }
+            });
+
+            tbody.addEventListener('dragend', function () {
+                if (draggedRow) draggedRow.classList.remove('dragging');
+                draggedRow = null;
+                clearDropTargets();
+            });
+
+            tbody.addEventListener('dragover', function (e) {
+                if (!draggedRow) return;
+
+                var target = e.target.closest('tr.fg-row');
+                if (!target || target === draggedRow) return;
+
+                e.preventDefault(); // allow drop
+
+                clearDropTargets();
+                target.classList.add('drop-target');
+
+                var rect = target.getBoundingClientRect();
+                var before = (e.clientY - rect.top) < (rect.height / 2);
+
+                if (before) {
+                    if (target.previousSibling !== draggedRow) {
+                        tbody.insertBefore(draggedRow, target);
+                    }
+                } else {
+                    if (target.nextSibling !== draggedRow) {
+                        tbody.insertBefore(draggedRow, target.nextSibling);
+                    }
+                }
+            });
+
+            tbody.addEventListener('drop', function (e) {
+                if (!draggedRow) return;
+                e.preventDefault();
+
+                clearDropTargets();
+                normalizeAfterChange();
+            });
+
+            // init
+            makeRowsDraggable();
+        })();
+</script>

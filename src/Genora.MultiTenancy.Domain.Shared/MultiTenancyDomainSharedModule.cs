@@ -51,15 +51,15 @@ public class MultiTenancyDomainSharedModule : AbpModule
 
             options.DefaultResourceType = typeof(MultiTenancyResource);
 
-            options.Languages.Add(new LanguageInfo("zh-Hans", "zh-Hans", "Chinese (Simplified)"));
-            options.Languages.Add(new LanguageInfo("zh-Hant", "zh-Hant", "Chinese (Traditional)"));
-            options.Languages.Add(new LanguageInfo("en", "en", "English"));
-            options.Languages.Add(new LanguageInfo("ru", "ru", "Russian"));
-            options.Languages.Add(new LanguageInfo("vi", "vi", "Vietnamese"));
-            options.Languages.Add(new LanguageInfo("ko", "ko", "Korean"));
-            options.Languages.Add(new LanguageInfo("ja", "ja", "Japanese"));
-            options.Languages.Add(new LanguageInfo("th", "th", "Thai"));
-            options.Languages.Add(new LanguageInfo("lo", "lo", "Lao"));
+            //options.Languages.Add(new LanguageInfo("zh-Hans", "zh-Hans", "Chinese (Simplified)"));
+            //options.Languages.Add(new LanguageInfo("zh-Hant", "zh-Hant", "Chinese (Traditional)"));
+            //options.Languages.Add(new LanguageInfo("en", "en", "English"));
+            //options.Languages.Add(new LanguageInfo("ru", "ru", "Russian"));
+            //options.Languages.Add(new LanguageInfo("vi", "vi", "Vietnamese"));
+            //options.Languages.Add(new LanguageInfo("ko", "ko", "Korean"));
+            //options.Languages.Add(new LanguageInfo("ja", "ja", "Japanese"));
+            //options.Languages.Add(new LanguageInfo("th", "th", "Thai"));
+            //options.Languages.Add(new LanguageInfo("lo", "lo", "Lao"));
 
         });
         

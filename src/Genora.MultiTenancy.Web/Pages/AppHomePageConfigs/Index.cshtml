@@ -1,0 +1,57 @@
+﻿@page
+@using Genora.MultiTenancy.Localization
+@using Genora.MultiTenancy.Permissions
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.Extensions.Localization
+@inject IStringLocalizer<MultiTenancyResource> L
+@inject IAuthorizationService AuthorizationService
+@inject Volo.Abp.MultiTenancy.ICurrentTenant CurrentTenant
+
+@{
+    var canEdit = CurrentTenant.IsAvailable
+        ? await AuthorizationService.IsGrantedAsync(MultiTenancyPermissions.AppHomePageConfigs.Edit)
+        : await AuthorizationService.IsGrantedAsync(MultiTenancyPermissions.HostAppHomePageConfigs.Edit);
+}
+
+@section scripts
+{
+    <abp-script src="/Pages/AppHomePageConfigs/Index.js" />
+    <abp-style src="/Pages/Index.css" />
+}
+
+<abp-card>
+    <abp-card-header>
+        <abp-row>
+            <abp-column size-md="_6">
+                <abp-card-title>@L["Menu:HomePageConfig"]</abp-card-title>
+            </abp-column>
+            <abp-column size-md="_6" class="text-end">
+                @if (canEdit)
+                {
+                    <small class="text-muted">
+                        @L["HomePageConfig:DragHint"]
+                    </small>
+                }
+            </abp-column>
+        </abp-row>
+    </abp-card-header>
+
+    <abp-card-body>
+        <abp-table striped-rows="true" id="AppHomePageWidgetsTable"></abp-table>
+    </abp-card-body>
+</abp-card>
+
+<style>
+    #AppHomePageWidgetsTable_wrapper .dt-scroll-body {
+        max-height: 69vh !important;
+        min-height: 64vh !important;
+    }
+
+    #AppHomePageWidgetsTable tbody tr.hp-draggable {
+        cursor: all-scroll;
+    }
+
+    #AppHomePageWidgetsTable tbody tr.dragging {
+        opacity: .55;
+    }
+</style>

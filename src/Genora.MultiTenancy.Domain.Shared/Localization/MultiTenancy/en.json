@@ -273,6 +273,9 @@
     "Price18": "18 hole price",
     "Price27": "27 hole price",
     "Price36": "36 hole price",
+    "ExportExcelBtn": "Export Excel file",
+    "DownloadTemplateBtn": "Download template file",
+    "ImportExcel": "Import Excel file",
     "GolfCourse": "Golf Course",
     "ManageCalendar": "Manage Play Time",
     "SelectGolfCourse": "Select Golf Course",
@@ -493,6 +496,56 @@
     "UpgradeSettings:ZaloZns:Template:BookingCreated": "Booking created TemplateId",
     "UpgradeSettings:ZaloZns:Template:BookingCancelled": "Booking cancelled TemplateId",
     "UpgradeSettings:ZaloZns:Template:BookingReminder": "Booking reminder TemplateId",
-    "UpgradeSettings:ZaloZns:Template:BookingChanged": "Booking changed TemplateId"
+    "UpgradeSettings:ZaloZns:Template:BookingChanged": "Booking changed TemplateId",
+
+    "FeatureGroup:MiniAppHomePage": "Homepage Configuration",
+    "Feature:MiniAppHomePage": "Enable Homepage Configuration",
+    "Feature:MiniAppHomePageDesc": "Enable Homepage Configuration Management Function (edit, sort, configure feature widgets, update status)",
+    "Permission:AppHomePageConfig": "Homepage Configuration",
+    "Permission:AppHomePageConfig.Edit": "Edit",
+    "Permission:HostAppHomePageConfig": "Homepage Configuration",
+    "Permission:HostAppHomePageConfig.Edit": "Edit",
+    "HomePageConfig:DragHint": "Drag & drop to reorder widgets",
+    "HomePageConfig:SearchPlaceholder": "Search",
+    "HomePageConfig:ToggleOnOff": "Show (On/Off)",
+
+    "HomePageConfig:WidgetKey": "WidgetKey",
+    "HomePageConfig:Order": "Order",
+    "HomePageConfig:Module": "Module",
+    "HomePageConfig:Title": "Title",
+    "HomePageConfig:Limit": "Limit",
+    "HomePageConfig:IsEnabled": "Enabled",
+
+    "HomePageConfig:UpdateStatus": "Update status",
+    "HomePageConfig:EditWidget": "Edit widget",
+    "HomePageConfig:FeatureGrid": "Feature Grid",
+    "HomePageConfig:EditFeatureGrid": "Configure Feature Grid",
+
+    "HomePageConfig:WidgetNotFound": "Widget not found.",
+    "HomePageConfig:WidgetNotInScope": "The widget is not in the current config scope.",
+    "HomePageConfig:NotFeatureGrid": "This widget is not FeatureGrid.",
+
+    "HomePageConfig:ItemText": "Text",
+    "HomePageConfig:ItemIcon": "Icon",
+    "HomePageConfig:ItemAction": "Action/Deeplink",
+    "HomePageConfig:ItemOrder": "Order",
+    "HomePageConfig:AddItem": "Add item",
+    "HomePageConfig:RemoveItem": "Remove",
+    "HomePageConfig:EnableItem": "Enable",
+    "HomePageConfig:DisableItem": "Disable",
+
+    "HomePageConfig:SaveSuccess": "Configuration saved successfully.",
+    "HomePageConfig:InvalidItemText": "Please enter text for the item.",
+
+
+    "HomePageConfig:FeatureGridTitle": "Feature Grid",
+    "HomePageConfig:Items": "Items",
+    "HomePageConfig:Add": "Add",
+    "HomePageConfig:Text": "Text",
+    "HomePageConfig:Icon": "Icon",
+    "HomePageConfig:Action": "Action/Deeplink",
+    "HomePageConfig:Enabled": "Enabled",
+    "HomePageConfig:HintDisplayOrder": "Tip: DisplayOrder should increase. You can edit it quickly."
+
   }
 }

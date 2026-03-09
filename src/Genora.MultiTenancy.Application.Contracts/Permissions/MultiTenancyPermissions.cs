@@ -234,6 +234,18 @@ public static class MultiTenancyPermissions
     }
     #endregion
 
+    public static class AppHomePageConfigs
+    {
+        public const string Default = GroupName + ".AppHomePageConfigs";
+        public const string Edit = Default + ".Edit";
+    }
+
+    public static class HostAppHomePageConfigs
+    {
+        public const string Default = GroupName + ".HostAppHomePageConfigs";
+        public const string Edit = Default + ".Edit";
+    }
+
     //Add your own permission names. Example:
     //public const string MyPermission1 = GroupName + ".MyPermission1";
 }

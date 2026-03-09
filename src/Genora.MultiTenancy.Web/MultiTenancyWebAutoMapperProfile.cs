@@ -4,6 +4,7 @@ using Genora.MultiTenancy.AppDtos.AppCalendarSlots;
 using Genora.MultiTenancy.AppDtos.AppCustomers;
 using Genora.MultiTenancy.AppDtos.AppCustomerTypes;
 using Genora.MultiTenancy.AppDtos.AppGolfCourses;
+using Genora.MultiTenancy.AppDtos.AppHomePageConfigs;
 using Genora.MultiTenancy.AppDtos.AppMembershipTiers;
 using Genora.MultiTenancy.AppDtos.AppNews;
 using Genora.MultiTenancy.AppDtos.AppSettings;
@@ -28,6 +29,11 @@ public class MultiTenancyWebAutoMapperProfile : Profile
 
         CreateMap<AppZaloAuthDto, CreateUpdateZaloAuthDto>();
         CreateMap<SpecialDateDto, CreateUpdateSpecialDateDto>().ReverseMap();
+        
+        CreateMap<FeatureGridDto, UpdateFeatureGridDto>()
+            .ForMember(d => d.Items, opt => opt.MapFrom(s => s.Items))
+            .ReverseMap();
+        CreateMap<HomePageWidgetItemDto, UpdateFeatureGridItemDto>().ReverseMap();
         //Define your object mappings here, for the Web project
     }
 }
