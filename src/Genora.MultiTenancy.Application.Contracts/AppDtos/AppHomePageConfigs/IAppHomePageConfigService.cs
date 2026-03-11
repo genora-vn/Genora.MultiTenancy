@@ -8,6 +8,8 @@ public interface IAppHomePageConfigService : IApplicationService
 {
     Task<PagedResultDto<HomePageWidgetListItemDto>> GetWidgetListAsync(GetHomePageWidgetListInput input);
 
+    Task<HomePageWidgetDto> CreateWidgetAsync(CreateHomePageWidgetDto input);
+
     Task UpdateWidgetAsync(UpdateWidgetRequestDto input);
 
     Task UpdateWidgetOrderAsync(UpdateWidgetOrderDto input);
@@ -17,5 +19,6 @@ public interface IAppHomePageConfigService : IApplicationService
     Task UpdateFeatureGridAsync(Guid widgetId, UpdateFeatureGridDto input);
 
     Task<HomePageWidgetDto> GetWidgetAsync(Guid id);
+
     Task<HomePageWidgetDto> UpdateWidgetByIdAsync(Guid id, UpdateHomePageWidgetDto input);
 }

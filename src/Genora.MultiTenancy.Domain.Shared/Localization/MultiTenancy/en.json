@@ -506,6 +506,7 @@
     "Permission:HostAppHomePageConfig": "Homepage Configuration",
     "Permission:HostAppHomePageConfig.Edit": "Edit",
     "HomePageConfig:DragHint": "Drag & drop to reorder widgets",
+    "HomePageConfig:NewWidget": "Add Configuration",
     "HomePageConfig:SearchPlaceholder": "Search",
     "HomePageConfig:ToggleOnOff": "Show (On/Off)",
 

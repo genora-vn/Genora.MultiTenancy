@@ -3,6 +3,7 @@
 
     var service = genora.multiTenancy.appServices.appHomePageConfigs.appHomePageConfig;
 
+    var createWidgetModal = new abp.ModalManager(abp.appPath + 'AppHomePageConfigs/CreateWidgetModal');
     var editWidgetModal = new abp.ModalManager(abp.appPath + 'AppHomePageConfigs/EditWidgetModal');
     var featureGridModal = new abp.ModalManager(abp.appPath + 'AppHomePageConfigs/FeatureGridModal');
 
@@ -14,12 +15,10 @@
         return d ? l('Yes') : l('No');
     }
 
-    // Switch column (On/Off)
     function renderToggleSwitch(data, type, row) {
         var checked = row.isEnabled ? 'checked' : '';
         var disabled = canEdit ? '' : 'disabled';
 
-        // Bootstrap switch style
         return `
           <div class="form-check form-switch m-0 d-flex justify-content-center">
             <input class="form-check-input hp-toggle"
@@ -36,7 +35,7 @@
             serverSide: true,
             paging: true,
             searching: true,
-            order: [[2, "asc"]], // DisplayOrder
+            order: [[2, "asc"]],
             scrollX: true,
 
             ajax: abp.libs.datatables.createAjax(service.getWidgetList, function (request) {
@@ -102,10 +101,9 @@
                     className: "text-center",
                     render: renderToggleSwitch,
                     createdCell: function (td) {
-                        if (!canEdit) {
-                            $(td).find('.hp-toggle').prop('disabled', true);
-                        }
-                    }
+                        $(td).find('.hp-toggle').prop('disabled', !canEdit);
+                    },
+                    visible: canEdit
                 }
             ],
 
@@ -114,6 +112,18 @@
             }
         })
     );
+
+    // ✅ Create button
+    $('#NewHomePageWidgetButton').click(function (e) {
+        e.preventDefault();
+        if (!canEdit) return;
+        createWidgetModal.open();
+    });
+
+    createWidgetModal.onResult(function () {
+        abp.notify.success(l('CreatedSuccessfully') || l('SavedSuccessfully'));
+        dataTable.ajax.reload(null, false);
+    });
 
     editWidgetModal.onResult(function () {
         abp.notify.success(l('SavedSuccessfully'));
@@ -125,42 +135,44 @@
         dataTable.ajax.reload(null, false);
     });
 
-    // Toggle nhanh bằng switch (delegate event)
+    // Toggle nhanh bằng switch
     $('#AppHomePageWidgetsTable').on('change', '.hp-toggle', function () {
         if (!canEdit) return;
 
-        var id = $(this).data('id');
-        var isEnabled = $(this).is(':checked');
+        var $sw = $(this);
+        var id = $sw.data('id');
+        var isEnabled = $sw.is(':checked');
 
         service.updateWidget({ id: id, isEnabled: isEnabled })
             .then(function () {
-                // Reload cập nhật cột text IsActive
                 dataTable.ajax.reload(null, false);
             })
             .catch(function () {
-                $(this).prop('checked', !isEnabled);
-            }.bind(this));
+                $sw.prop('checked', !isEnabled);
+            });
     });
 
     function enableRowDragDrop() {
         var $tbody = $('#AppHomePageWidgetsTable tbody');
 
-        // Bind events 1 lần, nhưng draggable attr set lại mỗi draw
         if ($tbody.data('dragBound') !== '1') {
             $tbody.data('dragBound', '1');
 
             var draggedRow = null;
 
             $tbody.on('dragstart', 'tr', function (e) {
-                // Không kéo khi đang click vào button/dropdown/input
+                if (!canEdit) { e.preventDefault(); return; }
+
+                // Không kéo khi đang click vào button/dropdown/input/switch
                 var $t = $(e.target);
-                if ($t.closest('button, a, input, select, textarea, .dropdown, .btn').length) {
+                if ($t.closest('button, a, input, select, textarea, .dropdown, .btn, .form-check').length) {
                     e.preventDefault();
                     return;
                 }
 
                 draggedRow = this;
                 e.originalEvent.dataTransfer.effectAllowed = 'move';
+                try { e.originalEvent.dataTransfer.setData('text/plain', 'drag'); } catch { }
                 $(this).addClass('dragging');
             });
 
@@ -169,6 +181,7 @@
             });
 
             $tbody.on('dragover', 'tr', function (e) {
+                if (!canEdit) return;
                 e.preventDefault();
                 if (!draggedRow) return;
 
@@ -184,6 +197,7 @@
             });
 
             $tbody.on('drop', 'tr', function (e) {
+                if (!canEdit) return;
                 e.preventDefault();
                 if (!draggedRow) return;
 
@@ -203,9 +217,10 @@
             });
         }
 
-        // Mỗi lần draw phải set lại draggable + cursor cho các row hiện tại
+        // mỗi draw set lại draggable + cursor
         $tbody.find('tr')
             .attr('draggable', canEdit ? 'true' : 'false')
-            .toggleClass('hp-draggable', canEdit);
+            .toggleClass('hp-draggable', canEdit)
+            .css('cursor', canEdit ? 'all-scroll' : '');
     }
 });

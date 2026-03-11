@@ -541,6 +541,7 @@
     "Permission:HostAppHomePageConfig": "Cấu hình Trang chủ",
     "Permission:HostAppHomePageConfig.Edit": "Chỉnh sửa",
     "HomePageConfig:DragHint": "Drag & drop để sắp xếp thứ tự hiển thị widget",
+    "HomePageConfig:NewWidget": "Thêm mới cấu hình",
     "HomePageConfig:SearchPlaceholder": "Tìm kiếm",
     "HomePageConfig:ToggleOnOff": "Hiển thị (On/Off)",
 

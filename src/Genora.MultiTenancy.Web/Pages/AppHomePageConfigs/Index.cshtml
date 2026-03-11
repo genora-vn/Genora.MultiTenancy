@@ -28,9 +28,13 @@
             <abp-column size-md="_6" class="text-end">
                 @if (canEdit)
                 {
-                    <small class="text-muted">
+                    <small class="text-muted ms-2">
                         @L["HomePageConfig:DragHint"]
                     </small>
+                    <abp-button id="NewHomePageWidgetButton"
+                                text="@L["HomePageConfig:NewWidget"].Value"
+                                icon="plus"
+                                button-type="Outline_Primary" />
                 }
             </abp-column>
         </abp-row>

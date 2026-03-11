@@ -1,0 +1,32 @@
+﻿@page
+@using Genora.MultiTenancy.Localization
+@using Microsoft.Extensions.Localization
+@using Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.TagHelpers.Modal
+@model Genora.MultiTenancy.Web.Pages.AppHomePageConfigs.CreateWidgetModalModel
+@inject IStringLocalizer<MultiTenancyResource> L
+
+@{
+    Layout = null;
+}
+
+<form abp-model="Widget" asp-page="/AppHomePageConfigs/CreateWidgetModal">
+    <abp-modal>
+        <abp-modal-header title="@L["HomePageConfig:NewWidget"].Value"></abp-modal-header>
+        <abp-modal-body>
+
+            <abp-input asp-for="Widget.WidgetKey" label="WidgetKey" />
+            <abp-input asp-for="Widget.ModuleKey" label="ModuleKey" />
+            <abp-input asp-for="Widget.Title" label="@L["Title"]" />
+            <abp-input asp-for="Widget.Limit" label="Limit" />
+            <abp-input asp-for="Widget.IsEnabled" label="@L["IsActive"]" />
+
+            <div class="mb-3">
+                <label class="form-label">ConfigJson</label>
+                <textarea class="form-control" asp-for="Widget.ConfigJson" rows="6"
+                          placeholder='{"key":"value"}'></textarea>
+            </div>
+
+        </abp-modal-body>
+        <abp-modal-footer buttons="@(AbpModalButtons.Cancel | AbpModalButtons.Save)"></abp-modal-footer>
+    </abp-modal>
+</form>

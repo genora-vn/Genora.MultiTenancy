@@ -116,6 +116,49 @@ public class AppHomePageConfigService
     public async Task<HomePageWidgetDto> GetWidgetAsync(Guid id)
         => await GetAsync(id);
 
+    public async Task<HomePageWidgetDto> CreateWidgetAsync(CreateHomePageWidgetDto input)
+    {
+        await CheckCreatePolicyAsync();
+
+        var cfg = await EnsureConfigAsync();
+        var tenantId = CurrentTenant.Id;
+
+        var widgetKey = (input.WidgetKey ?? "").Trim();
+        if (string.IsNullOrWhiteSpace(widgetKey))
+            throw new BusinessException("AppHomePageConfig:WidgetKeyRequired");
+
+        // auto display order nếu không set
+        var maxOrder = 0;
+        var q = await Repository.GetQueryableAsync();
+        q = q.Where(x => x.AppHomePageConfigId == cfg.Id);
+
+        var any = await AsyncExecuter.AnyAsync(q);
+        if (any)
+            maxOrder = await AsyncExecuter.MaxAsync(q, x => x.DisplayOrder);
+
+        var nextOrder = input.DisplayOrder.HasValue
+            ? input.DisplayOrder.Value
+            : (maxOrder <= 0 ? 10 : maxOrder + 10);
+
+        var entity = new AppHomePageWidget(
+            id: GuidGenerator.Create(),
+            configId: cfg.Id,
+            tenantId: tenantId,
+            widgetKey: widgetKey,
+            moduleKey: string.IsNullOrWhiteSpace(input.ModuleKey) ? "Free" : input.ModuleKey.Trim(),
+            displayOrder: nextOrder
+        )
+        {
+            IsEnabled = input.IsEnabled,
+            Title = string.IsNullOrWhiteSpace(input.Title) ? null : input.Title.Trim(),
+            Limit = input.Limit,
+            ConfigJson = string.IsNullOrWhiteSpace(input.ConfigJson) ? null : input.ConfigJson
+        };
+
+        await Repository.InsertAsync(entity, autoSave: true);
+        return ObjectMapper.Map<AppHomePageWidget, HomePageWidgetDto>(entity);
+    }
+
     public async Task<HomePageWidgetDto> UpdateWidgetByIdAsync(Guid id, UpdateHomePageWidgetDto input)
         => await UpdateAsync(id, input);
 
