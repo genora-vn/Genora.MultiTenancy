@@ -370,7 +370,8 @@ public class AppCalendarSlotService :
         if (input.ApplyDateTo.HasValue)
             slotQuery = slotQuery.Where(x => x.ApplyDate.Date <= input.ApplyDateTo.Value.Date);
 
-        var slots = await AsyncExecuter.ToListAsync(slotQuery.OrderBy(x => x.TimeFrom));
+        var slots = await AsyncExecuter.ToListAsync(slotQuery.OrderBy(x => x.ApplyDate)
+                                                            .ThenBy(x => x.TimeFrom));
 
         if (!slots.Any())
             return new List<AppCalendarSlotDto>();

@@ -94,7 +94,12 @@
                                                     <div class="d-flex flex-column align-items-center gap-1 py-2">
                                                         <div class="fw-semibold">Tải ảnh</div>
                                                         <div class="text-muted small">Kéo thả ảnh vào đây hoặc bấm để chọn</div>
-                                                        <div class="text-muted small">JPG / PNG / WebP</div>
+                                                        <small class="text-muted d-block">
+                                                            Định dạng: JPG/PNG/WebP.
+                                                        </small>
+                                                        <small class="text-muted d-block">
+                                                            Kích thước ảnh tối thiểu 1040×584 hoặc ảnh có tỉ lệ 16:9
+                                                        </small>
                                                     </div>
                                                     <input asp-for="News.Images" type="file" id="imagesEdit" accept="image/*" style="display:none" />
                                                 </div>
@@ -373,7 +378,7 @@
 
 <script>
     (function () {
-        const MAX_FILE_MB = 20;
+        const MAX_FILE_MB = 15;
         const MAX_FILE_BYTES = MAX_FILE_MB * 1024 * 1024;
 
         const MAX = 6;
