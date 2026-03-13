@@ -22,6 +22,13 @@ namespace Genora.MultiTenancy.AppServices.AppCalendarSlots
             _l = l;
         }
 
+        private sealed class PriceColumnMeta
+        {
+            public int ColumnIndex { get; set; }
+            public string CustomerTypeName { get; set; } = default!;
+            public int Holes { get; set; }
+        }
+
         public List<(int Row, AppCalendarSlotExcelRowDto Data)> Read(
             Stream stream,
             List<CustomerType> customerTypes)
@@ -30,11 +37,11 @@ namespace Genora.MultiTenancy.AppServices.AppCalendarSlots
             var ws = workbook.Worksheet(1);
 
             var results = new List<(int, AppCalendarSlotExcelRowDto)>();
-
             var row = 5;
-            var totalCustomerTypes = customerTypes.Count;
 
-            while (!ws.Cell(row, 1).IsEmpty())
+            var priceColumns = ReadPriceColumns(ws);
+
+            while (!IsDataRowEmpty(ws, row))
             {
                 try
                 {
@@ -53,54 +60,52 @@ namespace Genora.MultiTenancy.AppServices.AppCalendarSlots
                         CustomerTypePrice = new List<CustomerTypeExcelRowDto>()
                     };
 
-                    if (results.Any(x =>
-                        x.Item2.GolfCourseCode == dto.GolfCourseCode &&
-                        x.Item2.FromDate.Date == dto.FromDate.Date &&
-                        x.Item2.StartTime == dto.StartTime &&
-                        string.Equals(x.Item2.DayType, dto.DayType, StringComparison.OrdinalIgnoreCase)))
-                    {
-                        row++;
-                        continue;
-                    }
+                    var grouped = priceColumns
+                        .GroupBy(x => x.CustomerTypeName, StringComparer.OrdinalIgnoreCase)
+                        .ToList();
 
-                    var index = 0;
-                    var startCol = 11;
-
-                    for (var col = startCol; col < startCol + (totalCustomerTypes * 4); col += 4)
+                    foreach (var group in grouped)
                     {
-                        var hasAny =
-                            !ws.Cell(row, col).IsEmpty() ||
-                            !ws.Cell(row, col + 1).IsEmpty() ||
-                            !ws.Cell(row, col + 2).IsEmpty() ||
-                            !ws.Cell(row, col + 3).IsEmpty();
+                        var priceDto = new CustomerTypeExcelRowDto
+                        {
+                            CustomerType = group.Key,
+                            Price9 = null,
+                            Price18 = 0m,
+                            Price27 = null,
+                            Price36 = null
+                        };
+
+                        var hasAny = false;
+
+                        foreach (var colMeta in group)
+                        {
+                            var cell = ws.Cell(row, colMeta.ColumnIndex);
+                            if (cell.IsEmpty()) continue;
+
+                            var value = ExcelHelper.ReadDecimal(cell);
+                            hasAny = true;
+
+                            switch (colMeta.Holes)
+                            {
+                                case 9:
+                                    priceDto.Price9 = value;
+                                    break;
+                                case 18:
+                                    priceDto.Price18 = value;
+                                    break;
+                                case 27:
+                                    priceDto.Price27 = value;
+                                    break;
+                                case 36:
+                                    priceDto.Price36 = value;
+                                    break;
+                            }
+                        }
 
                         if (hasAny)
                         {
-                            var price = new CustomerTypeExcelRowDto
-                            {
-                                CustomerType = customerTypes[index].Name,
-
-                                Price9 = ws.Cell(row, col).IsEmpty()
-                                    ? (decimal?)null
-                                    : ExcelHelper.ReadDecimal(ws.Cell(row, col)),
-
-                                Price18 = ws.Cell(row, col + 1).IsEmpty()
-                                    ? 0m
-                                    : ExcelHelper.ReadDecimal(ws.Cell(row, col + 1)),
-
-                                Price27 = ws.Cell(row, col + 2).IsEmpty()
-                                    ? (decimal?)null
-                                    : ExcelHelper.ReadDecimal(ws.Cell(row, col + 2)),
-
-                                Price36 = ws.Cell(row, col + 3).IsEmpty()
-                                    ? (decimal?)null
-                                    : ExcelHelper.ReadDecimal(ws.Cell(row, col + 3)),
-                            };
-
-                            dto.CustomerTypePrice.Add(price);
+                            dto.CustomerTypePrice.Add(priceDto);
                         }
-
-                        index++;
                     }
 
                     results.Add((row, dto));
@@ -120,6 +125,74 @@ namespace Genora.MultiTenancy.AppServices.AppCalendarSlots
             }
 
             return results;
+        }
+
+        private static List<PriceColumnMeta> ReadPriceColumns(IXLWorksheet ws)
+        {
+            const int customerTypeHeaderRow = 2;
+            const int priceHeaderRow = 3;
+            const int startCol = 11;
+
+            var metas = new List<PriceColumnMeta>();
+            var lastCol = ws.LastColumnUsed()?.ColumnNumber() ?? startCol;
+
+            string? currentCustomerTypeName = null;
+
+            for (int col = startCol; col <= lastCol; col++)
+            {
+                var customerTypeName = ws.Cell(customerTypeHeaderRow, col).GetString()?.Trim();
+                var priceHeader = ws.Cell(priceHeaderRow, col).GetString()?.Trim();
+
+                // Row 2 đang merge theo nhóm customer type.
+                // Các cột sau trong cùng group có thể rỗng, nên dùng lại tên gần nhất bên trái.
+                if (!string.IsNullOrWhiteSpace(customerTypeName))
+                {
+                    currentCustomerTypeName = customerTypeName;
+                }
+                else
+                {
+                    customerTypeName = currentCustomerTypeName;
+                }
+
+                if (string.IsNullOrWhiteSpace(customerTypeName) || string.IsNullOrWhiteSpace(priceHeader))
+                    continue;
+
+                var holes = ResolveHoles(priceHeader);
+                if (holes == null) continue;
+
+                metas.Add(new PriceColumnMeta
+                {
+                    ColumnIndex = col,
+                    CustomerTypeName = customerTypeName,
+                    Holes = holes.Value
+                });
+            }
+
+            return metas;
+        }
+
+        private static int? ResolveHoles(string header)
+        {
+            var s = (header ?? "").Trim();
+
+            if (s.Contains("36")) return 36;
+            if (s.Contains("27")) return 27;
+            if (s.Contains("18")) return 18;
+            if (s.Contains("9")) return 9;
+
+            return null;
+        }
+
+        private static bool IsDataRowEmpty(IXLWorksheet ws, int row)
+        {
+            // Chỉ coi là hết dữ liệu khi toàn bộ phần cột cố định A..J đều trống
+            for (int col = 1; col <= 10; col++)
+            {
+                if (!ws.Cell(row, col).IsEmpty())
+                    return false;
+            }
+
+            return true;
         }
     }
 

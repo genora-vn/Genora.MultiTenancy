@@ -81,17 +81,15 @@
                 },
 
                 { title: l('CustomerCode'), data: "customerCode" },
-                { title: l('CustomerFullName'), data: "fullName" },
+                { title: l('FullName'), data: "fullName" },
                 { title: l('VgaCode'), data: "vgaCode" },
-                { title: l('CustomerPhoneNumber'), data: "phoneNumber" },
-                {
-                    title: l('DateOfBirth'),
-                    data: "dateOfBirth",
-                    dataFormat: "date"
-                },
-
+                { title: l('PhoneNumber'), data: "phoneNumber" },
                 { title: l('CustomerType'), data: "customerTypeName" },
-
+                {
+                    title: l('Email'),
+                    data: "email",
+                    dataFormat: "email"
+                },
                 {
                     title: l('IsActive'),
                     data: "isActive",

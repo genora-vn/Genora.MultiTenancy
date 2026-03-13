@@ -53,7 +53,7 @@ public class AppCalendarSlotService :
     private readonly IDataFilter _dataFilter;
     private readonly IStringLocalizer<MultiTenancyResource> _l;
 
-    // ✅ mask all days (Mon..Sun) with mapping 0..6 = T2..CN
+    // mask all days (Mon..Sun) with mapping 0..6 = T2..CN
     private const int AllWeekdaysMask = (1 << 7) - 1; // 127
 
     public AppCalendarSlotService(
@@ -186,20 +186,6 @@ public class AppCalendarSlotService :
         return string.IsNullOrWhiteSpace(wd) ? "Trong tuần" : wd;
     }
 
-    private static string ResolveDayTypeNameForExport(
-        DateTime applyDate,
-        HashSet<DateTime> holidaySet,
-        List<string> allowedDayTypes,
-        string holidayName)
-    {
-        var isHoliday = holidaySet.Contains(applyDate.Date);
-        var isWeekend = applyDate.DayOfWeek == DayOfWeek.Saturday || applyDate.DayOfWeek == DayOfWeek.Sunday;
-
-        if (isHoliday) return holidayName;
-        if (isWeekend) return GuessWeekendName(allowedDayTypes);
-        return GuessWeekdayName(allowedDayTypes);
-    }
-
     private static List<DateTime> ParseDatesJson(string json)
     {
         if (string.IsNullOrWhiteSpace(json))
@@ -209,7 +195,6 @@ public class AppCalendarSlotService :
         {
             var s = json.Trim();
 
-            // 1) Try JSON array: ["2026-01-25","2026-04-30",...]
             List<string>? arr = null;
             if (s.StartsWith("["))
             {
@@ -217,7 +202,6 @@ public class AppCalendarSlotService :
             }
             else
             {
-                // 2) Fallback: plain text (old data) - split by newline / comma / semicolon
                 arr = s.Split(new[] { '\r', '\n', ',', ';', '|' }, StringSplitOptions.RemoveEmptyEntries)
                        .Select(x => x.Trim())
                        .Where(x => !string.IsNullOrWhiteSpace(x))
@@ -227,35 +211,32 @@ public class AppCalendarSlotService :
             var list = new List<DateTime>();
             var formats = new[]
             {
-            "yyyy-MM-dd",
-            "yyyy/MM/dd",
-            "yyyy/M/d",
-            "dd/MM/yyyy",
-            "d/M/yyyy",
-            "dd-MM-yyyy",
-            "d-M-yyyy"
-        };
+                "yyyy-MM-dd",
+                "yyyy/MM/dd",
+                "yyyy/M/d",
+                "dd/MM/yyyy",
+                "d/M/yyyy",
+                "dd-MM-yyyy",
+                "d-M-yyyy"
+            };
 
             foreach (var raw in arr ?? new List<string>())
             {
                 var x = (raw ?? "").Trim();
                 if (string.IsNullOrWhiteSpace(x)) continue;
 
-                // exact formats first (culture-independent)
                 if (DateTime.TryParseExact(x, formats, CultureInfo.InvariantCulture, DateTimeStyles.None, out var dExact))
                 {
                     list.Add(dExact.Date);
                     continue;
                 }
 
-                // try vi-VN
                 if (DateTime.TryParse(x, new CultureInfo("vi-VN"), DateTimeStyles.None, out var dVi))
                 {
                     list.Add(dVi.Date);
                     continue;
                 }
 
-                // fallback invariant
                 if (DateTime.TryParse(x, CultureInfo.InvariantCulture, DateTimeStyles.None, out var dInv))
                 {
                     list.Add(dInv.Date);
@@ -271,7 +252,7 @@ public class AppCalendarSlotService :
         }
     }
 
-    // ✅ map .NET DayOfWeek -> index 0..6 (T2..CN)
+    // map .NET DayOfWeek -> index 0..6 (T2..CN)
     private static int ToWeekdayIndex0Mon6Sun(DateTime date)
     {
         // .NET: Sunday=0, Monday=1, ... Saturday=6
@@ -284,6 +265,82 @@ public class AppCalendarSlotService :
         var m = mask ?? AllWeekdaysMask;
         var idx = ToWeekdayIndex0Mon6Sun(date);
         return ((m >> idx) & 1) == 1;
+    }
+
+    private static int CountBits(int? mask)
+    {
+        var m = mask ?? AllWeekdaysMask;
+        var count = 0;
+
+        while (m != 0)
+        {
+            count += (m & 1);
+            m >>= 1;
+        }
+
+        return count;
+    }
+
+    private static string? ResolveEffectiveDayType(
+        DateTime applyDate,
+        List<string> allowedDayTypes,
+        HashSet<DateTime> holidaySet,
+        string holidayName,
+        Dictionary<string, int?> maskByName)
+    {
+        var date = applyDate.Date;
+
+        // Holiday luôn ưu tiên cao nhất
+        if (holidaySet.Contains(date))
+            return holidayName;
+
+        var matched = new List<(string Name, int BitCount)>();
+
+        foreach (var dayType in allowedDayTypes)
+        {
+            if (string.Equals(dayType, holidayName, StringComparison.OrdinalIgnoreCase))
+                continue;
+
+            maskByName.TryGetValue(dayType, out var mask);
+
+            if (IsMaskHit(mask, date))
+            {
+                matched.Add((dayType, CountBits(mask)));
+            }
+        }
+
+        if (matched.Count == 0)
+            return null;
+
+        // BitCount càng nhỏ => càng đặc hiệu => ưu tiên hơn
+        return matched
+            .OrderBy(x => x.BitCount)
+            .ThenBy(x => x.Name)
+            .First()
+            .Name;
+    }
+
+    private static string ResolveDayTypeNameForExport(
+        DateTime applyDate,
+        HashSet<DateTime> holidaySet,
+        List<string> allowedDayTypes,
+        string holidayName,
+        Dictionary<string, int?> maskByName)
+    {
+        var effective = ResolveEffectiveDayType(
+            applyDate,
+            allowedDayTypes,
+            holidaySet,
+            holidayName,
+            maskByName);
+
+        if (!string.IsNullOrWhiteSpace(effective))
+            return effective;
+
+        var isWeekend = applyDate.DayOfWeek == DayOfWeek.Saturday || applyDate.DayOfWeek == DayOfWeek.Sunday;
+        if (holidaySet.Contains(applyDate.Date)) return holidayName;
+        if (isWeekend) return GuessWeekendName(allowedDayTypes);
+        return GuessWeekdayName(allowedDayTypes);
     }
 
     // =========================================================
@@ -520,7 +577,6 @@ public class AppCalendarSlotService :
                 .WithData("TimeTo", input.TimeTo);
         }
 
-        // Rule bắt buộc Price18 > 0
         if (input.Prices == null || input.Prices.Count == 0 || input.Prices.Any(p => p.Price18 <= 0))
         {
             var bad = input.Prices?.FirstOrDefault(p => p.Price18 <= 0);
@@ -769,9 +825,15 @@ public class AppCalendarSlotService :
                     return items;
                 });
 
-        var specCache = new Dictionary<Guid, (List<string> DayTypes, HashSet<DateTime> HolidaySet, string HolidayName)>();
+        var specCache = new Dictionary<Guid, (
+            List<string> DayTypes,
+            HashSet<DateTime> HolidaySet,
+            string HolidayName,
+            Dictionary<string, int?> MaskByName
+        )>();
 
-        async Task<(List<string> DayTypes, HashSet<DateTime> HolidaySet, string HolidayName)> GetSpecAsync(Guid golfCourseId)
+        async Task<(List<string> DayTypes, HashSet<DateTime> HolidaySet, string HolidayName, Dictionary<string, int?> MaskByName)>
+        GetSpecAsync(Guid golfCourseId)
         {
             if (specCache.TryGetValue(golfCourseId, out var v)) return v;
 
@@ -780,7 +842,27 @@ public class AppCalendarSlotService :
             var holidaySet = ParseHolidaySet(spec);
             var holidayName = ResolveHolidayName(spec);
 
-            v = (dayTypes, holidaySet, holidayName);
+            var maskByName = new Dictionary<string, int?>(StringComparer.OrdinalIgnoreCase);
+
+            foreach (var name in dayTypes)
+            {
+                var candidates = spec
+                    .Where(x => x.IsActive && string.Equals((x.Name ?? "").Trim(), name, StringComparison.OrdinalIgnoreCase))
+                    .ToList();
+
+                if (candidates.Any(LooksLikeHolidayConfig))
+                {
+                    maskByName[name] = null;
+                    continue;
+                }
+
+                var pick = candidates.FirstOrDefault(x => x.GolfCourseId == golfCourseId)
+                       ?? candidates.FirstOrDefault(x => x.GolfCourseId == null);
+
+                maskByName[name] = pick?.WeekdaysMask;
+            }
+
+            v = (dayTypes, holidaySet, holidayName, maskByName);
             specCache[golfCourseId] = v;
             return v;
         }
@@ -792,18 +874,15 @@ public class AppCalendarSlotService :
             priceBySlot.TryGetValue(b.Id, out var ctPrices);
 
             var gc = golfCourses.FirstOrDefault(g => g.Id == b.GolfCourseId);
-            var (dayTypes, holidaySet, holidayName) = await GetSpecAsync(b.GolfCourseId);
+            var (dayTypes, holidaySet, holidayName, maskByName) = await GetSpecAsync(b.GolfCourseId);
 
             rows.Add(new AppCalendarSlotExcelRowDto
             {
                 GolfCourseCode = gc?.Code,
                 GolfCourseName = gc?.Name,
-
-                DayType = ResolveDayTypeNameForExport(b.ApplyDate.Date, holidaySet, dayTypes, holidayName),
-
+                DayType = ResolveDayTypeNameForExport(b.ApplyDate.Date, holidaySet, dayTypes, holidayName, maskByName),
                 FromDate = b.ApplyDate,
                 ToDate = b.ApplyDate,
-
                 StartTime = b.TimeFrom,
                 EndTime = b.TimeTo,
                 MaxSlots = b.MaxSlots,
@@ -827,17 +906,25 @@ public class AppCalendarSlotService :
             dayTypesHint = GetDayTypesFromSpecialDates(globalSpec);
         }
 
-        return exporter.Export(rows, customerTypes, dayTypesHint);
+        GolfCourse? selectedGolfCourse = null;
+        if (input.GolfCourseId.HasValue && input.GolfCourseId.Value != Guid.Empty)
+        {
+            selectedGolfCourse = golfCourses.FirstOrDefault(x => x.Id == input.GolfCourseId.Value)
+                ?? await _golfCourseRepository.FindAsync(input.GolfCourseId.Value);
+        }
+
+        return exporter.Export(rows, customerTypes, dayTypesHint, selectedGolfCourse);
     }
 
     public async Task<IRemoteStreamContent> DownloadImportTemplateAsync(Guid? golfCourseId)
     {
         var customerTypes = await _customerTypeRepository.GetListAsync();
         var promotions = await _promotionType.GetListAsync();
+        var golfCourses = await _golfCourseRepository.GetListAsync(x => x.IsActive);
 
         List<SpecialDate> specialDates;
 
-        if (golfCourseId.HasValue == true && golfCourseId.Value != Guid.Empty)
+        if (golfCourseId.HasValue && golfCourseId.Value != Guid.Empty)
         {
             specialDates = await GetSpecialDatesForCourseAsync(golfCourseId.Value);
         }
@@ -847,16 +934,18 @@ public class AppCalendarSlotService :
         }
 
         var template = _generator.GenerateTemplate(
+            golfCourses.OrderBy(x => x.Code).ToList(),
             customerTypes.OrderBy(t => t.CreationTime).ToList(),
             promotions,
-            specialDates
+            specialDates,
+            golfCourseId
         );
 
         return template;
     }
 
     // =========================================================
-    // Chuẩn hóa lỗi
+    // Import Excel
     // =========================================================
     public async Task<int> ImportExcelAsync(ImportCalendarExcelInput input)
     {
@@ -883,7 +972,6 @@ public class AppCalendarSlotService :
             .Where(x => !string.IsNullOrWhiteSpace(x.Name))
             .ToDictionary(x => x.Name.Trim(), x => x, StringComparer.OrdinalIgnoreCase);
 
-        // ✅ spec now includes MaskByName (WeekdaysMask per DayType)
         var specCache = new Dictionary<Guid, (
             List<string> DayTypes,
             HashSet<DateTime> HolidaySet,
@@ -901,7 +989,6 @@ public class AppCalendarSlotService :
             var holidaySet = ParseHolidaySet(spec);
             var holidayName = ResolveHolidayName(spec);
 
-            // build mask map by name (prefer course-specific over global)
             var maskByName = new Dictionary<string, int?>(StringComparer.OrdinalIgnoreCase);
 
             foreach (var name in dayTypes)
@@ -910,7 +997,6 @@ public class AppCalendarSlotService :
                     .Where(x => x.IsActive && string.Equals((x.Name ?? "").Trim(), name, StringComparison.OrdinalIgnoreCase))
                     .ToList();
 
-                // holiday config doesn't use mask
                 if (candidates.Any(LooksLikeHolidayConfig))
                 {
                     maskByName[name] = null;
@@ -920,7 +1006,7 @@ public class AppCalendarSlotService :
                 var pick = candidates.FirstOrDefault(x => x.GolfCourseId == golfCourseId)
                        ?? candidates.FirstOrDefault(x => x.GolfCourseId == null);
 
-                maskByName[name] = pick?.WeekdaysMask; // null => treat as All
+                maskByName[name] = pick?.WeekdaysMask;
             }
 
             v = (dayTypes, holidaySet, holidayName, maskByName);
@@ -928,7 +1014,6 @@ public class AppCalendarSlotService :
             return v;
         }
 
-        var slotKeySet = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         var pendingInsertByKey = new Dictionary<string, CalendarSlot>(StringComparer.OrdinalIgnoreCase);
         var pendingPriceByKey = new Dictionary<string, CalendarSlotPrice>(StringComparer.OrdinalIgnoreCase);
 
@@ -937,6 +1022,7 @@ public class AppCalendarSlotService :
         async Task<List<CalendarSlotPrice>> GetPricesOfSlotAsync(Guid slotId)
         {
             if (priceCacheBySlotId.TryGetValue(slotId, out var cached)) return cached;
+
             var list = await _priceRepository.GetListAsync(x => x.CalendarSlotId == slotId);
             priceCacheBySlotId[slotId] = list;
             return list;
@@ -971,11 +1057,17 @@ public class AppCalendarSlotService :
             if (r.ToDate == DateTime.MinValue)
                 throw RowError("Ngày kết thúc (ToDate) không được để trống");
 
+            if (r.FromDate.Date > r.ToDate.Date)
+                throw RowError("Ngày bắt đầu không được lớn hơn ngày kết thúc");
+
             if (r.StartTime == TimeSpan.Zero)
                 throw RowError("Giờ bắt đầu (StartTime) không được để trống");
 
             if (r.EndTime == TimeSpan.Zero)
                 throw RowError("Giờ kết thúc (EndTime) không được để trống");
+
+            if (r.StartTime >= r.EndTime)
+                throw RowError("Giờ bắt đầu phải nhỏ hơn giờ kết thúc");
 
             if (r.MaxSlots <= 0)
                 throw RowError($"Số slot tối đa (MaxSlots) không hợp lệ: {r.MaxSlots}");
@@ -994,6 +1086,26 @@ public class AppCalendarSlotService :
             if (!golfByCode.TryGetValue(code, out var golfCourse))
                 throw RowError($"Không tìm thấy sân theo mã (GolfCourseCode): '{code}'");
 
+            r.CustomerTypePrice = PriceByHoleHelper.NormalizePricesByGolfCourse(r.CustomerTypePrice, golfCourse);
+
+            if (PriceByHoleHelper.Requires18Holes(golfCourse))
+            {
+                if (r.CustomerTypePrice == null || r.CustomerTypePrice.Count == 0)
+                {
+                    throw RowError("Thiếu toàn bộ dữ liệu bảng giá cho các loại khách");
+                }
+
+                var invalid18 = r.CustomerTypePrice
+                    .Where(x => x.Price18 <= 0)
+                    .Select(x => x.CustomerType)
+                    .ToList();
+
+                if (invalid18.Count > 0)
+                {
+                    throw RowError($"Giá 18 hố phải > 0. Thiếu dữ liệu ở loại khách: {string.Join(", ", invalid18)}");
+                }
+            }
+
             var (allowedDayTypes, holidaySet, holidayName, maskByName) = await GetSpecAsync(golfCourse.Id);
 
             var dayTypeError = ValidateDayTypeAllowed(r.DayType, allowedDayTypes);
@@ -1010,30 +1122,21 @@ public class AppCalendarSlotService :
             var calendars = await Repository.GetListAsync(
                 x => x.GolfCourseId == golfCourse.Id &&
                      x.ApplyDate >= r.FromDate.Date &&
-                     x.ApplyDate <= r.ToDate.Date
-            );
+                     x.ApplyDate <= r.ToDate.Date);
 
             for (int i = 0; i <= totalDays; i++)
             {
                 var applyDate = r.FromDate.Date.AddDays(i);
 
-                var isHoliday = holidaySet.Contains(applyDate.Date);
+                var effectiveDayType = ResolveEffectiveDayType(
+                    applyDate,
+                    allowedDayTypes,
+                    holidaySet,
+                    holidayName,
+                    maskByName);
 
-                // ✅ NEW: check by config WeekdaysMask
-                if (selectedDayType.Equals(holidayName, StringComparison.OrdinalIgnoreCase))
-                {
-                    // Holiday type: only accept holidays
-                    if (!isHoliday) continue;
-                }
-                else
-                {
-                    // Non-holiday types: never include holidays
-                    if (isHoliday) continue;
-
-                    // Check mask for this DayType (null/missing => All)
-                    maskByName.TryGetValue(selectedDayType, out var mask);
-                    if (!IsMaskHit(mask, applyDate.Date)) continue;
-                }
+                if (!string.Equals(effectiveDayType, selectedDayType, StringComparison.OrdinalIgnoreCase))
+                    continue;
 
                 for (int j = 0; j < totalSlots; j++)
                 {
@@ -1060,22 +1163,15 @@ public class AppCalendarSlotService :
 
                     if (existingCalendar != null)
                     {
-                        if (!slotKeySet.Add(slotKey))
-                            continue;
-
                         existingCalendar.PromotionTypeId = promotion.Id;
                         existingCalendar.MaxSlots = r.MaxSlots;
                         existingCalendar.InternalNote = r.InternalNote;
                         existingCalendar.IsActive = true;
 
                         await Repository.UpdateAsync(existingCalendar, autoSave: false);
-
                         await UpsertPricesAsync(existingCalendar.Id, r.CustomerTypePrice);
                         continue;
                     }
-
-                    if (!slotKeySet.Add(slotKey))
-                        continue;
 
                     var calendarId = GuidGenerator.Create();
 
@@ -1095,7 +1191,6 @@ public class AppCalendarSlotService :
                     };
 
                     pendingInsertByKey[slotKey] = newCalendar;
-
                     UpsertPendingPrices(calendarId, r.CustomerTypePrice);
                 }
             }
@@ -1212,7 +1307,6 @@ public class AppCalendarSlotService :
                     };
 
                     toInsert.Add(newRow);
-
                     existingPrices.Add(newRow);
                     existingByCtId[ct.Id] = newRow;
                 }
