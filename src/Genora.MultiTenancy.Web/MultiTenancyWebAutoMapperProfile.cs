@@ -3,6 +3,8 @@ using Genora.MultiTenancy.AppDtos.AppBookings;
 using Genora.MultiTenancy.AppDtos.AppCalendarSlots;
 using Genora.MultiTenancy.AppDtos.AppCustomers;
 using Genora.MultiTenancy.AppDtos.AppCustomerTypes;
+using Genora.MultiTenancy.AppDtos.AppFnbCategories;
+using Genora.MultiTenancy.AppDtos.AppFnbItems;
 using Genora.MultiTenancy.AppDtos.AppGolfCourses;
 using Genora.MultiTenancy.AppDtos.AppHomePageConfigs;
 using Genora.MultiTenancy.AppDtos.AppMembershipTiers;
@@ -10,6 +12,8 @@ using Genora.MultiTenancy.AppDtos.AppNews;
 using Genora.MultiTenancy.AppDtos.AppSettings;
 using Genora.MultiTenancy.AppDtos.AppSpecialDates;
 using Genora.MultiTenancy.AppDtos.ZaloAuths;
+using Genora.MultiTenancy.DomainModels.AppFnbCategories;
+using Genora.MultiTenancy.DomainModels.AppFnbItems;
 
 namespace Genora.MultiTenancy.Web;
 
@@ -34,6 +38,12 @@ public class MultiTenancyWebAutoMapperProfile : Profile
             .ForMember(d => d.Items, opt => opt.MapFrom(s => s.Items))
             .ReverseMap();
         CreateMap<HomePageWidgetItemDto, UpdateFeatureGridItemDto>().ReverseMap();
+
+        CreateMap<FnbCategoryDto, CreateUpdateFnbCategoryDto>();
+        CreateMap<CreateUpdateFnbCategoryDto, FnbCategory>();
+
+        CreateMap<FnbItemDto, CreateUpdateFnbItemDto>();
+        CreateMap<CreateUpdateFnbItemDto, FnbItem>();
         //Define your object mappings here, for the Web project
     }
 }

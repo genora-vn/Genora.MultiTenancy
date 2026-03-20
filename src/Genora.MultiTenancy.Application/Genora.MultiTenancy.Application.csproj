@@ -36,4 +36,10 @@
 		<EmbeddedResource Include="AppServices\AppEmails\Templates\**\*.tpl" />
 	</ItemGroup>
 
+	<ItemGroup>
+	  <None Include="AppServices\AppFnbCategories\MiniAppFnbCategoryService.cs" />
+	  <None Include="AppServices\AppFnbItems\MiniAppFnbItemService.cs" />
+	  <None Include="AppServices\AppFnbOrders\MiniAppFnbOrderService.cs" />
+	</ItemGroup>
+
 </Project>

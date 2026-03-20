@@ -1,0 +1,21 @@
+# Build & IDE
+bin/
+obj/
+.vs/
+.vscode/
+*.user
+*.suo
+*.sln.dotSettings.user
+
+# Web & Static Assets (Quan trọng để tiết kiệm token)
+src/Genora.MultiTenancy.Web/wwwroot/libs/
+src/Genora.MultiTenancy.Web/wwwroot/browser/
+src/Genora.MultiTenancy.Web/node_modules/
+
+# Logs & Localization (Chỉ đọc khi cần thiết)
+Logs/
+src/Genora.MultiTenancy.Domain.Shared/Localization/
+.abp/
+
+# Database Migrations (File cực dài, tốn token)
+*Migrations/

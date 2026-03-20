@@ -50,6 +50,11 @@
     "Menu:TenantManagement": "Tenant management",
     "Menu:Tenants": "Tenants",
 
+    "MenuGroup:FnB": "FnB",
+    "Menu:AppFnbCategories": "FnB Categories",
+    "Menu:AppFnbItems": "FnB Items",
+    "Menu:AppFnbOrders": "FnB Orders",
+
     "Permission:MiniAppZaloAuth": "Zalo Authentication & Authorization Zalo OA management",
     "Permission:MiniAppZaloAuth.Create": "Create",
     "Permission:MiniAppZaloAuth.Edit": "Edit",
@@ -546,7 +551,92 @@
     "HomePageConfig:Icon": "Icon",
     "HomePageConfig:Action": "Action/Deeplink",
     "HomePageConfig:Enabled": "Enabled",
-    "HomePageConfig:HintDisplayOrder": "Tip: DisplayOrder should increase. You can edit it quickly."
+    "HomePageConfig:HintDisplayOrder": "Tip: DisplayOrder should increase. You can edit it quickly.",
 
+    "PermissionGroup:MiniAppFnbCategories": "FnB Categories",
+    "PermissionGroup:MiniAppFnbCategoriesHost": "FnB Categories (Host)",
+    "Permission:MiniAppFnbCategories": "Manage FnB categories",
+    "Permission:MiniAppFnbCategories.Create": "Create",
+    "Permission:MiniAppFnbCategories.Edit": "Edit",
+    "Permission:MiniAppFnbCategories.Delete": "Delete",
+
+    "PermissionGroup:MiniAppFnbItems": "FnB Items",
+    "PermissionGroup:MiniAppFnbItemsHost": "FnB Items (Host)",
+    "Permission:MiniAppFnbItems": "Manage FnB items",
+    "Permission:MiniAppFnbItems.Create": "Create",
+    "Permission:MiniAppFnbItems.Edit": "Edit",
+    "Permission:MiniAppFnbItems.Delete": "Delete",
+
+    "PermissionGroup:MiniAppFnbOrders": "FnB Orders",
+    "PermissionGroup:MiniAppFnbOrdersHost": "FnB Orders (Host)",
+    "Permission:MiniAppFnbOrders": "Manage FnB orders",
+    "Permission:MiniAppFnbOrders.Create": "Create",
+    "Permission:MiniAppFnbOrders.Edit": "Edit",
+    "Permission:MiniAppFnbOrders.Delete": "Delete",
+
+    "FeatureGroup:MiniAppFnb": "Mini App FnB",
+    "Feature:MiniAppFnb": "Enable FnB management",
+    "Feature:MiniAppFnbDesc": "Allow using FnB management including categories, items and orders.",
+
+    "AppFnbCategories": "FnB Categories",
+    "AppFnbItems": "FnB Items",
+    "AppFnbOrders": "FnB Orders",
+
+    "NewFnbCategory": "New category",
+    "EditFnbCategory": "Edit category",
+    "FnbCategoryFilterText": "Search by category name / code",
+    "SortOrder": "Sort order",
+
+    "NewFnbItem": "New item",
+    "EditFnbItem": "Edit item",
+    "FnbItemFilterText": "Search by item name",
+    "ImageUrl": "Image URL",
+    "IsAvailable": "Available",
+    "CategoryName": "Category name",
+
+    "OrderCode": "Order code",
+    "BagTag": "Bag tag",
+    "ServiceStatus": "Service status",
+    "PaymentStatus": "Payment status",
+    "PaymentMethod": "Payment method",
+    "CustomerName": "Customer name",
+    "CustomerPhone": "Phone number",
+    "CustomerPhoneMasked": "Phone number",
+    "OrderDetail": "Order detail",
+    "OrderItems": "Order items",
+    "Quantity": "Quantity",
+    "LineTotal": "Line total",
+    "CancelReason": "Cancel reason",
+    "CancelNote": "Cancel note",
+    "FnbOrderFilterText": "Search by order code / bag tag / customer",
+    "CreateTimeFrom": "Created from",
+    "CreateTimeTo": "Created to",
+
+    "FnbServiceStatus:Created": "Created",
+    "FnbServiceStatus:Preparing": "Preparing",
+    "FnbServiceStatus:Delivering": "Delivering",
+    "FnbServiceStatus:Served": "Served",
+    "FnbServiceStatus:Cancelled": "Cancelled",
+
+    "FnbPaymentStatus:Unpaid": "Unpaid",
+    "FnbPaymentStatus:Paid": "Paid",
+    "FnbPaymentStatus:Failed": "Failed",
+
+    "FnbPaymentMethod:Cod": "Pay at counter",
+    "FnbPaymentMethod:Online": "Online payment",
+
+    "FnbCancelReason:CustomerRequest": "Customer request",
+    "FnbCancelReason:OutOfStock": "Out of stock",
+    "FnbCancelReason:KitchenDelay": "Kitchen delay",
+    "FnbCancelReason:WrongOrder": "Wrong order",
+    "FnbCancelReason:SystemError": "System error",
+    "FnbCancelReason:Other": "Other",
+
+    "UpdateServiceStatus": "Update service status",
+    "UpdatePaymentStatus": "Update payment status",
+    "CancelOrder": "Cancel order",
+    "CannotDeleteCategoryHasItems": "Can not delete category because items still exist.",
+    "CannotDeleteItemHasOrders": "Can not delete item because it already exists in orders. Please disable it instead.",
+    "SavedSuccessfully": "Saved successfully."
   }
 }

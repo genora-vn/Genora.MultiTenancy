@@ -2,6 +2,9 @@
 using Genora.MultiTenancy.AppDtos.AppCalendarSlots;
 using Genora.MultiTenancy.AppDtos.AppCustomers;
 using Genora.MultiTenancy.AppDtos.AppCustomerTypes;
+using Genora.MultiTenancy.AppDtos.AppFnbCategories;
+using Genora.MultiTenancy.AppDtos.AppFnbItems;
+using Genora.MultiTenancy.AppDtos.AppFnbOrders;
 using Genora.MultiTenancy.AppDtos.AppGolfCourses;
 using Genora.MultiTenancy.AppDtos.AppHomePageConfigs;
 using Genora.MultiTenancy.AppDtos.AppMembershipTiers;
@@ -39,6 +42,9 @@ public class MiniAppController : MultiTenancyController
     private readonly IStringLocalizer<MultiTenancyResource> _localizer;
     private readonly IOptionExtendService _optionExtendService;
     private readonly IMiniAppHomePageConfigService _miniHomePage;
+    private readonly IMiniAppFnbCategoryService _miniAppFnbCategory;
+    private readonly IMiniAppFnbItemService _miniAppFnbItem;
+    private readonly IMiniAppFnbOrderService _miniAppFnbOrder;
     public MiniAppController(IZaloApiClient zaloApiClient,
                              IMiniAppBookingAppService miniBooking,
                              IMiniAppSettingService miniAppSetting,
@@ -50,7 +56,10 @@ public class MiniAppController : MultiTenancyController
                              IStringLocalizer<MultiTenancyResource> localizer,
                              IMiniAppCustomerAppService miniCustomer,
                              IOptionExtendService optionExtendService,
-                             IMiniAppHomePageConfigService miniHomePage)
+                             IMiniAppHomePageConfigService miniHomePage,
+                             IMiniAppFnbCategoryService miniAppFnbCategory,
+                             IMiniAppFnbItemService miniAppFnbItem,
+                             IMiniAppFnbOrderService miniAppFnbOrder)
     {
         _zaloApiClient = zaloApiClient;
         _miniBooking = miniBooking;
@@ -64,6 +73,9 @@ public class MiniAppController : MultiTenancyController
         _localizer = localizer;
         _optionExtendService = optionExtendService;
         _miniHomePage = miniHomePage;
+        _miniAppFnbCategory = miniAppFnbCategory;
+        _miniAppFnbItem = miniAppFnbItem;
+        _miniAppFnbOrder = miniAppFnbOrder;
     }
 
     [HttpPost("create-booking")]
@@ -227,4 +239,35 @@ public class MiniAppController : MultiTenancyController
     [AllowAnonymous]
     public Task<FeatureGridDto> GetHomePageFeatureGridAsync([FromQuery] Guid widgetId)
         => _miniHomePage.GetFeatureGridAsync(widgetId);
+
+    // Fnb
+    [HttpGet("get-fnb-categories")]
+    [AllowAnonymous]
+    public Task<MiniAppFnbCategoryListDto> GetFnbCategoriesAsync()
+    => _miniAppFnbCategory.GetListAsync();
+
+    [HttpGet("get-fnb-items")]
+    [AllowAnonymous]
+    public Task<MiniAppFnbItemListDto> GetFnbItemsAsync([FromQuery] GetMiniAppFnbItemListInput input)
+        => _miniAppFnbItem.GetListAsync(input);
+
+    [HttpGet("get-fnb-items/{id}")]
+    [AllowAnonymous]
+    public Task<MiniAppFnbItemDetailDto> GetFnbItemAsync(Guid id)
+        => _miniAppFnbItem.GetAsync(id);
+
+    [HttpPost("create-fnb-order")]
+    [AllowAnonymous]
+    public Task<MiniAppFnbOrderDetailDto> CreateFnbOrderAsync([FromBody] CreateFnbOrderDto input)
+        => _miniAppFnbOrder.CreateAsync(input);
+
+    [HttpGet("get-fnb-orders")]
+    [AllowAnonymous]
+    public Task<MiniAppFnbOrderListDto> GetFnbOrdersAsync([FromQuery] GetMiniAppFnbOrderListInput input)
+        => _miniAppFnbOrder.GetListAsync(input);
+
+    [HttpGet("get-fnb-orders/{id}")]
+    [AllowAnonymous]
+    public Task<MiniAppFnbOrderDetailDto> GetFnbOrderAsync(Guid id)
+        => _miniAppFnbOrder.GetAsync(id);
 }

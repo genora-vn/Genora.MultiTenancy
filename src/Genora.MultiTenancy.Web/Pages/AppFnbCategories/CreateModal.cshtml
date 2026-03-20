@@ -1,0 +1,32 @@
+﻿@page
+@using Genora.MultiTenancy.Localization
+@using Genora.MultiTenancy.Web.Pages.AppFnbCategories
+@using Microsoft.Extensions.Localization
+@using Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.TagHelpers.Modal
+@model CreateModalModel
+@inject IStringLocalizer<MultiTenancyResource> L
+
+@{
+    Layout = null;
+}
+
+<form asp-page="/AppFnbCategories/CreateModal" method="post">
+    <abp-modal>
+        <abp-modal-header title="@L["NewFnbCategory"]"></abp-modal-header>
+        <abp-modal-body>
+            <abp-input asp-for="Category.Name" label="@L["Name"]" />
+            <abp-input asp-for="Category.Code" label="@L["Code"]" />
+            <abp-input asp-for="Category.SortOrder" label="@L["SortOrder"]" />
+
+            <div class="mb-3">
+                <label class="form-label" asp-for="Category.IsActive">@L["IsActive"]</label>
+                <select asp-for="Category.IsActive" class="form-select">
+                    <option value="true">@L["Yes"]</option>
+                    <option value="false">@L["No"]</option>
+                </select>
+                <span asp-validation-for="Category.IsActive" class="text-danger"></span>
+            </div>
+        </abp-modal-body>
+        <abp-modal-footer buttons="@(AbpModalButtons.Cancel | AbpModalButtons.Save)"></abp-modal-footer>
+    </abp-modal>
+</form>

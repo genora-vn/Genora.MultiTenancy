@@ -4,6 +4,7 @@ using Genora.MultiTenancy.Features.AppCalendarSlots;
 using Genora.MultiTenancy.Features.AppCustomers;
 using Genora.MultiTenancy.Features.AppCustomerTypes;
 using Genora.MultiTenancy.Features.AppEmails;
+using Genora.MultiTenancy.Features.AppFnbFeatures;
 using Genora.MultiTenancy.Features.AppGolfCourses;
 using Genora.MultiTenancy.Features.AppMembershipTiers;
 using Genora.MultiTenancy.Features.AppNewsFeatures;
@@ -779,7 +780,7 @@ public class MultiTenancyPermissionDefinitionProvider : PermissionDefinitionProv
             L("Permission:MiniAppEmail")
         );
         emailTenantRoot.MultiTenancySide = MultiTenancySides.Tenant;
-        specialDateTenantRoot.RequireFeatures(AppEmailFeatures.Management);
+        emailTenantRoot.RequireFeatures(AppEmailFeatures.Management);
 
         var emailTenantCreate = emailTenantRoot.AddChild(
             MultiTenancyPermissions.AppEmails.Create,
@@ -856,6 +857,216 @@ public class MultiTenancyPermissionDefinitionProvider : PermissionDefinitionProv
            L("Permission:MiniAppEmail.Resend"));
 
         emailHostResend.MultiTenancySide = MultiTenancySides.Host;
+
+        #endregion
+
+        #region Cấu hình quyền Thêm / Sửa / Xóa cho các tính năng quản trị Fnb
+
+        #region Fnb Categories
+        // TENANT (bị ràng Feature)
+        var fnbCategoryGroup = context.AddGroup(
+            "MiniAppFnbCategories",
+            L("PermissionGroup:MiniAppFnbCategories")
+        );
+
+        var fnbCategoryTenantRoot = fnbCategoryGroup.AddPermission(
+            MultiTenancyPermissions.AppFnbCategories.Default,
+            L("Permission:MiniAppFnbCategories")
+        );
+        fnbCategoryTenantRoot.MultiTenancySide = MultiTenancySides.Tenant;
+        fnbCategoryTenantRoot.RequireFeatures(AppFnbFeatures.Management);
+
+        var fnbCategoryTenantCreate = fnbCategoryTenantRoot.AddChild(
+            MultiTenancyPermissions.AppFnbCategories.Create,
+            L("Permission:MiniAppFnbCategories.Create")
+        );
+        fnbCategoryTenantCreate.MultiTenancySide = MultiTenancySides.Tenant;
+        fnbCategoryTenantCreate.RequireFeatures(AppFnbFeatures.Management);
+
+
+        var fnbCategoryTenantEdit = fnbCategoryTenantRoot.AddChild(
+            MultiTenancyPermissions.AppFnbCategories.Edit,
+            L("Permission:MiniAppFnbCategories.Edit")
+        );
+        fnbCategoryTenantEdit.MultiTenancySide = MultiTenancySides.Tenant;
+        fnbCategoryTenantEdit.RequireFeatures(AppFnbFeatures.Management);
+
+        var fnbCategoryTenantDelete = fnbCategoryTenantRoot.AddChild(
+            MultiTenancyPermissions.AppFnbCategories.Delete,
+            L("Permission:MiniAppFnbCategories.Delete")
+        );
+        fnbCategoryTenantDelete.MultiTenancySide = MultiTenancySides.Tenant;
+        fnbCategoryTenantDelete.RequireFeatures(AppFnbFeatures.Management);
+
+
+        // HOST (không ràng Feature)
+        var fnbCategoryGroupHost = context.AddGroup(
+            "MiniAppFnbCategoriesHost",
+            L("PermissionGroup:MiniAppFnbCategoriesHost"));
+
+        var fnbCategoryHostRoot = fnbCategoryGroupHost.AddPermission(
+            MultiTenancyPermissions.HostAppFnbCategories.Default,
+            L("Permission:MiniAppFnbCategories"));
+
+        fnbCategoryHostRoot.MultiTenancySide = MultiTenancySides.Host;
+
+        var fnbCategoryHostCreate = fnbCategoryHostRoot.AddChild(
+            MultiTenancyPermissions.HostAppFnbCategories.Create,
+            L("Permission:MiniAppFnbCategories.Create"));
+
+        fnbCategoryHostCreate.MultiTenancySide = MultiTenancySides.Host;
+
+        var fnbCategoryHostEdit = fnbCategoryHostRoot.AddChild(
+            MultiTenancyPermissions.HostAppFnbCategories.Edit,
+            L("Permission:MiniAppFnbCategories.Edit"));
+
+        fnbCategoryHostEdit.MultiTenancySide = MultiTenancySides.Host;
+
+        var fnbCategorylHostDelete = fnbCategoryHostRoot.AddChild(
+            MultiTenancyPermissions.HostAppFnbCategories.Delete,
+            L("Permission:MiniAppFnbCategories.Delete"));
+
+        fnbCategorylHostDelete.MultiTenancySide = MultiTenancySides.Host;
+
+        #endregion
+
+        #region Fnb Items
+
+        // TENANT (bị ràng Feature)
+        var fnbItemGroup = context.AddGroup(
+            "MiniAppFnbItems",
+            L("PermissionGroup:MiniAppFnbItems")
+        );
+
+        var fnbItemTenantRoot = fnbCategoryGroup.AddPermission(
+            MultiTenancyPermissions.AppFnbItems.Default,
+            L("Permission:MiniAppFnbItems")
+        );
+        fnbItemTenantRoot.MultiTenancySide = MultiTenancySides.Tenant;
+        fnbItemTenantRoot.RequireFeatures(AppFnbFeatures.Management);
+
+        var fnbItemTenantCreate = fnbItemTenantRoot.AddChild(
+            MultiTenancyPermissions.AppFnbItems.Create,
+            L("Permission:MiniAppFnbItems.Create")
+        );
+        fnbItemTenantCreate.MultiTenancySide = MultiTenancySides.Tenant;
+        fnbItemTenantCreate.RequireFeatures(AppFnbFeatures.Management);
+
+
+        var fnbItemTenantEdit = fnbItemTenantRoot.AddChild(
+            MultiTenancyPermissions.AppFnbItems.Edit,
+            L("Permission:MiniAppFnbItems.Edit")
+        );
+        fnbItemTenantEdit.MultiTenancySide = MultiTenancySides.Tenant;
+        fnbItemTenantEdit.RequireFeatures(AppFnbFeatures.Management);
+
+        var fnbItemTenantDelete = fnbItemTenantRoot.AddChild(
+            MultiTenancyPermissions.AppFnbItems.Delete,
+            L("Permission:MiniAppFnbItems.Delete")
+        );
+        fnbItemTenantDelete.MultiTenancySide = MultiTenancySides.Tenant;
+        fnbItemTenantDelete.RequireFeatures(AppFnbFeatures.Management);
+
+
+        // HOST (không ràng Feature)
+        var fnbItemTenantGroupHost = context.AddGroup(
+            "MiniAppFnbItemsHost",
+            L("PermissionGroup:MiniAppFnbItemsHost"));
+
+        var fnbItemTenantHostRoot = fnbItemTenantGroupHost.AddPermission(
+            MultiTenancyPermissions.HostAppFnbItems.Default,
+            L("Permission:MiniAppFnbItems"));
+
+        fnbItemTenantHostRoot.MultiTenancySide = MultiTenancySides.Host;
+
+        var fnbItemHostCreate = fnbItemTenantHostRoot.AddChild(
+            MultiTenancyPermissions.HostAppFnbItems.Create,
+            L("Permission:MiniAppFnbItems.Create"));
+
+        fnbItemHostCreate.MultiTenancySide = MultiTenancySides.Host;
+
+        var fnbItemHostEdit = fnbItemTenantHostRoot.AddChild(
+            MultiTenancyPermissions.HostAppFnbItems.Edit,
+            L("Permission:MiniAppFnbItems.Edit"));
+
+        fnbItemHostEdit.MultiTenancySide = MultiTenancySides.Host;
+
+        var fnbItemlHostDelete = fnbItemTenantHostRoot.AddChild(
+            MultiTenancyPermissions.HostAppFnbItems.Delete,
+            L("Permission:MiniAppFnbItems.Delete"));
+
+        fnbItemlHostDelete.MultiTenancySide = MultiTenancySides.Host;
+
+        #endregion
+
+        #region Fnb Orders
+
+        // TENANT (bị ràng Feature)
+        var fnbOrderGroup = context.AddGroup(
+            "MiniAppFnbOrders",
+            L("PermissionGroup:MiniAppFnbOrders")
+        );
+
+        var fnbOrderTenantRoot = fnbOrderGroup.AddPermission(
+            MultiTenancyPermissions.AppFnbOrders.Default,
+            L("Permission:MiniAppFnbOrders")
+        );
+        fnbOrderTenantRoot.MultiTenancySide = MultiTenancySides.Tenant;
+        fnbOrderTenantRoot.RequireFeatures(AppFnbFeatures.Management);
+
+        var fnbOrderTenantCreate = fnbOrderTenantRoot.AddChild(
+            MultiTenancyPermissions.AppFnbOrders.Create,
+            L("Permission:MiniAppFnbOrders.Create")
+        );
+        fnbOrderTenantCreate.MultiTenancySide = MultiTenancySides.Tenant;
+        fnbOrderTenantCreate.RequireFeatures(AppFnbFeatures.Management);
+
+
+        var fnbOrderTenantEdit = fnbItemTenantRoot.AddChild(
+            MultiTenancyPermissions.AppFnbOrders.Edit,
+            L("Permission:MiniAppFnbOrders.Edit")
+        );
+        fnbOrderTenantEdit.MultiTenancySide = MultiTenancySides.Tenant;
+        fnbOrderTenantEdit.RequireFeatures(AppFnbFeatures.Management);
+
+        var fnbOrderTenantDelete = fnbItemTenantRoot.AddChild(
+            MultiTenancyPermissions.AppFnbOrders.Delete,
+            L("Permission:MiniAppFnbOrders.Delete")
+        );
+        fnbOrderTenantDelete.MultiTenancySide = MultiTenancySides.Tenant;
+        fnbOrderTenantDelete.RequireFeatures(AppFnbFeatures.Management);
+
+
+        // HOST (không ràng Feature)
+        var fnbOrderTenantGroupHost = context.AddGroup(
+            "MiniAppFnbOrdersHost",
+            L("PermissionGroup:MiniAppFnbOrdersHost"));
+
+        var fnbOrderTenantHostRoot = fnbOrderTenantGroupHost.AddPermission(
+            MultiTenancyPermissions.HostAppFnbOrders.Default,
+            L("Permission:MiniAppFnbOrders"));
+
+        fnbOrderTenantHostRoot.MultiTenancySide = MultiTenancySides.Host;
+
+        var fnbOrderHostCreate = fnbOrderTenantHostRoot.AddChild(
+            MultiTenancyPermissions.HostAppFnbOrders.Create,
+            L("Permission:MiniAppFnbOrders.Create"));
+
+        fnbOrderHostCreate.MultiTenancySide = MultiTenancySides.Host;
+
+        var fnbOrderHostEdit = fnbOrderTenantHostRoot.AddChild(
+            MultiTenancyPermissions.HostAppFnbOrders.Edit,
+            L("Permission:MiniAppFnbOrders.Edit"));
+
+        fnbOrderHostEdit.MultiTenancySide = MultiTenancySides.Host;
+
+        var fnbOrderlHostDelete = fnbOrderTenantHostRoot.AddChild(
+            MultiTenancyPermissions.HostAppFnbOrders.Delete,
+            L("Permission:MiniAppFnbOrders.Delete"));
+
+        fnbOrderlHostDelete.MultiTenancySide = MultiTenancySides.Host;
+
+        #endregion
 
         #endregion
     }

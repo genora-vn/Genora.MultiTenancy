@@ -1,0 +1,48 @@
+﻿@page
+@using Genora.MultiTenancy.Localization
+@using Genora.MultiTenancy.Web.Pages.AppFnbItems
+@using Microsoft.Extensions.Localization
+@using Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.TagHelpers.Modal
+@model CreateModalModel
+@inject IStringLocalizer<MultiTenancyResource> L
+
+@{
+    Layout = null;
+}
+
+<form asp-page="/AppFnbItems/CreateModal" method="post">
+    <abp-modal>
+        <abp-modal-header title="@L["NewFnbItem"]"></abp-modal-header>
+        <abp-modal-body>
+            <abp-input asp-for="Item.Name" label="@L["Name"]" />
+
+            <abp-select asp-for="Item.CategoryId"
+                        asp-items="Model.CategorySelectList"
+                        label="@L["Category"]" />
+
+            <abp-input asp-for="Item.Price" label="@L["Price"]" />
+            <abp-input asp-for="Item.ImageUrl" label="@L["ImageUrl"]" />
+            <abp-input asp-for="Item.SortOrder" label="@L["SortOrder"]" />
+            <abp-input asp-for="Item.Description" label="@L["Description"]" />
+
+            <div class="mb-3">
+                <label class="form-label" asp-for="Item.IsActive">@L["IsActive"]</label>
+                <select asp-for="Item.IsActive" class="form-select">
+                    <option value="true">@L["Yes"]</option>
+                    <option value="false">@L["No"]</option>
+                </select>
+                <span asp-validation-for="Item.IsActive" class="text-danger"></span>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label" asp-for="Item.IsAvailable">@L["IsAvailable"]</label>
+                <select asp-for="Item.IsAvailable" class="form-select">
+                    <option value="true">@L["Yes"]</option>
+                    <option value="false">@L["No"]</option>
+                </select>
+                <span asp-validation-for="Item.IsAvailable" class="text-danger"></span>
+            </div>
+        </abp-modal-body>
+        <abp-modal-footer buttons="@(AbpModalButtons.Cancel | AbpModalButtons.Save)"></abp-modal-footer>
+    </abp-modal>
+</form>

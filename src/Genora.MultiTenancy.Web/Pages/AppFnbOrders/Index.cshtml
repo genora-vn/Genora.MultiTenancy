@@ -1,0 +1,85 @@
+﻿@page
+@using Genora.MultiTenancy.Enums
+@using Genora.MultiTenancy.Localization
+@using Genora.MultiTenancy.Web.Helpers
+@using Genora.MultiTenancy.Web.Pages.AppFnbOrders
+@using Microsoft.Extensions.Localization
+@inject IStringLocalizer<MultiTenancyResource> L
+
+@section scripts {
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <abp-script src="/Pages/AppFnbOrders/index.js" />
+    <abp-style src="/Pages/Index.css" />
+}
+
+@section styles {
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
+}
+
+<abp-card>
+    <abp-card-header>
+        <abp-row>
+            <abp-column size-md="_6">
+                <abp-card-title>@L["AppFnbOrders"]</abp-card-title>
+            </abp-column>
+        </abp-row>
+
+        <abp-row class="mt-3">
+            <abp-column size-md="_3">
+                <div class="mb-3">
+                    <label class="form-label" for="FnbOrderFilterText">@L["FnbOrderFilterText"]</label>
+                    <input id="FnbOrderFilterText" class="form-control" type="text" />
+                </div>
+            </abp-column>
+            <abp-column size-md="_2">
+                <div class="mb-3">
+                    <label class="form-label" for="FnbOrderServiceStatusFilter">@L["ServiceStatus"]</label>
+                    <select id="FnbOrderServiceStatusFilter" class="form-select">
+                        <option value="">@L["All"]</option>
+                        <option value="1">@L["FnbServiceStatus:Created"]</option>
+                        <option value="2">@L["FnbServiceStatus:Preparing"]</option>
+                        <option value="3">@L["FnbServiceStatus:Delivering"]</option>
+                        <option value="4">@L["FnbServiceStatus:Served"]</option>
+                        <option value="5">@L["FnbServiceStatus:Cancelled"]</option>
+                    </select>
+                </div>
+            </abp-column>
+            <abp-column size-md="_2">
+                <div class="mb-3">
+                    <label class="form-label" for="FnbOrderPaymentStatusFilter">@L["PaymentStatus"]</label>
+                    <select id="FnbOrderPaymentStatusFilter" class="form-select">
+                        <option value="">@L["All"]</option>
+                        <option value="1">@L["FnbPaymentStatus:Unpaid"]</option>
+                        <option value="2">@L["FnbPaymentStatus:Paid"]</option>
+                        <option value="3">@L["FnbPaymentStatus:Failed"]</option>
+                    </select>
+                </div>
+            </abp-column>
+            <abp-column size-md="_2">
+                <div class="mb-3">
+                    <label class="form-label" for="FnbOrderCreationTimeFrom">@L["CreateTimeFrom"]</label>
+                    <input id="FnbOrderCreationTimeFrom" class="form-control public-time-input" type="text" />
+                </div>
+            </abp-column>
+            <abp-column size-md="_2">
+                <div class="mb-3">
+                    <label class="form-label" for="FnbOrderCreationTimeTo">@L["CreateTimeTo"]</label>
+                    <input id="FnbOrderCreationTimeTo" class="form-control public-time-input" type="text" />
+                </div>
+            </abp-column>
+            <abp-column size-md="_1" class="d-flex align-items-end">
+                <div class="mb-3 h-50">
+                    <abp-button id="SearchFnbOrderButton"
+                                class="h-100"
+                                text="@L["Search"]"
+                                icon="search"
+                                button-type="Outline_Primary" />
+                </div>
+            </abp-column>
+        </abp-row>
+    </abp-card-header>
+
+    <abp-card-body>
+        <abp-table striped-rows="true" id="FnbOrderTable"></abp-table>
+    </abp-card-body>
+</abp-card>

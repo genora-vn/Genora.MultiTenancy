@@ -246,6 +246,57 @@ public static class MultiTenancyPermissions
         public const string Edit = Default + ".Edit";
     }
 
+    #region Thêm permission cho tính năng quản trị Fnb
+    public static class AppFnbCategories
+    {
+        public const string Default = GroupName + ".AppFnbCategories";
+        public const string Create = Default + ".Create";
+        public const string Edit = Default + ".Edit";
+        public const string Delete = Default + ".Delete";
+    }
+
+    public static class HostAppFnbCategories
+    {
+        public const string Default = GroupName + ".HostAppFnbCategories";
+        public const string Create = Default + ".Create";
+        public const string Edit = Default + ".Edit";
+        public const string Delete = Default + ".Delete";
+    }
+
+    public static class AppFnbItems
+    {
+        public const string Default = GroupName + ".AppFnbItems";
+        public const string Create = Default + ".Create";
+        public const string Edit = Default + ".Edit";
+        public const string Delete = Default + ".Delete";
+    }
+
+    public static class HostAppFnbItems
+    {
+        public const string Default = GroupName + ".HostAppFnbItems";
+        public const string Create = Default + ".Create";
+        public const string Edit = Default + ".Edit";
+        public const string Delete = Default + ".Delete";
+    }
+
+    public static class AppFnbOrders
+    {
+        public const string Default = GroupName + ".AppFnbOrders";
+        public const string Create = Default + ".Create";
+        public const string Edit = Default + ".Edit";
+        public const string Delete = Default + ".Delete";
+    }
+
+    public static class HostAppFnbOrders
+    {
+        public const string Default = GroupName + ".HostAppFnbOrders";
+        public const string Create = Default + ".Create";
+        public const string Edit = Default + ".Edit";
+        public const string Delete = Default + ".Delete";
+    }
+    
+    #endregion
+
     //Add your own permission names. Example:
     //public const string MyPermission1 = GroupName + ".MyPermission1";
 }

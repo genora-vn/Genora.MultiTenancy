@@ -1,0 +1,26 @@
+﻿@page
+@using Genora.MultiTenancy.Enums
+@using Genora.MultiTenancy.Localization
+@using Genora.MultiTenancy.Web.Helpers
+@using Genora.MultiTenancy.Web.Pages.AppFnbOrders
+@using Microsoft.Extensions.Localization
+@using Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.TagHelpers.Modal
+@model UpdatePaymentStatusModalModel
+@inject IStringLocalizer<MultiTenancyResource> L
+
+@{
+    Layout = null;
+}
+
+<form asp-page="/AppFnbOrders/UpdatePaymentStatusModal" method="post">
+    <input type="hidden" asp-for="Id" />
+    <abp-modal>
+        <abp-modal-header title="@L["UpdatePaymentStatus"]"></abp-modal-header>
+        <abp-modal-body>
+            <abp-select asp-for="Input.PaymentStatus"
+                        label="@L["PaymentStatus"]"
+                        asp-items="EnumSelectList.GetLocalizedEnumSelectList<FnbPaymentStatus>(L)" />
+        </abp-modal-body>
+        <abp-modal-footer buttons="@(AbpModalButtons.Cancel | AbpModalButtons.Save)"></abp-modal-footer>
+    </abp-modal>
+</form>

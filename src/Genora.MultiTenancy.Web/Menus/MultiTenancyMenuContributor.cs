@@ -3,6 +3,7 @@ using Genora.MultiTenancy.Features.AppCalendarSlots;
 using Genora.MultiTenancy.Features.AppCustomers;
 using Genora.MultiTenancy.Features.AppCustomerTypes;
 using Genora.MultiTenancy.Features.AppEmails;
+using Genora.MultiTenancy.Features.AppFnbFeatures;
 using Genora.MultiTenancy.Features.AppGolfCourses;
 using Genora.MultiTenancy.Features.AppHomePages;
 using Genora.MultiTenancy.Features.AppMembershipTiers;
@@ -153,6 +154,65 @@ public class MultiTenancyMenuContributor : IMenuContributor
             var canSeeHomePageConfigs =
                 await feature.IsEnabledAsync(AppHomePageFeatures.Management) &&
                 await perms.IsGrantedAsync(MultiTenancyPermissions.AppHomePageConfigs.Default);
+
+            var canSeeFnb =
+                await feature.IsEnabledAsync(AppFnbFeatures.Management) &&
+                (
+                    await perms.IsGrantedAsync(MultiTenancyPermissions.AppFnbCategories.Default) ||
+                    await perms.IsGrantedAsync(MultiTenancyPermissions.AppFnbItems.Default) ||
+                    await perms.IsGrantedAsync(MultiTenancyPermissions.AppFnbOrders.Default)
+                );
+
+            if (canSeeFnb)
+            {
+                var groupFnb = new ApplicationMenuItem(
+                    name: "MenuGroup.FnB",
+                    displayName: l["MenuGroup:FnB"],
+                    icon: "fa fa-cutlery",
+                    order: 45
+                );
+
+                if (await perms.IsGrantedAsync(MultiTenancyPermissions.AppFnbCategories.Default))
+                {
+                    groupFnb.AddItem(
+                        new ApplicationMenuItem(
+                            name: "AppFnbCategories",
+                            displayName: l["Menu:AppFnbCategories"],
+                            url: "/AppFnbCategories",
+                            icon: "fa fa-folder-open",
+                            order: 1
+                        ).RequirePermissions(MultiTenancyPermissions.AppFnbCategories.Default)
+                    );
+                }
+
+                if (await perms.IsGrantedAsync(MultiTenancyPermissions.AppFnbItems.Default))
+                {
+                    groupFnb.AddItem(
+                        new ApplicationMenuItem(
+                            name: "AppFnbItems",
+                            displayName: l["Menu:AppFnbItems"],
+                            url: "/AppFnbItems",
+                            icon: "fa fa-coffee",
+                            order: 2
+                        ).RequirePermissions(MultiTenancyPermissions.AppFnbItems.Default)
+                    );
+                }
+
+                if (await perms.IsGrantedAsync(MultiTenancyPermissions.AppFnbOrders.Default))
+                {
+                    groupFnb.AddItem(
+                        new ApplicationMenuItem(
+                            name: "AppFnbOrders",
+                            displayName: l["Menu:AppFnbOrders"],
+                            url: "/AppFnbOrders",
+                            icon: "fa fa-receipt",
+                            order: 3
+                        ).RequirePermissions(MultiTenancyPermissions.AppFnbOrders.Default)
+                    );
+                }
+
+                context.Menu.AddItem(groupFnb);
+            }
 
             // =========================================================
             // 1) Cài đặt Mini App
@@ -318,7 +378,7 @@ public class MultiTenancyMenuContributor : IMenuContributor
                     ).RequirePermissions(MultiTenancyPermissions.AppCalendarSlots.Default)
                 );
             }
-            
+
             if (canSeeSpecialDates)
             {
                 groupGolfAndTeeTimes.AddItem(
@@ -598,6 +658,62 @@ public class MultiTenancyMenuContributor : IMenuContributor
             var hostCanZaloLogs = await perms.IsGrantedAsync(MultiTenancyPermissions.HostAppZaloLogs.Default);
             var hostCanEmails = await perms.IsGrantedAsync(MultiTenancyPermissions.HostAppEmails.Default);
             var hostCanSpecialDates = await perms.IsGrantedAsync(MultiTenancyPermissions.HostAppSpecialDates.Default);
+
+            var hostCanSeeFnb =
+                await perms.IsGrantedAsync(MultiTenancyPermissions.HostAppFnbCategories.Default) ||
+                await perms.IsGrantedAsync(MultiTenancyPermissions.HostAppFnbItems.Default) ||
+                await perms.IsGrantedAsync(MultiTenancyPermissions.HostAppFnbOrders.Default);
+
+            if (hostCanSeeFnb)
+            {
+                var groupFnb = new ApplicationMenuItem(
+                    name: "MenuGroup.FnB",
+                    displayName: l["MenuGroup:FnB"],
+                    icon: "fa fa-cutlery",
+                    order: 45
+                );
+
+                if (await perms.IsGrantedAsync(MultiTenancyPermissions.HostAppFnbCategories.Default))
+                {
+                    groupFnb.AddItem(
+                        new ApplicationMenuItem(
+                            name: "AppFnbCategoriesHost",
+                            displayName: l["Menu:AppFnbCategories"],
+                            url: "/AppFnbCategories",
+                            icon: "fa fa-folder-open",
+                            order: 1
+                        ).RequirePermissions(MultiTenancyPermissions.HostAppFnbCategories.Default)
+                    );
+                }
+
+                if (await perms.IsGrantedAsync(MultiTenancyPermissions.HostAppFnbItems.Default))
+                {
+                    groupFnb.AddItem(
+                        new ApplicationMenuItem(
+                            name: "AppFnbItemsHost",
+                            displayName: l["Menu:AppFnbItems"],
+                            url: "/AppFnbItems",
+                            icon: "fa fa-coffee",
+                            order: 2
+                        ).RequirePermissions(MultiTenancyPermissions.HostAppFnbItems.Default)
+                    );
+                }
+
+                if (await perms.IsGrantedAsync(MultiTenancyPermissions.HostAppFnbOrders.Default))
+                {
+                    groupFnb.AddItem(
+                        new ApplicationMenuItem(
+                            name: "AppFnbOrdersHost",
+                            displayName: l["Menu:AppFnbOrders"],
+                            url: "/AppFnbOrders",
+                            icon: "fa fa-receipt",
+                            order: 3
+                        ).RequirePermissions(MultiTenancyPermissions.HostAppFnbOrders.Default)
+                    );
+                }
+
+                context.Menu.AddItem(groupFnb);
+            }
 
             // ===== Home Page Config (Theme + Widgets) - HOST =====
             var hostCanSeeHomePageConfigs =

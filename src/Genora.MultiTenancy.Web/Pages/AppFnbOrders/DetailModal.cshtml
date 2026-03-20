@@ -1,0 +1,80 @@
+﻿@page
+@using Genora.MultiTenancy.Enums
+@using Genora.MultiTenancy.Localization
+@using Genora.MultiTenancy.Web.Pages.AppFnbOrders
+@using Microsoft.Extensions.Localization
+@using Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.TagHelpers.Modal
+@model DetailModalModel
+@inject IStringLocalizer<MultiTenancyResource> L
+
+@{
+    Layout = null;
+    string ServiceStatusText(FnbServiceStatus s) => s switch
+    {
+        FnbServiceStatus.Created => L["FnbServiceStatus:Created"],
+        FnbServiceStatus.Preparing => L["FnbServiceStatus:Preparing"],
+        FnbServiceStatus.Delivering => L["FnbServiceStatus:Delivering"],
+        FnbServiceStatus.Served => L["FnbServiceStatus:Served"],
+        FnbServiceStatus.Cancelled => L["FnbServiceStatus:Cancelled"],
+        _ => s.ToString()
+    };
+
+    string PaymentStatusText(FnbPaymentStatus s) => s switch
+    {
+        FnbPaymentStatus.Unpaid => L["FnbPaymentStatus:Unpaid"],
+        FnbPaymentStatus.Paid => L["FnbPaymentStatus:Paid"],
+        FnbPaymentStatus.Failed => L["FnbPaymentStatus:Failed"],
+        _ => s.ToString()
+    };
+}
+
+<abp-modal size="Large">
+    <abp-modal-header title="@L["OrderDetail"]"></abp-modal-header>
+    <abp-modal-body>
+        <div class="row g-3 mb-3">
+            <div class="col-md-4"><strong>@L["OrderCode"]:</strong> @Model.Order.OrderCode</div>
+            <div class="col-md-4"><strong>@L["BagTag"]:</strong> @Model.Order.BagTag</div>
+            <div class="col-md-4"><strong>@L["CreationTime"]:</strong> @Model.Order.CreationTime.ToString("dd/MM/yyyy HH:mm")</div>
+            <div class="col-md-4"><strong>@L["CustomerName"]:</strong> @Model.Order.CustomerName</div>
+            <div class="col-md-4"><strong>@L["CustomerPhoneMasked"]:</strong> @Model.Order.CustomerPhoneMasked</div>
+            <div class="col-md-4"><strong>@L["TotalAmount"]:</strong> @Model.Order.TotalAmount.ToString("N0")</div>
+            <div class="col-md-4"><strong>@L["ServiceStatus"]:</strong> @ServiceStatusText(Model.Order.ServiceStatus)</div>
+            <div class="col-md-4"><strong>@L["PaymentStatus"]:</strong> @PaymentStatusText(Model.Order.PaymentStatus)</div>
+            <div class="col-md-4"><strong>@L["PaymentMethod"]:</strong> @(Model.Order.PaymentMethod?.ToString() ?? "")</div>
+            <div class="col-md-12"><strong>@L["Notes"]:</strong> @Model.Order.Note</div>
+            <div class="col-md-12"><strong>@L["InternalNote"]:</strong> @Model.Order.InternalNote</div>
+            @if (Model.Order.CancelReason.HasValue)
+            {
+                <div class="col-md-6"><strong>@L["CancelReason"]:</strong> @Model.Order.CancelReason</div>
+                <div class="col-md-6"><strong>@L["CancelNote"]:</strong> @Model.Order.CancelNote</div>
+            }
+        </div>
+
+        <h6 class="mb-3">@L["OrderItems"]</h6>
+
+        <table class="table table-bordered table-sm">
+            <thead>
+                <tr>
+                    <th>@L["Name"]</th>
+                    <th>@L["Price"]</th>
+                    <th>@L["Quantity"]</th>
+                    <th>@L["LineTotal"]</th>
+                    <th>@L["Notes"]</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model.Order.Items)
+                {
+                    <tr>
+                        <td>@item.ItemName</td>
+                        <td>@item.Price.ToString("N0")</td>
+                        <td>@item.Quantity</td>
+                        <td>@((item.Price * item.Quantity).ToString("N0"))</td>
+                        <td>@item.Note</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </abp-modal-body>
+    <abp-modal-footer buttons="@(AbpModalButtons.Close)"></abp-modal-footer>
+</abp-modal>

@@ -50,6 +50,11 @@
     "Menu:TenantManagement": "Quản lý người thuê",
     "Menu:Tenants": "Người thuê",
 
+    "MenuGroup:FnB": "Quản lý FnB",
+    "Menu:AppFnbCategories": "Danh mục món",
+    "Menu:AppFnbItems": "Món ăn / đồ uống",
+    "Menu:AppFnbOrders": "Đơn hàng FnB",
+
     "Permission:MiniAppZaloAuth": "Quản lý xác thực & Ủy quyền Zalo OA",
     "Permission:MiniAppZaloAuth.Create": "Tạo mới",
     "Permission:MiniAppZaloAuth.Edit": "Chỉnh sửa",
@@ -581,6 +586,92 @@
     "HomePageConfig:Icon": "Icon",
     "HomePageConfig:Action": "Action/Deeplink",
     "HomePageConfig:Enabled": "Bật",
-    "HomePageConfig:HintDisplayOrder": "Gợi ý: DisplayOrder là số tăng dần. Bạn có thể sửa nhanh."
+    "HomePageConfig:HintDisplayOrder": "Gợi ý: DisplayOrder là số tăng dần. Bạn có thể sửa nhanh.",
+
+    "PermissionGroup:MiniAppFnbCategories": "Danh mục FnB",
+    "PermissionGroup:MiniAppFnbCategoriesHost": "Danh mục FnB (Host)",
+    "Permission:MiniAppFnbCategories": "Quản lý danh mục FnB",
+    "Permission:MiniAppFnbCategories.Create": "Tạo mới",
+    "Permission:MiniAppFnbCategories.Edit": "Chỉnh sửa",
+    "Permission:MiniAppFnbCategories.Delete": "Xóa",
+
+    "PermissionGroup:MiniAppFnbItems": "Món FnB",
+    "PermissionGroup:MiniAppFnbItemsHost": "Món FnB (Host)",
+    "Permission:MiniAppFnbItems": "Quản lý món FnB",
+    "Permission:MiniAppFnbItems.Create": "Tạo mới",
+    "Permission:MiniAppFnbItems.Edit": "Chỉnh sửa",
+    "Permission:MiniAppFnbItems.Delete": "Xóa",
+
+    "PermissionGroup:MiniAppFnbOrders": "Đơn hàng FnB",
+    "PermissionGroup:MiniAppFnbOrdersHost": "Đơn hàng FnB (Host)",
+    "Permission:MiniAppFnbOrders": "Quản lý đơn hàng FnB",
+    "Permission:MiniAppFnbOrders.Create": "Tạo mới",
+    "Permission:MiniAppFnbOrders.Edit": "Chỉnh sửa",
+    "Permission:MiniAppFnbOrders.Delete": "Xóa",
+
+    "FeatureGroup:MiniAppFnb": "FnB Mini App",
+    "Feature:MiniAppFnb": "Bật quản lý FnB",
+    "Feature:MiniAppFnbDesc": "Cho phép sử dụng chức năng quản lý FnB gồm danh mục, món ăn và đơn hàng.",
+
+    "AppFnbCategories": "Danh mục món",
+    "AppFnbItems": "Danh sách món",
+    "AppFnbOrders": "Quản lý đơn hàng FnB",
+
+    "NewFnbCategory": "Thêm danh mục món",
+    "EditFnbCategory": "Chỉnh sửa danh mục món",
+    "FnbCategoryFilterText": "Tìm theo tên / mã danh mục",
+    "SortOrder": "Thứ tự hiển thị",
+
+    "NewFnbItem": "Thêm món",
+    "EditFnbItem": "Chỉnh sửa món",
+    "FnbItemFilterText": "Tìm theo tên món",
+    "ImageUrl": "Đường dẫn ảnh",
+    "IsAvailable": "Còn món",
+    "CategoryName": "Tên danh mục",
+
+    "OrderCode": "Mã đơn hàng",
+    "BagTag": "Mã bag tag",
+    "ServiceStatus": "Trạng thái phục vụ",
+    "PaymentStatus": "Trạng thái thanh toán",
+    "PaymentMethod": "Phương thức thanh toán",
+    "CustomerName": "Tên khách hàng",
+    "CustomerPhone": "Số điện thoại",
+    "CustomerPhoneMasked": "Số điện thoại",
+    "OrderDetail": "Chi tiết đơn hàng",
+    "OrderItems": "Danh sách món",
+    "Quantity": "Số lượng",
+    "LineTotal": "Thành tiền",
+    "CancelReason": "Lý do hủy",
+    "CancelNote": "Ghi chú hủy",
+    "FnbOrderFilterText": "Tìm theo mã đơn / bag tag / tên khách",
+    "CreateTimeFrom": "Từ ngày tạo",
+    "CreateTimeTo": "Đến ngày tạo",
+
+    "FnbServiceStatus:Created": "Mới tạo",
+    "FnbServiceStatus:Preparing": "Đang chuẩn bị",
+    "FnbServiceStatus:Delivering": "Đang giao",
+    "FnbServiceStatus:Served": "Đã phục vụ",
+    "FnbServiceStatus:Cancelled": "Đã hủy",
+
+    "FnbPaymentStatus:Unpaid": "Chưa thanh toán",
+    "FnbPaymentStatus:Paid": "Đã thanh toán",
+    "FnbPaymentStatus:Failed": "Thanh toán lỗi",
+
+    "FnbPaymentMethod:Cod": "Thanh toán tại quầy",
+    "FnbPaymentMethod:Online": "Thanh toán online",
+
+    "FnbCancelReason:CustomerRequest": "Khách yêu cầu",
+    "FnbCancelReason:OutOfStock": "Hết món",
+    "FnbCancelReason:KitchenDelay": "Bếp chậm",
+    "FnbCancelReason:WrongOrder": "Đặt sai",
+    "FnbCancelReason:SystemError": "Lỗi hệ thống",
+    "FnbCancelReason:Other": "Khác",
+
+    "UpdateServiceStatus": "Cập nhật trạng thái phục vụ",
+    "UpdatePaymentStatus": "Cập nhật trạng thái thanh toán",
+    "CancelOrder": "Hủy đơn",
+    "CannotDeleteCategoryHasItems": "Không thể xóa danh mục vì vẫn còn món thuộc danh mục này.",
+    "CannotDeleteItemHasOrders": "Không thể xóa món vì đã phát sinh đơn hàng. Hãy chuyển sang ngừng hiển thị.",
+    "SavedSuccessfully": "Lưu thành công."
   }
 }

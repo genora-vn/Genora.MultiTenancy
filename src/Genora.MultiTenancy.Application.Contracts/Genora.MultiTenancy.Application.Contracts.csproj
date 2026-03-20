@@ -9,6 +9,11 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Include="AppDtos\AppFnbCategories\IMiniAppFnbCategoryService.cs" />
+    <None Include="AppDtos\AppFnbOrders\IMiniAppFnbOrderService.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\Genora.MultiTenancy.Domain.Shared\Genora.MultiTenancy.Domain.Shared.csproj" />
   </ItemGroup>
   

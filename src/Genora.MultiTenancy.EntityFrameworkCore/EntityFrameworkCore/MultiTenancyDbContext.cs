@@ -9,6 +9,9 @@ using Genora.MultiTenancy.DomainModels.AppCustomerMemberships;
 using Genora.MultiTenancy.DomainModels.AppCustomers;
 using Genora.MultiTenancy.DomainModels.AppCustomerTypes;
 using Genora.MultiTenancy.DomainModels.AppEmails;
+using Genora.MultiTenancy.DomainModels.AppFnbCategories;
+using Genora.MultiTenancy.DomainModels.AppFnbItems;
+using Genora.MultiTenancy.DomainModels.AppFnbOrders;
 using Genora.MultiTenancy.DomainModels.AppGolfCourses;
 using Genora.MultiTenancy.DomainModels.AppHomePageConfigs;
 using Genora.MultiTenancy.DomainModels.AppMembershipTiers;
@@ -70,6 +73,12 @@ public class MultiTenancyDbContext :
     public DbSet<AppHomePageConfig> AppHomePageConfigs { get; set; }
     public DbSet<AppHomePageWidget> AppHomePageWidgets { get; set; }
     public DbSet<AppHomePageWidgetItem> AppHomePageWidgetItems { get; set; }
+
+    // FnB
+    public DbSet<FnbCategory> AppFnbCategories { get; set; }
+    public DbSet<FnbItem> AppFnbItems { get; set; }
+    public DbSet<FnbOrder> AppFnbOrders { get; set; }
+    public DbSet<FnbOrderItem> AppFnbOrderItems { get; set; }
 
     // Identity
     public DbSet<IdentityUser> Users { get; set; }
@@ -141,6 +150,7 @@ public class MultiTenancyDbContext :
 
         // Mini App domain module
         builder.ConfigureMiniAppModule();
+        builder.ConfigureFnbModule();
 
         builder.Entity<ZaloAuth>(b =>
         {
