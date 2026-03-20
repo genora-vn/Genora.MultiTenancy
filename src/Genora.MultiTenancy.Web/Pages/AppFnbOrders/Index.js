@@ -14,30 +14,78 @@
         });
     }
 
+    function toNullableInt(value) {
+        if (value === undefined || value === null || value === '') {
+            return null;
+        }
+
+        var n = parseInt(value, 10);
+        return isNaN(n) ? null : n;
+    }
+
+    function toNullableString(value) {
+        if (value === undefined || value === null) {
+            return null;
+        }
+
+        value = String(value).trim();
+        return value === '' ? null : value;
+    }
+
     function getFilter() {
         return {
-            filterText: $('#FnbOrderFilterText').val(),
-            serviceStatus: $('#FnbOrderServiceStatusFilter').val() || null,
-            paymentStatus: $('#FnbOrderPaymentStatusFilter').val() || null,
-            creationTimeFrom: $('#FnbOrderCreationTimeFrom').val() || null,
-            creationTimeTo: $('#FnbOrderCreationTimeTo').val() || null
+            filterText: toNullableString($('#FnbOrderFilterText').val()),
+            serviceStatus: toNullableInt($('#FnbOrderServiceStatusFilter').val()),
+            paymentStatus: toNullableInt($('#FnbOrderPaymentStatusFilter').val()),
+            creationTimeFrom: toNullableString($('#FnbOrderCreationTimeFrom').val()),
+            creationTimeTo: toNullableString($('#FnbOrderCreationTimeTo').val())
         };
     }
 
     function renderServiceStatus(s) {
+        s = Number(s);
+
         if (s === 1) return '<span class="badge bg-secondary">' + l('FnbServiceStatus:Created') + '</span>';
         if (s === 2) return '<span class="badge bg-info text-dark">' + l('FnbServiceStatus:Preparing') + '</span>';
         if (s === 3) return '<span class="badge bg-primary">' + l('FnbServiceStatus:Delivering') + '</span>';
         if (s === 4) return '<span class="badge bg-success">' + l('FnbServiceStatus:Served') + '</span>';
         if (s === 5) return '<span class="badge bg-danger">' + l('FnbServiceStatus:Cancelled') + '</span>';
+
         return '';
     }
 
     function renderPaymentStatus(s) {
+        s = Number(s);
+
         if (s === 1) return '<span class="badge bg-warning text-dark">' + l('FnbPaymentStatus:Unpaid') + '</span>';
         if (s === 2) return '<span class="badge bg-success">' + l('FnbPaymentStatus:Paid') + '</span>';
         if (s === 3) return '<span class="badge bg-danger">' + l('FnbPaymentStatus:Failed') + '</span>';
+
         return '';
+    }
+
+    function renderDateTime(data) {
+        if (!data) return '';
+
+        try {
+            if (window.luxon && luxon.DateTime) {
+                return luxon.DateTime.fromISO(data).toFormat('dd/MM/yyyy HH:mm');
+            }
+
+            var d = new Date(data);
+            if (isNaN(d.getTime())) return data;
+
+            var dd = String(d.getDate()).padStart(2, '0');
+            var mm = String(d.getMonth() + 1).padStart(2, '0');
+            var yyyy = d.getFullYear();
+            var hh = String(d.getHours()).padStart(2, '0');
+            var mi = String(d.getMinutes()).padStart(2, '0');
+
+            return dd + '/' + mm + '/' + yyyy + ' ' + hh + ':' + mi;
+        } catch (e) {
+            console.error('renderDateTime error:', e, data);
+            return data;
+        }
     }
 
     var dataTable = $('#FnbOrderTable').DataTable(
@@ -47,7 +95,32 @@
             paging: true,
             searching: false,
             scrollX: true,
-            ajax: abp.libs.datatables.createAjax(service.getList, getFilter),
+            order: [[7, "desc"]],
+            ajax: function (requestData, callback) {
+                var input = $.extend({}, getFilter(), {
+                    skipCount: requestData.start,
+                    maxResultCount: requestData.length,
+                    sorting: 'creationTime desc'
+                });
+
+                service.getList(input)
+                    .then(function (result) {
+                        callback({
+                            recordsTotal: result.totalCount || 0,
+                            recordsFiltered: result.totalCount || 0,
+                            data: result.items || []
+                        });
+                    })
+                    .catch(function (error) {
+                        console.error('FnbOrder getList error:', error);
+                        abp.notify.error(l('Error:Generic'));
+                        callback({
+                            recordsTotal: 0,
+                            recordsFiltered: 0,
+                            data: []
+                        });
+                    });
+            },
             columnDefs: [
                 {
                     title: l('Actions'),
@@ -56,6 +129,7 @@
                             {
                                 text: l('View'),
                                 action: function (data) {
+                                    if (!data || !data.record || !data.record.id) return;
                                     detailModal.open({ id: data.record.id });
                                 }
                             },
@@ -66,6 +140,7 @@
                                         abp.auth.isGranted('MultiTenancy.HostAppFnbOrders.Edit');
                                 },
                                 action: function (data) {
+                                    if (!data || !data.record || !data.record.id) return;
                                     serviceStatusModal.open({ id: data.record.id });
                                 }
                             },
@@ -76,18 +151,27 @@
                                         abp.auth.isGranted('MultiTenancy.HostAppFnbOrders.Edit');
                                 },
                                 action: function (data) {
+                                    if (!data || !data.record || !data.record.id) return;
                                     paymentStatusModal.open({ id: data.record.id });
                                 }
                             },
                             {
                                 text: l('CancelOrder'),
                                 visible: function (data) {
-                                    return (abp.auth.isGranted('MultiTenancy.AppFnbOrders.Edit') ||
-                                        abp.auth.isGranted('MultiTenancy.HostAppFnbOrders.Edit')) &&
-                                        data.record.serviceStatus !== 4 &&
-                                        data.record.serviceStatus !== 5;
+                                    if (!(abp.auth.isGranted('MultiTenancy.AppFnbOrders.Edit') ||
+                                        abp.auth.isGranted('MultiTenancy.HostAppFnbOrders.Edit'))) {
+                                        return false;
+                                    }
+
+                                    if (!data || !data.record) {
+                                        return false;
+                                    }
+
+                                    var serviceStatus = Number(data.record.serviceStatus);
+                                    return serviceStatus !== 4 && serviceStatus !== 5;
                                 },
                                 action: function (data) {
+                                    if (!data || !data.record || !data.record.id) return;
                                     cancelModal.open({ id: data.record.id });
                                 }
                             }
@@ -101,7 +185,8 @@
                     title: l('TotalAmount'),
                     data: "totalAmount",
                     render: function (data) {
-                        return (data || 0).toLocaleString('vi-VN');
+                        var value = Number(data || 0);
+                        return value.toLocaleString('vi-VN');
                     }
                 },
                 {
@@ -122,8 +207,7 @@
                     title: l('CreationTime'),
                     data: "creationTime",
                     render: function (data) {
-                        if (!data) return '';
-                        return luxon.DateTime.fromISO(data).toFormat('dd/MM/yyyy HH:mm');
+                        return renderDateTime(data);
                     }
                 }
             ]
