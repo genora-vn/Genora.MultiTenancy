@@ -8,42 +8,408 @@
 
 @{
     Layout = null;
+
+    var rawImage = (Model.Item?.ImageUrl ?? "").Trim();
+    string previewUrl;
+
+    if (string.IsNullOrWhiteSpace(rawImage))
+    {
+        previewUrl = "/images/getting-started/no-photo-square.png";
+    }
+    else if (rawImage.StartsWith("http://", StringComparison.OrdinalIgnoreCase) ||
+             rawImage.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+    {
+        previewUrl = rawImage;
+    }
+    else if (rawImage.StartsWith("/"))
+    {
+        previewUrl = $"{Request.Scheme}://{Request.Host}{rawImage}";
+    }
+    else
+    {
+        previewUrl = $"{Request.Scheme}://{Request.Host}/{rawImage}";
+    }
 }
 
-<form asp-page="/AppFnbItems/EditModal" method="post">
+<form asp-page="/AppFnbItems/EditModal" method="post" id="EditFnbItemForm" enctype="multipart/form-data" class="fnb-item-modal-form">
     <input type="hidden" asp-for="Id" />
-    <abp-modal>
-        <abp-modal-header title="@L["EditFnbItem"]"></abp-modal-header>
-        <abp-modal-body>
-            <abp-input asp-for="Item.Name" label="@L["Name"]" />
+    <input type="hidden" id="IsUploadImageHiddenEdit" asp-for="Item.IsUploadImage" value="false" />
 
-            <abp-select asp-for="Item.CategoryId"
-                        asp-items="Model.CategorySelectList"
-                        label="@L["Category"]" />
+    <abp-modal size="Large">
+        <abp-modal-body class="p-0">
+            <div class="fnb-item-modal fnb-item-modal--compact fnb-item-modal--fit">
+                <div class="fnb-item-modal__header">
+                    <div class="fnb-item-modal__title-wrap">
+                        <div class="fnb-item-modal__title-row">
+                            <div class="fnb-item-modal__icon">
+                                <i class="fa fa-plus"></i>
+                            </div>
+                            <div>
+                                <h3 class="fnb-item-modal__title">@L["EditFnbItem"]</h3>
+                                <div class="fnb-item-modal__subtitle">Cập nhật món ăn mới trong hệ thống</div>
+                            </div>
+                        </div>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                </div>
 
-            <abp-input asp-for="Item.Price" label="@L["Price"]" />
-            <abp-input asp-for="Item.ImageUrl" label="@L["ImageUrl"]" />
-            <abp-input asp-for="Item.SortOrder" label="@L["SortOrder"]" />
-            <abp-input asp-for="Item.Description" label="@L["Description"]" />
+                <div class="fnb-item-modal__body">
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <div class="fnb-item-edit-preview-top">
+                                <div class="fnb-item-edit-preview-box">
+                                    <img src="@previewUrl" id="image-preview-edit" alt="Preview" />
+                                    <button type="button"
+                                            class="btn btn-sm btn-light fnb-item-preview__remove"
+                                            id="btnRemovePreviewEdit"
+                                            title="Xóa ảnh preview"
+                                            style="display:none;">
+                                        ×
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
 
-            <div class="mb-3">
-                <label class="form-label" asp-for="Item.IsActive">@L["IsActive"]</label>
-                <select asp-for="Item.IsActive" class="form-select">
-                    <option value="true">@L["Yes"]</option>
-                    <option value="false">@L["No"]</option>
-                </select>
-                <span asp-validation-for="Item.IsActive" class="text-danger"></span>
-            </div>
+                        <div class="col-12">
+                            <div class="d-flex align-items-center justify-content-between mb-2">
+                                <label class="form-label fnb-item-label mb-0">Ảnh món ăn</label>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="isUploadEdit" />
+                                    <label class="form-check-label" for="isUploadEdit">@L["IsImageInput"]</label>
+                                </div>
+                            </div>
 
-            <div class="mb-3">
-                <label class="form-label" asp-for="Item.IsAvailable">@L["IsAvailable"]</label>
-                <select asp-for="Item.IsAvailable" class="form-select">
-                    <option value="true">@L["Yes"]</option>
-                    <option value="false">@L["No"]</option>
-                </select>
-                <span asp-validation-for="Item.IsAvailable" class="text-danger"></span>
+                            <div id="input-url-edit">
+                                <input asp-for="Item.ImageUrl"
+                                       id="image-input-edit"
+                                       class="form-control fnb-item-input"
+                                       placeholder="https://..." />
+                                <small class="text-muted d-block mt-2">
+                                    Nếu không upload ảnh, vui lòng dán link ảnh. Nếu là ảnh hệ thống thì giữ nguyên đường dẫn hiện tại.
+                                </small>
+                                <span asp-validation-for="Item.ImageUrl" class="text-danger"></span>
+                            </div>
+
+                            <div id="input-image-edit" style="display:none;">
+                                <div class="fnb-item-upload fnb-item-upload--compact fnb-item-upload--sm" id="dropZoneEdit" tabindex="0">
+                                    <div class="fnb-item-upload__icon">
+                                        <i class="fa fa-image"></i>
+                                    </div>
+                                    <div class="fnb-item-upload__title">Tải ảnh lên</div>
+                                    <div class="fnb-item-upload__hint">PNG, JPG tối đa 5MB</div>
+                                    <input asp-for="Item.Images" type="file" id="imagesEdit" accept="image/*" style="display:none" />
+                                </div>
+
+                                <input type="text"
+                                       id="UploadGuardEdit"
+                                       name="UploadGuardEdit"
+                                       class="sr-only-validate"
+                                       data-val="true"
+                                       data-val-required="Vui lòng chọn ảnh để upload trước khi lưu."
+                                       value="" />
+
+                                <span class="text-danger"
+                                      data-valmsg-for="UploadGuardEdit"
+                                      data-valmsg-replace="true"></span>
+
+                                <span asp-validation-for="Item.Images" class="text-danger d-block mt-2"></span>
+                                <small class="text-muted d-block mt-2" id="fileHintEdit">Chưa chọn ảnh</small>
+                            </div>
+                        </div>
+
+                        <div class="col-lg-6">
+                            <label class="form-label fnb-item-label" asp-for="Item.Name">@L["FnbItemName"]</label>
+                            <input asp-for="Item.Name" class="form-control fnb-item-input" placeholder="Nhập tên món ăn" />
+                            <span asp-validation-for="Item.Name" class="text-danger"></span>
+                        </div>
+
+                        <div class="col-lg-6">
+                            <label class="form-label fnb-item-label" asp-for="Item.Price">@L["Price"] (VND)</label>
+                            <input asp-for="Item.Price"
+                                   type="text"
+                                   class="form-control fnb-item-input money-input text-end"
+                                   placeholder="0"
+                                   inputmode="numeric"
+                                   autocomplete="off" />
+                            <span asp-validation-for="Item.Price" class="text-danger"></span>
+                        </div>
+
+                        <div class="col-lg-6">
+                            <label class="form-label fnb-item-label" asp-for="Item.CategoryId">@L["CategoryName"]</label>
+                            <select asp-for="Item.CategoryId" asp-items="Model.CategorySelectList" class="form-select fnb-item-input">
+                                <option value="">Chọn danh mục</option>
+                            </select>
+                            <span asp-validation-for="Item.CategoryId" class="text-danger"></span>
+                        </div>
+
+                        <div class="col-lg-6">
+                            <label class="form-label fnb-item-label" asp-for="Item.SortOrder">@L["SortOrder"]</label>
+                            <input asp-for="Item.SortOrder" class="form-control fnb-item-input" placeholder="1" />
+                            <span asp-validation-for="Item.SortOrder" class="text-danger"></span>
+                        </div>
+
+                        <div class="col-12">
+                            <label class="form-label fnb-item-label" asp-for="Item.Description">@L["Description"]</label>
+                            <textarea asp-for="Item.Description"
+                                      class="form-control fnb-item-textarea fnb-item-textarea--compact"
+                                      rows="3"
+                                      placeholder="Nhập mô tả chi tiết về món ăn..."></textarea>
+                            <span asp-validation-for="Item.Description" class="text-danger"></span>
+                        </div>
+
+                        <div class="col-12">
+                            <div class="fnb-item-switches">
+                                <label class="fnb-item-switch-line">
+                                    <span class="fnb-switch">
+                                        <input asp-for="Item.IsActive" type="checkbox" />
+                                        <span class="fnb-switch-slider"></span>
+                                    </span>
+                                    <span>Được hoạt động</span>
+                                </label>
+
+                                <label class="fnb-item-switch-line">
+                                    <span class="fnb-switch">
+                                        <input asp-for="Item.IsAvailable" type="checkbox" />
+                                        <span class="fnb-switch-slider"></span>
+                                    </span>
+                                    <span>Sẵn sàng</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="fnb-item-modal__footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn btn-primary">Lưu lại</button>
+                </div>
             </div>
         </abp-modal-body>
-        <abp-modal-footer buttons="@(AbpModalButtons.Cancel | AbpModalButtons.Save)"></abp-modal-footer>
     </abp-modal>
 </form>
+
+<script>
+    (function () {
+        const MAX_FILE_MB = 5;
+        const MAX_FILE_BYTES = MAX_FILE_MB * 1024 * 1024;
+        const DEFAULT_PREVIEW = '/images/getting-started/no-photo-square.png';
+
+        setTimeout(function () {
+            const $form = $('#EditFnbItemForm');
+            if (!$form.length) return;
+
+            const $isUpload = $('#isUploadEdit');
+            const $hiddenUpload = $('#IsUploadImageHiddenEdit');
+            const $inputUrlWrap = $('#input-url-edit');
+            const $inputUploadWrap = $('#input-image-edit');
+            const $thumbInput = $('#image-input-edit');
+            const $uploadGuard = $('#UploadGuardEdit');
+            const $previewImg = $('#image-preview-edit');
+            const $removeBtn = $('#btnRemovePreviewEdit');
+            const $fileHint = $('#fileHintEdit');
+
+            const fileInput = document.getElementById('imagesEdit');
+            const dropZone = document.getElementById('dropZoneEdit');
+
+            function normalizeMoney(raw) {
+                if (!raw) return '';
+                return String(raw).replace(/[^\d]/g, '');
+            }
+
+            function formatMoneyVN(raw) {
+                const n = parseInt(normalizeMoney(raw), 10);
+                if (isNaN(n)) return '';
+                return n.toLocaleString('vi-VN');
+            }
+
+            function initMoney() {
+            $form.find('.money-input').each(function () {
+                const el = this;
+
+                el.value = formatMoneyVN(el.value);
+
+                el.addEventListener('focus', function () {
+                    el.value = normalizeMoney(el.value);
+                    });
+
+                    el.addEventListener('input', function () {
+                        el.value = normalizeMoney(el.value);
+                    });
+
+                    el.addEventListener('blur', function () {
+                        el.value = formatMoneyVN(el.value);
+                    });
+                });
+            }
+
+            function hookSubmitNormalize() {
+                $form.on('submit.moneyNormalize', function () {
+                    $form.find('.money-input').each(function () {
+                        this.value = normalizeMoney(this.value);
+                    });
+                });
+            }
+
+            function resetUnobtrusive() {
+                if ($.validator && $.validator.unobtrusive) {
+                    $form.removeData('validator');
+                    $form.removeData('unobtrusiveValidation');
+                    $.validator.unobtrusive.parse($form);
+                }
+            }
+
+            function clearFieldError(name) {
+                const $el = $form.find(`[name="${name}"]`);
+                $el.removeClass('input-validation-error is-invalid');
+
+                const $msg = $form.find(`[data-valmsg-for="${name}"]`);
+                $msg.removeClass('field-validation-error').addClass('field-validation-valid').text('');
+            }
+
+            function setPreview(src, alt) {
+                $previewImg.attr('src', src || DEFAULT_PREVIEW);
+                $previewImg.attr('alt', alt || 'Preview');
+                $removeBtn.show();
+            }
+
+            function clearPreview() {
+                $previewImg.attr('src', DEFAULT_PREVIEW);
+                $previewImg.attr('alt', 'Preview');
+                $removeBtn.hide();
+                $fileHint.text('Chưa chọn ảnh');
+            }
+
+            function bindingPreviewFromUrl() {
+                const url = ($thumbInput.val() || '').trim();
+                if (url) {
+                    setPreview(url, 'ImageUrl');
+                    $fileHint.text('Preview từ URL');
+                } else {
+                    clearPreview();
+                }
+            }
+
+            function enableUrlMode() {
+                $hiddenUpload.val('false');
+                $isUpload.prop('checked', false);
+
+                $inputUrlWrap.show();
+                $inputUploadWrap.hide();
+
+                $thumbInput.prop('disabled', false);
+                $uploadGuard.val('');
+                $uploadGuard.prop('disabled', true);
+
+                clearFieldError('UploadGuardEdit');
+                clearFieldError('Item.Images');
+
+                if (fileInput) fileInput.value = '';
+
+                resetUnobtrusive();
+                bindingPreviewFromUrl();
+            }
+
+            function enableUploadMode() {
+                $hiddenUpload.val('true');
+                $isUpload.prop('checked', true);
+
+                $inputUrlWrap.hide();
+                $inputUploadWrap.show();
+
+                $thumbInput.prop('disabled', true);
+                clearFieldError('Item.ImageUrl');
+
+                $uploadGuard.prop('disabled', false);
+
+                resetUnobtrusive();
+            }
+
+            $isUpload.on('change', function () {
+                if (this.checked) enableUploadMode();
+                else enableUrlMode();
+            });
+
+            $form.on('input change', '#image-input-edit', function () {
+                bindingPreviewFromUrl();
+            });
+
+            $removeBtn.on('click', function () {
+                if ($isUpload.is(':checked')) {
+                    if (fileInput) fileInput.value = '';
+                    $uploadGuard.val('');
+                    clearPreview();
+                } else {
+                    $thumbInput.val('');
+                    bindingPreviewFromUrl();
+                }
+            });
+
+            function notifyWarn(msg) {
+                if (window.abp?.notify?.warn) abp.notify.warn(msg);
+                else alert(msg);
+            }
+
+            function handleFiles(files) {
+                if (!files || files.length === 0) return;
+
+                const file = files[0];
+
+                if (!file.type || !file.type.startsWith('image/')) {
+                    notifyWarn("File không phải ảnh hợp lệ.");
+                    if (fileInput) fileInput.value = '';
+                    $uploadGuard.val('');
+                    return;
+                }
+
+                if (file.size > MAX_FILE_BYTES) {
+                    notifyWarn(`Ảnh vượt quá ${MAX_FILE_MB}MB. Vui lòng chọn ảnh nhỏ hơn.`);
+                    if (fileInput) fileInput.value = '';
+                    $uploadGuard.val('');
+                    return;
+                }
+
+                $uploadGuard.val(file.name);
+
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    setPreview(e.target.result, file.name);
+                    $fileHint.text(file.name);
+                };
+                reader.readAsDataURL(file);
+            }
+
+            if (dropZone && fileInput) {
+                dropZone.addEventListener('click', () => fileInput.click());
+
+                dropZone.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    dropZone.classList.add('drag-over');
+                });
+
+                dropZone.addEventListener('dragleave', () => {
+                    dropZone.classList.remove('drag-over');
+                });
+
+                dropZone.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    dropZone.classList.remove('drag-over');
+                    handleFiles(e.dataTransfer.files);
+                });
+
+                fileInput.addEventListener('change', () => {
+                    handleFiles(fileInput.files);
+                });
+            }
+
+            initMoney();
+            hookSubmitNormalize();
+
+            if (($thumbInput.val() || '').trim()) {
+                enableUrlMode();
+            } else {
+                clearPreview();
+                enableUploadMode();
+            }
+        }, 0);
+    })();
+</script>

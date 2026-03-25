@@ -54,6 +54,11 @@
     "Menu:AppFnbCategories": "FnB Categories",
     "Menu:AppFnbItems": "FnB Items",
     "Menu:AppFnbOrders": "FnB Orders",
+    "Menu:Refresh": "Refresh",
+
+    "ImagePreview": "Image preview",
+    "AutoRefresh": "Auto refresh",
+    "Off": "Off",
 
     "Permission:MiniAppZaloAuth": "Zalo Authentication & Authorization Zalo OA management",
     "Permission:MiniAppZaloAuth.Create": "Create",
@@ -592,6 +597,7 @@
     "FnbItemFilterText": "Search by item name",
     "ImageUrl": "Image URL",
     "IsAvailable": "Available",
+    "FnbItemName": "Item name",
     "CategoryName": "Category name",
 
     "OrderCode": "Order code",
@@ -637,6 +643,8 @@
     "CancelOrder": "Cancel order",
     "CannotDeleteCategoryHasItems": "Can not delete category because items still exist.",
     "CannotDeleteItemHasOrders": "Can not delete item because it already exists in orders. Please disable it instead.",
-    "SavedSuccessfully": "Saved successfully."
+    "SavedSuccessfully": "Saved successfully.",
+
+    "ImportSuccessfully": "Nhập dữ liệu thành công."
   }
 }

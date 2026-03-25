@@ -1,7 +1,6 @@
 ﻿@page
 @using Genora.MultiTenancy.Enums
 @using Genora.MultiTenancy.Localization
-@using Genora.MultiTenancy.Web.Helpers
 @using Genora.MultiTenancy.Web.Pages.AppFnbOrders
 @using Microsoft.Extensions.Localization
 @using Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.TagHelpers.Modal
@@ -12,15 +11,61 @@
     Layout = null;
 }
 
-<form asp-page="/AppFnbOrders/UpdatePaymentStatusModal" method="post">
+<form asp-page="/AppFnbOrders/UpdatePaymentStatusModal" method="post" class="fnb-item-modal-form">
     <input type="hidden" asp-for="Id" />
-    <abp-modal>
-        <abp-modal-header title="@L["UpdatePaymentStatus"]"></abp-modal-header>
-        <abp-modal-body>
-            <abp-select asp-for="Input.PaymentStatus"
-                        label="@L["PaymentStatus"]"
-                        asp-items="EnumSelectList.GetLocalizedEnumSelectList<FnbPaymentStatus>(L)" />
+
+    <abp-modal size="Large">
+        <abp-modal-body class="p-0">
+            <div class="fnb-item-modal fnb-item-modal--compact fnb-item-modal--fit">
+                <div class="fnb-item-modal__header">
+                    <div class="fnb-item-modal__title-wrap">
+                        <div class="fnb-item-modal__title-row">
+                            <div class="fnb-item-modal__icon">
+                                <i class="fa fa-credit-card"></i>
+                            </div>
+                            <div>
+                                <h3 class="fnb-item-modal__title">Cập nhật trạng thái thanh toán</h3>
+                                <div class="fnb-item-modal__subtitle">Chọn trạng thái thanh toán cho đơn hàng</div>
+                            </div>
+                        </div>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                </div>
+
+                <div class="fnb-item-modal__body">
+                    <div class="mb-3">
+                        <label class="fnb-label">Trạng thái thanh toán</label>
+
+                        <div class="fnb-radio-grid">
+                            @foreach (var item in Enum.GetValues<FnbPaymentStatus>())
+                            {
+                                var checkedCurrent = Model.Input.PaymentStatus == item;
+                                var disabled = checkedCurrent;
+
+                                <label class="fnb-radio-card @(disabled ? "disabled" : "")">
+                                    <input type="radio"
+                                           asp-for="Input.PaymentStatus"
+                                           value="@item"
+                                           checked="@(checkedCurrent ? "checked" : null)"
+                                           disabled="@(disabled ? "disabled" : null)" />
+                                    <span>@L[$"FnbPaymentStatus:{item}"]</span>
+                                </label>
+                            }
+                        </div>
+
+                        <span asp-validation-for="Input.PaymentStatus" class="text-danger"></span>
+                    </div>
+                </div>
+
+                <div class="fnb-item-modal__footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                        Hủy bỏ
+                    </button>
+                    <button type="submit" class="btn btn-primary">
+                        Xác nhận
+                    </button>
+                </div>
+            </div>
         </abp-modal-body>
-        <abp-modal-footer buttons="@(AbpModalButtons.Cancel | AbpModalButtons.Save)"></abp-modal-footer>
     </abp-modal>
 </form>

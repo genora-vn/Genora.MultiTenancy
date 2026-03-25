@@ -1,7 +1,6 @@
 ﻿@page
 @using Genora.MultiTenancy.Enums
 @using Genora.MultiTenancy.Localization
-@using Genora.MultiTenancy.Web.Helpers
 @using Genora.MultiTenancy.Web.Pages.AppFnbOrders
 @using Microsoft.Extensions.Localization
 @using Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.TagHelpers.Modal
@@ -10,17 +9,108 @@
 
 @{
     Layout = null;
+
+    bool IsAllowedNext(FnbServiceStatus current, FnbServiceStatus next)
+    {
+        if (current == next) return true;
+
+        return (current, next) switch
+        {
+            (FnbServiceStatus.Created, FnbServiceStatus.Preparing) => true,
+            (FnbServiceStatus.Preparing, FnbServiceStatus.Delivering) => true,
+            (FnbServiceStatus.Delivering, FnbServiceStatus.Served) => true,
+            _ => false
+        };
+    }
+
+    string BadgeClass(FnbServiceStatus s) => s switch
+    {
+        FnbServiceStatus.Created => "fnb-badge fnb-badge--neutral",
+        FnbServiceStatus.Preparing => "fnb-badge fnb-badge--info",
+        FnbServiceStatus.Delivering => "fnb-badge fnb-badge--primary",
+        FnbServiceStatus.Served => "fnb-badge fnb-badge--success",
+        FnbServiceStatus.Cancelled => "fnb-badge fnb-badge--danger",
+        _ => "fnb-badge fnb-badge--neutral"
+    };
 }
 
-<form asp-page="/AppFnbOrders/UpdateServiceStatusModal" method="post">
+<form asp-page="/AppFnbOrders/UpdateServiceStatusModal" method="post" class="fnb-item-modal-form">
     <input type="hidden" asp-for="Id" />
-    <abp-modal>
-        <abp-modal-header title="@L["UpdateServiceStatus"]"></abp-modal-header>
-        <abp-modal-body>
-            <abp-select asp-for="Input.ServiceStatus"
-                        label="@L["ServiceStatus"]"
-                        asp-items="EnumSelectList.GetLocalizedEnumSelectList<FnbServiceStatus>(L)" />
+
+    <abp-modal size="Large">
+        <abp-modal-body class="p-0">
+            <div class="fnb-item-modal fnb-item-modal--compact fnb-item-modal--fit">
+                <div class="fnb-item-modal__header">
+                    <div class="fnb-item-modal__title-wrap">
+                        <div class="fnb-item-modal__title-row">
+                            <div class="fnb-item-modal__icon">
+                                <i class="fa fa-sync"></i>
+                            </div>
+                            <div>
+                                <h3 class="fnb-item-modal__title">Cập nhật trạng thái đơn hàng</h3>
+                                <div class="fnb-item-modal__subtitle">Điều chỉnh trạng thái phục vụ</div>
+                            </div>
+                        </div>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                </div>
+
+                <div class="fnb-item-modal__body">
+                    <div class="mb-3">
+                        <label class="fnb-label">Trạng thái hiện tại</label>
+                        <div class="@BadgeClass(Model.Input.ServiceStatus)">
+                            @L[$"FnbServiceStatus:{Model.Input.ServiceStatus}"]
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="fnb-label">Chọn trạng thái mới</label>
+
+                        <div class="fnb-radio-grid">
+                            @foreach (var item in Enum.GetValues<FnbServiceStatus>())
+                            {
+                                if (item == FnbServiceStatus.Cancelled)
+                                {
+                                    continue;
+                                }
+
+                                var checkedCurrent = Model.Input.ServiceStatus == item;
+                                var allowed = IsAllowedNext(Model.Input.ServiceStatus, item);
+                                var disabled = !allowed || checkedCurrent;
+
+                                <label class="fnb-radio-card @(disabled ? "disabled" : "")">
+                                    <input type="radio"
+                                           asp-for="Input.ServiceStatus"
+                                           value="@item"
+                                           checked="@(checkedCurrent ? "checked" : null)"
+                                           disabled="@(disabled ? "disabled" : null)" />
+                                    <span>@L[$"FnbServiceStatus:{item}"]</span>
+                                </label>
+                            }
+                        </div>
+
+                        <span asp-validation-for="Input.ServiceStatus" class="text-danger"></span>
+                    </div>
+
+                    <div>
+                        <label class="fnb-label">Ghi chú nội bộ</label>
+                        <textarea asp-for="Input.InternalNote"
+                                  class="form-control fnb-textarea"
+                                  rows="3"
+                                  placeholder="Nhập ghi chú cho đơn hàng này"></textarea>
+                        <span asp-validation-for="Input.InternalNote" class="text-danger"></span>
+                    </div>
+                </div>
+
+                <div class="fnb-item-modal__footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                        Hủy
+                    </button>
+                    <button type="submit" class="btn btn-primary">
+                        Cập nhật
+                    </button>
+                </div>
+            </div>
         </abp-modal-body>
-        <abp-modal-footer buttons="@(AbpModalButtons.Cancel | AbpModalButtons.Save)"></abp-modal-footer>
     </abp-modal>
 </form>

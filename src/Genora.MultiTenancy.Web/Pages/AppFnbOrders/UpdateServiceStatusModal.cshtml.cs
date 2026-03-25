@@ -25,6 +25,7 @@ public class UpdateServiceStatusModalModel : MultiTenancyPageModel
     {
         var dto = await _service.GetAsync(Id);
         Input.ServiceStatus = dto.ServiceStatus;
+        Input.InternalNote = dto.InternalNote;
     }
 
     public async Task<IActionResult> OnPostAsync()

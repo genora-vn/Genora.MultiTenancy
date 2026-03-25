@@ -9,7 +9,9 @@
 @inject Volo.Abp.MultiTenancy.ICurrentTenant CurrentTenant
 
 @section scripts {
+    <abp-script src="/pages/fnb/fnb-shared.js" />
     <abp-script src="/Pages/AppFnbCategories/index.js" />
+    <abp-style src="/pages/fnb/fnb-shared.css" />
     <abp-style src="/Pages/Index.css" />
 }
 
@@ -17,55 +19,96 @@
     var canCreate = CurrentTenant.IsAvailable
         ? await AuthorizationService.IsGrantedAsync(MultiTenancyPermissions.AppFnbCategories.Create)
         : await AuthorizationService.IsGrantedAsync(MultiTenancyPermissions.HostAppFnbCategories.Create);
+
+    var canEdit = CurrentTenant.IsAvailable
+        ? await AuthorizationService.IsGrantedAsync(MultiTenancyPermissions.AppFnbCategories.Edit)
+        : await AuthorizationService.IsGrantedAsync(MultiTenancyPermissions.HostAppFnbCategories.Edit);
 }
 
-<abp-card>
-    <abp-card-header>
-        <abp-row>
-            <abp-column size-md="_6">
-                <abp-card-title>@L["AppFnbCategories"]</abp-card-title>
-            </abp-column>
-            <abp-column size-md="_6" class="text-end">
-                @if (canCreate)
-                {
-                    <abp-button id="NewFnbCategoryButton"
-                                text="@L["NewFnbCategory"]"
-                                icon="plus"
-                                button-type="Outline_Primary" />
-                }
-            </abp-column>
-        </abp-row>
+<div class="fnb-page">
+    <abp-card>
+        <abp-card-header>
+            <abp-row>
+                <abp-column size-md="_6">
+                    <abp-card-title>@L["AppFnbCategories"]</abp-card-title>
+                </abp-column>
 
-        <abp-row class="mt-3">
-            <abp-column size-md="_4">
-                <div class="mb-3">
-                    <label class="form-label" for="FnbCategoryFilterText">@L["FnbCategoryFilterText"]</label>
-                    <input id="FnbCategoryFilterText" name="FnbCategoryFilterText" class="form-control" type="text" />
-                </div>
-            </abp-column>
-            <abp-column size-md="_3">
-                <div class="mb-3">
-                    <label class="form-label" for="FnbCategoryActiveFilter">@L["IsActive"]</label>
-                    <select id="FnbCategoryActiveFilter" class="form-select">
-                        <option value="">@L["All"]</option>
-                        <option value="true">@L["Yes"]</option>
-                        <option value="false">@L["No"]</option>
-                    </select>
-                </div>
-            </abp-column>
-            <abp-column size-md="_2" class="d-flex align-items-end">
-                <div class="mb-3 h-50">
-                    <abp-button id="SearchFnbCategoryButton"
-                                class="h-100"
-                                text="@L["Search"]"
-                                icon="search"
-                                button-type="Outline_Primary" />
-                </div>
-            </abp-column>
-        </abp-row>
-    </abp-card-header>
+                <abp-column size-md="_6" class="text-end fnb-toolbar">
+                    <abp-button id="DownloadFnbCategoryTemplateBtn"
+                                text="@L["DownloadTemplateBtn"]"
+                                icon="download"
+                                button-type="Outline_Secondary" />
 
-    <abp-card-body>
-        <abp-table striped-rows="true" id="FnbCategoryTable"></abp-table>
-    </abp-card-body>
-</abp-card>
+                    <abp-button id="ImportCategoryExcelButton"
+                                text="@L["ImportExcel"]"
+                                icon="upload"
+                                button-type="Outline_Secondary" />
+
+                    <abp-button id="ExportCategoryExcelButton"
+                                text="@L["ExportExcelBtn"]"
+                                icon="file"
+                                button-type="Outline_Secondary" />
+                    <input type="file"
+                           id="CategoryExcelFileInput"
+                           accept=".xlsx,.xls"
+                           style="display:none;" />
+
+                    <abp-button id="RefreshFnbCategoryButton"
+                                text="@L["Menu:Refresh"]"
+                                icon="refresh"
+                                button-type="Outline_Secondary" />
+
+                    @if (canCreate)
+                    {
+                        <abp-button id="NewFnbCategoryButton"
+                                    text="@L["NewFnbCategory"]"
+                                    icon="plus"
+                                    button-type="Outline_Primary" />
+                    }
+                </abp-column>
+            </abp-row>
+
+            <abp-row class="mt-3">
+                <abp-column size-md="_4">
+                    <div class="mb-3">
+                        <label class="form-label fnb-filter-label" for="FnbCategoryFilterText">
+                            @L["FnbCategoryFilterText"]
+                        </label>
+                        <input id="FnbCategoryFilterText"
+                               name="FnbCategoryFilterText"
+                               class="form-control"
+                               type="text" />
+                    </div>
+                </abp-column>
+
+                <abp-column size-md="_3">
+                    <div class="mb-3">
+                        <label class="form-label fnb-filter-label" for="FnbCategoryActiveFilter">
+                            @L["IsActive"]
+                        </label>
+                        <select id="FnbCategoryActiveFilter" class="form-select">
+                            <option value="">@L["All"]</option>
+                            <option value="true">@L["Yes"]</option>
+                            <option value="false">@L["No"]</option>
+                        </select>
+                    </div>
+                </abp-column>
+
+                <abp-column size-md="_2" class="d-flex align-items-end">
+                    <div class="mb-3 h-50">
+                        <abp-button id="SearchFnbCategoryButton"
+                                    class="h-100"
+                                    text="@L["Search"]"
+                                    icon="search"
+                                    button-type="Outline_Primary" />
+                    </div>
+                </abp-column>
+            </abp-row>
+        </abp-card-header>
+
+        <abp-card-body class="fnb-table-wrap">
+            <input type="hidden" id="CanEditFnbCategory" value="@(canEdit ? "true" : "false")" />
+            <abp-table striped-rows="true" id="FnbCategoryTable"></abp-table>
+        </abp-card-body>
+    </abp-card>
+</div>

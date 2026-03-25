@@ -239,9 +239,12 @@ public class AppFnbOrderService : ApplicationService, IAppFnbOrderService
 
         var isValid = (order.ServiceStatus, input.ServiceStatus) switch
         {
+            (var current, var next) when current == next => true,
+
             (FnbServiceStatus.Created, FnbServiceStatus.Preparing) => true,
             (FnbServiceStatus.Preparing, FnbServiceStatus.Delivering) => true,
             (FnbServiceStatus.Delivering, FnbServiceStatus.Served) => true,
+
             _ => false
         };
 
@@ -251,6 +254,7 @@ public class AppFnbOrderService : ApplicationService, IAppFnbOrderService
         }
 
         order.ServiceStatus = input.ServiceStatus;
+        order.InternalNote = input.InternalNote;
         order = await _orderRepository.UpdateAsync(order, autoSave: true);
 
         return MapOrderDto(order);
@@ -283,6 +287,11 @@ public class AppFnbOrderService : ApplicationService, IAppFnbOrderService
             order.ServiceStatus != FnbServiceStatus.Preparing)
         {
             throw new UserFriendlyException("Chỉ được hủy đơn ở trạng thái Mới tạo hoặc Đang chuẩn bị.");
+        }
+
+        if (input.CancelReason == 0)
+        {
+            throw new UserFriendlyException("Vui lòng chọn lý do hủy đơn.");
         }
 
         if (!string.IsNullOrWhiteSpace(input.CancelNote) && input.CancelNote.Length > 500)

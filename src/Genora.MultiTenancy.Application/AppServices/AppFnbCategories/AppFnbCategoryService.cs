@@ -1,4 +1,5 @@
-﻿using Genora.MultiTenancy.AppDtos.AppFnbCategories;
+﻿using ClosedXML.Excel;
+using Genora.MultiTenancy.AppDtos.AppFnbCategories;
 using Genora.MultiTenancy.DomainModels.AppFnbCategories;
 using Genora.MultiTenancy.DomainModels.AppFnbItems;
 using Genora.MultiTenancy.Features.AppFnbFeatures;
@@ -11,6 +12,7 @@ using System.Linq.Dynamic.Core;
 using System.Threading.Tasks;
 using Volo.Abp;
 using Volo.Abp.Application.Dtos;
+using Volo.Abp.Content;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Features;
 using Volo.Abp.MultiTenancy;
@@ -28,12 +30,16 @@ public class AppFnbCategoryService :
     protected override string HostDefaultPermission => MultiTenancyPermissions.HostAppFnbCategories.Default;
 
     private readonly IRepository<FnbItem, Guid> _itemRepository;
+    private readonly FnbCategoryExcelTemplateGenerator _excelTemplateGenerator;
+    private readonly FnbCategoryExcelImporter _excelImporter;
 
     public AppFnbCategoryService(
         IRepository<FnbCategory, Guid> repository,
         IRepository<FnbItem, Guid> itemRepository,
         ICurrentTenant currentTenant,
-        IFeatureChecker featureChecker)
+        IFeatureChecker featureChecker,
+        FnbCategoryExcelTemplateGenerator excelTemplateGenerator,
+        FnbCategoryExcelImporter excelImporter)
         : base(repository, currentTenant, featureChecker)
     {
         GetPolicyName = MultiTenancyPermissions.AppFnbCategories.Default;
@@ -43,6 +49,8 @@ public class AppFnbCategoryService :
         DeletePolicyName = MultiTenancyPermissions.AppFnbCategories.Delete;
 
         _itemRepository = itemRepository;
+        _excelTemplateGenerator = excelTemplateGenerator;
+        _excelImporter = excelImporter;
     }
 
     [DisableValidation]
@@ -121,6 +129,140 @@ public class AppFnbCategoryService :
         }
 
         await Repository.HardDeleteAsync(entity, autoSave: true);
+    }
+
+    public async Task<IRemoteStreamContent> DownloadImportTemplateAsync()
+    {
+        await CheckGetListPolicyAsync();
+        return _excelTemplateGenerator.GenerateTemplate();
+    }
+
+    public async Task<FnbCategoryDto> SetActiveAsync(Guid id, SetFnbCategoryActiveDto input)
+    {
+        await CheckUpdatePolicyAsync();
+
+        var entity = await Repository.GetAsync(id);
+        entity.IsActive = input.IsActive;
+
+        entity = await Repository.UpdateAsync(entity, autoSave: true);
+        return ObjectMapper.Map<FnbCategory, FnbCategoryDto>(entity);
+    }
+
+    public async Task<IRemoteStreamContent> ExportExcelAsync(GetFnbCategoryListInput input)
+    {
+        await CheckGetListPolicyAsync();
+
+        var queryable = await Repository.GetQueryableAsync();
+        var query = queryable;
+
+        if (!input.FilterText.IsNullOrWhiteSpace())
+        {
+            var filter = input.FilterText.Trim();
+            query = query.Where(x => x.Name.Contains(filter) || (x.Code != null && x.Code.Contains(filter)));
+        }
+
+        if (input.IsActive.HasValue)
+        {
+            query = query.Where(x => x.IsActive == input.IsActive.Value);
+        }
+
+        var items = await AsyncExecuter.ToListAsync(
+            query.OrderBy(x => x.SortOrder).ThenBy(x => x.Name)
+        );
+
+        var workbook = new XLWorkbook();
+        var ws = workbook.Worksheets.Add("FnbCategories");
+
+        ws.Cell(1, 1).Value = "MÃ DANH MỤC";
+        ws.Cell(1, 2).Value = "TÊN DANH MỤC";
+        ws.Cell(1, 3).Value = "THỨ TỰ HIỂN THỊ";
+        ws.Cell(1, 4).Value = "ĐƯỢC SỬ DỤNG";
+
+        var header = ws.Range(1, 1, 1, 4);
+        header.Style.Font.Bold = true;
+        header.Style.Fill.BackgroundColor = XLColor.LightGray;
+        header.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+        header.Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
+        header.Style.Border.OutsideBorder = XLBorderStyleValues.Thin;
+        header.Style.Border.InsideBorder = XLBorderStyleValues.Thin;
+
+        var row = 2;
+        foreach (var item in items)
+        {
+            ws.Cell(row, 1).Value = item.Code;
+            ws.Cell(row, 2).Value = item.Name;
+            ws.Cell(row, 3).Value = item.SortOrder;
+            ws.Cell(row, 4).Value = item.IsActive;
+            row++;
+        }
+
+        var dataRange = ws.Range(1, 1, Math.Max(row - 1, 2), 4);
+        dataRange.Style.Border.OutsideBorder = XLBorderStyleValues.Thin;
+        dataRange.Style.Border.InsideBorder = XLBorderStyleValues.Thin;
+
+        ws.SheetView.FreezeRows(1);
+        ws.Columns().AdjustToContents();
+
+        return _excelTemplateGenerator.GenerateExport(workbook);
+    }
+
+    [DisableValidation]
+    public async Task<int> ImportExcelAsync(ImportFnbCategoryExcelInput input)
+    {
+        await CheckCreatePolicyAsync();
+        await CheckUpdatePolicyAsync();
+
+        if (input.File == null)
+        {
+            throw new UserFriendlyException("Vui lòng chọn file Excel.");
+        }
+
+        using var stream = input.File.GetStream();
+        var rows = _excelImporter.Read(stream);
+
+        var success = 0;
+
+        foreach (var r in rows)
+        {
+            var rowNumber = r.Row;
+            var data = r.Data;
+
+            var name = (data.Name ?? "").Trim();
+            var code = (data.Code ?? "").Trim();
+
+            if (string.IsNullOrWhiteSpace(name))
+            {
+                continue;
+            }
+
+            var existed = !string.IsNullOrWhiteSpace(code)
+                ? await Repository.FirstOrDefaultAsync(x => x.TenantId == CurrentTenant.Id && x.Code == code)
+                : null;
+
+            if (existed != null)
+            {
+                existed.Name = name;
+                existed.SortOrder = data.SortOrder ?? existed.SortOrder;
+                existed.IsActive = data.IsActive ?? existed.IsActive;
+                await Repository.UpdateAsync(existed, autoSave: false);
+            }
+            else
+            {
+                var dto = new CreateUpdateFnbCategoryDto
+                {
+                    Code = string.IsNullOrWhiteSpace(code) ? null : code,
+                    Name = name,
+                    SortOrder = data.SortOrder ?? await GetNextSortOrderAsync(),
+                    IsActive = data.IsActive ?? true
+                };
+
+                await CreateAsync(dto);
+            }
+
+            success++;
+        }
+
+        return success;
     }
 
     private async Task ValidateCreateUpdateAsync(CreateUpdateFnbCategoryDto input, Guid? editingId = null)

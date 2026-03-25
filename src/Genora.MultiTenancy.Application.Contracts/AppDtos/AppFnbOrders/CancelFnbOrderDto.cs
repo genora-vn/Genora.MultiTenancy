@@ -4,7 +4,7 @@ using System.ComponentModel.DataAnnotations;
 namespace Genora.MultiTenancy.AppDtos.AppFnbOrders;
 public class CancelFnbOrderDto
 {
-    [Required]
+    [Required(ErrorMessage = "Vui lòng chọn lý do hủy đơn.")]
     public FnbCancelReason CancelReason { get; set; }
 
     [StringLength(500)]

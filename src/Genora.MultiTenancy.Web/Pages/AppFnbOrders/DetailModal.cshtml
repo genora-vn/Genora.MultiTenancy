@@ -9,72 +9,162 @@
 
 @{
     Layout = null;
-    string ServiceStatusText(FnbServiceStatus s) => s switch
+
+    string ServiceStatusBadge(FnbServiceStatus s) => s switch
     {
-        FnbServiceStatus.Created => L["FnbServiceStatus:Created"],
-        FnbServiceStatus.Preparing => L["FnbServiceStatus:Preparing"],
-        FnbServiceStatus.Delivering => L["FnbServiceStatus:Delivering"],
-        FnbServiceStatus.Served => L["FnbServiceStatus:Served"],
-        FnbServiceStatus.Cancelled => L["FnbServiceStatus:Cancelled"],
-        _ => s.ToString()
+        FnbServiceStatus.Created => $"<span class=\"fnb-badge fnb-badge--neutral\">{L["FnbServiceStatus:Created"]}</span>",
+        FnbServiceStatus.Preparing => $"<span class=\"fnb-badge fnb-badge--info\">{L["FnbServiceStatus:Preparing"]}</span>",
+        FnbServiceStatus.Delivering => $"<span class=\"fnb-badge fnb-badge--primary\">{L["FnbServiceStatus:Delivering"]}</span>",
+        FnbServiceStatus.Served => $"<span class=\"fnb-badge fnb-badge--success\">{L["FnbServiceStatus:Served"]}</span>",
+        FnbServiceStatus.Cancelled => $"<span class=\"fnb-badge fnb-badge--danger\">{L["FnbServiceStatus:Cancelled"]}</span>",
+        _ => $"<span class=\"fnb-badge fnb-badge--dark\">{s}</span>"
     };
 
-    string PaymentStatusText(FnbPaymentStatus s) => s switch
+    string PaymentStatusBadge(FnbPaymentStatus s) => s switch
     {
-        FnbPaymentStatus.Unpaid => L["FnbPaymentStatus:Unpaid"],
-        FnbPaymentStatus.Paid => L["FnbPaymentStatus:Paid"],
-        FnbPaymentStatus.Failed => L["FnbPaymentStatus:Failed"],
-        _ => s.ToString()
+        FnbPaymentStatus.Unpaid => $"<span class=\"fnb-badge fnb-badge--warning\">{L["FnbPaymentStatus:Unpaid"]}</span>",
+        FnbPaymentStatus.Paid => $"<span class=\"fnb-badge fnb-badge--success\">{L["FnbPaymentStatus:Paid"]}</span>",
+        FnbPaymentStatus.Failed => $"<span class=\"fnb-badge fnb-badge--danger\">{L["FnbPaymentStatus:Failed"]}</span>",
+        _ => $"<span class=\"fnb-badge fnb-badge--dark\">{s}</span>"
+    };
+
+    string PaymentMethodText(PaymentMethod? s) => s switch
+    {
+        PaymentMethod.COD => L["FnbPaymentMethod:Cod"],
+        PaymentMethod.Online => L["FnbPaymentMethod:Online"],
+        _ => L["Common:NA"]
+    };
+
+    string CancelReasonText(FnbCancelReason? s) => s switch
+    {
+        FnbCancelReason.CustomerRequest => L["FnbCancelReason:CustomerRequest"],
+        FnbCancelReason.OutOfStock => L["FnbCancelReason:OutOfStock"],
+        FnbCancelReason.KitchenDelay => L["FnbCancelReason:KitchenDelay"],
+        FnbCancelReason.WrongOrder => L["FnbCancelReason:WrongOrder"],
+        FnbCancelReason.SystemError => L["FnbCancelReason:SystemError"],
+        FnbCancelReason.Other => L["FnbCancelReason:Other"],
+        _ => L["Common:NA"]
     };
 }
 
 <abp-modal size="Large">
     <abp-modal-header title="@L["OrderDetail"]"></abp-modal-header>
-    <abp-modal-body>
-        <div class="row g-3 mb-3">
-            <div class="col-md-4"><strong>@L["OrderCode"]:</strong> @Model.Order.OrderCode</div>
-            <div class="col-md-4"><strong>@L["BagTag"]:</strong> @Model.Order.BagTag</div>
-            <div class="col-md-4"><strong>@L["CreationTime"]:</strong> @Model.Order.CreationTime.ToString("dd/MM/yyyy HH:mm")</div>
-            <div class="col-md-4"><strong>@L["CustomerName"]:</strong> @Model.Order.CustomerName</div>
-            <div class="col-md-4"><strong>@L["CustomerPhoneMasked"]:</strong> @Model.Order.CustomerPhoneMasked</div>
-            <div class="col-md-4"><strong>@L["TotalAmount"]:</strong> @Model.Order.TotalAmount.ToString("N0")</div>
-            <div class="col-md-4"><strong>@L["ServiceStatus"]:</strong> @ServiceStatusText(Model.Order.ServiceStatus)</div>
-            <div class="col-md-4"><strong>@L["PaymentStatus"]:</strong> @PaymentStatusText(Model.Order.PaymentStatus)</div>
-            <div class="col-md-4"><strong>@L["PaymentMethod"]:</strong> @(Model.Order.PaymentMethod?.ToString() ?? "")</div>
-            <div class="col-md-12"><strong>@L["Notes"]:</strong> @Model.Order.Note</div>
-            <div class="col-md-12"><strong>@L["InternalNote"]:</strong> @Model.Order.InternalNote</div>
-            @if (Model.Order.CancelReason.HasValue)
-            {
-                <div class="col-md-6"><strong>@L["CancelReason"]:</strong> @Model.Order.CancelReason</div>
-                <div class="col-md-6"><strong>@L["CancelNote"]:</strong> @Model.Order.CancelNote</div>
-            }
+
+    <abp-modal-body class="fnb-modal fnb-modal--lg">
+        <div class="fnb-detail-grid">
+            <div class="row">
+                <div class="col-md-4">
+                    <strong>@L["OrderCode"]:</strong>
+                    <div>@Model.Order.OrderCode</div>
+                </div>
+
+                <div class="col-md-4">
+                    <strong>@L["BagTag"]:</strong>
+                    <div>@(string.IsNullOrWhiteSpace(Model.Order.BagTag) ? L["Common:NA"] : Model.Order.BagTag)</div>
+                </div>
+
+                <div class="col-md-4">
+                    <strong>@L["CreationTime"]:</strong>
+                    <div>@Model.Order.CreationTime.ToString("dd/MM/yyyy HH:mm")</div>
+                </div>
+
+                <div class="col-md-4">
+                    <strong>@L["CustomerName"]:</strong>
+                    <div>@(string.IsNullOrWhiteSpace(Model.Order.CustomerName) ? L["Common:NA"] : Model.Order.CustomerName)</div>
+                </div>
+
+                <div class="col-md-4">
+                    <strong>@L["CustomerPhoneMasked"]:</strong>
+                    <div>@(string.IsNullOrWhiteSpace(Model.Order.CustomerPhoneMasked) ? L["Common:NA"] : Model.Order.CustomerPhoneMasked)</div>
+                </div>
+
+                <div class="col-md-4">
+                    <strong>@L["TotalAmount"]:</strong>
+                    <div class="fnb-price">@Model.Order.TotalAmount.ToString("N0")</div>
+                </div>
+
+                <div class="col-md-4">
+                    <strong>@L["ServiceStatus"]:</strong>
+                    <div>@Html.Raw(ServiceStatusBadge(Model.Order.ServiceStatus))</div>
+                </div>
+
+                <div class="col-md-4">
+                    <strong>@L["PaymentStatus"]:</strong>
+                    <div>@Html.Raw(PaymentStatusBadge(Model.Order.PaymentStatus))</div>
+                </div>
+
+                <div class="col-md-4">
+                    <strong>@L["PaymentMethod"]:</strong>
+                    <div>@PaymentMethodText(Model.Order.PaymentMethod)</div>
+                </div>
+
+                <div class="col-md-12">
+                    <strong>@L["Notes"]:</strong>
+                    <div class="fnb-muted">@(string.IsNullOrWhiteSpace(Model.Order.Note) ? L["Common:NA"] : Model.Order.Note)</div>
+                </div>
+
+                <div class="col-md-12">
+                    <strong>@L["InternalNote"]:</strong>
+                    <div class="fnb-muted">@(string.IsNullOrWhiteSpace(Model.Order.InternalNote) ? L["Common:NA"] : Model.Order.InternalNote)</div>
+                </div>
+
+                @if (Model.Order.CancelReason.HasValue)
+                {
+                    <div class="col-md-6">
+                        <strong>@L["CancelReason"]:</strong>
+                        <div>@CancelReasonText(Model.Order.CancelReason)</div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <strong>@L["CancelNote"]:</strong>
+                        <div class="fnb-muted">@(string.IsNullOrWhiteSpace(Model.Order.CancelNote) ? L["Common:NA"] : Model.Order.CancelNote)</div>
+                    </div>
+                }
+            </div>
         </div>
 
-        <h6 class="mb-3">@L["OrderItems"]</h6>
+        <div class="fnb-section-title mt-3">@L["OrderItems"]</div>
 
-        <table class="table table-bordered table-sm">
+        <table class="table table-bordered table-sm align-middle">
             <thead>
                 <tr>
                     <th>@L["Name"]</th>
-                    <th>@L["Price"]</th>
-                    <th>@L["Quantity"]</th>
-                    <th>@L["LineTotal"]</th>
+                    <th class="text-end">@L["Price"]</th>
+                    <th class="text-center">@L["Quantity"]</th>
+                    <th class="text-end">@L["LineTotal"]</th>
                     <th>@L["Notes"]</th>
                 </tr>
             </thead>
             <tbody>
-                @foreach (var item in Model.Order.Items)
+                @if (Model.Order.Items != null && Model.Order.Items.Any())
+                {
+                    foreach (var item in Model.Order.Items)
+                    {
+                        <tr>
+                            <td>@item.ItemName</td>
+                            <td class="text-end fnb-price">@item.Price.ToString("N0")</td>
+                            <td class="text-center">@item.Quantity</td>
+                            <td class="text-end fnb-price">@((item.Price * item.Quantity).ToString("N0"))</td>
+                            <td>@(string.IsNullOrWhiteSpace(item.Note) ? L["Common:NA"] : item.Note)</td>
+                        </tr>
+                    }
+                }
+                else
                 {
                     <tr>
-                        <td>@item.ItemName</td>
-                        <td>@item.Price.ToString("N0")</td>
-                        <td>@item.Quantity</td>
-                        <td>@((item.Price * item.Quantity).ToString("N0"))</td>
-                        <td>@item.Note</td>
+                        <td colspan="5" class="text-center fnb-muted">@L["Common:NA"]</td>
                     </tr>
                 }
             </tbody>
+            <tfoot>
+                <tr>
+                    <th colspan="3" class="text-end">@L["TotalAmount"]</th>
+                    <th class="text-end fnb-price">@Model.Order.TotalAmount.ToString("N0")</th>
+                    <th></th>
+                </tr>
+            </tfoot>
         </table>
     </abp-modal-body>
+
     <abp-modal-footer buttons="@(AbpModalButtons.Close)"></abp-modal-footer>
 </abp-modal>

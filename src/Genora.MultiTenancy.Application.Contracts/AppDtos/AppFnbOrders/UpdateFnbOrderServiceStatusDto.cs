@@ -6,4 +6,6 @@ public class UpdateFnbOrderServiceStatusDto
 {
     [Required]
     public FnbServiceStatus ServiceStatus { get; set; }
+
+    public string? InternalNote { get; set; }
 }

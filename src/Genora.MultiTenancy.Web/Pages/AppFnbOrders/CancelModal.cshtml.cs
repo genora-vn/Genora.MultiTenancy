@@ -26,6 +26,11 @@ public class CancelModalModel : MultiTenancyPageModel
 
     public async Task<IActionResult> OnPostAsync()
     {
+        if (!ModelState.IsValid)
+        {
+            return Page();
+        }
+
         await _service.CancelAsync(Id, Input);
         return NoContent();
     }

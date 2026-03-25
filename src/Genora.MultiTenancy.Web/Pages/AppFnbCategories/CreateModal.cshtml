@@ -10,23 +10,92 @@
     Layout = null;
 }
 
-<form asp-page="/AppFnbCategories/CreateModal" method="post">
+<form asp-page="/AppFnbCategories/CreateModal" method="post" class="fnb-modal fnb-category-modal">
     <abp-modal>
-        <abp-modal-header title="@L["NewFnbCategory"]"></abp-modal-header>
-        <abp-modal-body>
-            <abp-input asp-for="Category.Name" label="@L["Name"]" />
-            <abp-input asp-for="Category.Code" label="@L["Code"]" />
-            <abp-input asp-for="Category.SortOrder" label="@L["SortOrder"]" />
+        <abp-modal-body class="p-0">
+            <div class="fnb-category-modal__layout">
+                <div class="fnb-category-modal__header">
+                    <div class="fnb-category-modal__icon">
+                        <i class="fa fa-plus"></i>
+                    </div>
+                    <div class="fnb-category-modal__title-wrap">
+                        <h3 class="fnb-category-modal__title">@L["NewFnbCategory"]</h3>
+                        <div class="fnb-category-modal__subtitle">Tạo danh mục sản phẩm mới trong hệ thống</div>
+                    </div>
+                </div>
 
-            <div class="mb-3">
-                <label class="form-label" asp-for="Category.IsActive">@L["IsActive"]</label>
-                <select asp-for="Category.IsActive" class="form-select">
-                    <option value="true">@L["Yes"]</option>
-                    <option value="false">@L["No"]</option>
-                </select>
-                <span asp-validation-for="Category.IsActive" class="text-danger"></span>
+                <div class="fnb-category-modal__body">
+                    <div class="mb-4">
+                        <label class="form-label fnb-category-label" asp-for="Category.Code">
+                            @L["Code"] <span class="text-danger">*</span>
+                        </label>
+                        <div class="fnb-input-icon-wrap">
+                            <span class="fnb-input-icon"><i class="fa fa-barcode"></i></span>
+                            <input asp-for="Category.Code" class="form-control fnb-category-input" placeholder="VD: DM001" />
+                        </div>
+                        <span asp-validation-for="Category.Code" class="text-danger"></span>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label fnb-category-label" asp-for="Category.Name">
+                            @L["Name"] <span class="text-danger">*</span>
+                        </label>
+                        <div class="fnb-input-icon-wrap">
+                            <span class="fnb-input-icon"><i class="fa fa-tag"></i></span>
+                            <input asp-for="Category.Name" class="form-control fnb-category-input" placeholder="Nhập tên danh mục" />
+                        </div>
+                        <span asp-validation-for="Category.Name" class="text-danger"></span>
+                    </div>
+
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label fnb-category-label" asp-for="Category.SortOrder">@L["SortOrder"]</label>
+                            <div class="fnb-input-icon-wrap">
+                                <span class="fnb-input-icon"><i class="fa fa-list"></i></span>
+                                <input asp-for="Category.SortOrder" class="form-control fnb-category-input" />
+                            </div>
+                            <span asp-validation-for="Category.SortOrder" class="text-danger"></span>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label fnb-category-label">@L["IsActive"]</label>
+                            <div class="fnb-status-box">
+                                <span id="CreateCategoryStatusText">Hoạt động</span>
+                                <label class="fnb-switch mb-0">
+                                    <input asp-for="Category.IsActive" type="checkbox" id="CreateCategoryIsActive" />
+                                    <span class="fnb-switch-slider"></span>
+                                </label>
+                            </div>
+                            <span asp-validation-for="Category.IsActive" class="text-danger"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="fnb-category-modal__footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                        @L["Close"]
+                    </button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fa fa-save me-1"></i> @L["Save"]
+                    </button>
+                </div>
             </div>
         </abp-modal-body>
-        <abp-modal-footer buttons="@(AbpModalButtons.Cancel | AbpModalButtons.Save)"></abp-modal-footer>
     </abp-modal>
 </form>
+
+<script>
+    (function () {
+        setTimeout(function () {
+            var $chk = $('#CreateCategoryIsActive');
+            var $txt = $('#CreateCategoryStatusText');
+
+            function syncText() {
+                $txt.text($chk.is(':checked') ? 'Hoạt động' : 'Tạm ngừng');
+            }
+
+            $chk.off('change.fnbCategoryCreate').on('change.fnbCategoryCreate', syncText);
+            syncText();
+        }, 0);
+    })();
+</script>

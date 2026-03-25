@@ -1,11 +1,14 @@
 ﻿$(function () {
     var l = abp.localization.getResource('MultiTenancy');
+    var fnb = window.genoraFnb;
     var service = genora.multiTenancy.appServices.appFnbOrders.appFnbOrder;
 
     var detailModal = new abp.ModalManager('/AppFnbOrders/DetailModal');
     var serviceStatusModal = new abp.ModalManager('/AppFnbOrders/UpdateServiceStatusModal');
     var paymentStatusModal = new abp.ModalManager('/AppFnbOrders/UpdatePaymentStatusModal');
     var cancelModal = new abp.ModalManager('/AppFnbOrders/CancelModal');
+
+    var autoRefreshTimer = null;
 
     if (window.flatpickr) {
         $('.public-time-input').flatpickr({
@@ -14,42 +17,24 @@
         });
     }
 
-    function toNullableInt(value) {
-        if (value === undefined || value === null || value === '') {
-            return null;
-        }
-
-        var n = parseInt(value, 10);
-        return isNaN(n) ? null : n;
-    }
-
-    function toNullableString(value) {
-        if (value === undefined || value === null) {
-            return null;
-        }
-
-        value = String(value).trim();
-        return value === '' ? null : value;
-    }
-
     function getFilter() {
         return {
-            filterText: toNullableString($('#FnbOrderFilterText').val()),
-            serviceStatus: toNullableInt($('#FnbOrderServiceStatusFilter').val()),
-            paymentStatus: toNullableInt($('#FnbOrderPaymentStatusFilter').val()),
-            creationTimeFrom: toNullableString($('#FnbOrderCreationTimeFrom').val()),
-            creationTimeTo: toNullableString($('#FnbOrderCreationTimeTo').val())
+            filterText: fnb.toNullableString($('#FnbOrderFilterText').val()),
+            serviceStatus: fnb.toNullableInt($('#FnbOrderServiceStatusFilter').val()),
+            paymentStatus: fnb.toNullableInt($('#FnbOrderPaymentStatusFilter').val()),
+            creationTimeFrom: fnb.toNullableString($('#FnbOrderCreationTimeFrom').val()),
+            creationTimeTo: fnb.toNullableString($('#FnbOrderCreationTimeTo').val())
         };
     }
 
     function renderServiceStatus(s) {
         s = Number(s);
 
-        if (s === 1) return '<span class="badge bg-secondary">' + l('FnbServiceStatus:Created') + '</span>';
-        if (s === 2) return '<span class="badge bg-info text-dark">' + l('FnbServiceStatus:Preparing') + '</span>';
-        if (s === 3) return '<span class="badge bg-primary">' + l('FnbServiceStatus:Delivering') + '</span>';
-        if (s === 4) return '<span class="badge bg-success">' + l('FnbServiceStatus:Served') + '</span>';
-        if (s === 5) return '<span class="badge bg-danger">' + l('FnbServiceStatus:Cancelled') + '</span>';
+        if (s === 1) return '<span class="fnb-badge fnb-badge--neutral">' + l('FnbServiceStatus:Created') + '</span>';
+        if (s === 2) return '<span class="fnb-badge fnb-badge--info">' + l('FnbServiceStatus:Preparing') + '</span>';
+        if (s === 3) return '<span class="fnb-badge fnb-badge--primary">' + l('FnbServiceStatus:Delivering') + '</span>';
+        if (s === 4) return '<span class="fnb-badge fnb-badge--success">' + l('FnbServiceStatus:Served') + '</span>';
+        if (s === 5) return '<span class="fnb-badge fnb-badge--danger">' + l('FnbServiceStatus:Cancelled') + '</span>';
 
         return '';
     }
@@ -57,35 +42,11 @@
     function renderPaymentStatus(s) {
         s = Number(s);
 
-        if (s === 1) return '<span class="badge bg-warning text-dark">' + l('FnbPaymentStatus:Unpaid') + '</span>';
-        if (s === 2) return '<span class="badge bg-success">' + l('FnbPaymentStatus:Paid') + '</span>';
-        if (s === 3) return '<span class="badge bg-danger">' + l('FnbPaymentStatus:Failed') + '</span>';
+        if (s === 1) return '<span class="fnb-badge fnb-badge--warning">' + l('FnbPaymentStatus:Unpaid') + '</span>';
+        if (s === 2) return '<span class="fnb-badge fnb-badge--success">' + l('FnbPaymentStatus:Paid') + '</span>';
+        if (s === 3) return '<span class="fnb-badge fnb-badge--danger">' + l('FnbPaymentStatus:Failed') + '</span>';
 
         return '';
-    }
-
-    function renderDateTime(data) {
-        if (!data) return '';
-
-        try {
-            if (window.luxon && luxon.DateTime) {
-                return luxon.DateTime.fromISO(data).toFormat('dd/MM/yyyy HH:mm');
-            }
-
-            var d = new Date(data);
-            if (isNaN(d.getTime())) return data;
-
-            var dd = String(d.getDate()).padStart(2, '0');
-            var mm = String(d.getMonth() + 1).padStart(2, '0');
-            var yyyy = d.getFullYear();
-            var hh = String(d.getHours()).padStart(2, '0');
-            var mi = String(d.getMinutes()).padStart(2, '0');
-
-            return dd + '/' + mm + '/' + yyyy + ' ' + hh + ':' + mi;
-        } catch (e) {
-            console.error('renderDateTime error:', e, data);
-            return data;
-        }
     }
 
     var dataTable = $('#FnbOrderTable').DataTable(
@@ -96,31 +57,7 @@
             searching: false,
             scrollX: true,
             order: [[7, "desc"]],
-            ajax: function (requestData, callback) {
-                var input = $.extend({}, getFilter(), {
-                    skipCount: requestData.start,
-                    maxResultCount: requestData.length,
-                    sorting: 'creationTime desc'
-                });
-
-                service.getList(input)
-                    .then(function (result) {
-                        callback({
-                            recordsTotal: result.totalCount || 0,
-                            recordsFiltered: result.totalCount || 0,
-                            data: result.items || []
-                        });
-                    })
-                    .catch(function (error) {
-                        console.error('FnbOrder getList error:', error);
-                        abp.notify.error(l('Error:Generic'));
-                        callback({
-                            recordsTotal: 0,
-                            recordsFiltered: 0,
-                            data: []
-                        });
-                    });
-            },
+            ajax: fnb.createServerAjax(service.getList, getFilter, 'creationTime desc'),
             columnDefs: [
                 {
                     title: l('Actions'),
@@ -129,8 +66,35 @@
                             {
                                 text: l('View'),
                                 action: function (data) {
-                                    if (!data || !data.record || !data.record.id) return;
-                                    detailModal.open({ id: data.record.id });
+                                    var id = fnb.safeId(data);
+                                    if (!id) return;
+                                    detailModal.open({ id: id });
+                                }
+                            },
+                            {
+                                text: function (data) {
+                                    var next = getNextServiceAction(data);
+                                    return next ? next.text : '';
+                                },
+                                visible: function (data) {
+                                    var canEdit = abp.auth.isGranted('MultiTenancy.AppFnbOrders.Edit') ||
+                                        abp.auth.isGranted('MultiTenancy.HostAppFnbOrders.Edit');
+
+                                    return canEdit && !!getNextServiceAction(data);
+                                },
+                                action: function (data) {
+                                    var next = getNextServiceAction(data.record);
+                                    console.log("next data", data)
+                                    console.log("next", next)
+                                    if (!next) return;
+
+                                    service.updateServiceStatus(data.record.id, {
+                                        serviceStatus: next.value,
+                                        internalNote: data.record.internalNote || null
+                                    }).then(function () {
+                                        abp.notify.success('Đã cập nhật trạng thái đơn hàng');
+                                        dataTable.ajax.reload(null, false);
+                                    });
                                 }
                             },
                             {
@@ -140,8 +104,9 @@
                                         abp.auth.isGranted('MultiTenancy.HostAppFnbOrders.Edit');
                                 },
                                 action: function (data) {
-                                    if (!data || !data.record || !data.record.id) return;
-                                    serviceStatusModal.open({ id: data.record.id });
+                                    var id = fnb.safeId(data);
+                                    if (!id) return;
+                                    serviceStatusModal.open({ id: id });
                                 }
                             },
                             {
@@ -151,28 +116,31 @@
                                         abp.auth.isGranted('MultiTenancy.HostAppFnbOrders.Edit');
                                 },
                                 action: function (data) {
-                                    if (!data || !data.record || !data.record.id) return;
-                                    paymentStatusModal.open({ id: data.record.id });
+                                    var id = fnb.safeId(data);
+                                    if (!id) return;
+                                    paymentStatusModal.open({ id: id });
                                 }
                             },
                             {
                                 text: l('CancelOrder'),
                                 visible: function (data) {
-                                    if (!(abp.auth.isGranted('MultiTenancy.AppFnbOrders.Edit') ||
-                                        abp.auth.isGranted('MultiTenancy.HostAppFnbOrders.Edit'))) {
+                                    var canEdit = abp.auth.isGranted('MultiTenancy.AppFnbOrders.Edit') ||
+                                        abp.auth.isGranted('MultiTenancy.HostAppFnbOrders.Edit');
+
+                                    if (!canEdit || !data) {
                                         return false;
                                     }
 
-                                    if (!data || !data.record) {
-                                        return false;
-                                    }
-
-                                    var serviceStatus = Number(data.record.serviceStatus);
-                                    return serviceStatus !== 4 && serviceStatus !== 5;
+                                    var status = Number(data.serviceStatus || 0);
+                                    console.log("status", status)
+                                    return status !== 4 && status !== 5;
                                 },
                                 action: function (data) {
-                                    if (!data || !data.record || !data.record.id) return;
-                                    cancelModal.open({ id: data.record.id });
+                                    console.log("data", data)
+                                    var id = data.record.id;
+                                    console.log("id", id)
+                                    if (!id) return;
+                                    cancelModal.open({ id: id });
                                 }
                             }
                         ]
@@ -185,8 +153,7 @@
                     title: l('TotalAmount'),
                     data: "totalAmount",
                     render: function (data) {
-                        var value = Number(data || 0);
-                        return value.toLocaleString('vi-VN');
+                        return '<span class="fnb-price">' + fnb.formatCurrency(data) + '</span>';
                     }
                 },
                 {
@@ -207,16 +174,80 @@
                     title: l('CreationTime'),
                     data: "creationTime",
                     render: function (data) {
-                        return renderDateTime(data);
+                        return fnb.formatDateTime(data);
                     }
                 }
             ]
         })
     );
 
-    $('#SearchFnbOrderButton').click(function (e) {
+    function reloadOrdersSilently() {
+        if (document.hidden) return;
+        dataTable.ajax.reload(null, false);
+    }
+
+    function stopAutoRefresh() {
+        if (autoRefreshTimer) {
+            clearInterval(autoRefreshTimer);
+            autoRefreshTimer = null;
+        }
+    }
+
+    function startAutoRefresh() {
+        stopAutoRefresh();
+
+        var interval = parseInt($('#FnbOrderAutoRefreshInterval').val() || '0', 10);
+        if (!interval || interval <= 0) return;
+
+        autoRefreshTimer = setInterval(function () {
+            reloadOrdersSilently();
+        }, interval);
+    }
+
+    function getNextServiceAction(record) {
+        console.log('record.serviceStatus', record.serviceStatus);
+        var s = Number(record.serviceStatus || 0);
+
+        if (s === 1) return { value: 2, text: 'Đang xử lý' };
+        if (s === 2) return { value: 3, text: 'Đang giao' };
+        if (s === 3) return { value: 4, text: 'Đã phục vụ' };
+
+        return null;
+    }
+
+    $('#FnbOrderAutoRefreshInterval').on('change', function () {
+        startAutoRefresh();
+    });
+
+    $(document).on('visibilitychange', function () {
+        if (document.hidden) {
+            stopAutoRefresh();
+        } else {
+            startAutoRefresh();
+        }
+    });
+
+    $('#SearchFnbOrderButton, #RefreshFnbOrderButton').click(function (e) {
         e.preventDefault();
         dataTable.ajax.reload();
+    });
+
+    $('#FnbOrderFilterText').on('keydown', function (e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            dataTable.ajax.reload();
+        }
+    });
+
+    $('.fnb-status-item').each(function () {
+        const isCurrent = $(this).data('current');
+
+        if (isCurrent) {
+            $(this).addClass('disabled active')
+                .css({ pointerEvents: 'none', opacity: 0.5 });
+
+            $hidden.val($(this).data('value'));
+        }
     });
 
     detailModal.onResult(function () {
@@ -237,4 +268,6 @@
         abp.notify.success(l('SavedSuccessfully'));
         dataTable.ajax.reload();
     });
+
+    startAutoRefresh();
 });

@@ -12,16 +12,71 @@
     Layout = null;
 }
 
-<form asp-page="/AppFnbOrders/CancelModal" method="post">
+<form asp-page="/AppFnbOrders/CancelModal"
+      method="post"
+      class="fnb-item-modal-form"
+      data-check-form-on-submit="true">
     <input type="hidden" asp-for="Id" />
-    <abp-modal>
-        <abp-modal-header title="@L["CancelOrder"]"></abp-modal-header>
-        <abp-modal-body>
-            <abp-select asp-for="Input.CancelReason"
-                        label="@L["CancelReason"]"
-                        asp-items="EnumSelectList.GetLocalizedEnumSelectList<FnbCancelReason>(L)" />
-            <abp-input asp-for="Input.CancelNote" label="@L["CancelNote"]" />
+
+    <abp-modal size="Large">
+        <abp-modal-body class="p-0">
+
+            <div class="fnb-item-modal fnb-item-modal--compact fnb-item-modal--fit">
+                <div class="fnb-item-modal__header fnb-item-modal__header--danger">
+                    <div class="fnb-item-modal__title-wrap">
+                        <div class="fnb-item-modal__title-row">
+                            <div class="fnb-item-modal__icon">
+                                <i class="fa fa-times"></i>
+                            </div>
+                            <div>
+                                <h3 class="fnb-item-modal__title">
+                                    Hủy đơn hàng
+                                </h3>
+                                <div class="fnb-item-modal__subtitle">
+                                    Vui lòng chọn lý do hủy
+                                </div>
+                            </div>
+                        </div>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                </div>
+                <div class="fnb-item-modal__body">
+                    <div class="fnb-radio-grid">
+                        @foreach (var item in Enum.GetValues<FnbCancelReason>())
+                        {
+                            var val = (int)item;
+                            var text = L[$"FnbCancelReason:{item}"];
+
+                            <label class="fnb-radio-card">
+                                <input type="radio"
+                                       name="Input.CancelReason"
+                                       value="@val"
+                                       @(Model.Input.CancelReason == item ? "checked" : "") />
+                                <span>@text</span>
+                            </label>
+                        }
+                    </div>
+
+                    <span asp-validation-for="Input.CancelReason" class="text-danger"></span>
+                    <div class="mt-3">
+                        <label class="fnb-label">Ghi chú</label>
+                        <textarea asp-for="Input.CancelNote"
+                                  class="form-control fnb-textarea"
+                                  rows="3"
+                                  placeholder="Nhập chi tiết lý do (không bắt buộc)"></textarea>
+                    </div>
+                </div>
+                <div class="fnb-item-modal__footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                        Hủy bỏ
+                    </button>
+                    <button type="submit" class="btn btn-danger">
+                        Xác nhận hủy
+                    </button>
+                </div>
+
+            </div>
+
         </abp-modal-body>
-        <abp-modal-footer buttons="@(AbpModalButtons.Cancel | AbpModalButtons.Save)"></abp-modal-footer>
     </abp-modal>
 </form>

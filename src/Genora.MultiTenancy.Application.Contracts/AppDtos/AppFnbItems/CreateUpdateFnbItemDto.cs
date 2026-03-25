@@ -1,5 +1,6 @@
 ﻿using System;
 using System.ComponentModel.DataAnnotations;
+using Volo.Abp.Content;
 
 namespace Genora.MultiTenancy.AppDtos.AppFnbItems;
 public class CreateUpdateFnbItemDto
@@ -25,4 +26,8 @@ public class CreateUpdateFnbItemDto
     public bool IsActive { get; set; } = true;
 
     public bool IsAvailable { get; set; } = true;
+
+    public IRemoteStreamContent? Images { get; set; }
+
+    public bool IsUploadImage { get; set; }
 }

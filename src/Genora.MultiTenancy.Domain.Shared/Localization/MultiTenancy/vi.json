@@ -54,6 +54,11 @@
     "Menu:AppFnbCategories": "Danh mục món",
     "Menu:AppFnbItems": "Món ăn / đồ uống",
     "Menu:AppFnbOrders": "Đơn hàng FnB",
+    "Menu:Refresh": "Làm mới",
+
+    "ImagePreview": "Preview ảnh",
+    "AutoRefresh": "Tự làm mới",
+    "Off": "Tắt",
 
     "Permission:MiniAppZaloAuth": "Quản lý xác thực & Ủy quyền Zalo OA",
     "Permission:MiniAppZaloAuth.Create": "Tạo mới",
@@ -627,6 +632,7 @@
     "FnbItemFilterText": "Tìm theo tên món",
     "ImageUrl": "Đường dẫn ảnh",
     "IsAvailable": "Còn món",
+    "FnbItemName": "Tên món ăn",
     "CategoryName": "Tên danh mục",
 
     "OrderCode": "Mã đơn hàng",
@@ -672,6 +678,8 @@
     "CancelOrder": "Hủy đơn",
     "CannotDeleteCategoryHasItems": "Không thể xóa danh mục vì vẫn còn món thuộc danh mục này.",
     "CannotDeleteItemHasOrders": "Không thể xóa món vì đã phát sinh đơn hàng. Hãy chuyển sang ngừng hiển thị.",
-    "SavedSuccessfully": "Lưu thành công."
+    "SavedSuccessfully": "Lưu thành công.",
+
+    "ImportSuccessfully": "Nhập dữ liệu thành công."
   }
 }
