@@ -9,6 +9,7 @@
     var cancelModal = new abp.ModalManager('/AppFnbOrders/CancelModal');
 
     var autoRefreshTimer = null;
+    var realtimeConnection = null;
 
     if (window.flatpickr) {
         $('.public-time-input').flatpickr({
@@ -49,6 +50,93 @@
         return '';
     }
 
+    var orderAudio = document.getElementById('fnbOrderNotificationAudio');
+    var audioUnlocked = false;
+    var lastSoundAt = 0;
+
+    function unlockAudio() {
+        if (!orderAudio || audioUnlocked) return;
+
+        try {
+            orderAudio.muted = true;
+            orderAudio.currentTime = 0;
+
+            var promise = orderAudio.play();
+            if (promise && typeof promise.then === 'function') {
+                promise.then(function () {
+                    orderAudio.pause();
+                    orderAudio.currentTime = 0;
+                    orderAudio.muted = false;
+                    audioUnlocked = true;
+                    console.log('Audio unlocked');
+                }).catch(function (err) {
+                    orderAudio.muted = false;
+                    console.warn('Audio unlock failed:', err);
+                });
+            } else {
+                orderAudio.pause();
+                orderAudio.currentTime = 0;
+                orderAudio.muted = false;
+                audioUnlocked = true;
+                console.log('Audio unlocked (no promise)');
+            }
+        } catch (err) {
+            orderAudio.muted = false;
+            console.warn('Audio unlock exception:', err);
+        }
+    }
+
+    function playSound() {
+        if (!orderAudio) {
+            console.warn('Audio element not found');
+            return;
+        }
+
+        var now = Date.now();
+        if (now - lastSoundAt < 1000) {
+            return;
+        }
+        lastSoundAt = now;
+
+        try {
+            orderAudio.pause();
+            orderAudio.currentTime = 0;
+
+            var promise = orderAudio.play();
+            if (promise && typeof promise.catch === 'function') {
+                promise.catch(function (err) {
+                    console.warn('Cannot play sound:', err);
+                    console.warn('Audio src:', orderAudio.currentSrc);
+                    console.warn('readyState:', orderAudio.readyState, 'networkState:', orderAudio.networkState);
+                });
+            }
+        } catch (err) {
+            console.warn('Cannot play sound:', err);
+        }
+    }
+
+    if (orderAudio) {
+        orderAudio.addEventListener('error', function () {
+            console.error('Audio load error:', orderAudio.error, orderAudio.currentSrc);
+        });
+    }
+
+    document.addEventListener('click', unlockAudio, { once: true });
+    document.addEventListener('keydown', unlockAudio, { once: true });
+    document.addEventListener('touchstart', unlockAudio, { once: true });
+
+    function getNextServiceAction(record) {
+        if (!record) return null;
+
+        var s = Number(record.serviceStatus || 0);
+
+        if (s === 1) return { value: 2, text: 'Đang xử lý' };
+        if (s === 2) return { value: 3, text: 'Đang giao' };
+        if (s === 3) return { value: 4, text: 'Đã phục vụ' };
+
+        return null;
+    }
+
     var dataTable = $('#FnbOrderTable').DataTable(
         abp.libs.datatables.normalizeConfiguration({
             processing: true,
@@ -84,8 +172,6 @@
                                 },
                                 action: function (data) {
                                     var next = getNextServiceAction(data.record);
-                                    console.log("next data", data)
-                                    console.log("next", next)
                                     if (!next) return;
 
                                     service.updateServiceStatus(data.record.id, {
@@ -132,13 +218,10 @@
                                     }
 
                                     var status = Number(data.serviceStatus || 0);
-                                    console.log("status", status)
                                     return status !== 4 && status !== 5;
                                 },
                                 action: function (data) {
-                                    console.log("data", data)
                                     var id = data.record.id;
-                                    console.log("id", id)
                                     if (!id) return;
                                     cancelModal.open({ id: id });
                                 }
@@ -204,15 +287,44 @@
         }, interval);
     }
 
-    function getNextServiceAction(record) {
-        console.log('record.serviceStatus', record.serviceStatus);
-        var s = Number(record.serviceStatus || 0);
+    function startRealtime() {
+        if (!window.signalR || !window.signalR.HubConnectionBuilder) {
+            console.warn('SignalR client is not loaded.');
+            return;
+        }
 
-        if (s === 1) return { value: 2, text: 'Đang xử lý' };
-        if (s === 2) return { value: 3, text: 'Đang giao' };
-        if (s === 3) return { value: 4, text: 'Đã phục vụ' };
+        realtimeConnection = new signalR.HubConnectionBuilder()
+            .withUrl("/signalr-hubs/fnb-orders")
+            .configureLogging(signalR.LogLevel.Trace)
+            .withAutomaticReconnect()
+            .build();
 
-        return null;
+        realtimeConnection.onclose(err => console.error("SignalR closed", err));
+        realtimeConnection.onreconnecting(err => console.warn("SignalR reconnecting", err));
+        realtimeConnection.onreconnected(id => console.log("SignalR reconnected", id));
+
+        realtimeConnection.on("fnb.order.created", function (orderId) {
+            console.log("NEW ORDER", orderId);
+            playSound();
+            reloadOrdersSilently();
+        });
+
+        realtimeConnection.on("fnb.order.updated", function (orderId) {
+            console.log("ORDER UPDATED", orderId);
+            reloadOrdersSilently();
+        });
+
+        realtimeConnection.start()
+            .then(function () {
+                console.log('SignalR connected');
+            })
+            .catch(function (err) {
+                console.error('SignalR start error:', err);
+            });
+
+        window.fnbPingBell = function () {
+            return realtimeConnection.invoke("PingBell");
+        };
     }
 
     $('#FnbOrderAutoRefreshInterval').on('change', function () {
@@ -239,17 +351,6 @@
         }
     });
 
-    $('.fnb-status-item').each(function () {
-        const isCurrent = $(this).data('current');
-
-        if (isCurrent) {
-            $(this).addClass('disabled active')
-                .css({ pointerEvents: 'none', opacity: 0.5 });
-
-            $hidden.val($(this).data('value'));
-        }
-    });
-
     detailModal.onResult(function () {
         dataTable.ajax.reload();
     });
@@ -270,4 +371,5 @@
     });
 
     startAutoRefresh();
+    startRealtime();
 });

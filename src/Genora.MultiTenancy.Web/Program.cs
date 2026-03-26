@@ -2,6 +2,7 @@
 
 using Genora.MultiTenancy.Web.Middlewares;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Serilog;
@@ -105,6 +106,16 @@ public class Program
             app.UseRouting();
             app.UseMiddleware<LogEnrichmentMiddleware>(); // đính TenantId, TenantName, UserId, UserName, CorrelationId
             app.UseStaticFiles();
+
+            app.MapHub<Genora.MultiTenancy.SignalR.FnbOrderHub>("/signalr-hubs/fnb-orders");
+
+            app.MapPost("/debug/fnb-bell", async (Genora.MultiTenancy.Realtime.IFnbOrderRealtimeNotifier notifier) =>
+            {
+                var id = Guid.NewGuid();
+                await notifier.OrderCreatedAsync(id);
+                return Results.Ok(new { orderId = id });
+            });
+
             // ... (Auth, Abp, Endpoints)
             await app.InitializeApplicationAsync();
             await app.RunAsync();

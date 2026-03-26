@@ -1,12 +1,16 @@
-﻿using Localization.Resources.AbpUi;
+﻿using Genora.MultiTenancy.AppServices.AppFnbOrders;
 using Genora.MultiTenancy.Localization;
+using Genora.MultiTenancy.Realtime;
+using Genora.MultiTenancy.SignalR;
+using Localization.Resources.AbpUi;
+using Microsoft.Extensions.DependencyInjection;
 using Volo.Abp.Account;
-using Volo.Abp.SettingManagement;
 using Volo.Abp.FeatureManagement;
 using Volo.Abp.Identity;
+using Volo.Abp.Localization;
 using Volo.Abp.Modularity;
 using Volo.Abp.PermissionManagement.HttpApi;
-using Volo.Abp.Localization;
+using Volo.Abp.SettingManagement;
 using Volo.Abp.TenantManagement;
 
 namespace Genora.MultiTenancy;
@@ -25,6 +29,7 @@ public class MultiTenancyHttpApiModule : AbpModule
     public override void ConfigureServices(ServiceConfigurationContext context)
     {
         ConfigureLocalization();
+        context.Services.AddTransient<IFnbOrderRealtimeNotifier, FnbOrderRealtimeNotifier>();
     }
 
     private void ConfigureLocalization()

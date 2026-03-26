@@ -3,6 +3,8 @@ using Genora.MultiTenancy.DomainModels.AppCustomers;
 using Genora.MultiTenancy.DomainModels.AppFnbItems;
 using Genora.MultiTenancy.DomainModels.AppFnbOrders;
 using Genora.MultiTenancy.Enums;
+using Genora.MultiTenancy.Realtime;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -22,19 +24,22 @@ public class MiniAppFnbOrderService : ApplicationService, IMiniAppFnbOrderServic
     private readonly IRepository<FnbItem, Guid> _itemRepository;
     private readonly IRepository<Customer, Guid> _customerRepository;
     private readonly ICurrentTenant _currentTenant;
+    private readonly IFnbOrderRealtimeNotifier _notifier;
 
     public MiniAppFnbOrderService(
         IRepository<FnbOrder, Guid> orderRepository,
         IRepository<FnbOrderItem, Guid> orderItemRepository,
         IRepository<FnbItem, Guid> itemRepository,
         IRepository<Customer, Guid> customerRepository,
-        ICurrentTenant currentTenant)
+        ICurrentTenant currentTenant,
+        IFnbOrderRealtimeNotifier notifier)
     {
         _orderRepository = orderRepository;
         _orderItemRepository = orderItemRepository;
         _itemRepository = itemRepository;
         _customerRepository = customerRepository;
         _currentTenant = currentTenant;
+        _notifier = notifier;
     }
 
     public async Task<MiniAppFnbOrderDetailDto> CreateAsync(CreateFnbOrderDto input)
@@ -97,6 +102,12 @@ public class MiniAppFnbOrderService : ApplicationService, IMiniAppFnbOrderServic
 
         await _orderRepository.InsertAsync(order, autoSave: true);
         await _orderItemRepository.InsertManyAsync(orderItems, autoSave: true);
+
+        Logger.LogInformation("Order saved: {OrderId}", order.Id);
+
+        await _notifier.OrderCreatedAsync(order.Id);
+
+        Logger.LogInformation("Realtime notified: {OrderId}", order.Id);
 
         return await GetAsync(order.Id);
     }

@@ -5,7 +5,10 @@ using Genora.MultiTenancy.DomainModels.AppFnbOrders;
 using Genora.MultiTenancy.Enums;
 using Genora.MultiTenancy.Features.AppFnbFeatures;
 using Genora.MultiTenancy.Permissions;
+using Genora.MultiTenancy.Realtime;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -32,6 +35,8 @@ public class AppFnbOrderService : ApplicationService, IAppFnbOrderService
     private readonly ICurrentTenant _currentTenant;
     private readonly IFeatureChecker _featureChecker;
     private readonly ICurrentUser _currentUser;
+    private readonly IFnbOrderRealtimeNotifier _notifier;
+    private readonly IHttpContextAccessor _httpContextAccessor;
 
     public AppFnbOrderService(
         IRepository<FnbOrder, Guid> orderRepository,
@@ -40,7 +45,9 @@ public class AppFnbOrderService : ApplicationService, IAppFnbOrderService
         IRepository<Customer, Guid> customerRepository,
         ICurrentTenant currentTenant,
         IFeatureChecker featureChecker,
-        ICurrentUser currentUser)
+        ICurrentUser currentUser,
+        IFnbOrderRealtimeNotifier notifier,
+        IHttpContextAccessor httpContextAccessor)
     {
         _orderRepository = orderRepository;
         _orderItemRepository = orderItemRepository;
@@ -49,6 +56,8 @@ public class AppFnbOrderService : ApplicationService, IAppFnbOrderService
         _currentTenant = currentTenant;
         _featureChecker = featureChecker;
         _currentUser = currentUser;
+        _notifier = notifier;
+        _httpContextAccessor = httpContextAccessor;
     }
 
     public async Task<PagedResultDto<FnbOrderDto>> GetListAsync(GetFnbOrderListInput input)
@@ -218,6 +227,12 @@ public class AppFnbOrderService : ApplicationService, IAppFnbOrderService
         await _orderRepository.InsertAsync(order, autoSave: true);
         await _orderItemRepository.InsertManyAsync(orderItems, autoSave: true);
 
+        Logger.LogInformation("Order saved: {OrderId}", order.Id);
+
+        await _notifier.OrderCreatedAsync(order.Id);
+
+        Logger.LogInformation("Realtime notified: {OrderId}", order.Id);
+
         return await GetAsync(order.Id);
     }
 
@@ -240,11 +255,9 @@ public class AppFnbOrderService : ApplicationService, IAppFnbOrderService
         var isValid = (order.ServiceStatus, input.ServiceStatus) switch
         {
             (var current, var next) when current == next => true,
-
             (FnbServiceStatus.Created, FnbServiceStatus.Preparing) => true,
             (FnbServiceStatus.Preparing, FnbServiceStatus.Delivering) => true,
             (FnbServiceStatus.Delivering, FnbServiceStatus.Served) => true,
-
             _ => false
         };
 

@@ -5,6 +5,7 @@
 @inject IStringLocalizer<MultiTenancyResource> L
 
 @section scripts {
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.7/signalr.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <abp-script src="/pages/fnb/fnb-shared.js" />
     <abp-script src="/Pages/AppFnbOrders/index.js" />
@@ -17,6 +18,10 @@
 }
 
 <div class="fnb-page">
+    <audio id="fnbOrderNotificationAudio" preload="auto">
+        <source src="/sounds/notification.mp3" type="audio/mpeg" />
+    </audio>
+
     <abp-card>
         <abp-card-header>
             <abp-row>
@@ -48,6 +53,7 @@
                         <input id="FnbOrderFilterText" class="form-control" type="text" />
                     </div>
                 </abp-column>
+
                 <abp-column size-md="_2">
                     <div class="mb-3">
                         <label class="form-label fnb-filter-label" for="FnbOrderServiceStatusFilter">@L["ServiceStatus"]</label>
@@ -61,6 +67,7 @@
                         </select>
                     </div>
                 </abp-column>
+
                 <abp-column size-md="_2">
                     <div class="mb-3">
                         <label class="form-label fnb-filter-label" for="FnbOrderPaymentStatusFilter">@L["PaymentStatus"]</label>
@@ -72,18 +79,21 @@
                         </select>
                     </div>
                 </abp-column>
+
                 <abp-column size-md="_2">
                     <div class="mb-3">
                         <label class="form-label fnb-filter-label" for="FnbOrderCreationTimeFrom">@L["CreateTimeFrom"]</label>
                         <input id="FnbOrderCreationTimeFrom" class="form-control public-time-input" type="text" />
                     </div>
                 </abp-column>
+
                 <abp-column size-md="_2">
                     <div class="mb-3">
                         <label class="form-label fnb-filter-label" for="FnbOrderCreationTimeTo">@L["CreateTimeTo"]</label>
                         <input id="FnbOrderCreationTimeTo" class="form-control public-time-input" type="text" />
                     </div>
                 </abp-column>
+
                 <abp-column size-md="_1" class="d-flex align-items-end">
                     <div class="mb-3 h-50">
                         <abp-button id="SearchFnbOrderButton"
