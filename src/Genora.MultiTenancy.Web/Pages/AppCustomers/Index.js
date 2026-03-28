@@ -83,7 +83,14 @@
                 { title: l('CustomerCode'), data: "customerCode" },
                 { title: l('FullName'), data: "fullName" },
                 { title: l('VgaCode'), data: "vgaCode" },
-                { title: l('PhoneNumber'), data: "phoneNumber" },
+                {
+                    title: l('CustomerPhoneMasked'),
+                    data: "customerPhoneMasked",
+                    // Sử dụng render để hiển thị tooltip với số điện thoại đầy đủ
+                    render: function (data, type, row) {
+                        return UIHelper.renderPhoneWithTooltip(data, row.phoneNumber);
+                    }
+                },
                 { title: l('CustomerType'), data: "customerTypeName" },
                 {
                     title: l('Email'),
@@ -99,7 +106,15 @@
                             : '<span class="badge bg-secondary">' + l('No') + '</span>';
                     }
                 }
-            ]
+            ],
+            // Kích hoạt tooltip sau mỗi lần vẽ lại bảng
+            drawCallback: function (settings) {
+                // Kích hoạt tooltip của Bootstrap cho các phần tử mới vẽ
+                $('[data-toggle="tooltip"]').tooltip({
+                    container: 'body', // Đảm bảo tooltip không bị cắt bởi khung table
+                    trigger: 'hover'   // Hiện khi di chuột vào
+                });
+            }
         })
     );
 

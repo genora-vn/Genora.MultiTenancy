@@ -12,6 +12,8 @@ public class AppCustomerDto : AuditedEntityDto<Guid>
 
     public string PhoneNumber { get; set; }
 
+    public string? CustomerPhoneMasked { get; set; }
+
     public string FullName { get; set; }
 
     /// <summary>

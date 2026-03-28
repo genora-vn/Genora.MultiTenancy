@@ -3,13 +3,11 @@
     var fnb = window.genoraFnb;
     var service = genora.multiTenancy.appServices.appFnbOrders.appFnbOrder;
 
-    var detailModal = new abp.ModalManager('/AppFnbOrders/DetailModal');
     var serviceStatusModal = new abp.ModalManager('/AppFnbOrders/UpdateServiceStatusModal');
     var paymentStatusModal = new abp.ModalManager('/AppFnbOrders/UpdatePaymentStatusModal');
     var cancelModal = new abp.ModalManager('/AppFnbOrders/CancelModal');
 
     var autoRefreshTimer = null;
-    var realtimeConnection = null;
 
     if (window.flatpickr) {
         $('.public-time-input').flatpickr({
@@ -50,81 +48,6 @@
         return '';
     }
 
-    var orderAudio = document.getElementById('fnbOrderNotificationAudio');
-    var audioUnlocked = false;
-    var lastSoundAt = 0;
-
-    function unlockAudio() {
-        if (!orderAudio || audioUnlocked) return;
-
-        try {
-            orderAudio.muted = true;
-            orderAudio.currentTime = 0;
-
-            var promise = orderAudio.play();
-            if (promise && typeof promise.then === 'function') {
-                promise.then(function () {
-                    orderAudio.pause();
-                    orderAudio.currentTime = 0;
-                    orderAudio.muted = false;
-                    audioUnlocked = true;
-                    console.log('Audio unlocked');
-                }).catch(function (err) {
-                    orderAudio.muted = false;
-                    console.warn('Audio unlock failed:', err);
-                });
-            } else {
-                orderAudio.pause();
-                orderAudio.currentTime = 0;
-                orderAudio.muted = false;
-                audioUnlocked = true;
-                console.log('Audio unlocked (no promise)');
-            }
-        } catch (err) {
-            orderAudio.muted = false;
-            console.warn('Audio unlock exception:', err);
-        }
-    }
-
-    function playSound() {
-        if (!orderAudio) {
-            console.warn('Audio element not found');
-            return;
-        }
-
-        var now = Date.now();
-        if (now - lastSoundAt < 1000) {
-            return;
-        }
-        lastSoundAt = now;
-
-        try {
-            orderAudio.pause();
-            orderAudio.currentTime = 0;
-
-            var promise = orderAudio.play();
-            if (promise && typeof promise.catch === 'function') {
-                promise.catch(function (err) {
-                    console.warn('Cannot play sound:', err);
-                    console.warn('Audio src:', orderAudio.currentSrc);
-                    console.warn('readyState:', orderAudio.readyState, 'networkState:', orderAudio.networkState);
-                });
-            }
-        } catch (err) {
-            console.warn('Cannot play sound:', err);
-        }
-    }
-
-    if (orderAudio) {
-        orderAudio.addEventListener('error', function () {
-            console.error('Audio load error:', orderAudio.error, orderAudio.currentSrc);
-        });
-    }
-
-    document.addEventListener('click', unlockAudio, { once: true });
-    document.addEventListener('keydown', unlockAudio, { once: true });
-    document.addEventListener('touchstart', unlockAudio, { once: true });
-
     function getNextServiceAction(record) {
         if (!record) return null;
 
@@ -156,27 +79,28 @@
                                 action: function (data) {
                                     var id = fnb.safeId(data);
                                     if (!id) return;
-                                    detailModal.open({ id: id });
+                                    window.location.href = `/AppFnbOrders/Kitchen/Detail?id=${id}`;
                                 }
                             },
                             {
                                 text: function (data) {
-                                    var next = getNextServiceAction(data);
+                                    var next = getNextServiceAction(data.record || data);
                                     return next ? next.text : '';
                                 },
                                 visible: function (data) {
                                     var canEdit = abp.auth.isGranted('MultiTenancy.AppFnbOrders.Edit') ||
                                         abp.auth.isGranted('MultiTenancy.HostAppFnbOrders.Edit');
 
-                                    return canEdit && !!getNextServiceAction(data);
+                                    return canEdit && !!getNextServiceAction(data.record || data);
                                 },
                                 action: function (data) {
-                                    var next = getNextServiceAction(data.record);
+                                    var record = data.record || data;
+                                    var next = getNextServiceAction(record);
                                     if (!next) return;
 
-                                    service.updateServiceStatus(data.record.id, {
+                                    service.updateServiceStatus(record.id, {
                                         serviceStatus: next.value,
-                                        internalNote: data.record.internalNote || null
+                                        internalNote: record.internalNote || null
                                     }).then(function () {
                                         abp.notify.success('Đã cập nhật trạng thái đơn hàng');
                                         dataTable.ajax.reload(null, false);
@@ -213,17 +137,18 @@
                                     var canEdit = abp.auth.isGranted('MultiTenancy.AppFnbOrders.Edit') ||
                                         abp.auth.isGranted('MultiTenancy.HostAppFnbOrders.Edit');
 
-                                    if (!canEdit || !data) {
+                                    var record = data.record || data;
+                                    if (!canEdit || !record) {
                                         return false;
                                     }
 
-                                    var status = Number(data.serviceStatus || 0);
+                                    var status = Number(record.serviceStatus || 0);
                                     return status !== 4 && status !== 5;
                                 },
                                 action: function (data) {
-                                    var id = data.record.id;
-                                    if (!id) return;
-                                    cancelModal.open({ id: id });
+                                    var record = data.record || data;
+                                    if (!record || !record.id) return;
+                                    cancelModal.open({ id: record.id });
                                 }
                             }
                         ]
@@ -233,10 +158,19 @@
                 { title: l('BagTag'), data: "bagTag" },
                 { title: l('CustomerName'), data: "customerName", defaultContent: "" },
                 {
+                    title: l('CustomerPhoneMasked'),
+                    data: "customerPhoneMasked",
+                    // Sử dụng customerPhoneMasked để hiển thị, nhưng tooltip sẽ hiển thị customerPhone thực tế
+                    render: function (data, type, row) {
+                        return UIHelper.renderPhoneWithTooltip(data, row.customerPhone);
+                    }
+                },
+                {
                     title: l('TotalAmount'),
                     data: "totalAmount",
                     render: function (data) {
-                        return '<span class="fnb-price">' + fnb.formatCurrency(data) + '</span>';
+                        console.log('Rendering totalAmount:', data);
+                        return '<span class="fnb-price kitchen-payment-grand">' + fnb.formatCurrency(data) + '<span class="vnd-symbol">đ</span></span>';
                     }
                 },
                 {
@@ -260,7 +194,15 @@
                         return fnb.formatDateTime(data);
                     }
                 }
-            ]
+            ],
+            // Sau mỗi lần vẽ lại bảng, kích hoạt lại tooltip cho các phần tử mới
+            drawCallback: function (settings) {
+                // Kích hoạt tooltip của Bootstrap cho các phần tử mới vẽ
+                $('[data-toggle="tooltip"]').tooltip({
+                    container: 'body', // Đảm bảo tooltip không bị cắt bởi khung table
+                    trigger: 'hover'   // Hiện khi di chuột vào
+                });
+            }
         })
     );
 
@@ -287,45 +229,22 @@
         }, interval);
     }
 
-    function startRealtime() {
-        if (!window.signalR || !window.signalR.HubConnectionBuilder) {
-            console.warn('SignalR client is not loaded.');
-            return;
+    var notify = window.genoraFnbNotify.init({
+        viewAllUrl: '/AppFnbOrders',
+        detailUrl: function (id) {
+            return '/AppFnbOrders/Kitchen/Detail?id=' + id;
+        },
+        onCreated: function () {
+            reloadOrdersSilently();
+        },
+        onUpdated: function () {
+            reloadOrdersSilently();
         }
+    });
 
-        realtimeConnection = new signalR.HubConnectionBuilder()
-            .withUrl("/signalr-hubs/fnb-orders")
-            .configureLogging(signalR.LogLevel.Trace)
-            .withAutomaticReconnect()
-            .build();
-
-        realtimeConnection.onclose(err => console.error("SignalR closed", err));
-        realtimeConnection.onreconnecting(err => console.warn("SignalR reconnecting", err));
-        realtimeConnection.onreconnected(id => console.log("SignalR reconnected", id));
-
-        realtimeConnection.on("fnb.order.created", function (orderId) {
-            console.log("NEW ORDER", orderId);
-            playSound();
-            reloadOrdersSilently();
-        });
-
-        realtimeConnection.on("fnb.order.updated", function (orderId) {
-            console.log("ORDER UPDATED", orderId);
-            reloadOrdersSilently();
-        });
-
-        realtimeConnection.start()
-            .then(function () {
-                console.log('SignalR connected');
-            })
-            .catch(function (err) {
-                console.error('SignalR start error:', err);
-            });
-
-        window.fnbPingBell = function () {
-            return realtimeConnection.invoke("PingBell");
-        };
-    }
+    window.fnbPingBell = function () {
+        return notify.invokePingBell();
+    };
 
     $('#FnbOrderAutoRefreshInterval').on('change', function () {
         startAutoRefresh();
@@ -351,10 +270,6 @@
         }
     });
 
-    detailModal.onResult(function () {
-        dataTable.ajax.reload();
-    });
-
     serviceStatusModal.onResult(function () {
         abp.notify.success(l('SavedSuccessfully'));
         dataTable.ajax.reload();
@@ -371,5 +286,4 @@
     });
 
     startAutoRefresh();
-    startRealtime();
 });

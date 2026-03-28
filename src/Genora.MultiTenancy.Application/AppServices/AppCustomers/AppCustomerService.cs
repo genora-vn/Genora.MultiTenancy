@@ -169,6 +169,7 @@ public class AppCustomerService :
             Id = x.c.Id,
             TenantId = x.c.TenantId,
             PhoneNumber = x.c.PhoneNumber,
+            CustomerPhoneMasked = PhoneHelper.MaskPhone(x.c.PhoneNumber),
             FullName = x.c.FullName,
             DateOfBirth = x.c.DateOfBirth,
             CustomerCode = x.c.CustomerCode ?? "",

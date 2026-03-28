@@ -32,4 +32,9 @@ public class AppGolfCourseDto : AuditedEntityDto<Guid>
     public string? NumberHoles { get; set; }
 
     public string? Utilities { get; set; }
+
+    public string? PaymentQrText { get; set; }
+    public string? PaymentQrBankCode { get; set; }
+    public string? PaymentQrBankAccount { get; set; }
+    public string? PaymentQrBankDisplay { get; set; }
 }

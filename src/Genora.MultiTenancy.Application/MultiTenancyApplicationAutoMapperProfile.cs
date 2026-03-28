@@ -60,7 +60,9 @@ public class MultiTenancyApplicationAutoMapperProfile : Profile
         #region AppGolfCourse auto mapper profile
         CreateMap<GolfCourse, AppGolfCourseDto>();
         CreateMap<GolfCourse, GolfCourseListData>();
-        CreateMap<CreateUpdateAppGolfCourseDto, GolfCourse>();
+        CreateMap<CreateUpdateAppGolfCourseDto, GolfCourse>()
+            .ForMember(x => x.Id, opt => opt.Ignore());
+        CreateMap<GolfCourse, CreateUpdateAppGolfCourseDto>();
         #endregion
 
         #region AppMembershipTier auto mapper profile

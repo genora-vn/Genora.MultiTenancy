@@ -54,6 +54,17 @@ public class CreateUpdateAppGolfCourseDto
     public string? NumberHoles { get; set; }
 
     public string? Utilities { get; set; }
+    [StringLength(200)]
+    public string? PaymentQrText { get; set; }
+
+    [StringLength(50)]
+    public string? PaymentQrBankCode { get; set; }
+
+    [StringLength(50)]
+    public string? PaymentQrBankAccount { get; set; }
+
+    [StringLength(200)]
+    public string? PaymentQrBankDisplay { get; set; }
     public List<GolfCourseUtilityDto> AvailableUtilities { get; set; } = new List<GolfCourseUtilityDto>();
     public List<GolfCourseHoleDto> AvailableHoles { get; set; } = new List<GolfCourseHoleDto>();
     public List<GolfCourseSessionOfDayDto> AvailableSessionsOfDay { get; set; } = new List<GolfCourseSessionOfDayDto>();

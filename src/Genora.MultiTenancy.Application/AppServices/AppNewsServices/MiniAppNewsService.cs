@@ -1,6 +1,7 @@
 ﻿using Genora.MultiTenancy.AppDtos.AppNews;
 using Genora.MultiTenancy.DomainModels.AppNews;
 using Genora.MultiTenancy.Enums;
+using Genora.MultiTenancy.Helpers;
 using Microsoft.Extensions.Configuration;
 using System;
 using System.Collections.Generic;
@@ -31,7 +32,7 @@ namespace Genora.MultiTenancy.AppServices.AppNewsServices
             // 1) bài chính
             var news = await _newsRepository.GetAsync(id);
             var result = ObjectMapper.Map<News, MiniAppNewsData>(news);
-            result.ThumbnailUrl = NormalizeThumb(result.ThumbnailUrl);
+            result.ThumbnailUrl = ImageHelper.NormalizeThumb(_configuration, result.ThumbnailUrl);
 
             var relRows = await _newsRelatedRepository.GetListAsync(x => x.NewsId == id);
             var relIds = relRows
@@ -53,7 +54,7 @@ namespace Genora.MultiTenancy.AppServices.AppNewsServices
                 var relatedDtos = ObjectMapper.Map<List<News>, List<MiniAppRelatedNewsData>>(relatedEntities);
                 foreach (var r in relatedDtos)
                 {
-                    r.ThumbnailUrl = NormalizeThumb(r.ThumbnailUrl);
+                    r.ThumbnailUrl = ImageHelper.NormalizeThumb(_configuration, r.ThumbnailUrl);
                 }
 
                 result.RelatedNews = relatedDtos;
@@ -93,7 +94,7 @@ namespace Genora.MultiTenancy.AppServices.AppNewsServices
 
             foreach (var item in dtoList)
             {
-                item.ThumbnailUrl = NormalizeThumb(item.ThumbnailUrl);
+                item.ThumbnailUrl = ImageHelper.NormalizeThumb(_configuration, item.ThumbnailUrl);
             }
 
             var newsIds = dtoList.Select(x => x.Id).Distinct().ToList();
@@ -115,7 +116,7 @@ namespace Genora.MultiTenancy.AppServices.AppNewsServices
 
                     foreach (var r in relatedDtos)
                     {
-                        r.ThumbnailUrl = NormalizeThumb(r.ThumbnailUrl);
+                        r.ThumbnailUrl = ImageHelper.NormalizeThumb(_configuration, r.ThumbnailUrl);
                     }
 
                     var relatedDict = relatedDtos.ToDictionary(x => x.Id, x => x);
@@ -141,15 +142,6 @@ namespace Genora.MultiTenancy.AppServices.AppNewsServices
 
             var result = new PagedResultDto<MiniAppNewsData>(total, dtoList);
             return new MiniAppNewsListDto { Data = result, Error = 0, Message = "Success" };
-        }
-
-        private string? NormalizeThumb(string? url)
-        {
-            if (!string.IsNullOrEmpty(url) && url.StartsWith("/uploads"))
-            {
-                return _configuration["App:AppUrl"] + url;
-            }
-            return url;
         }
     }
 }

@@ -11,6 +11,7 @@ using Genora.MultiTenancy.DomainModels.AppCustomerTypes;
 using Genora.MultiTenancy.DomainModels.AppEmails;
 using Genora.MultiTenancy.DomainModels.AppFnbCategories;
 using Genora.MultiTenancy.DomainModels.AppFnbItems;
+using Genora.MultiTenancy.DomainModels.AppFnbOrderActivity;
 using Genora.MultiTenancy.DomainModels.AppFnbOrders;
 using Genora.MultiTenancy.DomainModels.AppGolfCourses;
 using Genora.MultiTenancy.DomainModels.AppHomePageConfigs;
@@ -79,6 +80,7 @@ public class MultiTenancyDbContext :
     public DbSet<FnbItem> AppFnbItems { get; set; }
     public DbSet<FnbOrder> AppFnbOrders { get; set; }
     public DbSet<FnbOrderItem> AppFnbOrderItems { get; set; }
+    public DbSet<FnbOrderActivity> AppFnbOrderActivities { get; set; }
 
     // Identity
     public DbSet<IdentityUser> Users { get; set; }
@@ -407,6 +409,18 @@ public class MultiTenancyDbContext :
 
             b.HasIndex(x => x.TenantId);
             b.HasIndex(x => new { x.AppHomePageWidgetId, x.DisplayOrder });
+        });
+
+        builder.Entity<FnbOrderActivity>(b =>
+        {
+            b.ToTable("AppFnbOrderActivities");
+            b.ConfigureByConvention();
+
+            b.Property(x => x.ActionType).IsRequired().HasMaxLength(64);
+            b.Property(x => x.Title).IsRequired().HasMaxLength(256);
+            b.Property(x => x.Description).HasMaxLength(1000);
+
+            b.HasIndex(x => new { x.OrderId, x.ActionTime });
         });
     }
 }

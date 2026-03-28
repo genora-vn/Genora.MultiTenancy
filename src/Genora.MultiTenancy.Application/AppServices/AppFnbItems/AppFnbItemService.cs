@@ -5,6 +5,7 @@ using Genora.MultiTenancy.DomainModels.AppFnbCategories;
 using Genora.MultiTenancy.DomainModels.AppFnbItems;
 using Genora.MultiTenancy.DomainModels.AppFnbOrders;
 using Genora.MultiTenancy.Features.AppFnbFeatures;
+using Genora.MultiTenancy.Helpers;
 using Genora.MultiTenancy.Permissions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Configuration;
@@ -332,7 +333,7 @@ public class AppFnbItemService :
             ws.Cell(row, 2).Value = x.category.Name;
             ws.Cell(row, 3).Value = x.item.Name;
             ws.Cell(row, 4).Value = x.item.Price;
-            ws.Cell(row, 5).Value = NormalizeThumb(x.item.ImageUrl);
+            ws.Cell(row, 5).Value = ImageHelper.NormalizeThumb(_configuration, x.item.ImageUrl);
             ws.Cell(row, 6).Value = x.item.Description;
             ws.Cell(row, 7).Value = x.item.SortOrder;
             ws.Cell(row, 8).Value = x.item.IsActive;
@@ -479,14 +480,5 @@ public class AppFnbItemService :
             queryable.Where(x => x.CategoryId == categoryId).Select(x => (int?)x.SortOrder)
         );
         return (max ?? -1) + 1;
-    }
-
-    private string? NormalizeThumb(string? url)
-    {
-        if (!string.IsNullOrEmpty(url) && url.StartsWith("/uploads"))
-        {
-            return _configuration["App:AppUrl"] + url;
-        }
-        return url;
     }
 }

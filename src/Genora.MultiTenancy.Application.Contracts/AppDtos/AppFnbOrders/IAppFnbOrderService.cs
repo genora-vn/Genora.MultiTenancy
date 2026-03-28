@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Application.Services;
@@ -12,4 +13,7 @@ public interface IAppFnbOrderService : IApplicationService
     Task<FnbOrderDto> UpdateServiceStatusAsync(Guid id, UpdateFnbOrderServiceStatusDto input);
     Task<FnbOrderDto> UpdatePaymentStatusAsync(Guid id, UpdateFnbOrderPaymentStatusDto input);
     Task<FnbOrderDto> CancelAsync(Guid id, CancelFnbOrderDto input);
+    Task<FnbOrderHistoryPageDto> GetHistoryPageAsync(Guid id);
+    Task<FnbOrderHistoryPageDto> GetHistoryPageAsync(GetFnbOrderHistoryInput input);
+    Task<List<FnbKitchenBoardItemDto>> GetKitchenBoardAsync(GetFnbKitchenBoardInput input);
 }

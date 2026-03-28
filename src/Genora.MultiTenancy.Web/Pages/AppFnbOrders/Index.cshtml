@@ -8,6 +8,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.7/signalr.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <abp-script src="/pages/fnb/fnb-shared.js" />
+    <abp-script src="/pages/fnb/fnb-notify.js" />
     <abp-script src="/Pages/AppFnbOrders/index.js" />
     <abp-style src="/pages/fnb/fnb-shared.css" />
     <abp-style src="/Pages/Index.css" />
@@ -33,6 +34,7 @@
                         <label class="mb-0 fnb-filter-label">@L["AutoRefresh"]</label>
                         <select id="FnbOrderAutoRefreshInterval" class="form-select form-select-sm" style="width:120px;">
                             <option value="0">@L["Off"]</option>
+                            <option value="5000">5s</option>
                             <option value="10000">10s</option>
                             <option value="15000" selected>15s</option>
                             <option value="30000">30s</option>
@@ -43,6 +45,10 @@
                                 text="@L["Menu:Refresh"]"
                                 icon="refresh"
                                 button-type="Outline_Secondary" />
+                    <a href="/AppFnbOrders/Kitchen/Index" class="btn btn-outline-primary me-2">
+                        <i class="fa fa-th-large me-1"></i>
+                        Kitchen Board
+                    </a>
                 </abp-column>
             </abp-row>
 

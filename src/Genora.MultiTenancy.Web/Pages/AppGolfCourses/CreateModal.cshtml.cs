@@ -1,4 +1,4 @@
-using Genora.MultiTenancy.AppDtos.AppGolfCourses;
+﻿using Genora.MultiTenancy.AppDtos.AppGolfCourses;
 using Genora.MultiTenancy.AppDtos.AppOptionExtend;
 using Microsoft.AspNetCore.Mvc;
 using System.Collections.Generic;
@@ -16,7 +16,10 @@ public class CreateModalModel : MultiTenancyPageModel
 
     private readonly IAppGolfCourseService _appGolfCourseService;
     private readonly IOptionExtendService _extendService;
-    public CreateModalModel(IAppGolfCourseService appGolfCourseService, IOptionExtendService extendService)
+
+    public CreateModalModel(
+        IAppGolfCourseService appGolfCourseService,
+        IOptionExtendService extendService)
     {
         _appGolfCourseService = appGolfCourseService;
         _extendService = extendService;
@@ -26,6 +29,7 @@ public class CreateModalModel : MultiTenancyPageModel
     {
         var ulitities = new List<GolfCourseUtilityDto>();
         UtilityDtos = await _extendService.GetUtilitiesAsync();
+
         foreach (var utility in UtilityDtos)
         {
             ulitities.Add(new GolfCourseUtilityDto
@@ -64,7 +68,12 @@ public class CreateModalModel : MultiTenancyPageModel
             BookingStatus = 1,
             AvailableUtilities = ulitities,
             AvailableHoles = holes,
-            AvailableSessionsOfDay = sessions
+            AvailableSessionsOfDay = sessions,
+
+            PaymentQrText = "Quét mã để thanh toán nhanh",
+            PaymentQrBankCode = "vcb",
+            PaymentQrBankAccount = "",
+            PaymentQrBankDisplay = ""
         };
     }
 
@@ -78,6 +87,7 @@ public class CreateModalModel : MultiTenancyPageModel
                 GolfCourse.Utilities += utility.UtilityId + ",";
             }
         }
+
         foreach (var hole in GolfCourse.AvailableHoles)
         {
             if (hole.IsCheck)
@@ -86,6 +96,7 @@ public class CreateModalModel : MultiTenancyPageModel
                 GolfCourse.NumberHoles += hole.Id + ",";
             }
         }
+
         foreach (var session in GolfCourse.AvailableSessionsOfDay)
         {
             if (session.IsCheck)
@@ -94,6 +105,7 @@ public class CreateModalModel : MultiTenancyPageModel
                 GolfCourse.FrameTimes += session.Id + ",";
             }
         }
+
         await _appGolfCourseService.CreateAsync(GolfCourse);
         return NoContent();
     }

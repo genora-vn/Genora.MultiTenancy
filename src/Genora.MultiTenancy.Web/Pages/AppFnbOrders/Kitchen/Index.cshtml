@@ -1,0 +1,364 @@
+﻿@page
+@model Genora.MultiTenancy.Web.Pages.AppFnbOrders.Kitchen.IndexModel
+@using System.Text.Json
+
+@section styles {
+    <abp-style src="/pages/fnb/fnb-shared.css" />
+}
+
+@section scripts {
+    <abp-script src="/Abp/ApplicationConfigurationScript" />
+    <abp-script src="/pages/fnb/fnb-notify.js" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.7/signalr.min.js"></script>
+    <script>
+        $(function () {
+            const service = genora.multiTenancy.appServices.appFnbOrders.appFnbOrder;
+            const rawOrders = @Html.Raw(JsonSerializer.Serialize(Model.Orders));
+
+            const state = {
+                orders: (rawOrders || []).map(normalizeOrder).filter(x => !!x)
+            };
+
+            function pick(obj, camel, pascal) {
+                return obj?.[camel] ?? obj?.[pascal];
+            }
+
+            function normalizeStatus(value) {
+                if (value === null || value === undefined) return 0;
+                if (typeof value === 'number') return value;
+
+                const s = String(value).toLowerCase();
+                if (s === '1' || s === 'created') return 1;
+                if (s === '2' || s === 'preparing') return 2;
+                if (s === '3' || s === 'delivering') return 3;
+                if (s === '4' || s === 'served') return 4;
+                if (s === '5' || s === 'cancelled') return 5;
+
+                return Number(value) || 0;
+            }
+
+            function normalizeOrder(x) {
+                if (!x) return null;
+
+                return {
+                    id: pick(x, 'id', 'Id'),
+                    orderCode: pick(x, 'orderCode', 'OrderCode'),
+                    bagTag: pick(x, 'bagTag', 'BagTag'),
+                    customerName: pick(x, 'customerName', 'CustomerName'),
+                    customerPhoneMasked: pick(x, 'customerPhoneMasked', 'CustomerPhoneMasked'),
+                    customerTypeName: pick(x, 'customerTypeName', 'CustomerTypeName'),
+                    customerTypeColorCode: pick(x, 'customerTypeColorCode', 'CustomerTypeColorCode'),
+                    note: pick(x, 'note', 'Note'),
+                    totalAmount: Number(pick(x, 'totalAmount', 'TotalAmount') || 0),
+                    totalQuantity: Number(pick(x, 'totalQuantity', 'TotalQuantity') || 0),
+                    creationTime: pick(x, 'creationTime', 'CreationTime'),
+                    serviceStatus: normalizeStatus(pick(x, 'serviceStatus', 'ServiceStatus')),
+                    paymentStatus: normalizeStatus(pick(x, 'paymentStatus', 'PaymentStatus')),
+                    primaryImageUrl: pick(x, 'primaryImageUrl', 'PrimaryImageUrl'),
+                    itemsSummary: pick(x, 'itemsSummary', 'ItemsSummary'),
+                    itemNotesSummary: pick(x, 'itemNotesSummary', 'ItemNotesSummary'),
+                    latestActivityTitle: pick(x, 'latestActivityTitle', 'LatestActivityTitle'),
+                    latestActivityDescription: pick(x, 'latestActivityDescription', 'LatestActivityDescription'),
+                    itemNames: pick(x, 'itemNames', 'ItemNames') || []
+                };
+            }
+
+            function getColOrders(status) {
+                return state.orders.filter(x => Number(x.serviceStatus) === status);
+            }
+
+            function getNextAction(item) {
+                const s = Number(item.serviceStatus || 0);
+                if (s === 1) return { value: 2, text: 'Nhận đơn', icon: 'fa-cutlery', title: 'Cập nhật trạng thái: Đang xử lý' };
+                if (s === 2) return { value: 3, text: 'Đang giao', icon: 'fa-truck', title: 'Cập nhật trạng thái: Đang giao' };
+                if (s === 3) return { value: 4, text: 'Hoàn tất', icon: 'fa-check-circle', title: 'Cập nhật trạng thái: Đã phục vụ' };
+
+                return null;
+            }
+
+            function formatMoney(value) {
+                return Number(value || 0).toLocaleString('vi-VN');
+            }
+
+            function formatTime(value) {
+                if (!value) return '—';
+                try {
+                    const d = new Date(value);
+                    if (isNaN(d.getTime())) return value;
+                    const hh = String(d.getHours()).padStart(2, '0');
+                    const mm = String(d.getMinutes()).padStart(2, '0');
+                    const dd = String(d.getDate()).padStart(2, '0');
+                    const MM = String(d.getMonth() + 1).padStart(2, '0');
+                    return `${hh}:${mm} ${dd}/${MM}`;
+                } catch {
+                    return value;
+                }
+            }
+
+            function escapeHtml(text) {
+                if (text === null || text === undefined) return '';
+                return String(text)
+                    .replaceAll('&', '&amp;')
+                    .replaceAll('<', '&lt;')
+                    .replaceAll('>', '&gt;')
+                    .replaceAll('"', '&quot;')
+                    .replaceAll("'", '&#039;');
+            }
+
+            function renderTypeDot(item) {
+                const color = item.customerTypeColorCode || '#cbd5e1';
+                return `<span class="kb-customer-type-dot" style="background:${color};"></span>`;
+            }
+
+            function renderCard(item) {
+                const next = getNextAction(item);
+
+                return `
+                    <div class="kb-card" data-id="${item.id}">
+                        <div class="kb-card-head">
+                            <div class="kb-thumb">
+                                <img src="${item.primaryImageUrl || '/images/fnb/default-food.png'}"
+                                     onerror="this.src='/images/fnb/default-food.png'" />
+                            </div>
+
+                            <div class="kb-card-meta">
+                                <div class="kb-card-code">#${escapeHtml(item.orderCode)}</div>
+                                <div class="kb-card-sub">${escapeHtml(item.customerName || 'Khách lẻ')} • ${escapeHtml(item.bagTag || '')}</div>
+                                <div class="kb-customer-type">
+                                    ${renderTypeDot(item)}
+                                    <span>${escapeHtml(item.customerTypeName || 'Khách lẻ')} • ${item.totalQuantity || 0} món</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="kb-card-items">${escapeHtml(item.itemsSummary || 'Chưa có món')}</div>
+
+                        ${item.note ? `<div class="kb-card-note"><strong>Ghi chú khách:</strong> ${escapeHtml(item.note)}</div>` : ''}
+
+                        ${item.itemNotesSummary ? `<div class="kb-card-note"><strong>Ghi chú món:</strong> ${escapeHtml(item.itemNotesSummary)}</div>` : ''}
+
+                        ${item.latestActivityTitle ? `
+                            <div class="kb-card-activity">
+                                <strong>${escapeHtml(item.latestActivityTitle)}</strong>
+                                ${item.latestActivityDescription ? `<div>${escapeHtml(item.latestActivityDescription)}</div>` : ''}
+                            </div>` : ''}
+
+                        <div class="kb-card-footer">
+                            <div class="kb-card-time">${formatTime(item.creationTime)}</div>
+                            <div class="kb-card-total">${formatMoney(item.totalAmount)}<span class="vnd-symbol-underline">đ</div>
+                        </div>
+
+                        <div class="kb-card-actions">
+                            <button type="button" class="kb-action-btn kb-detail-btn" data-id="${item.id}">
+                                <i class="fa fa-eye"></i>
+                                <span>Chi tiết</span>
+                            </button>
+
+                            ${next ? `
+                            <button type="button"
+                                    class="kb-action-btn kb-next-btn"
+                                    data-id="${item.id}"
+                                    data-next-status="${next.value}">
+                                <i class="fa ${next.icon}"></i>
+                                <span>${next.text}</span>
+                            </button>` : ''}
+                        </div>
+                    </div>
+                `;
+            }
+
+            function renderColumn(containerId, status) {
+                const list = getColOrders(status);
+                const html = list.map(renderCard).join('');
+                $('#' + containerId).html(html || '<div class="kb-empty">Chưa có đơn</div>');
+                $('#count-' + containerId).text(list.length);
+            }
+
+            function renderSummary() {
+                $('#kb-summary-created').text(getColOrders(1).length);
+                $('#kb-summary-preparing').text(getColOrders(2).length);
+                $('#kb-summary-delivering').text(getColOrders(3).length);
+                $('#kb-summary-served').text(getColOrders(4).length);
+            }
+
+            function renderBoard() {
+                renderSummary();
+                renderColumn('kb-col-created', 1);
+                renderColumn('kb-col-preparing', 2);
+                renderColumn('kb-col-delivering', 3);
+                renderColumn('kb-col-served', 4);
+            }
+
+            function upsertOrder(payload) {
+                const order = normalizeOrder(payload);
+                if (!order || !order.id) return;
+
+                const idx = state.orders.findIndex(x => String(x.id) === String(order.id));
+
+                if (idx >= 0) {
+                    state.orders[idx] = order;
+                } else {
+                    state.orders.unshift(order);
+                }
+
+                renderBoard();
+            }
+
+            function patchOrderStatus(id, nextStatus) {
+                const idx = state.orders.findIndex(x => String(x.id) === String(id));
+                if (idx < 0) return;
+
+                const order = state.orders[idx];
+                const next = getNextAction({ serviceStatus: nextStatus - 1 });
+
+                order.serviceStatus = Number(nextStatus);
+                order.latestActivityTitle = next ? next.title : order.latestActivityTitle;
+
+                state.orders[idx] = order;
+                renderBoard();
+            }
+
+            $(document).on('click', '.kb-detail-btn', function (e) {
+                e.stopPropagation();
+                const id = $(this).data('id');
+                window.open(`/AppFnbOrders/Kitchen/Detail?id=${id}`, '_blank');
+            });
+
+            $(document).on('click', '.kb-next-btn', function (e) {
+                e.stopPropagation();
+
+                const id = $(this).data('id');
+                const nextStatus = Number($(this).data('next-status'));
+                const $btn = $(this);
+
+                $btn.prop('disabled', true);
+
+                patchOrderStatus(id, nextStatus);
+
+                service.updateServiceStatus(id, {
+                    serviceStatus: nextStatus,
+                    internalNote: null
+                }).then(function () {
+                    abp.notify.success('Đã cập nhật trạng thái đơn hàng');
+                }).catch(function (err) {
+                    console.error(err);
+                    window.location.reload();
+                }).always(function () {
+                    $btn.prop('disabled', false);
+                });
+            });
+
+            $(document).on('click', '.kb-card', function () {
+                const id = $(this).data('id');
+                window.location.href = `/AppFnbOrders/Kitchen/Detail?id=${id}`;
+            });
+
+            $('#KbRefreshBtn').on('click', function () {
+                window.location.reload();
+            });
+
+            window.genoraFnbNotify.init({
+                viewAllUrl: '/AppFnbOrders',
+                detailUrl: function (id) {
+                    return '/AppFnbOrders/Kitchen/Detail?id=' + id;
+                },
+                onCreated: function (payload) {
+                    upsertOrder(payload);
+                },
+                onUpdated: function (payload) {
+                    upsertOrder(payload);
+                }
+            });
+
+            renderBoard();
+        });
+    </script>
+}
+<div class="kb-page">
+    <div class="kb-page-head">
+        <div class="kb-page-title-wrap">
+            <h1 class="kb-page-title">Kitchen Board</h1>
+            <div class="kb-page-subtitle">Màn hình xử lý đơn hàng FnB theo thời gian thực</div>
+        </div>
+
+        <div class="kb-page-actions">
+            <button type="button" id="KbRefreshBtn" class="kb-page-refresh">
+                <i class="fa fa-refresh"></i>
+                <span>Làm mới</span>
+            </button>
+
+            <a href="/AppFnbOrders" class="kb-page-back">
+                <i class="fa fa-list"></i>
+                <span>Về danh sách đơn hàng</span>
+            </a>
+        </div>
+    </div>
+
+    <div class="kb-summary">
+        <div class="kb-summary-card">
+            <div class="kb-summary-head">
+                <div class="kb-summary-label">Mới tạo</div>
+                <div class="kb-summary-icon"><i class="fa fa-plus-circle"></i></div>
+            </div>
+            <div class="kb-summary-value" id="kb-summary-created">0</div>
+        </div>
+
+        <div class="kb-summary-card">
+            <div class="kb-summary-head">
+                <div class="kb-summary-label">Đang xử lý</div>
+                <div class="kb-summary-icon"><i class="fa fa-cutlery"></i></div>
+            </div>
+            <div class="kb-summary-value" id="kb-summary-preparing">0</div>
+        </div>
+
+        <div class="kb-summary-card">
+            <div class="kb-summary-head">
+                <div class="kb-summary-label">Đang giao</div>
+                <div class="kb-summary-icon"><i class="fa fa-truck"></i></div>
+            </div>
+            <div class="kb-summary-value" id="kb-summary-delivering">0</div>
+        </div>
+
+        <div class="kb-summary-card">
+            <div class="kb-summary-head">
+                <div class="kb-summary-label">Đã phục vụ</div>
+                <div class="kb-summary-icon"><i class="fa fa-check-circle"></i></div>
+            </div>
+            <div class="kb-summary-value" id="kb-summary-served">0</div>
+        </div>
+    </div>
+
+    <div class="kb-board">
+        <div class="kb-col kb-col--created">
+            <div class="kb-col-head">
+                <div class="kb-col-title"><i class="fa fa-plus-circle"></i> Mới tạo</div>
+                <div class="kb-col-count" id="count-kb-col-created">0</div>
+            </div>
+            <div class="kb-col-body" id="kb-col-created"></div>
+        </div>
+
+        <div class="kb-col kb-col--preparing">
+            <div class="kb-col-head">
+                <div class="kb-col-title"><i class="fa fa-cutlery"></i> Đang xử lý</div>
+                <div class="kb-col-count" id="count-kb-col-preparing">0</div>
+            </div>
+            <div class="kb-col-body" id="kb-col-preparing"></div>
+        </div>
+
+        <div class="kb-col kb-col--delivering">
+            <div class="kb-col-head">
+                <div class="kb-col-title"><i class="fa fa-truck"></i> Đang giao</div>
+                <div class="kb-col-count" id="count-kb-col-delivering">0</div>
+            </div>
+            <div class="kb-col-body" id="kb-col-delivering"></div>
+        </div>
+
+        <div class="kb-col kb-col--served">
+            <div class="kb-col-head">
+                <div class="kb-col-title"><i class="fa fa-check-circle"></i> Đã phục vụ</div>
+                <div class="kb-col-count" id="count-kb-col-served">0</div>
+            </div>
+            <div class="kb-col-body" id="kb-col-served"></div>
+        </div>
+    </div>
+</div>

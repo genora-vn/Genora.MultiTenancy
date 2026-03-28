@@ -109,3 +109,19 @@
 
     document.addEventListener("abp.dynamicScriptsInitialized", applyMenuTooltips);
 })();
+
+// Helper để hiển thị số điện thoại đã được mask, khi hover sẽ hiển thị số đầy đủ (nếu có)
+var UIHelper = {
+    renderPhoneWithTooltip: function (maskedPhone, fullPhone) {
+        if (!maskedPhone) return "";
+        var displayFull = fullPhone || maskedPhone;
+
+        // Sử dụng data-toggle="tooltip" của Bootstrap
+        return `<span data-toggle="tooltip" 
+                      data-placement="top" 
+                      title="${displayFull}" 
+                      style="cursor:pointer; border-bottom: 1px dashed #007bff; color: #007bff; display: inline-block;">
+                    ${maskedPhone}
+                </span>`;
+    }
+};

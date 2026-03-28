@@ -65,6 +65,36 @@
             </div>
 
             <div class="gc-section">
+                <div class="gc-section-title">Cấu hình thông tin thanh toán</div>
+
+                <div class="row g-3">
+                    <div class="col-md-3">
+                        <abp-input asp-for="GolfCourse.PaymentQrText"
+                                   label="QR Text"
+                                   placeholder="Ví dụ: Quét mã để thanh toán nhanh" />
+                    </div>
+
+                    <div class="col-md-2">
+                        <abp-input asp-for="GolfCourse.PaymentQrBankCode"
+                                   label="Mã ngân hàng QR"
+                                   placeholder="Ví dụ: vcb" />
+                    </div>
+
+                    <div class="col-md-2">
+                        <abp-input asp-for="GolfCourse.PaymentQrBankAccount"
+                                   label="Số tài khoản QR"
+                                   placeholder="Ví dụ: 123456789" />
+                    </div>
+
+                    <div class="col-5">
+                        <abp-input asp-for="GolfCourse.PaymentQrBankDisplay"
+                                   label="Thông tin hiển thị QR"
+                                   placeholder="Ví dụ: VIETCOMBANK: 123456789" />
+                    </div>
+                </div>
+            </div>
+
+            <div class="gc-section">
                 <div class="gc-section-title">Thông tin hiển thị</div>
 
                 <div class="row g-3">

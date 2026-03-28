@@ -1,6 +1,7 @@
 ﻿using Genora.MultiTenancy.AppDtos.AppFnbOrders;
 using Genora.MultiTenancy.DomainModels.AppCustomers;
 using Genora.MultiTenancy.DomainModels.AppFnbItems;
+using Genora.MultiTenancy.DomainModels.AppFnbOrderActivity;
 using Genora.MultiTenancy.DomainModels.AppFnbOrders;
 using Genora.MultiTenancy.Enums;
 using Genora.MultiTenancy.Realtime;
@@ -23,6 +24,7 @@ public class MiniAppFnbOrderService : ApplicationService, IMiniAppFnbOrderServic
     private readonly IRepository<FnbOrderItem, Guid> _orderItemRepository;
     private readonly IRepository<FnbItem, Guid> _itemRepository;
     private readonly IRepository<Customer, Guid> _customerRepository;
+    private readonly IRepository<FnbOrderActivity, Guid> _orderActivityRepository;
     private readonly ICurrentTenant _currentTenant;
     private readonly IFnbOrderRealtimeNotifier _notifier;
 
@@ -32,7 +34,8 @@ public class MiniAppFnbOrderService : ApplicationService, IMiniAppFnbOrderServic
         IRepository<FnbItem, Guid> itemRepository,
         IRepository<Customer, Guid> customerRepository,
         ICurrentTenant currentTenant,
-        IFnbOrderRealtimeNotifier notifier)
+        IFnbOrderRealtimeNotifier notifier,
+        IRepository<FnbOrderActivity, Guid> orderActivityRepository)
     {
         _orderRepository = orderRepository;
         _orderItemRepository = orderItemRepository;
@@ -40,6 +43,7 @@ public class MiniAppFnbOrderService : ApplicationService, IMiniAppFnbOrderServic
         _customerRepository = customerRepository;
         _currentTenant = currentTenant;
         _notifier = notifier;
+        _orderActivityRepository = orderActivityRepository;
     }
 
     public async Task<MiniAppFnbOrderDetailDto> CreateAsync(CreateFnbOrderDto input)
@@ -102,6 +106,20 @@ public class MiniAppFnbOrderService : ApplicationService, IMiniAppFnbOrderServic
 
         await _orderRepository.InsertAsync(order, autoSave: true);
         await _orderItemRepository.InsertManyAsync(orderItems, autoSave: true);
+
+        await _orderActivityRepository.InsertAsync(
+           new FnbOrderActivity(
+               GuidGenerator.Create(),
+               order.Id,
+               "Created",
+               "Đơn hàng được khởi tạo",
+               $"Đơn hàng {order.OrderCode} đã được tạo.",
+               Clock.Now,
+               false,
+               _currentTenant.Id
+           ),
+           autoSave: true
+       );
 
         Logger.LogInformation("Order saved: {OrderId}", order.Id);
 

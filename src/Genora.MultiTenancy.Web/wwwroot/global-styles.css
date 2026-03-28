@@ -33,3 +33,19 @@ a.genora-coming-soon {
     font-size: 12px;
     opacity: 0.9;
 }
+
+/*CSS để hiển thị số điện thoại đầy đủ khi hover*/
+span[title] {
+    transition: all 0.2s;
+}
+
+    span[title]:hover {
+        color: #007bff; /* Đổi màu xanh */
+        font-weight: bold;
+    }
+.phone-masked-wrapper:hover::after {
+    content: " (Full: " attr(title) ")";
+    color: red;
+    font-weight: bold;
+    margin-left: 5px;
+}
