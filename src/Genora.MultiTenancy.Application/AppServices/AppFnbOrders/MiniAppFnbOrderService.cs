@@ -132,10 +132,11 @@ public class MiniAppFnbOrderService : ApplicationService, IMiniAppFnbOrderServic
         );
 
         Logger.LogWarning(
-            "FNB_ORDER_BUILD_MARKER_20260328_1635 | TenantId={TenantId} | AssignedItemIds={AssignedItemIds}",
-            _currentTenant.Id,
-            string.Join(",", orderItems.Select(x => x.ItemId.HasValue ? x.ItemId.Value.ToString() : "NULL"))
-        );
+    "FNB_ORDER_BUILD_MARKER_20260328_1713 | TenantId={TenantId} | OrderId={OrderId} | AssignedItemIds={AssignedItemIds}",
+    _currentTenant.Id,
+    order.Id,
+    string.Join(",", orderItems.Select(x => x.ItemId.HasValue ? x.ItemId.Value.ToString() : "NULL"))
+);
 
         await _orderRepository.InsertAsync(order, autoSave: true);
 
