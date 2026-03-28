@@ -17,7 +17,6 @@ using Volo.Abp.Application.Dtos;
 using Volo.Abp.Application.Services;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.MultiTenancy;
-using Volo.Abp.Uow;
 using Volo.Abp.Validation;
 
 namespace Genora.MultiTenancy.AppServices.AppFnbOrders;
@@ -32,7 +31,6 @@ public class MiniAppFnbOrderService : ApplicationService, IMiniAppFnbOrderServic
     private readonly ICurrentTenant _currentTenant;
     private readonly IFnbOrderRealtimeNotifier _notifier;
     private readonly IConfiguration _configuration;
-    private readonly IUnitOfWorkManager _uowManager;
 
     public MiniAppFnbOrderService(
         IRepository<FnbOrder, Guid> orderRepository,
@@ -42,8 +40,7 @@ public class MiniAppFnbOrderService : ApplicationService, IMiniAppFnbOrderServic
         ICurrentTenant currentTenant,
         IFnbOrderRealtimeNotifier notifier,
         IRepository<FnbOrderActivity, Guid> orderActivityRepository,
-        IConfiguration configuration,
-        IUnitOfWorkManager uowManager)
+        IConfiguration configuration)
     {
         _orderRepository = orderRepository;
         _orderItemRepository = orderItemRepository;
@@ -53,7 +50,6 @@ public class MiniAppFnbOrderService : ApplicationService, IMiniAppFnbOrderServic
         _notifier = notifier;
         _orderActivityRepository = orderActivityRepository;
         _configuration = configuration;
-        _uowManager = uowManager;
     }
 
     public async Task<MiniAppFnbOrderDetailDto> CreateAsync(CreateFnbOrderDto input)
@@ -68,114 +64,99 @@ public class MiniAppFnbOrderService : ApplicationService, IMiniAppFnbOrderServic
             throw new AbpValidationException("Validation failed");
         }
 
-        var tenantId = _currentTenant.Id;
-        if (!tenantId.HasValue)
+        Customer? customer = null;
+        if (input.CustomerId.HasValue)
         {
-            throw new UserFriendlyException("Không xác định được tenant hiện tại.");
+            customer = await _customerRepository.FirstOrDefaultAsync(x => x.Id == input.CustomerId.Value);
         }
 
-        Guid orderId;
+        var itemIds = input.Items.Select(x => x.ItemId).Distinct().ToList();
+        var itemQuery = await _itemRepository.GetQueryableAsync();
+        var items = await AsyncExecuter.ToListAsync(itemQuery.Where(x => itemIds.Contains(x.Id)));
 
-        using (_currentTenant.Change(tenantId.Value))
-        using (var uow = _uowManager.Begin(requiresNew: true, isTransactional: true))
+        if (items.Count != itemIds.Count)
         {
-            Customer? customer = null;
-            if (input.CustomerId.HasValue)
-            {
-                customer = await _customerRepository.FirstOrDefaultAsync(x => x.Id == input.CustomerId.Value);
-            }
+            throw new UserFriendlyException("Có món không tồn tại.");
+        }
 
-            var itemIds = input.Items.Select(x => x.ItemId).Distinct().ToList();
-            var itemQuery = await _itemRepository.GetQueryableAsync();
-            var items = await AsyncExecuter.ToListAsync(itemQuery.Where(x => itemIds.Contains(x.Id)));
+        var invalidItem = items.FirstOrDefault(x => !x.IsActive || !x.IsAvailable);
+        if (invalidItem != null)
+        {
+            throw new UserFriendlyException($"Món '{invalidItem.Name}' hiện không khả dụng.");
+        }
 
-            if (items.Count != itemIds.Count)
-            {
-                throw new UserFriendlyException("Có món không tồn tại.");
-            }
+        var order = new FnbOrder(
+            GuidGenerator.Create(),
+            await GenerateOrderCodeAsync(),
+            input.BagTag.Trim(),
+            _currentTenant.Id)
+        {
+            CustomerId = input.CustomerId,
+            CustomerName = !string.IsNullOrWhiteSpace(input.CustomerName) ? input.CustomerName.Trim() : customer?.FullName,
+            CustomerPhone = !string.IsNullOrWhiteSpace(input.CustomerPhone) ? input.CustomerPhone.Trim() : customer?.PhoneNumber,
+            Note = string.IsNullOrWhiteSpace(input.Note) ? null : input.Note.Trim(),
+            InternalNote = string.IsNullOrWhiteSpace(input.InternalNote) ? null : input.InternalNote.Trim(),
+            PaymentMethod = input.PaymentMethod,
+            ServiceStatus = FnbServiceStatus.Created,
+            PaymentStatus = FnbPaymentStatus.Unpaid
+        };
 
-            var invalidItem = items.FirstOrDefault(x => !x.IsActive || !x.IsAvailable);
-            if (invalidItem != null)
-            {
-                throw new UserFriendlyException($"Món '{invalidItem.Name}' hiện không khả dụng.");
-            }
+        decimal total = 0;
+        var orderItems = new List<FnbOrderItem>();
 
-            var order = new FnbOrder(
+        foreach (var row in input.Items)
+        {
+            var item = items.First(x => x.Id == row.ItemId);
+
+            total += item.Price * row.Quantity;
+
+            orderItems.Add(new FnbOrderItem(
                 GuidGenerator.Create(),
-                await GenerateOrderCodeAsync(),
-                input.BagTag.Trim(),
-                tenantId.Value)
-            {
-                CustomerId = input.CustomerId,
-                CustomerName = !string.IsNullOrWhiteSpace(input.CustomerName) ? input.CustomerName.Trim() : customer?.FullName,
-                CustomerPhone = !string.IsNullOrWhiteSpace(input.CustomerPhone) ? input.CustomerPhone.Trim() : customer?.PhoneNumber,
-                Note = string.IsNullOrWhiteSpace(input.Note) ? null : input.Note.Trim(),
-                InternalNote = string.IsNullOrWhiteSpace(input.InternalNote) ? null : input.InternalNote.Trim(),
-                PaymentMethod = input.PaymentMethod,
-                ServiceStatus = FnbServiceStatus.Created,
-                PaymentStatus = FnbPaymentStatus.Unpaid
-            };
-
-            decimal total = 0;
-            var orderItems = new List<FnbOrderItem>();
-
-            foreach (var row in input.Items)
-            {
-                var item = items.First(x => x.Id == row.ItemId);
-
-                total += item.Price * row.Quantity;
-
-                orderItems.Add(new FnbOrderItem(
-                    GuidGenerator.Create(),
-                    order.Id,
-                    item.Name,
-                    item.Price,
-                    row.Quantity)
-                {
-                    ItemId = item.Id,
-                    Note = string.IsNullOrWhiteSpace(row.Note) ? null : row.Note.Trim()
-                });
-            }
-
-            order.TotalAmount = total;
-
-            Logger.LogInformation(
-                "MiniApp CreateAsync before save. TenantId={TenantId}, OrderId={OrderId}, ItemIds={ItemIds}",
-                _currentTenant.Id,
                 order.Id,
-                string.Join(",", orderItems.Select(x => x.ItemId))
-            );
-
-            await _orderRepository.InsertAsync(order, autoSave: false);
-
-            foreach (var orderItem in orderItems)
+                item.Name,
+                item.Price,
+                row.Quantity)
             {
-                await _orderItemRepository.InsertAsync(orderItem, autoSave: false);
-            }
-
-            await _orderActivityRepository.InsertAsync(
-                new FnbOrderActivity(
-                    GuidGenerator.Create(),
-                    order.Id,
-                    "Created",
-                    "Đơn hàng được khởi tạo",
-                    $"Đơn hàng {order.OrderCode} đã được tạo.",
-                    Clock.Now,
-                    false,
-                    tenantId.Value
-                ),
-                autoSave: false
-            );
-
-            await uow.CompleteAsync();
-            orderId = order.Id;
+                ItemId = null,
+                Note = string.IsNullOrWhiteSpace(row.Note) ? null : row.Note.Trim()
+            });
         }
 
-        using (_currentTenant.Change(tenantId.Value))
+        order.TotalAmount = total;
+
+        Logger.LogInformation(
+            "MiniApp CreateAsync before save. TenantId={TenantId}, OrderId={OrderId}, ItemIds={ItemIds}",
+            _currentTenant.Id,
+            order.Id,
+            string.Join(",", orderItems.Select(x => x.ItemId))
+        );
+
+        await _orderRepository.InsertAsync(order, autoSave: true);
+
+        foreach (var orderItem in orderItems)
         {
-            await _notifier.OrderCreatedAsync(orderId);
-            return await GetAsync(orderId);
+            await _orderItemRepository.InsertAsync(orderItem, autoSave: false);
         }
+
+        await _orderActivityRepository.InsertAsync(
+            new FnbOrderActivity(
+                GuidGenerator.Create(),
+                order.Id,
+                "Created",
+                "Đơn hàng được khởi tạo",
+                $"Đơn hàng {order.OrderCode} đã được tạo.",
+                Clock.Now,
+                false,
+                _currentTenant.Id
+            ),
+            autoSave: false
+        );
+
+        await CurrentUnitOfWork.SaveChangesAsync();
+
+        await _notifier.OrderCreatedAsync(order.Id);
+
+        return await GetAsync(order.Id);
     }
 
     public async Task<MiniAppFnbOrderListDto> GetListAsync(GetMiniAppFnbOrderListInput input)

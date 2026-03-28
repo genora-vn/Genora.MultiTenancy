@@ -56,16 +56,13 @@ public class FnbOrderRealtimeNotifier : IFnbOrderRealtimeNotifier
     {
         var order = await _orderRepository.GetAsync(orderId);
         var payload = await BuildPayloadAsync(order);
-
         var group = GetGroupName(order.TenantId);
 
         _logger.LogInformation(
-            "Broadcast fnb.order.created {OrderId} | TenantId={TenantId} | Group={Group} | OrderCode={OrderCode} | Customer={CustomerName}",
+            "Broadcast fnb.order.created {OrderId} | TenantId={TenantId} | Group={Group}",
             payload.Id,
             order.TenantId,
-            group,
-            payload.OrderCode,
-            payload.CustomerName);
+            group);
 
         await _hubContext.Clients.Group(group).SendAsync("fnb.order.created", payload);
     }
@@ -74,16 +71,13 @@ public class FnbOrderRealtimeNotifier : IFnbOrderRealtimeNotifier
     {
         var order = await _orderRepository.GetAsync(orderId);
         var payload = await BuildPayloadAsync(order);
-
         var group = GetGroupName(order.TenantId);
 
         _logger.LogInformation(
-            "Broadcast fnb.order.updated {OrderId} | TenantId={TenantId} | Group={Group} | OrderCode={OrderCode} | Customer={CustomerName}",
+            "Broadcast fnb.order.updated {OrderId} | TenantId={TenantId} | Group={Group}",
             payload.Id,
             order.TenantId,
-            group,
-            payload.OrderCode,
-            payload.CustomerName);
+            group);
 
         await _hubContext.Clients.Group(group).SendAsync("fnb.order.updated", payload);
     }
