@@ -1,27 +1,31 @@
 ﻿using Genora.MultiTenancy.AppDtos.AppFnbItems;
 using Genora.MultiTenancy.DomainModels.AppFnbCategories;
 using Genora.MultiTenancy.DomainModels.AppFnbItems;
+using Genora.MultiTenancy.Helpers;
+using Microsoft.Extensions.Configuration;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
-using Volo.Abp;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Application.Services;
 using Volo.Abp.Domain.Repositories;
-using Volo.Abp.MultiTenancy;
 
 namespace Genora.MultiTenancy.AppServices.AppFnbItems;
+
 public class MiniAppFnbItemService : ApplicationService, IMiniAppFnbItemService
 {
     private readonly IRepository<FnbItem, Guid> _itemRepository;
     private readonly IRepository<FnbCategory, Guid> _categoryRepository;
+    private readonly IConfiguration _configuration;
 
     public MiniAppFnbItemService(
         IRepository<FnbItem, Guid> itemRepository,
-        IRepository<FnbCategory, Guid> categoryRepository)
+        IRepository<FnbCategory, Guid> categoryRepository,
+        IConfiguration configuration)
     {
         _itemRepository = itemRepository;
         _categoryRepository = categoryRepository;
+        _configuration = configuration;
     }
 
     public async Task<MiniAppFnbItemListDto> GetListAsync(GetMiniAppFnbItemListInput input)
@@ -43,7 +47,9 @@ public class MiniAppFnbItemService : ApplicationService, IMiniAppFnbItemService
         if (!input.FilterText.IsNullOrWhiteSpace())
         {
             var filter = input.FilterText.Trim();
-            query = query.Where(x => x.item.Name.Contains(filter) || (x.item.Description != null && x.item.Description.Contains(filter)));
+            query = query.Where(x =>
+                x.item.Name.Contains(filter) ||
+                (x.item.Description != null && x.item.Description.Contains(filter)));
         }
 
         if (input.IsAvailable.HasValue)
@@ -52,6 +58,7 @@ public class MiniAppFnbItemService : ApplicationService, IMiniAppFnbItemService
         }
 
         var total = await AsyncExecuter.CountAsync(query);
+
         var rows = await AsyncExecuter.ToListAsync(
             query.OrderBy(x => x.category.SortOrder)
                  .ThenBy(x => x.item.SortOrder)
@@ -67,7 +74,7 @@ public class MiniAppFnbItemService : ApplicationService, IMiniAppFnbItemService
             CategoryName = x.category.Name,
             Name = x.item.Name,
             Price = x.item.Price,
-            ImageUrl = x.item.ImageUrl,
+            ImageUrl = ImageHelper.NormalizeThumb(_configuration, x.item.ImageUrl),
             Description = x.item.Description,
             IsAvailable = x.item.IsAvailable,
             SortOrder = x.item.SortOrder
@@ -97,7 +104,7 @@ public class MiniAppFnbItemService : ApplicationService, IMiniAppFnbItemService
                 CategoryName = category.Name,
                 Name = entity.Name,
                 Price = entity.Price,
-                ImageUrl = entity.ImageUrl,
+                ImageUrl = ImageHelper.NormalizeThumb(_configuration, entity.ImageUrl),
                 Description = entity.Description,
                 IsAvailable = entity.IsAvailable,
                 SortOrder = entity.SortOrder

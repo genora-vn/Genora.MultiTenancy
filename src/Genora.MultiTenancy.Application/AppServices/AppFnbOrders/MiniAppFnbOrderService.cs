@@ -4,20 +4,23 @@ using Genora.MultiTenancy.DomainModels.AppFnbItems;
 using Genora.MultiTenancy.DomainModels.AppFnbOrderActivity;
 using Genora.MultiTenancy.DomainModels.AppFnbOrders;
 using Genora.MultiTenancy.Enums;
+using Genora.MultiTenancy.Helpers;
 using Genora.MultiTenancy.Realtime;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Linq.Dynamic.Core;
 using System.Threading.Tasks;
 using Volo.Abp;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Application.Services;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.MultiTenancy;
+using Volo.Abp.Validation;
 
 namespace Genora.MultiTenancy.AppServices.AppFnbOrders;
+
 public class MiniAppFnbOrderService : ApplicationService, IMiniAppFnbOrderService
 {
     private readonly IRepository<FnbOrder, Guid> _orderRepository;
@@ -27,6 +30,7 @@ public class MiniAppFnbOrderService : ApplicationService, IMiniAppFnbOrderServic
     private readonly IRepository<FnbOrderActivity, Guid> _orderActivityRepository;
     private readonly ICurrentTenant _currentTenant;
     private readonly IFnbOrderRealtimeNotifier _notifier;
+    private readonly IConfiguration _configuration;
 
     public MiniAppFnbOrderService(
         IRepository<FnbOrder, Guid> orderRepository,
@@ -35,7 +39,8 @@ public class MiniAppFnbOrderService : ApplicationService, IMiniAppFnbOrderServic
         IRepository<Customer, Guid> customerRepository,
         ICurrentTenant currentTenant,
         IFnbOrderRealtimeNotifier notifier,
-        IRepository<FnbOrderActivity, Guid> orderActivityRepository)
+        IRepository<FnbOrderActivity, Guid> orderActivityRepository,
+        IConfiguration configuration)
     {
         _orderRepository = orderRepository;
         _orderItemRepository = orderItemRepository;
@@ -44,28 +49,70 @@ public class MiniAppFnbOrderService : ApplicationService, IMiniAppFnbOrderServic
         _currentTenant = currentTenant;
         _notifier = notifier;
         _orderActivityRepository = orderActivityRepository;
+        _configuration = configuration;
     }
 
     public async Task<MiniAppFnbOrderDetailDto> CreateAsync(CreateFnbOrderDto input)
     {
+        if (!_currentTenant.IsAvailable)
+        {
+            throw new UserFriendlyException("Không xác định được tenant hiện tại.");
+        }
+
         if (input.Items == null || input.Items.Count == 0)
         {
             throw new UserFriendlyException("Đơn hàng phải có ít nhất 1 món.");
         }
 
-        Customer? customer = null;
-        if (input.CustomerId.HasValue)
+        if (input.Items.Any(x => x.Quantity <= 0))
         {
-            customer = await _customerRepository.FirstOrDefaultAsync(x => x.Id == input.CustomerId.Value);
+            throw new AbpValidationException("Validation failed");
+        }
+
+        if (string.IsNullOrWhiteSpace(input.BagTag))
+        {
+            throw new UserFriendlyException("Vui lòng nhập BagTag.");
         }
 
         var itemIds = input.Items.Select(x => x.ItemId).Distinct().ToList();
+
+        Logger.LogInformation(
+            "MiniApp create order. TenantId={TenantId}, BagTag={BagTag}, ItemIds={ItemIds}",
+            _currentTenant.Id,
+            input.BagTag,
+            string.Join(",", itemIds)
+        );
+
+        Customer? customer = null;
+        if (input.CustomerId.HasValue)
+        {
+            var customerQuery = await _customerRepository.GetQueryableAsync();
+
+            // Nếu Customer có TenantId thì dùng filter này.
+            // Nếu entity không có TenantId thì bỏ điều kiện TenantId đi.
+            customer = await AsyncExecuter.FirstOrDefaultAsync(
+                customerQuery.Where(x => x.Id == input.CustomerId.Value && x.TenantId == _currentTenant.Id)
+            );
+        }
+
         var itemQuery = await _itemRepository.GetQueryableAsync();
-        var items = await AsyncExecuter.ToListAsync(itemQuery.Where(x => itemIds.Contains(x.Id)));
+
+        // Nếu FnbItem có TenantId thì dùng filter này.
+        // Nếu entity không có TenantId thì bỏ điều kiện TenantId đi.
+        var items = await AsyncExecuter.ToListAsync(
+            itemQuery.Where(x => itemIds.Contains(x.Id) && x.TenantId == _currentTenant.Id)
+        );
+
+        Logger.LogInformation(
+            "MiniApp create order resolved items. TenantId={TenantId}, Requested={RequestedCount}, Resolved={ResolvedCount}",
+            _currentTenant.Id,
+            itemIds.Count,
+            items.Count
+        );
 
         if (items.Count != itemIds.Count)
         {
-            throw new UserFriendlyException("Có món không tồn tại.");
+            throw new UserFriendlyException("Có món không tồn tại hoặc không thuộc tenant hiện tại.");
         }
 
         var invalidItem = items.FirstOrDefault(x => !x.IsActive || !x.IsAvailable);
@@ -74,11 +121,19 @@ public class MiniAppFnbOrderService : ApplicationService, IMiniAppFnbOrderServic
             throw new UserFriendlyException($"Món '{invalidItem.Name}' hiện không khả dụng.");
         }
 
-        var order = new FnbOrder(GuidGenerator.Create(), await GenerateOrderCodeAsync(), input.BagTag.Trim(), _currentTenant.Id)
+        var order = new FnbOrder(
+            GuidGenerator.Create(),
+            await GenerateOrderCodeAsync(),
+            input.BagTag.Trim(),
+            _currentTenant.Id)
         {
             CustomerId = input.CustomerId,
-            CustomerName = !string.IsNullOrWhiteSpace(input.CustomerName) ? input.CustomerName.Trim() : customer?.FullName,
-            CustomerPhone = !string.IsNullOrWhiteSpace(input.CustomerPhone) ? input.CustomerPhone.Trim() : customer?.PhoneNumber,
+            CustomerName = !string.IsNullOrWhiteSpace(input.CustomerName)
+                ? input.CustomerName.Trim()
+                : customer?.FullName,
+            CustomerPhone = !string.IsNullOrWhiteSpace(input.CustomerPhone)
+                ? input.CustomerPhone.Trim()
+                : customer?.PhoneNumber,
             Note = string.IsNullOrWhiteSpace(input.Note) ? null : input.Note.Trim(),
             InternalNote = string.IsNullOrWhiteSpace(input.InternalNote) ? null : input.InternalNote.Trim(),
             PaymentMethod = input.PaymentMethod,
@@ -95,7 +150,12 @@ public class MiniAppFnbOrderService : ApplicationService, IMiniAppFnbOrderServic
 
             total += item.Price * row.Quantity;
 
-            orderItems.Add(new FnbOrderItem(GuidGenerator.Create(), order.Id, item.Name, item.Price, row.Quantity)
+            orderItems.Add(new FnbOrderItem(
+                GuidGenerator.Create(),
+                order.Id,
+                item.Name,
+                item.Price,
+                row.Quantity)
             {
                 ItemId = item.Id,
                 Note = string.IsNullOrWhiteSpace(row.Note) ? null : row.Note.Trim()
@@ -108,24 +168,20 @@ public class MiniAppFnbOrderService : ApplicationService, IMiniAppFnbOrderServic
         await _orderItemRepository.InsertManyAsync(orderItems, autoSave: true);
 
         await _orderActivityRepository.InsertAsync(
-           new FnbOrderActivity(
-               GuidGenerator.Create(),
-               order.Id,
-               "Created",
-               "Đơn hàng được khởi tạo",
-               $"Đơn hàng {order.OrderCode} đã được tạo.",
-               Clock.Now,
-               false,
-               _currentTenant.Id
-           ),
-           autoSave: true
-       );
-
-        Logger.LogInformation("Order saved: {OrderId}", order.Id);
+            new FnbOrderActivity(
+                GuidGenerator.Create(),
+                order.Id,
+                "Created",
+                "Đơn hàng được khởi tạo",
+                $"Đơn hàng {order.OrderCode} đã được tạo.",
+                Clock.Now,
+                false,
+                _currentTenant.Id
+            ),
+            autoSave: true
+        );
 
         await _notifier.OrderCreatedAsync(order.Id);
-
-        Logger.LogInformation("Realtime notified: {OrderId}", order.Id);
 
         return await GetAsync(order.Id);
     }
@@ -182,6 +238,27 @@ public class MiniAppFnbOrderService : ApplicationService, IMiniAppFnbOrderServic
         var order = await _orderRepository.GetAsync(id);
         var items = await _orderItemRepository.GetListAsync(x => x.OrderId == id);
 
+        var itemIds = items
+            .Where(x => x.ItemId.HasValue)
+            .Select(x => x.ItemId!.Value)
+            .Distinct()
+            .ToList();
+
+        var imageMap = new Dictionary<Guid, string?>();
+
+        if (itemIds.Count > 0)
+        {
+            var itemQuery = await _itemRepository.GetQueryableAsync();
+            var itemEntities = await AsyncExecuter.ToListAsync(
+                itemQuery.Where(x => itemIds.Contains(x.Id))
+            );
+
+            imageMap = itemEntities.ToDictionary(
+                x => x.Id,
+                x => ImageHelper.NormalizeThumb(_configuration, x.ImageUrl)
+            );
+        }
+
         return new MiniAppFnbOrderDetailDto
         {
             Error = 0,
@@ -209,7 +286,10 @@ public class MiniAppFnbOrderService : ApplicationService, IMiniAppFnbOrderServic
                         ItemName = x.ItemName,
                         Price = x.Price,
                         Quantity = x.Quantity,
-                        Note = x.Note
+                        Note = x.Note,
+                        ImageUrl = x.ItemId.HasValue && imageMap.TryGetValue(x.ItemId.Value, out var imageUrl)
+                            ? imageUrl
+                            : null
                     }).ToList()
             }
         };
