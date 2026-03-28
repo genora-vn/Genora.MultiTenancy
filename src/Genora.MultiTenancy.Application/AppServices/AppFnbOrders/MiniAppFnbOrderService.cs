@@ -7,7 +7,6 @@ using Genora.MultiTenancy.Enums;
 using Genora.MultiTenancy.Helpers;
 using Genora.MultiTenancy.Realtime;
 using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -54,11 +53,6 @@ public class MiniAppFnbOrderService : ApplicationService, IMiniAppFnbOrderServic
 
     public async Task<MiniAppFnbOrderDetailDto> CreateAsync(CreateFnbOrderDto input)
     {
-        if (!_currentTenant.IsAvailable)
-        {
-            throw new UserFriendlyException("Không xác định được tenant hiện tại.");
-        }
-
         if (input.Items == null || input.Items.Count == 0)
         {
             throw new UserFriendlyException("Đơn hàng phải có ít nhất 1 món.");
@@ -69,50 +63,19 @@ public class MiniAppFnbOrderService : ApplicationService, IMiniAppFnbOrderServic
             throw new AbpValidationException("Validation failed");
         }
 
-        if (string.IsNullOrWhiteSpace(input.BagTag))
-        {
-            throw new UserFriendlyException("Vui lòng nhập BagTag.");
-        }
-
-        var itemIds = input.Items.Select(x => x.ItemId).Distinct().ToList();
-
-        Logger.LogInformation(
-            "MiniApp create order. TenantId={TenantId}, BagTag={BagTag}, ItemIds={ItemIds}",
-            _currentTenant.Id,
-            input.BagTag,
-            string.Join(",", itemIds)
-        );
-
         Customer? customer = null;
         if (input.CustomerId.HasValue)
         {
-            var customerQuery = await _customerRepository.GetQueryableAsync();
-
-            // Nếu Customer có TenantId thì dùng filter này.
-            // Nếu entity không có TenantId thì bỏ điều kiện TenantId đi.
-            customer = await AsyncExecuter.FirstOrDefaultAsync(
-                customerQuery.Where(x => x.Id == input.CustomerId.Value && x.TenantId == _currentTenant.Id)
-            );
+            customer = await _customerRepository.FirstOrDefaultAsync(x => x.Id == input.CustomerId.Value);
         }
 
+        var itemIds = input.Items.Select(x => x.ItemId).Distinct().ToList();
         var itemQuery = await _itemRepository.GetQueryableAsync();
-
-        // Nếu FnbItem có TenantId thì dùng filter này.
-        // Nếu entity không có TenantId thì bỏ điều kiện TenantId đi.
-        var items = await AsyncExecuter.ToListAsync(
-            itemQuery.Where(x => itemIds.Contains(x.Id) && x.TenantId == _currentTenant.Id)
-        );
-
-        Logger.LogInformation(
-            "MiniApp create order resolved items. TenantId={TenantId}, Requested={RequestedCount}, Resolved={ResolvedCount}",
-            _currentTenant.Id,
-            itemIds.Count,
-            items.Count
-        );
+        var items = await AsyncExecuter.ToListAsync(itemQuery.Where(x => itemIds.Contains(x.Id)));
 
         if (items.Count != itemIds.Count)
         {
-            throw new UserFriendlyException("Có món không tồn tại hoặc không thuộc tenant hiện tại.");
+            throw new UserFriendlyException("Có món không tồn tại.");
         }
 
         var invalidItem = items.FirstOrDefault(x => !x.IsActive || !x.IsAvailable);
@@ -128,12 +91,8 @@ public class MiniAppFnbOrderService : ApplicationService, IMiniAppFnbOrderServic
             _currentTenant.Id)
         {
             CustomerId = input.CustomerId,
-            CustomerName = !string.IsNullOrWhiteSpace(input.CustomerName)
-                ? input.CustomerName.Trim()
-                : customer?.FullName,
-            CustomerPhone = !string.IsNullOrWhiteSpace(input.CustomerPhone)
-                ? input.CustomerPhone.Trim()
-                : customer?.PhoneNumber,
+            CustomerName = !string.IsNullOrWhiteSpace(input.CustomerName) ? input.CustomerName.Trim() : customer?.FullName,
+            CustomerPhone = !string.IsNullOrWhiteSpace(input.CustomerPhone) ? input.CustomerPhone.Trim() : customer?.PhoneNumber,
             Note = string.IsNullOrWhiteSpace(input.Note) ? null : input.Note.Trim(),
             InternalNote = string.IsNullOrWhiteSpace(input.InternalNote) ? null : input.InternalNote.Trim(),
             PaymentMethod = input.PaymentMethod,
