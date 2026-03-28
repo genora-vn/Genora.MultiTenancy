@@ -29,9 +29,11 @@
     function getUserKey() {
         try {
             var userId = window.abp?.currentUser?.id || 'anonymous';
-            return 'genora:fnb:notify:v2:' + userId;
+            var tenantId = window.abp?.currentTenant?.id || 'host';
+            var host = window.location?.host || 'unknown-host';
+            return 'genora:fnb:notify:v3:' + host + ':' + tenantId + ':' + userId;
         } catch {
-            return 'genora:fnb:notify:v2:anonymous';
+            return 'genora:fnb:notify:v3:unknown-host:host:anonymous';
         }
     }
 

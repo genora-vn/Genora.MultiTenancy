@@ -18,6 +18,8 @@ namespace Genora.MultiTenancy.SignalR;
 
 public class FnbOrderRealtimeNotifier : IFnbOrderRealtimeNotifier
 {
+    private const string HostGroup = "fnb-orders:host";
+
     private readonly IHubContext<FnbOrderHub> _hubContext;
     private readonly IRepository<FnbOrder, Guid> _orderRepository;
     private readonly IRepository<FnbOrderItem, Guid> _orderItemRepository;
@@ -52,33 +54,50 @@ public class FnbOrderRealtimeNotifier : IFnbOrderRealtimeNotifier
 
     public async Task OrderCreatedAsync(Guid orderId)
     {
-        var payload = await BuildPayloadAsync(orderId);
+        var order = await _orderRepository.GetAsync(orderId);
+        var payload = await BuildPayloadAsync(order);
+
+        var group = GetGroupName(order.TenantId);
 
         _logger.LogInformation(
-            "Broadcast fnb.order.created {OrderId} | OrderCode={OrderCode} | Customer={CustomerName}",
+            "Broadcast fnb.order.created {OrderId} | TenantId={TenantId} | Group={Group} | OrderCode={OrderCode} | Customer={CustomerName}",
             payload.Id,
+            order.TenantId,
+            group,
             payload.OrderCode,
             payload.CustomerName);
 
-        await _hubContext.Clients.All.SendAsync("fnb.order.created", payload);
+        await _hubContext.Clients.Group(group).SendAsync("fnb.order.created", payload);
     }
 
     public async Task OrderUpdatedAsync(Guid orderId)
     {
-        var payload = await BuildPayloadAsync(orderId);
+        var order = await _orderRepository.GetAsync(orderId);
+        var payload = await BuildPayloadAsync(order);
+
+        var group = GetGroupName(order.TenantId);
 
         _logger.LogInformation(
-            "Broadcast fnb.order.updated {OrderId} | OrderCode={OrderCode} | Customer={CustomerName}",
+            "Broadcast fnb.order.updated {OrderId} | TenantId={TenantId} | Group={Group} | OrderCode={OrderCode} | Customer={CustomerName}",
             payload.Id,
+            order.TenantId,
+            group,
             payload.OrderCode,
             payload.CustomerName);
 
-        await _hubContext.Clients.All.SendAsync("fnb.order.updated", payload);
+        await _hubContext.Clients.Group(group).SendAsync("fnb.order.updated", payload);
     }
 
-    private async Task<FnbOrderRealtimeDto> BuildPayloadAsync(Guid orderId)
+    private static string GetGroupName(Guid? tenantId)
     {
-        var order = await _orderRepository.GetAsync(orderId);
+        return tenantId.HasValue
+            ? $"fnb-orders:{tenantId.Value:D}"
+            : HostGroup;
+    }
+
+    private async Task<FnbOrderRealtimeDto> BuildPayloadAsync(FnbOrder order)
+    {
+        var orderId = order.Id;
         var orderItems = await _orderItemRepository.GetListAsync(x => x.OrderId == orderId);
 
         Customer? customer = null;

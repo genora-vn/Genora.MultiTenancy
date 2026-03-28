@@ -1,24 +1,36 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
 using System;
+using System.Security.Claims;
 using System.Threading.Tasks;
+using Volo.Abp.Security.Claims;
 
 namespace Genora.MultiTenancy.SignalR;
 
 [Authorize]
 public class FnbOrderHub : Hub
 {
+    private const string HostGroup = "fnb-orders:host";
+
     public override async Task OnConnectedAsync()
     {
-        var tenantId = CurrentTenantId();
-        var group = tenantId.HasValue ? $"fnb-orders:{tenantId}" : "fnb-orders:host";
-        await Groups.AddToGroupAsync(Context.ConnectionId, group);
+        await Groups.AddToGroupAsync(Context.ConnectionId, ResolveGroupName());
         await base.OnConnectedAsync();
     }
 
-    private Guid? CurrentTenantId()
+    public Task PingBell()
     {
-        var tenantClaim = Context.User?.FindFirst("tenantid")?.Value;
-        return Guid.TryParse(tenantClaim, out var tenantId) ? tenantId : null;
+        return Clients.Caller.SendAsync("fnb.ping");
+    }
+
+    private string ResolveGroupName()
+    {
+        var tenantClaim =
+            Context.User?.FindFirstValue(AbpClaimTypes.TenantId) ??
+            Context.User?.FindFirstValue("tenantid");
+
+        return Guid.TryParse(tenantClaim, out var tenantId)
+            ? $"fnb-orders:{tenantId:D}"
+            : HostGroup;
     }
 }

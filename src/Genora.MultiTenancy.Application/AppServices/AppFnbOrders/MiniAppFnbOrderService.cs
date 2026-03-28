@@ -7,6 +7,7 @@ using Genora.MultiTenancy.Enums;
 using Genora.MultiTenancy.Helpers;
 using Genora.MultiTenancy.Realtime;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -123,8 +124,19 @@ public class MiniAppFnbOrderService : ApplicationService, IMiniAppFnbOrderServic
 
         order.TotalAmount = total;
 
+        Logger.LogInformation(
+            "MiniApp CreateAsync before save. TenantId={TenantId}, OrderId={OrderId}, ItemIds={ItemIds}",
+            _currentTenant.Id,
+            order.Id,
+            string.Join(",", orderItems.Select(x => x.ItemId))
+        );
+
         await _orderRepository.InsertAsync(order, autoSave: true);
-        await _orderItemRepository.InsertManyAsync(orderItems, autoSave: true);
+
+        foreach (var orderItem in orderItems)
+        {
+            await _orderItemRepository.InsertAsync(orderItem, autoSave: false);
+        }
 
         await _orderActivityRepository.InsertAsync(
             new FnbOrderActivity(
@@ -137,8 +149,10 @@ public class MiniAppFnbOrderService : ApplicationService, IMiniAppFnbOrderServic
                 false,
                 _currentTenant.Id
             ),
-            autoSave: true
+            autoSave: false
         );
+
+        await CurrentUnitOfWork.SaveChangesAsync();
 
         await _notifier.OrderCreatedAsync(order.Id);
 
