@@ -131,6 +131,12 @@ public class MiniAppFnbOrderService : ApplicationService, IMiniAppFnbOrderServic
             string.Join(",", orderItems.Select(x => x.ItemId))
         );
 
+        Logger.LogWarning(
+            "FNB_ORDER_BUILD_MARKER_20260328_1635 | TenantId={TenantId} | AssignedItemIds={AssignedItemIds}",
+            _currentTenant.Id,
+            string.Join(",", orderItems.Select(x => x.ItemId.HasValue ? x.ItemId.Value.ToString() : "NULL"))
+        );
+
         await _orderRepository.InsertAsync(order, autoSave: true);
 
         foreach (var orderItem in orderItems)
