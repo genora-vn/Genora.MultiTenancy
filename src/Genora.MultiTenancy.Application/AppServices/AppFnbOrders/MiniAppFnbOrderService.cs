@@ -138,32 +138,54 @@ public class MiniAppFnbOrderService : ApplicationService, IMiniAppFnbOrderServic
     string.Join(",", orderItems.Select(x => x.ItemId.HasValue ? x.ItemId.Value.ToString() : "NULL"))
 );
 
-        await _orderRepository.InsertAsync(order, autoSave: true);
-
-        foreach (var orderItem in orderItems)
+        try
         {
-            await _orderItemRepository.InsertAsync(orderItem, autoSave: false);
-        }
+            await _orderRepository.InsertAsync(order, autoSave: true);
 
-        await _orderActivityRepository.InsertAsync(
-            new FnbOrderActivity(
-                GuidGenerator.Create(),
+            foreach (var orderItem in orderItems)
+            {
+                await _orderItemRepository.InsertAsync(orderItem, autoSave: false);
+            }
+
+            await _orderActivityRepository.InsertAsync(
+                new FnbOrderActivity(
+                    GuidGenerator.Create(),
+                    order.Id,
+                    "Created",
+                    "Đơn hàng được khởi tạo",
+                    $"Đơn hàng {order.OrderCode} đã được tạo.",
+                    Clock.Now,
+                    false,
+                    _currentTenant.Id
+                ),
+                autoSave: false
+            );
+
+            await CurrentUnitOfWork.SaveChangesAsync();
+
+            Logger.LogWarning(
+                "FNB_ORDER_SAVE_SUCCESS | TenantId={TenantId} | OrderId={OrderId} | AssignedItemIds={AssignedItemIds}",
+                _currentTenant.Id,
                 order.Id,
-                "Created",
-                "Đơn hàng được khởi tạo",
-                $"Đơn hàng {order.OrderCode} đã được tạo.",
-                Clock.Now,
-                false,
-                _currentTenant.Id
-            ),
-            autoSave: false
-        );
+                string.Join(",", orderItems.Select(x => x.ItemId.HasValue ? x.ItemId.Value.ToString() : "NULL"))
+            );
 
-        await CurrentUnitOfWork.SaveChangesAsync();
+            await _notifier.OrderCreatedAsync(order.Id);
 
-        await _notifier.OrderCreatedAsync(order.Id);
+            return await GetAsync(order.Id);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(
+                ex,
+                "FNB_ORDER_SAVE_FAILED | TenantId={TenantId} | OrderId={OrderId} | AssignedItemIds={AssignedItemIds}",
+                _currentTenant.Id,
+                order.Id,
+                string.Join(",", orderItems.Select(x => x.ItemId.HasValue ? x.ItemId.Value.ToString() : "NULL"))
+            );
 
-        return await GetAsync(order.Id);
+            throw;
+        }
     }
 
     public async Task<MiniAppFnbOrderListDto> GetListAsync(GetMiniAppFnbOrderListInput input)
