@@ -124,23 +124,16 @@ public class MiniAppFnbOrderService : ApplicationService, IMiniAppFnbOrderServic
 
         order.TotalAmount = total;
 
-        Logger.LogInformation(
-            "MiniApp CreateAsync before save. TenantId={TenantId}, OrderId={OrderId}, ItemIds={ItemIds}",
+        Logger.LogWarning(
+            "FNB_ORDER_BUILD_MARKER_20260328_1713 | TenantId={TenantId} | OrderId={OrderId} | AssignedItemIds={AssignedItemIds}",
             _currentTenant.Id,
             order.Id,
-            string.Join(",", orderItems.Select(x => x.ItemId))
+            string.Join(",", orderItems.Select(x => x.ItemId.HasValue ? x.ItemId.Value.ToString() : "NULL"))
         );
-
-        Logger.LogWarning(
-    "FNB_ORDER_BUILD_MARKER_20260328_1713 | TenantId={TenantId} | OrderId={OrderId} | AssignedItemIds={AssignedItemIds}",
-    _currentTenant.Id,
-    order.Id,
-    string.Join(",", orderItems.Select(x => x.ItemId.HasValue ? x.ItemId.Value.ToString() : "NULL"))
-);
 
         try
         {
-            await _orderRepository.InsertAsync(order, autoSave: true);
+            await _orderRepository.InsertAsync(order, autoSave: false);
 
             foreach (var orderItem in orderItems)
             {
