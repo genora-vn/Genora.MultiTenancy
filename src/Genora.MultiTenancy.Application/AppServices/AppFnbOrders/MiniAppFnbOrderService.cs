@@ -110,16 +110,18 @@ public class MiniAppFnbOrderService : ApplicationService, IMiniAppFnbOrderServic
 
             total += item.Price * row.Quantity;
 
-            orderItems.Add(new FnbOrderItem(
+            var orderItem = new FnbOrderItem(
                 GuidGenerator.Create(),
                 order.Id,
                 item.Name,
                 item.Price,
                 row.Quantity)
             {
-                ItemId = null,
+                ItemId = null, // hotfix để không vướng FK AppFnbItems
                 Note = string.IsNullOrWhiteSpace(row.Note) ? null : row.Note.Trim()
-            });
+            };
+
+            orderItems.Add(orderItem);
         }
 
         order.TotalAmount = total;
@@ -133,12 +135,12 @@ public class MiniAppFnbOrderService : ApplicationService, IMiniAppFnbOrderServic
 
         try
         {
-            await _orderRepository.InsertAsync(order, autoSave: false);
-
             foreach (var orderItem in orderItems)
             {
-                await _orderItemRepository.InsertAsync(orderItem, autoSave: false);
+                order.Items.Add(orderItem);
             }
+
+            await _orderRepository.InsertAsync(order, autoSave: true);
 
             await _orderActivityRepository.InsertAsync(
                 new FnbOrderActivity(
@@ -151,10 +153,8 @@ public class MiniAppFnbOrderService : ApplicationService, IMiniAppFnbOrderServic
                     false,
                     _currentTenant.Id
                 ),
-                autoSave: false
+                autoSave: true
             );
-
-            await CurrentUnitOfWork.SaveChangesAsync();
 
             Logger.LogWarning(
                 "FNB_ORDER_SAVE_SUCCESS | TenantId={TenantId} | OrderId={OrderId} | AssignedItemIds={AssignedItemIds}",
