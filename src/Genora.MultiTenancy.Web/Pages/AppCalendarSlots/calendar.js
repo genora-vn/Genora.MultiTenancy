@@ -16,6 +16,27 @@
         return;
     }
 
+    function renderEvent(info) {
+        const promotionTypeId = info.event.extendedProps.promotionTypeId;
+        const promotionType = window.promotionTypeMap[promotionTypeId];
+        if (promotionType) {
+            // Set background color
+            info.el.style.backgroundColor = promotionType.color;
+
+            // Render icon: nếu là URL thì dùng <img>, nếu là class thì dùng <span>
+            let iconHtml = '';
+            if (promotionType.icon && (promotionType.icon.startsWith('http://') || promotionType.icon.startsWith('https://') || promotionType.icon.endsWith('.png') || promotionType.icon.endsWith('.svg'))) {
+                iconHtml = `<img src="${promotionType.icon}" style="height:16px;width:16px;margin-right:4px;vertical-align:middle;" />`;
+            } else if (promotionType.icon) {
+                iconHtml = `<span class="${promotionType.icon}" style="margin-right:4px;vertical-align:middle;"></span>`;
+            }
+            const titleEl = info.el.querySelector('.fc-event-title');
+            if (titleEl && iconHtml) {
+                titleEl.insertAdjacentHTML('afterbegin', iconHtml);
+            }
+        }
+    }
+
     var lastViewedSlotId = null;
 
     var calendar = new FullCalendar.Calendar(calendarEl, {
@@ -114,10 +135,11 @@
 
                     return {
                         id: slot.id,
-                        title: slot.timeFrom.substring(0, 5) + ' - ' + slot.timeTo.substring(0, 5),
+                        title: '('+slot.timeFrom.substring(0, 5) + ' - ' + slot.timeTo.substring(0, 5)+')',
                         start: start,
                         end: end,
-                        allDay: false
+                        allDay: false,
+                        promotionTypeId: slot.promotionTypeId // Loại ưu đãi
                     };
                 });
 
@@ -126,7 +148,8 @@
                 console.error(error);
                 failureCallback(error);
             });
-        }
+        },
+        eventDidMount: renderEvent
     });
 
     calendar.render();

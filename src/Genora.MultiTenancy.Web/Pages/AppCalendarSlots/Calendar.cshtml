@@ -34,7 +34,21 @@
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 
     <abp-script src="/Pages/AppCalendarSlots/calendar.js" />
+
+    @{
+        var promotionTypeMapJson = System.Text.Json.JsonSerializer.Serialize(
+            Model.PromotionTypeMap.ToDictionary(
+                x => x.Key.ToString(),
+                x => new { color = x.Value.Color, icon = x.Value.Icon }
+            )
+        );
+        <script>
+            // Mapping: { promotionTypeId: { color: "#hex", icon: "icon-class-or-url" } }
+            window.promotionTypeMap = @Html.Raw(promotionTypeMapJson);
+        </script>
+    }
 }
+
 
 <input type="hidden" id="GolfCourseId" value="@Model.GolfCourseId" />
 
