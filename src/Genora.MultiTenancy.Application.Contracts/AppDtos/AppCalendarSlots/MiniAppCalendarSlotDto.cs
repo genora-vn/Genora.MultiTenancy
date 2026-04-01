@@ -31,6 +31,13 @@ namespace Genora.MultiTenancy.AppDtos.AppCalendarSlots
         public decimal VisitorPrice { get; set; } 
         public decimal DiscountPercent { get; set; }
         public bool IsBestDeal { get; set; }
+
+        public string? CustomerTypeCode { get; set; }
+        public string? OriginalPriceSource { get; set; }
+
+        public string? PromotionCode { get; set; }
+        public string? PromotionIconUrl { get; set; }
+        public string? PromotionColorCode { get; set; }
     }
     public class FrameTimeOfDay
     {

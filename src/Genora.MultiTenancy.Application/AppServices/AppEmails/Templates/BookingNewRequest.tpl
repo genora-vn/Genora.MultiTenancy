@@ -4,7 +4,7 @@
 • Mã đặt chỗ: {{ model.BookingCode }}
 • Người đặt chỗ: {{ model.BookerName }}
 • Số điện thoại: {{ model.BookerPhone }}
-• Ngày chơi: {{ model.PlayDateText  }}
+• Ngày chơi: {{ model.PlayDateText }}
 • Tee time đăng ký: {{ model.TeeTimeFromText }} - {{ model.TeeTimeToText }}
 • Số lượng người chơi: {{ model.NumberOfGolfers }}
 • Loại khách: {{ model.CustomerTypeSummary }}

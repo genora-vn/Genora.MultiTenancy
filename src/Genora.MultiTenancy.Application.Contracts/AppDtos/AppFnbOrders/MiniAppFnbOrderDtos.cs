@@ -35,6 +35,13 @@ public class MiniAppFnbOrderData
     public PaymentMethod? PaymentMethod { get; set; }
     public string? Note { get; set; }
     public DateTime CreationTime { get; set; }
+
+    public int TotalQuantity { get; set; }
+    public int ItemCount { get; set; }
+    public string? CancelReason { get; set; }
+    public string? CancelNote { get; set; }
+    public string? CancelledBy { get; set; }
+    public DateTime? CancelledAt { get; set; }
     public List<MiniAppFnbOrderItemData> Items { get; set; } = new();
 }
 
@@ -47,4 +54,10 @@ public class MiniAppFnbOrderItemData
     public int Quantity { get; set; }
     public string? ImageUrl { get; set; }
     public string? Note { get; set; }
+
+    public decimal LineTotal { get; set; }
+    public string? CategoryName { get; set; }
+    public int? SortOrder { get; set; }
+    public bool? IsAvailable { get; set; }
+    public bool? IsActive { get; set; }
 }

@@ -50,7 +50,22 @@
                 },
                 { title: l('CustomerTypeCode'), data: "code" },
                 { title: l('CustomerTypeName'), data: "name" },
-                { title: l('CustomerTypeDescription'), data: "description" },
+                {
+                    title: l('OriginalPrice'),
+                    data: "originalPrice",
+                    render: function (value) {
+                        if (value === null || value === undefined || value === '') {
+                            return '';
+                        }
+
+                        var number = Number(value);
+                        if (isNaN(number)) {
+                            return value;
+                        }
+
+                        return number.toLocaleString('vi-VN') + ' đ';
+                    }
+                },
                 { title: l('CustomerTypeColorCode'), data: "colorCode" },
                 {
                     title: l('IsActive'),

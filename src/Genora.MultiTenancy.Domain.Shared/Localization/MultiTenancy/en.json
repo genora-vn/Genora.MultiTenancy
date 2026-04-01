@@ -170,6 +170,7 @@
     "NewAppCustomerType": "New customer type",
     "CustomerTypeCode": "Customer type code",
     "CustomerTypeName": "Customer type name",
+    "OriginalPrice": "Original price",
     "CustomerTypeDescription": "Description",
     "CustomerTypeColorCode": "Label color",
     "PermissionGroup:MiniAppGolfCourse": "Golf course settings",

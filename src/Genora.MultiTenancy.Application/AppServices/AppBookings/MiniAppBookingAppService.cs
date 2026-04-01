@@ -40,8 +40,8 @@ public class MiniAppBookingAppService : ApplicationService, IMiniAppBookingAppSe
     private readonly IAppEmailSenderService _appEmailSenderService;
     private readonly IRepository<OptionExtend, Guid> _optionExtendRepo;
     private readonly ISettingProvider _settingProvider;
-
     private readonly IBackgroundJobManager _jobManager;
+    private readonly IRepository<GolfCourse, Guid> _golfCourseRepo;
 
     public MiniAppBookingAppService(
         IRepository<Booking, Guid> bookingRepo,
@@ -54,7 +54,8 @@ public class MiniAppBookingAppService : ApplicationService, IMiniAppBookingAppSe
         IAppEmailSenderService appEmailSenderService,
         IRepository<OptionExtend, Guid> optionExtendRepo,
         ISettingProvider settingProvider,
-        IBackgroundJobManager jobManager)
+        IBackgroundJobManager jobManager,
+        IRepository<GolfCourse, Guid> golfCourseRepo)
     {
         _bookingRepo = bookingRepo;
         _playerRepo = playerRepo;
@@ -66,6 +67,7 @@ public class MiniAppBookingAppService : ApplicationService, IMiniAppBookingAppSe
         _optionExtendRepo = optionExtendRepo;
         _settingProvider = settingProvider;
         _jobManager = jobManager;
+        _golfCourseRepo = golfCourseRepo;
     }
 
     public async Task<MiniAppBookingDetailDto> CreateFromMiniAppAsync(MiniAppCreateBookingDto input)
@@ -292,7 +294,8 @@ public class MiniAppBookingAppService : ApplicationService, IMiniAppBookingAppSe
     {
         try
         {
-            if (input.CustomerId == Guid.Empty) throw new MemberAccessException("Vui lòng đăng nhập trước khi truy cập");
+            if (input.CustomerId == Guid.Empty)
+                throw new MemberAccessException("Vui lòng đăng nhập trước khi truy cập");
 
             var query = await _bookingRepo.WithDetailsAsync(x => x.CalendarSlot);
             query = query.Where(x => x.CustomerId == input.CustomerId);
@@ -324,16 +327,47 @@ public class MiniAppBookingAppService : ApplicationService, IMiniAppBookingAppSe
             var items = await AsyncExecuter.ToListAsync(query.Skip(input.SkipCount).Take(input.MaxResultCount));
 
             var dto = ObjectMapper.Map<List<Booking>, List<BookingListData>>(items);
-            var calendars = await _calendarSlotRepo.GetQueryableAsync();
+
+            var calendarSlotIds = items
+                .Where(x => x.CalendarSlotId.HasValue && x.CalendarSlotId.Value != Guid.Empty)
+                .Select(x => x.CalendarSlotId!.Value)
+                .Distinct()
+                .ToList();
+
+            var golfCourseIds = items
+                .Select(x => x.GolfCourseId)
+                .Distinct()
+                .ToList();
+
+            var calendars = await _calendarSlotRepo.GetListAsync(x => calendarSlotIds.Contains(x.Id));
+            var calendarDict = calendars.ToDictionary(x => x.Id, x => x);
+
+            var golfCourses = await _golfCourseRepo.GetListAsync(x => golfCourseIds.Contains(x.Id));
+            var golfCourseDict = golfCourses.ToDictionary(x => x.Id, x => x);
 
             foreach (var item in dto)
             {
                 item.VNDayOfWeek = FormatDateTimeHelper.GetVietnameseDayOfWeek(item.PlayDate);
+                item.IsCancellationPolicy = false;
+
+                CalendarSlot? calendar = null;
                 if (item.CalendarSlotId.HasValue && item.CalendarSlotId.Value != Guid.Empty)
                 {
-                    var calendar = calendars.FirstOrDefault(x => x.Id == item.CalendarSlotId.Value);
+                    calendarDict.TryGetValue(item.CalendarSlotId.Value, out calendar);
                     if (calendar != null)
+                    {
                         item.FrameTimes = $"{calendar.TimeFrom} - {calendar.TimeTo}";
+                    }
+                }
+
+                if (golfCourseDict.TryGetValue(item.GolfCourseId, out var golfCourse))
+                {
+                    item.IsCancellationPolicy = EvaluateCancellationPolicy(
+                        item.CreationTime,
+                        golfCourse.CancellationPolicyHours,
+                        golfCourse.PromotionTypeIds,
+                        calendar?.PromotionTypeId
+                    );
                 }
             }
 
@@ -453,5 +487,37 @@ public class MiniAppBookingAppService : ApplicationService, IMiniAppBookingAppSe
             .Select(id => $"• {dict[id]}");
 
         return string.Join(Environment.NewLine, lines);
+    }
+
+    private bool EvaluateCancellationPolicy(
+    DateTime creationTime,
+    int? cancellationPolicyHours,
+    string? promotionTypeIdsCsv,
+    Guid? slotPromotionTypeId)
+    {
+        // true = KHÔNG còn được hoãn/hủy
+        var isExpiredByHours =
+            cancellationPolicyHours.HasValue &&
+            cancellationPolicyHours.Value > 0 &&
+            creationTime.AddHours(cancellationPolicyHours.Value) <= Clock.Now;
+
+        var blockedPromotionIds = ParseGuidCsv(promotionTypeIdsCsv);
+        var isBlockedByPromotion =
+            slotPromotionTypeId.HasValue &&
+            blockedPromotionIds.Contains(slotPromotionTypeId.Value);
+
+        return isExpiredByHours || isBlockedByPromotion;
+    }
+
+    private static HashSet<Guid> ParseGuidCsv(string? csv)
+    {
+        if (string.IsNullOrWhiteSpace(csv))
+            return new HashSet<Guid>();
+
+        return csv
+            .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Select(x => Guid.TryParse(x, out var id) ? id : Guid.Empty)
+            .Where(x => x != Guid.Empty)
+            .ToHashSet();
     }
 }

@@ -81,7 +81,7 @@ public class SendEmailJob : AsyncBackgroundJob<SendEmailJobArgs>, ITransientDepe
                         to,
                         mail.Subject,
                         mail.Body,
-                        isBodyHtml: false // giữ nguyên như bạn đang dùng
+                        isBodyHtml: true
                     );
                 }
 

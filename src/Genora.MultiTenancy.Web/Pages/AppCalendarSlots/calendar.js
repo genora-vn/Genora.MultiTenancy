@@ -19,16 +19,17 @@
     function renderEvent(info) {
         const promotionTypeId = info.event.extendedProps.promotionTypeId;
         const promotionType = window.promotionTypeMap[promotionTypeId];
+        console.log("window.promotionTypeMap", window.promotionTypeMap);
         if (promotionType) {
             // Set background color
-            info.el.style.backgroundColor = promotionType.color;
+            //info.el.style.color = promotionType.color;
 
             // Render icon: nếu là URL thì dùng <img>, nếu là class thì dùng <span>
             let iconHtml = '';
             if (promotionType.icon && (promotionType.icon.startsWith('http://') || promotionType.icon.startsWith('https://') || promotionType.icon.endsWith('.png') || promotionType.icon.endsWith('.svg'))) {
                 iconHtml = `<img src="${promotionType.icon}" style="height:16px;width:16px;margin-right:4px;vertical-align:middle;" />`;
             } else if (promotionType.icon) {
-                iconHtml = `<span class="${promotionType.icon}" style="margin-right:4px;vertical-align:middle;"></span>`;
+                iconHtml = `<span class="${promotionType.icon}" style="margin-right:4px;vertical-align:middle;color:red"></span>`;
             }
             const titleEl = info.el.querySelector('.fc-event-title');
             if (titleEl && iconHtml) {

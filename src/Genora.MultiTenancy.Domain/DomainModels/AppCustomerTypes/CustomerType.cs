@@ -30,6 +30,9 @@ public class CustomerType : FullAuditedAggregateRoot<Guid>, IMultiTenant
 
     public bool IsActive { get; set; } = true;
 
+    [Column(TypeName = "decimal(18,2)")]
+    public decimal? OriginalPrice { get; set; }
+
     // Navigation
     public virtual ICollection<Customer> Customers { get; set; } = new List<Customer>();
     public virtual ICollection<CalendarSlotPrice> CalendarSlotPrices { get; set; } = new List<CalendarSlotPrice>();

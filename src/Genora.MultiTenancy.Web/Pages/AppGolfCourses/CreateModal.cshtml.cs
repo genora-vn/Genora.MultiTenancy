@@ -1,8 +1,14 @@
 ﻿using Genora.MultiTenancy.AppDtos.AppGolfCourses;
 using Genora.MultiTenancy.AppDtos.AppOptionExtend;
+using Genora.MultiTenancy.DomainModels.AppPromotionTypes;
+using Genora.MultiTenancy.Enums;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
+using Volo.Abp.Domain.Repositories;
 
 namespace Genora.MultiTenancy.Web.Pages.AppGolfCourses;
 
@@ -16,13 +22,16 @@ public class CreateModalModel : MultiTenancyPageModel
 
     private readonly IAppGolfCourseService _appGolfCourseService;
     private readonly IOptionExtendService _extendService;
+    private readonly IRepository<DomainModels.AppPromotionTypes.PromotionType, Guid> _promotionTypeRepository;
 
     public CreateModalModel(
         IAppGolfCourseService appGolfCourseService,
-        IOptionExtendService extendService)
+        IOptionExtendService extendService,
+        IRepository<DomainModels.AppPromotionTypes.PromotionType, Guid> promotionTypeRepository)
     {
         _appGolfCourseService = appGolfCourseService;
         _extendService = extendService;
+        _promotionTypeRepository = promotionTypeRepository;
     }
 
     public async Task OnGet()
@@ -62,6 +71,23 @@ public class CreateModalModel : MultiTenancyPageModel
             });
         }
 
+        var promotionQuery = await _promotionTypeRepository.GetQueryableAsync();
+        var promotions = await promotionQuery
+            .Where(x => x.Status)
+            .OrderBy(x => x.Name)
+            .ToListAsync();
+
+        var promotionDtos = promotions.Select(x => new GolfCoursePromotionTypeDto
+        {
+            Id = x.Id,
+            Code = x.Code,
+            Name = x.Name,
+            Description = x.Description,
+            IconUrl = x.IconUrl,
+            ColorCode = x.ColorCode,
+            IsCheck = false
+        }).ToList();
+
         GolfCourse = new CreateUpdateAppGolfCourseDto
         {
             IsActive = true,
@@ -69,6 +95,7 @@ public class CreateModalModel : MultiTenancyPageModel
             AvailableUtilities = ulitities,
             AvailableHoles = holes,
             AvailableSessionsOfDay = sessions,
+            AvailablePromotionTypes = promotionDtos,
 
             PaymentQrText = "Quét mã để thanh toán nhanh",
             PaymentQrBankCode = "vcb",
@@ -79,34 +106,92 @@ public class CreateModalModel : MultiTenancyPageModel
 
     public async Task<IActionResult> OnPostAsync()
     {
-        foreach (var utility in GolfCourse.AvailableUtilities)
+        // Giữ default create nếu form không post các field này
+        GolfCourse.IsActive = true;
+        if (GolfCourse.BookingStatus == 0)
         {
-            if (utility.IsCheck)
+            GolfCourse.BookingStatus = 1;
+        }
+
+        GolfCourse.Utilities = null;
+        GolfCourse.NumberHoles = null;
+        GolfCourse.FrameTimes = null;
+
+        int currentId = GolfCourse.AvailableUtilities?
+            .OrderByDescending(x => x.UtilityId)
+            .FirstOrDefault()?.UtilityId ?? 0;
+
+        if (GolfCourse.AvailableUtilities != null)
+        {
+            foreach (var utility in GolfCourse.AvailableUtilities)
             {
-                GolfCourse.Utilities ??= string.Empty;
-                GolfCourse.Utilities += utility.UtilityId + ",";
+                if (utility.UtilityId == 0 && !string.IsNullOrWhiteSpace(utility.UtilityName))
+                {
+                    var createOption = new CreateUpdateOptionExtendDto
+                    {
+                        OptionId = currentId + 1,
+                        OptionName = utility.UtilityName.Trim(),
+                        Type = OptionExtendTypeEnum.GolfCourseUlitity.Value
+                    };
+
+                    var create = await _extendService.CreateAsync(createOption);
+                    utility.UtilityId = create.OptionId;
+                    currentId = utility.UtilityId;
+                }
+
+                if (utility.IsCheck && utility.UtilityId > 0)
+                {
+                    GolfCourse.Utilities ??= string.Empty;
+                    GolfCourse.Utilities += utility.UtilityId + ",";
+                }
             }
         }
 
-        foreach (var hole in GolfCourse.AvailableHoles)
+        if (GolfCourse.AvailableHoles != null)
         {
-            if (hole.IsCheck)
+            foreach (var hole in GolfCourse.AvailableHoles)
             {
-                GolfCourse.NumberHoles ??= string.Empty;
-                GolfCourse.NumberHoles += hole.Id + ",";
+                if (hole.IsCheck)
+                {
+                    GolfCourse.NumberHoles ??= string.Empty;
+                    GolfCourse.NumberHoles += hole.Id + ",";
+                }
             }
         }
 
-        foreach (var session in GolfCourse.AvailableSessionsOfDay)
+        if (GolfCourse.AvailableSessionsOfDay != null)
         {
-            if (session.IsCheck)
+            foreach (var session in GolfCourse.AvailableSessionsOfDay)
             {
-                GolfCourse.FrameTimes ??= string.Empty;
-                GolfCourse.FrameTimes += session.Id + ",";
+                if (session.IsCheck)
+                {
+                    GolfCourse.FrameTimes ??= string.Empty;
+                    GolfCourse.FrameTimes += session.Id + ",";
+                }
             }
         }
+
+        GolfCourse.PromotionTypeIds = NormalizeGuidCsv(GolfCourse.PromotionTypeIds);
 
         await _appGolfCourseService.CreateAsync(GolfCourse);
         return NoContent();
+    }
+
+    private static string? NormalizeGuidCsv(string? raw)
+    {
+        if (string.IsNullOrWhiteSpace(raw))
+        {
+            return null;
+        }
+
+        var values = raw
+            .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Select(x => Guid.TryParse(x, out var id) ? id : Guid.Empty)
+            .Where(x => x != Guid.Empty)
+            .Distinct()
+            .Select(x => x.ToString())
+            .ToList();
+
+        return values.Count == 0 ? null : string.Join(",", values);
     }
 }

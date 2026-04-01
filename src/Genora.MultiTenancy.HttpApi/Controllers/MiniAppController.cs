@@ -270,4 +270,9 @@ public class MiniAppController : MultiTenancyController
     [AllowAnonymous]
     public Task<MiniAppFnbOrderDetailDto> GetFnbOrderAsync(Guid id)
         => _miniAppFnbOrder.GetAsync(id);
+
+    [HttpPost("cancel-fnb-orders/{id}")]
+    [AllowAnonymous]
+    public Task<MiniAppFnbOrderDetailDto> CancelFnbOrderAsync(Guid id, [FromBody] CancelMiniAppFnbOrderDto input)
+    => _miniAppFnbOrder.CancelAsync(id, input);
 }

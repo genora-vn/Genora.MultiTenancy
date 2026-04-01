@@ -65,11 +65,11 @@ public class AppHomePageDataSeederContributor : IDataSeedContributor, ITransient
     // Default FeatureGrid items
     private static readonly List<FeatureGridItemSeedDef> DefaultFeatureGridItems = new()
     {
-        new FeatureGridItemSeedDef("Đặt sân",    "golf",     "booking", true, 1),
-        new FeatureGridItemSeedDef("Tích điểm",  "loyalty",  "loyalty", true, 2),
-        new FeatureGridItemSeedDef("Tin tức",    "news",     "news",    true, 3),
-        new FeatureGridItemSeedDef("Đặt caddie", "caddie",   "caddie",  true, 4),
-        new FeatureGridItemSeedDef("Đặt FnB",    "fnb",      "fnb",     true, 5),
+        new FeatureGridItemSeedDef("Đặt sân",    "golf-icon.webp",     "booking", true, 1),
+        new FeatureGridItemSeedDef("Tích điểm",  "loyalty-icon.webp",  "loyalty", true, 2),
+        new FeatureGridItemSeedDef("Tin tức",    "news-icon.webp",     "news",    true, 3),
+        new FeatureGridItemSeedDef("Đặt caddie", "caddie-icon.webp",   "caddie",  true, 4),
+        new FeatureGridItemSeedDef("Đặt FnB",    "fnb-icon.webp",      "fnb",     true, 5),
     };
 
     public async Task SeedAsync(DataSeedContext context)

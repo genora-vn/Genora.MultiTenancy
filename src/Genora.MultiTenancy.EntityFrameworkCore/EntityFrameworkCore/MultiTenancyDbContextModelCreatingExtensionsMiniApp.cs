@@ -31,6 +31,10 @@ public static class MultiTenancyDbContextModelCreatingExtensionsMiniApp
             b.Property(x => x.Name).IsRequired().HasMaxLength(100);
             b.Property(x => x.Description).HasMaxLength(500);
 
+            b.Property(x => x.OriginalPrice)
+                .HasColumnType("decimal(18,2)")
+                .IsRequired(false);
+
             // ColorCode dạng #RRGGBB
             b.Property(x => x.ColorCode).HasColumnType("char(7)");
 

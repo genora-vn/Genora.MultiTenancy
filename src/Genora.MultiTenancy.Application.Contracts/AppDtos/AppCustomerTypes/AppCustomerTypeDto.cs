@@ -10,4 +10,5 @@ public class AppCustomerTypeDto : AuditedEntityDto<Guid>
     public string Description { get; set; }   // Mô tả
     public string ColorCode { get; set; }     // Màu nhãn hex (#FF9800)
     public bool IsActive { get; set; }
+    public decimal? OriginalPrice { get; set; }
 }

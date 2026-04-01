@@ -130,7 +130,8 @@
                                    class="form-control fnb-item-input money-input text-end"
                                    placeholder="0"
                                    inputmode="numeric"
-                                   autocomplete="off" />
+                                   autocomplete="off"
+                                   value="@(Model.Item?.Price > 0 ? decimal.Truncate(Model.Item.Price).ToString("0") : "")" />
                             <span asp-validation-for="Item.Price" class="text-danger"></span>
                         </div>
 

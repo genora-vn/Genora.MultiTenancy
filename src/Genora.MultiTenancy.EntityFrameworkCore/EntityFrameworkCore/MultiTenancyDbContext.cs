@@ -216,6 +216,14 @@ public class MultiTenancyDbContext :
             b.Property(x => x.FrameTimes).HasMaxLength(50);
             b.Property(x => x.NumberHoles);
             b.Property(x => x.Utilities).HasMaxLength(20);
+
+            b.Property(x => x.CancellationPolicyHours)
+                .HasColumnType("smallint")
+                .IsRequired(false);
+
+            b.Property(x => x.PromotionTypeIds)
+                .HasMaxLength(1000)
+                .IsRequired(false);
         });
 
         // ===== AppBookingPlayers =====

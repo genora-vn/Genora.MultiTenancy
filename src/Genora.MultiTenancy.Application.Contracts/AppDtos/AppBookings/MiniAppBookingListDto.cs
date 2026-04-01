@@ -29,5 +29,6 @@ namespace Genora.MultiTenancy.AppDtos.AppBookings
         public BookingStatus Status { get; set; }
         public BookingSource Source { get; set; }
         public string VNDayOfWeek { get; set; }
+        public bool IsCancellationPolicy { get; set; }
     }
 }

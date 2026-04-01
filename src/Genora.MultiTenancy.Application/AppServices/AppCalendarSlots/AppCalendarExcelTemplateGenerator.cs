@@ -35,7 +35,7 @@ public class AppCalendarExcelTemplateGenerator : ITransientDependency
     {
         using var workbook = new XLWorkbook();
 
-        var ws = workbook.Worksheets.Add("Danh sách booking");
+        var ws = workbook.Worksheets.Add("Danh sách cấu hình tee time");
         var lookup = workbook.Worksheets.Add("Lookup");
         lookup.Visibility = XLWorksheetVisibility.VeryHidden;
 

@@ -44,5 +44,18 @@ namespace Genora.MultiTenancy.AppDtos.AppGolfCourses
         public List<int> FrameTimeOfDay => !string.IsNullOrWhiteSpace(FrameTimes) ? FrameTimes.Split(',').Where(x => !string.IsNullOrEmpty(x)).Select(int.Parse).ToList() : new List<int>();
         public List<string> NumberHolesStr => !string.IsNullOrWhiteSpace(NumberHoles) ? NumberHoles.Split(',').Where(x => !string.IsNullOrEmpty(x)).ToList() : new List<string>();
         public List<int> Ulitity => !string.IsNullOrWhiteSpace(Utilities) ? Utilities.Split(',').Where(x => !string.IsNullOrEmpty(x)).Select(int.Parse).ToList() : new List<int>();
+        public short? CancellationPolicyHours { get; set; }
+        public string? PromotionTypeIds { get; set; }
+
+        public List<Guid> PromotionTypeIdList =>
+            !string.IsNullOrWhiteSpace(PromotionTypeIds)
+                ? PromotionTypeIds
+                    .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                    .Select(x => Guid.TryParse(x, out var id) ? id : Guid.Empty)
+                    .Where(x => x != Guid.Empty)
+                    .ToList()
+                : new List<Guid>();
+
+        public List<GolfCoursePromotionTypeMiniDto> PromotionTypes { get; set; } = new();
     }
 }

@@ -7,19 +7,43 @@
 @inject IStringLocalizer<MultiTenancyResource> L
 @{
     Layout = null;
+
+    var originalPriceRaw = Model.CustomerType?.OriginalPrice.HasValue == true
+        ? decimal.Truncate(Model.CustomerType.OriginalPrice.Value).ToString("0")
+        : "";
 }
 <form abp-model="CustomerType" asp-page="/AppCustomerTypes/CreateModal">
     <abp-modal>
         <abp-modal-header title="@L["CreateAppCustomerType"].Value"></abp-modal-header>
         <abp-modal-body>
-            @* <abp-form-content /> *@
             <abp-input asp-for="CustomerType.Code" placeholder="Nhập mã code loại khách hàng" label="@L["CustomerTypeCode"]" />
             <abp-input asp-for="CustomerType.Name" placeholder="Nhập tên loại khách hàng" label="@L["CustomerTypeName"]" />
+
             <div class="mb-3">
                 <label asp-for="CustomerType.Description" class="form-label">@L["Description"]</label>
                 <textarea asp-for="CustomerType.Description" class="form-control" rows="3" placeholder="Mô tả loại khách hàng"></textarea>
                 <span asp-validation-for="CustomerType.Description" class="text-danger"></span>
             </div>
+
+            <div class="mb-3">
+                <label asp-for="CustomerType.OriginalPrice" class="form-label">Giá gốc</label>
+
+                <input asp-for="CustomerType.OriginalPrice"
+                       type="hidden"
+                       id="original-price-hidden"
+                       value="@originalPriceRaw" />
+
+                <input type="text"
+                       id="original-price-display"
+                       class="form-control text-end"
+                       placeholder="0"
+                       inputmode="numeric"
+                       autocomplete="off"
+                       value="@originalPriceRaw" />
+
+                <span asp-validation-for="CustomerType.OriginalPrice" class="text-danger"></span>
+            </div>
+
             <div style="display: inline-flex; width: 100%">
                 <label asp-for="CustomerType.ColorCode" class="form-label" style="width: 18%">@L["ColorCode"]</label>
 
@@ -31,7 +55,6 @@
                        autocomplete="off" />
 
                 <input id="color-picker" type="color" class="form-control color-input" />
-
             </div>
             <span asp-validation-for="CustomerType.ColorCode" class="text-danger"></span>
 
@@ -52,19 +75,22 @@
         border-radius: 0 0.5rem 0.5rem 0;
     }
 
-    #color-code{
+    #color-code {
         border-radius: 0.5rem 0 0 0.5rem;
         margin-left: 20px;
         width: 68%;
         padding-right: 0
     }
 </style>
+
 <script>
     $(document).ready(function () {
         var $form = $('form[abp-model="CustomerType"]');
         var $desc = $form.find('[name="CustomerType.Description"]');
         var $colorCode = $form.find('[name="CustomerType.ColorCode"]');
         var $picker = $('#color-picker');
+        var $originalPriceHidden = $('#original-price-hidden');
+        var $originalPriceDisplay = $('#original-price-display');
 
         function refreshValidation() {
             $form.removeData('validator');
@@ -86,6 +112,40 @@
                     return pattern.test(value);
                 });
             }
+        }
+
+        function normalizeMoney(raw) {
+            if (!raw) return '';
+            return String(raw).replace(/[^\d]/g, '');
+        }
+
+        function formatMoneyVN(raw) {
+            var n = parseInt(normalizeMoney(raw), 10);
+            if (isNaN(n)) return '';
+            return n.toLocaleString('vi-VN');
+        }
+
+        function syncOriginalPriceHidden() {
+            $originalPriceHidden.val(normalizeMoney($originalPriceDisplay.val()));
+        }
+
+        function initMoney() {
+            $originalPriceDisplay.val(formatMoneyVN($originalPriceDisplay.val()));
+            syncOriginalPriceHidden();
+
+            $originalPriceDisplay.on('focus', function () {
+                $(this).val(normalizeMoney($(this).val()));
+            });
+
+            $originalPriceDisplay.on('input', function () {
+                $(this).val(normalizeMoney($(this).val()));
+                syncOriginalPriceHidden();
+            });
+
+            $originalPriceDisplay.on('blur', function () {
+                syncOriginalPriceHidden();
+                $(this).val(formatMoneyVN($(this).val()));
+            });
         }
 
         function normalizeHex(val) {
@@ -131,6 +191,8 @@
         });
 
         $form.on('submit', function () {
+            syncOriginalPriceHidden();
+
             var val = normalizeHex($colorCode.val());
             $colorCode.val(val);
 
@@ -143,5 +205,7 @@
         var initVal = normalizeHex($colorCode.val());
         $colorCode.val(initVal);
         if (isValidHex6(initVal)) $picker.val(initVal);
+
+        initMoney();
     });
 </script>

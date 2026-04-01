@@ -105,7 +105,6 @@
                 </div>
             </div>
 
-            @* GROUP 4: Vận hành sân *@
             <div class="gc-section">
                 <div class="gc-section-title">Vận hành sân</div>
 
@@ -256,6 +255,35 @@
                 <div class="gc-section-title">Chính sách & điều khoản</div>
 
                 <div class="row g-3">
+                    <div class="col-md-3">
+                        <label class="form-label">Loại ưu đãi áp dụng</label>
+                        <input asp-for="GolfCourse.PromotionTypeIds" type="hidden" id="GolfCourse_PromotionTypeIds" />
+
+                        <select id="PromotionTypeIdsSelect" class="form-select gc-multi-select" multiple size="4">
+                            @for (int i = 0; i < Model.GolfCourse.AvailablePromotionTypes.Count; i++)
+                            {
+                                var p = Model.GolfCourse.AvailablePromotionTypes[i];
+                                <option value="@p.Id"
+                                        selected="@(p.IsCheck ? "selected" : null)"
+                                        data-code="@p.Code"
+                                        data-color="@p.ColorCode">
+                                    @p.Name (@p.Code)
+                                </option>
+                            }
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <small class="text-muted d-block mt-1">Giữ Ctrl / Command để chọn nhiều loại ưu đãi.</small>
+                        <div id="PromotionTypePreview" class="gc-selected-tags mt-2"></div>
+                    </div>
+                    <div class="col-md-5">
+                        <abp-input asp-for="GolfCourse.CancellationPolicyHours"
+                                   type="number"
+                                   min="0"
+                                   placeholder="Ví dụ: 24"
+                                   label="Số giờ được phép hoãn / hủy" />
+                    </div>
+
                     <div class="col-12">
                         <label asp-for="GolfCourse.CancellationPolicy" class="form-label">@L["CancellationPolicy"]</label>
                         <textarea asp-for="GolfCourse.CancellationPolicy" class="form-control news-content-editor" placeholder="Nhập chính sách hoãn hủy." rows="5"></textarea>
@@ -384,11 +412,42 @@
         color: #dc3545;
         font-weight: 700;
     }
+
+    .gc-multi-select {
+        border-radius: 10px;
+    }
+
+    .gc-selected-tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    .gc-selected-tag {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 10px;
+        border-radius: 999px;
+        background: #f3f4f6;
+        font-size: 12px;
+        font-weight: 600;
+        color: #111827;
+    }
+
+    .gc-selected-tag-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 999px;
+        display: inline-block;
+    }
 </style>
 
 <script>
     $(document).ready(function () {
         initTimePicker();
+        initPromotionTypeSelect();
+
         let objUtility = @Json.Serialize(Model.GolfCourse.AvailableUtilities);
 
         $(document).on('change', '.hidden-checkbox', function () {
@@ -408,29 +467,31 @@
         const inputUtility = document.getElementById('add-new-input');
         const buttonUtility = document.getElementById('add-new-btn');
 
-        inputUtility.addEventListener('input', () => {
-            if (inputUtility.value.trim() !== '') {
-                buttonUtility.style.display = 'block'
-            } else {
-                buttonUtility.style.display = 'none'
-            }
-        });
-
-        buttonUtility.addEventListener('click', (e) => {
-            e.preventDefault();
-
-            if (inputUtility.value.trim() !== '') {
-                var util = {
-                    utilityId: 0,
-                    utilityName: inputUtility.value.trim(),
-                    isCheck: true
+        if (inputUtility && buttonUtility) {
+            inputUtility.addEventListener('input', () => {
+                if (inputUtility.value.trim() !== '') {
+                    buttonUtility.style.display = 'block'
+                } else {
+                    buttonUtility.style.display = 'none'
                 }
-                objUtility.push(util);
-                addUtilityLabel(util, objUtility.length - 1);
-            }
-            inputUtility.value = '';
-            buttonUtility.style.display = 'none'
-        });
+            });
+
+            buttonUtility.addEventListener('click', (e) => {
+                e.preventDefault();
+
+                if (inputUtility.value.trim() !== '') {
+                    var util = {
+                        utilityId: 0,
+                        utilityName: inputUtility.value.trim(),
+                        isCheck: true
+                    }
+                    objUtility.push(util);
+                    addUtilityLabel(util, objUtility.length - 1);
+                }
+                inputUtility.value = '';
+                buttonUtility.style.display = 'none'
+            });
+        }
 
         function addUtilityLabel(util, index) {
             const divs = document.querySelectorAll("div.row-utility");
@@ -469,6 +530,44 @@
             const cb = newNode.querySelector('input.hidden-checkbox');
             if (cb && cb.checked) {
                 $(cb).parent().addClass("golf-checkbox-checked");
+            }
+        }
+
+        function initPromotionTypeSelect() {
+            const select = document.getElementById('PromotionTypeIdsSelect');
+            const hidden = document.getElementById('GolfCourse_PromotionTypeIds');
+            const preview = document.getElementById('PromotionTypePreview');
+            if (!select || !hidden || !preview) return;
+
+            function syncPromotionTypes() {
+                const selected = Array.from(select.selectedOptions).map(x => x.value);
+                hidden.value = selected.join(',');
+
+                preview.innerHTML = '';
+
+                Array.from(select.selectedOptions).forEach(function (opt) {
+                    const tag = document.createElement('span');
+                    tag.className = 'gc-selected-tag';
+
+                    const dot = document.createElement('span');
+                    dot.className = 'gc-selected-tag-dot';
+                    dot.style.background = opt.getAttribute('data-color') || '#9ca3af';
+
+                    const text = document.createElement('span');
+                    text.textContent = opt.text;
+
+                    tag.appendChild(dot);
+                    tag.appendChild(text);
+                    preview.appendChild(tag);
+                });
+            }
+
+            select.addEventListener('change', syncPromotionTypes);
+            syncPromotionTypes();
+
+            const form = document.querySelector('form[asp-page="/AppGolfCourses/EditModal"]') || document.querySelector('form');
+            if (form) {
+                form.addEventListener('submit', syncPromotionTypes);
             }
         }
     });

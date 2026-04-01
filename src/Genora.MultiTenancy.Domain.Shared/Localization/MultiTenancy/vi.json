@@ -176,6 +176,7 @@
     "NewAppCustomerType": "Thêm loại khách hàng",
     "CustomerTypeCode": "Mã loại khách hàng",
     "CustomerTypeName": "Tên loại khách hàng",
+    "OriginalPrice": "Giá gốc",
     "CustomerTypeDescription": "Mô tả",
     "CustomerTypeColorCode": "Màu nhãn",
     "CustomerFilterText": "Tìm kiếm theo tên/ số điện thoại",

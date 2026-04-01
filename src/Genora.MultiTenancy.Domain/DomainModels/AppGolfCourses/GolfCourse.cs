@@ -50,6 +50,11 @@ public class GolfCourse : FullAuditedAggregateRoot<Guid>, IMultiTenant
     public string? CancellationPolicy { get; set; }
     public string? TermsAndConditions { get; set; }
 
+    public int? CancellationPolicyHours { get; set; }
+
+    [StringLength(1000)]
+    public string? PromotionTypeIds { get; set; }
+
     public TimeSpan? OpenTime { get; set; }
     public TimeSpan? CloseTime { get; set; }
 
@@ -80,6 +85,7 @@ public class GolfCourse : FullAuditedAggregateRoot<Guid>, IMultiTenant
 
     [StringLength(200)]
     public string? PaymentQrBankDisplay { get; set; }
+
 
     // Navigation
     public virtual ICollection<CalendarSlot> CalendarSlots { get; set; } = new List<CalendarSlot>();

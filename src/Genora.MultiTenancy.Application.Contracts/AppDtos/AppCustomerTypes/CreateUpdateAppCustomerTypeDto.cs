@@ -20,4 +20,7 @@ public class CreateUpdateAppCustomerTypeDto
     public string ColorCode { get; set; }
 
     public bool IsActive { get; set; } = true;
+
+    [Range(typeof(decimal), "0", "99999999")]
+    public decimal? OriginalPrice { get; set; }
 }

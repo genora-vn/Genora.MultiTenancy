@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using Volo.Abp.Application.Dtos;
 
 namespace Genora.MultiTenancy.AppDtos.AppGolfCourses;
@@ -37,4 +39,16 @@ public class AppGolfCourseDto : AuditedEntityDto<Guid>
     public string? PaymentQrBankCode { get; set; }
     public string? PaymentQrBankAccount { get; set; }
     public string? PaymentQrBankDisplay { get; set; }
+
+    public short? CancellationPolicyHours { get; set; }
+    public string? PromotionTypeIds { get; set; }
+
+    public List<Guid> PromotionTypeIdList =>
+        !string.IsNullOrWhiteSpace(PromotionTypeIds)
+            ? PromotionTypeIds
+                .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .Select(x => Guid.TryParse(x, out var id) ? id : Guid.Empty)
+                .Where(x => x != Guid.Empty)
+                .ToList()
+            : new List<Guid>();
 }

@@ -9,4 +9,5 @@ public interface IMiniAppFnbOrderService : IApplicationService
     Task<MiniAppFnbOrderDetailDto> CreateAsync(CreateFnbOrderDto input);
     Task<MiniAppFnbOrderListDto> GetListAsync(GetMiniAppFnbOrderListInput input);
     Task<MiniAppFnbOrderDetailDto> GetAsync(Guid id);
+    Task<MiniAppFnbOrderDetailDto> CancelAsync(Guid id, CancelMiniAppFnbOrderDto input);
 }
