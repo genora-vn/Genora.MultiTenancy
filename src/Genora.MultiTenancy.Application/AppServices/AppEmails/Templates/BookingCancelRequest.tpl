@@ -1,13 +1,23 @@
-﻿Hệ thống Zalo Mini App ghi nhận yêu cầu hủy đặt chỗ.
+﻿<table cellpadding="0" cellspacing="0" border="0" width="600" style="width:600px;border-collapse:collapse;font-family:Arial,sans-serif;font-size:14px;color:#000;border:1px solid #b7b7b7;">
+    <tr><td style="background:#355f93;color:#fff;text-align:center;padding:10px 16px 6px 16px;font-size:18px;font-weight:700;">YÊU CẦU HỦY ĐẶT CHỖ</td></tr>
+    <tr><td style="background:#355f93;color:#fff;text-align:center;padding:0 16px 6px 16px;font-size:16px;font-style:italic;">{{ model.GolfCourseName }}</td></tr>
+    <tr><td style="background:#355f93;color:#fff;padding:0 16px 10px 16px;font-size:12px;text-align:right;">Hotline:: {{ model.GolfCourseHotline }}<br />Địa chỉ: {{ model.GolfCourseAddress }}</td></tr>
 
-1. Thông tin booking:
-• Mã đặt chỗ: {{ model.BookingCode }}
-• Khách hàng: {{ model.BookerName }}
-• Số điện thoại khách hàng: {{ model.BookerPhone }}
-• Người yêu cầu hủy: {{ model.CancelRequesterName }}
-• Số điện thoại người yêu cầu hủy: {{ model.CancelRequesterPhone }}
-• Ngày chơi: {{ model.PlayDateText }}
-• Tee time: {{ model.TeeTimeFromText }} - {{ model.TeeTimeToText }}
-• Số lượng người chơi: {{ model.NumberOfGolfers }}
+    <tr><td style="background:#e9eef4;height:8px;"></td></tr>
 
-Vui lòng kiểm tra và cập nhật trạng thái booking trên hệ thống.
+    <tr><td style="background:#cfd9e6;padding:6px 8px;font-weight:700;">THÔNG TIN ĐẶT CHỖ YÊU CẦU HỦY</td></tr>
+    <tr><td style="padding:0;">
+        <table width="100%" cellpadding="4" cellspacing="0" border="0">
+            <tr style="background:#dfe6ee;"><td width="38%">Mã đặt chỗ:</td><td>{{ model.BookingCode }}</td></tr>
+            <tr style="background:#dfe6ee;"><td>Tên khách:</td><td>{{ model.BookerName }}</td></tr>
+            <tr style="background:#dfe6ee;"><td>Người chơi cùng:</td><td>{{ if model.PlayersText != "" }}{{ model.PlayersText }}{{ else }}Không có{{ end }}</td></tr>
+            <tr style="background:#dfe6ee;"><td>Số điện thoại:</td><td>{{ model.BookerPhone }}</td></tr>
+        </table>
+    </td></tr>
+
+    <tr>
+        <td style="padding:18px 8px;text-align:center;font-style:italic;font-weight:700;">
+            Vui lòng kiểm tra và cập nhật trạng thái booking trên hệ thống!
+        </td>
+    </tr>
+</table>

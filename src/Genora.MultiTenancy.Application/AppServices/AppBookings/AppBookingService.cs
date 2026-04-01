@@ -57,6 +57,7 @@ public class AppBookingService :
     private readonly IRepository<GolfCourse, Guid> _golfCourseRepository;
     private readonly IRepository<BookingPlayer, Guid> _playerRepository;
     private readonly IRepository<CalendarSlot, Guid> _calendarSlotRepository;
+    private readonly IRepository<Genora.MultiTenancy.DomainModels.AppPromotionTypes.PromotionType, Guid> _promotionTypeRepository;
     private readonly IAppEmailSenderService _appEmailSenderService;
     private readonly AppBookingExcelExporter _excelExporter;
     private readonly AppBookingExcelImporter _excelImporter;
@@ -66,10 +67,8 @@ public class AppBookingService :
     private readonly ISettingProvider _settingProvider;
     private readonly ILogger<AppBookingService> _logger;
 
-    // ✅ enqueue ZBS via Background Job
     private readonly IBackgroundJobManager _jobManager;
 
-    // NOTE: format yêu cầu bởi Zalo template (không phụ thuộc ngôn ngữ UI)
     private const string ZaloDateFormat = "dd/MM/yyyy";
 
     public AppBookingService(
@@ -89,7 +88,8 @@ public class AppBookingService :
         IRepository<CustomerType, Guid> customerType,
         ISettingProvider settingProvider,
         IBackgroundJobManager jobManager,
-        ILogger<AppBookingService> logger)
+        ILogger<AppBookingService> logger,
+        IRepository<DomainModels.AppPromotionTypes.PromotionType, Guid> promotionTypeRepository)
         : base(repository, currentTenant, featureChecker)
     {
         _customerRepository = customerRepository;
@@ -113,6 +113,7 @@ public class AppBookingService :
         _settingProvider = settingProvider;
         _jobManager = jobManager;
         _logger = logger;
+        _promotionTypeRepository = promotionTypeRepository;
     }
 
     private string NA() => _l["Common:NA"].Value;
@@ -408,11 +409,23 @@ public class AppBookingService :
             if (string.IsNullOrWhiteSpace(paymentText) || paymentText.StartsWith("PaymentMethod:", StringComparison.OrdinalIgnoreCase))
                 paymentText = entity.PaymentMethod.ToString();
 
+            var golfInfo = await GetGolfCourseInfoAsync(entity.GolfCourseId);
+            var promotionText = await GetPromotionNameAsync(entity.CalendarSlotId);
+            var savedPlayers = await _playerRepository.GetListAsync(p => p.BookingId == entity.Id);
+            var playersText = BuildPlayersInlineText(savedPlayers, customer.FullName);
+
+            if (string.IsNullOrWhiteSpace(paymentText) || paymentText.StartsWith("PaymentMethod:", StringComparison.OrdinalIgnoreCase))
+                paymentText = entity.PaymentMethod.ToString();
+
             var model = new BookingNewRequestEmailModelDto
             {
                 BookingCode = entity.BookingCode,
                 BookerName = (customer.FullName ?? "").Trim().IsNullOrWhiteSpace() ? NA() : customer.FullName,
                 BookerPhone = (customer.PhoneNumber ?? "").Trim().IsNullOrWhiteSpace() ? NA() : customer.PhoneNumber,
+
+                GolfCourseName = golfInfo.Name,
+                GolfCourseHotline = golfInfo.Phone,
+                GolfCourseAddress = golfInfo.Address,
 
                 PlayDate = entity.PlayDate,
                 PlayDateText = entity.PlayDate.ToString(ZaloDateFormat, CultureInfo.InvariantCulture),
@@ -423,6 +436,11 @@ public class AppBookingService :
 
                 NumberOfGolfers = entity.NumberOfGolfers,
                 CustomerTypeSummary = customerTypeSummary,
+                PlayersText = playersText,
+                PromotionText = promotionText,
+
+                PricePerGolfer = entity.PricePerGolfer ?? 0m,
+                PricePerGolferText = MoneyText(entity.PricePerGolfer),
 
                 TotalAmount = entity.TotalAmount,
                 TotalAmountText = MoneyText(entity.TotalAmount),
@@ -572,6 +590,34 @@ public class AppBookingService :
 
         try
         {
+            var golfInfo = await GetGolfCourseInfoAsync(entity.GolfCourseId);
+
+            var oldCustomerType = oldCustomer?.CustomerTypeId.HasValue == true
+                ? await _customerType.FindAsync(x => x.Id == oldCustomer.CustomerTypeId.Value)
+                : null;
+            var newCustomerType = newCustomer?.CustomerTypeId.HasValue == true
+                ? await _customerType.FindAsync(x => x.Id == newCustomer.CustomerTypeId.Value)
+                : null;
+
+            var oldCustomerTypeText = oldCustomerType?.Name ?? oldCustomerType?.Code ?? NA();
+            var newCustomerTypeText = newCustomerType?.Name ?? newCustomerType?.Code ?? NA();
+
+            var oldPromotionText = oldSlot != null && oldSlot.PromotionTypeId != Guid.Empty
+                ? (await _promotionTypeRepository.FindAsync(oldSlot.PromotionTypeId))?.Name ?? ""
+                : "";
+
+            var newPromotionText = newSlot != null && newSlot.PromotionTypeId != Guid.Empty
+                ? (await _promotionTypeRepository.FindAsync(newSlot.PromotionTypeId))?.Name ?? ""
+                : "";
+
+            var oldPlayersInline = BuildPlayersInlineText(oldPlayers, oldCustomer?.FullName);
+            var newPlayersInline = BuildPlayersInlineText(newPlayers, newCustomer?.FullName);
+
+            var otherRequestsText = await BuildOtherRequestsTextAsync(entity.Utility);
+            var invoiceInfoText = BuildInvoiceInfoText(entity);
+            var pricePerGolferText = MoneyText(entity.PricePerGolfer);
+            var totalAmountText = MoneyText(entity.TotalAmount);
+
             if (becameCancelled)
             {
                 if (!string.IsNullOrWhiteSpace(oldCustomer.PhoneNumber))
@@ -626,10 +672,16 @@ public class AppBookingService :
                     CancelRequesterName = requesterName,
                     CancelRequesterPhone = requesterPhone,
 
+                    GolfCourseName = golfInfo.Name,
+                    GolfCourseHotline = golfInfo.Phone,
+                    GolfCourseAddress = golfInfo.Address,
+
+                    PlayDate = entity.PlayDate,
                     PlayDateText = newPlayDateText,
                     TeeTimeFromText = newTeeFromText,
                     TeeTimeToText = newTeeToText,
                     NumberOfGolfers = entity.NumberOfGolfers,
+                    PlayersText = newPlayersInline,
 
                     CancelStatusText = newStatusText
                 };
@@ -684,16 +736,34 @@ public class AppBookingService :
                     BookerName = newCustomer?.FullName ?? NA(),
                     BookerPhone = newCustomer?.PhoneNumber ?? NA(),
 
+                    GolfCourseName = golfInfo.Name,
+                    GolfCourseHotline = golfInfo.Phone,
+                    GolfCourseAddress = golfInfo.Address,
+
                     OldStatusText = oldStatusText,
                     OldPaymentMethodText = oldPaymentText,
                     OldNumberOfGolfers = oldNumberOfGolfers,
-
-                    OldPlayersText = BuildPlayersText(oldPlayers),
-                    NewPlayersText = BuildPlayersText(newPlayers),
+                    OldPlayDateText = oldPlayDateText,
+                    OldTeeTimeFromText = oldTeeFromText,
+                    OldTeeTimeToText = oldTeeToText,
+                    OldCustomerTypeText = oldCustomerTypeText,
+                    OldPromotionText = oldPromotionText,
+                    OldPlayersText = oldPlayersInline,
 
                     NewStatusText = newStatusText,
                     NewPaymentMethodText = newPaymentText,
                     NewNumberOfGolfers = newNumberOfGolfers,
+                    NewPlayDateText = newPlayDateText,
+                    NewTeeTimeFromText = newTeeFromText,
+                    NewTeeTimeToText = newTeeToText,
+                    NewCustomerTypeText = newCustomerTypeText,
+                    NewPromotionText = newPromotionText,
+                    NewPlayersText = newPlayersInline,
+
+                    PricePerGolferText = pricePerGolferText,
+                    TotalAmountText = totalAmountText,
+                    OtherRequestsText = otherRequestsText,
+                    InvoiceInfoText = invoiceInfoText,
 
                     HasPlayerChanges = hasPlayerChanges,
                     HasHeaderChanges = hasHeaderChanges
@@ -1034,15 +1104,14 @@ public class AppBookingService :
     }
 
     private async Task<(string To, string? Cc, string? Bcc, string Subject)> GetEmailConfigAsync(
-    string toKey, string ccKey, string bccKey, string subjectKey,
-    string bookingCode, string fallbackTo)
+        string toKey, string ccKey, string bccKey, string subjectKey,
+        string bookingCode, string fallbackTo)
     {
         var to = await _settingProvider.GetOrNullAsync(toKey);
         var cc = await _settingProvider.GetOrNullAsync(ccKey);
         var bcc = await _settingProvider.GetOrNullAsync(bccKey);
         var subjectTpl = await _settingProvider.GetOrNullAsync(subjectKey);
 
-        // ✅ fallback nếu null hoặc rỗng
         var toFinal = EmailHelper.NormalizeEmailList(to);
         if (string.IsNullOrWhiteSpace(toFinal)) toFinal = EmailHelper.NormalizeEmailList(fallbackTo);
 
@@ -1053,7 +1122,6 @@ public class AppBookingService :
             Subject: ApplySubjectTemplate(subjectTpl, bookingCode)
         );
     }
-
 
     private static List<int> ParseUtilityIds(string? utility)
     {
@@ -1110,6 +1178,61 @@ public class AppBookingService :
 
             if (i < players.Count - 1) lines.Add("");
         }
+
+        return string.Join(Environment.NewLine, lines);
+    }
+
+    private async Task<string> GetPromotionNameAsync(Guid? calendarSlotId)
+    {
+        if (!calendarSlotId.HasValue || calendarSlotId.Value == Guid.Empty)
+            return "";
+
+        var slot = await _calendarSlotRepository.FindAsync(calendarSlotId.Value);
+        if (slot == null || slot.PromotionTypeId == Guid.Empty)
+            return "";
+
+        var promo = await _promotionTypeRepository.FindAsync(slot.PromotionTypeId);
+        return promo?.Name ?? "";
+    }
+
+    private async Task<(string Name, string Phone, string Address)> GetGolfCourseInfoAsync(Guid golfCourseId)
+    {
+        var golfCourse = await _golfCourseRepository.FindAsync(golfCourseId);
+        return (
+            Name: golfCourse?.Name ?? "",
+            Phone: golfCourse?.Phone ?? "",
+            Address: golfCourse?.Address ?? ""
+        );
+    }
+
+    private string BuildPlayersInlineText(List<BookingPlayer> players, string? bookerName)
+    {
+        if (players == null || players.Count == 0) return "";
+
+        var booker = (bookerName ?? "").Trim();
+
+        var names = players
+            .Select(x => (x.PlayerName ?? "").Trim())
+            .Where(x => !string.IsNullOrWhiteSpace(x))
+            .Where(x => !string.Equals(x, booker, StringComparison.OrdinalIgnoreCase))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        return names.Count == 0 ? "" : string.Join(", ", names);
+    }
+
+    private string BuildInvoiceInfoText(Booking booking)
+    {
+        if (!booking.IsExportInvoice)
+            return "Không yêu cầu";
+
+        var lines = new List<string>
+        {
+            $"Tên công ty: {booking.CompanyName ?? ""}",
+            $"Mã số thuế: {booking.TaxCode ?? ""}",
+            $"Địa chỉ: {booking.CompanyAddress ?? ""}",
+            $"Email nhận hóa đơn: {booking.InvoiceEmail ?? ""}"
+        };
 
         return string.Join(Environment.NewLine, lines);
     }

@@ -42,6 +42,7 @@ public class MiniAppBookingAppService : ApplicationService, IMiniAppBookingAppSe
     private readonly ISettingProvider _settingProvider;
     private readonly IBackgroundJobManager _jobManager;
     private readonly IRepository<GolfCourse, Guid> _golfCourseRepo;
+    private readonly IRepository<Genora.MultiTenancy.DomainModels.AppPromotionTypes.PromotionType, Guid> _promotionTypeRepository;
 
     public MiniAppBookingAppService(
         IRepository<Booking, Guid> bookingRepo,
@@ -55,7 +56,8 @@ public class MiniAppBookingAppService : ApplicationService, IMiniAppBookingAppSe
         IRepository<OptionExtend, Guid> optionExtendRepo,
         ISettingProvider settingProvider,
         IBackgroundJobManager jobManager,
-        IRepository<GolfCourse, Guid> golfCourseRepo)
+        IRepository<GolfCourse, Guid> golfCourseRepo,
+        IRepository<DomainModels.AppPromotionTypes.PromotionType, Guid> promotionTypeRepository)
     {
         _bookingRepo = bookingRepo;
         _playerRepo = playerRepo;
@@ -68,6 +70,7 @@ public class MiniAppBookingAppService : ApplicationService, IMiniAppBookingAppSe
         _settingProvider = settingProvider;
         _jobManager = jobManager;
         _golfCourseRepo = golfCourseRepo;
+        _promotionTypeRepository = promotionTypeRepository;
     }
 
     public async Task<MiniAppBookingDetailDto> CreateFromMiniAppAsync(MiniAppCreateBookingDto input)
@@ -91,7 +94,6 @@ public class MiniAppBookingAppService : ApplicationService, IMiniAppBookingAppSe
                 throw new AbpValidationException("Vui lòng nhập Email nhận hóa đơn");
         }
 
-        // BookingCode: CustomerCode + ddMMyy + serial/day (reset theo ngày)
         var slotWithPrices = await _calendarSlotRepo.WithDetailsAsync(c => c.Prices);
         var calendarSlot = slotWithPrices.FirstOrDefault(c => c.Id == input.CalendarSlotId);
         if (calendarSlot == null)
@@ -108,10 +110,8 @@ public class MiniAppBookingAppService : ApplicationService, IMiniAppBookingAppSe
             bookingCode = $"{customer.CustomerCode}-{datePart}-{(countInDay + 2).ToString("D3")}";
         }
 
-        // Lấy giá theo loại khách + số hố
         var myPriceRow = calendarSlot.Prices.FirstOrDefault(x => x.CustomerTypeId == customer.CustomerTypeId);
 
-        // nếu không có giá theo loại khách, fallback lấy VIS (nếu có), nếu không thì lấy dòng bất kỳ
         if (myPriceRow == null)
         {
             var visType = await _customerType.FirstOrDefaultAsync(c => c.Code == "VIS");
@@ -121,12 +121,10 @@ public class MiniAppBookingAppService : ApplicationService, IMiniAppBookingAppSe
             myPriceRow ??= calendarSlot.Prices.FirstOrDefault();
         }
 
-        // Giá / golfer theo số hố
         input.PricePerGolfer = myPriceRow != null
             ? PriceByHoleHelper.GetPriceByNumberHoles(myPriceRow, input.NumberHoles)
             : 0m;
 
-        // Tổng tiền
         input.TotalAmount = input.PricePerGolfer * input.NumberOfGolfers;
 
         var booking = new Booking(
@@ -226,11 +224,21 @@ public class MiniAppBookingAppService : ApplicationService, IMiniAppBookingAppSe
             static string ToDDMMYYYY(DateTime dt) => dt.ToString("dd/MM/yyyy");
 
             var otherRequestsText = await BuildOtherRequestsTextAsync(booking.Utility);
+
+            var golfInfo = await GetGolfCourseInfoAsync(booking.GolfCourseId);
+            var promotionText = await GetPromotionNameAsync(booking.CalendarSlotId);
+            var savedPlayers = await _playerRepo.GetListAsync(x => x.BookingId == booking.Id);
+            var playersText = BuildPlayersInlineText(savedPlayers, customer.FullName);
+
             var model = new BookingNewRequestEmailModelDto
             {
                 BookingCode = booking.BookingCode,
                 BookerName = customer.FullName ?? "N/A",
                 BookerPhone = customer.PhoneNumber ?? "N/A",
+
+                GolfCourseName = golfInfo.Name,
+                GolfCourseHotline = golfInfo.Phone,
+                GolfCourseAddress = golfInfo.Address,
 
                 PlayDate = booking.PlayDate,
                 PlayDateText = ToDDMMYYYY(booking.PlayDate),
@@ -241,9 +249,14 @@ public class MiniAppBookingAppService : ApplicationService, IMiniAppBookingAppSe
 
                 NumberOfGolfers = booking.NumberOfGolfers,
                 CustomerTypeSummary = customerTypeSummary,
+                PlayersText = playersText,
+                PromotionText = promotionText,
+
+                PricePerGolfer = booking.PricePerGolfer ?? 0m,
+                PricePerGolferText = $"{(booking.PricePerGolfer ?? 0m):N0}",
 
                 TotalAmount = booking.TotalAmount,
-                TotalAmountText = $"{booking.TotalAmount:N0} đ",
+                TotalAmountText = $"{booking.TotalAmount:N0}",
 
                 PaymentMethod = booking.PaymentMethod.ToString(),
                 OtherRequests = otherRequestsText,
@@ -278,7 +291,6 @@ public class MiniAppBookingAppService : ApplicationService, IMiniAppBookingAppSe
             // không throw
         }
 
-        // trả về dto đầy đủ (kèm players)
         var dto = ObjectMapper.Map<Booking, BookingDetailData>(booking);
         dto.NumberHoles = booking.NumberHole;
         dto.Utilities = input.Utilities;
@@ -490,12 +502,11 @@ public class MiniAppBookingAppService : ApplicationService, IMiniAppBookingAppSe
     }
 
     private bool EvaluateCancellationPolicy(
-    DateTime creationTime,
-    int? cancellationPolicyHours,
-    string? promotionTypeIdsCsv,
-    Guid? slotPromotionTypeId)
+        DateTime creationTime,
+        int? cancellationPolicyHours,
+        string? promotionTypeIdsCsv,
+        Guid? slotPromotionTypeId)
     {
-        // true = KHÔNG còn được hoãn/hủy
         var isExpiredByHours =
             cancellationPolicyHours.HasValue &&
             cancellationPolicyHours.Value > 0 &&
@@ -519,5 +530,44 @@ public class MiniAppBookingAppService : ApplicationService, IMiniAppBookingAppSe
             .Select(x => Guid.TryParse(x, out var id) ? id : Guid.Empty)
             .Where(x => x != Guid.Empty)
             .ToHashSet();
+    }
+
+    private async Task<string> GetPromotionNameAsync(Guid? calendarSlotId)
+    {
+        if (!calendarSlotId.HasValue || calendarSlotId.Value == Guid.Empty)
+            return "";
+
+        var slot = await _calendarSlotRepo.FindAsync(calendarSlotId.Value);
+        if (slot == null || slot.PromotionTypeId == Guid.Empty)
+            return "";
+
+        var promo = await _promotionTypeRepository.FindAsync(slot.PromotionTypeId);
+        return promo?.Name ?? "";
+    }
+
+    private async Task<(string Name, string Phone, string Address)> GetGolfCourseInfoAsync(Guid golfCourseId)
+    {
+        var golfCourse = await _golfCourseRepo.FindAsync(golfCourseId);
+        return (
+            Name: golfCourse?.Name ?? "",
+            Phone: golfCourse?.Phone ?? "",
+            Address: golfCourse?.Address ?? ""
+        );
+    }
+
+    private string BuildPlayersInlineText(List<BookingPlayer> players, string? bookerName)
+    {
+        if (players == null || players.Count == 0) return "";
+
+        var booker = (bookerName ?? "").Trim();
+
+        var names = players
+            .Select(x => (x.PlayerName ?? "").Trim())
+            .Where(x => !string.IsNullOrWhiteSpace(x))
+            .Where(x => !string.Equals(x, booker, StringComparison.OrdinalIgnoreCase))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        return names.Count == 0 ? "" : string.Join(", ", names);
     }
 }

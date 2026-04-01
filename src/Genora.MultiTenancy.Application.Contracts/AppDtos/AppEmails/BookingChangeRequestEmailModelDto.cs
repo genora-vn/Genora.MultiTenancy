@@ -1,28 +1,39 @@
 ﻿namespace Genora.MultiTenancy.AppDtos.AppEmails;
 public class BookingChangeRequestEmailModelDto
 {
-    // Booking info
     public string BookingCode { get; set; } = "";
     public string BookerName { get; set; } = "";
     public string BookerPhone { get; set; } = "";
 
-    // Before change
+    public string GolfCourseName { get; set; } = "";
+    public string GolfCourseHotline { get; set; } = "";
+    public string GolfCourseAddress { get; set; } = "";
+
     public string OldStatusText { get; set; } = "";
     public string OldPaymentMethodText { get; set; } = "";
     public int OldNumberOfGolfers { get; set; }
-
-    // Players before (only display if HasPlayerChanges)
+    public string OldPlayDateText { get; set; } = "";
+    public string OldTeeTimeFromText { get; set; } = "";
+    public string OldTeeTimeToText { get; set; } = "";
+    public string OldCustomerTypeText { get; set; } = "";
+    public string OldPromotionText { get; set; } = "";
     public string OldPlayersText { get; set; } = "";
 
-    // After change
     public string NewStatusText { get; set; } = "";
     public string NewPaymentMethodText { get; set; } = "";
     public int NewNumberOfGolfers { get; set; }
-
-    // Players after (only display if HasPlayerChanges)
+    public string NewPlayDateText { get; set; } = "";
+    public string NewTeeTimeFromText { get; set; } = "";
+    public string NewTeeTimeToText { get; set; } = "";
+    public string NewCustomerTypeText { get; set; } = "";
+    public string NewPromotionText { get; set; } = "";
     public string NewPlayersText { get; set; } = "";
 
-    // Flags for template rendering
+    public string PricePerGolferText { get; set; } = "";
+    public string TotalAmountText { get; set; } = "";
+    public string OtherRequestsText { get; set; } = "";
+    public string InvoiceInfoText { get; set; } = "";
+
     public bool HasPlayerChanges { get; set; }
     public bool HasHeaderChanges { get; set; }
 }
