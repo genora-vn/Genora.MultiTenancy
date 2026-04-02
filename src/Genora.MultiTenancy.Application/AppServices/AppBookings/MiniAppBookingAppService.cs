@@ -101,7 +101,7 @@ public class MiniAppBookingAppService : ApplicationService, IMiniAppBookingAppSe
 
         var datePart = calendarSlot.ApplyDate.ToString("ddMMyy");
 
-        var countInDay = await _bookingRepo.CountAsync(x => x.PlayDate.Date == input.PlayDate.Date);
+        var countInDay = await _bookingRepo.CountAsync(x => x.PlayDate.Date == calendarSlot.ApplyDate.Date);
         var serial = (countInDay + 1).ToString("D3");
 
         var bookingCode = $"{customer.CustomerCode}-{datePart}-{serial}";
