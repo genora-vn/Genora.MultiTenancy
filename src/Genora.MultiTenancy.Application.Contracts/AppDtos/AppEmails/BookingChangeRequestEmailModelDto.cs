@@ -18,6 +18,7 @@ public class BookingChangeRequestEmailModelDto
     public string OldCustomerTypeText { get; set; } = "";
     public string OldPromotionText { get; set; } = "";
     public string OldPlayersText { get; set; } = "";
+    public string OldUpdatedByText { get; set; } = "";
 
     public string NewStatusText { get; set; } = "";
     public string NewPaymentMethodText { get; set; } = "";
@@ -28,6 +29,7 @@ public class BookingChangeRequestEmailModelDto
     public string NewCustomerTypeText { get; set; } = "";
     public string NewPromotionText { get; set; } = "";
     public string NewPlayersText { get; set; } = "";
+    public string NewUpdatedByText { get; set; } = "";
 
     public string PricePerGolferText { get; set; } = "";
     public string TotalAmountText { get; set; } = "";

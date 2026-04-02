@@ -730,6 +730,8 @@ public class AppBookingService :
                     );
                 }
 
+                var updatedByText = BuildUpdatedByText();
+
                 var changeModel = new BookingChangeRequestEmailModelDto
                 {
                     BookingCode = entity.BookingCode,
@@ -749,6 +751,7 @@ public class AppBookingService :
                     OldCustomerTypeText = oldCustomerTypeText,
                     OldPromotionText = oldPromotionText,
                     OldPlayersText = oldPlayersInline,
+                    OldUpdatedByText = updatedByText,
 
                     NewStatusText = newStatusText,
                     NewPaymentMethodText = newPaymentText,
@@ -759,8 +762,12 @@ public class AppBookingService :
                     NewCustomerTypeText = newCustomerTypeText,
                     NewPromotionText = newPromotionText,
                     NewPlayersText = newPlayersInline,
+                    NewUpdatedByText = updatedByText,
 
-                    PricePerGolferText = pricePerGolferText,
+                    PricePerGolferText = entity.PricePerGolfer.HasValue
+                        ? MoneyText(entity.PricePerGolfer)
+                        : MoneyText(input.PricePerGolfer),
+
                     TotalAmountText = totalAmountText,
                     OtherRequestsText = otherRequestsText,
                     InvoiceInfoText = invoiceInfoText,
@@ -1235,5 +1242,29 @@ public class AppBookingService :
         };
 
         return string.Join(Environment.NewLine, lines);
+    }
+
+    private string BuildUpdatedByText()
+    {
+        var fullName = (CurrentUser?.Name ?? "").Trim();
+        var userName = (CurrentUser?.UserName ?? "").Trim();
+
+        var displayName = !string.IsNullOrWhiteSpace(fullName)
+            ? fullName
+            : (!string.IsNullOrWhiteSpace(userName) ? userName : "Hệ thống");
+
+        var role = "admin";
+
+        if (!string.IsNullOrWhiteSpace(userName) &&
+            (userName.Contains("khach", StringComparison.OrdinalIgnoreCase)
+             || userName.Contains("customer", StringComparison.OrdinalIgnoreCase)))
+        {
+            role = "khách hàng";
+        }
+
+        if (!string.IsNullOrWhiteSpace(fullName) && !string.IsNullOrWhiteSpace(userName))
+            return $"{displayName} ({role})";
+
+        return $"{displayName} ({role})";
     }
 }

@@ -51,14 +51,14 @@
 
     <tr><td style="background:#cfd9e6;padding:6px 8px;font-weight:700;">YÊU CẦU ĐẶC BIỆT KHÁC (nếu có)</td></tr>
     <tr>
-        <td style="padding:6px 8px;white-space:pre-line;">
+        <td style="padding:8px 8px;white-space:pre-line;line-height:1.55;">
             {{ if model.OtherRequests != "" }}{{ model.OtherRequests }}{{ else }}Không có{{ end }}
         </td>
     </tr>
 
     <tr><td style="background:#cfd9e6;padding:6px 8px;font-weight:700;">THÔNG TIN XUẤT HÓA ĐƠN (nếu có)</td></tr>
     <tr>
-        <td style="padding:6px 8px;white-space:pre-line;">
+        <td style="padding:8px 8px;white-space:pre-line;line-height:1.55;">
             {{ if model.IsExportInvoice -}}
 Tên công ty: {{ model.CompanyName }}
 Mã số thuế: {{ model.TaxCode }}

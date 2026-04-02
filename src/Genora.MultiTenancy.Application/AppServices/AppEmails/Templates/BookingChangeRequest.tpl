@@ -23,6 +23,8 @@
             <tr><td>Loại khách</td><td>{{ model.OldCustomerTypeText }}</td></tr>
             <tr style="background:#d8d8d8;"><td>Người chơi cùng</td><td>{{ if model.OldPlayersText != "" }}{{ model.OldPlayersText }}{{ else }}Không có{{ end }}</td></tr>
             <tr><td>Chương trình ưu đãi</td><td>{{ if model.OldPromotionText != "" }}{{ model.OldPromotionText }}{{ else }}Không có{{ end }}</td></tr>
+            <tr style="background:#d8d8d8;"><td>Trạng thái booking</td><td>{{ model.OldStatusText }}</td></tr>
+            <tr><td>Tên người cập nhật (role)</td><td>{{ model.OldUpdatedByText }}</td></tr>
         </table>
     </td></tr>
 
@@ -35,6 +37,8 @@
             <tr><td>Loại khách</td><td>{{ model.NewCustomerTypeText }}</td></tr>
             <tr style="background:#d8d8d8;"><td>Người chơi cùng</td><td>{{ if model.NewPlayersText != "" }}{{ model.NewPlayersText }}{{ else }}Không có{{ end }}</td></tr>
             <tr><td>Chương trình ưu đãi</td><td>{{ if model.NewPromotionText != "" }}{{ model.NewPromotionText }}{{ else }}Không có{{ end }}</td></tr>
+            <tr style="background:#d8d8d8;"><td>Trạng thái booking</td><td>{{ model.NewStatusText }}</td></tr>
+            <tr><td>Tên người cập nhật (role)</td><td>{{ model.NewUpdatedByText }}</td></tr>
         </table>
     </td></tr>
 
@@ -48,10 +52,18 @@
     </td></tr>
 
     <tr><td style="background:#cfd9e6;padding:6px 8px;font-weight:700;">YÊU CẦU ĐẶC BIỆT KHÁC (nếu có)</td></tr>
-    <tr><td style="padding:6px 8px;white-space:pre-line;">{{ if model.OtherRequestsText != "" }}{{ model.OtherRequestsText }}{{ else }}Không có{{ end }}</td></tr>
+    <tr>
+        <td style="padding:8px 8px;white-space:pre-line;line-height:1.55;">
+            {{ if model.OtherRequestsText != "" }}{{ model.OtherRequestsText }}{{ else }}Không có{{ end }}
+        </td>
+    </tr>
 
     <tr><td style="background:#cfd9e6;padding:6px 8px;font-weight:700;">THÔNG TIN XUẤT HÓA ĐƠN (nếu có)</td></tr>
-    <tr><td style="padding:6px 8px;white-space:pre-line;">{{ if model.InvoiceInfoText != "" }}{{ model.InvoiceInfoText }}{{ else }}Không yêu cầu{{ end }}</td></tr>
+    <tr>
+        <td style="padding:8px 8px;white-space:pre-line;line-height:1.55;">
+            {{ if model.InvoiceInfoText != "" }}{{ model.InvoiceInfoText }}{{ else }}Không yêu cầu{{ end }}
+        </td>
+    </tr>
 
     <tr><td style="padding:18px 8px;text-align:center;font-style:italic;font-weight:700;">Vui lòng kiểm tra và cập nhật trạng thái booking trên hệ thống!</td></tr>
 </table>
