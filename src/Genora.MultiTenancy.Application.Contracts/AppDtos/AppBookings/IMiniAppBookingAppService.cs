@@ -8,6 +8,8 @@ public interface IMiniAppBookingAppService : IApplicationService
 {
     Task<MiniAppBookingDetailDto> CreateFromMiniAppAsync(MiniAppCreateBookingDto input);
 
+    Task<MiniAppBookingDetailDto> UpdateFromMiniAppAsync(Guid id, MiniAppUpdateBookingDto input);
+
     Task<MiniAppBookingListDto> GetListMiniAppAsync(GetMiniAppBookingListInput input);
 
     Task<MiniAppBookingDetailDto> GetMiniAppAsync(Guid id, Guid customerId);

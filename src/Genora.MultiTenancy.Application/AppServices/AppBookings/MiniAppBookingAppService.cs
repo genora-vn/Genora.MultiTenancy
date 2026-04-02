@@ -1,4 +1,5 @@
-﻿using Genora.MultiTenancy.AppDtos.AppEmails;
+﻿using DocumentFormat.OpenXml.ExtendedProperties;
+using Genora.MultiTenancy.AppDtos.AppEmails;
 using Genora.MultiTenancy.AppServices.AppEmails;
 using Genora.MultiTenancy.AppServices.AppZaloAuths;
 using Genora.MultiTenancy.DomainModels.AppBookingPlayers;
@@ -173,6 +174,7 @@ public class MiniAppBookingAppService : ApplicationService, IMiniAppBookingAppSe
                     p.CustomerId,
                     p.PlayerName,
                     p.PricePerPlayer,
+                    p.VgaCode,
                     p.Notes
                 );
 
@@ -299,6 +301,273 @@ public class MiniAppBookingAppService : ApplicationService, IMiniAppBookingAppSe
         dto.Players = ObjectMapper.Map<List<BookingPlayer>, List<AppBookingPlayerDto>>(players);
 
         return new MiniAppBookingDetailDto { Error = 0, Message = "Success", Data = dto };
+    }
+
+    public async Task<MiniAppBookingDetailDto> UpdateFromMiniAppAsync(Guid id, MiniAppUpdateBookingDto input)
+    {
+        try
+        {
+            if (input.CustomerId == Guid.Empty)
+                throw new MemberAccessException("Vui lòng đăng nhập trước khi truy cập");
+
+            var booking = await _bookingRepo.FindAsync(x => x.Id == id);
+            if (booking == null)
+                throw new EntityNotFoundException(typeof(Booking), id);
+
+            if (booking.CustomerId != input.CustomerId)
+                throw new MemberAccessException("Bạn không có quyền cập nhật booking này");
+
+            if (booking.Status == BookingStatus.CancelledRefund || booking.Status == BookingStatus.CancelledNoRefund)
+                throw new AbpValidationException("Booking đã hủy, không thể cập nhật");
+
+            var customer = await _customerRepo.GetAsync(input.CustomerId);
+            if (customer == null)
+                throw new MemberAccessException("Quý khách chưa đăng nhập dịch vụ");
+
+            if (input.IsExportInvoice)
+            {
+                if (string.IsNullOrWhiteSpace(input.CompanyName))
+                    throw new AbpValidationException("Vui lòng nhập Tên công ty");
+
+                if (string.IsNullOrWhiteSpace(input.TaxCode))
+                    throw new AbpValidationException("Vui lòng nhập Mã số thuế");
+
+                if (string.IsNullOrWhiteSpace(input.CompanyAddress))
+                    throw new AbpValidationException("Vui lòng nhập Địa chỉ");
+
+                if (string.IsNullOrWhiteSpace(input.InvoiceEmail))
+                    throw new AbpValidationException("Vui lòng nhập Email nhận hóa đơn");
+            }
+
+            var oldPlayers = await _playerRepo.GetListAsync(p => p.BookingId == id);
+
+            CalendarSlot? oldSlot = null;
+            if (booking.CalendarSlotId.HasValue && booking.CalendarSlotId.Value != Guid.Empty)
+                oldSlot = await _calendarSlotRepo.FindAsync(booking.CalendarSlotId.Value);
+
+            var oldPlayDateText = booking.PlayDate.ToString("dd/MM/yyyy", CultureInfo.InvariantCulture);
+            var oldTeeFromText = oldSlot?.TimeFrom.ToString(@"hh\:mm") ?? "";
+            var oldTeeToText = oldSlot?.TimeTo.ToString(@"hh\:mm") ?? "";
+
+            var oldStatusText = booking.Status.ToString();
+            var oldPaymentMethodText = booking.PaymentMethod?.ToString() ?? "N/A";
+            var oldNumberOfGolfers = booking.NumberOfGolfers;
+
+            var oldCustomerType = customer.CustomerTypeId.HasValue
+                ? await _customerType.FindAsync(x => x.Id == customer.CustomerTypeId.Value)
+                : null;
+            var oldCustomerTypeText = oldCustomerType?.Name ?? oldCustomerType?.Code ?? "N/A";
+
+            var oldPromotionText = await GetPromotionNameAsync(booking.CalendarSlotId);
+
+            var slotWithPrices = await _calendarSlotRepo.WithDetailsAsync(c => c.Prices);
+            var newCalendarSlot = slotWithPrices.FirstOrDefault(c => c.Id == input.CalendarSlotId);
+            if (newCalendarSlot == null)
+            {
+                return new MiniAppBookingDetailDto
+                {
+                    Error = (int)HttpStatusCode.NotFound,
+                    Message = "Không tìm thấy giờ chơi"
+                };
+            }
+
+            var myPriceRow = newCalendarSlot.Prices.FirstOrDefault(x => x.CustomerTypeId == customer.CustomerTypeId);
+
+            if (myPriceRow == null)
+            {
+                var visType = await _customerType.FirstOrDefaultAsync(c => c.Code == "VIS");
+                if (visType != null)
+                    myPriceRow = newCalendarSlot.Prices.FirstOrDefault(x => x.CustomerTypeId == visType.Id);
+
+                myPriceRow ??= newCalendarSlot.Prices.FirstOrDefault();
+            }
+
+            var recalculatedPricePerGolfer = myPriceRow != null
+                ? PriceByHoleHelper.GetPriceByNumberHoles(myPriceRow, input.NumberHoles)
+                : 0m;
+
+            booking.CalendarSlotId = input.CalendarSlotId;
+            booking.GolfCourseId = newCalendarSlot.GolfCourseId;
+            booking.PlayDate = newCalendarSlot.ApplyDate;
+            booking.NumberOfGolfers = input.NumberOfGolfers;
+            booking.NumberHole = input.NumberHoles;
+            booking.PricePerGolfer = recalculatedPricePerGolfer;
+            booking.TotalAmount = recalculatedPricePerGolfer * input.NumberOfGolfers;
+            booking.Utility = (input.Utilities != null && input.Utilities.Count > 0)
+                ? string.Join(",", input.Utilities)
+                : string.Empty;
+
+            booking.IsExportInvoice = input.IsExportInvoice;
+            if (input.IsExportInvoice)
+            {
+                booking.CompanyName = input.CompanyName?.Trim();
+                booking.TaxCode = input.TaxCode?.Trim();
+                booking.CompanyAddress = input.CompanyAddress?.Trim();
+                booking.InvoiceEmail = input.InvoiceEmail?.Trim();
+            }
+            else
+            {
+                booking.CompanyName = null;
+                booking.TaxCode = null;
+                booking.CompanyAddress = null;
+                booking.InvoiceEmail = null;
+            }
+
+            await _bookingRepo.UpdateAsync(booking, autoSave: true);
+
+            await ReplacePlayersAsync(booking.Id, input.Players, booking.PricePerGolfer);
+
+            await CurrentUnitOfWork.SaveChangesAsync();
+
+            var newPlayers = await _playerRepo.GetListAsync(p => p.BookingId == id);
+
+            var newPlayDateText = booking.PlayDate.ToString("dd/MM/yyyy", CultureInfo.InvariantCulture);
+            var newTeeFromText = newCalendarSlot.TimeFrom.ToString(@"hh\:mm");
+            var newTeeToText = newCalendarSlot.TimeTo.ToString(@"hh\:mm");
+
+            var newStatusText = booking.Status.ToString();
+            var newPaymentMethodText = booking.PaymentMethod?.ToString() ?? "N/A";
+            var newNumberOfGolfers = booking.NumberOfGolfers;
+
+            var newCustomerType = customer.CustomerTypeId.HasValue
+                ? await _customerType.FindAsync(x => x.Id == customer.CustomerTypeId.Value)
+                : null;
+            var newCustomerTypeText = newCustomerType?.Name ?? newCustomerType?.Code ?? "N/A";
+
+            var newPromotionText = await GetPromotionNameAsync(booking.CalendarSlotId);
+
+            static string PlayersSig(IEnumerable<BookingPlayer> ps) =>
+                string.Join("|",
+                    ps.Select(p =>
+                        $"{(p.PlayerName ?? "").Trim()}#{(p.VgaCode ?? "").Trim()}#{(p.PricePerPlayer ?? 0m):0.##}"
+                    ).OrderBy(x => x, StringComparer.OrdinalIgnoreCase)
+                );
+
+            var hasPlayerChanges =
+                !string.Equals(PlayersSig(oldPlayers), PlayersSig(newPlayers), StringComparison.OrdinalIgnoreCase);
+
+            var hasHeaderChanges =
+                oldPlayDateText != newPlayDateText
+                || oldTeeFromText != newTeeFromText
+                || oldTeeToText != newTeeToText
+                || oldNumberOfGolfers != newNumberOfGolfers;
+
+            try
+            {
+                if (!string.IsNullOrWhiteSpace(customer.PhoneNumber))
+                {
+                    await _jobManager.EnqueueAsync(
+                        new ZbsSendJobArgs
+                        {
+                            TenantId = CurrentTenant.Id,
+                            TemplateKey = "BookingChanged",
+                            Phone = customer.PhoneNumber,
+                            TrackingId = booking.Id.ToString(),
+                            TemplateData = new
+                            {
+                                customer_name = customer.FullName,
+                                booking_code = booking.BookingCode,
+                                tee_off_date = newPlayDateText,
+                                tee_off_time = newTeeFromText,
+                                number_of_player = booking.NumberOfGolfers
+                            }
+                        },
+                        priority: BackgroundJobPriority.Normal
+                    );
+                }
+            }
+            catch
+            {
+                // không throw để không ảnh hưởng update booking
+            }
+
+            try
+            {
+                var golfInfo = await GetGolfCourseInfoAsync(booking.GolfCourseId);
+                var oldPlayersInline = BuildPlayersInlineText(oldPlayers, customer.FullName);
+                var newPlayersInline = BuildPlayersInlineText(newPlayers, customer.FullName);
+                var otherRequestsText = await BuildOtherRequestsTextAsync(booking.Utility);
+                var invoiceInfoText = BuildInvoiceInfoText(booking);
+                var updatedByText = BuildUpdatedByText(customer);
+
+                var changeModel = new BookingChangeRequestEmailModelDto
+                {
+                    BookingCode = booking.BookingCode,
+                    BookerName = customer.FullName ?? "N/A",
+                    BookerPhone = customer.PhoneNumber ?? "N/A",
+
+                    GolfCourseName = golfInfo.Name,
+                    GolfCourseHotline = golfInfo.Phone,
+                    GolfCourseAddress = golfInfo.Address,
+
+                    OldStatusText = oldStatusText,
+                    OldPaymentMethodText = oldPaymentMethodText,
+                    OldNumberOfGolfers = oldNumberOfGolfers,
+                    OldPlayDateText = oldPlayDateText,
+                    OldTeeTimeFromText = oldTeeFromText,
+                    OldTeeTimeToText = oldTeeToText,
+                    OldCustomerTypeText = oldCustomerTypeText,
+                    OldPromotionText = oldPromotionText,
+                    OldPlayersText = oldPlayersInline,
+                    OldUpdatedByText = updatedByText,
+
+                    NewStatusText = newStatusText,
+                    NewPaymentMethodText = newPaymentMethodText,
+                    NewNumberOfGolfers = newNumberOfGolfers,
+                    NewPlayDateText = newPlayDateText,
+                    NewTeeTimeFromText = newTeeFromText,
+                    NewTeeTimeToText = newTeeToText,
+                    NewCustomerTypeText = newCustomerTypeText,
+                    NewPromotionText = newPromotionText,
+                    NewPlayersText = newPlayersInline,
+                    NewUpdatedByText = updatedByText,
+
+                    PricePerGolferText = MoneyText(booking.PricePerGolfer),
+                    TotalAmountText = MoneyText(booking.TotalAmount),
+                    OtherRequestsText = otherRequestsText,
+                    InvoiceInfoText = invoiceInfoText,
+
+                    HasPlayerChanges = hasPlayerChanges,
+                    HasHeaderChanges = hasHeaderChanges
+                };
+
+                var toEmails = await _settingProvider.GetOrNullAsync(AppEmailSettingNames.BookingChange_ToEmails);
+                var ccEmails = await _settingProvider.GetOrNullAsync(AppEmailSettingNames.BookingChange_CcEmails);
+                var bccEmails = await _settingProvider.GetOrNullAsync(AppEmailSettingNames.BookingChange_BccEmails);
+                var subjectTpl = await _settingProvider.GetOrNullAsync(AppEmailSettingNames.BookingChange_SubjectTemplate);
+
+                var subject = ApplyTemplate(
+                    subjectTpl,
+                    booking.BookingCode,
+                    "[ZALO MINI APP] YÊU CẦU THAY ĐỔI ĐẶT CHỖ – {BookingCode}"
+                );
+
+                await _appEmailSenderService.EnqueueTemplateAsync(
+                    templateName: AppEmailTemplateNames.BookingChangeRequest,
+                    model: changeModel,
+                    toEmails: toEmails ?? "tandv@baygolf.vn",
+                    subject: subject,
+                    cc: NullIfEmpty(ccEmails),
+                    bcc: NullIfEmpty(bccEmails),
+                    bookingId: booking.Id,
+                    bookingCode: booking.BookingCode
+                );
+            }
+            catch
+            {
+                // không throw
+            }
+
+            return await GetMiniAppAsync(booking.Id, input.CustomerId);
+        }
+        catch (Exception e)
+        {
+            return new MiniAppBookingDetailDto
+            {
+                Error = (int)HttpStatusCode.BadRequest,
+                Message = e.Message
+            };
+        }
     }
 
     [DisableValidation]
@@ -569,5 +838,67 @@ public class MiniAppBookingAppService : ApplicationService, IMiniAppBookingAppSe
             .ToList();
 
         return names.Count == 0 ? "" : string.Join(", ", names);
+    }
+
+    private async Task ReplacePlayersAsync(Guid bookingId, List<CreateUpdateBookingPlayerDto>? players, decimal? pricePerGolfer)
+    {
+        await _playerRepo.DeleteAsync(p => p.BookingId == bookingId);
+
+        if (players == null || !players.Any())
+            return;
+
+        foreach (var p in players)
+        {
+            var player = new BookingPlayer(
+                GuidGenerator.Create(),
+                bookingId,
+                p.CustomerId,
+                p.PlayerName,
+                pricePerGolfer,
+                p.VgaCode,
+                p.Notes
+            );
+
+            player.VgaCode = p.VgaCode;
+            player.PricePerPlayer = pricePerGolfer;
+
+            await _playerRepo.InsertAsync(player, autoSave: true);
+        }
+    }
+
+    private static string ApplyTemplate(string? template, string bookingCode, string defaultTemplate)
+    {
+        template ??= defaultTemplate;
+        return template.Replace("{BookingCode}", bookingCode ?? "");
+    }
+
+    private static string MoneyText(decimal? value)
+    {
+        return value.HasValue ? $"{value.Value:N0}" : "N/A";
+    }
+
+    private string BuildInvoiceInfoText(Booking booking)
+    {
+        if (!booking.IsExportInvoice)
+            return "Không yêu cầu";
+
+        var lines = new List<string>
+    {
+        $"Tên công ty: {booking.CompanyName ?? ""}",
+        $"Mã số thuế: {booking.TaxCode ?? ""}",
+        $"Địa chỉ: {booking.CompanyAddress ?? ""}",
+        $"Email nhận hóa đơn: {booking.InvoiceEmail ?? ""}"
+    };
+
+        return string.Join(Environment.NewLine, lines);
+    }
+
+    private string BuildUpdatedByText(Customer customer)
+    {
+        var name = !string.IsNullOrWhiteSpace(customer.FullName)
+            ? customer.FullName.Trim()
+            : (!string.IsNullOrWhiteSpace(customer.PhoneNumber) ? customer.PhoneNumber.Trim() : "Khách hàng");
+
+        return $"{name} (khách hàng)";
     }
 }

@@ -83,6 +83,11 @@ public class MiniAppController : MultiTenancyController
     public Task<MiniAppBookingDetailDto> CreateBookingAsync([FromBody] MiniAppCreateBookingDto input)
         => _miniBooking.CreateFromMiniAppAsync(input);
 
+    [HttpPut("update-bookings/{id}")]
+    [AllowAnonymous]
+    public Task<MiniAppBookingDetailDto> UpdateBookingAsync(Guid id, [FromBody] MiniAppUpdateBookingDto input)
+    => _miniBooking.UpdateFromMiniAppAsync(id, input);
+
     [HttpGet("get-bookings")]
     [AllowAnonymous]
     public Task<MiniAppBookingListDto> GetBookingsAsync([FromQuery] GetMiniAppBookingListInput input)
