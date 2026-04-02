@@ -273,7 +273,7 @@ public class MiniAppFnbOrderService : ApplicationService, IMiniAppFnbOrderServic
                     return new MiniAppFnbOrderItemData
                     {
                         Id = x.Id,
-                        ItemId = x.ItemId,
+                        ItemId = itemEntity?.Id,
                         ItemName = x.ItemName,
                         Price = x.Price,
                         Quantity = x.Quantity,
