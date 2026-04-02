@@ -53,15 +53,31 @@
 
     <tr><td style="background:#cfd9e6;padding:6px 8px;font-weight:700;">YÊU CẦU ĐẶC BIỆT KHÁC (nếu có)</td></tr>
     <tr>
-        <td style="padding:8px 8px;white-space:pre-line;line-height:1.55;">
-            {{ if model.OtherRequestsText != "" }}{{ model.OtherRequestsText }}{{ else }}Không có{{ end }}
+        <td style="padding:8px 8px;line-height:1.55;">
+            {{ if model.OtherRequestsText != "" }}
+                {{ for line in (model.OtherRequestsText | string.replace "\r" "" | string.split "\n") }}
+                    {{ if line != "" }}
+                        <div style="margin:0 0 4px 0;">{{ line }}</div>
+                    {{ end }}
+                {{ end }}
+            {{ else }}
+                <div>Không có</div>
+            {{ end }}
         </td>
     </tr>
 
     <tr><td style="background:#cfd9e6;padding:6px 8px;font-weight:700;">THÔNG TIN XUẤT HÓA ĐƠN (nếu có)</td></tr>
     <tr>
-        <td style="padding:8px 8px;white-space:pre-line;line-height:1.55;">
-            {{ if model.InvoiceInfoText != "" }}{{ model.InvoiceInfoText }}{{ else }}Không yêu cầu{{ end }}
+        <td style="padding:8px 8px;line-height:1.55;">
+            {{ if model.InvoiceInfoText != "" }}
+                {{ for line in (model.InvoiceInfoText | string.replace "\r" "" | string.split "\n") }}
+                    {{ if line != "" }}
+                        <div style="margin:0 0 4px 0;">{{ line }}</div>
+                    {{ end }}
+                {{ end }}
+            {{ else }}
+                <div>Không yêu cầu</div>
+            {{ end }}
         </td>
     </tr>
 
