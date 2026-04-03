@@ -52,6 +52,47 @@
                     </abp-column>
                 </abp-row>
 
+                @* ── Checkout SDK Payment Config ────────────────────────── *@
+                <abp-row class="mt-4">
+                    <abp-column size-md="_12">
+                        <div class="p-2 bg-body-tertiary">
+                            <abp-card-header class="mb-3 p-0">
+                                Checkout SDK — Cấu hình thanh toán
+                            </abp-card-header>
+                            <abp-row>
+                                <abp-column size-md="_6">
+                                    <div class="mb-3">
+                                        <label class="form-label">Private Key (HMAC SHA256)</label>
+                                        <input asp-for="Input.PaymentPrivateKey"
+                                               type="password"
+                                               class="form-control"
+                                               placeholder="Nhập Private Key từ Zalo Developer Portal" />
+                                        <div class="form-text text-muted">
+                                            Để trống nếu không muốn thay đổi. Giá trị được mã hoá khi lưu.
+                                        </div>
+                                    </div>
+                                </abp-column>
+                            </abp-row>
+                            <hr />
+                            <p class="text-muted small mb-2">Thông tin tài khoản ngân hàng (hiển thị khi khách chọn Chuyển khoản)</p>
+                            <abp-row>
+                                <abp-column size-md="_3">
+                                    <abp-input asp-for="Input.BankName" label="Tên ngân hàng" />
+                                </abp-column>
+                                <abp-column size-md="_3">
+                                    <abp-input asp-for="Input.BankAccountNumber" label="Số tài khoản" />
+                                </abp-column>
+                                <abp-column size-md="_3">
+                                    <abp-input asp-for="Input.BankAccountOwner" label="Chủ tài khoản" />
+                                </abp-column>
+                                <abp-column size-md="_3">
+                                    <abp-input asp-for="Input.BankBranch" label="Chi nhánh" />
+                                </abp-column>
+                            </abp-row>
+                        </div>
+                    </abp-column>
+                </abp-row>
+
                 <div class="mt-3">
                     <button class="btn btn-primary" type="submit">
                         <i class="fa fa-save"></i>

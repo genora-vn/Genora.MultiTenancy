@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using Genora.MultiTenancy.AppServices.AppPayments;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using System.ComponentModel.DataAnnotations;
@@ -68,6 +69,26 @@ public class ZaloZnsModel : AbpPageModel
 
         [Display(Name = "BookingChanged TemplateId")]
         public string? BookingChanged { get; set; }
+
+        // ── Checkout SDK — Payment Config ────────────────────────────────────
+        /// <summary>
+        /// Private Key HMAC SHA256 từ Zalo Developer Portal.
+        /// Để trống = không thay đổi giá trị hiện tại.
+        /// </summary>
+        [Display(Name = "Private Key (Checkout SDK)")]
+        public string? PaymentPrivateKey { get; set; }
+
+        [Display(Name = "Tên ngân hàng")]
+        public string? BankName { get; set; }
+
+        [Display(Name = "Số tài khoản")]
+        public string? BankAccountNumber { get; set; }
+
+        [Display(Name = "Chủ tài khoản")]
+        public string? BankAccountOwner { get; set; }
+
+        [Display(Name = "Chi nhánh")]
+        public string? BankBranch { get; set; }
     }
 
     public async Task OnGetAsync()
@@ -84,11 +105,19 @@ public class ZaloZnsModel : AbpPageModel
         var enabledRaw = await _settingProvider.GetOrNullAsync(AppServices.AppZaloAuths.ZaloSettingNames.ZbsEnabled);
         Input.ZbsEnabled = string.IsNullOrWhiteSpace(enabledRaw) ? true : bool.TryParse(enabledRaw, out var b) ? b : true;
 
-        Input.RegisterSuccess = await _settingProvider.GetOrNullAsync(AppServices.AppZaloAuths.ZaloSettingNames.ZbsRegisterSuccess);
-        Input.BookingCreated = await _settingProvider.GetOrNullAsync(AppServices.AppZaloAuths.ZaloSettingNames.ZbsBookingCreated);
+        Input.RegisterSuccess  = await _settingProvider.GetOrNullAsync(AppServices.AppZaloAuths.ZaloSettingNames.ZbsRegisterSuccess);
+        Input.BookingCreated   = await _settingProvider.GetOrNullAsync(AppServices.AppZaloAuths.ZaloSettingNames.ZbsBookingCreated);
         Input.BookingCancelled = await _settingProvider.GetOrNullAsync(AppServices.AppZaloAuths.ZaloSettingNames.ZbsBookingCancelled);
-        Input.BookingReminder = await _settingProvider.GetOrNullAsync(AppServices.AppZaloAuths.ZaloSettingNames.ZbsBookingReminder);
-        Input.BookingChanged = await _settingProvider.GetOrNullAsync(AppServices.AppZaloAuths.ZaloSettingNames.ZbsBookingChanged);
+        Input.BookingReminder  = await _settingProvider.GetOrNullAsync(AppServices.AppZaloAuths.ZaloSettingNames.ZbsBookingReminder);
+        Input.BookingChanged   = await _settingProvider.GetOrNullAsync(AppServices.AppZaloAuths.ZaloSettingNames.ZbsBookingChanged);
+
+        // ── Payment settings ─────────────────────────────────────────────────
+        // Private Key không load ra UI (encrypted) — chỉ hiển thị placeholder
+        Input.PaymentPrivateKey  = null;
+        Input.BankName           = await _settingProvider.GetOrNullAsync(ZaloPaymentSettingNames.BankName);
+        Input.BankAccountNumber  = await _settingProvider.GetOrNullAsync(ZaloPaymentSettingNames.BankAccountNumber);
+        Input.BankAccountOwner   = await _settingProvider.GetOrNullAsync(ZaloPaymentSettingNames.BankAccountOwner);
+        Input.BankBranch         = await _settingProvider.GetOrNullAsync(ZaloPaymentSettingNames.BankBranch);
     }
 
     public async Task<IActionResult> OnPostAsync()
@@ -112,10 +141,20 @@ public class ZaloZnsModel : AbpPageModel
         await SetAsync(AppServices.AppZaloAuths.ZaloSettingNames.ZbsEnabled, Input.ZbsEnabled.ToString());
 
         await SetAsync(AppServices.AppZaloAuths.ZaloSettingNames.ZbsRegisterSuccess, Input.RegisterSuccess);
-        await SetAsync(AppServices.AppZaloAuths.ZaloSettingNames.ZbsBookingCreated, Input.BookingCreated);
+        await SetAsync(AppServices.AppZaloAuths.ZaloSettingNames.ZbsBookingCreated,   Input.BookingCreated);
         await SetAsync(AppServices.AppZaloAuths.ZaloSettingNames.ZbsBookingCancelled, Input.BookingCancelled);
-        await SetAsync(AppServices.AppZaloAuths.ZaloSettingNames.ZbsBookingReminder, Input.BookingReminder);
-        await SetAsync(AppServices.AppZaloAuths.ZaloSettingNames.ZbsBookingChanged, Input.BookingChanged);
+        await SetAsync(AppServices.AppZaloAuths.ZaloSettingNames.ZbsBookingReminder,  Input.BookingReminder);
+        await SetAsync(AppServices.AppZaloAuths.ZaloSettingNames.ZbsBookingChanged,   Input.BookingChanged);
+
+        // ── Payment settings ─────────────────────────────────────────────────
+        // Private Key: chỉ lưu nếu user nhập giá trị mới (không ghi đè bằng chuỗi rỗng)
+        if (!string.IsNullOrWhiteSpace(Input.PaymentPrivateKey))
+            await SetAsync(ZaloPaymentSettingNames.PrivateKey, Input.PaymentPrivateKey);
+
+        await SetAsync(ZaloPaymentSettingNames.BankName,          Input.BankName);
+        await SetAsync(ZaloPaymentSettingNames.BankAccountNumber,  Input.BankAccountNumber);
+        await SetAsync(ZaloPaymentSettingNames.BankAccountOwner,   Input.BankAccountOwner);
+        await SetAsync(ZaloPaymentSettingNames.BankBranch,         Input.BankBranch);
 
         Alerts.Success("Đã lưu cấu hình Zalo/ZNS.");
         return RedirectToPage();

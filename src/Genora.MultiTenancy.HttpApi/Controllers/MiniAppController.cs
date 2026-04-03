@@ -10,6 +10,7 @@ using Genora.MultiTenancy.AppDtos.AppHomePageConfigs;
 using Genora.MultiTenancy.AppDtos.AppMembershipTiers;
 using Genora.MultiTenancy.AppDtos.AppNews;
 using Genora.MultiTenancy.AppDtos.AppOptionExtend;
+using Genora.MultiTenancy.AppDtos.AppPayments;
 using Genora.MultiTenancy.AppDtos.AppSettings;
 using Genora.MultiTenancy.AppDtos.AppZaloAuths;
 using Genora.MultiTenancy.Localization;
@@ -42,9 +43,12 @@ public class MiniAppController : MultiTenancyController
     private readonly IStringLocalizer<MultiTenancyResource> _localizer;
     private readonly IOptionExtendService _optionExtendService;
     private readonly IMiniAppHomePageConfigService _miniHomePage;
-    private readonly IMiniAppFnbCategoryService _miniAppFnbCategory;
-    private readonly IMiniAppFnbItemService _miniAppFnbItem;
-    private readonly IMiniAppFnbOrderService _miniAppFnbOrder;
+    private readonly IMiniAppFnbCategoryService   _miniAppFnbCategory;
+    private readonly IMiniAppFnbItemService       _miniAppFnbItem;
+    private readonly IMiniAppFnbOrderService      _miniAppFnbOrder;
+    private readonly IMiniAppPaymentAppService    _miniPayment;
+    private readonly IMiniAppFnbPaymentAppService _miniFnbPayment;
+
     public MiniAppController(IZaloApiClient zaloApiClient,
                              IMiniAppBookingAppService miniBooking,
                              IMiniAppSettingService miniAppSetting,
@@ -59,7 +63,9 @@ public class MiniAppController : MultiTenancyController
                              IMiniAppHomePageConfigService miniHomePage,
                              IMiniAppFnbCategoryService miniAppFnbCategory,
                              IMiniAppFnbItemService miniAppFnbItem,
-                             IMiniAppFnbOrderService miniAppFnbOrder)
+                             IMiniAppFnbOrderService miniAppFnbOrder,
+                             IMiniAppPaymentAppService miniPayment,
+                             IMiniAppFnbPaymentAppService miniFnbPayment)
     {
         _zaloApiClient = zaloApiClient;
         _miniBooking = miniBooking;
@@ -76,6 +82,8 @@ public class MiniAppController : MultiTenancyController
         _miniAppFnbCategory = miniAppFnbCategory;
         _miniAppFnbItem = miniAppFnbItem;
         _miniAppFnbOrder = miniAppFnbOrder;
+        _miniPayment = miniPayment;
+        _miniFnbPayment = miniFnbPayment;
     }
 
     [HttpPost("create-booking")]
@@ -280,4 +288,45 @@ public class MiniAppController : MultiTenancyController
     [AllowAnonymous]
     public Task<MiniAppFnbOrderDetailDto> CancelFnbOrderAsync(Guid id, [FromBody] CancelMiniAppFnbOrderDto input)
     => _miniAppFnbOrder.CancelAsync(id, input);
+
+    // ── Payment — Booking (Đặt sân) ──────────────────────────────────────────
+
+    /// <summary>
+    /// Tạo dữ liệu order đã ký MAC để Mini App gọi Zalo Checkout SDK createOrder().
+    /// POST /api/mini-app/payment/prepare-order
+    /// </summary>
+    [HttpPost("payment/prepare-order")]
+    [AllowAnonymous]
+    public Task<PrepareOrderResult> PrepareOrderAsync([FromBody] PrepareOrderInput input)
+        => _miniPayment.PrepareOrderAsync(input);
+
+    /// <summary>
+    /// Kiểm tra trạng thái giao dịch sau khi Mini App gọi createOrder() xong.
+    /// GET /api/mini-app/payment/check-transaction/{orderId}
+    /// </summary>
+    [HttpGet("payment/check-transaction/{orderId}")]
+    [AllowAnonymous]
+    public Task<CheckTransactionResult> CheckTransactionAsync(string orderId)
+        => _miniPayment.CheckTransactionAsync(orderId);
+
+    // ── Payment — FnB (Đặt món) ───────────────────────────────────────────────
+
+    /// <summary>
+    /// Tạo dữ liệu order đã ký MAC để Mini App gọi Zalo Checkout SDK createOrder() cho đơn FnB.
+    /// orderId format: {FnbOrderCode}_{timestamp} — prefix "FNB" để phân biệt với Booking.
+    /// POST /api/mini-app/payment/fnb/prepare-order
+    /// </summary>
+    [HttpPost("payment/fnb/prepare-order")]
+    [AllowAnonymous]
+    public Task<PrepareOrderResult> PrepareFnbOrderAsync([FromBody] PrepareFnbOrderInput input)
+        => _miniFnbPayment.PrepareOrderAsync(input);
+
+    /// <summary>
+    /// Kiểm tra trạng thái giao dịch FnbOrder sau khi Mini App gọi createOrder() xong.
+    /// GET /api/mini-app/payment/fnb/check-transaction/{orderId}
+    /// </summary>
+    [HttpGet("payment/fnb/check-transaction/{orderId}")]
+    [AllowAnonymous]
+    public Task<CheckTransactionResult> CheckFnbTransactionAsync(string orderId)
+        => _miniFnbPayment.CheckTransactionAsync(orderId);
 }

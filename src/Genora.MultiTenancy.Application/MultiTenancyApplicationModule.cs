@@ -3,6 +3,7 @@ using Genora.MultiTenancy.AppDtos.AppZaloAuths;
 using Genora.MultiTenancy.Apps.AppSettings;
 using Genora.MultiTenancy.AppServices.AppEmails;
 using Genora.MultiTenancy.AppServices.AppEmails.Templates;
+using Genora.MultiTenancy.AppServices.AppPayments;
 using Genora.MultiTenancy.AppServices.AppZaloAuths;
 using Microsoft.Extensions.DependencyInjection;
 using SixLabors.ImageSharp;
@@ -66,6 +67,7 @@ public class MultiTenancyApplicationModule : AbpModule
         {
             options.DefinitionProviders.Add<AppEmailSettingDefinitionProvider>();
             options.DefinitionProviders.Add<ZaloSettingDefinitionProvider>();
+            options.DefinitionProviders.Add<ZaloPaymentSettingDefinitionProvider>();
         });
 
         //Configure<ZaloZbsOptions>(configuration.GetSection("Zalo:Zbs"));
@@ -75,5 +77,13 @@ public class MultiTenancyApplicationModule : AbpModule
         context.Services.AddTransient<IZaloZbsTemplateResolver, ZaloZbsTemplateResolver>();
         context.Services.AddTransient<IZaloZbsToggleProvider, ZaloZbsToggleProvider>();
         context.Services.AddTransient<IZaloRuntimeConfigProvider, ZaloRuntimeConfigProvider>();
+
+        // VietQR API client — timeout 5s, tránh block prepare-order quá lâu
+        context.Services.AddHttpClient("VietQR", client =>
+        {
+            client.BaseAddress = new Uri("https://api.vietqr.io");
+            client.Timeout     = TimeSpan.FromSeconds(5);
+            client.DefaultRequestHeaders.Add("Accept", "application/json");
+        });
     }
 }

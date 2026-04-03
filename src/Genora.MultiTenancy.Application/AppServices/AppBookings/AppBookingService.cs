@@ -461,7 +461,7 @@ public class AppBookingService :
                 AppEmailSettingNames.BookingNew_BccEmails,
                 AppEmailSettingNames.BookingNew_SubjectTemplate,
                 entity.BookingCode,
-                fallbackTo: "sales@montgomerielinks.com"
+                fallbackTo: "tandv@baygolf.vn"
             );
 
             await _appEmailSenderService.EnqueueTemplateAsync(
@@ -692,7 +692,7 @@ public class AppBookingService :
                     AppEmailSettingNames.BookingCancel_BccEmails,
                     AppEmailSettingNames.BookingCancel_SubjectTemplate,
                     entity.BookingCode,
-                    fallbackTo: "sales@montgomerielinks.com"
+                    fallbackTo: "tandv@baygolf.vn"
                 );
 
                 await _appEmailSenderService.EnqueueTemplateAsync(
@@ -782,7 +782,7 @@ public class AppBookingService :
                     AppEmailSettingNames.BookingChange_BccEmails,
                     AppEmailSettingNames.BookingChange_SubjectTemplate,
                     entity.BookingCode,
-                    fallbackTo: "sales@montgomerielinks.com"
+                    fallbackTo: "tandv@baygolf.vn"
                 );
 
                 await _appEmailSenderService.EnqueueTemplateAsync(
