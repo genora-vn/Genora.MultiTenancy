@@ -901,4 +901,173 @@ public class MiniAppBookingAppService : ApplicationService, IMiniAppBookingAppSe
 
         return $"{name} (khách hàng)";
     }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // CancelFromMiniAppAsync
+    // Chỉ chủ booking (CustomerId khớp) mới được huỷ.
+    // Status → CancelledRefund. Gửi ZBS "BookingCancelled" + Email cancel.
+    // ─────────────────────────────────────────────────────────────────────────
+    public async Task<MiniAppBookingDetailDto> CancelFromMiniAppAsync(Guid id, MiniAppCancelBookingDto input)
+    {
+        // 1. Load booking
+        var booking = await _bookingRepo.FindAsync(id);
+        if (booking == null)
+            return new MiniAppBookingDetailDto
+            {
+                Error   = 404,
+                Message = "Không tìm thấy booking"
+            };
+
+        // 2. Xác thực chủ booking
+        if (booking.CustomerId != input.CustomerId)
+            return new MiniAppBookingDetailDto
+            {
+                Error   = 403,
+                Message = "Bạn không có quyền huỷ booking này"
+            };
+
+        // 3. Kiểm tra trạng thái — chỉ huỷ được khi chưa hoàn thành / chưa huỷ
+        if (booking.Status == BookingStatus.CancelledRefund || booking.Status == BookingStatus.CancelledNoRefund)
+            return new MiniAppBookingDetailDto
+            {
+                Error   = 400,
+                Message = "Booking này đã được huỷ trước đó"
+            };
+
+        if (booking.Status == BookingStatus.Completed)
+            return new MiniAppBookingDetailDto
+            {
+                Error   = 400,
+                Message = "Booking đã hoàn thành, không thể huỷ"
+            };
+
+        // 4. Load customer để lấy thông tin gửi thông báo
+        var customer = await _customerRepo.FindAsync(booking.CustomerId);
+
+        // 5. Cập nhật status → CancelledRefund
+        // Lý do huỷ hiện không có field riêng trên Booking entity.
+        // Nếu cần lưu lý do → Phase 2 thêm field CancelNote vào entity + migration.
+        booking.Status = BookingStatus.CancelledRefund;
+        await _bookingRepo.UpdateAsync(booking, autoSave: true);
+
+        // ── Lấy thông tin phụ để build thông báo ──────────────────────────
+        var calendarSlot = await _calendarSlotRepo.FindAsync(booking.CalendarSlotId.Value);
+        var golfInfo     = await GetGolfCourseInfoAsync(booking.GolfCourseId);
+        var players      = await _playerRepo.GetListAsync(x => x.BookingId == booking.Id);
+        var playersText  = BuildPlayersInlineText(players, customer?.FullName);
+
+        static string ToHHmm(TimeSpan? ts)   => ts.HasValue ? ts.Value.ToString(@"hh\:mm") : "";
+        static string ToDDMMYYYY(DateTime dt) => dt.ToString("dd/MM/yyyy");
+
+        var playDateText = ToDDMMYYYY(booking.PlayDate);
+        var teeFromText  = ToHHmm(calendarSlot?.TimeFrom);
+        var teeToText    = ToHHmm(calendarSlot?.TimeTo);
+
+        // 6. Gửi ZBS "BookingCancelled"
+        try
+        {
+            if (customer != null && !string.IsNullOrWhiteSpace(customer.PhoneNumber))
+            {
+                await _jobManager.EnqueueAsync(
+                    new ZbsSendJobArgs
+                    {
+                        TenantId    = CurrentTenant.Id,
+                        TemplateKey = "BookingCancelled",
+                        Phone       = customer.PhoneNumber,
+                        TrackingId  = booking.Id.ToString(),
+                        TemplateData = new
+                        {
+                            customer_name = customer.FullName,
+                            booking_code  = booking.BookingCode,
+                            tee_off_date  = playDateText,
+                            tee_off_time  = teeFromText
+                        }
+                    },
+                    priority: BackgroundJobPriority.Normal
+                );
+            }
+        }
+        catch
+        {
+            // không throw — ZBS lỗi không được block response
+        }
+
+        // 7. Gửi Email cancel
+        try
+        {
+            var requesterName = !string.IsNullOrWhiteSpace(customer?.FullName)
+                ? $"{customer.FullName.Trim()} (khách hàng)"
+                : "Khách hàng";
+
+            var cancelModel = new BookingCancelRequestEmailModelDto
+            {
+                BookingCode          = booking.BookingCode,
+                BookerName           = customer?.FullName ?? "N/A",
+                BookerPhone          = customer?.PhoneNumber ?? "N/A",
+                CancelRequesterName  = requesterName,
+                CancelRequesterPhone = customer?.PhoneNumber ?? "N/A",
+                GolfCourseName       = golfInfo.Name,
+                GolfCourseHotline    = golfInfo.Phone,
+                GolfCourseAddress    = golfInfo.Address,
+                PlayDate             = booking.PlayDate,
+                PlayDateText         = playDateText,
+                TeeTimeFromText      = teeFromText,
+                TeeTimeToText        = teeToText,
+                NumberOfGolfers      = booking.NumberOfGolfers,
+                PlayersText          = playersText,
+                CancelStatusText     = "Huỷ hoàn tiền"
+            };
+
+            var cfg = await GetEmailConfigAsync(
+                AppEmailSettingNames.BookingCancel_ToEmails,
+                AppEmailSettingNames.BookingCancel_CcEmails,
+                AppEmailSettingNames.BookingCancel_BccEmails,
+                AppEmailSettingNames.BookingCancel_SubjectTemplate,
+                booking.BookingCode,
+                fallbackTo: "tandv@baygolf.vn"
+            );
+
+            await _appEmailSenderService.EnqueueTemplateAsync(
+                templateName: AppEmailTemplateNames.BookingCancelRequest,
+                model:        cancelModel,
+                toEmails:     cfg.To,
+                subject:      cfg.Subject,
+                cc:           cfg.Cc,
+                bcc:          cfg.Bcc,
+                bookingId:    booking.Id,
+                bookingCode:  booking.BookingCode
+            );
+        }
+        catch
+        {
+            // không throw — Email lỗi không được block response
+        }
+
+        // 8. Trả về detail booking đã huỷ
+        return await GetMiniAppAsync(booking.Id, input.CustomerId);
+    }
+    private static string ApplySubjectTemplate(string? template, string bookingCode)
+    {
+        template ??= "{BookingCode}";
+        return template.Replace("{BookingCode}", bookingCode ?? "");
+    }
+    private async Task<(string To, string? Cc, string? Bcc, string Subject)> GetEmailConfigAsync(
+        string toKey, string ccKey, string bccKey, string subjectKey,
+        string bookingCode, string fallbackTo)
+    {
+        var to = await _settingProvider.GetOrNullAsync(toKey);
+        var cc = await _settingProvider.GetOrNullAsync(ccKey);
+        var bcc = await _settingProvider.GetOrNullAsync(bccKey);
+        var subjectTpl = await _settingProvider.GetOrNullAsync(subjectKey);
+
+        var toFinal = EmailHelper.NormalizeEmailList(to);
+        if (string.IsNullOrWhiteSpace(toFinal)) toFinal = EmailHelper.NormalizeEmailList(fallbackTo);
+
+        return (
+            To: toFinal,
+            Cc: NullIfEmpty(EmailHelper.NormalizeEmailList(cc)),
+            Bcc: NullIfEmpty(EmailHelper.NormalizeEmailList(bcc)),
+            Subject: ApplySubjectTemplate(subjectTpl, bookingCode)
+        );
+    }
 }

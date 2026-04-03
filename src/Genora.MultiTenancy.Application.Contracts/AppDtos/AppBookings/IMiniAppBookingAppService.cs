@@ -13,5 +13,11 @@ public interface IMiniAppBookingAppService : IApplicationService
     Task<MiniAppBookingListDto> GetListMiniAppAsync(GetMiniAppBookingListInput input);
 
     Task<MiniAppBookingDetailDto> GetMiniAppAsync(Guid id, Guid customerId);
-    //Task<MiniAppBookingListDto> GetBookingHistoryAsync(GetMiniAppBookingListInput input);
+
+    /// <summary>
+    /// Huỷ booking từ Mini App — chỉ chủ booking mới được huỷ.
+    /// Tự động gửi ZBS "BookingCancelled" + Email cancel.
+    /// Status cập nhật: BookingStatus.CancelledRefund
+    /// </summary>
+    Task<MiniAppBookingDetailDto> CancelFromMiniAppAsync(Guid id, MiniAppCancelBookingDto input);
 }
