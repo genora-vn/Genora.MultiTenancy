@@ -159,21 +159,46 @@ public class AppFnbOrderService : ApplicationService, IAppFnbOrderService
             .Distinct()
             .ToList();
 
+        var itemQuery = await _itemRepository.GetQueryableAsync();
         Dictionary<Guid, string?> itemImageMap = new();
+        Dictionary<string, string?> itemImageByName = new(StringComparer.OrdinalIgnoreCase);
 
         if (itemIds.Count > 0)
         {
-            var itemQuery = await _itemRepository.GetQueryableAsync();
-            var items = await AsyncExecuter.ToListAsync(
+            var byId = await AsyncExecuter.ToListAsync(
                 itemQuery.Where(x => itemIds.Contains(x.Id))
             );
 
-            itemImageMap = items.ToDictionary(
+            itemImageMap = byId.ToDictionary(
                 x => x.Id,
                 x => string.IsNullOrWhiteSpace(x.ImageUrl)
                     ? null
                     : ImageHelper.NormalizeThumb(_configuration, x.ImageUrl)
             );
+        }
+
+        // Fallback: lookup ảnh theo ItemName cho các item không có ItemId (Mini App orders)
+        var itemNames = orderItems
+            .Where(x => !x.ItemId.HasValue && !string.IsNullOrWhiteSpace(x.ItemName))
+            .Select(x => x.ItemName!.Trim())
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        if (itemNames.Count > 0)
+        {
+            var byName = await AsyncExecuter.ToListAsync(
+                itemQuery.Where(x => itemNames.Contains(x.Name))
+            );
+
+            itemImageByName = byName
+                .GroupBy(x => x.Name.Trim(), StringComparer.OrdinalIgnoreCase)
+                .ToDictionary(
+                    g => g.Key,
+                    g => string.IsNullOrWhiteSpace(g.First().ImageUrl)
+                        ? null
+                        : ImageHelper.NormalizeThumb(_configuration, g.First().ImageUrl),
+                    StringComparer.OrdinalIgnoreCase
+                );
         }
 
         var activityQuery = await _orderActivityRepository.GetQueryableAsync();
@@ -222,7 +247,9 @@ public class AppFnbOrderService : ApplicationService, IAppFnbOrderService
                     Note = x.Note,
                     ImageUrl = x.ItemId.HasValue && itemImageMap.TryGetValue(x.ItemId.Value, out var imageUrl)
                         ? imageUrl
-                        : null
+                        : (!string.IsNullOrWhiteSpace(x.ItemName) && itemImageByName.TryGetValue(x.ItemName.Trim(), out var imageByName)
+                            ? imageByName
+                            : null)
                 })
                 .ToList(),
             Activities = activities
@@ -650,6 +677,21 @@ public class AppFnbOrderService : ApplicationService, IAppFnbOrderService
             ? new List<FnbItem>()
             : await AsyncExecuter.ToListAsync(itemQuery.Where(x => itemIds.Contains(x.Id)));
 
+        // Fallback: lookup ảnh theo ItemName cho Mini App orders (ItemId = null)
+        var noIdItemNames = orderItems
+            .Where(x => !x.ItemId.HasValue && !string.IsNullOrWhiteSpace(x.ItemName))
+            .Select(x => x.ItemName!.Trim())
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        var itemsByName = noIdItemNames.Count == 0
+            ? new List<FnbItem>()
+            : await AsyncExecuter.ToListAsync(itemQuery.Where(x => noIdItemNames.Contains(x.Name)));
+
+        var itemByNameMap = itemsByName
+            .GroupBy(x => x.Name.Trim(), StringComparer.OrdinalIgnoreCase)
+            .ToDictionary(g => g.Key, g => g.First(), StringComparer.OrdinalIgnoreCase);
+
         var customers = customerIds.Count == 0
             ? new List<Customer>()
             : await AsyncExecuter.ToListAsync(customerQuery.Where(x => customerIds.Contains(x.Id)));
@@ -707,6 +749,14 @@ public class AppFnbOrderService : ApplicationService, IAppFnbOrderService
                     if (!string.IsNullOrWhiteSpace(menuItem.ImageUrl))
                     {
                         primaryImage = ImageHelper.NormalizeThumb(_configuration, menuItem.ImageUrl);
+                    }
+                }
+                else if (primaryImage == null && !oi.ItemId.HasValue && !string.IsNullOrWhiteSpace(oi.ItemName)
+                    && itemByNameMap.TryGetValue(oi.ItemName.Trim(), out var menuItemByName))
+                {
+                    if (!string.IsNullOrWhiteSpace(menuItemByName.ImageUrl))
+                    {
+                        primaryImage = ImageHelper.NormalizeThumb(_configuration, menuItemByName.ImageUrl);
                     }
                 }
             }

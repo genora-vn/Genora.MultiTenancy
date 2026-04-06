@@ -121,7 +121,7 @@ public class MiniAppFnbOrderService : ApplicationService, IMiniAppFnbOrderServic
                 item.Price,
                 row.Quantity)
             {
-                ItemId = item.Id,
+                ItemId = null, // FK cross-tenant: dùng ItemName để lookup ảnh
                 Note = string.IsNullOrWhiteSpace(row.Note) ? null : row.Note.Trim()
             };
 

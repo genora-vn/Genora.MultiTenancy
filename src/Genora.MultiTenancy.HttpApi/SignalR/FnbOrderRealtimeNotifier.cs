@@ -113,21 +113,38 @@ public class FnbOrderRealtimeNotifier : IFnbOrderRealtimeNotifier
             .Distinct()
             .ToList();
 
-        Dictionary<Guid, FnbItem> itemMap = new();
+        var itemsQuery = await _itemRepository.GetQueryableAsync();
+        var itemMap = new Dictionary<Guid, FnbItem>();
 
         if (itemIds.Count > 0)
         {
-            var itemsQuery = await _itemRepository.GetQueryableAsync();
-            var itemEntities = itemsQuery
-                .Where(x => itemIds.Contains(x.Id))
-                .ToList();
+            var byId = itemsQuery.Where(x => itemIds.Contains(x.Id)).ToList();
+            itemMap = byId.ToDictionary(x => x.Id, x => x);
+        }
 
-            itemMap = itemEntities.ToDictionary(x => x.Id, x => x);
+        // Fallback: tìm theo ItemName cho các item không có ItemId (Mini App orders)
+        var itemNames = orderItems
+            .Where(x => !x.ItemId.HasValue && !string.IsNullOrWhiteSpace(x.ItemName))
+            .Select(x => x.ItemName!.Trim())
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        var itemByName = new Dictionary<string, FnbItem>(StringComparer.OrdinalIgnoreCase);
+        if (itemNames.Count > 0)
+        {
+            var byName = itemsQuery.Where(x => itemNames.Contains(x.Name)).ToList();
+            itemByName = byName
+                .GroupBy(x => x.Name.Trim(), StringComparer.OrdinalIgnoreCase)
+                .ToDictionary(g => g.Key, g => g.First(), StringComparer.OrdinalIgnoreCase);
         }
 
         var items = orderItems.Select(x =>
         {
-            itemMap.TryGetValue(x.ItemId ?? Guid.Empty, out var itemEntity);
+            FnbItem? itemEntity = null;
+            if (x.ItemId.HasValue)
+                itemMap.TryGetValue(x.ItemId.Value, out itemEntity);
+            else if (!string.IsNullOrWhiteSpace(x.ItemName))
+                itemByName.TryGetValue(x.ItemName.Trim(), out itemEntity);
 
             return new FnbOrderRealtimeItemDto
             {
