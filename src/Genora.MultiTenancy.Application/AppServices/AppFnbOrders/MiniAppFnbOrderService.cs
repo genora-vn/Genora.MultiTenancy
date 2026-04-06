@@ -132,9 +132,8 @@ public class MiniAppFnbOrderService : ApplicationService, IMiniAppFnbOrderServic
 
         try
         {
-            await _orderRepository.InsertAsync(order, autoSave: true);
-            await _orderItemRepository.InsertManyAsync(orderItems, autoSave: true);
-
+            await _orderRepository.InsertAsync(order);
+            await _orderItemRepository.InsertManyAsync(orderItems);
             await _orderActivityRepository.InsertAsync(
                 new FnbOrderActivity(
                     GuidGenerator.Create(),
@@ -145,9 +144,9 @@ public class MiniAppFnbOrderService : ApplicationService, IMiniAppFnbOrderServic
                     Clock.Now,
                     false,
                     _currentTenant.Id
-                ),
-                autoSave: true
+                )
             );
+            await CurrentUnitOfWork!.SaveChangesAsync();
 
             await _notifier.OrderCreatedAsync(order.Id);
 

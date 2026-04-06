@@ -74,12 +74,12 @@ public class MiniAppProOrderService : ApplicationService, IMiniAppProOrderServic
         }
 
         order.TotalAmount = orderItems.Sum(i => i.Price * i.Quantity);
-        await _orderRepository.InsertAsync(order, autoSave: true);
-        await _orderItemRepository.InsertManyAsync(orderItems, autoSave: true);
-
+        await _orderRepository.InsertAsync(order);
+        await _orderItemRepository.InsertManyAsync(orderItems);
         await WriteActivityAsync(order.Id, "Created",
             "Đơn hàng được tạo từ Mini App",
             $"Mã túi: {order.BagTag} | {orderItems.Count} sản phẩm | {order.TotalAmount:N0} VND");
+        await CurrentUnitOfWork!.SaveChangesAsync();
 
         // Broadcast SignalR — staff nhận notify realtime
         try { await _notifier.OrderCreatedAsync(order.Id); }
@@ -206,7 +206,7 @@ public class MiniAppProOrderService : ApplicationService, IMiniAppProOrderServic
         var activity = new ProOrderActivity(
             GuidGenerator.Create(), orderId, actionType, title, description,
             Clock.Now, isDanger, _currentTenant.Id);
-        await _activityRepository.InsertAsync(activity, autoSave: true);
+        await _activityRepository.InsertAsync(activity);
     }
 
     private async Task<string> GenerateOrderCodeAsync()
