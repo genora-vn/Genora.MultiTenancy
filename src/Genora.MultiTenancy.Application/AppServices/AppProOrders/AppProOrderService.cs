@@ -117,17 +117,43 @@ public class AppProOrderService : ApplicationService, IAppProOrderService
 
         // Populate ImageUrl cho từng item từ ProItem master data
         var itemIds = order.Items.Where(x => x.ItemId.HasValue).Select(x => x.ItemId!.Value).Distinct().ToList();
+        var proItemRepo  = LazyServiceProvider.LazyGetRequiredService<IRepository<DomainModels.AppProItems.ProItem, Guid>>();
+        var proItemQuery = await proItemRepo.GetQueryableAsync();
+
+        var imageMap = new Dictionary<Guid, string?>();
         if (itemIds.Count > 0)
         {
-            var proItemRepo  = LazyServiceProvider.LazyGetRequiredService<IRepository<DomainModels.AppProItems.ProItem, Guid>>();
-            var proItemQuery = await proItemRepo.GetQueryableAsync();
-            var proItems     = await AsyncExecuter.ToListAsync(proItemQuery.Where(x => itemIds.Contains(x.Id)));
-            var imageMap     = proItems.ToDictionary(
+            var proItems = await AsyncExecuter.ToListAsync(proItemQuery.Where(x => itemIds.Contains(x.Id)));
+            imageMap = proItems.ToDictionary(
                 x => x.Id,
                 x => string.IsNullOrWhiteSpace(x.ImageUrl) ? null : ImageHelper.NormalizeThumb(_configuration, x.ImageUrl));
-            foreach (var item in detail.Items)
-                if (item.ItemId.HasValue && imageMap.TryGetValue(item.ItemId.Value, out var img))
-                    item.ImageUrl = img;
+        }
+
+        // Fallback: lookup ảnh theo ItemName cho Mini App orders (ItemId = null)
+        var noIdNames = order.Items
+            .Where(x => !x.ItemId.HasValue && !string.IsNullOrWhiteSpace(x.ItemName))
+            .Select(x => x.ItemName!.Trim())
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        var imageByName = new Dictionary<string, string?>(StringComparer.OrdinalIgnoreCase);
+        if (noIdNames.Count > 0)
+        {
+            var byName = await AsyncExecuter.ToListAsync(proItemQuery.Where(x => noIdNames.Contains(x.Name)));
+            imageByName = byName
+                .GroupBy(x => x.Name.Trim(), StringComparer.OrdinalIgnoreCase)
+                .ToDictionary(
+                    g => g.Key,
+                    g => string.IsNullOrWhiteSpace(g.First().ImageUrl) ? null : ImageHelper.NormalizeThumb(_configuration, g.First().ImageUrl),
+                    StringComparer.OrdinalIgnoreCase);
+        }
+
+        foreach (var item in detail.Items)
+        {
+            if (item.ItemId.HasValue && imageMap.TryGetValue(item.ItemId.Value, out var img))
+                item.ImageUrl = img;
+            else if (!string.IsNullOrWhiteSpace(item.ItemName) && imageByName.TryGetValue(item.ItemName.Trim(), out var imgByName))
+                item.ImageUrl = imgByName;
         }
 
         detail.Activities = activities
@@ -573,6 +599,21 @@ public class AppProOrderService : ApplicationService, IAppProOrderService
             ? new List<DomainModels.AppProItems.ProItem>()
             : await AsyncExecuter.ToListAsync(proItemQuery.Where(x => itemIds.Contains(x.Id)));
 
+        // Fallback: lookup ảnh theo ItemName cho Mini App orders (ItemId = null)
+        var noIdItemNames = orderItems
+            .Where(x => !x.ItemId.HasValue && !string.IsNullOrWhiteSpace(x.ItemName))
+            .Select(x => x.ItemName!.Trim())
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        var proItemsByName = noIdItemNames.Count == 0
+            ? new List<DomainModels.AppProItems.ProItem>()
+            : await AsyncExecuter.ToListAsync(proItemQuery.Where(x => noIdItemNames.Contains(x.Name)));
+
+        var proItemByNameMap = proItemsByName
+            .GroupBy(x => x.Name.Trim(), StringComparer.OrdinalIgnoreCase)
+            .ToDictionary(g => g.Key, g => g.First(), StringComparer.OrdinalIgnoreCase);
+
         var customers = customerIds.Count == 0
             ? new List<Customer>()
             : await AsyncExecuter.ToListAsync(
@@ -613,8 +654,16 @@ public class AppProOrderService : ApplicationService, IAppProOrderService
             {
                 itemNames.Add(oi.ItemName);
                 if (primaryImage == null && oi.ItemId.HasValue && proItemMap.TryGetValue(oi.ItemId.Value, out var pi))
+                {
                     if (!string.IsNullOrWhiteSpace(pi.ImageUrl))
                         primaryImage = ImageHelper.NormalizeThumb(_configuration, pi.ImageUrl);
+                }
+                else if (primaryImage == null && !oi.ItemId.HasValue && !string.IsNullOrWhiteSpace(oi.ItemName)
+                    && proItemByNameMap.TryGetValue(oi.ItemName.Trim(), out var piByName))
+                {
+                    if (!string.IsNullOrWhiteSpace(piByName.ImageUrl))
+                        primaryImage = ImageHelper.NormalizeThumb(_configuration, piByName.ImageUrl);
+                }
             }
 
             latestActivityMap.TryGetValue(order.Id, out var latestActivity);

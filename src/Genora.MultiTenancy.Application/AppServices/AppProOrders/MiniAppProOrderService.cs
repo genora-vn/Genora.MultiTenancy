@@ -68,14 +68,18 @@ public class MiniAppProOrderService : ApplicationService, IMiniAppProOrderServic
             orderItems.Add(new ProOrderItem(
                 GuidGenerator.Create(), order.Id, proItem.Name, proItem.Price, itemInput.Quantity)
             {
-                ItemId = itemInput.ItemId,
+                ItemId = null, // FK cross-tenant: dùng ItemName để lookup ảnh
                 Note   = itemInput.Note
             });
         }
 
         order.TotalAmount = orderItems.Sum(i => i.Price * i.Quantity);
+
+        foreach (var orderItem in orderItems)
+            order.Items.Add(orderItem);
+
         await _orderRepository.InsertAsync(order, autoSave: true);
-        await _orderItemRepository.InsertManyAsync(orderItems, autoSave: true);
+
         await WriteActivityAsync(order.Id, "Created",
             "Đơn hàng được tạo từ Mini App",
             $"Mã túi: {order.BagTag} | {orderItems.Count} sản phẩm | {order.TotalAmount:N0} VND");

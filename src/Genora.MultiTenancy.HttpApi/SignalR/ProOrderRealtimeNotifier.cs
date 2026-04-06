@@ -80,25 +80,46 @@ public class ProOrderRealtimeNotifier : IProOrderRealtimeNotifier
         var orderId    = order.Id;
         var orderItems = await _orderItemRepository.GetListAsync(x => x.OrderId == orderId);
 
-        // Map item images
+        // Map item images by Id
         var itemIds = orderItems
             .Where(x => x.ItemId.HasValue)
             .Select(x => x.ItemId!.Value)
             .Distinct()
             .ToList();
 
+        var itemsQuery = await _itemRepository.GetQueryableAsync();
         var itemMap = new Dictionary<Guid, ProItem>();
         if (itemIds.Count > 0)
         {
-            var itemsQuery = await _itemRepository.GetQueryableAsync();
             itemMap = itemsQuery
                 .Where(x => itemIds.Contains(x.Id))
                 .ToDictionary(x => x.Id, x => x);
         }
 
+        // Fallback: lookup theo ItemName cho Mini App orders (ItemId = null)
+        var itemNames = orderItems
+            .Where(x => !x.ItemId.HasValue && !string.IsNullOrWhiteSpace(x.ItemName))
+            .Select(x => x.ItemName!.Trim())
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        var itemByName = new Dictionary<string, ProItem>(StringComparer.OrdinalIgnoreCase);
+        if (itemNames.Count > 0)
+        {
+            var byName = itemsQuery.Where(x => itemNames.Contains(x.Name)).ToList();
+            itemByName = byName
+                .GroupBy(x => x.Name.Trim(), StringComparer.OrdinalIgnoreCase)
+                .ToDictionary(g => g.Key, g => g.First(), StringComparer.OrdinalIgnoreCase);
+        }
+
         var items = orderItems.Select(x =>
         {
-            itemMap.TryGetValue(x.ItemId ?? Guid.Empty, out var proItem);
+            ProItem? proItem = null;
+            if (x.ItemId.HasValue)
+                itemMap.TryGetValue(x.ItemId.Value, out proItem);
+            else if (!string.IsNullOrWhiteSpace(x.ItemName))
+                itemByName.TryGetValue(x.ItemName.Trim(), out proItem);
+
             return new ProOrderRealtimeItemDto
             {
                 ItemId   = x.ItemId,
