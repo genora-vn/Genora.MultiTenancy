@@ -121,7 +121,7 @@ public class MiniAppFnbOrderService : ApplicationService, IMiniAppFnbOrderServic
                 item.Price,
                 row.Quantity)
             {
-                ItemId = null, // hotfix hiện tại
+                ItemId = item.Id,
                 Note = string.IsNullOrWhiteSpace(row.Note) ? null : row.Note.Trim()
             };
 

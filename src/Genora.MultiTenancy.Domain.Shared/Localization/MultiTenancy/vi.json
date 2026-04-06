@@ -627,6 +627,10 @@
     "Feature:MiniAppFnb": "Bật quản lý FnB",
     "Feature:MiniAppFnbDesc": "Cho phép sử dụng chức năng quản lý FnB gồm danh mục, món ăn và đơn hàng.",
 
+    "FeatureGroup:MiniAppProshop": "Proshop Mini App",
+    "Feature:MiniAppProshop": "Bật quản lý Proshop",
+    "Feature:MiniAppProshopDesc": "Cho phép sử dụng chức năng quản lý Proshop gồm danh mục, sản phầm và đơn hàng.",
+
     "PermissionGroup:MiniAppProCategories": "Danh mục Proshop",
     "PermissionGroup:MiniAppProCategoriesHost": "Danh mục Proshop (Host)",
     "Permission:MiniAppProCategories": "Quản lý danh mục Proshop",

@@ -132,6 +132,9 @@ public class ProOrderRealtimeNotifier : IProOrderRealtimeNotifier
         var latestActivity  = recentActivityDtos.FirstOrDefault();
         var primaryImage    = items.FirstOrDefault(x => !string.IsNullOrWhiteSpace(x.ImageUrl))?.ImageUrl;
         var itemsSummary    = string.Join(", ", items.Select(x => $"{x.ItemName} x{x.Quantity}"));
+        var itemNotesSummary = string.Join(" • ",
+            items.Where(x => !string.IsNullOrWhiteSpace(x.Note))
+                 .Select(x => $"{x.ItemName}: {x.Note}"));
 
         return new ProOrderRealtimeDto
         {
@@ -149,6 +152,7 @@ public class ProOrderRealtimeNotifier : IProOrderRealtimeNotifier
             PaymentStatus           = (int)order.PaymentStatus,
             PrimaryImageUrl         = primaryImage ?? "/images/fnb/default-food.png",
             ItemsSummary            = itemsSummary,
+            ItemNotesSummary        = itemNotesSummary,
             TotalQuantity           = items.Sum(x => x.Quantity),
             LatestActivityTitle     = latestActivity?.Title,
             LatestActivityDescription = latestActivity?.Description,

@@ -1,4 +1,4 @@
-(function (window, $) {
+﻿(function (window, $) {
     if (window.genoraProNotify) {
         return;
     }
@@ -111,6 +111,7 @@
             paymentStatus:            normalizeStatus(pick(payload, 'paymentStatus', 'PaymentStatus')),
             primaryImageUrl:          pick(payload, 'primaryImageUrl', 'PrimaryImageUrl'),
             itemsSummary:             pick(payload, 'itemsSummary', 'ItemsSummary'),
+            itemNotesSummary:         pick(payload, 'itemNotesSummary', 'ItemNotesSummary'),
             latestActivityTitle:      pick(payload, 'latestActivityTitle', 'LatestActivityTitle'),
             latestActivityDescription:pick(payload, 'latestActivityDescription', 'LatestActivityDescription'),
             items:                    pick(payload, 'items', 'Items') || [],
@@ -243,6 +244,14 @@
         } catch { return value; }
     }
 
+    function buildItemNotes(items) {
+        if (!items || !items.length) return '';
+        var notes = items
+            .filter(function (x) { return x.note; })
+            .map(function (x) { return x.itemName + ': ' + x.note; });
+        return notes.join(' • ');
+    }
+
     function renderNotificationItem(item) {
         var customer  = [item.customerName, item.customerPhoneMasked || item.customerPhone, item.bagTag]
             .filter(Boolean).join(' • ');
@@ -250,6 +259,7 @@
         var title     = item.latestActivityTitle
             ? escapeHtml(item.latestActivityTitle)
             : ('Đơn Proshop #' + escapeHtml(item.orderCode || ''));
+        var itemNotes = item.itemNotesSummary || buildItemNotes(item.items);
 
         return `
             <div class="fnb-notify-item ${item.isRead ? '' : 'unread'}" data-id="${item.id}" data-type="pro">
@@ -263,7 +273,8 @@
                     </div>
                     <div class="fnb-notify-meta">${escapeHtml(customer)}</div>
                     <div class="fnb-notify-text">${escapeHtml(item.itemsSummary || '')}</div>
-                    ${item.note ? `<div class="fnb-notify-note"><strong>Ghi chú:</strong> ${escapeHtml(item.note)}</div>` : ''}
+                    ${item.note ? `<div class="fnb-notify-note"><strong>Ghi chú khách:</strong> ${escapeHtml(item.note)}</div>` : ''}
+                    ${itemNotes ? `<div class="fnb-notify-note"><strong>Ghi chú món:</strong> ${escapeHtml(itemNotes)}</div>` : ''}
                 </div>
             </div>
         `;

@@ -19,6 +19,7 @@ public class ProOrderRealtimeDto
     public int PaymentStatus { get; set; }
     public string? PrimaryImageUrl { get; set; }
     public string ItemsSummary { get; set; } = default!;
+    public string ItemNotesSummary { get; set; } = string.Empty;
     public int TotalQuantity { get; set; }
     public string? LatestActivityTitle { get; set; }
     public string? LatestActivityDescription { get; set; }

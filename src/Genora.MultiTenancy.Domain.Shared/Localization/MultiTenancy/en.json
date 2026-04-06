@@ -592,6 +592,10 @@
     "Feature:MiniAppFnb": "Enable FnB management",
     "Feature:MiniAppFnbDesc": "Allow using FnB management including categories, items and orders.",
 
+    "FeatureGroup:MiniAppProshop": "Proshop Mini App",
+    "Feature:MiniAppProshop": "Enable Proshop management",
+    "Feature:MiniAppProshopDesc": "Allow using Proshop management including categories, items and orders.",
+
     "PermissionGroup:MiniAppProCategories": "Proshop Categories",
     "PermissionGroup:MiniAppProCategoriesHost": "Proshop Categories (Host)",
     "Permission:MiniAppProCategories": "Manage Proshop categories",
