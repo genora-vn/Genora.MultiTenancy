@@ -1,14 +1,17 @@
-﻿using Genora.MultiTenancy.DomainModels.AppFnbItems;
+using Genora.MultiTenancy.DomainModels.AppFnbItems;
 using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Volo.Abp.Domain.Entities;
+using Volo.Abp.MultiTenancy;
 
 namespace Genora.MultiTenancy.DomainModels.AppFnbOrders;
 
 [Table("AppFnbOrderItems")]
-public class FnbOrderItem : Entity<Guid>
+public class FnbOrderItem : Entity<Guid>, IMultiTenant
 {
+    public Guid? TenantId { get; set; }
+
     [Required]
     public Guid OrderId { get; set; }
     public virtual FnbOrder Order { get; set; } = null!;

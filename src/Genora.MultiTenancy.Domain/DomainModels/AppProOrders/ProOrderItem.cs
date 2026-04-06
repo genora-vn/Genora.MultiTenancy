@@ -3,12 +3,15 @@ using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Volo.Abp.Domain.Entities;
+using Volo.Abp.MultiTenancy;
 
 namespace Genora.MultiTenancy.DomainModels.AppProOrders;
 
 [Table("AppProOrderItems")]
-public class ProOrderItem : Entity<Guid>
+public class ProOrderItem : Entity<Guid>, IMultiTenant
 {
+    public Guid? TenantId { get; set; }
+
     [Required]
     public Guid OrderId { get; set; }
     public virtual ProOrder Order { get; set; } = null!;

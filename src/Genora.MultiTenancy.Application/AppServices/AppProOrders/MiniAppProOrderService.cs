@@ -68,6 +68,7 @@ public class MiniAppProOrderService : ApplicationService, IMiniAppProOrderServic
             orderItems.Add(new ProOrderItem(
                 GuidGenerator.Create(), order.Id, proItem.Name, proItem.Price, itemInput.Quantity)
             {
+                TenantId = _currentTenant.Id,
                 ItemId = null, // FK cross-tenant: dùng ItemName để lookup ảnh
                 Note   = itemInput.Note
             });
