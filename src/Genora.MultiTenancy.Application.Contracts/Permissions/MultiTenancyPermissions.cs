@@ -263,6 +263,16 @@ public static class MultiTenancyPermissions
         public const string Delete = Default + ".Delete";
     }
 
+    public static class AppFnbKitchenBoard
+    {
+        public const string Default = GroupName + ".AppFnbKitchenBoard";
+    }
+
+    public static class HostAppFnbKitchenBoard
+    {
+        public const string Default = GroupName + ".HostAppFnbKitchenBoard";
+    }
+
     public static class AppFnbItems
     {
         public const string Default = GroupName + ".AppFnbItems";
@@ -295,6 +305,68 @@ public static class MultiTenancyPermissions
         public const string Delete = Default + ".Delete";
     }
     
+    #endregion
+
+    #region Proshop permissions
+
+    public static class AppProCategories
+    {
+        public const string Default = GroupName + ".AppProCategories";
+        public const string Create  = Default + ".Create";
+        public const string Edit    = Default + ".Edit";
+        public const string Delete  = Default + ".Delete";
+    }
+
+    public static class HostAppProCategories
+    {
+        public const string Default = GroupName + ".HostAppProCategories";
+        public const string Create  = Default + ".Create";
+        public const string Edit    = Default + ".Edit";
+        public const string Delete  = Default + ".Delete";
+    }
+
+    public static class AppProItems
+    {
+        public const string Default = GroupName + ".AppProItems";
+        public const string Create  = Default + ".Create";
+        public const string Edit    = Default + ".Edit";
+        public const string Delete  = Default + ".Delete";
+    }
+
+    public static class HostAppProItems
+    {
+        public const string Default = GroupName + ".HostAppProItems";
+        public const string Create  = Default + ".Create";
+        public const string Edit    = Default + ".Edit";
+        public const string Delete  = Default + ".Delete";
+    }
+
+    public static class AppProOrders
+    {
+        public const string Default = GroupName + ".AppProOrders";
+        public const string Create  = Default + ".Create";
+        public const string Edit    = Default + ".Edit";
+        public const string Delete  = Default + ".Delete";
+    }
+
+    public static class HostAppProOrders
+    {
+        public const string Default = GroupName + ".HostAppProOrders";
+        public const string Create  = Default + ".Create";
+        public const string Edit    = Default + ".Edit";
+        public const string Delete  = Default + ".Delete";
+    }
+
+    public static class AppProOrdersBoard
+    {
+        public const string Default = GroupName + ".AppProOrdersBoard";
+    }
+
+    public static class HostAppProOrdersBoard
+    {
+        public const string Default = GroupName + ".HostAppProOrdersBoard";
+    }
+
     #endregion
 
     //Add your own permission names. Example:

@@ -1,4 +1,4 @@
-{
+﻿{
   "Culture": "en",
   "Texts": {
     "Common:NA": "N/A",
@@ -54,6 +54,7 @@
     "Menu:AppFnbCategories": "FnB Categories",
     "Menu:AppFnbItems": "FnB Items",
     "Menu:AppFnbOrders": "FnB Orders",
+    "Menu:AppFnbKitchenBoard": "Kitchen Board",
     "Menu:Refresh": "Refresh",
 
     "ImagePreview": "Image preview",
@@ -96,7 +97,8 @@
     "ResponseBody": "Response",
     "FromDate": "From date",
     "ToDate": "To date",
-    "View": "View",
+    "View": "Quick View",
+    "ViewDetail": "View Detail",
     "MaskTokenHint": "Tokens are partially masked for security.",
     "StayPlay": "Stay & Explore Stay & Play Package",
     "RentCaddie": "Book Caddie",
@@ -579,10 +581,75 @@
     "Permission:MiniAppFnbOrders.Create": "Create",
     "Permission:MiniAppFnbOrders.Edit": "Edit",
     "Permission:MiniAppFnbOrders.Delete": "Delete",
+    "PermissionGroup:MiniAppFnb": "FnB Management",
+    "PermissionGroup:MiniAppFnbHost": "FnB Management (Host)",
+    "Permission:MiniAppFnbKitchenBoard": "Manage Kitchen Board",
+    "PermissionGroup:MiniAppProshop": "Proshop Management",
+    "PermissionGroup:MiniAppProshopHost": "Proshop Management (Host)",
+    "Permission:MiniAppProOrdersBoard": "Manage Proshop Board",
 
     "FeatureGroup:MiniAppFnb": "Mini App FnB",
     "Feature:MiniAppFnb": "Enable FnB management",
     "Feature:MiniAppFnbDesc": "Allow using FnB management including categories, items and orders.",
+
+    "PermissionGroup:MiniAppProCategories": "Proshop Categories",
+    "PermissionGroup:MiniAppProCategoriesHost": "Proshop Categories (Host)",
+    "Permission:MiniAppProCategories": "Manage Proshop categories",
+    "Permission:MiniAppProCategories.Create": "Create",
+    "Permission:MiniAppProCategories.Edit": "Edit",
+    "Permission:MiniAppProCategories.Delete": "Delete",
+
+    "PermissionGroup:MiniAppProItems": "Proshop Items",
+    "PermissionGroup:MiniAppProItemsHost": "Proshop Items (Host)",
+    "Permission:MiniAppProItems": "Manage Proshop items",
+    "Permission:MiniAppProItems.Create": "Create",
+    "Permission:MiniAppProItems.Edit": "Edit",
+    "Permission:MiniAppProItems.Delete": "Delete",
+
+    "PermissionGroup:MiniAppProOrders": "Proshop Orders",
+    "PermissionGroup:MiniAppProOrdersHost": "Proshop Orders (Host)",
+    "Permission:MiniAppProOrders": "Manage Proshop orders",
+    "Permission:MiniAppProOrders.Create": "Create",
+    "Permission:MiniAppProOrders.Edit": "Edit",
+    "Permission:MiniAppProOrders.Delete": "Delete",
+
+    "MenuGroup:Proshop": "Proshop",
+    "Menu:AppProCategories": "Categories",
+    "Menu:AppProItems": "Products",
+    "Menu:AppProOrders": "Orders",
+    "Menu:AppProOrdersBoard": "Proshop Board",
+
+    "AppProCategories": "Proshop Categories",
+    "AppProItems": "Proshop Products",
+    "AppProOrders": "Proshop Orders",
+
+    "NewProCategory": "New category",
+    "EditProCategory": "Edit category",
+    "ProCategoryFilterText": "Search by category name / code",
+
+    "NewProItem": "New product",
+    "EditProItem": "Edit product",
+    "ProItemFilterText": "Search by product name / code",
+
+    "NewProOrder": "New order",
+    "ProOrderFilterText": "Search by order code / bag tag / customer name",
+    "ProOrderDetail": "Order detail",
+
+    "ProServiceStatus:Created": "Created",
+    "ProServiceStatus:Processing": "Processing",
+    "ProServiceStatus:Ready": "Ready",
+    "ProServiceStatus:Delivered": "Delivered",
+    "ProServiceStatus:Cancelled": "Cancelled",
+
+    "ProPaymentStatus:Unpaid": "Unpaid",
+    "ProPaymentStatus:Paid": "Paid",
+    "ProPaymentStatus:Failed": "Payment failed",
+
+    "ProCancelReason:CustomerRequest": "Customer request",
+    "ProCancelReason:OutOfStock": "Out of stock",
+    "ProCancelReason:WrongOrder": "Wrong order",
+    "ProCancelReason:SystemError": "System error",
+    "ProCancelReason:Other": "Other",
 
     "AppFnbCategories": "FnB Categories",
     "AppFnbItems": "FnB Items",
@@ -604,6 +671,8 @@
     "OrderCode": "Order code",
     "BagTag": "Bag tag",
     "ServiceStatus": "Service status",
+    "SearchPlaceholder": "Order code / Customer / Phone...",
+    "AllStatuses": "All statuses",
     "PaymentStatus": "Payment status",
     "PaymentMethod": "Payment method",
     "CustomerName": "Customer name",

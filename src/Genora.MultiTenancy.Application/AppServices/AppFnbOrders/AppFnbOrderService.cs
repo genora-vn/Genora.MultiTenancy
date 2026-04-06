@@ -9,16 +9,19 @@ using Genora.MultiTenancy.Features.AppFnbFeatures;
 using Genora.MultiTenancy.Helpers;
 using Genora.MultiTenancy.Permissions;
 using Genora.MultiTenancy.Realtime;
+using ClosedXML.Excel;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Configuration;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Linq.Dynamic.Core;
 using System.Threading.Tasks;
 using Volo.Abp;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Application.Services;
+using Volo.Abp.Content;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Features;
 using Volo.Abp.Identity;
@@ -847,5 +850,92 @@ public class AppFnbOrderService : ApplicationService, IAppFnbOrderService
             FnbPaymentStatus.Failed => "Thanh toán lỗi",
             _ => "Không xác định"
         };
+    }
+
+    public async Task<IRemoteStreamContent> ExportExcelAsync(GetFnbOrderListInput input)
+    {
+        await CheckFeatureAndPolicyAsync(GetRootPermission());
+
+        // Áp dụng cùng filter như GetListAsync — không phân trang, lấy toàn bộ
+        var query = await _orderRepository.GetQueryableAsync();
+
+        if (!input.FilterText.IsNullOrWhiteSpace())
+        {
+            var f = input.FilterText.Trim();
+            query = query.Where(x =>
+                x.OrderCode.Contains(f) ||
+                x.BagTag.Contains(f) ||
+                (x.CustomerName != null && x.CustomerName.Contains(f)));
+        }
+
+        if (!input.BagTag.IsNullOrWhiteSpace())
+            query = query.Where(x => x.BagTag.Contains(input.BagTag!.Trim()));
+
+        if (input.ServiceStatus.HasValue)
+            query = query.Where(x => x.ServiceStatus == input.ServiceStatus.Value);
+
+        if (input.PaymentStatus.HasValue)
+            query = query.Where(x => x.PaymentStatus == input.PaymentStatus.Value);
+
+        if (input.CreationTimeFrom.HasValue)
+            query = query.Where(x => x.CreationTime >= input.CreationTimeFrom.Value);
+
+        if (input.CreationTimeTo.HasValue)
+            query = query.Where(x => x.CreationTime <= input.CreationTimeTo.Value);
+
+        var items = await AsyncExecuter.ToListAsync(
+            query.OrderByDescending(x => x.CreationTime));
+
+        using var workbook = new XLWorkbook();
+        var ws = workbook.Worksheets.Add("FnB Orders");
+
+        // Header
+        var headers = new[]
+        {
+            "MÃ ĐƠN", "BAG TAG", "TÊN KHÁCH", "SỐ ĐIỆN THOẠI",
+            "TỔNG TIỀN", "TRẠNG THÁI PHỤC VỤ", "TRẠNG THÁI THANH TOÁN",
+            "GHI CHÚ", "NỘI BỘ", "NGÀY TẠO"
+        };
+        for (var col = 1; col <= headers.Length; col++)
+            ws.Cell(1, col).Value = headers[col - 1];
+
+        var headerRange = ws.Range(1, 1, 1, headers.Length);
+        headerRange.Style.Font.Bold = true;
+        headerRange.Style.Fill.BackgroundColor = XLColor.FromHtml("#2563EB");
+        headerRange.Style.Font.FontColor = XLColor.White;
+        headerRange.Style.Border.OutsideBorder = XLBorderStyleValues.Thin;
+        headerRange.Style.Border.InsideBorder = XLBorderStyleValues.Thin;
+        headerRange.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+
+        var row = 2;
+        foreach (var o in items)
+        {
+            ws.Cell(row, 1).Value = o.OrderCode;
+            ws.Cell(row, 2).Value = o.BagTag;
+            ws.Cell(row, 3).Value = o.CustomerName ?? "";
+            ws.Cell(row, 4).Value = o.CustomerPhone ?? "";
+            ws.Cell(row, 5).Value = (double)o.TotalAmount;
+            ws.Cell(row, 5).Style.NumberFormat.Format = "#,##0";
+            ws.Cell(row, 6).Value = MapServiceStatus(o.ServiceStatus);
+            ws.Cell(row, 7).Value = MapPaymentStatus(o.PaymentStatus);
+            ws.Cell(row, 8).Value = o.Note ?? "";
+            ws.Cell(row, 9).Value = o.InternalNote ?? "";
+            ws.Cell(row, 10).Value = o.CreationTime.ToLocalTime().ToString("dd/MM/yyyy HH:mm");
+            row++;
+        }
+
+        ws.SheetView.FreezeRows(1);
+        ws.Columns().AdjustToContents();
+
+        return StreamToRemoteContent(workbook, $"Export_FnBOrders_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx");
+    }
+
+    private static IRemoteStreamContent StreamToRemoteContent(XLWorkbook workbook, string fileName)
+    {
+        var stream = new MemoryStream();
+        workbook.SaveAs(stream);
+        stream.Position = 0;
+        return new RemoteStreamContent(stream, fileName,
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
     }
 }

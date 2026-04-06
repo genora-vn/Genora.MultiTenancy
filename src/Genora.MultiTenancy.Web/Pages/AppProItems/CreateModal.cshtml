@@ -1,0 +1,319 @@
+@page
+@using Genora.MultiTenancy.Localization
+@using Genora.MultiTenancy.Web.Pages.AppProItems
+@using Microsoft.Extensions.Localization
+@using Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.TagHelpers.Modal
+@model CreateModalModel
+@inject IStringLocalizer<MultiTenancyResource> L
+
+@{
+    Layout = null;
+}
+
+<form asp-page="/AppProItems/CreateModal" method="post" id="CreateProItemForm" enctype="multipart/form-data" class="fnb-item-modal-form">
+    <input type="hidden" id="IsUploadImageHiddenCreate" asp-for="Item.IsUploadImage" value="true" />
+
+    <abp-modal size="Large">
+        <abp-modal-body class="p-0">
+            <div class="fnb-item-modal fnb-item-modal--compact fnb-item-modal--fit">
+                <div class="fnb-item-modal__header">
+                    <div class="fnb-item-modal__title-wrap">
+                        <div class="fnb-item-modal__title-row">
+                            <div class="fnb-item-modal__icon">
+                                <i class="fa fa-plus"></i>
+                            </div>
+                            <div>
+                                <h3 class="fnb-item-modal__title">@L["NewProItem"]</h3>
+                                <div class="fnb-item-modal__subtitle">Tạo sản phẩm Proshop mới trong hệ thống</div>
+                            </div>
+                        </div>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                </div>
+
+                <div class="fnb-item-modal__body">
+                    <div class="row g-3">
+                        <div class="col-lg-6">
+                            <label class="form-label fnb-item-label" asp-for="Item.Name">@L["Name"] <span class="text-danger">*</span></label>
+                            <input asp-for="Item.Name" class="form-control fnb-item-input" placeholder="Nhập tên sản phẩm" />
+                            <span asp-validation-for="Item.Name" class="text-danger"></span>
+                        </div>
+
+                        <div class="col-lg-6">
+                            <label class="form-label fnb-item-label" asp-for="Item.Price">@L["Price"] (VND)</label>
+                            <input asp-for="Item.Price"
+                                   type="text"
+                                   class="form-control fnb-item-input money-input text-end"
+                                   placeholder="0"
+                                   inputmode="numeric"
+                                   autocomplete="off"
+                                   value="@(Model.Item?.Price > 0 ? decimal.Truncate(Model.Item.Price).ToString("0") : "")" />
+                            <span asp-validation-for="Item.Price" class="text-danger"></span>
+                        </div>
+
+                        <div class="col-lg-6">
+                            <label class="form-label fnb-item-label" asp-for="Item.CategoryId">@L["Category"] <span class="text-danger">*</span></label>
+                            <select asp-for="Item.CategoryId" class="form-select fnb-item-input" asp-items="Model.CategoryOptions">
+                                <option value="">Chọn danh mục</option>
+                            </select>
+                            <span asp-validation-for="Item.CategoryId" class="text-danger"></span>
+                        </div>
+
+                        <div class="col-lg-6">
+                            <label class="form-label fnb-item-label" asp-for="Item.SortOrder">@L["SortOrder"]</label>
+                            <input asp-for="Item.SortOrder" class="form-control fnb-item-input" placeholder="1" />
+                            <span asp-validation-for="Item.SortOrder" class="text-danger"></span>
+                        </div>
+
+                        <div class="col-12">
+                            <div class="d-flex align-items-center justify-content-between mb-2">
+                                <label class="form-label fnb-item-label mb-0">Ảnh sản phẩm</label>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="isUploadProCreate" checked />
+                                    <label class="form-check-label" for="isUploadProCreate">@L["IsImageInput"]</label>
+                                </div>
+                            </div>
+
+                            <div id="input-url-pro-create" style="display:none;">
+                                <input asp-for="Item.ImageUrl"
+                                       id="image-input-pro-create"
+                                       class="form-control fnb-item-input"
+                                       placeholder="https://..." />
+                                <small class="text-muted d-block mt-2">Nếu không upload ảnh, vui lòng dán link ảnh.</small>
+                                <span asp-validation-for="Item.ImageUrl" class="text-danger"></span>
+                            </div>
+
+                            <div id="input-image-pro-create">
+                                <div class="row g-3 align-items-stretch">
+                                    <div class="col-lg-8">
+                                        <div class="fnb-item-upload fnb-item-upload--compact fnb-item-upload--sm" id="dropZoneProCreate" tabindex="0">
+                                            <div class="fnb-item-upload__icon">
+                                                <i class="fa fa-image"></i>
+                                            </div>
+                                            <div class="fnb-item-upload__title">Kéo thả hoặc nhấp để tải lên</div>
+                                            <div class="fnb-item-upload__hint">PNG, JPG tối đa 5MB</div>
+                                            <input asp-for="Item.Images" type="file" id="imagesProCreate" accept="image/*" style="display:none" />
+                                        </div>
+
+                                        <input type="text"
+                                               id="UploadGuardProCreate"
+                                               name="UploadGuardProCreate"
+                                               class="sr-only-validate"
+                                               data-val="true"
+                                               data-val-required="Vui lòng chọn ảnh để upload trước khi lưu."
+                                               value="" />
+
+                                        <span class="text-danger"
+                                              data-valmsg-for="UploadGuardProCreate"
+                                              data-valmsg-replace="true"></span>
+                                    </div>
+
+                                    <div class="col-lg-4">
+                                        <div class="fnb-item-preview fnb-item-preview--side fnb-item-preview--sm h-100">
+                                            <img src="/images/getting-started/no-photo-square.png" id="image-preview-pro-create" alt="Preview" />
+                                            <button type="button" class="btn btn-sm btn-light fnb-item-preview__remove" id="btnRemovePreviewProCreate" style="display:none;">×</button>
+                                        </div>
+                                        <span asp-validation-for="Item.Images" class="text-danger d-block mt-2"></span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-12 mt-4">
+                            <label class="form-label fnb-item-label" asp-for="Item.Description">@L["Description"]</label>
+                            <textarea asp-for="Item.Description"
+                                      class="form-control fnb-item-textarea fnb-item-textarea--compact"
+                                      rows="3"
+                                      placeholder="Nhập mô tả chi tiết về sản phẩm..."></textarea>
+                            <span asp-validation-for="Item.Description" class="text-danger"></span>
+                        </div>
+
+                        <div class="col-12">
+                            <div class="fnb-item-switches">
+                                <label class="fnb-item-switch-line">
+                                    <span class="fnb-switch">
+                                        <input asp-for="Item.IsActive" type="checkbox" />
+                                        <span class="fnb-switch-slider"></span>
+                                    </span>
+                                    <span>Được hoạt động</span>
+                                </label>
+
+                                <label class="fnb-item-switch-line">
+                                    <span class="fnb-switch">
+                                        <input asp-for="Item.IsAvailable" type="checkbox" />
+                                        <span class="fnb-switch-slider"></span>
+                                    </span>
+                                    <span>Còn hàng</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="fnb-item-modal__footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn btn-primary">Lưu lại</button>
+                </div>
+            </div>
+        </abp-modal-body>
+    </abp-modal>
+</form>
+
+<script>
+    (function () {
+        const MAX_FILE_MB = 5;
+        const MAX_FILE_BYTES = MAX_FILE_MB * 1024 * 1024;
+
+        setTimeout(function () {
+            const $form = $('#CreateProItemForm');
+            if (!$form.length) return;
+
+            const $isUpload    = $('#isUploadProCreate');
+            const $hiddenUpload  = $('#IsUploadImageHiddenCreate');
+            const $inputUrlWrap  = $('#input-url-pro-create');
+            const $inputUploadWrap = $('#input-image-pro-create');
+            const $thumbInput  = $('#image-input-pro-create');
+            const $uploadGuard = $('#UploadGuardProCreate');
+            const $previewImg  = $('#image-preview-pro-create');
+            const $removeBtn   = $('#btnRemovePreviewProCreate');
+
+            const fileInput = document.getElementById('imagesProCreate');
+            const dropZone  = document.getElementById('dropZoneProCreate');
+
+            function normalizeMoney(raw) {
+                if (!raw) return '';
+                return String(raw).replace(/[^\d]/g, '');
+            }
+
+            function formatMoneyVN(raw) {
+                const n = parseInt(normalizeMoney(raw), 10);
+                if (isNaN(n)) return '';
+                return n.toLocaleString('vi-VN');
+            }
+
+            function initMoney() {
+                $form.find('.money-input').each(function () {
+                    const el = this;
+                    el.value = formatMoneyVN(el.value);
+                    el.addEventListener('focus', () => { el.value = normalizeMoney(el.value); });
+                    el.addEventListener('input', () => { el.value = normalizeMoney(el.value); });
+                    el.addEventListener('blur',  () => { el.value = formatMoneyVN(el.value); });
+                });
+            }
+
+            function hookSubmitNormalize() {
+                $form.on('submit.moneyNormalize', function () {
+                    $form.find('.money-input').each(function () { this.value = normalizeMoney(this.value); });
+                });
+            }
+
+            function resetUnobtrusive() {
+                if ($.validator && $.validator.unobtrusive) {
+                    $form.removeData('validator').removeData('unobtrusiveValidation');
+                    $.validator.unobtrusive.parse($form);
+                }
+            }
+
+            function clearFieldError(name) {
+                $form.find(`[name="${name}"]`).removeClass('input-validation-error is-invalid');
+                $form.find(`[data-valmsg-for="${name}"]`)
+                    .removeClass('field-validation-error').addClass('field-validation-valid').text('');
+            }
+
+            function setPreview(src, alt) {
+                $previewImg.attr('src', src).attr('alt', alt || 'Preview');
+                $removeBtn.show();
+            }
+
+            function clearPreview() {
+                $previewImg.attr('src', '/images/getting-started/no-photo-square.png').attr('alt', 'Preview');
+                $removeBtn.hide();
+            }
+
+            function bindingPreviewFromUrl() {
+                const url = ($thumbInput.val() || '').trim();
+                url ? setPreview(url, 'ImageUrl') : clearPreview();
+            }
+
+            function enableUrlMode() {
+                $hiddenUpload.val('false');
+                $isUpload.prop('checked', false);
+                $inputUrlWrap.show();
+                $inputUploadWrap.hide();
+                $thumbInput.prop('disabled', false);
+                $uploadGuard.val('').prop('disabled', true);
+                clearFieldError('UploadGuardProCreate');
+                clearFieldError('Item.Images');
+                if (fileInput) fileInput.value = '';
+                resetUnobtrusive();
+                bindingPreviewFromUrl();
+            }
+
+            function enableUploadMode() {
+                $hiddenUpload.val('true');
+                $isUpload.prop('checked', true);
+                $inputUrlWrap.hide();
+                $inputUploadWrap.show();
+                $thumbInput.val('').prop('disabled', true);
+                clearFieldError('Item.ImageUrl');
+                $uploadGuard.prop('disabled', false);
+                resetUnobtrusive();
+                clearPreview();
+            }
+
+            $isUpload.on('change', function () {
+                this.checked ? enableUploadMode() : enableUrlMode();
+            });
+
+            $form.on('input change', '#image-input-pro-create', bindingPreviewFromUrl);
+
+            $removeBtn.on('click', function () {
+                if ($isUpload.is(':checked')) {
+                    if (fileInput) fileInput.value = '';
+                    $uploadGuard.val('');
+                    clearPreview();
+                } else {
+                    $thumbInput.val('');
+                    bindingPreviewFromUrl();
+                }
+            });
+
+            function notifyWarn(msg) {
+                if (window.abp?.notify?.warn) abp.notify.warn(msg); else alert(msg);
+            }
+
+            function handleFiles(files) {
+                if (!files || !files.length) return;
+                const file = files[0];
+                if (!file.type?.startsWith('image/')) {
+                    notifyWarn("File không phải ảnh hợp lệ.");
+                    if (fileInput) fileInput.value = '';
+                    $uploadGuard.val('');
+                    return;
+                }
+                if (file.size > MAX_FILE_BYTES) {
+                    notifyWarn(`Ảnh vượt quá ${MAX_FILE_MB}MB.`);
+                    if (fileInput) fileInput.value = '';
+                    $uploadGuard.val('');
+                    return;
+                }
+                $uploadGuard.val(file.name);
+                const reader = new FileReader();
+                reader.onload = (e) => setPreview(e.target.result, file.name);
+                reader.readAsDataURL(file);
+            }
+
+            if (dropZone && fileInput) {
+                dropZone.addEventListener('click', () => fileInput.click());
+                dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+                dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+                dropZone.addEventListener('drop', (e) => { e.preventDefault(); dropZone.classList.remove('drag-over'); handleFiles(e.dataTransfer.files); });
+                fileInput.addEventListener('change', () => handleFiles(fileInput.files));
+            }
+
+            initMoney();
+            hookSubmitNormalize();
+            enableUploadMode();
+        }, 0);
+    })();
+</script>

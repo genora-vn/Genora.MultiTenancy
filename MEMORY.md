@@ -196,7 +196,35 @@ vietqr://pay?app={shortCode}&ba={accountNo}&am={amount}&tn={addInfo}&nn={account
 
 ---
 
-## TODO (Phase 2 — chưa làm)
+### [2026-04-03 v6] Bổ sung API huỷ booking từ Mini App
+
+**Endpoint mới:** `POST /api/mini-app/cancel-booking/{id}`
+
+**Files thay đổi / tạo mới:**
+| File | Thay đổi |
+|------|----------|
+| `MiniAppCancelBookingDto.cs` *(mới)* | Input: `CustomerId` (required) + `CancelReason?` (optional, max 500) |
+| `IMiniAppBookingAppService.cs` | Thêm `CancelFromMiniAppAsync(Guid id, MiniAppCancelBookingDto input)` |
+| `MiniAppBookingAppService.cs` | Implement `CancelFromMiniAppAsync` — full logic |
+| `MiniAppController.cs` | `[HttpPost("cancel-booking/{id}")]` AllowAnonymous |
+
+**Logic `CancelFromMiniAppAsync`:**
+1. Load booking → 404 nếu không tìm thấy
+2. Xác thực `booking.CustomerId == input.CustomerId` → 403 nếu không khớp
+3. Guard: đã huỷ rồi → 400 | đã Completed → 400
+4. `booking.Status = BookingStatus.CancelledRefund` → `UpdateAsync`
+5. Gửi ZBS `"BookingCancelled"` (try/catch, không throw)
+6. Gửi Email `BookingCancelRequest` template (try/catch, không throw)
+7. Trả về `GetMiniAppAsync(id, customerId)` — response giống get detail
+
+**ZBS TemplateData:**
+```json
+{ "customer_name": "...", "booking_code": "...", "tee_off_date": "dd/MM/yyyy", "tee_off_time": "HH:mm" }
+```
+
+**Email model:** `BookingCancelRequestEmailModelDto` — `CancelRequesterName = "{FullName} (khách hàng)"`, `CancelStatusText = "Huỷ hoàn tiền"`.
+
+**Lưu ý:** `Booking` entity không có field `InternalNote` → `CancelReason` nhận từ input nhưng chưa persist vào DB. TODO Phase 2: thêm `CancelNote` field + migration nếu cần lưu lý do huỷ.
 - [ ] Tích hợp ZaloPay / Momo / VNPay (Online = 1) cho cả Booking và FnB.
 - [ ] Push thông báo realtime (SignalR) khi callback thành công cập nhật PaymentStatus.
 - [ ] Trang admin quản lý lịch sử giao dịch thanh toán.

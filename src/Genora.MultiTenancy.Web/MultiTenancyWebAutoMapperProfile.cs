@@ -9,6 +9,8 @@ using Genora.MultiTenancy.AppDtos.AppGolfCourses;
 using Genora.MultiTenancy.AppDtos.AppHomePageConfigs;
 using Genora.MultiTenancy.AppDtos.AppMembershipTiers;
 using Genora.MultiTenancy.AppDtos.AppNews;
+using Genora.MultiTenancy.AppDtos.AppProCategories;
+using Genora.MultiTenancy.AppDtos.AppProItems;
 using Genora.MultiTenancy.AppDtos.AppSettings;
 using Genora.MultiTenancy.AppDtos.AppSpecialDates;
 using Genora.MultiTenancy.AppDtos.ZaloAuths;
@@ -21,7 +23,6 @@ public class MultiTenancyWebAutoMapperProfile : Profile
 {
     public MultiTenancyWebAutoMapperProfile()
     {
-
         CreateMap<AppSettingDto, CreateUpdateAppSettingDto>();
         CreateMap<AppCustomerTypeDto, CreateUpdateAppCustomerTypeDto>();
         CreateMap<AppGolfCourseDto, CreateUpdateAppGolfCourseDto>();
@@ -33,7 +34,7 @@ public class MultiTenancyWebAutoMapperProfile : Profile
 
         CreateMap<AppZaloAuthDto, CreateUpdateZaloAuthDto>();
         CreateMap<SpecialDateDto, CreateUpdateSpecialDateDto>().ReverseMap();
-        
+
         CreateMap<FeatureGridDto, UpdateFeatureGridDto>()
             .ForMember(d => d.Items, opt => opt.MapFrom(s => s.Items))
             .ReverseMap();
@@ -44,6 +45,11 @@ public class MultiTenancyWebAutoMapperProfile : Profile
 
         CreateMap<FnbItemDto, CreateUpdateFnbItemDto>();
         CreateMap<CreateUpdateFnbItemDto, FnbItem>();
-        //Define your object mappings here, for the Web project
+
+        // Proshop — cần cho EditModal của ProCategory và ProItem
+        CreateMap<ProCategoryDto, CreateUpdateProCategoryDto>();
+        CreateMap<ProItemDto, CreateUpdateProItemDto>()
+            .ForMember(d => d.Images,        opt => opt.Ignore())
+            .ForMember(d => d.IsUploadImage, opt => opt.Ignore());
     }
 }

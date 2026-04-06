@@ -5,7 +5,8 @@
 
     var serviceStatusModal = new abp.ModalManager('/AppFnbOrders/UpdateServiceStatusModal');
     var paymentStatusModal = new abp.ModalManager('/AppFnbOrders/UpdatePaymentStatusModal');
-    var cancelModal = new abp.ModalManager('/AppFnbOrders/CancelModal');
+    var cancelModal        = new abp.ModalManager('/AppFnbOrders/CancelModal');
+    var detailModal        = new abp.ModalManager('/AppFnbOrders/DetailModal');
 
     var autoRefreshTimer = null;
 
@@ -74,8 +75,18 @@
                     title: l('Actions'),
                     rowAction: {
                         items: [
+                            // ── Xem nhanh (modal) ────────────────────────────
                             {
                                 text: l('View'),
+                                action: function (data) {
+                                    var id = fnb.safeId(data);
+                                    if (!id) return;
+                                    detailModal.open({ id: id });
+                                }
+                            },
+                            // ── Xem chi tiết (Kitchen/Detail) ────────────────
+                            {
+                                text: l('ViewDetail'),
                                 action: function (data) {
                                     var id = fnb.safeId(data);
                                     if (!id) return;
@@ -261,6 +272,11 @@
     $('#SearchFnbOrderButton, #RefreshFnbOrderButton').click(function (e) {
         e.preventDefault();
         dataTable.ajax.reload();
+    });
+
+    $('#ExportFnbOrderExcelButton').on('click', function (e) {
+        e.preventDefault();
+        genora.excel.download('api/app/app-fnb-order-excel/export', getFilter());
     });
 
     $('#FnbOrderFilterText').on('keydown', function (e) {

@@ -7,6 +7,9 @@ using Genora.MultiTenancy.AppDtos.AppEmails;
 using Genora.MultiTenancy.AppDtos.AppFnbCategories;
 using Genora.MultiTenancy.AppDtos.AppFnbItems;
 using Genora.MultiTenancy.AppDtos.AppFnbOrders;
+using Genora.MultiTenancy.AppDtos.AppProCategories;
+using Genora.MultiTenancy.AppDtos.AppProItems;
+using Genora.MultiTenancy.AppDtos.AppProOrders;
 using Genora.MultiTenancy.AppDtos.AppGolfCourses;
 using Genora.MultiTenancy.AppDtos.AppHomePageConfigs;
 using Genora.MultiTenancy.AppDtos.AppMembershipTiers;
@@ -27,6 +30,9 @@ using Genora.MultiTenancy.DomainModels.AppEmails;
 using Genora.MultiTenancy.DomainModels.AppFnbCategories;
 using Genora.MultiTenancy.DomainModels.AppFnbItems;
 using Genora.MultiTenancy.DomainModels.AppFnbOrders;
+using Genora.MultiTenancy.DomainModels.AppProCategories;
+using Genora.MultiTenancy.DomainModels.AppProItems;
+using Genora.MultiTenancy.DomainModels.AppProOrders;
 using Genora.MultiTenancy.DomainModels.AppGolfCourses;
 using Genora.MultiTenancy.DomainModels.AppHomePageConfigs;
 using Genora.MultiTenancy.DomainModels.AppMembershipTiers;
@@ -182,6 +188,26 @@ public class MultiTenancyApplicationAutoMapperProfile : Profile
 
         CreateMap<FnbOrder, FnbOrderDto>();
         CreateMap<FnbOrderItem, FnbOrderItemDto>();
+        #endregion
+
+        #region Proshop
+        CreateMap<ProCategory, ProCategoryDto>();
+        CreateMap<CreateUpdateProCategoryDto, ProCategory>();
+        CreateMap<ProCategoryDto, CreateUpdateProCategoryDto>();
+
+        CreateMap<ProItem, ProItemDto>();
+        CreateMap<CreateUpdateProItemDto, ProItem>();
+        // Cần cho EditModal: ObjectMapper.Map<ProItemDto, CreateUpdateProItemDto>
+        CreateMap<ProItemDto, CreateUpdateProItemDto>()
+            .ForMember(d => d.Images,          opt => opt.Ignore())
+            .ForMember(d => d.IsUploadImage,   opt => opt.Ignore());
+
+        CreateMap<ProOrder, ProOrderDto>();
+        // ProOrderDetailDto kế thừa ProOrderDto — phải map riêng, nếu không AutoMapper
+        // sẽ tạo ProOrderDto rồi cast sang ProOrderDetailDto → InvalidCastException.
+        CreateMap<ProOrder, ProOrderDetailDto>()
+            .IncludeBase<ProOrder, ProOrderDto>();
+        CreateMap<ProOrderItem, ProOrderItemDto>();
         #endregion
     }
 }

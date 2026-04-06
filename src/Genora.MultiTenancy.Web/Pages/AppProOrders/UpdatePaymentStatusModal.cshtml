@@ -1,0 +1,107 @@
+@page
+@using Genora.MultiTenancy.Enums
+@using Genora.MultiTenancy.Localization
+@using Genora.MultiTenancy.Web.Pages.AppProOrders
+@using Microsoft.Extensions.Localization
+@using Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.TagHelpers.Modal
+@model UpdatePaymentStatusModalModel
+@inject IStringLocalizer<MultiTenancyResource> L
+
+@{
+    Layout = null;
+
+    string PaymentStatusText(ProPaymentStatus s) => s switch
+    {
+        ProPaymentStatus.Unpaid => "Chưa thanh toán",
+        ProPaymentStatus.Paid   => "Đã thanh toán",
+        ProPaymentStatus.Failed => "Thanh toán lỗi",
+        _                       => s.ToString()
+    };
+}
+
+<form asp-page="/AppProOrders/UpdatePaymentStatusModal" method="post" class="fnb-item-modal-form">
+    <input type="hidden" asp-for="Id" />
+    <input type="hidden" name="CurrentPaymentStatus" value="@Model.Input.PaymentStatus" />
+
+    <abp-modal size="Large">
+        <abp-modal-body class="p-0">
+            <div class="fnb-item-modal fnb-item-modal--compact fnb-item-modal--fit">
+                <div class="fnb-item-modal__header">
+                    <div class="fnb-item-modal__title-wrap">
+                        <div class="fnb-item-modal__title-row">
+                            <div class="fnb-item-modal__icon">
+                                <i class="fa fa-credit-card"></i>
+                            </div>
+                            <div>
+                                <h3 class="fnb-item-modal__title">Cập nhật trạng thái thanh toán</h3>
+                                <div class="fnb-item-modal__subtitle">Chọn trạng thái thanh toán cho đơn Proshop</div>
+                            </div>
+                        </div>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                </div>
+
+                <div class="fnb-item-modal__body">
+                    <div class="mb-3">
+                        <label class="fnb-label">Trạng thái thanh toán hiện tại</label>
+                        <div class="@(Model.Input.PaymentStatus == ProPaymentStatus.Paid ? "fnb-badge fnb-badge--success" :
+                                       Model.Input.PaymentStatus == ProPaymentStatus.Failed ? "fnb-badge fnb-badge--danger" :
+                                       "fnb-badge fnb-badge--warning")">
+                            @PaymentStatusText(Model.Input.PaymentStatus)
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="fnb-label">Chọn trạng thái mới <span class="text-danger">*</span></label>
+                        <div class="fnb-radio-grid">
+                            @foreach (var item in Enum.GetValues<ProPaymentStatus>())
+                            {
+                                var isCurrent = Model.Input.PaymentStatus == item;
+                                <label class="fnb-radio-card @(isCurrent ? "disabled" : "")"
+                                       style="@(isCurrent ? "pointer-events:none;opacity:0.45;" : "")">
+                                    <input type="radio"
+                                           asp-for="Input.PaymentStatus"
+                                           value="@((int)item)"
+                                           disabled="@(isCurrent ? "disabled" : null)" />
+                                    <span>@PaymentStatusText(item)</span>
+                                </label>
+                            }
+                        </div>
+                        @if (!ViewData.ModelState.IsValid && ViewData.ModelState.ContainsKey("PaymentStatusValidation"))
+                        {
+                            <div class="text-danger small mt-1">@ViewData.ModelState["PaymentStatusValidation"]!.Errors[0].ErrorMessage</div>
+                        }
+                    </div>
+                </div>
+
+                <div class="fnb-item-modal__footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Hủy bỏ</button>
+                    <button type="submit" class="btn btn-primary">Xác nhận</button>
+                </div>
+            </div>
+        </abp-modal-body>
+    </abp-modal>
+</form>
+
+<script>
+    (function () {
+        var form = document.querySelector('.fnb-item-modal-form');
+        if (!form) return;
+
+        var submitBtn = form.querySelector('button[type="submit"]');
+        var radios = form.querySelectorAll('input[type="radio"][name="Input.PaymentStatus"]');
+        var currentStatus = parseInt(form.querySelector('input[name="CurrentPaymentStatus"]').value || '0');
+
+        function updateSubmitState() {
+            var selected = form.querySelector('input[type="radio"][name="Input.PaymentStatus"]:checked');
+            var hasValidSelection = selected && parseInt(selected.value) !== currentStatus;
+            submitBtn.disabled = !hasValidSelection;
+        }
+
+        radios.forEach(function (r) {
+            r.addEventListener('change', updateSubmitState);
+        });
+
+        updateSubmitState();
+    })();
+</script>

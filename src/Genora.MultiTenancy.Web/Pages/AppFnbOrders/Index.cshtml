@@ -34,10 +34,7 @@
                         <label class="mb-0 fnb-filter-label">@L["AutoRefresh"]</label>
                         <select id="FnbOrderAutoRefreshInterval" class="form-select form-select-sm" style="width:120px;">
                             <option value="0">@L["Off"]</option>
-                            <option value="5000">5s</option>
-                            <option value="10000">10s</option>
-                            <option value="15000" selected>15s</option>
-                            <option value="30000">30s</option>
+                            <option value="30000" selected>30s</option>
                         </select>
                     </div>
 
@@ -45,6 +42,12 @@
                                 text="@L["Menu:Refresh"]"
                                 icon="refresh"
                                 button-type="Outline_Secondary" />
+
+                    <abp-button id="ExportFnbOrderExcelButton"
+                                text="@L["ExportExcelBtn"]"
+                                icon="file"
+                                button-type="Outline_Secondary" />
+
                     <a href="/AppFnbOrders/Kitchen/Index" class="btn btn-outline-primary me-2">
                         <i class="fa fa-th-large me-1"></i>
                         Kitchen Board

@@ -108,6 +108,7 @@ public class Program
             app.UseStaticFiles();
 
             app.MapHub<Genora.MultiTenancy.SignalR.FnbOrderHub>("/signalr-hubs/fnb-orders");
+            app.MapHub<Genora.MultiTenancy.SignalR.ProOrderHub>("/signalr-hubs/pro-orders");
 
             app.MapPost("/debug/fnb-bell", async (Genora.MultiTenancy.Realtime.IFnbOrderRealtimeNotifier notifier) =>
             {

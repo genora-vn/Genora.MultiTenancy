@@ -1,0 +1,74 @@
+@page
+@using Genora.MultiTenancy.Localization
+@using Genora.MultiTenancy.Permissions
+@using Genora.MultiTenancy.Web.Pages.AppProItems
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.Extensions.Localization
+@inject IStringLocalizer<MultiTenancyResource> L
+@inject IAuthorizationService AuthorizationService
+@inject Volo.Abp.MultiTenancy.ICurrentTenant CurrentTenant
+
+@section scripts {
+    <abp-script src="/pages/fnb/fnb-shared.js" />
+    <abp-script src="/Pages/AppProItems/index.js" />
+    <abp-style src="/pages/fnb/fnb-shared.css" />
+    <abp-style src="/Pages/Index.css" />
+}
+
+@{
+    var canCreate = CurrentTenant.IsAvailable
+        ? await AuthorizationService.IsGrantedAsync(MultiTenancyPermissions.AppProItems.Create)
+        : await AuthorizationService.IsGrantedAsync(MultiTenancyPermissions.HostAppProItems.Create);
+
+    var canEdit = CurrentTenant.IsAvailable
+        ? await AuthorizationService.IsGrantedAsync(MultiTenancyPermissions.AppProItems.Edit)
+        : await AuthorizationService.IsGrantedAsync(MultiTenancyPermissions.HostAppProItems.Edit);
+}
+
+<abp-card>
+    <abp-card-header>
+        <abp-row>
+            <abp-column size-md="_6">
+                <abp-card-title>@L["AppProItems"]</abp-card-title>
+            </abp-column>
+            <abp-column size-md="_6" class="text-end">
+                <abp-button id="DownloadProItemTemplateBtn" text="@L["DownloadTemplateBtn"]" icon="download" button-type="Outline_Secondary" />
+                <abp-button id="ImportProItemExcelButton" text="@L["ImportExcel"]" icon="upload" button-type="Outline_Secondary" />
+                <abp-button id="ExportProItemExcelButton" text="@L["ExportExcelBtn"]" icon="file" button-type="Outline_Secondary" />
+                <input type="file" id="ProItemExcelFileInput" accept=".xlsx,.xls" style="display:none;" />
+                <abp-button id="RefreshProItemButton" text="@L["Menu:Refresh"]" icon="refresh" button-type="Outline_Secondary" />
+                @if (canCreate)
+                {
+                    <abp-button id="NewProItemButton" text="@L["NewProItem"]" icon="plus" button-type="Outline_Primary" />
+                }
+            </abp-column>
+        </abp-row>
+        <abp-row class="mt-3">
+            <abp-column size-md="_4">
+                <div class="mb-3">
+                    <label class="form-label fnb-filter-label" for="ProItemFilterText">@L["ProItemFilterText"]</label>
+                    <input id="ProItemFilterText" class="form-control" type="text" placeholder="@L["SearchPlaceholder"]" />
+                </div>
+            </abp-column>
+            <abp-column size-md="_3">
+                <div class="mb-3">
+                    <label class="form-label fnb-filter-label" for="ProItemActiveFilter">@L["IsActive"]</label>
+                    <select id="ProItemActiveFilter" class="form-select">
+                        <option value="">@L["All"]</option>
+                        <option value="true">@L["Yes"]</option>
+                        <option value="false">@L["No"]</option>
+                    </select>
+                </div>
+            </abp-column>
+            <abp-column size-md="_2" class="d-flex align-items-end">
+                <div class="mb-3 h-50">
+                    <abp-button id="SearchProItemButton" class="h-100" text="@L["Search"]" icon="search" button-type="Outline_Primary" />
+                </div>
+            </abp-column>
+        </abp-row>
+    </abp-card-header>
+    <abp-card-body>
+        <input type="hidden" id="CanEditProItem" value="@(canEdit ? "true" : "false")" />
+        <abp-table striped-rows="true" id="ProItemTable"></abp-table>
+    </abp-card-body>
+</abp-card>

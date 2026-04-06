@@ -5,6 +5,9 @@ using Genora.MultiTenancy.AppDtos.AppCustomerTypes;
 using Genora.MultiTenancy.AppDtos.AppFnbCategories;
 using Genora.MultiTenancy.AppDtos.AppFnbItems;
 using Genora.MultiTenancy.AppDtos.AppFnbOrders;
+using Genora.MultiTenancy.AppDtos.AppProCategories;
+using Genora.MultiTenancy.AppDtos.AppProItems;
+using Genora.MultiTenancy.AppDtos.AppProOrders;
 using Genora.MultiTenancy.AppDtos.AppGolfCourses;
 using Genora.MultiTenancy.AppDtos.AppHomePageConfigs;
 using Genora.MultiTenancy.AppDtos.AppMembershipTiers;
@@ -48,6 +51,9 @@ public class MiniAppController : MultiTenancyController
     private readonly IMiniAppFnbOrderService      _miniAppFnbOrder;
     private readonly IMiniAppPaymentAppService    _miniPayment;
     private readonly IMiniAppFnbPaymentAppService _miniFnbPayment;
+    private readonly IMiniAppProCategoryService   _miniProCategory;
+    private readonly IMiniAppProItemService       _miniProItem;
+    private readonly IMiniAppProOrderService      _miniProOrder;
 
     public MiniAppController(IZaloApiClient zaloApiClient,
                              IMiniAppBookingAppService miniBooking,
@@ -65,7 +71,10 @@ public class MiniAppController : MultiTenancyController
                              IMiniAppFnbItemService miniAppFnbItem,
                              IMiniAppFnbOrderService miniAppFnbOrder,
                              IMiniAppPaymentAppService miniPayment,
-                             IMiniAppFnbPaymentAppService miniFnbPayment)
+                             IMiniAppFnbPaymentAppService miniFnbPayment,
+                             IMiniAppProCategoryService miniProCategory,
+                             IMiniAppProItemService miniProItem,
+                             IMiniAppProOrderService miniProOrder)
     {
         _zaloApiClient = zaloApiClient;
         _miniBooking = miniBooking;
@@ -84,6 +93,9 @@ public class MiniAppController : MultiTenancyController
         _miniAppFnbOrder = miniAppFnbOrder;
         _miniPayment = miniPayment;
         _miniFnbPayment = miniFnbPayment;
+        _miniProCategory = miniProCategory;
+        _miniProItem = miniProItem;
+        _miniProOrder = miniProOrder;
     }
 
     [HttpPost("create-booking")]
@@ -105,10 +117,16 @@ public class MiniAppController : MultiTenancyController
     [AllowAnonymous]
     public Task<MiniAppBookingDetailDto> GetBookingAsync(Guid id, [FromQuery] Guid customerId)
         => _miniBooking.GetMiniAppAsync(id, customerId);
-    //[HttpGet("get-booking-histories")]
-    //[AllowAnonymous]
-    //public Task<MiniAppBookingListDto> GetBookingHistoties([FromQuery] GetMiniAppBookingListInput input)
-    //    => _miniBooking.GetBookingHistoryAsync(input);
+
+    /// <summary>
+    /// Huỷ booking từ Mini App.
+    /// Chỉ chủ booking (customerId khớp) mới được huỷ.
+    /// Status → CancelledRefund. Tự động gửi ZBS + Email cancel.
+    /// </summary>
+    [HttpPost("cancel-booking/{id}")]
+    [AllowAnonymous]
+    public Task<MiniAppBookingDetailDto> CancelBookingAsync(Guid id, [FromBody] MiniAppCancelBookingDto input)
+        => _miniBooking.CancelFromMiniAppAsync(id, input);
     [HttpGet("get-app-settings")]
     [AllowAnonymous]
     public Task<MiniAppAppSettingListDto> GetAppSettingsAsync([FromQuery] GetMiniAppSettingListInput input)
@@ -329,4 +347,45 @@ public class MiniAppController : MultiTenancyController
     [AllowAnonymous]
     public Task<CheckTransactionResult> CheckFnbTransactionAsync(string orderId)
         => _miniFnbPayment.CheckTransactionAsync(orderId);
+
+    // ── Proshop — Danh mục sản phẩm ─────────────────────────────────────────
+
+    [HttpGet("get-pro-categories")]
+    [AllowAnonymous]
+    public Task<MiniAppProCategoryListDto> GetProCategoriesAsync()
+        => _miniProCategory.GetListAsync();
+
+    // ── Proshop — Sản phẩm ───────────────────────────────────────────────────
+
+    [HttpGet("get-pro-items")]
+    [AllowAnonymous]
+    public Task<MiniAppProItemListDto> GetProItemsAsync([FromQuery] GetMiniAppProItemListInput input)
+        => _miniProItem.GetListAsync(input);
+
+    [HttpGet("get-pro-items/{id}")]
+    [AllowAnonymous]
+    public Task<MiniAppProItemDetailDto> GetProItemAsync(Guid id)
+        => _miniProItem.GetAsync(id);
+
+    // ── Proshop — Đơn hàng ───────────────────────────────────────────────────
+
+    [HttpPost("create-pro-order")]
+    [AllowAnonymous]
+    public Task<MiniAppProOrderDetailDto> CreateProOrderAsync([FromBody] CreateProOrderDto input)
+        => _miniProOrder.CreateAsync(input);
+
+    [HttpGet("get-pro-orders")]
+    [AllowAnonymous]
+    public Task<MiniAppProOrderListDto> GetProOrdersAsync([FromQuery] GetMiniAppProOrderListInput input)
+        => _miniProOrder.GetListAsync(input);
+
+    [HttpGet("get-pro-orders/{id}")]
+    [AllowAnonymous]
+    public Task<MiniAppProOrderDetailDto> GetProOrderAsync(Guid id)
+        => _miniProOrder.GetAsync(id);
+
+    [HttpPost("cancel-pro-orders/{id}")]
+    [AllowAnonymous]
+    public Task<MiniAppProOrderDetailDto> CancelProOrderAsync(Guid id, [FromBody] CancelMiniAppProOrderDto input)
+        => _miniProOrder.CancelAsync(id, input);
 }

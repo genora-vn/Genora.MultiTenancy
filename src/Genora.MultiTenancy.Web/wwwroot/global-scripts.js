@@ -6,12 +6,67 @@
     }
 
     window.genora.excel = {
+        /**
+         * Tải file Excel từ server.
+         * Dùng fetch + Blob để force download, tránh browser mở URL thay vì tải.
+         * Các query param có giá trị rỗng / null / undefined sẽ bị loại bỏ tự động.
+         */
         download: function (url, query) {
-            var finalUrl = abp.appPath + url;
+            // Lọc bỏ param rỗng để tránh server binding lỗi
+            var cleanQuery = {};
             if (query) {
-                finalUrl += '?' + $.param(query);
+                Object.keys(query).forEach(function (k) {
+                    var v = query[k];
+                    if (v !== null && v !== undefined && v !== '') {
+                        cleanQuery[k] = v;
+                    }
+                });
             }
-            window.location.href = finalUrl;
+
+            var finalUrl = abp.appPath + url;
+            var qs = $.param(cleanQuery);
+            if (qs) finalUrl += '?' + qs;
+
+            // Lấy CSRF token của ABP (nếu có)
+            var headers = { 'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val() || '' };
+
+            abp.ui.setBusy();
+
+            fetch(finalUrl, { method: 'GET', headers: headers, credentials: 'same-origin' })
+                .then(function (response) {
+                    if (!response.ok) {
+                        return response.text().then(function (text) {
+                            throw new Error('Server trả về lỗi ' + response.status + ': ' + text);
+                        });
+                    }
+
+                    // Lấy tên file từ header Content-Disposition
+                    var disposition = response.headers.get('Content-Disposition') || '';
+                    var fileNameMatch = disposition.match(/filename\*?=(?:UTF-8'')?([^;"\n]+)/i);
+                    var fileName = fileNameMatch
+                        ? decodeURIComponent(fileNameMatch[1].replace(/"/g, ''))
+                        : 'export.xlsx';
+
+                    return response.blob().then(function (blob) {
+                        return { blob: blob, fileName: fileName };
+                    });
+                })
+                .then(function (result) {
+                    var objectUrl = URL.createObjectURL(result.blob);
+                    var a = document.createElement('a');
+                    a.href = objectUrl;
+                    a.download = result.fileName;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(objectUrl);
+                })
+                .catch(function (err) {
+                    abp.notify.error(err.message || 'Xuất Excel thất bại');
+                })
+                .finally(function () {
+                    abp.ui.clearBusy();
+                });
         },
 
         upload: function (options) {

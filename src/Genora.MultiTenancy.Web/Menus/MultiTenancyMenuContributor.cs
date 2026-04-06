@@ -4,6 +4,7 @@ using Genora.MultiTenancy.Features.AppCustomers;
 using Genora.MultiTenancy.Features.AppCustomerTypes;
 using Genora.MultiTenancy.Features.AppEmails;
 using Genora.MultiTenancy.Features.AppFnbFeatures;
+using Genora.MultiTenancy.Features.AppProshopFeatures;
 using Genora.MultiTenancy.Features.AppGolfCourses;
 using Genora.MultiTenancy.Features.AppHomePages;
 using Genora.MultiTenancy.Features.AppMembershipTiers;
@@ -160,7 +161,8 @@ public class MultiTenancyMenuContributor : IMenuContributor
                 (
                     await perms.IsGrantedAsync(MultiTenancyPermissions.AppFnbCategories.Default) ||
                     await perms.IsGrantedAsync(MultiTenancyPermissions.AppFnbItems.Default) ||
-                    await perms.IsGrantedAsync(MultiTenancyPermissions.AppFnbOrders.Default)
+                    await perms.IsGrantedAsync(MultiTenancyPermissions.AppFnbOrders.Default) ||
+                    await perms.IsGrantedAsync(MultiTenancyPermissions.AppFnbKitchenBoard.Default)
                 );
 
             if (canSeeFnb)
@@ -211,7 +213,94 @@ public class MultiTenancyMenuContributor : IMenuContributor
                     );
                 }
 
+                if (await perms.IsGrantedAsync(MultiTenancyPermissions.AppFnbKitchenBoard.Default))
+                {
+                    groupFnb.AddItem(
+                        new ApplicationMenuItem(
+                            name: "AppFnbKitchenBoard",
+                            displayName: l["Menu:AppFnbKitchenBoard"],
+                            url: "/AppFnbOrders/Kitchen",
+                            icon: "fa fa-th-large",
+                            order: 4
+                        ).RequirePermissions(MultiTenancyPermissions.AppFnbKitchenBoard.Default)
+                    );
+                }
+
                 context.Menu.AddItem(groupFnb);
+            }
+
+            // ── PROSHOP ──────────────────────────────────────────────────────
+            var canSeeProshop =
+                await feature.IsEnabledAsync(AppProshopFeatures.Management) &&
+                (
+                    await perms.IsGrantedAsync(MultiTenancyPermissions.AppProCategories.Default) ||
+                    await perms.IsGrantedAsync(MultiTenancyPermissions.AppProItems.Default) ||
+                    await perms.IsGrantedAsync(MultiTenancyPermissions.AppProOrders.Default) ||
+                    await perms.IsGrantedAsync(MultiTenancyPermissions.AppProOrdersBoard.Default)
+                );
+
+            if (canSeeProshop)
+            {
+                var groupPro = new ApplicationMenuItem(
+                    name: "MenuGroup.Proshop",
+                    displayName: l["MenuGroup:Proshop"],
+                    icon: "fa fa-shopping-bag",
+                    order: 46
+                );
+
+                if (await perms.IsGrantedAsync(MultiTenancyPermissions.AppProCategories.Default))
+                {
+                    groupPro.AddItem(
+                        new ApplicationMenuItem(
+                            name: "AppProCategories",
+                            displayName: l["Menu:AppProCategories"],
+                            url: "/AppProCategories",
+                            icon: "fa fa-folder-open",
+                            order: 1
+                        ).RequirePermissions(MultiTenancyPermissions.AppProCategories.Default)
+                    );
+                }
+
+                if (await perms.IsGrantedAsync(MultiTenancyPermissions.AppProItems.Default))
+                {
+                    groupPro.AddItem(
+                        new ApplicationMenuItem(
+                            name: "AppProItems",
+                            displayName: l["Menu:AppProItems"],
+                            url: "/AppProItems",
+                            icon: "fa fa-tag",
+                            order: 2
+                        ).RequirePermissions(MultiTenancyPermissions.AppProItems.Default)
+                    );
+                }
+
+                if (await perms.IsGrantedAsync(MultiTenancyPermissions.AppProOrders.Default))
+                {
+                    groupPro.AddItem(
+                        new ApplicationMenuItem(
+                            name: "AppProOrders",
+                            displayName: l["Menu:AppProOrders"],
+                            url: "/AppProOrders",
+                            icon: "fa fa-receipt",
+                            order: 3
+                        ).RequirePermissions(MultiTenancyPermissions.AppProOrders.Default)
+                    );
+                }
+
+                if (await perms.IsGrantedAsync(MultiTenancyPermissions.AppProOrdersBoard.Default))
+                {
+                    groupPro.AddItem(
+                        new ApplicationMenuItem(
+                            name: "AppProOrdersBoard",
+                            displayName: l["Menu:AppProOrdersBoard"],
+                            url: "/AppProOrders/Board",
+                            icon: "fa fa-columns",
+                            order: 4
+                        ).RequirePermissions(MultiTenancyPermissions.AppProOrdersBoard.Default)
+                    );
+                }
+
+                context.Menu.AddItem(groupPro);
             }
 
             // =========================================================
@@ -662,7 +751,8 @@ public class MultiTenancyMenuContributor : IMenuContributor
             var hostCanSeeFnb =
                 await perms.IsGrantedAsync(MultiTenancyPermissions.HostAppFnbCategories.Default) ||
                 await perms.IsGrantedAsync(MultiTenancyPermissions.HostAppFnbItems.Default) ||
-                await perms.IsGrantedAsync(MultiTenancyPermissions.HostAppFnbOrders.Default);
+                await perms.IsGrantedAsync(MultiTenancyPermissions.HostAppFnbOrders.Default) ||
+                await perms.IsGrantedAsync(MultiTenancyPermissions.HostAppFnbKitchenBoard.Default);
 
             if (hostCanSeeFnb)
             {
@@ -712,7 +802,91 @@ public class MultiTenancyMenuContributor : IMenuContributor
                     );
                 }
 
+                if (await perms.IsGrantedAsync(MultiTenancyPermissions.HostAppFnbKitchenBoard.Default))
+                {
+                    groupFnb.AddItem(
+                        new ApplicationMenuItem(
+                            name: "AppFnbKitchenBoardHost",
+                            displayName: l["Menu:AppFnbKitchenBoard"],
+                            url: "/AppFnbOrders/Kitchen",
+                            icon: "fa fa-th-large",
+                            order: 4
+                        ).RequirePermissions(MultiTenancyPermissions.HostAppFnbKitchenBoard.Default)
+                    );
+                }
+
                 context.Menu.AddItem(groupFnb);
+            }
+
+            // ── PROSHOP (HOST) ────────────────────────────────────────────────
+            var hostCanSeeProshop =
+                await perms.IsGrantedAsync(MultiTenancyPermissions.HostAppProCategories.Default) ||
+                await perms.IsGrantedAsync(MultiTenancyPermissions.HostAppProItems.Default) ||
+                await perms.IsGrantedAsync(MultiTenancyPermissions.HostAppProOrders.Default) ||
+                await perms.IsGrantedAsync(MultiTenancyPermissions.HostAppProOrdersBoard.Default);
+
+            if (hostCanSeeProshop)
+            {
+                var groupPro = new ApplicationMenuItem(
+                    name: "MenuGroup.Proshop",
+                    displayName: l["MenuGroup:Proshop"],
+                    icon: "fa fa-shopping-bag",
+                    order: 46
+                );
+
+                if (await perms.IsGrantedAsync(MultiTenancyPermissions.HostAppProCategories.Default))
+                {
+                    groupPro.AddItem(
+                        new ApplicationMenuItem(
+                            name: "AppProCategoriesHost",
+                            displayName: l["Menu:AppProCategories"],
+                            url: "/AppProCategories",
+                            icon: "fa fa-folder-open",
+                            order: 1
+                        ).RequirePermissions(MultiTenancyPermissions.HostAppProCategories.Default)
+                    );
+                }
+
+                if (await perms.IsGrantedAsync(MultiTenancyPermissions.HostAppProItems.Default))
+                {
+                    groupPro.AddItem(
+                        new ApplicationMenuItem(
+                            name: "AppProItemsHost",
+                            displayName: l["Menu:AppProItems"],
+                            url: "/AppProItems",
+                            icon: "fa fa-tag",
+                            order: 2
+                        ).RequirePermissions(MultiTenancyPermissions.HostAppProItems.Default)
+                    );
+                }
+
+                if (await perms.IsGrantedAsync(MultiTenancyPermissions.HostAppProOrders.Default))
+                {
+                    groupPro.AddItem(
+                        new ApplicationMenuItem(
+                            name: "AppProOrdersHost",
+                            displayName: l["Menu:AppProOrders"],
+                            url: "/AppProOrders",
+                            icon: "fa fa-receipt",
+                            order: 3
+                        ).RequirePermissions(MultiTenancyPermissions.HostAppProOrders.Default)
+                    );
+                }
+
+                if (await perms.IsGrantedAsync(MultiTenancyPermissions.HostAppProOrdersBoard.Default))
+                {
+                    groupPro.AddItem(
+                        new ApplicationMenuItem(
+                            name: "AppProOrdersBoardHost",
+                            displayName: l["Menu:AppProOrdersBoard"],
+                            url: "/AppProOrders/Board",
+                            icon: "fa fa-columns",
+                            order: 4
+                        ).RequirePermissions(MultiTenancyPermissions.HostAppProOrdersBoard.Default)
+                    );
+                }
+
+                context.Menu.AddItem(groupPro);
             }
 
             // ===== Home Page Config (Theme + Widgets) - HOST =====

@@ -1,0 +1,291 @@
+﻿@page
+@model Genora.MultiTenancy.Web.Pages.AppProOrders.Board.HistoryModel
+@using System.Text.Json
+
+@section styles {
+    <abp-style src="/pages/fnb/fnb-shared.css" />
+}
+
+@section scripts {
+    <script>
+        const historyRows = @Html.Raw(JsonSerializer.Serialize(
+            Model.Data.PagedActivities.Items.Select(x => new
+            {
+                time           = x.Time.ToLocalTime().ToString("dd/MM/yyyy HH:mm:ss"),
+                performedBy    = x.PerformedBy,
+                actionTypeText = x.ActionTypeText,
+                title          = x.Title,
+                description    = x.Description
+            })
+        ));
+
+            function exportHistoryCsv() {
+            const rows = [];
+            rows.push(["Thời gian", "Người thực hiện", "Loại thao tác", "Tiêu đề", "Mô tả"]);
+
+            historyRows.forEach(function (x) {
+                rows.push([
+                    x.time || "",
+                    x.performedBy || "",
+                    x.actionTypeText || "",
+                    x.title || "",
+                    x.description || ""
+                ]);
+            });
+
+            const csvContent = "\uFEFF" + rows.map(r => r.map(x => `"${String(x).replace(/"/g, '""')}"`).join(",")).join("\n");
+            const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+            const url = URL.createObjectURL(blob);
+
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = "lich-su-thao-tac-@(Model.Data.OrderCode).csv";
+            a.click();
+
+            URL.revokeObjectURL(url);
+        }
+    </script>
+}
+<div class="order-history-page">
+    <div class="order-history-wrap">
+        <div class="lpx-topbar order-history-topbar">
+            <div>
+                <div class="order-history-breadcrumb">
+                    <a href="/AppProOrders">Quản lý Proshop</a>
+                    <span>/</span>
+                    <a href="/AppProOrders/Board/Detail?id=@Model.Id">Đơn hàng</a>
+                    <span>/</span>
+                    <span>@Model.Data.OrderCode — Lịch sử thao tác</span>
+                </div>
+
+                <div class="order-history-head">
+                    <div class="order-history-title-row">
+                        <h1 class="order-history-title">
+                            <i class="fa fa-shopping-bag me-1"></i>
+                            Lịch sử thao tác #@Model.Data.OrderCode
+                        </h1>
+                        <span class="order-history-status">@Model.GetServiceStatusText()</span>
+                    </div>
+
+                    <div class="order-history-subtitle">
+                        Nhật ký hoạt động chi tiết của đơn hàng, phục vụ tra cứu và đối soát nội bộ.
+                    </div>
+                </div>
+            </div>
+
+            <div class="order-history-toolbar">
+                <button type="button" class="order-history-icon-btn" onclick="exportHistoryCsv()" title="Xuất CSV">
+                    <i class="fa fa-download"></i>
+                </button>
+
+                <button type="button" class="order-history-icon-btn" onclick="exportOrderPdf(80)" title="Xuất PDF">
+                    <i class="fa fa-file-pdf-o"></i>
+                </button>
+
+                <button type="button" class="order-history-icon-btn" onclick="printOrderBill(80)" title="In K80">
+                    <i class="fa fa-print"></i>
+                </button>
+
+                <button type="button" class="order-history-icon-btn" onclick="printOrderBill(57)" title="In K57">
+                    <i class="fa fa-receipt"></i>
+                </button>
+
+                <a class="order-history-back" href="/AppProOrders/Board/Detail?id=@Model.Id">
+                    <i class="fa fa-arrow-left"></i>
+                    <span>Quay lại đơn hàng</span>
+                </a>
+            </div>
+        </div>
+
+        <div class="row g-3 order-history-metrics">
+            <div class="col-md-3">
+                <div class="order-history-metric-card">
+                    <div class="order-history-metric-head">
+                        <div class="order-history-metric-label">Tổng số thao tác</div>
+                        <div class="order-history-metric-icon">
+                            <i class="fa fa-history"></i>
+                        </div>
+                    </div>
+                    <div class="order-history-metric-value">@Model.Data.TotalActions</div>
+                </div>
+            </div>
+
+            <div class="col-md-3">
+                <div class="order-history-metric-card">
+                    <div class="order-history-metric-head">
+                        <div class="order-history-metric-label">Hoạt động gần nhất</div>
+                        <div class="order-history-metric-icon">
+                            <i class="fa fa-clock-o"></i>
+                        </div>
+                    </div>
+                    <div class="order-history-metric-value">
+                        @(Model.Data.LastActivityTime.HasValue
+                                                ? Model.Data.LastActivityTime.Value.ToLocalTime().ToString("dd/MM/yyyy HH:mm")
+                                                : "—")
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-3">
+                <div class="order-history-metric-card">
+                    <div class="order-history-metric-head">
+                        <div class="order-history-metric-label">Độ tin cậy nhật ký</div>
+                        <div class="order-history-metric-icon">
+                            <i class="fa fa-check-circle"></i>
+                        </div>
+                    </div>
+                    <div class="order-history-metric-value">100% Xác thực</div>
+                </div>
+            </div>
+
+            <div class="col-md-3">
+                <div class="order-history-metric-card">
+                    <div class="order-history-metric-head">
+                        <div class="order-history-metric-label">Khách hàng</div>
+                        <div class="order-history-metric-icon">
+                            <i class="fa fa-check-circle"></i>
+                        </div>
+                    </div>
+                    <div class="order-history-metric-value">
+                        @(!string.IsNullOrWhiteSpace(Model.Data.CustomerName) ? Model.Data.CustomerName : "Khách lẻ")
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="order-history-filter-card">
+            <form method="get" class="row g-3 align-items-end">
+                <input type="hidden" name="id" value="@Model.Id" />
+                <input type="hidden" name="currentPage" value="1" />
+
+                <div class="col-md-4">
+                    <label class="form-label">Lọc theo loại thao tác</label>
+                    <select name="actionType" class="form-select">
+                        @foreach (var opt in Model.Data.ActionTypeOptions)
+                        {
+                            if (string.Equals(opt.Value ?? "", Model.ActionType ?? "", StringComparison.OrdinalIgnoreCase))
+                            {
+                                <option value="@opt.Value" selected>@opt.Text</option>
+                            }
+                            else
+                            {
+                                <option value="@opt.Value">@opt.Text</option>
+                            }
+                        }
+                    </select>
+                </div>
+
+                <div class="col-md-2">
+                    <label class="form-label">Số dòng / trang</label>
+                    <select name="pageSize" class="form-select">
+                        @foreach (var size in new[] { 5, 10, 20, 50 })
+                        {
+                            if (Model.PageSize == size)
+                            {
+                                <option value="@size" selected>@size</option>
+                            }
+                            else
+                            {
+                                <option value="@size">@size</option>
+                            }
+                        }
+                    </select>
+                </div>
+
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-primary w-50">
+                        <i class="fa fa-search me-1"></i> Áp dụng
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <div class="order-history-table-card">
+            <div class="table-responsive">
+                <table class="table order-history-table">
+                    <thead>
+                        <tr>
+                            <th>Thời gian</th>
+                            <th>Người thực hiện</th>
+                            <th>Loại thao tác</th>
+                            <th>Chi tiết & ngữ cảnh</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model.Data.PagedActivities != null && Model.Data.PagedActivities.Items.Any())
+                        {
+                            @foreach (var item in Model.Data.PagedActivities.Items)
+                            {
+                                <tr>
+                                    <td>@item.Time.ToLocalTime().ToString("dd/MM/yyyy HH:mm:ss")</td>
+                                    <td>
+                                        <div class="order-history-actor">
+                                            <span class="order-history-actor-icon">
+                                                <i class="fa fa-user"></i>
+                                            </span>
+                                            <span>@item.PerformedBy</span>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span class="order-history-badge @item.ActionTypeClass">
+                                            @item.ActionTypeText
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <div class="order-history-detail-title">@item.Title</div>
+                                        <div class="order-history-detail-desc">@item.Description</div>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="4" class="text-center text-muted py-4">
+                                    Chưa có dữ liệu lịch sử thao tác.
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="order-history-footer">
+            <div>
+                Hiển thị @Model.Data.PagedActivities.Items.Count / @Model.Data.PagedActivities.TotalCount bản ghi.
+            </div>
+
+            <div class="order-history-pagination">
+                @{
+                    var prevPage = Model.CurrentPage - 1;
+                    var nextPage = Model.CurrentPage + 1;
+                }
+
+                @if (Model.CurrentPage > 1)
+                {
+                    <a class="order-history-page-btn"
+                       href="/AppProOrders/Board/History?id=@Model.Id&actionType=@Model.ActionType&pageSize=@Model.PageSize&currentPage=@prevPage">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+                }
+
+                @for (var p = 1; p <= Model.TotalPages; p++)
+                {
+                    <a class="order-history-page-btn @(p == Model.CurrentPage ? "active" : "")"
+                       href="/AppProOrders/Board/History?id=@Model.Id&actionType=@Model.ActionType&pageSize=@Model.PageSize&currentPage=@p">
+                        @p
+                    </a>
+                }
+
+                @if (Model.CurrentPage < Model.TotalPages)
+                {
+                    <a class="order-history-page-btn"
+                       href="/AppProOrders/Board/History?id=@Model.Id&actionType=@Model.ActionType&pageSize=@Model.PageSize&currentPage=@nextPage">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
+                }
+            </div>
+        </div>
+    </div>
+</div>

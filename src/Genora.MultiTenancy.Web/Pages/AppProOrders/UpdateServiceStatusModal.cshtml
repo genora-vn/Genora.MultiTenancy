@@ -1,0 +1,142 @@
+@page
+@using Genora.MultiTenancy.Enums
+@using Genora.MultiTenancy.Localization
+@using Genora.MultiTenancy.Web.Pages.AppProOrders
+@using Microsoft.Extensions.Localization
+@using Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.TagHelpers.Modal
+@model UpdateServiceStatusModalModel
+@inject IStringLocalizer<MultiTenancyResource> L
+
+@{
+    Layout = null;
+
+    // Chỉ cho phép chuyển tiếp (forward), không cho nhảy cách bậc
+    bool IsAllowedNext(ProServiceStatus current, ProServiceStatus next)
+    {
+        return (current, next) switch
+        {
+            (ProServiceStatus.Created,    ProServiceStatus.Processing) => true,
+            (ProServiceStatus.Processing, ProServiceStatus.Ready)      => true,
+            (ProServiceStatus.Ready,      ProServiceStatus.Delivered)  => true,
+            _ => false
+        };
+    }
+
+    string BadgeClass(ProServiceStatus s) => s switch
+    {
+        ProServiceStatus.Created    => "fnb-badge fnb-badge--neutral",
+        ProServiceStatus.Processing => "fnb-badge fnb-badge--info",
+        ProServiceStatus.Ready      => "fnb-badge fnb-badge--primary",
+        ProServiceStatus.Delivered  => "fnb-badge fnb-badge--success",
+        ProServiceStatus.Cancelled  => "fnb-badge fnb-badge--danger",
+        _                           => "fnb-badge fnb-badge--neutral"
+    };
+
+    string StatusText(ProServiceStatus s) => s switch
+    {
+        ProServiceStatus.Created    => "Đơn mới",
+        ProServiceStatus.Processing => "Đang xử lý",
+        ProServiceStatus.Ready      => "Sẵn sàng giao",
+        ProServiceStatus.Delivered  => "Đã giao",
+        ProServiceStatus.Cancelled  => "Đã hủy",
+        _                           => s.ToString()
+    };
+}
+
+<form asp-page="/AppProOrders/UpdateServiceStatusModal" method="post" class="fnb-item-modal-form">
+    <input type="hidden" asp-for="Id" />
+    <input type="hidden" name="CurrentServiceStatus" value="@Model.Input.ServiceStatus" />
+
+    <abp-modal size="Large">
+        <abp-modal-body class="p-0">
+            <div class="fnb-item-modal fnb-item-modal--compact fnb-item-modal--fit">
+                <div class="fnb-item-modal__header">
+                    <div class="fnb-item-modal__title-wrap">
+                        <div class="fnb-item-modal__title-row">
+                            <div class="fnb-item-modal__icon"><i class="fa fa-sync"></i></div>
+                            <div>
+                                <h3 class="fnb-item-modal__title">Cập nhật trạng thái đơn Proshop</h3>
+                                <div class="fnb-item-modal__subtitle">Điều chỉnh trạng thái xử lý</div>
+                            </div>
+                        </div>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                </div>
+
+                <div class="fnb-item-modal__body">
+                    <div class="mb-3">
+                        <label class="fnb-label">Trạng thái hiện tại</label>
+                        <div class="@BadgeClass(Model.Input.ServiceStatus)">
+                            @StatusText(Model.Input.ServiceStatus)
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="fnb-label">Chọn trạng thái mới <span class="text-danger">*</span></label>
+                        <div class="fnb-radio-grid">
+                            @foreach (var item in Enum.GetValues<ProServiceStatus>())
+                            {
+                                if (item == ProServiceStatus.Cancelled) { continue; }
+                                var allowed = IsAllowedNext(Model.Input.ServiceStatus, item);
+
+                                <label class="fnb-radio-card @(!allowed ? "disabled" : "")"
+                                       style="@(!allowed ? "pointer-events:none;opacity:0.45;" : "")">
+                                    <input type="radio"
+                                           asp-for="Input.ServiceStatus"
+                                           value="@((int)item)"
+                                           disabled="@(!allowed ? "disabled" : null)" />
+                                    <span>@StatusText(item)</span>
+                                </label>
+                            }
+                        </div>
+                        @if (!ViewData.ModelState.IsValid && ViewData.ModelState.ContainsKey("Input.ServiceStatus"))
+                        {
+                            <div class="text-danger small mt-1">Vui lòng chọn trạng thái mới.</div>
+                        }
+                        @if (!ViewData.ModelState.IsValid && ViewData.ModelState.ContainsKey("ServiceStatusValidation"))
+                        {
+                            <div class="text-danger small mt-1">@ViewData.ModelState["ServiceStatusValidation"]!.Errors[0].ErrorMessage</div>
+                        }
+                    </div>
+
+                    <div>
+                        <label class="fnb-label">Ghi chú nội bộ</label>
+                        <textarea asp-for="Input.InternalNote"
+                                  class="form-control fnb-textarea" rows="3"
+                                  placeholder="Nhập ghi chú cho đơn hàng này"></textarea>
+                        <span asp-validation-for="Input.InternalNote" class="text-danger"></span>
+                    </div>
+                </div>
+
+                <div class="fnb-item-modal__footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn btn-primary">Cập nhật</button>
+                </div>
+            </div>
+        </abp-modal-body>
+    </abp-modal>
+</form>
+
+<script>
+    (function () {
+        // Client-side: chỉ enable submit khi đã chọn radio khác với hiện tại
+        var form = document.querySelector('.fnb-item-modal-form');
+        if (!form) return;
+
+        var submitBtn = form.querySelector('button[type="submit"]');
+        var radios = form.querySelectorAll('input[type="radio"][name="Input.ServiceStatus"]');
+        var currentStatus = parseInt(form.querySelector('input[name="CurrentServiceStatus"]').value || '0');
+
+        function updateSubmitState() {
+            var selected = form.querySelector('input[type="radio"][name="Input.ServiceStatus"]:checked');
+            var hasValidSelection = selected && parseInt(selected.value) !== currentStatus;
+            submitBtn.disabled = !hasValidSelection;
+        }
+
+        radios.forEach(function (r) {
+            r.addEventListener('change', updateSubmitState);
+        });
+
+        updateSubmitState();
+    })();
+</script>

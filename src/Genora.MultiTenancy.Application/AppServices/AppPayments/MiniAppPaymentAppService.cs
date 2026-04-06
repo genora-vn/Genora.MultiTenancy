@@ -1,4 +1,5 @@
 using Genora.MultiTenancy.AppDtos.AppPayments;
+using Genora.MultiTenancy.AppServices.AppZaloAuths;
 using Genora.MultiTenancy.DomainModels.AppBookings;
 using Genora.MultiTenancy.Enums;
 using Genora.MultiTenancy.Enums.ErrorCodes;
@@ -52,7 +53,9 @@ public class MiniAppPaymentAppService : ApplicationService, IMiniAppPaymentAppSe
             throw new UserFriendlyException(AppPaymentErrorCodes.BookingCancelled);
 
         // 2. Load settings per-tenant
-        var appId      = await _settingProvider.GetOrNullAsync(ZaloPaymentSettingNames.AppId) ?? string.Empty;
+        // AppId tái dụng ZaloSettingNames.MiniAppId (đã được cấu hình sẵn trên trang Zalo/ZNS)
+        // PrivateKey lưu riêng tại ZaloPaymentSettingNames.PrivateKey (nhập trên cùng trang)
+        var appId      = await _settingProvider.GetOrNullAsync(ZaloSettingNames.MiniAppId) ?? string.Empty;
         var privateKey = await _settingProvider.GetOrNullAsync(ZaloPaymentSettingNames.PrivateKey) ?? string.Empty;
 
         if (string.IsNullOrWhiteSpace(appId) || string.IsNullOrWhiteSpace(privateKey))

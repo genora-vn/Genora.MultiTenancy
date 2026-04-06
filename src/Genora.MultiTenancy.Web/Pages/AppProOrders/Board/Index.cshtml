@@ -1,0 +1,332 @@
+﻿@page
+@model Genora.MultiTenancy.Web.Pages.AppProOrders.Board.IndexModel
+@using System.Text.Json
+@using Genora.MultiTenancy.Permissions
+
+@section styles {
+    <abp-style src="/pages/fnb/fnb-shared.css" />
+}
+
+@section scripts {
+    <script src="~/Abp/ApplicationConfigurationScript"></script>
+    <abp-script src="/pages/fnb/fnb-shared.js" />
+    <abp-script src="/pages/fnb/pro-notify.js" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.7/signalr.min.js"></script>
+    <script>
+        $(function () {
+            const service = genora.multiTenancy.appServices.appProOrders.appProOrder;
+            const rawOrders = @Html.Raw(JsonSerializer.Serialize(Model.Orders));
+
+            const canEdit = abp.auth.isGranted('@MultiTenancyPermissions.AppProOrders.Edit') ||
+                            abp.auth.isGranted('@MultiTenancyPermissions.HostAppProOrders.Edit');
+
+            // ProServiceStatus: Created=1, Processing=2, Ready=3, Delivered=4, Cancelled=5
+            const state = {
+                orders: (rawOrders || []).map(normalizeOrder).filter(x => !!x)
+            };
+
+            function pick(obj, camel, pascal) {
+                return obj?.[camel] ?? obj?.[pascal];
+            }
+
+            function normalizeStatus(value) {
+                if (value === null || value === undefined) return 0;
+                if (typeof value === 'number') return value;
+                const s = String(value).toLowerCase();
+                if (s === '1' || s === 'created')    return 1;
+                if (s === '2' || s === 'processing') return 2;
+                if (s === '3' || s === 'ready')      return 3;
+                if (s === '4' || s === 'delivered')  return 4;
+                if (s === '5' || s === 'cancelled')  return 5;
+                return Number(value) || 0;
+            }
+
+            function normalizeOrder(x) {
+                if (!x) return null;
+                return {
+                    id:                        pick(x, 'id', 'Id'),
+                    orderCode:                 pick(x, 'orderCode', 'OrderCode'),
+                    bagTag:                    pick(x, 'bagTag', 'BagTag'),
+                    customerName:              pick(x, 'customerName', 'CustomerName'),
+                    customerPhoneMasked:       pick(x, 'customerPhoneMasked', 'CustomerPhoneMasked'),
+                    customerTypeName:          pick(x, 'customerTypeName', 'CustomerTypeName'),
+                    customerTypeColorCode:     pick(x, 'customerTypeColorCode', 'CustomerTypeColorCode'),
+                    note:                      pick(x, 'note', 'Note'),
+                    totalAmount:               Number(pick(x, 'totalAmount', 'TotalAmount') || 0),
+                    totalQuantity:             Number(pick(x, 'totalQuantity', 'TotalQuantity') || 0),
+                    serviceStatus:             normalizeStatus(pick(x, 'serviceStatus', 'ServiceStatus')),
+                    paymentStatus:             normalizeStatus(pick(x, 'paymentStatus', 'PaymentStatus')),
+                    creationTime:              pick(x, 'creationTime', 'CreationTime'),
+                    primaryImageUrl:           pick(x, 'primaryImageUrl', 'PrimaryImageUrl'),
+                    itemsSummary:              pick(x, 'itemsSummary', 'ItemsSummary'),
+                    itemNotesSummary:          pick(x, 'itemNotesSummary', 'ItemNotesSummary'),
+                    latestActivityTitle:       pick(x, 'latestActivityTitle', 'LatestActivityTitle'),
+                    latestActivityDescription: pick(x, 'latestActivityDescription', 'LatestActivityDescription'),
+                    itemNames:                 pick(x, 'itemNames', 'ItemNames') || []
+                };
+            }
+
+            function getColOrders(status) {
+                return state.orders.filter(x => Number(x.serviceStatus) === status);
+            }
+
+            function getNextAction(item) {
+                const s = Number(item.serviceStatus || 0);
+                if (s === 1) return { value: 2, text: 'Xác nhận',        icon: 'fa-cogs',        label: 'Đang xử lý' };
+                if (s === 2) return { value: 3, text: 'Sẵn sàng giao',   icon: 'fa-check',       label: 'Ready' };
+                if (s === 3) return { value: 4, text: 'Hoàn tất',        icon: 'fa-check-circle', label: 'Đã giao' };
+                return null;
+            }
+
+            function formatMoney(v) {
+                return Number(v || 0).toLocaleString('vi-VN');
+            }
+
+            function formatTime(v) {
+                if (!v) return '—';
+                try {
+                    const d = new Date(v);
+                    if (isNaN(d.getTime())) return v;
+                    return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')} ${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}`;
+                } catch { return v; }
+            }
+
+            function esc(text) {
+                if (text === null || text === undefined) return '';
+                return String(text)
+                    .replaceAll('&','&amp;').replaceAll('<','&lt;')
+                    .replaceAll('>','&gt;').replaceAll('"','&quot;')
+                    .replaceAll("'","&#039;");
+            }
+
+            function renderTypeDot(item) {
+                const color = item.customerTypeColorCode || '#cbd5e1';
+                return `<span class="kb-customer-type-dot" style="background:${color};"></span>`;
+            }
+
+            function renderCard(item) {
+                const next    = getNextAction(item);
+                const nextBtn = (canEdit && next) ? `
+                    <button type="button" class="kb-action-btn kb-next-btn"
+                            data-id="${item.id}" data-next-status="${next.value}">
+                        <i class="fa ${next.icon}"></i>
+                        <span>${next.text}</span>
+                    </button>` : '';
+
+                const payBadge = Number(item.paymentStatus) === 2
+                    ? `<span class="kb-pay-badge kb-pay-badge--paid">Đã TT</span>`
+                    : `<span class="kb-pay-badge kb-pay-badge--unpaid">Chưa TT</span>`;
+
+                const imgSrc = item.primaryImageUrl || '/images/pro/default-product.png';
+
+                return `
+                    <div class="kb-card" data-id="${item.id}">
+                        <div class="kb-card-head">
+                            <div class="kb-thumb">
+                                <img src="${esc(imgSrc)}"
+                                     onerror="this.src='/images/pro/default-product.png'" />
+                            </div>
+                            <div class="kb-card-meta">
+                                <div class="kb-card-code">#${esc(item.orderCode)}</div>
+                                <div class="kb-card-sub">${esc(item.customerName || 'Khách lẻ')} • Túi <strong>${esc(item.bagTag || '—')}</strong></div>
+                                <div class="kb-customer-type">
+                                    ${renderTypeDot(item)}
+                                    <span>${esc(item.customerTypeName || 'Khách lẻ')} • ${item.totalQuantity || 0} sản phẩm</span>
+                                </div>
+                            </div>
+                            <div>${payBadge}</div>
+                        </div>
+                        ${item.itemsSummary ? `<div class="kb-card-items">${esc(item.itemsSummary)}</div>` : ''}
+                        ${item.itemNotesSummary ? `<div class="kb-card-note"><i class="fa fa-sticky-note-o me-1"></i>${esc(item.itemNotesSummary)}</div>` : ''}
+                        ${item.note ? `<div class="kb-card-note"><i class="fa fa-comment-o me-1"></i>${esc(item.note)}</div>` : ''}
+                        ${item.latestActivityTitle ? `<div class="kb-card-activity"><i class="fa fa-history me-1"></i>${esc(item.latestActivityTitle)}${item.latestActivityDescription ? ' — ' + esc(item.latestActivityDescription) : ''}</div>` : ''}
+                        <div class="kb-card-footer">
+                            <div class="kb-card-time">${formatTime(item.creationTime)}</div>
+                            <div class="kb-card-total">${formatMoney(item.totalAmount)}<span class="vnd-symbol-underline">đ</span></div>
+                        </div>
+                        <div class="kb-card-actions">
+                            <button type="button" class="kb-action-btn kb-detail-btn" data-id="${item.id}">
+                                <i class="fa fa-eye"></i>
+                                <span>Chi tiết</span>
+                            </button>
+                            ${nextBtn}
+                        </div>
+                    </div>`;
+            }
+
+            function renderColumn(containerId, status) {
+                const list = getColOrders(status);
+                $('#' + containerId).html(
+                    list.length ? list.map(renderCard).join('') : '<div class="kb-empty">Chưa có đơn</div>'
+                );
+                $('#count-' + containerId).text(list.length);
+            }
+
+            function renderSummary() {
+                $('#kb-summary-created').text(getColOrders(1).length);
+                $('#kb-summary-processing').text(getColOrders(2).length);
+                $('#kb-summary-ready').text(getColOrders(3).length);
+                $('#kb-summary-delivered').text(getColOrders(4).length);
+            }
+
+            function renderBoard() {
+                renderSummary();
+                renderColumn('kb-col-created',    1);
+                renderColumn('kb-col-processing', 2);
+                renderColumn('kb-col-ready',      3);
+                renderColumn('kb-col-delivered',  4);
+            }
+
+            function upsertOrder(payload) {
+                if (!payload) return;
+                // Nếu payload là ProOrder từ SignalR (update service status)
+                const id     = payload.id ?? payload.Id;
+                const status = payload.serviceStatus ?? payload.ServiceStatus;
+                if (!id) return;
+
+                const idx = state.orders.findIndex(x => String(x.id) === String(id));
+                const normalized = normalizeOrder(payload);
+                if (idx >= 0) {
+                    // merge: chỉ update nếu có đủ fields, nếu không thì patch status
+                    state.orders[idx] = normalized || { ...state.orders[idx], serviceStatus: normalizeStatus(status) };
+                } else if (normalized) {
+                    state.orders.unshift(normalized);
+                }
+                renderBoard();
+            }
+
+            function patchStatus(id, newStatus) {
+                const idx = state.orders.findIndex(x => String(x.id) === String(id));
+                if (idx < 0) return;
+                state.orders[idx].serviceStatus = Number(newStatus);
+                renderBoard();
+            }
+
+            // ── Event handlers ──────────────────────────────────────────────
+            $(document).on('click', '.kb-detail-btn', function (e) {
+                e.stopPropagation();
+                window.open(`/AppProOrders/Board/Detail?id=${$(this).data('id')}`, '_blank');
+            });
+
+            $(document).on('click', '.kb-next-btn', function (e) {
+                e.stopPropagation();
+                const id         = $(this).data('id');
+                const nextStatus = Number($(this).data('next-status'));
+                const $btn       = $(this);
+
+                $btn.prop('disabled', true);
+                patchStatus(id, nextStatus);
+
+                service.updateServiceStatus(id, { serviceStatus: nextStatus, internalNote: null })
+                    .then(() => abp.notify.success('Đã cập nhật trạng thái'))
+                    .catch(err => { console.error(err); window.location.reload(); })
+                    .always(() => $btn.prop('disabled', false));
+            });
+
+            $(document).on('click', '.kb-card', function () {
+                window.location.href = `/AppProOrders/Board/Detail?id=${$(this).data('id')}`;
+            });
+
+            $('#KbProshopBoardRefreshBtn').on('click', () => window.location.reload());
+
+            // ── SignalR: ProOrderHub realtime ─────────────────────────────────
+            try {
+                if (window.genoraProNotify) {
+                    window.genoraProNotify.init({
+                        viewAllUrl: '/AppProOrders',
+                        detailUrl: (id) => `/AppProOrders/Board/Detail?id=${id}`,
+                        onCreated: (payload) => upsertOrder(payload),
+                        onUpdated: (payload) => upsertOrder(payload)
+                    });
+                }
+            } catch (e) { console.warn('PRO SignalR init error:', e); }
+
+            renderBoard();
+        });
+    </script>
+}
+
+<div class="kb-page">
+    <div class="kb-page-head">
+        <div class="kb-page-title-wrap">
+            <h1 class="kb-page-title">
+                <i class="fa fa-shopping-bag me-1"></i> Proshop Board
+            </h1>
+            <div class="kb-page-subtitle">Màn hình xử lý đơn hàng Proshop theo thời gian thực</div>
+        </div>
+        <div class="kb-page-actions">
+            <button type="button" id="KbProshopBoardRefreshBtn" class="kb-page-refresh">
+                <i class="fa fa-refresh"></i>
+                <span>Làm mới</span>
+            </button>
+            <a href="/AppProOrders" class="kb-page-back">
+                <i class="fa fa-list"></i>
+                <span>Về danh sách</span>
+            </a>
+        </div>
+    </div>
+
+    @* Summary bar *@
+    <div class="kb-summary">
+        <div class="kb-summary-card">
+            <div class="kb-summary-head">
+                <div class="kb-summary-label">Đơn mới</div>
+                <div class="kb-summary-icon"><i class="fa fa-inbox"></i></div>
+            </div>
+            <div class="kb-summary-value" id="kb-summary-created">0</div>
+        </div>
+        <div class="kb-summary-card">
+            <div class="kb-summary-head">
+                <div class="kb-summary-label">Đang xử lý</div>
+                <div class="kb-summary-icon"><i class="fa fa-cogs"></i></div>
+            </div>
+            <div class="kb-summary-value" id="kb-summary-processing">0</div>
+        </div>
+        <div class="kb-summary-card">
+            <div class="kb-summary-head">
+                <div class="kb-summary-label">Sẵn sàng giao</div>
+                <div class="kb-summary-icon"><i class="fa fa-check"></i></div>
+            </div>
+            <div class="kb-summary-value" id="kb-summary-ready">0</div>
+        </div>
+        <div class="kb-summary-card">
+            <div class="kb-summary-head">
+                <div class="kb-summary-label">Đã giao</div>
+                <div class="kb-summary-icon"><i class="fa fa-check-circle"></i></div>
+            </div>
+            <div class="kb-summary-value" id="kb-summary-delivered">0</div>
+        </div>
+    </div>
+
+    @* Kanban columns *@
+    <div class="kb-board">
+        <div class="kb-col kb-col--created">
+            <div class="kb-col-head">
+                <div class="kb-col-title"><i class="fa fa-inbox"></i> Đơn mới</div>
+                <div class="kb-col-count" id="count-kb-col-created">0</div>
+            </div>
+            <div class="kb-col-body" id="kb-col-created"></div>
+        </div>
+        <div class="kb-col kb-col--preparing">
+            <div class="kb-col-head">
+                <div class="kb-col-title"><i class="fa fa-cogs"></i> Đang xử lý</div>
+                <div class="kb-col-count" id="count-kb-col-processing">0</div>
+            </div>
+            <div class="kb-col-body" id="kb-col-processing"></div>
+        </div>
+        <div class="kb-col kb-col--delivering">
+            <div class="kb-col-head">
+                <div class="kb-col-title"><i class="fa fa-check"></i> Sẵn sàng giao</div>
+                <div class="kb-col-count" id="count-kb-col-ready">0</div>
+            </div>
+            <div class="kb-col-body" id="kb-col-ready"></div>
+        </div>
+        <div class="kb-col kb-col--served">
+            <div class="kb-col-head">
+                <div class="kb-col-title"><i class="fa fa-check-circle"></i> Đã giao</div>
+                <div class="kb-col-count" id="count-kb-col-delivered">0</div>
+            </div>
+            <div class="kb-col-body" id="kb-col-delivered"></div>
+        </div>
+    </div>
+</div>

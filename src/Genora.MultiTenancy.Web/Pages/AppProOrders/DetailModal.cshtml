@@ -1,0 +1,168 @@
+@page
+@using Genora.MultiTenancy.Enums
+@using Genora.MultiTenancy.Localization
+@using Genora.MultiTenancy.Web.Pages.AppProOrders
+@using Microsoft.Extensions.Localization
+@using Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.TagHelpers.Modal
+@model DetailModalModel
+@inject IStringLocalizer<MultiTenancyResource> L
+
+@{
+    Layout = null;
+
+    string ServiceStatusBadge(ProServiceStatus s) => s switch
+    {
+        ProServiceStatus.Created    => $"<span class=\"fnb-badge fnb-badge--neutral\">Mới tạo</span>",
+        ProServiceStatus.Processing => $"<span class=\"fnb-badge fnb-badge--info\">Đang xử lý</span>",
+        ProServiceStatus.Ready      => $"<span class=\"fnb-badge fnb-badge--primary\">Sẵn sàng giao</span>",
+        ProServiceStatus.Delivered  => $"<span class=\"fnb-badge fnb-badge--success\">Đã giao</span>",
+        ProServiceStatus.Cancelled  => $"<span class=\"fnb-badge fnb-badge--danger\">Đã hủy</span>",
+        _                           => $"<span class=\"fnb-badge fnb-badge--dark\">{s}</span>"
+    };
+
+    string PaymentStatusBadge(ProPaymentStatus s) => s switch
+    {
+        ProPaymentStatus.Unpaid => $"<span class=\"fnb-badge fnb-badge--warning\">Chưa thanh toán</span>",
+        ProPaymentStatus.Paid   => $"<span class=\"fnb-badge fnb-badge--success\">Đã thanh toán</span>",
+        ProPaymentStatus.Failed => $"<span class=\"fnb-badge fnb-badge--danger\">Thanh toán lỗi</span>",
+        _                       => $"<span class=\"fnb-badge fnb-badge--dark\">{s}</span>"
+    };
+
+    string PaymentMethodText(PaymentMethod? s) => s switch
+    {
+        PaymentMethod.COD    => L["FnbPaymentMethod:Cod"],
+        PaymentMethod.Online => L["FnbPaymentMethod:Online"],
+        _                    => L["Common:NA"]
+    };
+
+    string CancelReasonText(ProCancelReason? s) => s switch
+    {
+        ProCancelReason.CustomerRequest => "Khách yêu cầu",
+        ProCancelReason.OutOfStock      => "Hết hàng",
+        ProCancelReason.WrongOrder      => "Đặt sai",
+        ProCancelReason.SystemError     => "Lỗi hệ thống",
+        ProCancelReason.Other           => "Lý do khác",
+        _                               => L["Common:NA"]
+    };
+}
+
+<abp-modal size="Large">
+    <abp-modal-header title="@L["OrderDetail"]"></abp-modal-header>
+
+    <abp-modal-body class="fnb-modal fnb-modal--lg">
+        <div class="fnb-detail-grid">
+            <div class="row">
+                <div class="col-md-4">
+                    <strong>@L["OrderCode"]:</strong>
+                    <div>@Model.Order.OrderCode</div>
+                </div>
+
+                <div class="col-md-4">
+                    <strong>@L["BagTag"]:</strong>
+                    <div>@(string.IsNullOrWhiteSpace(Model.Order.BagTag) ? L["Common:NA"].Value : Model.Order.BagTag)</div>
+                </div>
+
+                <div class="col-md-4">
+                    <strong>@L["CreationTime"]:</strong>
+                    <div>@Model.Order.CreationTime.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</div>
+                </div>
+
+                <div class="col-md-4">
+                    <strong>@L["CustomerName"]:</strong>
+                    <div>@(string.IsNullOrWhiteSpace(Model.Order.CustomerName) ? L["Common:NA"].Value : Model.Order.CustomerName)</div>
+                </div>
+
+                <div class="col-md-4">
+                    <strong>@L["CustomerPhoneMasked"]:</strong>
+                    <div>@(string.IsNullOrWhiteSpace(Model.Order.CustomerPhoneMasked) ? L["Common:NA"].Value : Model.Order.CustomerPhoneMasked)</div>
+                </div>
+
+                <div class="col-md-4">
+                    <strong>@L["TotalAmount"]:</strong>
+                    <div class="fnb-price">@Model.Order.TotalAmount.ToString("N0") <span class="vnd-symbol-underline">đ</span></div>
+                </div>
+
+                <div class="col-md-4">
+                    <strong>@L["ServiceStatus"]:</strong>
+                    <div>@Html.Raw(ServiceStatusBadge(Model.Order.ServiceStatus))</div>
+                </div>
+
+                <div class="col-md-4">
+                    <strong>@L["PaymentStatus"]:</strong>
+                    <div>@Html.Raw(PaymentStatusBadge(Model.Order.PaymentStatus))</div>
+                </div>
+
+                <div class="col-md-4">
+                    <strong>@L["PaymentMethod"]:</strong>
+                    <div>@PaymentMethodText(Model.Order.PaymentMethod)</div>
+                </div>
+
+                <div class="col-md-12">
+                    <strong>@L["Notes"]:</strong>
+                    <div class="fnb-muted">@(string.IsNullOrWhiteSpace(Model.Order.Note) ? L["Common:NA"].Value : Model.Order.Note)</div>
+                </div>
+
+                <div class="col-md-12">
+                    <strong>@L["InternalNote"]:</strong>
+                    <div class="fnb-muted">@(string.IsNullOrWhiteSpace(Model.Order.InternalNote) ? L["Common:NA"].Value : Model.Order.InternalNote)</div>
+                </div>
+
+                @if (Model.Order.CancelReason.HasValue)
+                {
+                    <div class="col-md-6">
+                        <strong>@L["CancelReason"]:</strong>
+                        <div>@CancelReasonText(Model.Order.CancelReason)</div>
+                    </div>
+                    <div class="col-md-6">
+                        <strong>@L["CancelNote"]:</strong>
+                        <div class="fnb-muted">@(string.IsNullOrWhiteSpace(Model.Order.CancelNote) ? L["Common:NA"].Value : Model.Order.CancelNote)</div>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <div class="fnb-section-title mt-3">@L["OrderItems"]</div>
+
+        <table class="table table-bordered table-sm align-middle">
+            <thead>
+                <tr>
+                    <th>@L["Name"]</th>
+                    <th class="text-end">@L["Price"]</th>
+                    <th class="text-center">@L["Quantity"]</th>
+                    <th class="text-end">@L["LineTotal"]</th>
+                    <th>@L["Notes"]</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model.Order.Items != null && Model.Order.Items.Any())
+                {
+                    foreach (var item in Model.Order.Items)
+                    {
+                        <tr>
+                            <td>@item.ItemName</td>
+                            <td class="text-end fnb-price">@item.Price.ToString("N0") đ</td>
+                            <td class="text-center">@item.Quantity</td>
+                            <td class="text-end fnb-price">@((item.Price * item.Quantity).ToString("N0")) đ</td>
+                            <td>@(string.IsNullOrWhiteSpace(item.Note) ? L["Common:NA"].Value : item.Note)</td>
+                        </tr>
+                    }
+                }
+                else
+                {
+                    <tr>
+                        <td colspan="5" class="text-center fnb-muted">@L["Common:NA"]</td>
+                    </tr>
+                }
+            </tbody>
+            <tfoot>
+                <tr>
+                    <th colspan="3" class="text-end">@L["TotalAmount"]</th>
+                    <th class="text-end fnb-price">@Model.Order.TotalAmount.ToString("N0") đ</th>
+                    <th></th>
+                </tr>
+            </tfoot>
+        </table>
+    </abp-modal-body>
+
+    <abp-modal-footer buttons="@(AbpModalButtons.Close)"></abp-modal-footer>
+</abp-modal>

@@ -1,0 +1,74 @@
+@page
+@using Genora.MultiTenancy.Localization
+@using Genora.MultiTenancy.Permissions
+@using Genora.MultiTenancy.Web.Pages.AppProCategories
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.Extensions.Localization
+@inject IStringLocalizer<MultiTenancyResource> L
+@inject IAuthorizationService AuthorizationService
+@inject Volo.Abp.MultiTenancy.ICurrentTenant CurrentTenant
+
+@section scripts {
+    <abp-script src="/pages/fnb/fnb-shared.js" />
+    <abp-script src="/Pages/AppProCategories/index.js" />
+    <abp-style src="/pages/fnb/fnb-shared.css" />
+    <abp-style src="/Pages/Index.css" />
+}
+
+@{
+    var canCreate = CurrentTenant.IsAvailable
+        ? await AuthorizationService.IsGrantedAsync(MultiTenancyPermissions.AppProCategories.Create)
+        : await AuthorizationService.IsGrantedAsync(MultiTenancyPermissions.HostAppProCategories.Create);
+
+    var canEdit = CurrentTenant.IsAvailable
+        ? await AuthorizationService.IsGrantedAsync(MultiTenancyPermissions.AppProCategories.Edit)
+        : await AuthorizationService.IsGrantedAsync(MultiTenancyPermissions.HostAppProCategories.Edit);
+}
+
+<abp-card>
+    <abp-card-header>
+        <abp-row>
+            <abp-column size-md="_6">
+                <abp-card-title>@L["AppProCategories"]</abp-card-title>
+            </abp-column>
+            <abp-column size-md="_6" class="text-end">
+                <abp-button id="DownloadProCategoryTemplateBtn" text="@L["DownloadTemplateBtn"]" icon="download" button-type="Outline_Secondary" />
+                <abp-button id="ImportProCategoryExcelButton" text="@L["ImportExcel"]" icon="upload" button-type="Outline_Secondary" />
+                <abp-button id="ExportProCategoryExcelButton" text="@L["ExportExcelBtn"]" icon="file" button-type="Outline_Secondary" />
+                <input type="file" id="ProCategoryExcelFileInput" accept=".xlsx,.xls" style="display:none;" />
+                <abp-button id="RefreshProCategoryButton" text="@L["Menu:Refresh"]" icon="refresh" button-type="Outline_Secondary" />
+                @if (canCreate)
+                {
+                    <abp-button id="NewProCategoryButton" text="@L["NewProCategory"]" icon="plus" button-type="Outline_Primary" />
+                }
+            </abp-column>
+        </abp-row>
+        <abp-row class="mt-3">
+            <abp-column size-md="_4">
+                <div class="mb-3">
+                    <label class="form-label fnb-filter-label" for="ProCategoryFilterText">@L["ProCategoryFilterText"]</label>
+                    <input id="ProCategoryFilterText" class="form-control" type="text" placeholder="@L["SearchPlaceholder"]" />
+                </div>
+            </abp-column>
+            <abp-column size-md="_3">
+                <div class="mb-3">
+                    <label class="form-label fnb-filter-label" for="ProCategoryActiveFilter">@L["IsActive"]</label>
+                    <select id="ProCategoryActiveFilter" class="form-select">
+                        <option value="">@L["All"]</option>
+                        <option value="true">@L["Yes"]</option>
+                        <option value="false">@L["No"]</option>
+                    </select>
+                </div>
+            </abp-column>
+            <abp-column size-md="_2" class="d-flex align-items-end">
+                <div class="mb-3 h-50">
+                    <abp-button id="SearchProCategoryButton" class="h-100" text="@L["Search"]" icon="search" button-type="Outline_Primary" />
+                </div>
+            </abp-column>
+        </abp-row>
+    </abp-card-header>
+    <abp-card-body>
+        <input type="hidden" id="CanEditProCategory" value="@(canEdit ? "true" : "false")" />
+        <abp-table striped-rows="true" id="ProCategoryTable"></abp-table>
+    </abp-card-body>
+</abp-card>

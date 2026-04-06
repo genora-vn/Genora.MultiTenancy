@@ -1,0 +1,427 @@
+@page
+@model Genora.MultiTenancy.Web.Pages.AppProOrders.Board.DetailModel
+@using Genora.MultiTenancy.Localization
+@inject Microsoft.Extensions.Localization.IStringLocalizer<MultiTenancyResource> L
+
+@section styles {
+    <abp-style src="/pages/fnb/fnb-shared.css" />
+}
+
+@section scripts {
+    <abp-script src="/pages/fnb/fnb-shared.js" />
+    <abp-script src="/pages/fnb/pro-notify.js" />
+    <abp-script src="/pages/fnb/fnb-bill-print.js" />
+    <abp-script src="/pages/fnb/fnb-bill-export.js" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.7/signalr.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script>
+        $(function () {
+            var orderId = '@Model.Id';
+
+            var serviceStatusModal = new abp.ModalManager('/AppProOrders/UpdateServiceStatusModal');
+            var cancelModal        = new abp.ModalManager('/AppProOrders/CancelModal');
+
+            // ── SignalR: ProOrderHub realtime — live reload khi order được cập nhật
+            try {
+                if (window.genoraProNotify) {
+                    window.genoraProNotify.init({
+                        viewAllUrl: '/AppProOrders',
+                        detailUrl: (id) => `/AppProOrders/Board/Detail?id=${id}`,
+                        onUpdated: function (payload) {
+                            if (!payload) return;
+                            if (String(payload.id || payload.Id) !== String(orderId)) return;
+                            if ($('.modal.show').length) return;
+                            window.location.reload();
+                        }
+                    });
+                }
+            } catch (e) { console.warn('PRO SignalR init error on Detail:', e); }
+
+            var orderPrintPayload = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(new
+            {
+                shopName    = Model.ShopName,
+                shopAddress = Model.ShopAddress,
+                shopPhone   = Model.ShopPhone,
+                kioskLabel  = Model.KioskLabel,
+                cashierName = Model.CashierName,
+
+                orderCode        = Model.Order.OrderCode,
+                creationTimeText = Model.Order.CreationTime.ToLocalTime().ToString("dd/MM/yyyy HH:mm"),
+                customerName     = !string.IsNullOrWhiteSpace(Model.Order.CustomerName) ? Model.Order.CustomerName : "Khách lẻ",
+                customerTypeName = "Khách Proshop",
+                bagTag           = Model.Order.BagTag,
+                cartNo           = "",
+
+                subtotal           = Model.SubTotal,
+                serviceFee         = 0,
+                serviceFeeRateText = "0%",
+                vat                = 0,
+                vatRateText        = "0%",
+                discount           = 0,
+                discountLabel      = "",
+                total              = Model.Order.TotalAmount,
+
+                paymentText       = Model.GetPaymentMethodText(),
+                serviceStatusText = Model.GetServiceStatusText(),
+                note              = !string.IsNullOrWhiteSpace(Model.Order.Note) ? Model.Order.Note : "—",
+
+                qrText        = !string.IsNullOrWhiteSpace(Model.PaymentQrText) ? Model.PaymentQrText : "Quét mã để thanh toán nhanh",
+                qrBankCode    = Model.PaymentQrBankCode,
+                qrBankAccount = Model.PaymentQrBankAccount,
+                qrBankDisplay = Model.PaymentQrBankDisplay,
+                qrAccountName = Model.ShopName,
+                qrAddInfo     = $"Thanh toan Proshop {Model.Order.OrderCode}",
+
+                items = Model.Order.Items.Select(x => new
+                {
+                    itemName = x.ItemName,
+                    quantity = x.Quantity,
+                    price    = x.Price,
+                    amount   = x.Price * x.Quantity
+                })
+            }));
+
+            $('#ProshopBoardUpdateStatusBtn').on('click', () => serviceStatusModal.open({ id: orderId }));
+            $('#ProshopBoardCancelBtn').on('click',        () => cancelModal.open({ id: orderId }));
+
+            $('#ProshopBoardPrint80Btn').on('click',    () => window.fnbPrintOrderBill(orderPrintPayload, 80));
+            $('#ProshopBoardPrint57Btn').on('click',    () => window.fnbPrintOrderBill(orderPrintPayload, 57));
+            $('#ProshopBoardExportPdfBtn').on('click',  () => window.fnbExportOrderPdf(orderPrintPayload, 80));
+
+            serviceStatusModal.onResult(() => window.location.reload());
+            cancelModal.onResult(()        => window.location.reload());
+        });
+        $(function () { $('[data-toggle="tooltip"]').tooltip(); });
+    </script>
+}
+
+@{
+    var order             = Model.Order;
+    var currentStep       = Model.GetCurrentStep();
+    var paymentStatusClass = order.PaymentStatus.ToString().ToLowerInvariant() switch
+    {
+        "unpaid" => "is-unpaid",
+        "failed" => "is-failed",
+        _ => ""
+    };
+}
+
+<div class="kitchen-shell">
+    <div class="lpx-topbar kitchen-page-topbar">
+        <div class="lpx-breadcrumb-container">
+            <a class="kitchen-page-back" href="/AppProOrders/Board" title="Quay lại Board">
+                <i class="fa fa-arrow-left"></i>
+            </a>
+            <div class="kitchen-page-title-wrap">
+                <h1 class="kitchen-page-title">
+                    <i class="fa fa-shopping-bag me-1"></i>
+                    Proshop — Chi tiết đơn #@order.OrderCode
+                </h1>
+            </div>
+        </div>
+
+        <div class="kitchen-toolbar-actions">
+            @if (Model.CanCancel())
+            {
+                <button id="ProshopBoardCancelBtn" type="button" class="btn btn-light kds-btn-light">
+                    Hủy đơn
+                </button>
+            }
+            <button id="ProshopBoardExportPdfBtn" type="button" class="btn btn-outline-secondary">
+                <i class="fa fa-file-pdf-o me-1"></i> Xuất PDF
+            </button>
+            <button id="ProshopBoardPrint80Btn" type="button" class="btn btn-outline-secondary">
+                <i class="fa fa-print me-1"></i> In K80
+            </button>
+            <button id="ProshopBoardPrint57Btn" type="button" class="btn btn-outline-secondary">
+                <i class="fa fa-receipt me-1"></i> In K57
+            </button>
+            <button id="ProshopBoardUpdateStatusBtn" type="button" class="btn btn-primary kds-btn-primary">
+                Cập nhật trạng thái
+            </button>
+        </div>
+    </div>
+
+    <div class="kitchen-content">
+        <div class="kitchen-order-meta">
+            <span class="kitchen-status-chip @(Model.IsCancelled() ? "kitchen-status-chip--cancelled" : "kitchen-status-chip--active")">
+                @Model.GetServiceStatusText()
+            </span>
+            <span>
+                <i class="fa fa-clock-o"></i>
+                @order.CreationTime.ToLocalTime().ToString("dd/MM/yyyy HH:mm")
+            </span>
+        </div>
+
+        <h2 class="kitchen-order-title">Đơn hàng #@order.OrderCode</h2>
+
+        @if (Model.IsCancelled())
+        {
+            <div class="kitchen-cancel-alert">
+                Đơn hàng đã bị hủy.
+                @if (!string.IsNullOrWhiteSpace(order.CancelNote))
+                {
+                    <span> Ghi chú hủy: @order.CancelNote</span>
+                }
+            </div>
+        }
+
+        @* Stepper *@
+        <div class="kitchen-stepper-card">
+            @if (!Model.IsCancelled())
+            {
+                <div class="kitchen-stepper">
+                    <div class="kitchen-step @(currentStep >= 1 ? (currentStep == 1 ? "is-active" : "is-done") : "")">
+                        <div class="kitchen-step__circle"><i class="fa fa-inbox"></i></div>
+                        <div class="kitchen-step__label">Đơn mới</div>
+                        <div class="kitchen-step__time">@order.CreationTime.ToLocalTime().ToString("HH:mm dd/MM")</div>
+                    </div>
+                    <div class="kitchen-step @(currentStep >= 2 ? (currentStep == 2 ? "is-active" : "is-done") : "")">
+                        <div class="kitchen-step__circle"><i class="fa fa-cogs"></i></div>
+                        <div class="kitchen-step__label">Đang xử lý</div>
+                        <div class="kitchen-step__time">Đang chuẩn bị</div>
+                    </div>
+                    <div class="kitchen-step @(currentStep >= 3 ? (currentStep == 3 ? "is-active" : "is-done") : "")">
+                        <div class="kitchen-step__circle"><i class="fa fa-check"></i></div>
+                        <div class="kitchen-step__label">Sẵn sàng giao</div>
+                        <div class="kitchen-step__time">Chờ giao hàng</div>
+                    </div>
+                    <div class="kitchen-step @(currentStep >= 4 ? (currentStep == 4 ? "is-active" : "is-done") : "")">
+                        <div class="kitchen-step__circle"><i class="fa fa-check-circle-o"></i></div>
+                        <div class="kitchen-step__label">Đã giao</div>
+                        <div class="kitchen-step__time">Hoàn tất</div>
+                    </div>
+                </div>
+            }
+            else
+            {
+                <div class="kitchen-stepper">
+                    <div class="kitchen-step is-done">
+                        <div class="kitchen-step__circle"><i class="fa fa-inbox"></i></div>
+                        <div class="kitchen-step__label">Đơn mới</div>
+                        <div class="kitchen-step__time">@order.CreationTime.ToLocalTime().ToString("HH:mm dd/MM")</div>
+                    </div>
+                    <div class="kitchen-step is-done">
+                        <div class="kitchen-step__circle"><i class="fa fa-cogs"></i></div>
+                        <div class="kitchen-step__label">Đang xử lý</div>
+                        <div class="kitchen-step__time">Đã tiếp nhận</div>
+                    </div>
+                    <div class="kitchen-step is-cancelled">
+                        <div class="kitchen-step__circle kitchen-step__circle--cancelled"><i class="fa fa-times"></i></div>
+                        <div class="kitchen-step__label kitchen-step__label--cancelled">Đã hủy</div>
+                        <div class="kitchen-step__time">
+                            @(order.CancelledAt.HasValue ? order.CancelledAt.Value.ToLocalTime().ToString("HH:mm dd/MM") : "—")
+                        </div>
+                    </div>
+                    <div class="kitchen-step">
+                        <div class="kitchen-step__circle"><i class="fa fa-check-circle-o"></i></div>
+                        <div class="kitchen-step__label">Đã giao</div>
+                        <div class="kitchen-step__time">—</div>
+                    </div>
+                </div>
+            }
+        </div>
+
+        <div class="row kitchen-layout-row">
+            @* LEFT: items + notes *@
+            <div class="col-lg-8">
+                <div class="kitchen-card">
+                    <div class="kitchen-card__head">
+                        <h3 class="kitchen-card__title">Danh sách sản phẩm</h3>
+                        <div class="kitchen-card__meta">@Model.TotalQuantity sản phẩm</div>
+                    </div>
+                    <div class="kitchen-card__body">
+                        <div class="table-responsive">
+                            <table class="table kitchen-items-table">
+                                <thead>
+                                    <tr>
+                                        <th>Sản phẩm</th>
+                                        <th class="text-center">Số lượng</th>
+                                        <th class="text-end">Đơn giá</th>
+                                        <th class="text-end">Thành tiền</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var item in order.Items)
+                                    {
+                                        <tr>
+                                            <td>
+                                                <div class="kitchen-item">
+                                                    <div class="kitchen-item__thumb">
+                                                        <img src="@(string.IsNullOrWhiteSpace(item.ImageUrl) ? "/images/fnb/default-food.png" : item.ImageUrl)"
+                                                             alt="@item.ItemName"
+                                                             onerror="this.src='/images/fnb/default-food.png'" />
+                                                    </div>
+                                                    <div>
+                                                        <div class="kitchen-item__name">@item.ItemName</div>
+                                                        @if (!string.IsNullOrWhiteSpace(item.Note))
+                                                        {
+                                                            <div class="kitchen-item__note">Ghi chú: @item.Note</div>
+                                                        }
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td class="text-center">
+                                                <div class="kitchen-qty">@item.Quantity.ToString("00")</div>
+                                            </td>
+                                            <td class="text-end">
+                                                <span class="kitchen-price">@($"{item.Price:N0}")<span class="vnd-symbol-underline">đ</span></span>
+                                            </td>
+                                            <td class="text-end">
+                                                <span class="kitchen-total">@($"{(item.Price * item.Quantity):N0}")<span class="vnd-symbol-underline">đ</span></span>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row kitchen-layout-row mt-0">
+                    <div class="col-md-6">
+                        <div class="kitchen-card kitchen-note-card">
+                            <div class="kitchen-card__head">
+                                <div class="kitchen-note-title">
+                                    <i class="fa fa-sticky-note-o"></i>
+                                    <span>Ghi chú khách hàng</span>
+                                </div>
+                            </div>
+                            <div class="kitchen-note-box @(string.IsNullOrWhiteSpace(order.Note) ? "is-empty" : "")">
+                                @(string.IsNullOrWhiteSpace(order.Note) ? "Khách hàng chưa để lại ghi chú." : order.Note)
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="kitchen-card kitchen-note-card">
+                            <div class="kitchen-card__head">
+                                <div class="kitchen-note-title">
+                                    <i class="fa fa-sticky-note-o"></i>
+                                    <span>Ghi chú nội bộ</span>
+                                </div>
+                            </div>
+                            <div class="kitchen-note-box @(string.IsNullOrWhiteSpace(order.InternalNote) ? "is-empty" : "")">
+                                @(string.IsNullOrWhiteSpace(order.InternalNote) ? "Chưa có ghi chú nội bộ." : order.InternalNote)
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            @* RIGHT: customer + payment + activity *@
+            <div class="col-lg-4">
+                <div class="kitchen-card mb-3">
+                    <div class="kitchen-panel">
+                        <div class="kitchen-customer">
+                            <div class="kitchen-customer__avatar">@Model.GetCustomerInitials()</div>
+                            <div>
+                                <div class="kitchen-customer__name">@(!string.IsNullOrWhiteSpace(order.CustomerName) ? order.CustomerName : "Khách lẻ")</div>
+                                <div class="kitchen-customer__sub">Khách Proshop</div>
+                            </div>
+                        </div>
+                        <div class="kitchen-info-list">
+                            <div class="kitchen-info-row">
+                                <div class="kitchen-info-label">Số điện thoại</div>
+                                <div class="kitchen-info-value">
+                                    @if (!string.IsNullOrWhiteSpace(order.CustomerPhone))
+                                    {
+                                        <span>@order.CustomerPhone</span>
+                                    }
+                                    else { <span>—</span> }
+                                </div>
+                            </div>
+                            <div class="kitchen-info-row">
+                                <div class="kitchen-info-label">Mã túi (BagTag)</div>
+                                <div class="kitchen-info-value">@(!string.IsNullOrWhiteSpace(order.BagTag) ? order.BagTag : "—")</div>
+                            </div>
+                            <div class="kitchen-info-row">
+                                <div class="kitchen-info-label">Mã đơn</div>
+                                <div class="kitchen-info-value">@order.OrderCode</div>
+                            </div>
+                            <div class="kitchen-info-row">
+                                <div class="kitchen-info-label">Kênh</div>
+                                <div class="kitchen-info-value">Proshop</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="kitchen-card mb-3">
+                    <div class="kitchen-card__head">
+                        <h3 class="kitchen-card__title">Chi tiết thanh toán</h3>
+                    </div>
+                    <div class="kitchen-panel">
+                        <div class="kitchen-info-list mb-3">
+                            <div class="kitchen-info-row">
+                                <div class="kitchen-info-label">Tạm tính</div>
+                                <div class="kitchen-info-value">@($"{Model.SubTotal:N0}")<span class="vnd-symbol-underline">đ</span></div>
+                            </div>
+                            <div class="kitchen-info-row">
+                                <div class="kitchen-info-label">Giảm giá</div>
+                                <div class="kitchen-info-value" style="color:#16a34a;">0<span class="vnd-symbol-underline">đ</span></div>
+                            </div>
+                            <div class="kitchen-info-row">
+                                <div class="kitchen-info-label">Tổng cộng</div>
+                                <div class="kitchen-payment-grand">@($"{order.TotalAmount:N0}")<span class="vnd-symbol-underline">đ</span></div>
+                            </div>
+                        </div>
+
+                        @if (Model.IsCancelled())
+                        {
+                            <div class="d-flex align-items-center justify-content-between gap-3 flex-wrap">
+                                <span class="kitchen-payment-status is-cancelled">
+                                    <i class="fa fa-times-circle"></i> Giao dịch đã hủy
+                                </span>
+                                <div class="kitchen-info-value">
+                                    @(order.CancelledAt.HasValue ? order.CancelledAt.Value.ToLocalTime().ToString("HH:mm dd/MM") : "—")
+                                </div>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="d-flex align-items-center justify-content-between gap-3 flex-wrap">
+                                <span class="kitchen-payment-status @paymentStatusClass">
+                                    <i class="fa fa-circle"></i> @Model.GetPaymentStatusText()
+                                </span>
+                                <div class="kitchen-info-value">@order.CreationTime.ToLocalTime().ToString("HH:mm dd/MM")</div>
+                            </div>
+                        }
+
+                        <div class="kitchen-info-row mt-3">
+                            <div class="kitchen-info-label">Phương thức</div>
+                            <div class="kitchen-info-value">@Model.GetPaymentMethodText()</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="kitchen-card kitchen-history-card">
+                    <div class="kitchen-card__head">
+                        <h3 class="kitchen-card__title">Lịch sử thao tác</h3>
+                        <a href="/AppProOrders/Board/History?id=@order.Id" class="kitchen-history-link">Xem thêm</a>
+                    </div>
+                    <div class="kitchen-history-list">
+                        @if (order.Activities != null && order.Activities.Any())
+                        {
+                            @foreach (var activity in order.Activities.Take(5))
+                            {
+                                <div class="kitchen-history-item">
+                                    <div class="kitchen-history-dot @(activity.IsDanger ? "is-danger" : "")"></div>
+                                    <div>
+                                        <div class="kitchen-history-item__title">@activity.Title</div>
+                                        <div class="kitchen-history-item__desc">@activity.Description</div>
+                                        <div class="kitchen-history-item__desc">@activity.Time.ToLocalTime().ToString("HH:mm dd/MM/yyyy")</div>
+                                    </div>
+                                </div>
+                            }
+                        }
+                        else
+                        {
+                            <div class="kitchen-history-item" style="color:#94a3b8;font-size:0.85rem;">Chưa có hoạt động.</div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,120 @@
+﻿@page
+@using Genora.MultiTenancy.Localization
+@using Genora.MultiTenancy.Web.Pages.AppProOrders
+@using Microsoft.Extensions.Localization
+@inject IStringLocalizer<MultiTenancyResource> L
+
+@section scripts {
+    <script src="~/Abp/ApplicationConfigurationScript"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.7/signalr.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <abp-script src="/pages/fnb/fnb-shared.js" />
+    <abp-script src="/pages/fnb/pro-notify.js" />
+    <abp-script src="/Pages/AppProOrders/index.js" />
+    <abp-style src="/pages/fnb/fnb-shared.css" />
+    <abp-style src="/Pages/Index.css" />
+}
+
+@section styles {
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
+}
+
+<div class="fnb-page">
+    <abp-card>
+        <abp-card-header>
+            <abp-row>
+                <abp-column size-md="_6">
+                    <abp-card-title>
+                        <i class="fa fa-shopping-bag me-1"></i> @L["AppProOrders"]
+                    </abp-card-title>
+                </abp-column>
+                <abp-column size-md="_6" class="text-end fnb-toolbar">
+                    <div class="d-inline-flex align-items-center gap-2 me-2">
+                        <label class="mb-0 fnb-filter-label">@L["AutoRefresh"]</label>
+                        <select id="ProOrderAutoRefreshInterval" class="form-select form-select-sm" style="width:120px;">
+                            <option value="0">@L["Off"]</option>
+                            <option value="30000" selected>30s</option>
+                        </select>
+                    </div>
+
+                    <abp-button id="RefreshProOrderButton"
+                                text="@L["Menu:Refresh"]"
+                                icon="refresh"
+                                button-type="Outline_Secondary" />
+
+                    <abp-button id="ExportProOrderExcelButton"
+                                text="@L["ExportExcelBtn"]"
+                                icon="file"
+                                button-type="Outline_Secondary" />
+
+                    <a href="/AppProOrders/Board" class="btn btn-outline-primary">
+                        <i class="fa fa-columns me-1"></i> @L["Menu:AppProOrdersBoard"]
+                    </a>
+                </abp-column>
+            </abp-row>
+
+            <abp-row class="mt-3">
+                <abp-column size-md="_3">
+                    <div class="mb-3">
+                        <label class="form-label fnb-filter-label" for="ProOrderFilterText">@L["ProOrderFilterText"]</label>
+                        <input id="ProOrderFilterText" class="form-control" type="text" />
+                    </div>
+                </abp-column>
+
+                <abp-column size-md="_2">
+                    <div class="mb-3">
+                        <label class="form-label fnb-filter-label" for="ProOrderServiceStatusFilter">@L["ServiceStatus"]</label>
+                        <select id="ProOrderServiceStatusFilter" class="form-select">
+                            <option value="">@L["All"]</option>
+                            <option value="1">@L["ProServiceStatus:Created"]</option>
+                            <option value="2">@L["ProServiceStatus:Processing"]</option>
+                            <option value="3">@L["ProServiceStatus:Ready"]</option>
+                            <option value="4">@L["ProServiceStatus:Delivered"]</option>
+                            <option value="5">@L["ProServiceStatus:Cancelled"]</option>
+                        </select>
+                    </div>
+                </abp-column>
+
+                <abp-column size-md="_2">
+                    <div class="mb-3">
+                        <label class="form-label fnb-filter-label" for="ProOrderPaymentStatusFilter">@L["PaymentStatus"]</label>
+                        <select id="ProOrderPaymentStatusFilter" class="form-select">
+                            <option value="">@L["All"]</option>
+                            <option value="1">@L["ProPaymentStatus:Unpaid"]</option>
+                            <option value="2">@L["ProPaymentStatus:Paid"]</option>
+                            <option value="3">@L["ProPaymentStatus:Failed"]</option>
+                        </select>
+                    </div>
+                </abp-column>
+
+                <abp-column size-md="_2">
+                    <div class="mb-3">
+                        <label class="form-label fnb-filter-label" for="ProOrderCreationTimeFrom">@L["CreateTimeFrom"]</label>
+                        <input id="ProOrderCreationTimeFrom" class="form-control public-time-input" type="text" />
+                    </div>
+                </abp-column>
+
+                <abp-column size-md="_2">
+                    <div class="mb-3">
+                        <label class="form-label fnb-filter-label" for="ProOrderCreationTimeTo">@L["CreateTimeTo"]</label>
+                        <input id="ProOrderCreationTimeTo" class="form-control public-time-input" type="text" />
+                    </div>
+                </abp-column>
+
+                <abp-column size-md="_1" class="d-flex align-items-end">
+                    <div class="mb-3 h-50">
+                        <abp-button id="SearchProOrderButton"
+                                    class="h-100"
+                                    text="@L["Search"]"
+                                    icon="search"
+                                    button-type="Outline_Primary" />
+                    </div>
+                </abp-column>
+            </abp-row>
+        </abp-card-header>
+
+        <abp-card-body class="fnb-table-wrap">
+            <abp-table striped-rows="true" id="ProOrderTable"></abp-table>
+        </abp-card-body>
+    </abp-card>
+</div>

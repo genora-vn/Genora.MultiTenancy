@@ -1,4 +1,5 @@
 using Genora.MultiTenancy.AppDtos.AppPayments;
+using Genora.MultiTenancy.AppServices.AppZaloAuths;
 using Genora.MultiTenancy.DomainModels.AppBookings;
 using Genora.MultiTenancy.DomainModels.AppFnbOrderActivity;
 using Genora.MultiTenancy.DomainModels.AppFnbOrders;
@@ -56,7 +57,8 @@ public class PaymentCallbackAppService : ApplicationService, IPaymentCallbackApp
 
         // ── 1. Load Private Key per-tenant ────────────────────────────────────
         var privateKey      = await _settingProvider.GetOrNullAsync(ZaloPaymentSettingNames.PrivateKey) ?? string.Empty;
-        var configuredAppId = await _settingProvider.GetOrNullAsync(ZaloPaymentSettingNames.AppId)     ?? string.Empty;
+        // AppId tái dụng MiniAppId (cùng giá trị, tránh nhập trùng)
+        var configuredAppId = await _settingProvider.GetOrNullAsync(ZaloSettingNames.MiniAppId)         ?? string.Empty;
 
         if (string.IsNullOrWhiteSpace(privateKey))
         {

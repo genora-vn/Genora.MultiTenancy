@@ -30,6 +30,7 @@ public class MultiTenancyHttpApiModule : AbpModule
     {
         ConfigureLocalization();
         context.Services.AddTransient<IFnbOrderRealtimeNotifier, FnbOrderRealtimeNotifier>();
+        context.Services.AddTransient<IProOrderRealtimeNotifier, ProOrderRealtimeNotifier>();
     }
 
     private void ConfigureLocalization()

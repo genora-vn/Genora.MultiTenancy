@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Application.Services;
+using Volo.Abp.Content;
 
 namespace Genora.MultiTenancy.AppDtos.AppFnbOrders;
 public interface IAppFnbOrderService : IApplicationService
@@ -16,4 +17,5 @@ public interface IAppFnbOrderService : IApplicationService
     Task<FnbOrderHistoryPageDto> GetHistoryPageAsync(Guid id);
     Task<FnbOrderHistoryPageDto> GetHistoryPageAsync(GetFnbOrderHistoryInput input);
     Task<List<FnbKitchenBoardItemDto>> GetKitchenBoardAsync(GetFnbKitchenBoardInput input);
+    Task<IRemoteStreamContent> ExportExcelAsync(GetFnbOrderListInput input);
 }

@@ -1,0 +1,34 @@
+using System;
+using System.ComponentModel.DataAnnotations;
+using Volo.Abp.Content;
+
+namespace Genora.MultiTenancy.AppDtos.AppProItems;
+
+public class CreateUpdateProItemDto
+{
+    [Required]
+    public Guid CategoryId { get; set; }
+
+    [Required]
+    [StringLength(255)]
+    public string Name { get; set; } = null!;
+
+    [Range(0, double.MaxValue)]
+    public decimal Price { get; set; }
+
+    [StringLength(500)]
+    public string? ImageUrl { get; set; }
+
+    public string? Description { get; set; }
+
+    [Range(0, int.MaxValue)]
+    public int? SortOrder { get; set; }
+
+    public bool IsActive { get; set; } = true;
+
+    public bool IsAvailable { get; set; } = true;
+
+    public IRemoteStreamContent? Images { get; set; }
+
+    public bool IsUploadImage { get; set; }
+}
