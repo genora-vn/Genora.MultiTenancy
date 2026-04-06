@@ -19,20 +19,23 @@ namespace Genora.MultiTenancy.AppServices.AppProOrders;
 public class MiniAppProOrderService : ApplicationService, IMiniAppProOrderService
 {
     private readonly IRepository<ProOrder, Guid> _orderRepository;
+    private readonly IRepository<ProOrderItem, Guid> _orderItemRepository;
     private readonly IRepository<ProOrderActivity, Guid> _activityRepository;
     private readonly ICurrentTenant _currentTenant;
     private readonly IProOrderRealtimeNotifier _notifier;
 
     public MiniAppProOrderService(
         IRepository<ProOrder, Guid> orderRepository,
+        IRepository<ProOrderItem, Guid> orderItemRepository,
         IRepository<ProOrderActivity, Guid> activityRepository,
         ICurrentTenant currentTenant,
         IProOrderRealtimeNotifier notifier)
     {
-        _orderRepository    = orderRepository;
-        _activityRepository = activityRepository;
-        _currentTenant      = currentTenant;
-        _notifier           = notifier;
+        _orderRepository     = orderRepository;
+        _orderItemRepository = orderItemRepository;
+        _activityRepository  = activityRepository;
+        _currentTenant       = currentTenant;
+        _notifier            = notifier;
     }
 
     public async Task<MiniAppProOrderDetailDto> CreateAsync(CreateProOrderDto input)
@@ -55,13 +58,14 @@ public class MiniAppProOrderService : ApplicationService, IMiniAppProOrderServic
 
         var itemRepo = LazyServiceProvider.LazyGetRequiredService<IRepository<DomainModels.AppProItems.ProItem, Guid>>();
 
+        var orderItems = new List<ProOrderItem>();
         foreach (var itemInput in input.Items)
         {
             DomainModels.AppProItems.ProItem? proItem;
             try { proItem = await itemRepo.GetAsync(itemInput.ItemId); }
             catch { return Error($"Sản phẩm không tồn tại: {itemInput.ItemId}"); }
 
-            order.Items.Add(new ProOrderItem(
+            orderItems.Add(new ProOrderItem(
                 GuidGenerator.Create(), order.Id, proItem.Name, proItem.Price, itemInput.Quantity)
             {
                 ItemId = itemInput.ItemId,
@@ -69,12 +73,13 @@ public class MiniAppProOrderService : ApplicationService, IMiniAppProOrderServic
             });
         }
 
-        order.TotalAmount = order.Items.Sum(i => i.Price * i.Quantity);
-        order = await _orderRepository.InsertAsync(order, autoSave: true);
+        order.TotalAmount = orderItems.Sum(i => i.Price * i.Quantity);
+        await _orderRepository.InsertAsync(order, autoSave: true);
+        await _orderItemRepository.InsertManyAsync(orderItems, autoSave: true);
 
         await WriteActivityAsync(order.Id, "Created",
             "Đơn hàng được tạo từ Mini App",
-            $"Mã túi: {order.BagTag} | {order.Items.Count} sản phẩm | {order.TotalAmount:N0} VND");
+            $"Mã túi: {order.BagTag} | {orderItems.Count} sản phẩm | {order.TotalAmount:N0} VND");
 
         // Broadcast SignalR — staff nhận notify realtime
         try { await _notifier.OrderCreatedAsync(order.Id); }

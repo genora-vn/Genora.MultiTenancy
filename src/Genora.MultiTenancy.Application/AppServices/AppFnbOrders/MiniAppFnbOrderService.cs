@@ -132,12 +132,8 @@ public class MiniAppFnbOrderService : ApplicationService, IMiniAppFnbOrderServic
 
         try
         {
-            foreach (var orderItem in orderItems)
-            {
-                order.Items.Add(orderItem);
-            }
-
             await _orderRepository.InsertAsync(order, autoSave: true);
+            await _orderItemRepository.InsertManyAsync(orderItems, autoSave: true);
 
             await _orderActivityRepository.InsertAsync(
                 new FnbOrderActivity(
