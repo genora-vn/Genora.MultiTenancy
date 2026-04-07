@@ -1,5 +1,6 @@
 using Genora.MultiTenancy.AppDtos.AppProOrders;
 using Genora.MultiTenancy.AppServices.AppProOrders;
+using Genora.MultiTenancy.AppServices.AppPaymentConfigurations;
 using Genora.MultiTenancy.DomainModels.AppGolfCourses;
 using Genora.MultiTenancy.Enums;
 using Microsoft.AspNetCore.Authorization;
@@ -19,6 +20,7 @@ public class DetailModel : MultiTenancyPageModel
 {
     private readonly IAppProOrderService _proOrderService;
     private readonly IRepository<GolfCourse, Guid> _golfCourseRepository;
+    private readonly IAppPaymentConfigurationService _paymentConfigService;
     private readonly ICurrentUser _currentUser;
 
     public string ShopName    { get; private set; } = "LAGUNA GOLF LĂNG CÔ";
@@ -43,10 +45,12 @@ public class DetailModel : MultiTenancyPageModel
     public DetailModel(
         IAppProOrderService proOrderService,
         IRepository<GolfCourse, Guid> golfCourseRepository,
+        IAppPaymentConfigurationService paymentConfigService,
         ICurrentUser currentUser)
     {
         _proOrderService      = proOrderService;
         _golfCourseRepository = golfCourseRepository;
+        _paymentConfigService = paymentConfigService;
         _currentUser          = currentUser;
     }
 
@@ -63,10 +67,16 @@ public class DetailModel : MultiTenancyPageModel
             ShopPhone   = golfCourse.Phone   ?? ShopPhone;
         }
 
-        PaymentQrText        = golfCourse?.PaymentQrText;
-        PaymentQrBankCode    = golfCourse?.PaymentQrBankCode;
-        PaymentQrBankAccount = golfCourse?.PaymentQrBankAccount;
-        PaymentQrBankDisplay = golfCourse?.PaymentQrBankDisplay;
+        var paymentConfig = await _paymentConfigService.GetActiveAsync();
+        if (paymentConfig != null)
+        {
+            PaymentQrText        = paymentConfig.Description ?? "Quét mã để thanh toán nhanh";
+            PaymentQrBankCode    = paymentConfig.BankBin;
+            PaymentQrBankAccount = paymentConfig.AccountNumber;
+            PaymentQrBankDisplay = !string.IsNullOrWhiteSpace(paymentConfig.AccountName)
+                ? paymentConfig.AccountName
+                : null;
+        }
 
         CashierName = !string.IsNullOrWhiteSpace(_currentUser.Name)
             ? _currentUser.Name!

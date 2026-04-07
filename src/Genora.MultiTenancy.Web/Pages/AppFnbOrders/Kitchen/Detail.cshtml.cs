@@ -1,8 +1,8 @@
-﻿using Genora.MultiTenancy.AppDtos.AppFnbOrders;
+using Genora.MultiTenancy.AppDtos.AppFnbOrders;
+using Genora.MultiTenancy.AppServices.AppPaymentConfigurations;
 using Genora.MultiTenancy.DomainModels.AppGolfCourses;
 using Genora.MultiTenancy.Enums;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.RazorPages;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -16,8 +16,8 @@ namespace Genora.MultiTenancy.Web.Pages.AppFnbOrders.Kitchen;
 public class DetailModel : MultiTenancyPageModel
 {
     private readonly IAppFnbOrderService _appFnbOrderService;
-
     private readonly IRepository<GolfCourse, Guid> _golfCourseRepository;
+    private readonly IAppPaymentConfigurationService _paymentConfigService;
     private readonly ICurrentUser _currentUser;
 
     public string ShopName { get; private set; } = "LAGUNA GOLF LĂNG CÔ";
@@ -42,10 +42,15 @@ public class DetailModel : MultiTenancyPageModel
 
     public IReadOnlyList<ActivityTimelineItem> Activities { get; private set; } = Array.Empty<ActivityTimelineItem>();
 
-    public DetailModel(IAppFnbOrderService appFnbOrderService, IRepository<GolfCourse, Guid> golfCourseRepository, ICurrentUser currentUser)
+    public DetailModel(
+        IAppFnbOrderService appFnbOrderService,
+        IRepository<GolfCourse, Guid> golfCourseRepository,
+        IAppPaymentConfigurationService paymentConfigService,
+        ICurrentUser currentUser)
     {
         _appFnbOrderService = appFnbOrderService;
         _golfCourseRepository = golfCourseRepository;
+        _paymentConfigService = paymentConfigService;
         _currentUser = currentUser;
     }
 
@@ -61,14 +66,20 @@ public class DetailModel : MultiTenancyPageModel
         if (golfCourse != null)
         {
             ShopName = golfCourse.Name ?? ShopName;
-            ShopAddress = golfCourse.Address ?? ShopAddress;      // nếu entity dùng tên khác thì đổi tại đây
-            ShopPhone = golfCourse.Phone ?? ShopPhone;      // nếu entity dùng tên khác thì đổi tại đây
+            ShopAddress = golfCourse.Address ?? ShopAddress;
+            ShopPhone = golfCourse.Phone ?? ShopPhone;
         }
 
-        PaymentQrText = golfCourse?.PaymentQrText;
-        PaymentQrBankCode = golfCourse?.PaymentQrBankCode;
-        PaymentQrBankAccount = golfCourse?.PaymentQrBankAccount;
-        PaymentQrBankDisplay = golfCourse?.PaymentQrBankDisplay;
+        var paymentConfig = await _paymentConfigService.GetActiveAsync();
+        if (paymentConfig != null)
+        {
+            PaymentQrText = paymentConfig.Description ?? "Quét mã để thanh toán nhanh";
+            PaymentQrBankCode = paymentConfig.BankBin;
+            PaymentQrBankAccount = paymentConfig.AccountNumber;
+            PaymentQrBankDisplay = !string.IsNullOrWhiteSpace(paymentConfig.AccountName)
+                ? paymentConfig.AccountName
+                : null;
+        }
 
         CashierName = !string.IsNullOrWhiteSpace(_currentUser.Name)
             ? _currentUser.Name!

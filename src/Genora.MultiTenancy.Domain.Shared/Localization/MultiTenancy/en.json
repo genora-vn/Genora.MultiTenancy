@@ -719,6 +719,32 @@
     "CannotDeleteItemHasOrders": "Can not delete item because it already exists in orders. Please disable it instead.",
     "SavedSuccessfully": "Saved successfully.",
 
-    "ImportSuccessfully": "Nhập dữ liệu thành công."
+    "ImportSuccessfully": "Nhập dữ liệu thành công.",
+
+    "FeatureGroup:MiniAppPaymentConfiguration": "Payment Configuration",
+    "Feature:MiniAppPaymentConfiguration": "Payment Configuration Management",
+    "Feature:MiniAppPaymentConfigurationDesc": "Enable payment configuration management for Mini App",
+
+    "PermissionGroup:MiniAppPaymentConfiguration": "Mini App – Payment Configuration",
+    "PermissionGroup:MiniAppPaymentConfigurationHost": "Mini App – Payment Configuration (Host)",
+    "Permission:AppPaymentConfigurations": "Payment Configuration",
+    "Permission:AppPaymentConfigurations.Create": "Create",
+    "Permission:AppPaymentConfigurations.Edit": "Edit",
+    "Permission:AppPaymentConfigurations.Delete": "Delete",
+
+    "Menu:AppPaymentConfigurations": "Payment Configuration",
+
+    "AppPaymentConfigurations": "Payment Configurations",
+    "NewPaymentConfiguration": "New payment configuration",
+    "EditPaymentConfiguration": "Edit payment configuration",
+    "PaymentProviderName": "Payment provider",
+    "BankBin": "Bank BIN code",
+    "AccountNumber": "Account number",
+    "AccountName": "Account name",
+    "MerchantId": "Merchant ID",
+    "ApiKey": "API Key",
+    "PaymentDescription": "Description",
+    "LogoUrl": "Logo URL",
+    "DeletionConfirmationMessage": "Are you sure you want to delete '{0}'?"
   }
 }

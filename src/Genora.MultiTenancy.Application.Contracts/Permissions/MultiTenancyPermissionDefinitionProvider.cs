@@ -63,6 +63,13 @@ public class MultiTenancyPermissionDefinitionProvider : PermissionDefinitionProv
         homePageConfigEdit.MultiTenancySide = MultiTenancySides.Tenant;
         homePageConfigEdit.RequireFeatures(Genora.MultiTenancy.Features.AppHomePages.AppHomePageFeatures.Management);
 
+        // Cấu hình thanh toán (TENANT - không ràng Feature)
+        var paymentTenantRoot = appSettingGroup.AddPermission(MultiTenancyPermissions.AppPaymentConfigurations.Default, L("Permission:AppPaymentConfigurations"));
+        paymentTenantRoot.MultiTenancySide = MultiTenancySides.Tenant;
+        paymentTenantRoot.AddChild(MultiTenancyPermissions.AppPaymentConfigurations.Create, L("Permission:AppPaymentConfigurations.Create")).MultiTenancySide = MultiTenancySides.Tenant;
+        paymentTenantRoot.AddChild(MultiTenancyPermissions.AppPaymentConfigurations.Edit,   L("Permission:AppPaymentConfigurations.Edit"))  .MultiTenancySide = MultiTenancySides.Tenant;
+        paymentTenantRoot.AddChild(MultiTenancyPermissions.AppPaymentConfigurations.Delete, L("Permission:AppPaymentConfigurations.Delete")).MultiTenancySide = MultiTenancySides.Tenant;
+
         var appSettingGroupHost = context.AddGroup("MiniAppSettingHost", L("PermissionGroup:MiniAppSettingHost"));
         // ========== HOST (không ràng Feature) ==========
         var appSettingHostRoot = appSettingGroupHost.AddPermission(MultiTenancyPermissions.HostAppSettings.Default, L("Permission:MiniAppSetting"));
@@ -89,6 +96,14 @@ public class MultiTenancyPermissionDefinitionProvider : PermissionDefinitionProv
             L("Permission:HostAppHomePageConfig.Edit")
         );
         homePageConfigHostEdit.MultiTenancySide = MultiTenancySides.Host;
+
+        // Cấu hình thanh toán (HOST - không ràng Feature)
+        var paymentHostRoot = appSettingGroupHost.AddPermission(MultiTenancyPermissions.HostAppPaymentConfigurations.Default, L("Permission:AppPaymentConfigurations"));
+        paymentHostRoot.MultiTenancySide = MultiTenancySides.Host;
+        paymentHostRoot.AddChild(MultiTenancyPermissions.HostAppPaymentConfigurations.Create, L("Permission:AppPaymentConfigurations.Create")).MultiTenancySide = MultiTenancySides.Host;
+        paymentHostRoot.AddChild(MultiTenancyPermissions.HostAppPaymentConfigurations.Edit,   L("Permission:AppPaymentConfigurations.Edit"))  .MultiTenancySide = MultiTenancySides.Host;
+        paymentHostRoot.AddChild(MultiTenancyPermissions.HostAppPaymentConfigurations.Delete, L("Permission:AppPaymentConfigurations.Delete")).MultiTenancySide = MultiTenancySides.Host;
+
         #endregion
 
         #region Cấu hình quyền Thêm / Sửa / Xóa cho tính năng quản trị AppCustomerTypes

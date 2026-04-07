@@ -74,19 +74,6 @@ public class GolfCourse : FullAuditedAggregateRoot<Guid>, IMultiTenant
 
     public bool IsActive { get; set; } = true;
 
-    [StringLength(200)]
-    public string? PaymentQrText { get; set; }
-
-    [StringLength(50)]
-    public string? PaymentQrBankCode { get; set; }
-
-    [StringLength(50)]
-    public string? PaymentQrBankAccount { get; set; }
-
-    [StringLength(200)]
-    public string? PaymentQrBankDisplay { get; set; }
-
-
     // Navigation
     public virtual ICollection<CalendarSlot> CalendarSlots { get; set; } = new List<CalendarSlot>();
     public virtual ICollection<Booking> Bookings { get; set; } = new List<Booking>();

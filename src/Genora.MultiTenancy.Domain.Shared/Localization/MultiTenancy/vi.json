@@ -754,6 +754,32 @@
     "CannotDeleteItemHasOrders": "Không thể xóa món vì đã phát sinh đơn hàng. Hãy chuyển sang ngừng hiển thị.",
     "SavedSuccessfully": "Lưu thành công.",
 
-    "ImportSuccessfully": "Nhập dữ liệu thành công."
+    "ImportSuccessfully": "Nhập dữ liệu thành công.",
+
+    "FeatureGroup:MiniAppPaymentConfiguration": "Cấu hình thanh toán",
+    "Feature:MiniAppPaymentConfiguration": "Quản lý cấu hình thanh toán",
+    "Feature:MiniAppPaymentConfigurationDesc": "Cho phép quản lý cấu hình phương thức thanh toán cho Mini App",
+
+    "PermissionGroup:MiniAppPaymentConfiguration": "Mini App – Cấu hình thanh toán",
+    "PermissionGroup:MiniAppPaymentConfigurationHost": "Mini App – Cấu hình thanh toán (Host)",
+    "Permission:AppPaymentConfigurations": "Cấu hình thanh toán",
+    "Permission:AppPaymentConfigurations.Create": "Tạo mới",
+    "Permission:AppPaymentConfigurations.Edit": "Chỉnh sửa",
+    "Permission:AppPaymentConfigurations.Delete": "Xoá",
+
+    "Menu:AppPaymentConfigurations": "Cấu hình thanh toán",
+
+    "AppPaymentConfigurations": "Cấu hình thanh toán",
+    "NewPaymentConfiguration": "Thêm cấu hình thanh toán",
+    "EditPaymentConfiguration": "Chỉnh sửa cấu hình thanh toán",
+    "PaymentProviderName": "Nhà cung cấp thanh toán",
+    "BankBin": "Mã BIN ngân hàng",
+    "AccountNumber": "Số tài khoản",
+    "AccountName": "Tên chủ tài khoản",
+    "MerchantId": "Merchant ID",
+    "ApiKey": "API Key",
+    "PaymentDescription": "Mô tả",
+    "LogoUrl": "URL Logo",
+    "DeletionConfirmationMessage": "Bạn có chắc muốn xoá '{0}' không?"
   }
 }

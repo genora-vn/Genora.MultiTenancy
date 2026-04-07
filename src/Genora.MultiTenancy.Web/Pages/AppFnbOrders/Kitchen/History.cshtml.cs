@@ -1,5 +1,6 @@
 ﻿using Genora.MultiTenancy.AppDtos.AppFnbOrders;
 using Genora.MultiTenancy.AppServices.AppFnbOrders;
+using Genora.MultiTenancy.AppServices.AppPaymentConfigurations;
 using Genora.MultiTenancy.DomainModels.AppGolfCourses;
 using Microsoft.AspNetCore.Mvc;
 using System;
@@ -14,6 +15,7 @@ public class HistoryModel : MultiTenancyPageModel
 {
     private readonly IAppFnbOrderService _appFnbOrderService;
     private readonly IRepository<GolfCourse, Guid> _golfCourseRepository;
+    private readonly IAppPaymentConfigurationService _paymentConfigService;
     private readonly ICurrentUser _currentUser;
 
     [BindProperty(SupportsGet = true)]
@@ -50,10 +52,12 @@ public class HistoryModel : MultiTenancyPageModel
     public HistoryModel(
         IAppFnbOrderService appFnbOrderService,
         IRepository<GolfCourse, Guid> golfCourseRepository,
+        IAppPaymentConfigurationService paymentConfigService,
         ICurrentUser currentUser)
     {
         _appFnbOrderService = appFnbOrderService;
         _golfCourseRepository = golfCourseRepository;
+        _paymentConfigService = paymentConfigService;
         _currentUser = currentUser;
     }
 
@@ -80,10 +84,16 @@ public class HistoryModel : MultiTenancyPageModel
             ? _currentUser.Name!
             : (!string.IsNullOrWhiteSpace(_currentUser.UserName) ? _currentUser.UserName! : "Admin");
 
-        PaymentQrText = golfCourse?.PaymentQrText;
-        PaymentQrBankCode = golfCourse?.PaymentQrBankCode;
-        PaymentQrBankAccount = golfCourse?.PaymentQrBankAccount;
-        PaymentQrBankDisplay = golfCourse?.PaymentQrBankDisplay;
+        var paymentConfig = await _paymentConfigService.GetActiveAsync();
+        if (paymentConfig != null)
+        {
+            PaymentQrText = paymentConfig.Description ?? "Quét mã để thanh toán nhanh";
+            PaymentQrBankCode = paymentConfig.BankBin;
+            PaymentQrBankAccount = paymentConfig.AccountNumber;
+            PaymentQrBankDisplay = !string.IsNullOrWhiteSpace(paymentConfig.AccountName)
+                ? paymentConfig.AccountName
+                : null;
+        }
 
         Data = await _appFnbOrderService.GetHistoryPageAsync(new GetFnbOrderHistoryInput
         {

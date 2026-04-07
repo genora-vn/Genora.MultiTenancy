@@ -54,17 +54,7 @@ public class CreateUpdateAppGolfCourseDto
     public string? NumberHoles { get; set; }
 
     public string? Utilities { get; set; }
-    [StringLength(200)]
-    public string? PaymentQrText { get; set; }
 
-    [StringLength(50)]
-    public string? PaymentQrBankCode { get; set; }
-
-    [StringLength(50)]
-    public string? PaymentQrBankAccount { get; set; }
-
-    [StringLength(200)]
-    public string? PaymentQrBankDisplay { get; set; }
     [Range(0, short.MaxValue)]
     public short? CancellationPolicyHours { get; set; }
 

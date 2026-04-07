@@ -151,6 +151,9 @@ public class MultiTenancyMenuContributor : IMenuContributor
                 await feature.IsEnabledAsync(AppEmailFeatures.Management) &&
                 await perms.IsGrantedAsync(MultiTenancyPermissions.AppEmails.Default);
 
+            var canSeePaymentConfigurations =
+                await perms.IsGrantedAsync(MultiTenancyPermissions.AppPaymentConfigurations.Default);
+
             // ===== Home Page Config (Theme + Widgets) =====
             var canSeeHomePageConfigs =
                 await feature.IsEnabledAsync(AppHomePageFeatures.Management) &&
@@ -324,6 +327,20 @@ public class MultiTenancyMenuContributor : IMenuContributor
                         icon: "fa fa-cogs",
                         order: 1
                     ).RequirePermissions(MultiTenancyPermissions.AppSettings.Default)
+                );
+            }
+
+            // Cấu hình thanh toán
+            if (canSeePaymentConfigurations)
+            {
+                groupMiniAppSetup.AddItem(
+                    new ApplicationMenuItem(
+                        name: "AppPaymentConfigurations",
+                        displayName: l["Menu:AppPaymentConfigurations"],
+                        url: "/AppPaymentConfigurations",
+                        icon: "fa fa-credit-card",
+                        order: 5
+                    ).RequirePermissions(MultiTenancyPermissions.AppPaymentConfigurations.Default)
                 );
             }
 
@@ -747,6 +764,7 @@ public class MultiTenancyMenuContributor : IMenuContributor
             var hostCanZaloLogs = await perms.IsGrantedAsync(MultiTenancyPermissions.HostAppZaloLogs.Default);
             var hostCanEmails = await perms.IsGrantedAsync(MultiTenancyPermissions.HostAppEmails.Default);
             var hostCanSpecialDates = await perms.IsGrantedAsync(MultiTenancyPermissions.HostAppSpecialDates.Default);
+            var hostCanPaymentConfigurations = await perms.IsGrantedAsync(MultiTenancyPermissions.HostAppPaymentConfigurations.Default);
 
             var hostCanSeeFnb =
                 await perms.IsGrantedAsync(MultiTenancyPermissions.HostAppFnbCategories.Default) ||
@@ -911,6 +929,19 @@ public class MultiTenancyMenuContributor : IMenuContributor
                         icon: "fa fa-cogs",
                         order: 1
                     ).RequirePermissions(MultiTenancyPermissions.HostAppSettings.Default)
+                );
+            }
+
+            if (hostCanPaymentConfigurations)
+            {
+                groupMiniAppSetup.AddItem(
+                    new ApplicationMenuItem(
+                        name: "AppPaymentConfigurationsHost",
+                        displayName: l["Menu:AppPaymentConfigurations"],
+                        url: "/AppPaymentConfigurations",
+                        icon: "fa fa-credit-card",
+                        order: 5
+                    ).RequirePermissions(MultiTenancyPermissions.HostAppPaymentConfigurations.Default)
                 );
             }
 

@@ -22,6 +22,7 @@ using Genora.MultiTenancy.DomainModels.AppHomePageConfigs;
 using Genora.MultiTenancy.DomainModels.AppMembershipTiers;
 using Genora.MultiTenancy.DomainModels.AppNews;
 using Genora.MultiTenancy.DomainModels.AppOptionExtend;
+using Genora.MultiTenancy.DomainModels.AppPaymentConfigurations;
 using Genora.MultiTenancy.DomainModels.AppPromotionTypes;
 using Genora.MultiTenancy.DomainModels.AppSpecialDates;
 using Genora.MultiTenancy.DomainModels.AppZaloAuth;
@@ -92,6 +93,9 @@ public class MultiTenancyDbContext :
     public DbSet<ProOrder> AppProOrders { get; set; }
     public DbSet<ProOrderItem> AppProOrderItems { get; set; }
     public DbSet<ProOrderActivity> AppProOrderActivities { get; set; }
+
+    // Payment
+    public DbSet<PaymentConfiguration> AppPaymentConfigurations { get; set; }
 
     // Identity
     public DbSet<IdentityUser> Users { get; set; }
@@ -165,6 +169,7 @@ public class MultiTenancyDbContext :
         builder.ConfigureMiniAppModule();
         builder.ConfigureFnbModule();
         builder.ConfigureProshopModule();
+        builder.ConfigurePaymentModule();
 
         builder.Entity<ZaloAuth>(b =>
         {

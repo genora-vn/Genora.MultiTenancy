@@ -116,8 +116,8 @@ body {
 }
 
 .qr-code {
-    width: ${widthMm <= 57 ? '110px' : '140px'};
-    height: ${widthMm <= 57 ? '110px' : '140px'};
+    width: ${widthMm <= 57 ? '140px' : '180px'};
+    height: ${widthMm <= 57 ? '140px' : '180px'};
     margin-bottom: 5px;
 }
 

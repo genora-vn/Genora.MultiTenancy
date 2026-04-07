@@ -1,0 +1,58 @@
+@page
+@using Genora.MultiTenancy.Localization
+@using Genora.MultiTenancy.Permissions
+@using Genora.MultiTenancy.Web.Pages.AppPaymentConfigurations
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.Extensions.Localization
+@inject IStringLocalizer<MultiTenancyResource> L
+@inject IAuthorizationService AuthorizationService
+@inject Volo.Abp.MultiTenancy.ICurrentTenant CurrentTenant
+
+@section scripts {
+    <abp-script src="/Pages/AppPaymentConfigurations/index.js" />
+    <abp-style src="/pages/fnb/fnb-shared.css" />
+    <abp-style src="/Pages/Index.css" />
+}
+
+@{
+    var canCreate = CurrentTenant.IsAvailable
+        ? await AuthorizationService.IsGrantedAsync(MultiTenancyPermissions.AppPaymentConfigurations.Create)
+        : await AuthorizationService.IsGrantedAsync(MultiTenancyPermissions.HostAppPaymentConfigurations.Create);
+
+    var canEdit = CurrentTenant.IsAvailable
+        ? await AuthorizationService.IsGrantedAsync(MultiTenancyPermissions.AppPaymentConfigurations.Edit)
+        : await AuthorizationService.IsGrantedAsync(MultiTenancyPermissions.HostAppPaymentConfigurations.Edit);
+
+    var canDelete = CurrentTenant.IsAvailable
+        ? await AuthorizationService.IsGrantedAsync(MultiTenancyPermissions.AppPaymentConfigurations.Delete)
+        : await AuthorizationService.IsGrantedAsync(MultiTenancyPermissions.HostAppPaymentConfigurations.Delete);
+}
+
+<div class="fnb-page">
+    <abp-card>
+        <abp-card-header>
+            <abp-row>
+                <abp-column size-md="_6">
+                    <abp-card-title>@L["AppPaymentConfigurations"]</abp-card-title>
+                </abp-column>
+                <abp-column size-md="_6" class="text-end fnb-toolbar">
+                    <abp-button id="RefreshPaymentConfigButton"
+                                text="@L["Menu:Refresh"]"
+                                icon="refresh"
+                                button-type="Outline_Secondary" />
+                    @if (canCreate)
+                    {
+                        <abp-button id="NewPaymentConfigButton"
+                                    text="@L["NewPaymentConfiguration"]"
+                                    icon="plus"
+                                    button-type="Outline_Primary" />
+                    }
+                </abp-column>
+            </abp-row>
+        </abp-card-header>
+
+        <abp-card-body>
+            <abp-table striped-rows="true" id="PaymentConfigurationsTable" class="nowrap"></abp-table>
+        </abp-card-body>
+    </abp-card>
+</div>

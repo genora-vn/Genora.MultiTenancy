@@ -9,6 +9,7 @@ using Genora.MultiTenancy.AppDtos.AppGolfCourses;
 using Genora.MultiTenancy.AppDtos.AppHomePageConfigs;
 using Genora.MultiTenancy.AppDtos.AppMembershipTiers;
 using Genora.MultiTenancy.AppDtos.AppNews;
+using Genora.MultiTenancy.AppDtos.AppPaymentConfigurations;
 using Genora.MultiTenancy.AppDtos.AppProCategories;
 using Genora.MultiTenancy.AppDtos.AppProItems;
 using Genora.MultiTenancy.AppDtos.AppSettings;
@@ -16,6 +17,7 @@ using Genora.MultiTenancy.AppDtos.AppSpecialDates;
 using Genora.MultiTenancy.AppDtos.ZaloAuths;
 using Genora.MultiTenancy.DomainModels.AppFnbCategories;
 using Genora.MultiTenancy.DomainModels.AppFnbItems;
+using Genora.MultiTenancy.Web.Pages.AppPaymentConfigurations;
 
 namespace Genora.MultiTenancy.Web;
 
@@ -51,5 +53,9 @@ public class MultiTenancyWebAutoMapperProfile : Profile
         CreateMap<ProItemDto, CreateUpdateProItemDto>()
             .ForMember(d => d.Images,        opt => opt.Ignore())
             .ForMember(d => d.IsUploadImage, opt => opt.Ignore());
+
+        // PaymentConfiguration
+        CreateMap<PaymentConfigurationDto, CreateUpdatePaymentConfigurationPageModel>();
+        CreateMap<CreateUpdatePaymentConfigurationPageModel, CreateUpdatePaymentConfigurationDto>();
     }
 }

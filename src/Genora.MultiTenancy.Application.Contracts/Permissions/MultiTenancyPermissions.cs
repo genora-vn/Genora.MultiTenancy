@@ -369,6 +369,26 @@ public static class MultiTenancyPermissions
 
     #endregion
 
+    #region PaymentConfiguration
+
+    public static class AppPaymentConfigurations
+    {
+        public const string Default = GroupName + ".AppPaymentConfigurations";
+        public const string Create  = Default + ".Create";
+        public const string Edit    = Default + ".Edit";
+        public const string Delete  = Default + ".Delete";
+    }
+
+    public static class HostAppPaymentConfigurations
+    {
+        public const string Default = GroupName + ".HostAppPaymentConfigurations";
+        public const string Create  = Default + ".Create";
+        public const string Edit    = Default + ".Edit";
+        public const string Delete  = Default + ".Delete";
+    }
+
+    #endregion
+
     //Add your own permission names. Example:
     //public const string MyPermission1 = GroupName + ".MyPermission1";
 }

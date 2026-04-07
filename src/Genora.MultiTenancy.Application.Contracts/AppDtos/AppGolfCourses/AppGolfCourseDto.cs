@@ -35,11 +35,6 @@ public class AppGolfCourseDto : AuditedEntityDto<Guid>
 
     public string? Utilities { get; set; }
 
-    public string? PaymentQrText { get; set; }
-    public string? PaymentQrBankCode { get; set; }
-    public string? PaymentQrBankAccount { get; set; }
-    public string? PaymentQrBankDisplay { get; set; }
-
     public short? CancellationPolicyHours { get; set; }
     public string? PromotionTypeIds { get; set; }
 

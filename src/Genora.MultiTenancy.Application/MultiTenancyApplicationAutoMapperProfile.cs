@@ -10,6 +10,7 @@ using Genora.MultiTenancy.AppDtos.AppFnbOrders;
 using Genora.MultiTenancy.AppDtos.AppProCategories;
 using Genora.MultiTenancy.AppDtos.AppProItems;
 using Genora.MultiTenancy.AppDtos.AppProOrders;
+using Genora.MultiTenancy.AppDtos.AppPaymentConfigurations;
 using Genora.MultiTenancy.AppDtos.AppGolfCourses;
 using Genora.MultiTenancy.AppDtos.AppHomePageConfigs;
 using Genora.MultiTenancy.AppDtos.AppMembershipTiers;
@@ -38,6 +39,7 @@ using Genora.MultiTenancy.DomainModels.AppHomePageConfigs;
 using Genora.MultiTenancy.DomainModels.AppMembershipTiers;
 using Genora.MultiTenancy.DomainModels.AppNews;
 using Genora.MultiTenancy.DomainModels.AppOptionExtend;
+using Genora.MultiTenancy.DomainModels.AppPaymentConfigurations;
 using Genora.MultiTenancy.DomainModels.AppPromotionTypes;
 using Genora.MultiTenancy.DomainModels.AppSpecialDates;
 using Genora.MultiTenancy.DomainModels.AppZaloAuth;
@@ -208,6 +210,8 @@ public class MultiTenancyApplicationAutoMapperProfile : Profile
         CreateMap<ProOrder, ProOrderDetailDto>()
             .IncludeBase<ProOrder, ProOrderDto>();
         CreateMap<ProOrderItem, ProOrderItemDto>();
+
+        CreateMap<PaymentConfiguration, PaymentConfigurationDto>();
         #endregion
     }
 }

@@ -95,12 +95,7 @@ public class CreateModalModel : MultiTenancyPageModel
             AvailableUtilities = ulitities,
             AvailableHoles = holes,
             AvailableSessionsOfDay = sessions,
-            AvailablePromotionTypes = promotionDtos,
-
-            PaymentQrText = "Quét mã để thanh toán nhanh",
-            PaymentQrBankCode = "vcb",
-            PaymentQrBankAccount = "",
-            PaymentQrBankDisplay = ""
+            AvailablePromotionTypes = promotionDtos
         };
     }
 
