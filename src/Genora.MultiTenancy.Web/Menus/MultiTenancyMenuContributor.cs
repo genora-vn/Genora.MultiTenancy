@@ -12,6 +12,7 @@ using Genora.MultiTenancy.Features.AppNewsFeatures;
 using Genora.MultiTenancy.Features.AppPromotionTypes;
 using Genora.MultiTenancy.Features.AppSettings;
 using Genora.MultiTenancy.Features.AppSpecialDates;
+using Genora.MultiTenancy.Features.AppPaymentConfigurationFeatures;
 using Genora.MultiTenancy.Features.AppZaloAuths;
 using Genora.MultiTenancy.Features.AppZaloLogs;
 using Genora.MultiTenancy.Localization;
@@ -152,6 +153,7 @@ public class MultiTenancyMenuContributor : IMenuContributor
                 await perms.IsGrantedAsync(MultiTenancyPermissions.AppEmails.Default);
 
             var canSeePaymentConfigurations =
+                await feature.IsEnabledAsync(AppPaymentConfigurationFeatures.Management) &&
                 await perms.IsGrantedAsync(MultiTenancyPermissions.AppPaymentConfigurations.Default);
 
             // ===== Home Page Config (Theme + Widgets) =====

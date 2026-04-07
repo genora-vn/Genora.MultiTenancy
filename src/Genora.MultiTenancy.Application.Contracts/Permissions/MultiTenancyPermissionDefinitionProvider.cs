@@ -12,6 +12,7 @@ using Genora.MultiTenancy.Features.AppNewsFeatures;
 using Genora.MultiTenancy.Features.AppPromotionTypes;
 using Genora.MultiTenancy.Features.AppSettings;
 using Genora.MultiTenancy.Features.AppSpecialDates;
+using Genora.MultiTenancy.Features.AppPaymentConfigurationFeatures;
 using Genora.MultiTenancy.Features.AppZaloAuths;
 using Genora.MultiTenancy.Features.AppZaloLogs;
 using Genora.MultiTenancy.Localization;
@@ -63,12 +64,19 @@ public class MultiTenancyPermissionDefinitionProvider : PermissionDefinitionProv
         homePageConfigEdit.MultiTenancySide = MultiTenancySides.Tenant;
         homePageConfigEdit.RequireFeatures(Genora.MultiTenancy.Features.AppHomePages.AppHomePageFeatures.Management);
 
-        // Cấu hình thanh toán (TENANT - không ràng Feature)
+        // Cấu hình thanh toán (TENANT - ràng Feature)
         var paymentTenantRoot = appSettingGroup.AddPermission(MultiTenancyPermissions.AppPaymentConfigurations.Default, L("Permission:AppPaymentConfigurations"));
         paymentTenantRoot.MultiTenancySide = MultiTenancySides.Tenant;
-        paymentTenantRoot.AddChild(MultiTenancyPermissions.AppPaymentConfigurations.Create, L("Permission:AppPaymentConfigurations.Create")).MultiTenancySide = MultiTenancySides.Tenant;
-        paymentTenantRoot.AddChild(MultiTenancyPermissions.AppPaymentConfigurations.Edit,   L("Permission:AppPaymentConfigurations.Edit"))  .MultiTenancySide = MultiTenancySides.Tenant;
-        paymentTenantRoot.AddChild(MultiTenancyPermissions.AppPaymentConfigurations.Delete, L("Permission:AppPaymentConfigurations.Delete")).MultiTenancySide = MultiTenancySides.Tenant;
+        paymentTenantRoot.RequireFeatures(AppPaymentConfigurationFeatures.Management);
+        var paymentTenantCreate = paymentTenantRoot.AddChild(MultiTenancyPermissions.AppPaymentConfigurations.Create, L("Permission:AppPaymentConfigurations.Create"));
+        paymentTenantCreate.MultiTenancySide = MultiTenancySides.Tenant;
+        paymentTenantCreate.RequireFeatures(AppPaymentConfigurationFeatures.Management);
+        var paymentTenantEdit = paymentTenantRoot.AddChild(MultiTenancyPermissions.AppPaymentConfigurations.Edit, L("Permission:AppPaymentConfigurations.Edit"));
+        paymentTenantEdit.MultiTenancySide = MultiTenancySides.Tenant;
+        paymentTenantEdit.RequireFeatures(AppPaymentConfigurationFeatures.Management);
+        var paymentTenantDelete = paymentTenantRoot.AddChild(MultiTenancyPermissions.AppPaymentConfigurations.Delete, L("Permission:AppPaymentConfigurations.Delete"));
+        paymentTenantDelete.MultiTenancySide = MultiTenancySides.Tenant;
+        paymentTenantDelete.RequireFeatures(AppPaymentConfigurationFeatures.Management);
 
         var appSettingGroupHost = context.AddGroup("MiniAppSettingHost", L("PermissionGroup:MiniAppSettingHost"));
         // ========== HOST (không ràng Feature) ==========
