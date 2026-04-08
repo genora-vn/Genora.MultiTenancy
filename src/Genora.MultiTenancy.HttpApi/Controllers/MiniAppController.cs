@@ -54,6 +54,7 @@ public class MiniAppController : MultiTenancyController
     private readonly IMiniAppProCategoryService   _miniProCategory;
     private readonly IMiniAppProItemService       _miniProItem;
     private readonly IMiniAppProOrderService      _miniProOrder;
+    private readonly IMiniAppProPaymentAppService _miniProPayment;
 
     public MiniAppController(IZaloApiClient zaloApiClient,
                              IMiniAppBookingAppService miniBooking,
@@ -74,7 +75,8 @@ public class MiniAppController : MultiTenancyController
                              IMiniAppFnbPaymentAppService miniFnbPayment,
                              IMiniAppProCategoryService miniProCategory,
                              IMiniAppProItemService miniProItem,
-                             IMiniAppProOrderService miniProOrder)
+                             IMiniAppProOrderService miniProOrder,
+                             IMiniAppProPaymentAppService miniProPayment)
     {
         _zaloApiClient = zaloApiClient;
         _miniBooking = miniBooking;
@@ -96,6 +98,7 @@ public class MiniAppController : MultiTenancyController
         _miniProCategory = miniProCategory;
         _miniProItem = miniProItem;
         _miniProOrder = miniProOrder;
+        _miniProPayment = miniProPayment;
     }
 
     [HttpPost("create-booking")]
@@ -388,4 +391,25 @@ public class MiniAppController : MultiTenancyController
     [AllowAnonymous]
     public Task<MiniAppProOrderDetailDto> CancelProOrderAsync(Guid id, [FromBody] CancelMiniAppProOrderDto input)
         => _miniProOrder.CancelAsync(id, input);
+
+    // ── Proshop — Thanh toán ─────────────────────────────────────────────────
+
+    /// <summary>
+    /// Tạo dữ liệu order đã ký MAC để Mini App gọi Zalo Checkout SDK createOrder() cho đơn Proshop.
+    /// orderId format: {ProOrderCode}_{timestamp} — prefix "PRO" để phân biệt với Booking và FnB.
+    /// POST /api/mini-app/payment/pro/prepare-order
+    /// </summary>
+    [HttpPost("payment/pro/prepare-order")]
+    [AllowAnonymous]
+    public Task<PrepareOrderResult> PrepareProOrderAsync([FromBody] PrepareProOrderInput input)
+        => _miniProPayment.PrepareOrderAsync(input);
+
+    /// <summary>
+    /// Kiểm tra trạng thái giao dịch ProOrder sau khi Mini App gọi createOrder() xong.
+    /// GET /api/mini-app/payment/pro/check-transaction/{orderId}
+    /// </summary>
+    [HttpGet("payment/pro/check-transaction/{orderId}")]
+    [AllowAnonymous]
+    public Task<CheckTransactionResult> CheckProTransactionAsync(string orderId)
+        => _miniProPayment.CheckTransactionAsync(orderId);
 }
