@@ -13,7 +13,7 @@
 
     function formatCurrency(value) {
         var number = Number(value || 0);
-        return number.toLocaleString('vi-VN');
+        return number.toLocaleString('vi-VN') + 'đ';
     }
 
     function formatDateTime(value) {

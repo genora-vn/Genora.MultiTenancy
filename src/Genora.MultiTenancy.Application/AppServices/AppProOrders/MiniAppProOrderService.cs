@@ -1,8 +1,12 @@
 using Genora.MultiTenancy.AppDtos.AppProOrders;
+using Genora.MultiTenancy.DomainModels.AppProCategories;
+using Genora.MultiTenancy.DomainModels.AppProItems;
 using Genora.MultiTenancy.DomainModels.AppProOrderActivity;
 using Genora.MultiTenancy.DomainModels.AppProOrders;
 using Genora.MultiTenancy.Enums;
+using Genora.MultiTenancy.Helpers;
 using Genora.MultiTenancy.Realtime;
+using Microsoft.Extensions.Configuration;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -21,21 +25,30 @@ public class MiniAppProOrderService : ApplicationService, IMiniAppProOrderServic
     private readonly IRepository<ProOrder, Guid> _orderRepository;
     private readonly IRepository<ProOrderItem, Guid> _orderItemRepository;
     private readonly IRepository<ProOrderActivity, Guid> _activityRepository;
+    private readonly IRepository<ProItem, Guid> _proItemRepository;
+    private readonly IRepository<ProCategory, Guid> _proCategoryRepository;
     private readonly ICurrentTenant _currentTenant;
     private readonly IProOrderRealtimeNotifier _notifier;
+    private readonly IConfiguration _configuration;
 
     public MiniAppProOrderService(
         IRepository<ProOrder, Guid> orderRepository,
         IRepository<ProOrderItem, Guid> orderItemRepository,
         IRepository<ProOrderActivity, Guid> activityRepository,
+        IRepository<ProItem, Guid> proItemRepository,
+        IRepository<ProCategory, Guid> proCategoryRepository,
         ICurrentTenant currentTenant,
-        IProOrderRealtimeNotifier notifier)
+        IProOrderRealtimeNotifier notifier,
+        IConfiguration configuration)
     {
-        _orderRepository     = orderRepository;
-        _orderItemRepository = orderItemRepository;
-        _activityRepository  = activityRepository;
-        _currentTenant       = currentTenant;
-        _notifier            = notifier;
+        _orderRepository       = orderRepository;
+        _orderItemRepository   = orderItemRepository;
+        _activityRepository    = activityRepository;
+        _proItemRepository     = proItemRepository;
+        _proCategoryRepository = proCategoryRepository;
+        _currentTenant         = currentTenant;
+        _notifier              = notifier;
+        _configuration         = configuration;
     }
 
     public async Task<MiniAppProOrderDetailDto> CreateAsync(CreateProOrderDto input)
@@ -56,12 +69,12 @@ public class MiniAppProOrderService : ApplicationService, IMiniAppProOrderServic
             TotalAmount   = 0
         };
 
-        var itemRepo = LazyServiceProvider.LazyGetRequiredService<IRepository<DomainModels.AppProItems.ProItem, Guid>>();
+        var itemRepo = LazyServiceProvider.LazyGetRequiredService<IRepository<ProItem, Guid>>();
 
         var orderItems = new List<ProOrderItem>();
         foreach (var itemInput in input.Items)
         {
-            DomainModels.AppProItems.ProItem? proItem;
+            ProItem? proItem;
             try { proItem = await itemRepo.GetAsync(itemInput.ItemId); }
             catch { return Error($"Sản phẩm không tồn tại: {itemInput.ItemId}"); }
 
@@ -108,34 +121,43 @@ public class MiniAppProOrderService : ApplicationService, IMiniAppProOrderServic
                  .Skip(input.SkipCount)
                  .Take(input.MaxResultCount));
 
+        var allOrderItems = orders.SelectMany(o => o.Items).ToList();
+        var itemDict = await BuildItemDictAsync(allOrderItems);
+        var categoryDict = await BuildCategoryDictAsync(itemDict.Values.ToList());
+
         return new MiniAppProOrderListDto
         {
             Error = 0,
             Message = "Success",
             Data = new PagedResultDto<MiniAppProOrderData>(total,
-                orders.Select(o => ToData(o)).ToList())
+                orders.Select(o => ToData(o, itemDict, categoryDict)).ToList())
         };
     }
 
     public async Task<MiniAppProOrderDetailDto> GetAsync(Guid id)
     {
-        ProOrder order;
+        ProOrder? order;
         try
         {
-            order = await _orderRepository.GetAsync(
-                x => x.Id == id,
-                includeDetails: true);
+            var query = (await _orderRepository.WithDetailsAsync(o => o.Items)).AsQueryable();
+            order = await AsyncExecuter.FirstOrDefaultAsync(query.Where(x => x.Id == id));
         }
         catch
         {
             return Error("Không tìm thấy đơn hàng.");
         }
 
+        if (order == null)
+            return Error("Không tìm thấy đơn hàng.");
+
+        var itemDict = await BuildItemDictAsync(order.Items.ToList());
+        var categoryDict = await BuildCategoryDictAsync(itemDict.Values.ToList());
+
         return new MiniAppProOrderDetailDto
         {
             Error = 0,
             Message = "Success",
-            Data = ToData(order)
+            Data = ToData(order, itemDict, categoryDict)
         };
     }
 
@@ -169,38 +191,117 @@ public class MiniAppProOrderService : ApplicationService, IMiniAppProOrderServic
     }
 
     // ── Helpers ──────────────────────────────────────────────────────────────
-    private MiniAppProOrderData ToData(ProOrder o)
+
+    /// <summary>
+    /// Build lookup dict từ ProItem. Key = Id.ToString() hoặc "name:{ItemName}" (fallback).
+    /// </summary>
+    private async Task<Dictionary<string, ProItem>> BuildItemDictAsync(List<ProOrderItem> orderItems)
     {
-        var items = o.Items.Select(i => new MiniAppProOrderItemData
+        var linkedItemIds = orderItems
+            .Where(x => x.ItemId.HasValue)
+            .Select(x => x.ItemId!.Value)
+            .Distinct()
+            .ToList();
+
+        var itemQuery = await _proItemRepository.GetQueryableAsync();
+
+        var linkedItems = linkedItemIds.Count > 0
+            ? await AsyncExecuter.ToListAsync(itemQuery.Where(x => linkedItemIds.Contains(x.Id)))
+            : new List<ProItem>();
+
+        var orderItemNames = orderItems
+            .Select(x => x.ItemName?.Trim())
+            .Where(x => !string.IsNullOrWhiteSpace(x))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        var fallbackItems = orderItemNames.Count > 0
+            ? await AsyncExecuter.ToListAsync(itemQuery.Where(x => orderItemNames.Contains(x.Name)))
+            : new List<ProItem>();
+
+        var allItems = linkedItems
+            .Concat(fallbackItems)
+            .GroupBy(x => x.Id)
+            .Select(g => g.First())
+            .ToList();
+
+        var dict = new Dictionary<string, ProItem>(StringComparer.OrdinalIgnoreCase);
+        foreach (var item in allItems)
         {
-            Id          = i.Id,
-            ItemId      = i.ItemId,
-            ItemName    = i.ItemName,
-            Price       = i.Price,
-            Quantity    = i.Quantity,
-            Note        = i.Note,
-            LineTotal   = i.Price * i.Quantity
+            dict[item.Id.ToString()] = item;
+            if (!string.IsNullOrWhiteSpace(item.Name))
+                dict.TryAdd("name:" + item.Name.Trim(), item);
+        }
+
+        return dict;
+    }
+
+    private async Task<Dictionary<Guid, string>> BuildCategoryDictAsync(List<ProItem> items)
+    {
+        var categoryIds = items.Select(x => x.CategoryId).Distinct().ToList();
+        if (!categoryIds.Any()) return new Dictionary<Guid, string>();
+
+        var categories = await _proCategoryRepository.GetListAsync(x => categoryIds.Contains(x.Id));
+        return categories.ToDictionary(x => x.Id, x => x.Name);
+    }
+
+    private ProItem? ResolveItem(ProOrderItem orderItem, Dictionary<string, ProItem> itemDict)
+    {
+        if (orderItem.ItemId.HasValue && itemDict.TryGetValue(orderItem.ItemId.Value.ToString(), out var byId))
+            return byId;
+
+        if (!string.IsNullOrWhiteSpace(orderItem.ItemName) &&
+            itemDict.TryGetValue("name:" + orderItem.ItemName.Trim(), out var byName))
+            return byName;
+
+        return null;
+    }
+
+    private MiniAppProOrderData ToData(ProOrder o, Dictionary<string, ProItem> itemDict, Dictionary<Guid, string> categoryDict)
+    {
+        var items = o.Items.Select(i =>
+        {
+            var proItem = ResolveItem(i, itemDict);
+            return new MiniAppProOrderItemData
+            {
+                Id           = i.Id,
+                ItemId       = proItem?.Id ?? i.ItemId,
+                ItemName     = i.ItemName,
+                Price        = i.Price,
+                Quantity     = i.Quantity,
+                Note         = i.Note,
+                LineTotal    = i.Price * i.Quantity,
+                ImageUrl     = !string.IsNullOrWhiteSpace(proItem?.ImageUrl)
+                    ? ImageHelper.NormalizeThumb(_configuration, proItem.ImageUrl)
+                    : null,
+                CategoryName = proItem != null && categoryDict.TryGetValue(proItem.CategoryId, out var catName)
+                    ? catName
+                    : null,
+                SortOrder    = proItem?.SortOrder,
+                IsActive     = proItem?.IsActive,
+                IsAvailable  = proItem?.IsAvailable
+            };
         }).ToList();
 
         return new MiniAppProOrderData
         {
-            Id            = o.Id,
-            OrderCode     = o.OrderCode,
-            BagTag        = o.BagTag,
-            CustomerId    = o.CustomerId,
-            CustomerName  = o.CustomerName,
+            Id                  = o.Id,
+            OrderCode           = o.OrderCode,
+            BagTag              = o.BagTag,
+            CustomerId          = o.CustomerId,
+            CustomerName        = o.CustomerName,
             CustomerPhoneMasked = MaskPhone(o.CustomerPhone),
-            TotalAmount   = o.TotalAmount,
-            ServiceStatus = o.ServiceStatus,
-            PaymentStatus = o.PaymentStatus,
-            PaymentMethod = o.PaymentMethod,
-            Note          = o.Note,
-            CreationTime  = o.CreationTime,
-            TotalQuantity = items.Sum(i => i.Quantity),
-            ItemCount     = items.Count,
-            CancelNote    = o.CancelNote,
-            CancelledAt   = o.CancelledAt,
-            Items         = items
+            TotalAmount         = o.TotalAmount,
+            ServiceStatus       = o.ServiceStatus,
+            PaymentStatus       = o.PaymentStatus,
+            PaymentMethod       = o.PaymentMethod,
+            Note                = o.Note,
+            CreationTime        = o.CreationTime,
+            TotalQuantity       = items.Sum(i => i.Quantity),
+            ItemCount           = items.Count,
+            CancelNote          = o.CancelNote,
+            CancelledAt         = o.CancelledAt,
+            Items               = items
         };
     }
 

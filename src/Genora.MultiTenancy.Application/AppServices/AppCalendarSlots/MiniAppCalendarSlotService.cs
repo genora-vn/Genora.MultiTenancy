@@ -165,6 +165,7 @@ namespace Genora.MultiTenancy.AppServices.AppCalendarSlots
                         PromotionIconUrl = promotion?.IconUrl,
                         PromotionColorCode = promotion?.ColorCode,
                         MaxSlots = slot.MaxSlots,
+                        SlotAvailable = slot.SlotAvailable,
                     };
                 })
                 .ToList();

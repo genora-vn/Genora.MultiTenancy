@@ -28,6 +28,11 @@ public class CalendarSlot : FullAuditedAggregateRoot<Guid>, IMultiTenant
 
     public int MaxSlots { get; set; }
 
+    /// <summary>
+    /// Số chỗ còn trống. Tự động giảm khi có booking active, cộng lại khi booking bị hủy.
+    /// </summary>
+    public int SlotAvailable { get; set; }
+
     [StringLength(500)]
     public string? InternalNote { get; set; }
 

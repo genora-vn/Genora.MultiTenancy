@@ -25,6 +25,14 @@ namespace Genora.MultiTenancy.AppDtos.AppCalendarSlots
         public TimeSpan? TimeFrom { get; set; }
         public TimeSpan? TimeTo { get; set; }
         public int MaxSlots { get; set; }
+
+        /// <summary>
+        /// Số chỗ còn trống. Frontend dùng để hiển thị cảnh báo:
+        /// - slotAvailable = 0: "Tee-time đã đủ khách"
+        /// - slotAvailable < numberOfGolfers: "Chỉ còn X chỗ trống"
+        /// </summary>
+        public int SlotAvailable { get; set; }
+
         public Guid PromotionId { get; set; }
         public string? PromotionName { get; set; }
         public decimal CustomerTypePrice { get; set; }

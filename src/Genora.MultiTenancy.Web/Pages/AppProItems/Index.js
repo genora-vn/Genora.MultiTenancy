@@ -1,58 +1,87 @@
 $(function () {
     var l = abp.localization.getResource('MultiTenancy');
+    var fnb = window.genoraFnb;
     var service = genora.multiTenancy.appServices.appProItems.appProItem;
-    var canEdit = $('#CanEditProItem').val() === 'true';
+    var categoryService = genora.multiTenancy.appServices.appProCategories.appProCategory;
 
     var createModal = new abp.ModalManager('/AppProItems/CreateModal');
-    var editModal   = new abp.ModalManager('/AppProItems/EditModal');
+    var editModal = new abp.ModalManager('/AppProItems/EditModal');
+    var canEdit = $('#CanEditProItem').val() === 'true';
 
-    function formatVND(v) { return new Intl.NumberFormat('vi-VN').format(v || 0) + ' đ'; }
+    // Badge màu theo danh mục
+    var categoryColors = {};
+    var colorPalette = [
+        { bg: '#dbeafe', text: '#1e40af' },
+        { bg: '#dcfce7', text: '#15803d' },
+        { bg: '#fef9c3', text: '#854d0e' },
+        { bg: '#ffe4e6', text: '#be123c' },
+        { bg: '#f3e8ff', text: '#7e22ce' },
+        { bg: '#ffedd5', text: '#c2410c' },
+        { bg: '#e0f2fe', text: '#0369a1' },
+        { bg: '#fce7f3', text: '#9d174d' },
+        { bg: '#ecfdf5', text: '#065f46' },
+        { bg: '#fff7ed', text: '#9a3412' },
+    ];
+    var colorIndex = 0;
 
-    // Toggle Hoạt động (IsActive)
-    function renderToggle(checked, itemId, disabled) {
-        var isChecked  = checked  ? 'checked'  : '';
-        var isDisabled = disabled ? 'disabled' : '';
-        return `
-            <label class="fnb-switch">
-                <input type="checkbox"
-                       class="pro-item-toggle"
-                       data-id="${itemId}"
-                       ${isChecked}
-                       ${isDisabled} />
-                <span class="fnb-switch-slider"></span>
-            </label>
-        `;
+    function getCategoryColor(name) {
+        if (!name) return colorPalette[0];
+        if (!categoryColors[name]) {
+            categoryColors[name] = colorPalette[colorIndex % colorPalette.length];
+            colorIndex++;
+        }
+        return categoryColors[name];
     }
 
-    // Toggle Còn hàng (IsAvailable)
-    function renderAvailableToggle(checked, itemId, disabled) {
-        var isChecked  = checked  ? 'checked'  : '';
+    function renderToggle(name, checked, itemId, disabled) {
+        var isChecked = checked ? 'checked' : '';
         var isDisabled = disabled ? 'disabled' : '';
-        return `
-            <label class="fnb-switch">
-                <input type="checkbox"
-                       class="pro-item-available-toggle"
-                       data-id="${itemId}"
-                       ${isChecked}
-                       ${isDisabled} />
-                <span class="fnb-switch-slider"></span>
-            </label>
-        `;
+        return '<label class="fnb-switch">'
+            + '<input type="checkbox"'
+            + ' class="pro-item-toggle"'
+            + ' data-name="' + name + '"'
+            + ' data-id="' + itemId + '"'
+            + ' ' + isChecked
+            + ' ' + isDisabled + ' />'
+            + '<span class="fnb-switch-slider"></span>'
+            + '</label>';
+    }
+
+    function loadCategories() {
+        categoryService.getList({
+            skipCount: 0,
+            maxResultCount: 1000,
+            sorting: 'sortOrder asc',
+            isActive: true
+        }).then(function (res) {
+            var $ddl = $('#ProItemCategoryIdFilter');
+            $ddl.empty().append('<option value="">' + l('All') + '</option>');
+
+            (res.items || []).forEach(function (x) {
+                $ddl.append('<option value="' + x.id + '">' + x.name + '</option>');
+            });
+        });
     }
 
     function getFilter() {
         var isActive = $('#ProItemActiveFilter').val();
+
         return {
-            filterText: $('#ProItemFilterText').val() || null,
+            filterText: fnb.toNullableString($('#ProItemFilterText').val()),
+            categoryId: fnb.toNullableString($('#ProItemCategoryIdFilter').val()),
             isActive: isActive === '' ? null : (isActive === 'true')
         };
     }
 
     var dataTable = $('#ProItemTable').DataTable(
         abp.libs.datatables.normalizeConfiguration({
-            processing: true, serverSide: true, paging: true, searching: false, scrollX: true,
-            order: [[4, 'asc']],
-            ajax: abp.libs.datatables.createAjax(service.getList, getFilter),
+            processing: true,
+            serverSide: true,
+            paging: true,
+            searching: false,
+            scrollX: true,
+            order: [[5, "asc"]],
+            ajax: fnb.createServerAjax(service.getList, getFilter, 'sortOrder asc'),
             columnDefs: [
                 {
                     title: l('Actions'),
@@ -60,76 +89,138 @@ $(function () {
                         items: [
                             {
                                 text: l('Edit'),
-                                visible: () => abp.auth.isGranted('MultiTenancy.AppProItems.Edit') || abp.auth.isGranted('MultiTenancy.HostAppProItems.Edit'),
-                                action: data => editModal.open({ id: data.record.id })
+                                visible: function () {
+                                    return abp.auth.isGranted('MultiTenancy.AppProItems.Edit') ||
+                                        abp.auth.isGranted('MultiTenancy.HostAppProItems.Edit');
+                                },
+                                action: function (data) {
+                                    var id = fnb.safeId(data);
+                                    if (!id) return;
+                                    editModal.open({ id: id });
+                                }
                             },
                             {
                                 text: l('Delete'),
-                                visible: () => abp.auth.isGranted('MultiTenancy.AppProItems.Delete') || abp.auth.isGranted('MultiTenancy.HostAppProItems.Delete'),
-                                confirmMessage: data => l('AreYouSureToDelete', data.record.name),
-                                action: data => service.delete(data.record.id).then(() => {
-                                    abp.notify.success(l('DeletedSuccessfully'));
-                                    dataTable.ajax.reload();
-                                })
+                                visible: function () {
+                                    return abp.auth.isGranted('MultiTenancy.AppProItems.Delete') ||
+                                        abp.auth.isGranted('MultiTenancy.HostAppProItems.Delete');
+                                },
+                                confirmMessage: function (data) {
+                                    return l('AreYouSureToDelete', data && data.record ? data.record.name : '');
+                                },
+                                action: function (data) {
+                                    var id = fnb.safeId(data);
+                                    if (!id) return;
+
+                                    service.delete(id).then(function () {
+                                        abp.notify.success(l('DeletedSuccessfully'));
+                                        dataTable.ajax.reload();
+                                    });
+                                }
                             }
                         ]
                     }
                 },
-                { title: l('Code'),         data: 'code',         defaultContent: '' },
-                { title: l('Name'),         data: 'name' },
-                { title: l('CategoryName'), data: 'categoryName',  defaultContent: '' },
-                { title: l('SortOrder'),    data: 'sortOrder' },
-                { title: l('Price'),        data: 'price', render: v => formatVND(v) },
                 {
-                    title: 'Còn hàng', data: 'isAvailable', orderable: false,
+                    title: l('Name'),
+                    data: null,
                     render: function (data, type, row) {
-                        return renderAvailableToggle(data, row.id, !canEdit);
+                        var img = row.imageUrl
+                            ? '<img class="fnb-thumb" src="' + row.imageUrl + '" alt="thumb" />'
+                            : '<div class="fnb-empty-thumb"></div>';
+                        var desc = row.description ? '<div class="fnb-item-table__desc">' + row.description + '</div>' : '';
+                        return '<div class="d-flex align-items-center gap-2">' + img +
+                            '<div><div class="fnb-item-table__name">' + (row.name || '') + '</div>' + desc + '</div></div>';
                     }
                 },
                 {
-                    title: l('IsActive'), data: 'isActive', orderable: false,
+                    title: l('Category'),
+                    data: "categoryName",
+                    render: function (data) {
+                        if (!data) return '';
+                        var c = getCategoryColor(data);
+                        return '<span class="fnb-item-table__category-badge" style="background:' + c.bg + ';color:' + c.text + ';border-color:' + c.text + '20">' + data + '</span>';
+                    }
+                },
+                {
+                    title: l('Price'),
+                    data: "price",
+                    render: function (data) {
+                        return '<span class="fnb-price">' + fnb.formatCurrency(data) + '</span>';
+                    }
+                },
+                { title: l('SortOrder'), data: "sortOrder" },
+                {
+                    title: l('IsActive'),
+                    data: "isActive",
+                    orderable: false,
                     render: function (data, type, row) {
-                        return renderToggle(data, row.id, !canEdit);
+                        return renderToggle('isActive', data, row.id, !canEdit);
+                    }
+                },
+                {
+                    title: l('IsAvailable'),
+                    data: "isAvailable",
+                    orderable: false,
+                    render: function (data, type, row) {
+                        return renderToggle('isAvailable', data, row.id, !canEdit);
                     }
                 }
             ]
         })
     );
 
-    var proItemExcelService = genora.multiTenancy.controllers.appProItemExcel;
-
-    // Switcher: Hoạt động (IsActive)
     $('#ProItemTable').on('change', '.pro-item-toggle', function () {
-        var $t = $(this), id = $t.data('id'), checked = $t.is(':checked');
-        $t.prop('disabled', true);
-        proItemExcelService.setState(id, { isActive: checked })
-            .then(function () { abp.notify.success(l('SavedSuccessfully')); })
-            .catch(function () { $t.prop('checked', !checked); })
-            .always(function () { $t.prop('disabled', !canEdit); });
+        var $this = $(this);
+        var id = $this.data('id');
+        var name = $this.data('name');
+        var checked = $this.is(':checked');
+
+        if (!id || !name) return;
+
+        var payload = {};
+        payload[name] = checked;
+
+        $this.prop('disabled', true);
+
+        service.setState(id, payload)
+            .then(function () {
+                abp.notify.success(l('SavedSuccessfully'));
+            })
+            .catch(function () {
+                $this.prop('checked', !checked);
+            })
+            .always(function () {
+                $this.prop('disabled', !canEdit);
+            });
     });
 
-    // Switcher: Còn hàng (IsAvailable)
-    $('#ProItemTable').on('change', '.pro-item-available-toggle', function () {
-        var $t = $(this), id = $t.data('id'), checked = $t.is(':checked');
-        $t.prop('disabled', true);
-        proItemExcelService.setState(id, { isAvailable: checked })
-            .then(function () { abp.notify.success(l('SavedSuccessfully')); })
-            .catch(function () { $t.prop('checked', !checked); })
-            .always(function () { $t.prop('disabled', !canEdit); });
+    $('#NewProItemButton').click(function (e) {
+        e.preventDefault();
+        createModal.open();
     });
 
-    $('#DownloadProItemTemplateBtn').click(e => { e.preventDefault(); genora.excel.download('api/app/app-pro-item-excel/template', {}); });
-    $('#ExportProItemExcelButton').click(e => { e.preventDefault(); genora.excel.download('api/app/app-pro-item-excel/export', getFilter()); });
-    $('#ImportProItemExcelButton').click(e => { e.preventDefault(); $('#ProItemExcelFileInput').click(); });
-    $('#ProItemExcelFileInput').change(function (e) {
-        genora.excel.upload({ url: 'api/app/app-pro-item-excel/import', fileInput: e.target,
-            onSuccess: () => { abp.notify.success(l('ImportSuccessfully')); dataTable.ajax.reload(); }});
+    $('#SearchProItemButton, #RefreshProItemButton').click(function (e) {
+        e.preventDefault();
+        dataTable.ajax.reload();
     });
 
-    $('#NewProItemButton').click(e => { e.preventDefault(); createModal.open(); });
-    $('#SearchProItemButton, #RefreshProItemButton').click(e => { e.preventDefault(); dataTable.ajax.reload(); });
-    $('#ProItemFilterText').on('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); dataTable.ajax.reload(); } });
+    $('#ProItemFilterText').on('keydown', function (e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            dataTable.ajax.reload();
+        }
+    });
 
-    createModal.onResult(() => { abp.notify.success(l('SavedSuccessfully')); dataTable.ajax.reload(); });
-    editModal.onResult(() => { abp.notify.success(l('SavedSuccessfully')); dataTable.ajax.reload(); });
+    createModal.onResult(function () {
+        abp.notify.success(l('SavedSuccessfully'));
+        dataTable.ajax.reload();
+    });
+
+    editModal.onResult(function () {
+        abp.notify.success(l('SavedSuccessfully'));
+        dataTable.ajax.reload();
+    });
+
+    loadCategories();
 });

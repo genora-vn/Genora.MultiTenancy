@@ -83,7 +83,7 @@ public class MiniAppBookingAppService : ApplicationService, IMiniAppBookingAppSe
         if (input.IsExportInvoice)
         {
             if (string.IsNullOrWhiteSpace(input.CompanyName))
-                throw new AbpValidationException("Vui lòng nhập Tên công ty");
+                throw new AbpValidationException("Vui lòng nhập Tên công ty"); 
 
             if (string.IsNullOrWhiteSpace(input.TaxCode))
                 throw new AbpValidationException("Vui lòng nhập Mã số thuế");
@@ -99,6 +99,21 @@ public class MiniAppBookingAppService : ApplicationService, IMiniAppBookingAppSe
         var calendarSlot = slotWithPrices.FirstOrDefault(c => c.Id == input.CalendarSlotId);
         if (calendarSlot == null)
             return new MiniAppBookingDetailDto { Error = (int)HttpStatusCode.NotFound, Message = "Không tìm thấy giờ chơi" };
+
+        // ── Kiểm tra slot còn trống ──────────────────────────────────────────
+        if (calendarSlot.SlotAvailable <= 0)
+            return new MiniAppBookingDetailDto
+            {
+                Error   = 1,
+                Message = "Rất tiếc, tee-time này đã đủ số lượng khách. Quý khách vui lòng chọn khung giờ khác."
+            };
+
+        if (calendarSlot.SlotAvailable < input.NumberOfGolfers)
+            return new MiniAppBookingDetailDto
+            {
+                Error   = 1,
+                Message = $"Khung giờ này chỉ còn {calendarSlot.SlotAvailable} chỗ trống. Quý khách vui lòng điều chỉnh số lượng người chơi."
+            };
 
         var datePart = calendarSlot.ApplyDate.ToString("ddMMyy");
 
@@ -163,6 +178,10 @@ public class MiniAppBookingAppService : ApplicationService, IMiniAppBookingAppSe
         }
 
         await _bookingRepo.InsertAsync(booking, autoSave: true);
+
+        // ── Giảm SlotAvailable theo số golfer vừa đặt ──────────────────────
+        calendarSlot.SlotAvailable = Math.Max(0, calendarSlot.SlotAvailable - input.NumberOfGolfers);
+        await _calendarSlotRepo.UpdateAsync(calendarSlot, autoSave: true);
 
         if (input.Players != null && input.Players.Any())
         {
@@ -369,6 +388,60 @@ public class MiniAppBookingAppService : ApplicationService, IMiniAppBookingAppSe
                     Error = (int)HttpStatusCode.NotFound,
                     Message = "Không tìm thấy giờ chơi"
                 };
+            }
+
+            // ── Kiểm tra và cập nhật SlotAvailable khi đổi slot hoặc đổi số golfer ─
+            var oldSlotId = booking.CalendarSlotId;
+            var oldGolfers = booking.NumberOfGolfers;
+            bool isSlotChanged = oldSlotId != input.CalendarSlotId;
+
+            if (isSlotChanged)
+            {
+                // Đổi sang slot mới — kiểm tra slot mới còn đủ chỗ
+                if (newCalendarSlot.SlotAvailable <= 0)
+                    return new MiniAppBookingDetailDto
+                    {
+                        Error   = 1,
+                        Message = "Rất tiếc, tee-time này đã đủ số lượng khách. Quý khách vui lòng chọn khung giờ khác."
+                    };
+
+                if (newCalendarSlot.SlotAvailable < input.NumberOfGolfers)
+                    return new MiniAppBookingDetailDto
+                    {
+                        Error   = 1,
+                        Message = $"Khung giờ này chỉ còn {newCalendarSlot.SlotAvailable} chỗ trống. Quý khách vui lòng điều chỉnh số lượng người chơi."
+                    };
+
+                // Hoàn slot cũ
+                if (oldSlotId.HasValue)
+                {
+                    var previousSlot = await _calendarSlotRepo.FindAsync(oldSlotId.Value);
+                    if (previousSlot != null)
+                    {
+                        previousSlot.SlotAvailable = Math.Min(previousSlot.MaxSlots, previousSlot.SlotAvailable + oldGolfers);
+                        await _calendarSlotRepo.UpdateAsync(previousSlot, autoSave: true);
+                    }
+                }
+
+                // Trừ slot mới
+                newCalendarSlot.SlotAvailable = Math.Max(0, newCalendarSlot.SlotAvailable - input.NumberOfGolfers);
+                await _calendarSlotRepo.UpdateAsync(newCalendarSlot, autoSave: true);
+            }
+            else if (input.NumberOfGolfers != oldGolfers)
+            {
+                // Cùng slot nhưng đổi số golfer — điều chỉnh chênh lệch
+                var diff = input.NumberOfGolfers - oldGolfers;
+                if (diff > 0 && newCalendarSlot.SlotAvailable < diff)
+                    return new MiniAppBookingDetailDto
+                    {
+                        Error   = 1,
+                        Message = $"Khung giờ này chỉ còn {newCalendarSlot.SlotAvailable} chỗ trống. Quý khách vui lòng điều chỉnh số lượng người chơi."
+                    };
+
+                newCalendarSlot.SlotAvailable = Math.Clamp(
+                    newCalendarSlot.SlotAvailable - diff,
+                    0, newCalendarSlot.MaxSlots);
+                await _calendarSlotRepo.UpdateAsync(newCalendarSlot, autoSave: true);
             }
 
             var myPriceRow = newCalendarSlot.Prices.FirstOrDefault(x => x.CustomerTypeId == customer.CustomerTypeId);
@@ -945,10 +1018,21 @@ public class MiniAppBookingAppService : ApplicationService, IMiniAppBookingAppSe
         var customer = await _customerRepo.FindAsync(booking.CustomerId);
 
         // 5. Cập nhật status → CancelledRefund
-        // Lý do huỷ hiện không có field riêng trên Booking entity.
-        // Nếu cần lưu lý do → Phase 2 thêm field CancelNote vào entity + migration.
         booking.Status = BookingStatus.CancelledRefund;
         await _bookingRepo.UpdateAsync(booking, autoSave: true);
+
+        // ── Hoàn lại SlotAvailable khi booking bị hủy ──────────────────────
+        if (booking.CalendarSlotId.HasValue)
+        {
+            var slotToRestore = await _calendarSlotRepo.FindAsync(booking.CalendarSlotId.Value);
+            if (slotToRestore != null)
+            {
+                slotToRestore.SlotAvailable = Math.Min(
+                    slotToRestore.MaxSlots,
+                    slotToRestore.SlotAvailable + booking.NumberOfGolfers);
+                await _calendarSlotRepo.UpdateAsync(slotToRestore, autoSave: true);
+            }
+        }
 
         // ── Lấy thông tin phụ để build thông báo ──────────────────────────
         var calendarSlot = await _calendarSlotRepo.FindAsync(booking.CalendarSlotId.Value);

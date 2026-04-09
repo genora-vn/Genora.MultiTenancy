@@ -1,4 +1,4 @@
-﻿$(function () {
+$(function () {
     var l = abp.localization.getResource('MultiTenancy');
     var fnb = window.genoraFnb;
     var service = genora.multiTenancy.appServices.appFnbItems.appFnbItem;
@@ -8,20 +8,43 @@
     var editModal = new abp.ModalManager('/AppFnbItems/EditModal');
     var canEdit = $('#CanEditFnbItem').val() === 'true';
 
+    // Badge màu theo danh mục (tự động gán màu theo tên)
+    var categoryColors = {};
+    var colorPalette = [
+        { bg: '#dbeafe', text: '#1e40af' },
+        { bg: '#dcfce7', text: '#15803d' },
+        { bg: '#fef9c3', text: '#854d0e' },
+        { bg: '#ffe4e6', text: '#be123c' },
+        { bg: '#f3e8ff', text: '#7e22ce' },
+        { bg: '#ffedd5', text: '#c2410c' },
+        { bg: '#e0f2fe', text: '#0369a1' },
+        { bg: '#fce7f3', text: '#9d174d' },
+        { bg: '#ecfdf5', text: '#065f46' },
+        { bg: '#fff7ed', text: '#9a3412' },
+    ];
+    var colorIndex = 0;
+
+    function getCategoryColor(name) {
+        if (!name) return colorPalette[0];
+        if (!categoryColors[name]) {
+            categoryColors[name] = colorPalette[colorIndex % colorPalette.length];
+            colorIndex++;
+        }
+        return categoryColors[name];
+    }
+
     function renderToggle(name, checked, itemId, disabled) {
         var isChecked = checked ? 'checked' : '';
         var isDisabled = disabled ? 'disabled' : '';
-        return `
-            <label class="fnb-switch">
-                <input type="checkbox"
-                       class="fnb-item-toggle"
-                       data-name="${name}"
-                       data-id="${itemId}"
-                       ${isChecked}
-                       ${isDisabled} />
-                <span class="fnb-switch-slider"></span>
-            </label>
-        `;
+        return '<label class="fnb-switch">'
+            + '<input type="checkbox"'
+            + ' class="fnb-item-toggle"'
+            + ' data-name="' + name + '"'
+            + ' data-id="' + itemId + '"'
+            + ' ' + isChecked
+            + ' ' + isDisabled + ' />'
+            + '<span class="fnb-switch-slider"></span>'
+            + '</label>';
     }
 
     function loadCategories() {
@@ -101,23 +124,17 @@
                     }
                 },
                 {
-                    title: '',
-                    data: "imageUrl",
-                    orderable: false,
-                    width: "70px",
-                    render: function (data) {
-                        if (!data) {
-                            return '<div class="fnb-empty-thumb"></div>';
-                        }
-                        return '<img class="fnb-thumb" src="' + data + '" alt="thumb" />';
-                    }
-                },
-                {
                     title: l('Name'),
                     data: null,
                     render: function (data, type, row) {
-                        var desc = row.description ? '<div class="fnb-item-table__desc">' + row.description + '</div>' : '';
-                        return '<div class="fnb-item-table__name">' + (row.name || '') + '</div>' + desc;
+                        var img = row.imageUrl
+                            ? '<img class="fnb-thumb" src="' + row.imageUrl + '" alt="thumb" />'
+                            : '<div class="fnb-empty-thumb"></div>';
+                        var desc = row.description
+                            ? '<div class="fnb-item-table__desc">' + row.description + '</div>'
+                            : '';
+                        return '<div class="d-flex align-items-center gap-2">' + img
+                            + '<div><div class="fnb-item-table__name">' + (row.name || '') + '</div>' + desc + '</div></div>';
                     }
                 },
                 {
@@ -125,7 +142,8 @@
                     data: "categoryName",
                     render: function (data) {
                         if (!data) return '';
-                        return '<span class="fnb-item-table__category-badge">' + data + '</span>';
+                        var c = getCategoryColor(data);
+                        return '<span class="fnb-item-table__category-badge" style="background:' + c.bg + ';color:' + c.text + ';border-color:' + c.text + '20">' + data + '</span>';
                     }
                 },
                 {
