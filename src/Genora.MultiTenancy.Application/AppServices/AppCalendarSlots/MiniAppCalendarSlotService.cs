@@ -258,7 +258,7 @@ namespace Genora.MultiTenancy.AppServices.AppCalendarSlots
                 {
                     myPrice = slotPrices.Select(p => PriceByHoleHelper.GetPriceByNumberHoles(p, input.NumberHoles))
                                         .DefaultIfEmpty(0m)
-                                        .Min();
+                                        .Max();
                 }
 
                 item.CustomerTypePrice = myPrice;
