@@ -19,6 +19,8 @@ using OpenIddict.Server.AspNetCore;
 using OpenIddict.Validation.AspNetCore;
 using System;
 using System.IO;
+using System.Linq;
+using System.Security.Cryptography.X509Certificates;
 using Volo.Abp;
 using Volo.Abp.Account.Web;
 using Volo.Abp.AspNetCore.MultiTenancy;
@@ -102,31 +104,32 @@ public class MultiTenancyWebModule : AbpModule
 
             PreConfigure<OpenIddictServerBuilder>(serverBuilder =>
             {
-                var pass = configuration["AuthServer:CertificatePassPhrase"];
-                if (string.IsNullOrWhiteSpace(pass))
+                var authority = configuration["AuthServer:Authority"]!;
+                serverBuilder.SetIssuer(new Uri(authority));
+
+                var thumbprint = configuration["AuthServer:CertificateThumbprint"];
+                if (string.IsNullOrWhiteSpace(thumbprint))
                 {
-                    throw new AbpException("AuthServer:CertificatePassPhrase is missing.");
+                    throw new AbpException("AuthServer:CertificateThumbprint is missing.");
                 }
 
-                var pfxPath = Path.Combine(hostingEnvironment.ContentRootPath, "openiddict.pfx");
-                if (!File.Exists(pfxPath))
-                {
-                    throw new AbpException($"openiddict.pfx not found at: {pfxPath}");
-                }
+                thumbprint = thumbprint.Replace(" ", "").ToUpperInvariant();
 
-                // IMPORTANT: these flags fix IIS/AppPoolIdentity private key access issues on Windows
-                var cert = new System.Security.Cryptography.X509Certificates.X509Certificate2(
-                    pfxPath,
-                    pass,
-                    System.Security.Cryptography.X509Certificates.X509KeyStorageFlags.MachineKeySet
-                    | System.Security.Cryptography.X509Certificates.X509KeyStorageFlags.PersistKeySet
-                    | System.Security.Cryptography.X509Certificates.X509KeyStorageFlags.Exportable
-                );
+                using var store = new X509Store(StoreName.My, StoreLocation.LocalMachine);
+                store.Open(OpenFlags.ReadOnly);
+
+                var cert = store.Certificates
+                    .Find(X509FindType.FindByThumbprint, thumbprint, validOnly: false)
+                    .OfType<X509Certificate2>()
+                    .FirstOrDefault();
+
+                if (cert == null)
+                {
+                    throw new AbpException($"OpenIddict certificate not found in LocalMachine\\My. Thumbprint={thumbprint}");
+                }
 
                 serverBuilder.AddEncryptionCertificate(cert);
                 serverBuilder.AddSigningCertificate(cert);
-
-                serverBuilder.SetIssuer(new Uri(configuration["AuthServer:Authority"]!));
             });
         }
     }
