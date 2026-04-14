@@ -1,4 +1,4 @@
-using Genora.MultiTenancy.Localization;
+﻿using Genora.MultiTenancy.Localization;
 using Volo.Abp.AuditLogging;
 using Volo.Abp.BackgroundJobs;
 using Volo.Abp.FeatureManagement;
@@ -45,11 +45,15 @@ public class MultiTenancyDomainSharedModule : AbpModule
         Configure<AbpLocalizationOptions>(options =>
         {
             options.Resources
-                .Add<MultiTenancyResource>("ar")
+                .Add<MultiTenancyResource>("en")
                 .AddBaseTypes(typeof(AbpValidationResource))
                 .AddVirtualJson("/Localization/MultiTenancy");
 
             options.DefaultResourceType = typeof(MultiTenancyResource);
+
+            // ADD LANGUAGES (ít nhất 2 cái để hiện dropdown)
+            options.Languages.Add(new LanguageInfo("vi", "vi", "Tiếng Việt"));
+            options.Languages.Add(new LanguageInfo("en", "en", "English"));
 
             //options.Languages.Add(new LanguageInfo("zh-Hans", "zh-Hans", "Chinese (Simplified)"));
             //options.Languages.Add(new LanguageInfo("zh-Hant", "zh-Hant", "Chinese (Traditional)"));
