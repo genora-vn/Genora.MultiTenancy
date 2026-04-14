@@ -154,10 +154,20 @@ public class MultiTenancyWebModule : AbpModule
             {
                 options.DisableTransportSecurityRequirement = true;
             });
-            
+
             Configure<ForwardedHeadersOptions>(options =>
             {
-                options.ForwardedHeaders = ForwardedHeaders.XForwardedProto;
+                options.ForwardedHeaders =
+                    ForwardedHeaders.XForwardedFor |
+                    ForwardedHeaders.XForwardedProto |
+                    ForwardedHeaders.XForwardedHost;
+
+                // Vì reverse proxy từ server khác (Apache 103.157.218.191) nên phải clear để không bị ignore
+                options.KnownNetworks.Clear();
+                options.KnownProxies.Clear();
+
+                // (khuyến nghị) whitelist proxy Apache
+                options.KnownProxies.Add(System.Net.IPAddress.Parse("103.157.218.191"));
             });
         }
 
@@ -317,13 +327,13 @@ public class MultiTenancyWebModule : AbpModule
         var app = context.GetApplicationBuilder();
         var env = context.GetEnvironment();
 
+        app.UseForwardedHeaders();
+
         var opts = context.ServiceProvider.GetRequiredService<IOptions<AuditLogCleanupOptions>>().Value;
         if (opts.Enabled)
         {
             context.AddBackgroundWorkerAsync<AuditLogCleanupWorker>();
         }
-
-        app.UseForwardedHeaders();
 
         if (env.IsDevelopment())
         {
