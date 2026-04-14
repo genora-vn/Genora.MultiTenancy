@@ -162,12 +162,17 @@ public class MultiTenancyWebModule : AbpModule
                     ForwardedHeaders.XForwardedProto |
                     ForwardedHeaders.XForwardedHost;
 
-                // Vì reverse proxy từ server khác (Apache 103.157.218.191) nên phải clear để không bị ignore
                 options.KnownNetworks.Clear();
                 options.KnownProxies.Clear();
 
-                // (khuyến nghị) whitelist proxy Apache
-                options.KnownProxies.Add(System.Net.IPAddress.Parse("103.157.218.191"));
+                var proxies = configuration.GetSection("ReverseProxy:KnownProxies").Get<string[]>() ?? Array.Empty<string>();
+                foreach (var p in proxies)
+                {
+                    if (System.Net.IPAddress.TryParse(p, out var ip))
+                    {
+                        options.KnownProxies.Add(ip);
+                    }
+                }
             });
         }
 
