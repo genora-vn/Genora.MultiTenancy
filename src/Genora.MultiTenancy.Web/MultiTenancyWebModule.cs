@@ -171,6 +171,7 @@ public class MultiTenancyWebModule : AbpModule
 
         // ✅ Replace auditing store
         context.Services.Replace(ServiceDescriptor.Transient<IAuditingStore, HostRedirectAuditingStore>());
+        context.Services.AddSignalR();
 
         ConfigureBundles();
         ConfigureUrls(configuration);
