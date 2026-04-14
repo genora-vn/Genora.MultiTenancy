@@ -148,31 +148,34 @@ public class MultiTenancyWebModule : AbpModule
             Microsoft.IdentityModel.Logging.IdentityModelEventSource.LogCompleteSecurityArtifact = true;
         }
 
+        // luôn chạy cho mọi môi trường (Staging/Production)
+        Configure<ForwardedHeadersOptions>(options =>
+        {
+            options.ForwardedHeaders =
+                ForwardedHeaders.XForwardedFor |
+                ForwardedHeaders.XForwardedProto |
+                ForwardedHeaders.XForwardedHost;
+
+            // Trust proxy từ config (reverse proxy của bạn là Apache)
+            options.KnownNetworks.Clear();
+            options.KnownProxies.Clear();
+
+            var proxies = configuration.GetSection("ReverseProxy:KnownProxies").Get<string[]>() ?? Array.Empty<string>();
+            foreach (var p in proxies)
+            {
+                if (System.Net.IPAddress.TryParse(p, out var ip))
+                {
+                    options.KnownProxies.Add(ip);
+                }
+            }
+        });
+
+        // chỉ cần cho dev/local
         if (!configuration.GetValue<bool>("AuthServer:RequireHttpsMetadata"))
         {
             Configure<OpenIddictServerAspNetCoreOptions>(options =>
             {
                 options.DisableTransportSecurityRequirement = true;
-            });
-
-            Configure<ForwardedHeadersOptions>(options =>
-            {
-                options.ForwardedHeaders =
-                    ForwardedHeaders.XForwardedFor |
-                    ForwardedHeaders.XForwardedProto |
-                    ForwardedHeaders.XForwardedHost;
-
-                options.KnownNetworks.Clear();
-                options.KnownProxies.Clear();
-
-                var proxies = configuration.GetSection("ReverseProxy:KnownProxies").Get<string[]>() ?? Array.Empty<string>();
-                foreach (var p in proxies)
-                {
-                    if (System.Net.IPAddress.TryParse(p, out var ip))
-                    {
-                        options.KnownProxies.Add(ip);
-                    }
-                }
             });
         }
 
