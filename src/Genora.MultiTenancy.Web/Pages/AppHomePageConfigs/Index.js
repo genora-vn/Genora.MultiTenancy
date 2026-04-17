@@ -11,11 +11,29 @@
         abp.auth.isGranted('MultiTenancy.AppHomePageConfigs.Edit') ||
         abp.auth.isGranted('MultiTenancy.HostAppHomePageConfigs.Edit');
 
-    function ensureAntiForgeryHeader() {
-        $.ajaxSetup({
-            headers: { 'RequestVerificationToken': abp.security.antiForgery.getToken() }
-        });
-    }
+    // Ensure antiforgery header for all ABP ajax calls
+    (function () {
+        var tokenProvider = function () {
+            // ABP anti-forgery token getter
+            return (abp.security && abp.security.antiForgery)
+                ? abp.security.antiForgery.getToken()
+                : null;
+        };
+
+        // Patch abp.ajax default headers (works even if proxy uses abp.ajax internally)
+        var originalAjax = abp.ajax;
+        abp.ajax = function (userOptions) {
+            userOptions = userOptions || {};
+            userOptions.headers = userOptions.headers || {};
+
+            var t = tokenProvider();
+            if (t && !userOptions.headers.RequestVerificationToken) {
+                userOptions.headers.RequestVerificationToken = t;
+            }
+
+            return originalAjax(userOptions);
+        };
+    })();
 
     function renderEnabled(d) {
         return d ? l('Yes') : l('No');
@@ -82,7 +100,6 @@
                                 text: l('UpdateStatus'),
                                 visible: canEdit,
                                 action: function (data) {
-                                    ensureAntiForgeryHeader();
                                     service.updateWidget({
                                         id: data.record.id,
                                         isEnabled: !data.record.isEnabled
@@ -150,7 +167,6 @@
         var id = $sw.data('id');
         var isEnabled = $sw.is(':checked');
 
-        ensureAntiForgeryHeader();
         service.updateWidget({ id: id, isEnabled: isEnabled })
             .then(function () {
                 dataTable.ajax.reload(null, false);
@@ -217,7 +233,7 @@
 
                 draggedRow = null;
                 if (!ids.length) return;
-                ensureAntiForgeryHeader();
+
                 service.updateWidgetOrder({ orderedIds: ids })
                     .then(function () {
                         dataTable.ajax.reload(null, false);
