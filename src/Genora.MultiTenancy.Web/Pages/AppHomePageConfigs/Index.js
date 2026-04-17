@@ -3,6 +3,28 @@
 
     var service = genora.multiTenancy.appServices.appHomePageConfigs.appHomePageConfig;
 
+    // ✅ Auto add antiforgery header for ALL jQuery ajax calls (ABP proxies use this)
+    (function () {
+        // Bind once
+        if (window.__hpAntiforgeryBound) return;
+        window.__hpAntiforgeryBound = true;
+
+        $(document).ajaxSend(function (event, jqXHR, settings) {
+            try {
+                // Only attach for unsafe methods
+                var method = (settings.type || settings.method || "GET").toUpperCase();
+                if (method === "GET" || method === "HEAD" || method === "OPTIONS" || method === "TRACE") return;
+
+                var token = abp?.security?.antiForgery?.getToken?.();
+                if (token) {
+                    jqXHR.setRequestHeader("RequestVerificationToken", token);
+                }
+            } catch (e) {
+                // swallow
+            }
+        });
+    })();
+
     var createWidgetModal = new abp.ModalManager(abp.appPath + 'AppHomePageConfigs/CreateWidgetModal');
     var editWidgetModal = new abp.ModalManager(abp.appPath + 'AppHomePageConfigs/EditWidgetModal');
     var featureGridModal = new abp.ModalManager(abp.appPath + 'AppHomePageConfigs/FeatureGridModal');
@@ -10,30 +32,6 @@
     var canEdit =
         abp.auth.isGranted('MultiTenancy.AppHomePageConfigs.Edit') ||
         abp.auth.isGranted('MultiTenancy.HostAppHomePageConfigs.Edit');
-
-    // Ensure antiforgery header for all ABP ajax calls
-    (function () {
-        var tokenProvider = function () {
-            // ABP anti-forgery token getter
-            return (abp.security && abp.security.antiForgery)
-                ? abp.security.antiForgery.getToken()
-                : null;
-        };
-
-        // Patch abp.ajax default headers (works even if proxy uses abp.ajax internally)
-        var originalAjax = abp.ajax;
-        abp.ajax = function (userOptions) {
-            userOptions = userOptions || {};
-            userOptions.headers = userOptions.headers || {};
-
-            var t = tokenProvider();
-            if (t && !userOptions.headers.RequestVerificationToken) {
-                userOptions.headers.RequestVerificationToken = t;
-            }
-
-            return originalAjax(userOptions);
-        };
-    })();
 
     function renderEnabled(d) {
         return d ? l('Yes') : l('No');
