@@ -3,12 +3,6 @@
 
     var service = genora.multiTenancy.appServices.appHomePageConfigs.appHomePageConfig;
 
-    abp.ajaxSetup({
-        headers: {
-            'RequestVerificationToken': abp.security.antiForgery.getToken()
-        }
-    });
-
     var createWidgetModal = new abp.ModalManager(abp.appPath + 'AppHomePageConfigs/CreateWidgetModal');
     var editWidgetModal = new abp.ModalManager(abp.appPath + 'AppHomePageConfigs/EditWidgetModal');
     var featureGridModal = new abp.ModalManager(abp.appPath + 'AppHomePageConfigs/FeatureGridModal');
@@ -16,6 +10,12 @@
     var canEdit =
         abp.auth.isGranted('MultiTenancy.AppHomePageConfigs.Edit') ||
         abp.auth.isGranted('MultiTenancy.HostAppHomePageConfigs.Edit');
+
+    function ensureAntiForgeryHeader() {
+        $.ajaxSetup({
+            headers: { 'RequestVerificationToken': abp.security.antiForgery.getToken() }
+        });
+    }
 
     function renderEnabled(d) {
         return d ? l('Yes') : l('No');
@@ -82,6 +82,7 @@
                                 text: l('UpdateStatus'),
                                 visible: canEdit,
                                 action: function (data) {
+                                    ensureAntiForgeryHeader();
                                     service.updateWidget({
                                         id: data.record.id,
                                         isEnabled: !data.record.isEnabled
@@ -149,6 +150,7 @@
         var id = $sw.data('id');
         var isEnabled = $sw.is(':checked');
 
+        ensureAntiForgeryHeader();
         service.updateWidget({ id: id, isEnabled: isEnabled })
             .then(function () {
                 dataTable.ajax.reload(null, false);
@@ -215,7 +217,7 @@
 
                 draggedRow = null;
                 if (!ids.length) return;
-
+                ensureAntiForgeryHeader();
                 service.updateWidgetOrder({ orderedIds: ids })
                     .then(function () {
                         dataTable.ajax.reload(null, false);
