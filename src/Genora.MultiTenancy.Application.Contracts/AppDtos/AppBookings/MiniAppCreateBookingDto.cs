@@ -12,7 +12,7 @@ public class MiniAppBookingPlayerInput
     [StringLength(200)]
     public string PlayerName { get; set; }
     [Required]
-    public decimal PricePerPlayer { get; set; }
+    public decimal PricePerGolfer { get; set; }
     [StringLength(500)]
     public string? Notes { get; set; }
     [StringLength(100)]

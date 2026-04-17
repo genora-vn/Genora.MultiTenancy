@@ -242,16 +242,38 @@
                             }
                         </select>
                     </div>
-                    <div class="col-md-4">
+                    <div class="col-md-3">
                         <small class="text-muted d-block mt-1">Giữ Ctrl / Command để chọn nhiều loại ưu đãi.</small>
                         <div id="PromotionTypePreview" class="gc-selected-tags mt-2"></div>
                     </div>
-                    <div class="col-md-5">
+                    <div class="col-md-2">
                         <abp-input asp-for="GolfCourse.CancellationPolicyHours"
                                    type="number"
                                    min="0"
                                    placeholder="Ví dụ: 24"
-                                   label="Số giờ được phép hoãn / hủy" />
+                                   label="Số giờ hoãn / hủy" />
+                    </div>
+                    <div class="col-md-2 d-flex flex-column justify-content-start">
+                        <label class="form-label mb-1">Có hỗ trợ Member</label>
+                        <div class="form-check form-switch mt-1">
+                            <input asp-for="GolfCourse.IsMemberSupported"
+                                   class="form-check-input"
+                                   type="checkbox"
+                                   role="switch"
+                                   id="GolfCourse_IsMemberSupported" />
+                            <label class="form-check-label" for="GolfCourse_IsMemberSupported">
+                                <span id="member-support-label">@(Model.GolfCourse.IsMemberSupported ? "Có" : "Không")</span>
+                            </label>
+                        </div>
+                    </div>
+                    <div class="col-md-2" id="max-member-guest-col" style="@(Model.GolfCourse.IsMemberSupported ? "" : "display:none")">
+                        <label class="form-label">Số khách Member Guest tối đa đi cùng 1 Member</label>
+                        <input asp-for="GolfCourse.MaxMemberGuest"
+                               type="number"
+                               min="0"
+                               max="100"
+                               placeholder="VD: 3"
+                               class="form-control" />
                     </div>
 
                     <div class="col-12">
@@ -417,6 +439,7 @@
     $(document).ready(function () {
         initTimePicker();
         initPromotionTypeSelect();
+        initMemberSupportToggle();
 
         let objUtility = @Json.Serialize(Model.GolfCourse.AvailableUtilities);
 
@@ -542,8 +565,24 @@
         }
     });
 
-    function initTimePicker() {
-        if (!window.flatpickr) return;
+    function initMemberSupportToggle() {
+        const cb = document.getElementById('GolfCourse_IsMemberSupported');
+        const col = document.getElementById('max-member-guest-col');
+        const lbl = document.getElementById('member-support-label');
+        if (!cb || !col || !lbl) return;
+
+        cb.addEventListener('change', function () {
+            if (this.checked) {
+                col.style.display = '';
+                lbl.textContent = 'Có';
+            } else {
+                col.style.display = 'none';
+                lbl.textContent = 'Không';
+            }
+        });
+    }
+
+    function initTimePicker() {        if (!window.flatpickr) return;
 
         ['OpenTime', 'CloseTime'].forEach(function (id) {
             var el = document.getElementById(id);

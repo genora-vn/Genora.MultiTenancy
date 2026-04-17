@@ -187,6 +187,11 @@ namespace Genora.MultiTenancy.AppServices.AppCalendarSlots
             var visCustomerType = customerTypes.FirstOrDefault(c => c.Code == "VIS");
             var visCustomerTypeId = visCustomerType?.Id ?? Guid.Empty;
 
+            var mbgCustomerType = customerTypes.FirstOrDefault(c => c.Code == "MBG");
+            var mbCustomerType  = customerTypes.FirstOrDefault(c => c.Code == "MB");
+            var isCurrentMember = golfCourse.IsMemberSupported
+                && currentCustomerType?.Code == "MB";
+
             foreach (var item in dtoList)
             {
                 item.FrameTime = $"{item.TimeFrom} - {item.TimeTo}";
@@ -240,7 +245,7 @@ namespace Genora.MultiTenancy.AppServices.AppCalendarSlots
                     }
                 }
 
-                item.VisitorPrice = visitorPrice;
+                item.OriginalPrice = visitorPrice;
                 item.OriginalPriceSource = originalPriceSource;
 
                 // ===== Giá theo loại khách hiện tại =====
@@ -263,9 +268,64 @@ namespace Genora.MultiTenancy.AppServices.AppCalendarSlots
 
                 item.CustomerTypePrice = myPrice;
 
+                // ===== VisitorPrice = giá VIS từ AppCalendarSlotPrices theo NumberHoles =====
+                var visSlotRow = slotPrices.FirstOrDefault(p => p.CustomerTypeId == visCustomerTypeId);
+                item.VisitorPrice = visSlotRow != null
+                    ? PriceByHoleHelper.GetPriceByNumberHoles(visSlotRow, input.NumberHoles)
+                    : 0m;
+
                 item.DiscountPercent = (item.VisitorPrice - item.CustomerTypePrice) > 0 && item.VisitorPrice > 0
                     ? Math.Round(100 - (item.CustomerTypePrice / item.VisitorPrice) * 100, MidpointRounding.AwayFromZero)
                     : 0;
+
+                // ===== Member config =====
+                item.IsMemberSupported = golfCourse.IsMemberSupported;
+                item.MaxMemberGuest = golfCourse.IsMemberSupported ? golfCourse.MaxMemberGuest : null;
+
+                if (isCurrentMember && mbgCustomerType != null)
+                {
+                    var mbgRow = slotPrices.FirstOrDefault(p => p.CustomerTypeId == mbgCustomerType.Id);
+                    if (mbgRow != null)
+                    {
+                        var mbgPrice = PriceByHoleHelper.GetPriceByNumberHoles(mbgRow, input.NumberHoles);
+                        item.MemberGuestPrice = mbgPrice > 0 ? mbgPrice : null;
+                    }
+                }
+
+                // ===== Tính customerBillTotalPrice / originalBillTotalPrice / discountTotalPrice =====
+                int slotCount    = item.SlotAvailable;
+                int maxMbg       = golfCourse.IsMemberSupported ? (golfCourse.MaxMemberGuest ?? 0) : 0;
+
+                if (isCurrentMember)
+                {
+                    // MB + MBG guests + Visitor phần còn lại
+                    decimal mbSlotPrice  = item.CustomerTypePrice;
+                    decimal mbgSlotPrice = item.MemberGuestPrice ?? 0m;
+                    int remaining        = Math.Max(0, slotCount - maxMbg - 1);
+
+                    item.CustomerBillTotalPrice = mbSlotPrice
+                        + (mbgSlotPrice * maxMbg)
+                        + (remaining * item.VisitorPrice);
+
+                    // Giá gốc theo AppCustomerTypes.OriginalPrice
+                    decimal mbOriginal  = mbCustomerType?.OriginalPrice  ?? 0m;
+                    decimal mbgOriginal = mbgCustomerType?.OriginalPrice ?? 0m;
+                    decimal visOriginal = visCustomerType?.OriginalPrice ?? 0m;
+
+                    item.OriginalBillTotalPrice = mbOriginal
+                        + (mbgOriginal * maxMbg)
+                        + (remaining * visOriginal);
+                }
+                else
+                {
+                    // Visitor hoặc sân không hỗ trợ Member
+                    item.CustomerBillTotalPrice = item.VisitorPrice * slotCount;
+
+                    decimal visOriginal         = visCustomerType?.OriginalPrice ?? 0m;
+                    item.OriginalBillTotalPrice = visOriginal * slotCount;
+                }
+
+                item.DiscountTotalPrice = Math.Max(0m, item.OriginalBillTotalPrice - item.CustomerBillTotalPrice);
             }
 
             result.Data = new PagedResultDto<CalendarSlotData>(totalCount, dtoList);

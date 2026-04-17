@@ -36,6 +36,7 @@ namespace Genora.MultiTenancy.AppDtos.AppCalendarSlots
         public Guid PromotionId { get; set; }
         public string? PromotionName { get; set; }
         public decimal CustomerTypePrice { get; set; }
+        public decimal OriginalPrice { get; set; }
         public decimal VisitorPrice { get; set; } 
         public decimal DiscountPercent { get; set; }
         public bool IsBestDeal { get; set; }
@@ -46,6 +47,35 @@ namespace Genora.MultiTenancy.AppDtos.AppCalendarSlots
         public string? PromotionCode { get; set; }
         public string? PromotionIconUrl { get; set; }
         public string? PromotionColorCode { get; set; }
+
+        /// <summary>Sân có áp dụng chính sách Member không.</summary>
+        public bool IsMemberSupported { get; set; }
+
+        /// <summary>Số Member Guest tối đa / 1 Member. Null khi IsMemberSupported = false.</summary>
+        public int? MaxMemberGuest { get; set; }
+
+        /// <summary>
+        /// Giá Member Accompanied Guest (Code=MBG) theo số lỗ.
+        /// Chỉ có giá trị khi IsMemberSupported=true VÀ khách hàng hiện tại là Member (Code=MB).
+        /// </summary>
+        public decimal? MemberGuestPrice { get; set; }
+
+        /// <summary>
+        /// Tổng tiền khách hàng phải trả (theo giá ưu đãi) dựa trên slotAvailable và loại khách hàng.
+        /// - Visitor: visitorPrice * slotAvailable
+        /// - Member (MB) + isMemberSupported=true: memberPrice + (memberGuestPrice * maxMemberGuest) + (max(0, slotAvailable - maxMemberGuest - 1) * visitorPrice)
+        /// </summary>
+        public decimal CustomerBillTotalPrice { get; set; }
+
+        /// <summary>
+        /// Tổng tiền theo giá gốc (OriginalPrice trong AppCustomerTypes) — cùng công thức với CustomerBillTotalPrice.
+        /// </summary>
+        public decimal OriginalBillTotalPrice { get; set; }
+
+        /// <summary>
+        /// Tổng tiền được chiết khấu = OriginalBillTotalPrice - CustomerBillTotalPrice.
+        /// </summary>
+        public decimal DiscountTotalPrice { get; set; }
     }
     public class FrameTimeOfDay
     {

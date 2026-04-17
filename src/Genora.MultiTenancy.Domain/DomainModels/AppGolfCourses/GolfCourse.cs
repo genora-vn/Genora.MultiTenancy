@@ -74,6 +74,16 @@ public class GolfCourse : FullAuditedAggregateRoot<Guid>, IMultiTenant
 
     public bool IsActive { get; set; } = true;
 
+    /// <summary>
+    /// Sân có áp dụng chính sách Member hay không.
+    /// </summary>
+    public bool IsMemberSupported { get; set; } = false;
+
+    /// <summary>
+    /// Số Member Guest tối đa mà 1 Member có thể mời. Chỉ có ý nghĩa khi IsMemberSupported = true.
+    /// </summary>
+    public int? MaxMemberGuest { get; set; }
+
     // Navigation
     public virtual ICollection<CalendarSlot> CalendarSlots { get; set; } = new List<CalendarSlot>();
     public virtual ICollection<Booking> Bookings { get; set; } = new List<Booking>();

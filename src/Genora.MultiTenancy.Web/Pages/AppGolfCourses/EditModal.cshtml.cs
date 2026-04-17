@@ -168,12 +168,12 @@ public class EditModalModel : MultiTenancyPageModel
 
         foreach (var utility in GolfCourse.AvailableUtilities)
         {
-            if (utility.UtilityId == 0)
+            if (utility.UtilityId == 0 && !string.IsNullOrWhiteSpace(utility.UtilityName))
             {
                 var createOption = new CreateUpdateOptionExtendDto
                 {
                     OptionId = currentId + 1,
-                    OptionName = utility.UtilityName,
+                    OptionName = utility.UtilityName.Trim(),
                     Type = OptionExtendTypeEnum.GolfCourseUlitity.Value
                 };
 
@@ -182,7 +182,7 @@ public class EditModalModel : MultiTenancyPageModel
                 currentId = utility.UtilityId;
             }
 
-            if (utility.IsCheck)
+            if (utility.IsCheck && utility.UtilityId > 0)
             {
                 GolfCourse.Utilities ??= string.Empty;
                 GolfCourse.Utilities += utility.UtilityId + ",";

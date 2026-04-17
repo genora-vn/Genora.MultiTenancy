@@ -38,6 +38,9 @@ public class AppGolfCourseDto : AuditedEntityDto<Guid>
     public short? CancellationPolicyHours { get; set; }
     public string? PromotionTypeIds { get; set; }
 
+    public bool IsMemberSupported { get; set; }
+    public int? MaxMemberGuest { get; set; }
+
     public List<Guid> PromotionTypeIdList =>
         !string.IsNullOrWhiteSpace(PromotionTypeIds)
             ? PromotionTypeIds

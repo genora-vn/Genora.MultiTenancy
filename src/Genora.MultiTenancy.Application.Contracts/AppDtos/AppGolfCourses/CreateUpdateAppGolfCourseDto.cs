@@ -61,6 +61,11 @@ public class CreateUpdateAppGolfCourseDto
     [StringLength(1000)]
     public string? PromotionTypeIds { get; set; }
 
+    public bool IsMemberSupported { get; set; } = false;
+
+    [Range(0, 100)]
+    public int? MaxMemberGuest { get; set; }
+
     public List<GolfCoursePromotionTypeDto> AvailablePromotionTypes { get; set; } = new();
     public List<GolfCourseUtilityDto> AvailableUtilities { get; set; } = new List<GolfCourseUtilityDto>();
     public List<GolfCourseHoleDto> AvailableHoles { get; set; } = new List<GolfCourseHoleDto>();

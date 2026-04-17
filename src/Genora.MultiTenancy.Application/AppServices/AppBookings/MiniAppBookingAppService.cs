@@ -192,13 +192,13 @@ public class MiniAppBookingAppService : ApplicationService, IMiniAppBookingAppSe
                     booking.Id,
                     p.CustomerId,
                     p.PlayerName,
-                    p.PricePerPlayer,
+                    p.PricePerGolfer,
                     p.VgaCode,
                     p.Notes
                 );
 
                 player.VgaCode = p.VgaCode;
-                player.PricePerPlayer = booking.PricePerGolfer;
+                player.PricePerPlayer = p.PricePerGolfer;
 
                 await _playerRepo.InsertAsync(player, autoSave: true);
             }
@@ -756,24 +756,111 @@ public class MiniAppBookingAppService : ApplicationService, IMiniAppBookingAppSe
 
             dto.NumberHoles = booking.NumberHole;
 
-            var visCustomerType = await _customerType.FirstOrDefaultAsync(c => c.Code == "VIS");
-            var visCustomerTypeId = visCustomerType?.Id;
+            // TotalAmount = tổng giá thực tế từng người chơi trong AppBookingPlayers
+            dto.TotalAmount = players.Sum(p => p.PricePerPlayer ?? 0m);
+
+            // ===== CustomerType + GolfCourse member config =====
+            var customer = await _customerRepo.FindAsync(booking.CustomerId);
+            var currentCt = (customer?.CustomerTypeId.HasValue == true)
+                ? await _customerType.FindAsync(x => x.Id == customer.CustomerTypeId.Value)
+                : null;
+
+            dto.CustomerTypeCode = currentCt?.Code;
+
+            // OriginalTotalAmount = CustomerType.OriginalPrice * numberOfGolfers
+            var originalUnitPrice = (currentCt?.OriginalPrice.HasValue == true && currentCt.OriginalPrice.Value > 0)
+                ? currentCt.OriginalPrice.Value
+                : 0m;
+            dto.OriginalTotalAmount = originalUnitPrice * booking.NumberOfGolfers;
+
+            var golfCourse = await _golfCourseRepo.FindAsync(booking.GolfCourseId);
+            dto.IsMemberSupported = golfCourse?.IsMemberSupported ?? false;
+            dto.MaxMemberGuest    = golfCourse?.IsMemberSupported == true ? golfCourse.MaxMemberGuest : null;
 
             if (dto.CalendarSlotId.HasValue && dto.CalendarSlotId.Value != Guid.Empty)
             {
-                var getCalendarPrice = await _calendarSlotPriceRepo.FirstOrDefaultAsync(
-                    x => x.CalendarSlotId == booking.CalendarSlotId && x.CustomerTypeId == visCustomerTypeId
-                );
-
-                var basePrice = getCalendarPrice != null
-                    ? PriceByHoleHelper.GetPriceByNumberHoles(getCalendarPrice, booking.NumberHole)
-                    : 0m;
-
-                dto.OriginalTotalAmount = basePrice * (booking.NumberOfGolfers);
-
                 var calendar = await _calendarSlotRepo.FirstOrDefaultAsync(x => x.Id == dto.CalendarSlotId.Value);
                 if (calendar != null)
+                {
                     dto.FrameTimes = $"{calendar.TimeFrom} - {calendar.TimeTo}";
+                    dto.MaxSlots = calendar.MaxSlots;
+                }
+
+                // Load tất cả customer types cần dùng trong 1 lần
+                var allCtCodes = new[] { "VIS", "MBG", "MB" };
+                var relevantCts = await _customerType.GetListAsync(c => allCtCodes.Contains(c.Code));
+                var visCtx  = relevantCts.FirstOrDefault(c => c.Code == "VIS");
+                var mbgCtx  = relevantCts.FirstOrDefault(c => c.Code == "MBG");
+                var mbCtx   = relevantCts.FirstOrDefault(c => c.Code == "MB");
+
+                // Load tất cả slot prices của booking này trong 1 lần
+                var slotPrices = await _calendarSlotPriceRepo.GetListAsync(
+                    x => x.CalendarSlotId == booking.CalendarSlotId
+                );
+
+                // VisitorPrice = giá VIS từ AppCalendarSlotPrices theo số hố
+                if (visCtx != null)
+                {
+                    var visRow = slotPrices.FirstOrDefault(x => x.CustomerTypeId == visCtx.Id);
+                    dto.VisitorPrice = visRow != null
+                        ? PriceByHoleHelper.GetPriceByNumberHoles(visRow, booking.NumberHole)
+                        : 0m;
+                }
+
+                // MemberGuestPrice = giá MBG, chỉ khi sân hỗ trợ Member và KH là MB
+                decimal mbSlotPrice = 0m;
+                if (golfCourse?.IsMemberSupported == true && currentCt?.Code == "MB")
+                {
+                    // Giá MB từ slot
+                    if (mbCtx != null)
+                    {
+                        var mbRow = slotPrices.FirstOrDefault(x => x.CustomerTypeId == mbCtx.Id);
+                        mbSlotPrice = mbRow != null
+                            ? PriceByHoleHelper.GetPriceByNumberHoles(mbRow, booking.NumberHole)
+                            : 0m;
+                    }
+
+                    if (mbgCtx != null)
+                    {
+                        var mbgRow = slotPrices.FirstOrDefault(x => x.CustomerTypeId == mbgCtx.Id);
+                        if (mbgRow != null)
+                        {
+                            var mbgPrice = PriceByHoleHelper.GetPriceByNumberHoles(mbgRow, booking.NumberHole);
+                            dto.MemberGuestPrice = mbgPrice > 0 ? mbgPrice : null;
+                        }
+                    }
+                }
+
+                // ===== Tính customerBillTotalPrice / originalBillTotalPrice / discountTotalPrice =====
+                int numGolfers = booking.NumberOfGolfers;
+                int maxMbg     = golfCourse?.IsMemberSupported == true ? (golfCourse.MaxMemberGuest ?? 0) : 0;
+
+                if (golfCourse?.IsMemberSupported == true && currentCt?.Code == "MB")
+                {
+                    decimal mbgSlotPrice = dto.MemberGuestPrice ?? 0m;
+                    int remaining        = Math.Max(0, numGolfers - maxMbg - 1);
+
+                    dto.CustomerBillTotalPrice = mbSlotPrice
+                        + (mbgSlotPrice * maxMbg)
+                        + (remaining * dto.VisitorPrice);
+
+                    decimal mbOriginal  = mbCtx?.OriginalPrice  ?? 0m;
+                    decimal mbgOriginal = mbgCtx?.OriginalPrice ?? 0m;
+                    decimal visOriginal = visCtx?.OriginalPrice ?? 0m;
+
+                    dto.OriginalBillTotalPrice = mbOriginal
+                        + (mbgOriginal * maxMbg)
+                        + (remaining * visOriginal);
+                }
+                else
+                {
+                    dto.CustomerBillTotalPrice = dto.VisitorPrice * numGolfers;
+
+                    decimal visOriginal         = visCtx?.OriginalPrice ?? 0m;
+                    dto.OriginalBillTotalPrice  = visOriginal * numGolfers;
+                }
+
+                dto.DiscountTotalPrice = Math.Max(0m, dto.OriginalBillTotalPrice - dto.CustomerBillTotalPrice);
             }
 
             return new MiniAppBookingDetailDto { Data = dto, Error = 0, Message = "Success" };

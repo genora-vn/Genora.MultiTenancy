@@ -1502,6 +1502,11 @@ namespace Genora.MultiTenancy.Migrations
                         .HasDefaultValue(false)
                         .HasColumnName("IsDeleted");
 
+                    b.Property<bool>("IsMemberSupported")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false);
+
                     b.Property<DateTime?>("LastModificationTime")
                         .HasColumnType("datetime2")
                         .HasColumnName("LastModificationTime");
@@ -1509,6 +1514,9 @@ namespace Genora.MultiTenancy.Migrations
                     b.Property<Guid?>("LastModifierId")
                         .HasColumnType("uniqueidentifier")
                         .HasColumnName("LastModifierId");
+
+                    b.Property<int?>("MaxMemberGuest")
+                        .HasColumnType("int");
 
                     b.Property<string>("Name")
                         .IsRequired()

@@ -77,6 +77,9 @@ public class MultiTenancyApplicationModule : AbpModule
         context.Services.AddTransient<IZaloZbsTemplateResolver, ZaloZbsTemplateResolver>();
         context.Services.AddTransient<IZaloZbsToggleProvider, ZaloZbsToggleProvider>();
         context.Services.AddTransient<IZaloRuntimeConfigProvider, ZaloRuntimeConfigProvider>();
+        context.Services.AddTransient<IZaloTokenProvider, ZaloTokenProvider>();
+        context.Services.AddTransient<IZaloApiClient, ZaloApiClient>();
+        context.Services.AddTransient<IZaloOAuthClient, ZaloOAuthClient>();
 
         // VietQR API client — timeout 5s, tránh block prepare-order quá lâu
         context.Services.AddHttpClient("VietQR", client =>

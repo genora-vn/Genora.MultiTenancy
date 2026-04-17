@@ -241,6 +241,13 @@ public class MultiTenancyDbContext :
             b.Property(x => x.PromotionTypeIds)
                 .HasMaxLength(1000)
                 .IsRequired(false);
+
+            b.Property(x => x.IsMemberSupported)
+                .HasDefaultValue(false)
+                .IsRequired();
+
+            b.Property(x => x.MaxMemberGuest)
+                .IsRequired(false);
         });
 
         // ===== AppBookingPlayers =====

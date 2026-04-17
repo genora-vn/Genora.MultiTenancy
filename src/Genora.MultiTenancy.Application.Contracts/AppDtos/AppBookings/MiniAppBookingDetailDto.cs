@@ -21,6 +21,7 @@ namespace Genora.MultiTenancy.AppDtos.AppBookings
         public DateTime PlayDate { get; set; }
         public DateTime CreationTime { get; set; }
         public int NumberOfGolfers { get; set; }
+        public int MaxSlots { get; set; }
 
         public decimal? PricePerGolfer { get; set; }
         public decimal OriginalTotalAmount { get; set; }
@@ -39,5 +40,26 @@ namespace Genora.MultiTenancy.AppDtos.AppBookings
         public string? TaxCode { get; set; }
         public string? CompanyAddress { get; set; }
         public string? InvoiceEmail { get; set; }
+
+        public string? CustomerTypeCode { get; set; }
+        public bool IsMemberSupported { get; set; }
+        public int? MaxMemberGuest { get; set; }
+        public decimal? MemberGuestPrice { get; set; }
+        public decimal VisitorPrice { get; set; }
+
+        /// <summary>
+        /// Tổng tiền khách hàng phải trả (theo giá ưu đãi) dựa trên numberOfGolfers và loại khách hàng.
+        /// </summary>
+        public decimal CustomerBillTotalPrice { get; set; }
+
+        /// <summary>
+        /// Tổng tiền theo giá gốc (OriginalPrice trong AppCustomerTypes).
+        /// </summary>
+        public decimal OriginalBillTotalPrice { get; set; }
+
+        /// <summary>
+        /// Tổng tiền được chiết khấu = OriginalBillTotalPrice - CustomerBillTotalPrice.
+        /// </summary>
+        public decimal DiscountTotalPrice { get; set; }
     }
 }
