@@ -3,6 +3,12 @@
 
     var service = genora.multiTenancy.appServices.appHomePageConfigs.appHomePageConfig;
 
+    abp.ajaxSetup({
+        headers: {
+            'RequestVerificationToken': abp.security.antiForgery.getToken()
+        }
+    });
+
     var createWidgetModal = new abp.ModalManager(abp.appPath + 'AppHomePageConfigs/CreateWidgetModal');
     var editWidgetModal = new abp.ModalManager(abp.appPath + 'AppHomePageConfigs/EditWidgetModal');
     var featureGridModal = new abp.ModalManager(abp.appPath + 'AppHomePageConfigs/FeatureGridModal');

@@ -6,6 +6,7 @@
 @inject IStringLocalizer<MultiTenancyResource> L
 @inject IAuthorizationService AuthorizationService
 @inject Volo.Abp.MultiTenancy.ICurrentTenant CurrentTenant
+@Html.AntiForgeryToken()
 
 @{
     var canEdit = CurrentTenant.IsAvailable
