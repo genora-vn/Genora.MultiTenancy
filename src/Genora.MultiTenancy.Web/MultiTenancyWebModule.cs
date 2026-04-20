@@ -513,8 +513,6 @@ public class MultiTenancyWebModule : AbpModule
             logger.LogWarning("Hangfire recurring registration skipped (Hangfire:RegisterRecurringJobs=false).");
         }
 
-        app.UseForwardedHeaders();
-
         app.UseCors("ZaloPolicy");
 
         if (env.IsDevelopment())
