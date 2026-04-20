@@ -32,6 +32,7 @@ using System;
 using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading.Tasks;
 using Volo.Abp;
@@ -222,7 +223,6 @@ public class MultiTenancyWebModule : AbpModule
             Microsoft.IdentityModel.Logging.IdentityModelEventSource.LogCompleteSecurityArtifact = true;
         }
 
-        // luôn chạy cho mọi môi trường (Staging/Production)
         Configure<ForwardedHeadersOptions>(options =>
         {
             options.ForwardedHeaders =
@@ -230,19 +230,25 @@ public class MultiTenancyWebModule : AbpModule
                 ForwardedHeaders.XForwardedProto |
                 ForwardedHeaders.XForwardedHost;
 
-            // ✅ QUAN TRỌNG: nếu header có nhiều giá trị (như xfHost "a, a") thì đừng bỏ qua
+            // Quan trọng: nếu header bị duplicate/mismatch thì vẫn accept
             options.RequireHeaderSymmetry = false;
 
-            // ✅ QUAN TRỌNG: nếu có nhiều proxy / hoặc header bị append, đừng giới hạn
-            options.ForwardLimit = null;
+            // Chỉ lấy 1 hop gần nhất (Apache)
+            options.ForwardLimit = 1;
 
+            // Clear mặc định rồi add lại proxies tin cậy
             options.KnownNetworks.Clear();
             options.KnownProxies.Clear();
 
+            // Luôn trust loopback (rất hay gặp khi Apache proxy về IIS bằng localhost)
+            options.KnownProxies.Add(IPAddress.Loopback);
+            options.KnownProxies.Add(IPAddress.IPv6Loopback);
+
+            // Trust proxy theo config
             var proxies = configuration.GetSection("ReverseProxy:KnownProxies").Get<string[]>() ?? Array.Empty<string>();
             foreach (var p in proxies)
             {
-                if (System.Net.IPAddress.TryParse(p, out var ip))
+                if (IPAddress.TryParse(p, out var ip))
                 {
                     options.KnownProxies.Add(ip);
                 }
