@@ -223,6 +223,7 @@ public class MultiTenancyWebModule : AbpModule
             Microsoft.IdentityModel.Logging.IdentityModelEventSource.LogCompleteSecurityArtifact = true;
         }
 
+        // ✅ ForwardedHeaders: bật nếu có ReverseProxy:KnownProxies
         Configure<ForwardedHeadersOptions>(options =>
         {
             options.ForwardedHeaders =
@@ -230,21 +231,12 @@ public class MultiTenancyWebModule : AbpModule
                 ForwardedHeaders.XForwardedProto |
                 ForwardedHeaders.XForwardedHost;
 
-            // Quan trọng: nếu header bị duplicate/mismatch thì vẫn accept
-            options.RequireHeaderSymmetry = false;
+            // Quan trọng để tránh bị bỏ qua khi có chuỗi proxy
+            options.ForwardLimit = null;
 
-            // Chỉ lấy 1 hop gần nhất (Apache)
-            options.ForwardLimit = 1;
-
-            // Clear mặc định rồi add lại proxies tin cậy
             options.KnownNetworks.Clear();
             options.KnownProxies.Clear();
 
-            // Luôn trust loopback (rất hay gặp khi Apache proxy về IIS bằng localhost)
-            options.KnownProxies.Add(IPAddress.Loopback);
-            options.KnownProxies.Add(IPAddress.IPv6Loopback);
-
-            // Trust proxy theo config
             var proxies = configuration.GetSection("ReverseProxy:KnownProxies").Get<string[]>() ?? Array.Empty<string>();
             foreach (var p in proxies)
             {
