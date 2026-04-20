@@ -230,7 +230,12 @@ public class MultiTenancyWebModule : AbpModule
                 ForwardedHeaders.XForwardedProto |
                 ForwardedHeaders.XForwardedHost;
 
-            // Trust proxy từ config (reverse proxy của bạn là Apache)
+            // ✅ QUAN TRỌNG: nếu header có nhiều giá trị (như xfHost "a, a") thì đừng bỏ qua
+            options.RequireHeaderSymmetry = false;
+
+            // ✅ QUAN TRỌNG: nếu có nhiều proxy / hoặc header bị append, đừng giới hạn
+            options.ForwardLimit = null;
+
             options.KnownNetworks.Clear();
             options.KnownProxies.Clear();
 
@@ -530,6 +535,8 @@ public class MultiTenancyWebModule : AbpModule
 
         app.UseCorrelationId();
         app.UseRouting();
+
+        app.UseStaticFiles();
 
         if (MultiTenancyConsts.IsEnabled)
         {
