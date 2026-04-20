@@ -163,6 +163,34 @@ public class MultiTenancyWebModule : AbpModule
         var hostingEnvironment = context.Services.GetHostingEnvironment();
         var configuration = context.Services.GetConfiguration();
 
+        var behindProxy = configuration.GetValue<bool>("ReverseProxy:Enabled");
+        if (behindProxy)
+        {
+            Configure<ForwardedHeadersOptions>(options =>
+            {
+                options.ForwardedHeaders =
+                    ForwardedHeaders.XForwardedFor |
+                    ForwardedHeaders.XForwardedProto |
+                    ForwardedHeaders.XForwardedHost;
+
+                options.KnownNetworks.Clear();
+                options.KnownProxies.Clear();
+
+                var proxies = configuration.GetSection("ReverseProxy:KnownProxies").Get<string[]>() ?? Array.Empty<string>();
+                foreach (var p in proxies)
+                {
+                    if (System.Net.IPAddress.TryParse(p, out var ip))
+                    {
+                        options.KnownProxies.Add(ip);
+                    }
+                }
+
+                // an toàn khi qua 1 hop proxy
+                options.ForwardLimit = 1;
+                options.RequireHeaderSymmetry = false;
+            });
+        }
+
         // ✅ ÉP antiforgery cookie chuẩn khi chạy sau reverse proxy HTTPS
         // Fix triệt để lỗi: XSRF-TOKEN SameSite=None nhưng không Secure -> browser drop cookie -> thiếu token
         Configure<AntiforgeryOptions>(options =>
@@ -222,30 +250,6 @@ public class MultiTenancyWebModule : AbpModule
             Microsoft.IdentityModel.Logging.IdentityModelEventSource.ShowPII = true;
             Microsoft.IdentityModel.Logging.IdentityModelEventSource.LogCompleteSecurityArtifact = true;
         }
-
-        // ✅ ForwardedHeaders: bật nếu có ReverseProxy:KnownProxies
-        Configure<ForwardedHeadersOptions>(options =>
-        {
-            options.ForwardedHeaders =
-                ForwardedHeaders.XForwardedFor |
-                ForwardedHeaders.XForwardedProto |
-                ForwardedHeaders.XForwardedHost;
-
-            // Quan trọng để tránh bị bỏ qua khi có chuỗi proxy
-            options.ForwardLimit = null;
-
-            options.KnownNetworks.Clear();
-            options.KnownProxies.Clear();
-
-            var proxies = configuration.GetSection("ReverseProxy:KnownProxies").Get<string[]>() ?? Array.Empty<string>();
-            foreach (var p in proxies)
-            {
-                if (IPAddress.TryParse(p, out var ip))
-                {
-                    options.KnownProxies.Add(ip);
-                }
-            }
-        });
 
         // chỉ cần cho dev/local
         if (!configuration.GetValue<bool>("AuthServer:RequireHttpsMetadata"))

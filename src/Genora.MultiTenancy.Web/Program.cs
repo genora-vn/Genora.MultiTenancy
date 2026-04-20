@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Serilog;
@@ -70,7 +71,17 @@ public class Program
             var app = builder.Build();
 
             // 0) MUST: apply forwarded headers BEFORE anything else (esp. antiforgery/config scripts)
-            app.UseForwardedHeaders();
+            // ✅ đặt sớm nhất có thể
+            if (app.Configuration.GetValue<bool>("ReverseProxy:Enabled"))
+            {
+                app.UseForwardedHeaders();
+            }
+
+            // ✅ nếu Apache đã force HTTPS rồi, đừng redirect lần nữa trong app để tránh loop
+            if (!app.Configuration.GetValue<bool>("ReverseProxy:Enabled"))
+            {
+                app.UseHttpsRedirection();
+            }
 
             // optional: request logging after forwarded headers (so scheme/host are correct)
             app.UseSerilogRequestLogging();
