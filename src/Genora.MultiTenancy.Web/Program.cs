@@ -10,6 +10,7 @@ using Serilog.Exceptions.Core;
 using Serilog.Exceptions.SqlServer.Destructurers;
 using System;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace Genora.MultiTenancy.Web;
@@ -70,15 +71,23 @@ public class Program
 
             var app = builder.Build();
 
-            // 0) MUST: apply forwarded headers BEFORE anything else (esp. antiforgery/config scripts)
-            // ✅ đặt sớm nhất có thể
-            if (app.Configuration.GetValue<bool>("ReverseProxy:Enabled"))
-            {
-                app.UseForwardedHeaders();
-            }
+            // Detect behind reverse proxy:
+            // - ReverseProxy:Enabled = true
+            // - OR has any ReverseProxy:KnownProxies values
+            var hasKnownProxies = app.Configuration
+                .GetSection("ReverseProxy:KnownProxies")
+                .GetChildren()
+                .Any();
 
-            // ✅ nếu Apache đã force HTTPS rồi, đừng redirect lần nữa trong app để tránh loop
-            if (!app.Configuration.GetValue<bool>("ReverseProxy:Enabled"))
+            var behindProxy =
+                app.Configuration.GetValue<bool>("ReverseProxy:Enabled") ||
+                hasKnownProxies;
+
+            // ✅ MUST be FIRST so Request.Scheme/Host is correct everywhere (auth, antiforgery, redirects...)
+            app.UseForwardedHeaders();
+
+            // ✅ If a proxy already terminates TLS, DON'T redirect again in ASP.NET Core (avoid loops)
+            if (!behindProxy)
             {
                 app.UseHttpsRedirection();
             }
@@ -93,12 +102,14 @@ public class Program
                 commit = File.Exists(".git_commit") ? File.ReadAllText(".git_commit") : "missing"
             });
 
-            // Map hubs (endpoints are picked up when ABP later calls UseRouting/UseEndpoints)
+            // Map hubs
             app.MapHub<Genora.MultiTenancy.SignalR.FnbOrderHub>("/signalr-hubs/fnb-orders");
             app.MapHub<Genora.MultiTenancy.SignalR.ProOrderHub>("/signalr-hubs/pro-orders");
 
             await app.InitializeApplicationAsync();
-            app.MapGet("/debug/scheme", (HttpContext ctx) => new {
+
+            app.MapGet("/debug/scheme", (HttpContext ctx) => new
+            {
                 scheme = ctx.Request.Scheme,
                 isHttps = ctx.Request.IsHttps,
                 host = ctx.Request.Host.Value,
@@ -106,6 +117,7 @@ public class Program
                 xfHost = ctx.Request.Headers["X-Forwarded-Host"].ToString(),
                 xfPort = ctx.Request.Headers["X-Forwarded-Port"].ToString()
             });
+
             await app.RunAsync();
             return 0;
         }

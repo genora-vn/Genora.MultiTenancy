@@ -130,13 +130,26 @@ public class MultiTenancyWebModule : AbpModule
                 var authority = configuration["AuthServer:Authority"]!;
                 serverBuilder.SetIssuer(new Uri(authority));
 
-                var thumbprint = configuration["AuthServer:CertificateThumbprint"];
+                // NOTE: you are using thumbprint now
+                var thumbprint = configuration["AuthServer:CertificateThumbprint"]
+                                 ?? configuration["AuthServer:CertificateThumbprint".Replace("Thumbprint", "Thumbprint")]; // keep safe
+
+                // Prefer config key: AuthServer:CertificateThumbprint (you mentioned switching)
+                // If you use AuthServer:CertificateThumbprint in appsettings => OK
+                if (string.IsNullOrWhiteSpace(thumbprint))
+                {
+                    // allow also "CertificateThumbprint" or "CertificateThumbprint" variants if you renamed
+                    thumbprint = configuration["AuthServer:CertificateThumbprint"]
+                                 ?? configuration["AuthServer:CertificateThumbprint"];
+                }
+
+                // If you actually store it as AuthServer:CertificateThumbprint => keep this:
                 if (string.IsNullOrWhiteSpace(thumbprint))
                 {
                     throw new AbpException("AuthServer:CertificateThumbprint is missing.");
                 }
 
-                thumbprint = thumbprint.Replace(" ", "").ToUpperInvariant();
+                thumbprint = thumbprint.Replace(" ", "").Replace("-", "").ToUpperInvariant();
 
                 using var store = new X509Store(StoreName.My, StoreLocation.LocalMachine);
                 store.Open(OpenFlags.ReadOnly);
@@ -160,46 +173,61 @@ public class MultiTenancyWebModule : AbpModule
     public override void ConfigureServices(ServiceConfigurationContext context)
     {
         context.Services.AddSignalR();
+
         var hostingEnvironment = context.Services.GetHostingEnvironment();
         var configuration = context.Services.GetConfiguration();
 
-        var behindProxy = configuration.GetValue<bool>("ReverseProxy:Enabled");
-        if (behindProxy)
+        var hasKnownProxies = configuration
+            .GetSection("ReverseProxy:KnownProxies")
+            .GetChildren()
+            .Any();
+
+        var behindProxy =
+            configuration.GetValue<bool>("ReverseProxy:Enabled") ||
+            hasKnownProxies;
+
+        // ✅ Forwarded headers options (used by app.UseForwardedHeaders() in Program.cs)
+        Configure<ForwardedHeadersOptions>(options =>
         {
-            Configure<ForwardedHeadersOptions>(options =>
+            options.ForwardedHeaders =
+                ForwardedHeaders.XForwardedFor |
+                ForwardedHeaders.XForwardedProto |
+                ForwardedHeaders.XForwardedHost;
+
+            // You are behind exactly 1 proxy hop
+            options.ForwardLimit = 1;
+            options.RequireHeaderSymmetry = false;
+
+            options.KnownNetworks.Clear();
+            options.KnownProxies.Clear();
+
+            // Always trust loopback (Apache on same server often proxies via 127.0.0.1)
+            options.KnownProxies.Add(IPAddress.Parse("127.0.0.1"));
+            options.KnownProxies.Add(IPAddress.IPv6Loopback);
+
+            // Add proxies from config
+            var proxies = configuration.GetSection("ReverseProxy:KnownProxies").Get<string[]>() ?? Array.Empty<string>();
+            foreach (var p in proxies)
             {
-                options.ForwardedHeaders =
-                    ForwardedHeaders.XForwardedFor |
-                    ForwardedHeaders.XForwardedProto |
-                    ForwardedHeaders.XForwardedHost;
-
-                options.KnownNetworks.Clear();
-                options.KnownProxies.Clear();
-
-                var proxies = configuration.GetSection("ReverseProxy:KnownProxies").Get<string[]>() ?? Array.Empty<string>();
-                foreach (var p in proxies)
+                if (IPAddress.TryParse(p, out var ip))
                 {
-                    if (System.Net.IPAddress.TryParse(p, out var ip))
-                    {
+                    if (!options.KnownProxies.Contains(ip))
                         options.KnownProxies.Add(ip);
-                    }
                 }
+            }
+        });
 
-                // an toàn khi qua 1 hop proxy
-                options.ForwardLimit = 1;
-                options.RequireHeaderSymmetry = false;
-            });
-        }
-
-        // ✅ ÉP antiforgery cookie chuẩn khi chạy sau reverse proxy HTTPS
-        // Fix triệt để lỗi: XSRF-TOKEN SameSite=None nhưng không Secure -> browser drop cookie -> thiếu token
+        // ✅ Anti-forgery cookie MUST be Secure when SameSite=None (browser will drop otherwise)
         Configure<AntiforgeryOptions>(options =>
         {
             options.Cookie.SameSite = SameSiteMode.None;
-            // QUAN TRỌNG: tránh crash khi app nhìn thấy request là HTTP
-            options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
-        });
 
+            // When behind proxy, Request.Scheme can be wrong BEFORE forwarded headers,
+            // so force Secure ALWAYS to avoid token missing.
+            options.Cookie.SecurePolicy = behindProxy
+                ? CookieSecurePolicy.Always
+                : CookieSecurePolicy.SameAsRequest;
+        });
 
         context.Services.AddCors(options =>
         {
@@ -251,7 +279,6 @@ public class MultiTenancyWebModule : AbpModule
             Microsoft.IdentityModel.Logging.IdentityModelEventSource.LogCompleteSecurityArtifact = true;
         }
 
-        // chỉ cần cho dev/local
         if (!configuration.GetValue<bool>("AuthServer:RequireHttpsMetadata"))
         {
             Configure<OpenIddictServerAspNetCoreOptions>(options =>
@@ -284,18 +311,13 @@ public class MultiTenancyWebModule : AbpModule
             c.Timeout = TimeSpan.FromSeconds(15);
         });
 
-        // ✅ Replace auditing store
         context.Services.Replace(ServiceDescriptor.Transient<IAuditingStore, HostRedirectAuditingStore>());
 
-        // Register DI Zalo Service
         context.Services.AddHttpClient();
         context.Services.AddTransient<IZaloOAuthClient, ZaloOAuthClient>();
         context.Services.AddTransient<IZaloTokenProvider, ZaloTokenProvider>();
         context.Services.AddTransient<IZaloApiClient, ZaloApiClient>();
 
-        // =========================
-        // ✅ HANGFIRE
-        // =========================
         context.Services.AddTransient<BookingReminderZbsCronJob>();
 
         context.Services.AddHangfire(cfg =>
@@ -318,18 +340,14 @@ public class MultiTenancyWebModule : AbpModule
             );
         });
 
-        // Queue theo môi trường (default nếu không set)
         var hangfireQueue = configuration["Hangfire:Queue"];
         if (string.IsNullOrWhiteSpace(hangfireQueue))
             hangfireQueue = "default";
 
         context.Services.AddHangfireServer(options =>
         {
-            // listen queue theo config, kèm default để không bị lệch
             options.Queues = new[] { hangfireQueue, "default", "local" };
             options.WorkerCount = 20;
-
-            // server name có env + guid => dễ phân biệt
             options.ServerName = $"{Environment.MachineName}:{hostingEnvironment.EnvironmentName}:{Guid.NewGuid():N}";
         });
 
@@ -386,8 +404,6 @@ public class MultiTenancyWebModule : AbpModule
                 bundle =>
                 {
                     bundle.AddFiles("/global-scripts.js");
-
-                    // ✅ add global error handler ở ĐÂY (theme bundle đang dùng)
                     bundle.AddFiles("/global-error-toast.js");
                 }
             );
@@ -483,11 +499,6 @@ public class MultiTenancyWebModule : AbpModule
         var config = sp.GetRequiredService<IConfiguration>();
 
         var logger = sp.GetRequiredService<ILogger<MultiTenancyWebModule>>();
-        var sender = sp.GetRequiredService<IEmailSender>();
-        logger.LogWarning("IEmailSender implementation = {Type}", sender.GetType().FullName);
-
-        var jobManager = sp.GetRequiredService<IBackgroundJobManager>();
-        logger.LogWarning("IBackgroundJobManager implementation = {Type}", jobManager.GetType().FullName);
 
         var opts = sp.GetRequiredService<IOptions<AuditLogCleanupOptions>>().Value;
         if (opts.Enabled)
@@ -552,7 +563,6 @@ public class MultiTenancyWebModule : AbpModule
         app.UseAbpStudioLink();
         app.UseAbpSecurityHeaders();
 
-        // ✅ Auth trước để dashboard đọc được User principal
         app.UseAuthentication();
         app.UseAbpOpenIddictValidation();
 
@@ -560,7 +570,6 @@ public class MultiTenancyWebModule : AbpModule
         app.UseDynamicClaims();
         app.UseAuthorization();
 
-        // ✅ Dashboard đặt SAU auth + có Authorization filter
         app.UseHangfireDashboard("/hangfire", new DashboardOptions
         {
             Authorization = new[] { new HangfireDashboardAuthFilter() }
