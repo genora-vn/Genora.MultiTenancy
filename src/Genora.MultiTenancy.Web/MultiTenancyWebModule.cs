@@ -10,9 +10,11 @@ using Genora.MultiTenancy.Web.Menus;
 using Genora.MultiTenancy.Web.Middlewares;
 using Hangfire;
 using Hangfire.SqlServer;
+using Microsoft.AspNetCore.Antiforgery;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Extensions.DependencyInjection;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Localization;
@@ -159,6 +161,16 @@ public class MultiTenancyWebModule : AbpModule
         context.Services.AddSignalR();
         var hostingEnvironment = context.Services.GetHostingEnvironment();
         var configuration = context.Services.GetConfiguration();
+
+        // ✅ ÉP antiforgery cookie chuẩn khi chạy sau reverse proxy HTTPS
+        // Fix triệt để lỗi: XSRF-TOKEN SameSite=None nhưng không Secure -> browser drop cookie -> thiếu token
+        Configure<AntiforgeryOptions>(options =>
+        {
+            options.Cookie.SecurePolicy = CookieSecurePolicy.Always; // luôn Secure
+            options.Cookie.SameSite = SameSiteMode.None;             // cho phép cross-site nếu có reverse proxy / SSO
+            // options.Cookie.HttpOnly = false; // mặc định của antiforgery token cookie là đọc được (đúng cho XSRF-TOKEN)
+        });
+
 
         context.Services.AddCors(options =>
         {
@@ -501,8 +513,9 @@ public class MultiTenancyWebModule : AbpModule
             logger.LogWarning("Hangfire recurring registration skipped (Hangfire:RegisterRecurringJobs=false).");
         }
 
-        app.UseCors("ZaloPolicy");
         app.UseForwardedHeaders();
+
+        app.UseCors("ZaloPolicy");
 
         if (env.IsDevelopment())
         {
@@ -555,5 +568,7 @@ public class MultiTenancyWebModule : AbpModule
         app.UseAuditing();
         app.UseAbpSerilogEnrichers();
         app.UseConfiguredEndpoints();
+
+        await Task.CompletedTask;
     }
 }
