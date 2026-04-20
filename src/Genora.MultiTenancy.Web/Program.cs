@@ -10,7 +10,6 @@ using Serilog.Exceptions.Core;
 using Serilog.Exceptions.SqlServer.Destructurers;
 using System;
 using System.IO;
-using System.Linq;
 using System.Threading.Tasks;
 
 namespace Genora.MultiTenancy.Web;
@@ -71,28 +70,18 @@ public class Program
 
             var app = builder.Build();
 
-            // Detect behind reverse proxy:
-            // - ReverseProxy:Enabled = true
-            // - OR has any ReverseProxy:KnownProxies values
-            var hasKnownProxies = app.Configuration
-                .GetSection("ReverseProxy:KnownProxies")
-                .GetChildren()
-                .Any();
-
-            var behindProxy =
-                app.Configuration.GetValue<bool>("ReverseProxy:Enabled") ||
-                hasKnownProxies;
-
-            // ✅ MUST be FIRST so Request.Scheme/Host is correct everywhere (auth, antiforgery, redirects...)
-            app.UseForwardedHeaders();
-
-            // ✅ If a proxy already terminates TLS, DON'T redirect again in ASP.NET Core (avoid loops)
-            if (!behindProxy)
+            // ✅ MUST: Forwarded headers sớm nhất có thể (trước antiforgery/config scripts)
+            if (app.Configuration.GetValue<bool>("ReverseProxy:Enabled"))
             {
+                app.UseForwardedHeaders();
+            }
+            else
+            {
+                // chỉ khi KHÔNG có reverse proxy mới bật redirect https trong app
                 app.UseHttpsRedirection();
             }
 
-            // optional: request logging after forwarded headers (so scheme/host are correct)
+            // optional: request logging after forwarded headers (scheme/host đúng)
             app.UseSerilogRequestLogging();
 
             // debug version
@@ -102,22 +91,23 @@ public class Program
                 commit = File.Exists(".git_commit") ? File.ReadAllText(".git_commit") : "missing"
             });
 
-            // Map hubs
-            app.MapHub<Genora.MultiTenancy.SignalR.FnbOrderHub>("/signalr-hubs/fnb-orders");
-            app.MapHub<Genora.MultiTenancy.SignalR.ProOrderHub>("/signalr-hubs/pro-orders");
-
-            await app.InitializeApplicationAsync();
-
+            // Debug scheme (thêm remoteIp để soi)
             app.MapGet("/debug/scheme", (HttpContext ctx) => new
             {
                 scheme = ctx.Request.Scheme,
                 isHttps = ctx.Request.IsHttps,
                 host = ctx.Request.Host.Value,
+                remoteIp = ctx.Connection.RemoteIpAddress?.ToString(),
                 xfProto = ctx.Request.Headers["X-Forwarded-Proto"].ToString(),
                 xfHost = ctx.Request.Headers["X-Forwarded-Host"].ToString(),
                 xfPort = ctx.Request.Headers["X-Forwarded-Port"].ToString()
             });
 
+            // SignalR hubs
+            app.MapHub<Genora.MultiTenancy.SignalR.FnbOrderHub>("/signalr-hubs/fnb-orders");
+            app.MapHub<Genora.MultiTenancy.SignalR.ProOrderHub>("/signalr-hubs/pro-orders");
+
+            await app.InitializeApplicationAsync();
             await app.RunAsync();
             return 0;
         }

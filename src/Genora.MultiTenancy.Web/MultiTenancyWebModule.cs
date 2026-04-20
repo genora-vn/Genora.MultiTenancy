@@ -130,26 +130,14 @@ public class MultiTenancyWebModule : AbpModule
                 var authority = configuration["AuthServer:Authority"]!;
                 serverBuilder.SetIssuer(new Uri(authority));
 
-                // NOTE: you are using thumbprint now
-                var thumbprint = configuration["AuthServer:CertificateThumbprint"]
-                                 ?? configuration["AuthServer:CertificateThumbprint".Replace("Thumbprint", "Thumbprint")]; // keep safe
-
-                // Prefer config key: AuthServer:CertificateThumbprint (you mentioned switching)
-                // If you use AuthServer:CertificateThumbprint in appsettings => OK
-                if (string.IsNullOrWhiteSpace(thumbprint))
-                {
-                    // allow also "CertificateThumbprint" or "CertificateThumbprint" variants if you renamed
-                    thumbprint = configuration["AuthServer:CertificateThumbprint"]
-                                 ?? configuration["AuthServer:CertificateThumbprint"];
-                }
-
-                // If you actually store it as AuthServer:CertificateThumbprint => keep this:
+                // NOTE: key config của bạn đang dùng CertificateThumbprint
+                var thumbprint = configuration["AuthServer:CertificateThumbprint"];
                 if (string.IsNullOrWhiteSpace(thumbprint))
                 {
                     throw new AbpException("AuthServer:CertificateThumbprint is missing.");
                 }
 
-                thumbprint = thumbprint.Replace(" ", "").Replace("-", "").ToUpperInvariant();
+                thumbprint = thumbprint.Replace(" ", "").ToUpperInvariant();
 
                 using var store = new X509Store(StoreName.My, StoreLocation.LocalMachine);
                 store.Open(OpenFlags.ReadOnly);
@@ -173,60 +161,49 @@ public class MultiTenancyWebModule : AbpModule
     public override void ConfigureServices(ServiceConfigurationContext context)
     {
         context.Services.AddSignalR();
-
         var hostingEnvironment = context.Services.GetHostingEnvironment();
         var configuration = context.Services.GetConfiguration();
 
-        var hasKnownProxies = configuration
-            .GetSection("ReverseProxy:KnownProxies")
-            .GetChildren()
-            .Any();
-
-        var behindProxy =
-            configuration.GetValue<bool>("ReverseProxy:Enabled") ||
-            hasKnownProxies;
-
-        // ✅ Forwarded headers options (used by app.UseForwardedHeaders() in Program.cs)
-        Configure<ForwardedHeadersOptions>(options =>
+        // ✅ Reverse proxy (Apache) - Forwarded Headers
+        // Fix triệt để: header có nhiều value => ForwardLimit=1 sẽ khiến middleware bỏ qua -> scheme vẫn http
+        var behindProxy = configuration.GetValue<bool>("ReverseProxy:Enabled");
+        if (behindProxy)
         {
-            options.ForwardedHeaders =
-                ForwardedHeaders.XForwardedFor |
-                ForwardedHeaders.XForwardedProto |
-                ForwardedHeaders.XForwardedHost;
-
-            // You are behind exactly 1 proxy hop
-            options.ForwardLimit = 1;
-            options.RequireHeaderSymmetry = false;
-
-            options.KnownNetworks.Clear();
-            options.KnownProxies.Clear();
-
-            // Always trust loopback (Apache on same server often proxies via 127.0.0.1)
-            options.KnownProxies.Add(IPAddress.Parse("127.0.0.1"));
-            options.KnownProxies.Add(IPAddress.IPv6Loopback);
-
-            // Add proxies from config
-            var proxies = configuration.GetSection("ReverseProxy:KnownProxies").Get<string[]>() ?? Array.Empty<string>();
-            foreach (var p in proxies)
+            Configure<ForwardedHeadersOptions>(options =>
             {
-                if (IPAddress.TryParse(p, out var ip))
-                {
-                    if (!options.KnownProxies.Contains(ip))
-                        options.KnownProxies.Add(ip);
-                }
-            }
-        });
+                options.ForwardedHeaders =
+                    ForwardedHeaders.XForwardedFor |
+                    ForwardedHeaders.XForwardedProto |
+                    ForwardedHeaders.XForwardedHost;
 
-        // ✅ Anti-forgery cookie MUST be Secure when SameSite=None (browser will drop otherwise)
+                options.KnownNetworks.Clear();
+                options.KnownProxies.Clear();
+
+                // Trust proxy từ appsettings
+                var proxies = configuration.GetSection("ReverseProxy:KnownProxies").Get<string[]>() ?? Array.Empty<string>();
+                foreach (var p in proxies)
+                {
+                    if (IPAddress.TryParse(p, out var ip))
+                    {
+                        options.KnownProxies.Add(ip);
+                    }
+                }
+
+                // Nếu Apache/IIS cùng máy đôi khi RemoteIp là loopback
+                options.KnownProxies.Add(IPAddress.Loopback);
+                options.KnownProxies.Add(IPAddress.IPv6Loopback);
+
+                // ✅ QUAN TRỌNG: đừng giới hạn 1 hop vì header của bạn đang có "a, a"
+                options.ForwardLimit = null; // unlimited
+                options.RequireHeaderSymmetry = false;
+            });
+        }
+
+        // Antiforgery: để browser set cookie được khi SameSite=None
         Configure<AntiforgeryOptions>(options =>
         {
             options.Cookie.SameSite = SameSiteMode.None;
-
-            // When behind proxy, Request.Scheme can be wrong BEFORE forwarded headers,
-            // so force Secure ALWAYS to avoid token missing.
-            options.Cookie.SecurePolicy = behindProxy
-                ? CookieSecurePolicy.Always
-                : CookieSecurePolicy.SameAsRequest;
+            options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
         });
 
         context.Services.AddCors(options =>
@@ -499,6 +476,11 @@ public class MultiTenancyWebModule : AbpModule
         var config = sp.GetRequiredService<IConfiguration>();
 
         var logger = sp.GetRequiredService<ILogger<MultiTenancyWebModule>>();
+        var sender = sp.GetRequiredService<IEmailSender>();
+        logger.LogWarning("IEmailSender implementation = {Type}", sender.GetType().FullName);
+
+        var jobManager = sp.GetRequiredService<IBackgroundJobManager>();
+        logger.LogWarning("IBackgroundJobManager implementation = {Type}", jobManager.GetType().FullName);
 
         var opts = sp.GetRequiredService<IOptions<AuditLogCleanupOptions>>().Value;
         if (opts.Enabled)
@@ -515,7 +497,6 @@ public class MultiTenancyWebModule : AbpModule
         if (shouldRegisterRecurring)
         {
             var recurring = sp.GetRequiredService<IRecurringJobManager>();
-
             recurring.AddOrUpdate<BookingReminderZbsCronJob>(
                 recurringJobId: "booking-reminder-zbs",
                 methodCall: job => job.ExecuteAsync(),
