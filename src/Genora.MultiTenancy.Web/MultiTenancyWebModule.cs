@@ -166,9 +166,9 @@ public class MultiTenancyWebModule : AbpModule
         // Fix triệt để lỗi: XSRF-TOKEN SameSite=None nhưng không Secure -> browser drop cookie -> thiếu token
         Configure<AntiforgeryOptions>(options =>
         {
-            options.Cookie.SecurePolicy = CookieSecurePolicy.Always; // luôn Secure
-            options.Cookie.SameSite = SameSiteMode.None;             // cho phép cross-site nếu có reverse proxy / SSO
-            // options.Cookie.HttpOnly = false; // mặc định của antiforgery token cookie là đọc được (đúng cho XSRF-TOKEN)
+            options.Cookie.SameSite = SameSiteMode.None;
+            // QUAN TRỌNG: tránh crash khi app nhìn thấy request là HTTP
+            options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
         });
 
 

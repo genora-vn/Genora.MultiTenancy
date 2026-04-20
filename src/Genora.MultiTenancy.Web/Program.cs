@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Serilog;
@@ -86,6 +87,14 @@ public class Program
             app.MapHub<Genora.MultiTenancy.SignalR.ProOrderHub>("/signalr-hubs/pro-orders");
 
             await app.InitializeApplicationAsync();
+            app.MapGet("/debug/scheme", (HttpContext ctx) => new {
+                scheme = ctx.Request.Scheme,
+                isHttps = ctx.Request.IsHttps,
+                host = ctx.Request.Host.Value,
+                xfProto = ctx.Request.Headers["X-Forwarded-Proto"].ToString(),
+                xfHost = ctx.Request.Headers["X-Forwarded-Host"].ToString(),
+                xfPort = ctx.Request.Headers["X-Forwarded-Port"].ToString()
+            });
             await app.RunAsync();
             return 0;
         }
