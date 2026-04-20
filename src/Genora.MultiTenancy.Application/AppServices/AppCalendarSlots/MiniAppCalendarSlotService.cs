@@ -78,7 +78,7 @@ namespace Genora.MultiTenancy.AppServices.AppCalendarSlots
                 };
             }
 
-            query = query.Where(x => x.GolfCourseId == golfCourse.Id);
+            query = query.Where(x => x.GolfCourseId == golfCourse.Id && x.IsActive);
 
             if (input.Date.HasValue && input.Date.Value != DateTime.Now.Date)
             {

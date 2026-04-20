@@ -3,28 +3,6 @@
 
     var service = genora.multiTenancy.appServices.appHomePageConfigs.appHomePageConfig;
 
-    // ✅ Auto add antiforgery header for ALL jQuery ajax calls (ABP proxies use this)
-    (function () {
-        // Bind once
-        if (window.__hpAntiforgeryBound) return;
-        window.__hpAntiforgeryBound = true;
-
-        $(document).ajaxSend(function (event, jqXHR, settings) {
-            try {
-                // Only attach for unsafe methods
-                var method = (settings.type || settings.method || "GET").toUpperCase();
-                if (method === "GET" || method === "HEAD" || method === "OPTIONS" || method === "TRACE") return;
-
-                var token = abp?.security?.antiForgery?.getToken?.();
-                if (token) {
-                    jqXHR.setRequestHeader("RequestVerificationToken", token);
-                }
-            } catch (e) {
-                // swallow
-            }
-        });
-    })();
-
     var createWidgetModal = new abp.ModalManager(abp.appPath + 'AppHomePageConfigs/CreateWidgetModal');
     var editWidgetModal = new abp.ModalManager(abp.appPath + 'AppHomePageConfigs/EditWidgetModal');
     var featureGridModal = new abp.ModalManager(abp.appPath + 'AppHomePageConfigs/FeatureGridModal');
