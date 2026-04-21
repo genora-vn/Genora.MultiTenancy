@@ -203,7 +203,7 @@ public class MultiTenancyWebModule : AbpModule
         Configure<AntiforgeryOptions>(options =>
         {
             options.Cookie.SameSite = SameSiteMode.None;
-            options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+            options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
         });
 
         context.Services.AddCors(options =>

@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 namespace Genora.MultiTenancy.Controllers;
 
 [ApiController]
+[IgnoreAntiforgeryToken]
 [Route("api/app/app-home-page-config")]
 public class AppHomePageConfigsController : MultiTenancyController
 {
