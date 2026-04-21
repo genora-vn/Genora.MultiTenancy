@@ -318,11 +318,14 @@ namespace Genora.MultiTenancy.AppServices.AppCalendarSlots
                 }
                 else
                 {
-                    // Visitor hoặc sân không hỗ trợ Member
-                    item.CustomerBillTotalPrice = item.VisitorPrice * slotCount;
+                    // Visitor hoặc sân không hỗ trợ Member - dùng giá CustomerTypePrice (của loại khách hàng hiện tại)
+                    item.CustomerBillTotalPrice = item.CustomerTypePrice * slotCount;
 
-                    decimal visOriginal         = visCustomerType?.OriginalPrice ?? 0m;
-                    item.OriginalBillTotalPrice = visOriginal * slotCount;
+                    // Tính OriginalBillTotalPrice dựa vào OriginalPrice của loại khách hàng hiện tại
+                    decimal currentOriginalPrice = (currentCustomerType?.OriginalPrice ?? 0m) > 0
+                        ? currentCustomerType.OriginalPrice.Value
+                        : (visCustomerType?.OriginalPrice ?? 0m);
+                    item.OriginalBillTotalPrice = currentOriginalPrice * slotCount;
                 }
 
                 item.DiscountTotalPrice = Math.Max(0m, item.OriginalBillTotalPrice - item.CustomerBillTotalPrice);
@@ -579,11 +582,14 @@ namespace Genora.MultiTenancy.AppServices.AppCalendarSlots
             }
             else
             {
-                // Visitor hoặc sân không hỗ trợ Member
-                dto.CustomerBillTotalPrice = dto.VisitorPrice * playerNumber;
+                // Visitor hoặc sân không hỗ trợ Member - dùng giá CustomerTypePrice (của loại khách hàng hiện tại)
+                dto.CustomerBillTotalPrice = dto.CustomerTypePrice * playerNumber;
 
-                decimal visOriginal = visCustomerType?.OriginalPrice ?? 0m;
-                dto.OriginalBillTotalPrice = visOriginal * playerNumber;
+                // Tính OriginalBillTotalPrice dựa vào OriginalPrice của loại khách hàng hiện tại
+                decimal currentOriginalPrice = (currentCustomerType?.OriginalPrice ?? 0m) > 0
+                    ? currentCustomerType.OriginalPrice.Value
+                    : (visCustomerType?.OriginalPrice ?? 0m);
+                dto.OriginalBillTotalPrice = currentOriginalPrice * playerNumber;
             }
 
             dto.DiscountTotalPrice = Math.Max(0m, dto.OriginalBillTotalPrice - dto.CustomerBillTotalPrice);
