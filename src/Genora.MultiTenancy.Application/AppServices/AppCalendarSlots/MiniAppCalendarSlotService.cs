@@ -358,6 +358,7 @@ namespace Genora.MultiTenancy.AppServices.AppCalendarSlots
                 TimeTo = slot.TimeTo,
                 PromotionTypeId = slot.PromotionTypeId,
                 MaxSlots = slot.MaxSlots,
+                SlotAvailable = slot.SlotAvailable,
                 InternalNote = slot.InternalNote,
                 IsActive = slot.IsActive,
                 CreationTime = slot.CreationTime,
@@ -384,6 +385,205 @@ namespace Genora.MultiTenancy.AppServices.AppCalendarSlots
                     Price36 = p.Price36 ?? 0m
                 });
             }
+
+            return dto;
+        }
+
+        public async Task<AppCalendarSlotDto> GetMiniAppAsync(GetMiniAppCalendarSlotDetailInput input)
+        {
+            var slot = await _calendarSlotRepository.FindAsync(input.Id);
+            if (slot == null)
+            {
+                throw new EntityNotFoundException(typeof(CalendarSlot), input.Id);
+            }
+
+            var golf = await _golfCourseRepository.FindAsync(slot.GolfCourseId);
+            var prices = await _priceRepository.GetListAsync(p => p.CalendarSlotId == input.Id);
+
+            var customerTypeIds = prices.Select(p => p.CustomerTypeId).Distinct().ToList();
+            var customerTypes = await _customerTypeRepository.GetListAsync(ct => customerTypeIds.Contains(ct.Id));
+            var ctDict = customerTypes.ToDictionary(ct => ct.Id, ct => ct);
+
+            var dto = new AppCalendarSlotDto
+            {
+                Id = slot.Id,
+                TenantId = slot.TenantId,
+                GolfCourseId = slot.GolfCourseId,
+                GolfCourseName = golf?.Name ?? string.Empty,
+                ApplyDate = slot.ApplyDate,
+                TimeFrom = slot.TimeFrom,
+                TimeTo = slot.TimeTo,
+                PromotionTypeId = slot.PromotionTypeId,
+                MaxSlots = slot.MaxSlots,
+                SlotAvailable = slot.SlotAvailable,
+                InternalNote = slot.InternalNote,
+                IsActive = slot.IsActive,
+                CreationTime = slot.CreationTime,
+                CreatorId = slot.CreatorId,
+                LastModificationTime = slot.LastModificationTime,
+                LastModifierId = slot.LastModifierId,
+                Prices = new List<AppCalendarSlotPriceDto>()
+            };
+
+            foreach (var p in prices)
+            {
+                ctDict.TryGetValue(p.CustomerTypeId, out var ct);
+
+                dto.Prices.Add(new AppCalendarSlotPriceDto
+                {
+                    Id = p.Id,
+                    CalendarSlotId = p.CalendarSlotId,
+                    CustomerTypeId = p.CustomerTypeId,
+                    CustomerTypeCode = ct?.Code,
+                    CustomerTypeName = ct?.Name,
+                    Price9 = p.Price9 ?? 0m,
+                    Price18 = p.Price18,
+                    Price27 = p.Price27 ?? 0m,
+                    Price36 = p.Price36 ?? 0m
+                });
+            }
+
+            // Tính toán giá dựa trên số người chơi
+            var numberHoles = input.NumberHoles ?? 18;
+            var playerNumber = input.PlayerNumber > 0 ? input.PlayerNumber : 1;
+
+            var visCustomerType = customerTypes.FirstOrDefault(c => c.Code == "VIS");
+            var visCustomerTypeId = visCustomerType?.Id ?? Guid.Empty;
+            var mbgCustomerType = customerTypes.FirstOrDefault(c => c.Code == "MBG");
+            var mbCustomerType = customerTypes.FirstOrDefault(c => c.Code == "MB");
+
+            var user = (input.CustomerId.HasValue && input.CustomerId != Guid.Empty)
+                ? await _customerRepo.FirstOrDefaultAsync(c => c.Id == input.CustomerId)
+                : null;
+
+            var currentCustomerType = (user != null && user.CustomerTypeId.HasValue && ctDict.ContainsKey(user.CustomerTypeId.Value))
+                ? ctDict[user.CustomerTypeId.Value]
+                : null;
+
+            var isCurrentMember = golf?.IsMemberSupported == true && currentCustomerType?.Code == "MB";
+
+            // Tính giá gốc theo loại khách hàng
+            decimal visitorPrice = 0m;
+            string originalPriceSource = "None";
+
+            if (currentCustomerType != null && currentCustomerType.OriginalPrice.HasValue && currentCustomerType.OriginalPrice.Value > 0)
+            {
+                visitorPrice = currentCustomerType.OriginalPrice.Value;
+                originalPriceSource = $"CustomerType:{currentCustomerType.Code}";
+            }
+            else if (user == null && visCustomerType != null && visCustomerType.OriginalPrice.HasValue && visCustomerType.OriginalPrice.Value > 0)
+            {
+                visitorPrice = visCustomerType.OriginalPrice.Value;
+                originalPriceSource = $"CustomerType:{visCustomerType.Code}";
+            }
+
+            // Fallback về logic cũ nếu chưa cấu hình OriginalPrice
+            if (visitorPrice <= 0)
+            {
+                var visRow = prices.FirstOrDefault(p => p.CustomerTypeId == visCustomerTypeId);
+                visitorPrice = visRow != null
+                    ? PriceByHoleHelper.GetPriceByNumberHoles(visRow, numberHoles)
+                    : 0m;
+
+                if (visitorPrice > 0)
+                {
+                    originalPriceSource = "CalendarSlotPrice:VIS";
+                }
+
+                if (visitorPrice <= 0 && prices.Count > 0)
+                {
+                    visitorPrice = prices
+                        .Select(p => PriceByHoleHelper.GetPriceByNumberHoles(p, numberHoles))
+                        .DefaultIfEmpty(0m)
+                        .Max();
+
+                    if (visitorPrice > 0)
+                    {
+                        originalPriceSource = "CalendarSlotPrice:MAX";
+                    }
+                }
+            }
+
+            dto.OriginalPrice = visitorPrice;
+            dto.OriginalPriceSource = originalPriceSource;
+
+            // Giá theo loại khách hiện tại
+            decimal myPrice;
+            if (user != null && user.CustomerTypeId.HasValue)
+            {
+                var myRow = prices.FirstOrDefault(p => p.CustomerTypeId == user.CustomerTypeId.Value);
+                myPrice = myRow != null
+                    ? PriceByHoleHelper.GetPriceByNumberHoles(myRow, numberHoles)
+                    : prices.Select(p => PriceByHoleHelper.GetPriceByNumberHoles(p, numberHoles))
+                           .DefaultIfEmpty(0m)
+                           .Min();
+            }
+            else
+            {
+                myPrice = prices.Select(p => PriceByHoleHelper.GetPriceByNumberHoles(p, numberHoles))
+                                .DefaultIfEmpty(0m)
+                                .Max();
+            }
+
+            dto.CustomerTypePrice = myPrice;
+
+            // VisitorPrice từ AppCalendarSlotPrices
+            var visSlotRow = prices.FirstOrDefault(p => p.CustomerTypeId == visCustomerTypeId);
+            dto.VisitorPrice = visSlotRow != null
+                ? PriceByHoleHelper.GetPriceByNumberHoles(visSlotRow, numberHoles)
+                : 0m;
+
+            dto.DiscountPercent = (dto.VisitorPrice - dto.CustomerTypePrice) > 0 && dto.VisitorPrice > 0
+                ? Math.Round(100 - (dto.CustomerTypePrice / dto.VisitorPrice) * 100, MidpointRounding.AwayFromZero)
+                : 0;
+
+            // Member config
+            dto.IsMemberSupported = golf?.IsMemberSupported ?? false;
+            dto.MaxMemberGuest = golf?.IsMemberSupported == true ? golf.MaxMemberGuest : null;
+
+            if (isCurrentMember && mbgCustomerType != null)
+            {
+                var mbgRow = prices.FirstOrDefault(p => p.CustomerTypeId == mbgCustomerType.Id);
+                if (mbgRow != null)
+                {
+                    var mbgPrice = PriceByHoleHelper.GetPriceByNumberHoles(mbgRow, numberHoles);
+                    dto.MemberGuestPrice = mbgPrice > 0 ? mbgPrice : null;
+                }
+            }
+
+            // Tính toán CustomerBillTotalPrice, OriginalBillTotalPrice, DiscountTotalPrice dựa trên playerNumber
+            int maxMbg = golf?.IsMemberSupported == true ? (golf.MaxMemberGuest ?? 0) : 0;
+
+            if (isCurrentMember)
+            {
+                // MB + MBG guests + Visitor phần còn lại
+                decimal mbSlotPrice = dto.CustomerTypePrice;
+                decimal mbgSlotPrice = dto.MemberGuestPrice ?? 0m;
+                int visitorSlots = Math.Max(0, playerNumber - maxMbg - 1);
+
+                dto.CustomerBillTotalPrice = mbSlotPrice
+                    + (mbgSlotPrice * Math.Min(maxMbg, playerNumber - 1))
+                    + (visitorSlots * dto.VisitorPrice);
+
+                // Giá gốc theo AppCustomerTypes.OriginalPrice
+                decimal mbOriginal = mbCustomerType?.OriginalPrice ?? 0m;
+                decimal mbgOriginal = mbgCustomerType?.OriginalPrice ?? 0m;
+                decimal visOriginal = visCustomerType?.OriginalPrice ?? 0m;
+
+                dto.OriginalBillTotalPrice = mbOriginal
+                    + (mbgOriginal * Math.Min(maxMbg, playerNumber - 1))
+                    + (visitorSlots * visOriginal);
+            }
+            else
+            {
+                // Visitor hoặc sân không hỗ trợ Member
+                dto.CustomerBillTotalPrice = dto.VisitorPrice * playerNumber;
+
+                decimal visOriginal = visCustomerType?.OriginalPrice ?? 0m;
+                dto.OriginalBillTotalPrice = visOriginal * playerNumber;
+            }
+
+            dto.DiscountTotalPrice = Math.Max(0m, dto.OriginalBillTotalPrice - dto.CustomerBillTotalPrice);
 
             return dto;
         }

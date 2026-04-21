@@ -185,8 +185,17 @@ public class MiniAppController : MultiTenancyController
         
     [HttpGet("get-calendar-slots/{id}")]
     [AllowAnonymous]
-    public Task<AppCalendarSlotDto> GetCalendarSlotAsync(Guid id)
-        => _miniAppCalendarSlot.GetMiniAppAsync(id);
+    public Task<AppCalendarSlotDto> GetCalendarSlotAsync(Guid id, [FromQuery] Guid? customerId, [FromQuery] short? numberHoles = 18, [FromQuery] int playerNumber = 1)
+    {
+        var input = new GetMiniAppCalendarSlotDetailInput
+        {
+            Id = id,
+            CustomerId = customerId,
+            NumberHoles = numberHoles,
+            PlayerNumber = playerNumber
+        };
+        return _miniAppCalendarSlot.GetMiniAppAsync(input);
+    }
 
     // <summary>
     /// Lấy thông tin user từ Zalo Graph API

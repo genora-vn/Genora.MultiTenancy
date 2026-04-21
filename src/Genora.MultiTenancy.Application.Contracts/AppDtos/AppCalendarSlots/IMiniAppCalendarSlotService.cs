@@ -9,5 +9,6 @@ namespace Genora.MultiTenancy.AppDtos.AppCalendarSlots
     {
         Task<MiniAppCalendarSlotDto> GetListMiniAppAsync(GetMiniAppCalendarListInput input);
         Task<AppCalendarSlotDto> GetMiniAppAsync(Guid id);
+        Task<AppCalendarSlotDto> GetMiniAppAsync(GetMiniAppCalendarSlotDetailInput input);
     }
 }
