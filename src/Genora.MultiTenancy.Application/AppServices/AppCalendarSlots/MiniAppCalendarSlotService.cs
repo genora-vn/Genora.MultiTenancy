@@ -537,6 +537,9 @@ namespace Genora.MultiTenancy.AppServices.AppCalendarSlots
                 ? Math.Round(100 - (dto.CustomerTypePrice / dto.VisitorPrice) * 100, MidpointRounding.AwayFromZero)
                 : 0;
 
+            // Set customer type code
+            dto.CustomerTypeCode = currentCustomerType?.Code ?? visCustomerType?.Code;
+
             // Member config
             dto.IsMemberSupported = golf?.IsMemberSupported ?? false;
             dto.MaxMemberGuest = golf?.IsMemberSupported == true ? golf.MaxMemberGuest : null;
