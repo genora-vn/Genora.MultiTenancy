@@ -12,6 +12,7 @@ using Hangfire;
 using Hangfire.SqlServer;
 using Microsoft.AspNetCore.Antiforgery;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.CookiePolicy;
 using Microsoft.AspNetCore.Extensions.DependencyInjection;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
@@ -199,11 +200,31 @@ public class MultiTenancyWebModule : AbpModule
             });
         }
 
-        // Antiforgery: để browser set cookie được khi SameSite=None
+        // Antiforgery / auth cookie behind reverse proxy
         Configure<AntiforgeryOptions>(options =>
         {
-            options.Cookie.SameSite = SameSiteMode.None;
-            options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
+            options.Cookie.Name = "__Host-Genora-AF";
+            options.Cookie.HttpOnly = true;
+            options.Cookie.SameSite = SameSiteMode.Lax;
+            options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+            options.FormFieldName = "__RequestVerificationToken";
+            options.HeaderName = "RequestVerificationToken";
+        });
+
+        context.Services.ConfigureApplicationCookie(options =>
+        {
+            options.Cookie.Name = ".Genora.Auth";
+            options.Cookie.HttpOnly = true;
+            options.Cookie.SameSite = SameSiteMode.Lax;
+            options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+            options.SlidingExpiration = true;
+        });
+
+        context.Services.Configure<CookiePolicyOptions>(options =>
+        {
+            options.MinimumSameSitePolicy = SameSiteMode.Unspecified;
+            options.Secure = CookieSecurePolicy.Always;
+            options.HttpOnly = HttpOnlyPolicy.Always;
         });
 
         context.Services.AddCors(options =>

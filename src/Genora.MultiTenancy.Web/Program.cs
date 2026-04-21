@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Antiforgery;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.CookiePolicy;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
@@ -11,6 +12,8 @@ using Serilog.Exceptions;
 using Serilog.Exceptions.Core;
 using Serilog.Exceptions.SqlServer.Destructurers;
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.IO;
 using System.Threading.Tasks;
 
@@ -68,19 +71,44 @@ public class Program
                       ));
                 });
 
+
+            var sharedKeyPath = builder.Configuration["DataProtection:KeyPath"];
+            if (string.IsNullOrWhiteSpace(sharedKeyPath))
+            {
+                sharedKeyPath = Path.Combine(AppContext.BaseDirectory, "App_Data", "keys");
+            }
+
+            Directory.CreateDirectory(sharedKeyPath);
+
+            builder.Services
+                .AddDataProtection()
+                .PersistKeysToFileSystem(new DirectoryInfo(sharedKeyPath))
+                .SetApplicationName("Genora.MultiTenancy");
+
             builder.Services.PostConfigure<AntiforgeryOptions>(options =>
             {
-                options.Cookie.Name = "XSRF-TOKEN";
-                options.Cookie.HttpOnly = false;
-                options.Cookie.SameSite = SameSiteMode.None;
+                options.Cookie.Name = "__Host-Genora-AF";
+                options.Cookie.HttpOnly = true;
+                options.Cookie.SameSite = SameSiteMode.Lax;
                 options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+                options.FormFieldName = "__RequestVerificationToken";
+                options.HeaderName = "RequestVerificationToken";
+            });
+
+            builder.Services.ConfigureApplicationCookie(options =>
+            {
+                options.Cookie.Name = ".Genora.Auth";
+                options.Cookie.HttpOnly = true;
+                options.Cookie.SameSite = SameSiteMode.Lax;
+                options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+                options.SlidingExpiration = true;
             });
 
             builder.Services.Configure<CookiePolicyOptions>(options =>
             {
                 options.MinimumSameSitePolicy = SameSiteMode.Unspecified;
                 options.Secure = CookieSecurePolicy.Always;
-                options.HttpOnly = HttpOnlyPolicy.None;
+                options.HttpOnly = HttpOnlyPolicy.Always;
             });
 
             await builder.AddApplicationAsync<MultiTenancyWebModule>();
@@ -111,7 +139,8 @@ public class Program
                 remoteIp = ctx.Connection.RemoteIpAddress?.ToString(),
                 xfProto = ctx.Request.Headers["X-Forwarded-Proto"].ToString(),
                 xfHost = ctx.Request.Headers["X-Forwarded-Host"].ToString(),
-                xfPort = ctx.Request.Headers["X-Forwarded-Port"].ToString()
+                xfPort = ctx.Request.Headers["X-Forwarded-Port"].ToString(),
+                cookies = ctx.Request.Cookies.Keys.OrderBy(x => x).ToArray()
             });
 
             // SignalR hubs
