@@ -530,6 +530,7 @@ public class MultiTenancyWebModule : AbpModule
         app.UseCorrelationId();
         app.UseRouting();
 
+        app.UseCookiePolicy();
         app.UseStaticFiles();
 
         if (MultiTenancyConsts.IsEnabled)

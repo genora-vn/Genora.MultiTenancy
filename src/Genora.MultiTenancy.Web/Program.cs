@@ -1,4 +1,6 @@
-﻿using Microsoft.AspNetCore.Builder;
+﻿using Microsoft.AspNetCore.Antiforgery;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.CookiePolicy;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -66,22 +68,31 @@ public class Program
                       ));
                 });
 
+            builder.Services.PostConfigure<AntiforgeryOptions>(options =>
+            {
+                options.Cookie.Name = "XSRF-TOKEN";
+                options.Cookie.HttpOnly = false;
+                options.Cookie.SameSite = SameSiteMode.None;
+                options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+            });
+
+            builder.Services.Configure<CookiePolicyOptions>(options =>
+            {
+                options.MinimumSameSitePolicy = SameSiteMode.Unspecified;
+                options.Secure = CookieSecurePolicy.Always;
+                options.HttpOnly = HttpOnlyPolicy.None;
+            });
+
             await builder.AddApplicationAsync<MultiTenancyWebModule>();
 
             var app = builder.Build();
 
-            // ✅ MUST: Forwarded headers sớm nhất có thể (trước antiforgery/config scripts)
             if (app.Configuration.GetValue<bool>("ReverseProxy:Enabled"))
             {
                 app.UseForwardedHeaders();
             }
-            else
-            {
-                // chỉ khi KHÔNG có reverse proxy mới bật redirect https trong app
-                app.UseHttpsRedirection();
-            }
 
-            // optional: request logging after forwarded headers (scheme/host đúng)
+            app.UseCookiePolicy();
             app.UseSerilogRequestLogging();
 
             // debug version
