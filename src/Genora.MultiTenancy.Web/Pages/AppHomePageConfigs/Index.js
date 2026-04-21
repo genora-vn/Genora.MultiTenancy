@@ -2,6 +2,16 @@
     var l = abp.localization.getResource('MultiTenancy');
 
     var service = genora.multiTenancy.appServices.appHomePageConfigs.appHomePageConfig;
+    var postApiBase = abp.appPath + 'api/app/app-home-page-config';
+
+    function postJson(url, payload) {
+        return abp.ajax({
+            url: url,
+            type: 'POST',
+            data: JSON.stringify(payload || {}),
+            contentType: 'application/json'
+        });
+    }
 
     var createWidgetModal = new abp.ModalManager(abp.appPath + 'AppHomePageConfigs/CreateWidgetModal');
     var editWidgetModal = new abp.ModalManager(abp.appPath + 'AppHomePageConfigs/EditWidgetModal');
@@ -76,7 +86,7 @@
                                 text: l('UpdateStatus'),
                                 visible: canEdit,
                                 action: function (data) {
-                                    service.updateWidget({
+                                    postJson(postApiBase + '/update-widget', {
                                         id: data.record.id,
                                         isEnabled: !data.record.isEnabled
                                     }).then(function () {
@@ -143,7 +153,7 @@
         var id = $sw.data('id');
         var isEnabled = $sw.is(':checked');
 
-        service.updateWidget({ id: id, isEnabled: isEnabled })
+        postJson(postApiBase + '/update-widget', { id: id, isEnabled: isEnabled })
             .then(function () {
                 dataTable.ajax.reload(null, false);
             })
@@ -210,7 +220,7 @@
                 draggedRow = null;
                 if (!ids.length) return;
 
-                service.updateWidgetOrder({ orderedIds: ids })
+                postJson(postApiBase + '/update-widget-order', { orderedIds: ids })
                     .then(function () {
                         dataTable.ajax.reload(null, false);
                     });

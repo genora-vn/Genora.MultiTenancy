@@ -159,6 +159,7 @@ public class AppHomePageConfigService
         return ObjectMapper.Map<AppHomePageWidget, HomePageWidgetDto>(entity);
     }
 
+    [RemoteService(false)]
     public async Task<HomePageWidgetDto> UpdateWidgetByIdAsync(Guid id, UpdateHomePageWidgetDto input)
         => await UpdateAsync(id, input);
 
@@ -197,6 +198,7 @@ public class AppHomePageConfigService
         );
     }
 
+    [RemoteService(false)]
     public async Task UpdateWidgetAsync(UpdateWidgetRequestDto input)
     {
         await CheckUpdatePolicyAsync();
@@ -218,6 +220,7 @@ public class AppHomePageConfigService
         await Repository.UpdateAsync(w, autoSave: true);
     }
 
+    [RemoteService(false)]
     public async Task UpdateWidgetOrderAsync(UpdateWidgetOrderDto input)
     {
         await CheckUpdatePolicyAsync();
@@ -266,6 +269,7 @@ public class AppHomePageConfigService
         };
     }
 
+    [RemoteService(false)]
     public async Task UpdateFeatureGridAsync(Guid widgetId, UpdateFeatureGridDto input)
     {
         await CheckUpdatePolicyAsync();
@@ -344,6 +348,7 @@ public class AppHomePageConfigService
         return dto;
     }
 
+    [RemoteService(false)]
     public override async Task<HomePageWidgetDto> UpdateAsync(Guid id, UpdateHomePageWidgetDto input)
     {
         await CheckUpdatePolicyAsync();
