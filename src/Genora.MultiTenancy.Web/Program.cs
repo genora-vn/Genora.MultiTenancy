@@ -87,12 +87,12 @@ public class Program
 
             builder.Services.PostConfigure<AntiforgeryOptions>(options =>
             {
-                options.Cookie.Name = "__Host-Genora-AF";
-                options.Cookie.HttpOnly = true;
+                options.Cookie.Name = "XSRF-TOKEN";
+                options.Cookie.HttpOnly = false;
+                options.Cookie.Path = "/";
                 options.Cookie.SameSite = SameSiteMode.Lax;
                 options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
                 options.FormFieldName = "__RequestVerificationToken";
-                options.HeaderName = "RequestVerificationToken";
             });
 
             builder.Services.ConfigureApplicationCookie(options =>
@@ -146,6 +146,21 @@ public class Program
             // SignalR hubs
             app.MapHub<Genora.MultiTenancy.SignalR.FnbOrderHub>("/signalr-hubs/fnb-orders");
             app.MapHub<Genora.MultiTenancy.SignalR.ProOrderHub>("/signalr-hubs/pro-orders");
+
+            app.Use(async (context, next) =>
+            {
+                if (context.Request.Cookies.ContainsKey("__Host-Genora-AF"))
+                {
+                    context.Response.Cookies.Delete("__Host-Genora-AF", new CookieOptions
+                    {
+                        Path = "/",
+                        Secure = true,
+                        SameSite = SameSiteMode.Lax
+                    });
+                }
+
+                await next();
+            });
 
             await app.InitializeApplicationAsync();
             await app.RunAsync();

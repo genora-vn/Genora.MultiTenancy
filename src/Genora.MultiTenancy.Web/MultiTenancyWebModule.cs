@@ -203,12 +203,12 @@ public class MultiTenancyWebModule : AbpModule
         // Antiforgery / auth cookie behind reverse proxy
         Configure<AntiforgeryOptions>(options =>
         {
-            options.Cookie.Name = "__Host-Genora-AF";
-            options.Cookie.HttpOnly = true;
+            options.Cookie.Name = "XSRF-TOKEN";
+            options.Cookie.HttpOnly = false;
+            options.Cookie.Path = "/";
             options.Cookie.SameSite = SameSiteMode.Lax;
             options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
             options.FormFieldName = "__RequestVerificationToken";
-            options.HeaderName = "RequestVerificationToken";
         });
 
         context.Services.ConfigureApplicationCookie(options =>
