@@ -544,7 +544,7 @@ public class MultiTenancyWebModule : AbpModule
 
         if (!env.IsDevelopment())
         {
-            app.UseErrorPage();
+            app.UseDeveloperExceptionPage();
             app.UseHsts();
         }
 
