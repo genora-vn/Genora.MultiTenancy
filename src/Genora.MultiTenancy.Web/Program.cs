@@ -1,13 +1,10 @@
-﻿using Microsoft.AspNetCore.Antiforgery;
-using Microsoft.AspNetCore.Authentication.Cookies;
-using Microsoft.AspNetCore.Builder;
+﻿using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.CookiePolicy;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Options;
 using Serilog;
 using Serilog.Events;
 using Serilog.Exceptions;
@@ -118,9 +115,21 @@ public class Program
                 commit = File.Exists(".git_commit") ? File.ReadAllText(".git_commit") : "missing"
             });
 
+            app.MapGet("/debug/scheme", (HttpContext ctx) => new
+            {
+                scheme = ctx.Request.Scheme,
+                isHttps = ctx.Request.IsHttps,
+                host = ctx.Request.Host.Value,
+                remoteIp = ctx.Connection.RemoteIpAddress?.ToString(),
+                xfProto = ctx.Request.Headers["X-Forwarded-Proto"].ToString(),
+                xfHost = ctx.Request.Headers["X-Forwarded-Host"].ToString(),
+                xfPort = ctx.Request.Headers["X-Forwarded-Port"].ToString(),
+                cookies = ctx.Request.Cookies.Keys
+            });
+
             app.MapGet("/debug/antiforgery", (
-                IOptions<AntiforgeryOptions> anti,
-                IOptions<CookiePolicyOptions> cookie) =>
+                Microsoft.Extensions.Options.IOptions<Microsoft.AspNetCore.Antiforgery.AntiforgeryOptions> anti,
+                Microsoft.Extensions.Options.IOptions<CookiePolicyOptions> cookie) =>
             {
                 var a = anti.Value;
                 var c = cookie.Value;
@@ -146,67 +155,8 @@ public class Program
                 };
             });
 
-            app.MapGet("/debug/scheme", (HttpContext ctx) => new
-            {
-                scheme = ctx.Request.Scheme,
-                isHttps = ctx.Request.IsHttps,
-                host = ctx.Request.Host.Value,
-                remoteIp = ctx.Connection.RemoteIpAddress?.ToString(),
-                xfProto = ctx.Request.Headers["X-Forwarded-Proto"].ToString(),
-                xfHost = ctx.Request.Headers["X-Forwarded-Host"].ToString(),
-                xfPort = ctx.Request.Headers["X-Forwarded-Port"].ToString(),
-                cookies = ctx.Request.Cookies.Keys
-            });
-
             app.MapHub<Genora.MultiTenancy.SignalR.FnbOrderHub>("/signalr-hubs/fnb-orders");
             app.MapHub<Genora.MultiTenancy.SignalR.ProOrderHub>("/signalr-hubs/pro-orders");
-
-            app.Use(async (context, next) =>
-            {
-                if (context.Request.Path.Equals("/Account/Login", StringComparison.OrdinalIgnoreCase)
-                    && HttpMethods.IsPost(context.Request.Method))
-                {
-                    try
-                    {
-                        var antiforgery = context.RequestServices.GetRequiredService<IAntiforgery>();
-                        await antiforgery.ValidateRequestAsync(context);
-                        Log.Information("Manual antiforgery validation passed for /Account/Login");
-                    }
-                    catch (Exception ex)
-                    {
-                        Log.Error(ex, "Manual antiforgery validation FAILED for /Account/Login");
-                        throw;
-                    }
-                }
-
-                await next();
-            });
-
-            app.Use(async (context, next) =>
-            {
-                if (context.Request.Path.Equals("/Account/Login", StringComparison.OrdinalIgnoreCase)
-                    && HttpMethods.IsPost(context.Request.Method))
-                {
-                    try
-                    {
-                        await next();
-                    }
-                    catch (Exception ex)
-                    {
-                        Log.Error(ex, "LOGIN POST FAILED. Path={Path}, Host={Host}, Scheme={Scheme}, Cookies={Cookies}",
-                            context.Request.Path,
-                            context.Request.Host.Value,
-                            context.Request.Scheme,
-                            string.Join(",", context.Request.Cookies.Keys));
-
-                        throw;
-                    }
-                }
-                else
-                {
-                    await next();
-                }
-            });
 
             await app.InitializeApplicationAsync();
             await app.RunAsync();

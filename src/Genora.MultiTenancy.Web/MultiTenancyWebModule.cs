@@ -195,16 +195,6 @@ public class MultiTenancyWebModule : AbpModule
             });
         }
 
-        Configure<AntiforgeryOptions>(options =>
-        {
-            options.Cookie.Name = "XSRF-TOKEN";
-            options.Cookie.HttpOnly = false;
-            options.Cookie.Path = "/";
-            options.Cookie.SameSite = SameSiteMode.Lax;
-            options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
-            options.FormFieldName = "__RequestVerificationToken";
-        });
-
         context.Services.ConfigureApplicationCookie(options =>
         {
             options.Cookie.Name = ".Genora.Auth";
@@ -216,9 +206,9 @@ public class MultiTenancyWebModule : AbpModule
 
         context.Services.Configure<CookiePolicyOptions>(options =>
         {
-            options.MinimumSameSitePolicy = SameSiteMode.Unspecified;
-            options.Secure = CookieSecurePolicy.Always;
             options.HttpOnly = HttpOnlyPolicy.None;
+            options.Secure = CookieSecurePolicy.Always;
+            options.MinimumSameSitePolicy = SameSiteMode.Unspecified;
         });
 
         context.Services.AddCors(options =>
