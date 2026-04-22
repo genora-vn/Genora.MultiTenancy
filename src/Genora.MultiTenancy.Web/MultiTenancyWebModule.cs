@@ -11,6 +11,7 @@ using Genora.MultiTenancy.Web.Middlewares;
 using Hangfire;
 using Hangfire.SqlServer;
 using Microsoft.AspNetCore.Antiforgery;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.CookiePolicy;
 using Microsoft.AspNetCore.Extensions.DependencyInjection;
@@ -131,7 +132,6 @@ public class MultiTenancyWebModule : AbpModule
                 var authority = configuration["AuthServer:Authority"]!;
                 serverBuilder.SetIssuer(new Uri(authority));
 
-                // NOTE: key config của bạn đang dùng CertificateThumbprint
                 var thumbprint = configuration["AuthServer:CertificateThumbprint"];
                 if (string.IsNullOrWhiteSpace(thumbprint))
                 {
@@ -162,11 +162,10 @@ public class MultiTenancyWebModule : AbpModule
     public override void ConfigureServices(ServiceConfigurationContext context)
     {
         context.Services.AddSignalR();
+
         var hostingEnvironment = context.Services.GetHostingEnvironment();
         var configuration = context.Services.GetConfiguration();
 
-        // ✅ Reverse proxy (Apache) - Forwarded Headers
-        // Fix triệt để: header có nhiều value => ForwardLimit=1 sẽ khiến middleware bỏ qua -> scheme vẫn http
         var behindProxy = configuration.GetValue<bool>("ReverseProxy:Enabled");
         if (behindProxy)
         {
@@ -180,7 +179,6 @@ public class MultiTenancyWebModule : AbpModule
                 options.KnownNetworks.Clear();
                 options.KnownProxies.Clear();
 
-                // Trust proxy từ appsettings
                 var proxies = configuration.GetSection("ReverseProxy:KnownProxies").Get<string[]>() ?? Array.Empty<string>();
                 foreach (var p in proxies)
                 {
@@ -190,17 +188,13 @@ public class MultiTenancyWebModule : AbpModule
                     }
                 }
 
-                // Nếu Apache/IIS cùng máy đôi khi RemoteIp là loopback
                 options.KnownProxies.Add(IPAddress.Loopback);
                 options.KnownProxies.Add(IPAddress.IPv6Loopback);
-
-                // ✅ QUAN TRỌNG: đừng giới hạn 1 hop vì header của bạn đang có "a, a"
-                options.ForwardLimit = null; // unlimited
+                options.ForwardLimit = null;
                 options.RequireHeaderSymmetry = false;
             });
         }
 
-        // Antiforgery / auth cookie behind reverse proxy
         Configure<AntiforgeryOptions>(options =>
         {
             options.Cookie.Name = "XSRF-TOKEN";
@@ -340,7 +334,9 @@ public class MultiTenancyWebModule : AbpModule
 
         var hangfireQueue = configuration["Hangfire:Queue"];
         if (string.IsNullOrWhiteSpace(hangfireQueue))
+        {
             hangfireQueue = "default";
+        }
 
         context.Services.AddHangfireServer(options =>
         {
@@ -419,6 +415,7 @@ public class MultiTenancyWebModule : AbpModule
     private void ConfigureAuthentication(ServiceConfigurationContext context)
     {
         context.Services.ForwardIdentityAuthenticationForBearer(OpenIddictValidationAspNetCoreDefaults.AuthenticationScheme);
+
         context.Services.Configure<AbpClaimsPrincipalFactoryOptions>(options =>
         {
             options.IsDynamicClaimsEnabled = true;
@@ -428,6 +425,7 @@ public class MultiTenancyWebModule : AbpModule
     private void ConfigureAutoMapper(ServiceConfigurationContext context)
     {
         context.Services.AddAutoMapperObjectMapper<MultiTenancyWebModule>();
+
         Configure<AbpAutoMapperOptions>(options =>
         {
             options.AddMaps<MultiTenancyWebModule>(validate: false);
@@ -513,7 +511,9 @@ public class MultiTenancyWebModule : AbpModule
 
         var hangfireQueue = config["Hangfire:Queue"];
         if (string.IsNullOrWhiteSpace(hangfireQueue))
+        {
             hangfireQueue = "default";
+        }
 
         if (shouldRegisterRecurring)
         {
@@ -550,7 +550,6 @@ public class MultiTenancyWebModule : AbpModule
 
         app.UseCorrelationId();
         app.UseRouting();
-
         app.UseCookiePolicy();
         app.UseStaticFiles();
 

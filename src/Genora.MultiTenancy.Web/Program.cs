@@ -1,7 +1,7 @@
-﻿using Microsoft.AspNetCore.Antiforgery;
+﻿using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.CookiePolicy;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -12,8 +12,6 @@ using Serilog.Exceptions;
 using Serilog.Exceptions.Core;
 using Serilog.Exceptions.SqlServer.Destructurers;
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.IO;
 using System.Threading.Tasks;
 
@@ -32,6 +30,7 @@ public class Program
         try
         {
             Log.Information("Starting web host...");
+
             var builder = WebApplication.CreateBuilder(args);
 
             builder.Host
@@ -71,7 +70,6 @@ public class Program
                       ));
                 });
 
-
             var sharedKeyPath = builder.Configuration["DataProtection:KeyPath"];
             if (string.IsNullOrWhiteSpace(sharedKeyPath))
             {
@@ -80,8 +78,7 @@ public class Program
 
             Directory.CreateDirectory(sharedKeyPath);
 
-            builder.Services
-                .AddDataProtection()
+            builder.Services.AddDataProtection()
                 .PersistKeysToFileSystem(new DirectoryInfo(sharedKeyPath))
                 .SetApplicationName("Genora.MultiTenancy");
 
@@ -113,14 +110,12 @@ public class Program
             app.UseCookiePolicy();
             app.UseSerilogRequestLogging();
 
-            // debug version
             app.MapGet("/version", () => new
             {
                 env = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT"),
                 commit = File.Exists(".git_commit") ? File.ReadAllText(".git_commit") : "missing"
             });
 
-            // Debug scheme (thêm remoteIp để soi)
             app.MapGet("/debug/scheme", (HttpContext ctx) => new
             {
                 scheme = ctx.Request.Scheme,
@@ -130,27 +125,11 @@ public class Program
                 xfProto = ctx.Request.Headers["X-Forwarded-Proto"].ToString(),
                 xfHost = ctx.Request.Headers["X-Forwarded-Host"].ToString(),
                 xfPort = ctx.Request.Headers["X-Forwarded-Port"].ToString(),
-                cookies = ctx.Request.Cookies.Keys.OrderBy(x => x).ToArray()
+                cookies = ctx.Request.Cookies.Keys
             });
 
-            // SignalR hubs
             app.MapHub<Genora.MultiTenancy.SignalR.FnbOrderHub>("/signalr-hubs/fnb-orders");
             app.MapHub<Genora.MultiTenancy.SignalR.ProOrderHub>("/signalr-hubs/pro-orders");
-
-            app.Use(async (context, next) =>
-            {
-                if (context.Request.Cookies.ContainsKey("__Host-Genora-AF"))
-                {
-                    context.Response.Cookies.Delete("__Host-Genora-AF", new CookieOptions
-                    {
-                        Path = "/",
-                        Secure = true,
-                        SameSite = SameSiteMode.Lax
-                    });
-                }
-
-                await next();
-            });
 
             await app.InitializeApplicationAsync();
             await app.RunAsync();
