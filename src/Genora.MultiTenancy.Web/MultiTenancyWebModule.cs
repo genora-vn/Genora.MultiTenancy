@@ -224,7 +224,7 @@ public class MultiTenancyWebModule : AbpModule
         {
             options.MinimumSameSitePolicy = SameSiteMode.Unspecified;
             options.Secure = CookieSecurePolicy.Always;
-            options.HttpOnly = HttpOnlyPolicy.Always;
+            options.HttpOnly = HttpOnlyPolicy.None;
         });
 
         context.Services.AddCors(options =>

@@ -133,8 +133,9 @@ public class MultiTenancyDbContext :
         base.OnConfiguring(optionsBuilder);
 
         // Có interceptor thì gắn; nếu null (design-time) thì bỏ qua
-        if (_sqlInterceptor is not null)
-            optionsBuilder.AddInterceptors(_sqlInterceptor);
+        // Tạm tắt SerilogCommandInterceptor để giảm tải log SQL
+        //if (_sqlInterceptor is not null)
+        //    optionsBuilder.AddInterceptors(_sqlInterceptor);
 
         // Chỉ DEV mới bật logging nhạy cảm; nếu _env null (design-time) thì không bật
         if (_env?.IsDevelopment() == true)

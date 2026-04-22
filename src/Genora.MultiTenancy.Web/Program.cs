@@ -85,16 +85,6 @@ public class Program
                 .PersistKeysToFileSystem(new DirectoryInfo(sharedKeyPath))
                 .SetApplicationName("Genora.MultiTenancy");
 
-            builder.Services.PostConfigure<AntiforgeryOptions>(options =>
-            {
-                options.Cookie.Name = "XSRF-TOKEN";
-                options.Cookie.HttpOnly = false;
-                options.Cookie.Path = "/";
-                options.Cookie.SameSite = SameSiteMode.Lax;
-                options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
-                options.FormFieldName = "__RequestVerificationToken";
-            });
-
             builder.Services.ConfigureApplicationCookie(options =>
             {
                 options.Cookie.Name = ".Genora.Auth";
@@ -108,7 +98,7 @@ public class Program
             {
                 options.MinimumSameSitePolicy = SameSiteMode.Unspecified;
                 options.Secure = CookieSecurePolicy.Always;
-                options.HttpOnly = HttpOnlyPolicy.Always;
+                options.HttpOnly = HttpOnlyPolicy.None;
             });
 
             await builder.AddApplicationAsync<MultiTenancyWebModule>();
