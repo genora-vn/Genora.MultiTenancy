@@ -86,9 +86,17 @@ namespace Genora.MultiTenancy.AppServices.AppCalendarSlots
             }
             else
             {
-                query = query.Where(x =>
-                    //(x.ApplyDate.Date > DateTime.Now.Date) &&
+                if(input.PromotionType != null)
+                {
+                    query = query.Where(x =>
+                    (x.ApplyDate.Date > DateTime.Now.Date) ||
                     (x.ApplyDate.Date == DateTime.Now.Date && x.TimeTo >= DateTime.Now.TimeOfDay));
+                } else
+                {
+                    query = query.Where(x =>
+                   (x.ApplyDate.Date == DateTime.Now.Date && x.TimeTo >= DateTime.Now.TimeOfDay));
+                }
+                
             }
 
             if (!string.IsNullOrEmpty(input.PromotionType))
