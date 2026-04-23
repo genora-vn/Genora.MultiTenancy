@@ -34,18 +34,18 @@
 
     string StatusText(ProServiceStatus s) => s switch
     {
-        ProServiceStatus.Created    => "Đơn mới",
-        ProServiceStatus.Processing => "Đang xử lý",
-        ProServiceStatus.Ready      => "Sẵn sàng giao",
-        ProServiceStatus.Delivered  => "Đã giao",
-        ProServiceStatus.Cancelled  => "Đã hủy",
+        ProServiceStatus.Created    => L["ProServiceStatus:CreatedShort"],
+        ProServiceStatus.Processing => L["ProServiceStatus:ProcessingShort"],
+        ProServiceStatus.Ready      => L["ProServiceStatus:ReadyShort"],
+        ProServiceStatus.Delivered  => L["ProServiceStatus:DeliveredShort"],
+        ProServiceStatus.Cancelled  => L["ProServiceStatus:CancelledShort"],
         _                           => s.ToString()
     };
 }
 
 <form asp-page="/AppProOrders/UpdateServiceStatusModal" method="post" class="fnb-item-modal-form">
     <input type="hidden" asp-for="Id" />
-    <input type="hidden" name="CurrentServiceStatus" value="@Model.Input.ServiceStatus" />
+    <input type="hidden" name="CurrentServiceStatus" value="@((int)Model.Input.ServiceStatus)" />
 
     <abp-modal size="Large">
         <abp-modal-body class="p-0">
@@ -55,8 +55,8 @@
                         <div class="fnb-item-modal__title-row">
                             <div class="fnb-item-modal__icon"><i class="fa fa-sync"></i></div>
                             <div>
-                                <h3 class="fnb-item-modal__title">Cập nhật trạng thái đơn Proshop</h3>
-                                <div class="fnb-item-modal__subtitle">Điều chỉnh trạng thái xử lý</div>
+                                <h3 class="fnb-item-modal__title">@L["OrderStatusModal:ProServiceTitle"]</h3>
+                                <div class="fnb-item-modal__subtitle">@L["OrderStatusModal:ProServiceSubtitle"]</div>
                             </div>
                         </div>
                         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
@@ -65,14 +65,14 @@
 
                 <div class="fnb-item-modal__body">
                     <div class="mb-3">
-                        <label class="fnb-label">Trạng thái hiện tại</label>
+                        <label class="fnb-label">@L["OrderStatusModal:CurrentStatus"]</label>
                         <div class="@BadgeClass(Model.Input.ServiceStatus)">
                             @StatusText(Model.Input.ServiceStatus)
                         </div>
                     </div>
 
                     <div class="mb-3">
-                        <label class="fnb-label">Chọn trạng thái mới <span class="text-danger">*</span></label>
+                        <label class="fnb-label">@L["OrderStatusModal:SelectNewStatus"] <span class="text-danger">*</span></label>
                         <div class="fnb-radio-grid">
                             @foreach (var item in Enum.GetValues<ProServiceStatus>())
                             {
@@ -91,7 +91,7 @@
                         </div>
                         @if (!ViewData.ModelState.IsValid && ViewData.ModelState.ContainsKey("Input.ServiceStatus"))
                         {
-                            <div class="text-danger small mt-1">Vui lòng chọn trạng thái mới.</div>
+                            <div class="text-danger small mt-1">@L["OrderStatusModal:RequiredNewStatus"]</div>
                         }
                         @if (!ViewData.ModelState.IsValid && ViewData.ModelState.ContainsKey("ServiceStatusValidation"))
                         {
@@ -100,17 +100,17 @@
                     </div>
 
                     <div>
-                        <label class="fnb-label">Ghi chú nội bộ</label>
+                        <label class="fnb-label">@L["OrderStatusModal:InternalNote"]</label>
                         <textarea asp-for="Input.InternalNote"
                                   class="form-control fnb-textarea" rows="3"
-                                  placeholder="Nhập ghi chú cho đơn hàng này"></textarea>
+                                  placeholder="@L["OrderStatusModal:InternalNotePlaceholder"]"></textarea>
                         <span asp-validation-for="Input.InternalNote" class="text-danger"></span>
                     </div>
                 </div>
 
                 <div class="fnb-item-modal__footer">
-                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Hủy</button>
-                    <button type="submit" class="btn btn-primary">Cập nhật</button>
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">@L["OrderStatusModal:Cancel"]</button>
+                    <button type="submit" class="btn btn-primary">@L["OrderStatusModal:Submit"]</button>
                 </div>
             </div>
         </abp-modal-body>

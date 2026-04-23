@@ -1,5 +1,6 @@
 ﻿using System;
 using System.ComponentModel.DataAnnotations;
+using Genora.MultiTenancy.Enums;
 using Volo.Abp.Application.Dtos;
 
 namespace Genora.MultiTenancy.AppDtos.AppCustomers;
@@ -45,4 +46,6 @@ public class AppCustomerDto : AuditedEntityDto<Guid>
     public decimal BonusPoint { get; set; }
     public Guid? MembershipTierId { get; set; }
     public string? MembershipTierName { get; set; }
+
+    public CustomerSource? CustomerSource { get; set; }
 }

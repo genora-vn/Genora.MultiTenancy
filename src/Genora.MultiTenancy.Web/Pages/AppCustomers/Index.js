@@ -33,9 +33,11 @@
 
     // ✅ chỉ lấy keyword từ ô search của DataTable
     function buildListInput(request) {
+        var sourceVal = $('#CustomerSourceFilter').val();
         return {
             filterText: (request.search?.value || '').trim() || null,
             customerTypeId: parseNullableGuid($('#CustomerTypeId').val()),
+            customerSource: sourceVal ? parseInt(sourceVal, 10) : null,
             isActive: parseNullableBool($('#IsActiveFilter').val()),
             createdFrom: parseDateDdMmYyyy($('#CreatedFrom').val()),
             createdTo: parseDateDdMmYyyy($('#CreatedTo').val()),

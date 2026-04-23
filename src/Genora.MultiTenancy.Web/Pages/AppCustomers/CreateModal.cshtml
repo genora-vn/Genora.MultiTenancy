@@ -72,28 +72,36 @@
                     <abp-input asp-for="Customer.Address"
                                label="@L["Address"]"
                                type="text"
-                               placeholder="Đường A, phường B, thành phố D,..." />
+                               placeholder="@L["Customer:AddressPlaceholder"]" />
                 </div>
             </div>
 
             <div class="row g-3">
-                <div class="col-md-4">
+                <div class="col-md-3">
                     <abp-select asp-for="Customer.ProvinceCode"
                                 asp-items="Model.ProvinceItems"
-                                label="Tỉnh / Thành phố" />
+                                label="@L["Customer:ProvinceCode"]" />
                 </div>
 
-                <div class="col-md-4">
+                <div class="col-md-3">
                     <abp-select asp-for="Customer.CustomerTypeId"
                                 asp-items="Model.CustomerTypeItems"
                                 label="@L["CustomerType"]" />
                 </div>
 
-                <div class="col-md-4">
+                <div class="col-md-3">
                     <abp-input asp-for="Customer.VgaCode"
                                label="@L["VgaCode"]"
                                type="text"
                                placeholder="ABC12345" />
+                </div>
+                <div class="col-md-3">
+                    <label asp-for="Customer.CustomerSource" class="form-label">@L["Customer:Source"]</label>
+                    <select asp-for="Customer.CustomerSource"
+                            asp-items="Model.CustomerSourceItems"
+                            class="form-select readonly-gray"
+                            disabled="disabled"></select>
+                    <input type="hidden" asp-for="Customer.CustomerSource" />
                 </div>
             </div>
 
@@ -111,7 +119,7 @@
                                disabled
                                @(isFollower ? "checked" : "") />
                         <label class="form-check-label">
-                            @(isFollower ? "Đã quan tâm Zalo OA" : "Chưa quan tâm Zalo OA")
+                            @(isFollower ? L["Customer:FollowedZaloOA"] : L["Customer:NotFollowedZaloOA"])
                         </label>
 
                         <input type="hidden" name="Customer.IsFollower" value="@(isFollower ? "true" : "false")" />
@@ -120,7 +128,7 @@
 
                 <div class="col-md-4">
                     <div class="mt-4 pt-1">
-                        <abp-input asp-for="Customer.IsActive" label="Được hoạt động" />
+                        <abp-input asp-for="Customer.IsActive" label="@L["Customer:IsActive"]" />
                     </div>
                 </div>
             </div>

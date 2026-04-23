@@ -48,7 +48,9 @@ public class ViewModalModel : PageModel
         StatusText = _l[$"BookingStatus:{Booking.Status}"];
         PaymentMethodText = Booking.PaymentMethod.HasValue ? _l[$"PaymentMethod:{Booking.PaymentMethod.Value}"] : "N/A";
         SourceText = _l[$"BookingSource:{Booking.Source}"];
-        TotalAmountText = $"{Booking.TotalAmount:N0}";
+
+        var totalFromPlayers = Booking.Players?.Sum(p => p.PricePerPlayer ?? 0m) ?? 0m;
+        TotalAmountText = totalFromPlayers.ToString("N0", new System.Globalization.CultureInfo("vi-VN"));
 
         var ids = ParseUtilityIds(Booking.Utilities);
 

@@ -1,4 +1,5 @@
 ﻿using System;
+using Genora.MultiTenancy.Enums;
 using Volo.Abp.Application.Dtos;
 
 namespace Genora.MultiTenancy.AppDtos.AppCustomers;
@@ -15,6 +16,8 @@ public class GetCustomerListInput : PagedAndSortedResultRequestDto
     public string FullName { get; set; }
 
     public Guid? CustomerTypeId { get; set; }
+
+    public CustomerSource? CustomerSource { get; set; }
 
     public bool? IsActive { get; set; }
 

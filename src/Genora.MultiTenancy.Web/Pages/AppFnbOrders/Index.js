@@ -27,26 +27,40 @@
         };
     }
 
-    function renderServiceStatus(s) {
-        s = Number(s);
-
-        if (s === 1) return '<span class="fnb-badge fnb-badge--neutral">' + l('FnbServiceStatus:Created') + '</span>';
-        if (s === 2) return '<span class="fnb-badge fnb-badge--info">' + l('FnbServiceStatus:Preparing') + '</span>';
-        if (s === 3) return '<span class="fnb-badge fnb-badge--primary">' + l('FnbServiceStatus:Delivering') + '</span>';
-        if (s === 4) return '<span class="fnb-badge fnb-badge--success">' + l('FnbServiceStatus:Served') + '</span>';
-        if (s === 5) return '<span class="fnb-badge fnb-badge--danger">' + l('FnbServiceStatus:Cancelled') + '</span>';
-
-        return '';
+    function canEditFnbOrder() {
+        return abp.auth.isGranted('MultiTenancy.AppFnbOrders.Edit') ||
+               abp.auth.isGranted('MultiTenancy.HostAppFnbOrders.Edit');
     }
 
-    function renderPaymentStatus(s) {
+    function renderUpdateButton(id, type, title) {
+        if (!canEditFnbOrder() || !id) return '';
+        return ' <button type="button" class="btn btn-sm btn-outline-secondary fnb-inline-update-btn" '
+            + 'data-fnb-update-type="' + type + '" data-fnb-id="' + id + '" '
+            + 'title="' + title + '"><i class="fa fa-pen"></i></button>';
+    }
+
+    function renderServiceStatus(s, row) {
         s = Number(s);
+        var badge = '';
 
-        if (s === 1) return '<span class="fnb-badge fnb-badge--warning">' + l('FnbPaymentStatus:Unpaid') + '</span>';
-        if (s === 2) return '<span class="fnb-badge fnb-badge--success">' + l('FnbPaymentStatus:Paid') + '</span>';
-        if (s === 3) return '<span class="fnb-badge fnb-badge--danger">' + l('FnbPaymentStatus:Failed') + '</span>';
+        if (s === 1) badge = '<span class="fnb-badge fnb-badge--neutral">' + l('FnbServiceStatus:Created') + '</span>';
+        else if (s === 2) badge = '<span class="fnb-badge fnb-badge--info">' + l('FnbServiceStatus:Preparing') + '</span>';
+        else if (s === 3) badge = '<span class="fnb-badge fnb-badge--primary">' + l('FnbServiceStatus:Delivering') + '</span>';
+        else if (s === 4) badge = '<span class="fnb-badge fnb-badge--success">' + l('FnbServiceStatus:Served') + '</span>';
+        else if (s === 5) badge = '<span class="fnb-badge fnb-badge--danger">' + l('FnbServiceStatus:Cancelled') + '</span>';
 
-        return '';
+        return badge + renderUpdateButton(row && row.id, 'service', l('UpdateServiceStatus'));
+    }
+
+    function renderPaymentStatus(s, row) {
+        s = Number(s);
+        var badge = '';
+
+        if (s === 1) badge = '<span class="fnb-badge fnb-badge--warning">' + l('FnbPaymentStatus:Unpaid') + '</span>';
+        else if (s === 2) badge = '<span class="fnb-badge fnb-badge--success">' + l('FnbPaymentStatus:Paid') + '</span>';
+        else if (s === 3) badge = '<span class="fnb-badge fnb-badge--danger">' + l('FnbPaymentStatus:Failed') + '</span>';
+
+        return badge + renderUpdateButton(row && row.id, 'payment', l('UpdatePaymentStatus'));
     }
 
     function getNextServiceAction(record) {
@@ -119,30 +133,6 @@
                                 }
                             },
                             {
-                                text: l('UpdateServiceStatus'),
-                                visible: function () {
-                                    return abp.auth.isGranted('MultiTenancy.AppFnbOrders.Edit') ||
-                                        abp.auth.isGranted('MultiTenancy.HostAppFnbOrders.Edit');
-                                },
-                                action: function (data) {
-                                    var id = fnb.safeId(data);
-                                    if (!id) return;
-                                    serviceStatusModal.open({ id: id });
-                                }
-                            },
-                            {
-                                text: l('UpdatePaymentStatus'),
-                                visible: function () {
-                                    return abp.auth.isGranted('MultiTenancy.AppFnbOrders.Edit') ||
-                                        abp.auth.isGranted('MultiTenancy.HostAppFnbOrders.Edit');
-                                },
-                                action: function (data) {
-                                    var id = fnb.safeId(data);
-                                    if (!id) return;
-                                    paymentStatusModal.open({ id: id });
-                                }
-                            },
-                            {
                                 text: l('CancelOrder'),
                                 visible: function (data) {
                                     var canEdit = abp.auth.isGranted('MultiTenancy.AppFnbOrders.Edit') ||
@@ -187,15 +177,15 @@
                 {
                     title: l('ServiceStatus'),
                     data: "serviceStatus",
-                    render: function (s) {
-                        return renderServiceStatus(s);
+                    render: function (s, type, row) {
+                        return renderServiceStatus(s, row);
                     }
                 },
                 {
                     title: l('PaymentStatus'),
                     data: "paymentStatus",
-                    render: function (s) {
-                        return renderPaymentStatus(s);
+                    render: function (s, type, row) {
+                        return renderPaymentStatus(s, row);
                     }
                 },
                 {
@@ -299,6 +289,19 @@
     cancelModal.onResult(function () {
         abp.notify.success(l('SavedSuccessfully'));
         dataTable.ajax.reload();
+    });
+
+    $('#FnbOrderTable').on('click', '.fnb-inline-update-btn', function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        var id = $(this).data('fnb-id');
+        var type = $(this).data('fnb-update-type');
+        if (!id) return;
+        if (type === 'service') {
+            serviceStatusModal.open({ id: id });
+        } else if (type === 'payment') {
+            paymentStatusModal.open({ id: id });
+        }
     });
 
     startAutoRefresh();

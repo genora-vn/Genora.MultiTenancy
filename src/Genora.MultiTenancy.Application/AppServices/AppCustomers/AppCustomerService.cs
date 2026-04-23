@@ -139,6 +139,9 @@ public class AppCustomerService :
         if (input.CustomerTypeId.HasValue)
             query = query.Where(x => x.c.CustomerTypeId == input.CustomerTypeId);
 
+        if (input.CustomerSource.HasValue)
+            query = query.Where(x => x.c.CustomerSource == input.CustomerSource.Value);
+
         if (input.IsActive.HasValue)
             query = query.Where(x => x.c.IsActive == input.IsActive.Value);
 
@@ -190,7 +193,8 @@ public class AppCustomerService :
             IsFollower = x.c.IsFollower,
             BonusPoint = x.c.BonusPoint,
             MembershipTierId = x.c.MembershipTierId,
-            MembershipTierName = x.c.MembershipTier != null ? x.c.MembershipTier.Name : null
+            MembershipTierName = x.c.MembershipTier != null ? x.c.MembershipTier.Name : null,
+            CustomerSource = x.c.CustomerSource
         }).ToList();
 
         return new PagedResultDto<AppCustomerDto>(totalCount, dtos);
@@ -299,6 +303,7 @@ public class AppCustomerService :
         entity.PhoneNumber = normalizedPhone;
         entity.CustomerCode = normalizedCustomerCode;
         entity.IsActive = true;
+        entity.CustomerSource = CustomerSource.Manual;
 
         entity = await Repository.InsertAsync(entity, autoSave: true);
         return ObjectMapper.Map<Customer, AppCustomerDto>(entity);
@@ -441,7 +446,7 @@ public class AppCustomerService :
                 DateOfBirth = r.DateOfBirth,
                 Email = email,
                 CustomerTypeId = customerType?.Id,
-                CustomerSource = CustomerSource.Other,
+                CustomerSource = CustomerSource.Extent,
                 IsActive = true
             };
 

@@ -1,9 +1,11 @@
 ﻿using Genora.MultiTenancy.AppDtos.AppCalendarSlots;
+using Genora.MultiTenancy.DomainModels.AppBookings;
 using Genora.MultiTenancy.DomainModels.AppCalendarSlotPrices;
 using Genora.MultiTenancy.DomainModels.AppCalendarSlots;
 using Genora.MultiTenancy.DomainModels.AppCustomerTypes;
 using Genora.MultiTenancy.DomainModels.AppGolfCourses;
 using Genora.MultiTenancy.DomainModels.AppSpecialDates;
+using Genora.MultiTenancy.Enums;
 using Genora.MultiTenancy.Enums.ErrorCodes;
 using Genora.MultiTenancy.Features.AppCalendarSlots;
 using Genora.MultiTenancy.Helpers;
@@ -49,6 +51,7 @@ public class AppCalendarSlotService :
     private readonly IRepository<CustomerType, Guid> _customerTypeRepository;
     private readonly IRepository<Genora.MultiTenancy.DomainModels.AppPromotionTypes.PromotionType, Guid> _promotionType;
     private readonly IRepository<SpecialDate, Guid> _specialDateRepository;
+    private readonly IRepository<Booking, Guid> _bookingRepository;
     private readonly AppCalendarExcelTemplateGenerator _generator;
     private readonly IDataFilter _dataFilter;
     private readonly IStringLocalizer<MultiTenancyResource> _l;
@@ -66,6 +69,7 @@ public class AppCalendarSlotService :
         AppCalendarExcelTemplateGenerator generator,
         IRepository<Genora.MultiTenancy.DomainModels.AppPromotionTypes.PromotionType, Guid> promotionType,
         IRepository<SpecialDate, Guid> specialDateRepository,
+        IRepository<Booking, Guid> bookingRepository,
         IDataFilter dataFilter,
         IStringLocalizer<MultiTenancyResource> l)
         : base(repository, currentTenant, featureChecker)
@@ -83,8 +87,22 @@ public class AppCalendarSlotService :
         _generator = generator;
         _promotionType = promotionType;
         _specialDateRepository = specialDateRepository;
+        _bookingRepository = bookingRepository;
         _dataFilter = dataFilter;
         _l = l;
+    }
+
+    // Trừ lại số golfer của các booking đang active (không bị hủy) khỏi MaxSlots
+    // để giữ nguyên tồn kho thực tế sau khi reset SlotAvailable.
+    private async Task<int> ResolveSlotAvailableAsync(Guid calendarSlotId, int maxSlots)
+    {
+        var activeBookings = await _bookingRepository.GetListAsync(b =>
+            b.CalendarSlotId == calendarSlotId &&
+            b.Status != BookingStatus.CancelledRefund &&
+            b.Status != BookingStatus.CancelledNoRefund);
+
+        var occupied = activeBookings.Sum(b => b.NumberOfGolfers);
+        return Math.Max(0, maxSlots - occupied);
     }
 
     // =========================================================
@@ -517,6 +535,7 @@ public class AppCalendarSlotService :
         {
             PromotionTypeId = input.PromotionTypeId,
             MaxSlots = input.MaxSlots,
+            SlotAvailable = input.MaxSlots,
             InternalNote = input.InternalNote,
             IsActive = input.IsActive
         };
@@ -545,6 +564,7 @@ public class AppCalendarSlotService :
         entity.TimeTo = input.TimeTo;
         entity.PromotionTypeId = input.PromotionTypeId;
         entity.MaxSlots = input.MaxSlots;
+        entity.SlotAvailable = await ResolveSlotAvailableAsync(entity.Id, input.MaxSlots);
         entity.InternalNote = input.InternalNote;
         entity.IsActive = input.IsActive;
 
@@ -1149,6 +1169,7 @@ public class AppCalendarSlotService :
                     {
                         pending.PromotionTypeId = promotion.Id;
                         pending.MaxSlots = r.MaxSlots;
+                        pending.SlotAvailable = r.MaxSlots;
                         pending.InternalNote = r.InternalNote;
                         pending.IsActive = true;
 
@@ -1165,6 +1186,7 @@ public class AppCalendarSlotService :
                     {
                         existingCalendar.PromotionTypeId = promotion.Id;
                         existingCalendar.MaxSlots = r.MaxSlots;
+                        existingCalendar.SlotAvailable = await ResolveSlotAvailableAsync(existingCalendar.Id, r.MaxSlots);
                         existingCalendar.InternalNote = r.InternalNote;
                         existingCalendar.IsActive = true;
 
@@ -1185,6 +1207,7 @@ public class AppCalendarSlotService :
                     {
                         PromotionTypeId = promotion.Id,
                         MaxSlots = r.MaxSlots,
+                        SlotAvailable = r.MaxSlots,
                         InternalNote = r.InternalNote,
                         IsActive = true,
                         TenantId = CurrentTenant.Id

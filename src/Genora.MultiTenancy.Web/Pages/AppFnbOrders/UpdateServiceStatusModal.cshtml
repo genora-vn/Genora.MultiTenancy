@@ -36,6 +36,7 @@
 
 <form asp-page="/AppFnbOrders/UpdateServiceStatusModal" method="post" class="fnb-item-modal-form">
     <input type="hidden" asp-for="Id" />
+    <input type="hidden" name="CurrentServiceStatus" value="@Model.Input.ServiceStatus" />
 
     <abp-modal size="Large">
         <abp-modal-body class="p-0">
@@ -47,8 +48,8 @@
                                 <i class="fa fa-sync"></i>
                             </div>
                             <div>
-                                <h3 class="fnb-item-modal__title">Cập nhật trạng thái đơn hàng</h3>
-                                <div class="fnb-item-modal__subtitle">Điều chỉnh trạng thái phục vụ</div>
+                                <h3 class="fnb-item-modal__title">@L["OrderStatusModal:FnbServiceTitle"]</h3>
+                                <div class="fnb-item-modal__subtitle">@L["OrderStatusModal:FnbServiceSubtitle"]</div>
                             </div>
                         </div>
                         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
@@ -57,14 +58,14 @@
 
                 <div class="fnb-item-modal__body">
                     <div class="mb-3">
-                        <label class="fnb-label">Trạng thái hiện tại</label>
+                        <label class="fnb-label">@L["OrderStatusModal:CurrentStatus"]</label>
                         <div class="@BadgeClass(Model.Input.ServiceStatus)">
                             @L[$"FnbServiceStatus:{Model.Input.ServiceStatus}"]
                         </div>
                     </div>
 
                     <div class="mb-3">
-                        <label class="fnb-label">Chọn trạng thái mới</label>
+                        <label class="fnb-label">@L["OrderStatusModal:SelectNewStatus"] <span class="text-danger">*</span></label>
 
                         <div class="fnb-radio-grid">
                             @foreach (var item in Enum.GetValues<FnbServiceStatus>())
@@ -93,24 +94,48 @@
                     </div>
 
                     <div>
-                        <label class="fnb-label">Ghi chú nội bộ</label>
+                        <label class="fnb-label">@L["OrderStatusModal:InternalNote"]</label>
                         <textarea asp-for="Input.InternalNote"
                                   class="form-control fnb-textarea"
                                   rows="3"
-                                  placeholder="Nhập ghi chú cho đơn hàng này"></textarea>
+                                  placeholder="@L["OrderStatusModal:InternalNotePlaceholder"]"></textarea>
                         <span asp-validation-for="Input.InternalNote" class="text-danger"></span>
                     </div>
                 </div>
 
                 <div class="fnb-item-modal__footer">
                     <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
-                        Hủy
+                        @L["OrderStatusModal:Cancel"]
                     </button>
                     <button type="submit" class="btn btn-primary">
-                        Cập nhật
+                        @L["OrderStatusModal:Submit"]
                     </button>
                 </div>
             </div>
         </abp-modal-body>
     </abp-modal>
 </form>
+
+<script>
+    (function () {
+        var form = document.querySelector('.fnb-item-modal-form');
+        if (!form) return;
+
+        var submitBtn = form.querySelector('button[type="submit"]');
+        var radios = form.querySelectorAll('input[type="radio"][name="Input.ServiceStatus"]');
+        var currentInput = form.querySelector('input[name="CurrentServiceStatus"]');
+        var currentStatus = (currentInput && currentInput.value) || '';
+
+        function updateSubmitState() {
+            var selected = form.querySelector('input[type="radio"][name="Input.ServiceStatus"]:checked');
+            var hasValidSelection = selected && String(selected.value) !== String(currentStatus);
+            submitBtn.disabled = !hasValidSelection;
+        }
+
+        radios.forEach(function (r) {
+            r.addEventListener('change', updateSubmitState);
+        });
+
+        updateSubmitState();
+    })();
+</script>

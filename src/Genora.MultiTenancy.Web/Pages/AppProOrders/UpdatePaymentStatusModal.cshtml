@@ -12,16 +12,16 @@
 
     string PaymentStatusText(ProPaymentStatus s) => s switch
     {
-        ProPaymentStatus.Unpaid => "Chưa thanh toán",
-        ProPaymentStatus.Paid   => "Đã thanh toán",
-        ProPaymentStatus.Failed => "Thanh toán lỗi",
+        ProPaymentStatus.Unpaid => L["ProPaymentStatus:UnpaidShort"],
+        ProPaymentStatus.Paid   => L["ProPaymentStatus:PaidShort"],
+        ProPaymentStatus.Failed => L["ProPaymentStatus:FailedShort"],
         _                       => s.ToString()
     };
 }
 
 <form asp-page="/AppProOrders/UpdatePaymentStatusModal" method="post" class="fnb-item-modal-form">
     <input type="hidden" asp-for="Id" />
-    <input type="hidden" name="CurrentPaymentStatus" value="@Model.Input.PaymentStatus" />
+    <input type="hidden" name="CurrentPaymentStatus" value="@((int)Model.Input.PaymentStatus)" />
 
     <abp-modal size="Large">
         <abp-modal-body class="p-0">
@@ -33,8 +33,8 @@
                                 <i class="fa fa-credit-card"></i>
                             </div>
                             <div>
-                                <h3 class="fnb-item-modal__title">Cập nhật trạng thái thanh toán</h3>
-                                <div class="fnb-item-modal__subtitle">Chọn trạng thái thanh toán cho đơn Proshop</div>
+                                <h3 class="fnb-item-modal__title">@L["OrderStatusModal:ProPaymentTitle"]</h3>
+                                <div class="fnb-item-modal__subtitle">@L["OrderStatusModal:ProPaymentSubtitle"]</div>
                             </div>
                         </div>
                         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
@@ -43,7 +43,7 @@
 
                 <div class="fnb-item-modal__body">
                     <div class="mb-3">
-                        <label class="fnb-label">Trạng thái thanh toán hiện tại</label>
+                        <label class="fnb-label">@L["OrderStatusModal:CurrentPaymentStatus"]</label>
                         <div class="@(Model.Input.PaymentStatus == ProPaymentStatus.Paid ? "fnb-badge fnb-badge--success" :
                                        Model.Input.PaymentStatus == ProPaymentStatus.Failed ? "fnb-badge fnb-badge--danger" :
                                        "fnb-badge fnb-badge--warning")">
@@ -52,7 +52,7 @@
                     </div>
 
                     <div class="mb-3">
-                        <label class="fnb-label">Chọn trạng thái mới <span class="text-danger">*</span></label>
+                        <label class="fnb-label">@L["OrderStatusModal:SelectNewStatus"] <span class="text-danger">*</span></label>
                         <div class="fnb-radio-grid">
                             @foreach (var item in Enum.GetValues<ProPaymentStatus>())
                             {
@@ -75,8 +75,8 @@
                 </div>
 
                 <div class="fnb-item-modal__footer">
-                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Hủy bỏ</button>
-                    <button type="submit" class="btn btn-primary">Xác nhận</button>
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">@L["OrderStatusModal:CancelLong"]</button>
+                    <button type="submit" class="btn btn-primary">@L["OrderStatusModal:Confirm"]</button>
                 </div>
             </div>
         </abp-modal-body>

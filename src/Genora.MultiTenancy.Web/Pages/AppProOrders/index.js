@@ -30,24 +30,33 @@ $(function () {
                abp.auth.isGranted('MultiTenancy.HostAppProOrders.Delete');
     }
 
+    function renderUpdateButton(id, type, title) {
+        if (!canEdit() || !id) return '';
+        return ' <button type="button" class="btn btn-sm btn-outline-secondary pro-inline-update-btn" '
+            + 'data-pro-update-type="' + type + '" data-pro-id="' + id + '" '
+            + 'title="' + title + '"><i class="fa fa-pen"></i></button>';
+    }
+
     // ProServiceStatus: Created=1, Processing=2, Ready=3, Delivered=4, Cancelled=5
-    function renderServiceStatus(s) {
+    function renderServiceStatus(s, row) {
         s = Number(s);
-        if (s === 1) return '<span class="fnb-badge fnb-badge--neutral">'  + l('ProServiceStatus:Created')    + '</span>';
-        if (s === 2) return '<span class="fnb-badge fnb-badge--info">'     + l('ProServiceStatus:Processing') + '</span>';
-        if (s === 3) return '<span class="fnb-badge fnb-badge--primary">'  + l('ProServiceStatus:Ready')      + '</span>';
-        if (s === 4) return '<span class="fnb-badge fnb-badge--success">'  + l('ProServiceStatus:Delivered')  + '</span>';
-        if (s === 5) return '<span class="fnb-badge fnb-badge--danger">'   + l('ProServiceStatus:Cancelled')  + '</span>';
-        return '';
+        var badge = '';
+        if (s === 1) badge = '<span class="fnb-badge fnb-badge--neutral">'  + l('ProServiceStatus:Created')    + '</span>';
+        else if (s === 2) badge = '<span class="fnb-badge fnb-badge--info">'     + l('ProServiceStatus:Processing') + '</span>';
+        else if (s === 3) badge = '<span class="fnb-badge fnb-badge--primary">'  + l('ProServiceStatus:Ready')      + '</span>';
+        else if (s === 4) badge = '<span class="fnb-badge fnb-badge--success">'  + l('ProServiceStatus:Delivered')  + '</span>';
+        else if (s === 5) badge = '<span class="fnb-badge fnb-badge--danger">'   + l('ProServiceStatus:Cancelled')  + '</span>';
+        return badge + renderUpdateButton(row && row.id, 'service', l('UpdateServiceStatus'));
     }
 
     // ProPaymentStatus: Unpaid=1, Paid=2, Refunded=3
-    function renderPaymentStatus(s) {
+    function renderPaymentStatus(s, row) {
         s = Number(s);
-        if (s === 1) return '<span class="fnb-badge fnb-badge--warning">'  + l('ProPaymentStatus:Unpaid')   + '</span>';
-        if (s === 2) return '<span class="fnb-badge fnb-badge--success">'  + l('ProPaymentStatus:Paid')     + '</span>';
-        if (s === 3) return '<span class="fnb-badge fnb-badge--neutral">'  + l('ProPaymentStatus:Refunded') + '</span>';
-        return '';
+        var badge = '';
+        if (s === 1) badge = '<span class="fnb-badge fnb-badge--warning">'  + l('ProPaymentStatus:Unpaid')   + '</span>';
+        else if (s === 2) badge = '<span class="fnb-badge fnb-badge--success">'  + l('ProPaymentStatus:Paid')     + '</span>';
+        else if (s === 3) badge = '<span class="fnb-badge fnb-badge--neutral">'  + l('ProPaymentStatus:Refunded') + '</span>';
+        return badge + renderUpdateButton(row && row.id, 'payment', l('UpdatePaymentStatus'));
     }
 
     // Created(1) → Processing(2) → Ready(3) → Delivered(4)
@@ -130,28 +139,6 @@ $(function () {
                                 }
                             },
 
-                            // ── Cập nhật trạng thái dịch vụ (modal) ──────────
-                            {
-                                text: l('UpdateServiceStatus'),
-                                visible: function () { return canEdit(); },
-                                action: function (data) {
-                                    var id = fnb.safeId(data);
-                                    if (!id) return;
-                                    serviceStatusModal.open({ id: id });
-                                }
-                            },
-
-                            // ── Cập nhật thanh toán (modal) ───────────────────
-                            {
-                                text: l('UpdatePaymentStatus'),
-                                visible: function () { return canEdit(); },
-                                action: function (data) {
-                                    var id = fnb.safeId(data);
-                                    if (!id) return;
-                                    paymentStatusModal.open({ id: id });
-                                }
-                            },
-
                             // ── Huỷ đơn ──────────────────────────────────────
                             {
                                 text: l('CancelOrder'),
@@ -196,12 +183,12 @@ $(function () {
                 {
                     title: l('ServiceStatus'),
                     data: 'serviceStatus',
-                    render: function (s) { return renderServiceStatus(s); }
+                    render: function (s, type, row) { return renderServiceStatus(s, row); }
                 },
                 {
                     title: l('PaymentStatus'),
                     data: 'paymentStatus',
-                    render: function (s) { return renderPaymentStatus(s); }
+                    render: function (s, type, row) { return renderPaymentStatus(s, row); }
                 },
                 {
                     title: l('CreationTime'),
@@ -294,6 +281,19 @@ $(function () {
             stopAutoRefresh();
         } else {
             startAutoRefresh();
+        }
+    });
+
+    $('#ProOrderTable').on('click', '.pro-inline-update-btn', function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        var id = $(this).data('pro-id');
+        var type = $(this).data('pro-update-type');
+        if (!id) return;
+        if (type === 'service') {
+            serviceStatusModal.open({ id: id });
+        } else if (type === 'payment') {
+            paymentStatusModal.open({ id: id });
         }
     });
 
