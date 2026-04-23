@@ -251,6 +251,14 @@ public class MiniAppBookingAppService : ApplicationService, IMiniAppBookingAppSe
             var savedPlayers = await _playerRepo.GetListAsync(x => x.BookingId == booking.Id);
             var playersText = BuildPlayersInlineText(savedPlayers, customer.FullName);
 
+            // TotalAmount thực tế = tổng PricePerPlayer của từng người chơi
+            // (mỗi golfer có thể là Member / MemberGuest / Visitor với giá khác nhau)
+            var emailTotalAmount = savedPlayers.Sum(p => p.PricePerPlayer ?? 0m);
+            if (emailTotalAmount <= 0m)
+            {
+                emailTotalAmount = booking.TotalAmount;
+            }
+
             var model = new BookingNewRequestEmailModelDto
             {
                 BookingCode = booking.BookingCode,
@@ -276,8 +284,8 @@ public class MiniAppBookingAppService : ApplicationService, IMiniAppBookingAppSe
                 PricePerGolfer = booking.PricePerGolfer ?? 0m,
                 PricePerGolferText = $"{(booking.PricePerGolfer ?? 0m):N0}",
 
-                TotalAmount = booking.TotalAmount,
-                TotalAmountText = $"{booking.TotalAmount:N0}",
+                TotalAmount = emailTotalAmount,
+                TotalAmountText = $"{emailTotalAmount:N0}",
 
                 PaymentMethod = booking.PaymentMethod.ToString(),
                 OtherRequests = otherRequestsText,
