@@ -269,9 +269,13 @@ namespace Genora.MultiTenancy.AppServices.AppCalendarSlots
                 }
                 else
                 {
-                    myPrice = slotPrices.Select(p => PriceByHoleHelper.GetPriceByNumberHoles(p, input.NumberHoles))
-                                        .DefaultIfEmpty(0m)
-                                        .Max();
+                    // Khách chưa đăng nhập hoặc chưa gán loại khách → mặc định tính giá theo Visitor (VIS)
+                    var visRow = visCustomerType != null
+                        ? slotPrices.FirstOrDefault(p => p.CustomerTypeId == visCustomerType.Id)
+                        : null;
+                    myPrice = visRow != null
+                        ? PriceByHoleHelper.GetPriceByNumberHoles(visRow, input.NumberHoles)
+                        : 0m;
                 }
 
                 item.CustomerTypePrice = myPrice;
