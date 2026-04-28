@@ -117,15 +117,27 @@ public class VietQrApiClient : ITransientDependency
                $"?amount={r.Amount}&addInfo={addInfo}&accountName={accountName}";
     }
 
+    //private static string BuildDeeplink(VietQrRequest r)
+    //{
+    //    // vietqr://pay?app={shortCode}&ba={accountNo}&am={amount}&tn={note}&nn={accountName}
+    //    // Scheme này hoạt động trên Zalo Mini App để mở trực tiếp app ngân hàng.
+    //    var tn  = HttpUtility.UrlEncode(Truncate(r.AddInfo, 50));
+    //    var nn  = HttpUtility.UrlEncode(r.AccountOwner);
+    //    var app = r.BankShortCode.ToLowerInvariant();
+
+    //    return $"{DeeplinkScheme}?app={app}&ba={r.AccountNumber}&am={r.Amount}&tn={tn}&nn={nn}";
+    //}
+
     private static string BuildDeeplink(VietQrRequest r)
     {
-        // vietqr://pay?app={shortCode}&ba={accountNo}&am={amount}&tn={note}&nn={accountName}
-        // Scheme này hoạt động trên Zalo Mini App để mở trực tiếp app ngân hàng.
-        var tn  = HttpUtility.UrlEncode(Truncate(r.AddInfo, 50));
-        var nn  = HttpUtility.UrlEncode(r.AccountOwner);
+        // Sử dụng link https thay vì scheme vietqr://
+        // Cấu trúc: https://dl.vietqr.io/pay?app={bank_id}&ba={account_no}&am={amount}&tn={note}
+
+        var tn = HttpUtility.UrlEncode(Truncate(r.AddInfo, 50));
         var app = r.BankShortCode.ToLowerInvariant();
 
-        return $"{DeeplinkScheme}?app={app}&ba={r.AccountNumber}&am={r.Amount}&tn={tn}&nn={nn}";
+        // Dùng HTTPS link để vượt qua kiểm tra bảo mật -1403 của Zalo
+        return $"https://dl.vietqr.io/pay?app={app}&ba={r.AccountNumber}&am={r.Amount}&tn={tn}";
     }
 
     private static string Truncate(string? s, int max)
