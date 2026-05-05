@@ -78,6 +78,17 @@ namespace Genora.MultiTenancy.AppServices.AppCalendarSlots
                 };
             }
 
+            if (!string.IsNullOrWhiteSpace(golfCourse.FrameTimes))
+            {
+                var configuredIds = golfCourse.FrameTimes
+                    .Split(',', StringSplitOptions.RemoveEmptyEntries)
+                    .Select(int.Parse)
+                    .ToHashSet();
+                result.FrameTimeOfDays = result.FrameTimeOfDays
+                    .Where(x => configuredIds.Contains(x.Id))
+                    .ToList();
+            }
+
             query = query.Where(x => x.GolfCourseId == golfCourse.Id && x.IsActive);
 
             if (input.Date.HasValue && input.Date.Value != DateTime.Now.Date)
