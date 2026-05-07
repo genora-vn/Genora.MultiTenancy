@@ -5,6 +5,8 @@ using Genora.MultiTenancy.AppServices.AppEmails;
 using Genora.MultiTenancy.AppServices.AppEmails.Templates;
 using Genora.MultiTenancy.AppServices.AppPayments;
 using Genora.MultiTenancy.AppServices.AppZaloAuths;
+using Genora.MultiTenancy.Application.SalonBeauty;
+using Genora.MultiTenancy.SalonBeauty;
 using Microsoft.Extensions.DependencyInjection;
 using SixLabors.ImageSharp;
 using System;
@@ -13,7 +15,9 @@ using Volo.Abp.AspNetCore.ExceptionHandling;
 using Volo.Abp.AutoMapper;
 using Volo.Abp.Domain.Entities.Caching;
 using Volo.Abp.FeatureManagement;
+using Volo.Abp.Features;
 using Volo.Abp.Identity;
+using Volo.Abp.Linq;
 using Volo.Abp.Modularity;
 using Volo.Abp.PermissionManagement;
 using Volo.Abp.SettingManagement;
@@ -80,6 +84,14 @@ public class MultiTenancyApplicationModule : AbpModule
         context.Services.AddTransient<IZaloTokenProvider, ZaloTokenProvider>();
         context.Services.AddTransient<IZaloApiClient, ZaloApiClient>();
         context.Services.AddTransient<IZaloOAuthClient, ZaloOAuthClient>();
+
+        // Salon Beauty services
+        context.Services.AddScoped<ISalonBeautyCustomerAppService, SalonBeautyCustomerAppService>();
+        context.Services.AddScoped<ISalonBeautyServiceCategoryAppService, SalonBeautyServiceCategoryAppService>();
+        context.Services.AddScoped<ISalonBeautyServiceAppService, SalonBeautyServiceAppService>();
+        context.Services.AddScoped<ISalonBeautyStylistAppService, SalonBeautyStylistAppService>();
+        context.Services.AddScoped<ISalonBeautyBookingAppService, SalonBeautyBookingAppService>();
+        context.Services.AddScoped<ISalonBeautyLoyaltyAppService, SalonBeautyLoyaltyAppService>();
 
         // VietQR API client — timeout 5s, tránh block prepare-order quá lâu
         context.Services.AddHttpClient("VietQR", client =>

@@ -653,6 +653,7 @@
     "Permission:MiniAppProOrders.Delete": "Xóa",
 
     "MenuGroup:Proshop": "Proshop",
+    "MenuGroup:SalonBeauty": "Quản lý Salon",
     "Menu:AppProCategories": "Danh mục",
     "Menu:AppProItems": "Sản phẩm",
     "Menu:AppProOrders": "Đơn hàng",
@@ -844,6 +845,71 @@
     "CustomerSource:Manual": "Tạo thủ công",
     "CustomerSource:Extent": "Đồng bộ / Import",
     "CustomerSource:Other": "Nguồn khác",
-    "DeletionConfirmationMessage": "Bạn có chắc muốn xoá '{0}' không?"
+    "DeletionConfirmationMessage": "Bạn có chắc muốn xoá '{0}' không?",
+
+    "PermissionGroup:SalonBeauty": "Quản lý Salon",
+    "PermissionGroup:SalonBeautyHost": "Quản lý Salon (Host)",
+    "Feature:SalonBeautyManagementGroup": "Hệ thống Salon",
+    "Feature:SalonBeautyManagement": "Quản lý Salon",
+    "Feature:SalonBeautyManagementDesc": "Cho phép quản lý hệ thống Salon",
+
+    "Permission:SalonBeautyCustomers": "Quản lý khách hàng",
+    "Permission:SalonBeautyServiceCategories": "Quản lý danh mục dịch vụ",
+    "Permission:SalonBeautyServices": "Quản lý dịch vụ",
+    "Permission:SalonBeautyStylists": "Quản lý nhân viên",
+    "Permission:SalonBeautyBookings": "Quản lý đặt lịch",
+    "Permission:Create": "Tạo mới",
+    "Permission:Edit": "Chỉnh sửa",
+    "Permission:Delete": "Xoá",
+    "Permission:Checkin": "Check-in",
+    "Permission:UpdatePayment": "Cập nhật thanh toán",
+    "Permission:Cancel": "Hủy",
+
+    "Menu:SalonBeauty": "Quản lý Salon",
+    "Menu:SalonBeautyCustomers": "Khách hàng",
+    "Menu:SalonBeautyServices": "Dịch vụ",
+    "Menu:SalonBeautyServiceCategories": "Danh mục dịch vụ",
+    "Menu:SalonBeautyStylists": "Nhân viên",
+    "Menu:SalonBeautyBookings": "Đặt lịch",
+
+    "SalonBeautyCustomer:Code": "Mã khách hàng",
+    "SalonBeautyCustomer:Name": "Tên đầy đủ",
+    "SalonBeautyCustomer:Phone": "Điện thoại",
+    "SalonBeautyCustomer:Email": "Email",
+    "SalonBeautyCustomer:Gender": "Giới tính",
+    "SalonBeautyCustomer:Birthday": "Ngày sinh",
+    "SalonBeautyCustomer:Source": "Nguồn",
+    "SalonBeautyCustomer:Status": "Trạng thái",
+
+    "SalonBeautyService:Name": "Tên dịch vụ",
+    "SalonBeautyService:Category": "Danh mục",
+    "SalonBeautyService:Price": "Giá",
+    "SalonBeautyService:Duration": "Thời gian (phút)",
+    "SalonBeautyService:Status": "Trạng thái",
+
+    "SalonBeautyBooking:Code": "Mã đặt lịch",
+    "SalonBeautyBooking:Customer": "Khách hàng",
+    "SalonBeautyBooking:Service": "Dịch vụ",
+    "SalonBeautyBooking:Stylist": "Nhân viên",
+    "SalonBeautyBooking:Date": "Ngày",
+    "SalonBeautyBooking:Time": "Thời gian",
+    "SalonBeautyBooking:Amount": "Số tiền",
+    "SalonBeautyBooking:Status": "Trạng thái",
+    "SalonBeautyBooking:PaymentStatus": "Thanh toán",
+    "SalonBeautyBooking:CheckinStatus": "Check-in",
+
+    "BookingStatus:New": "Mới",
+    "BookingStatus:Confirmed": "Xác nhận",
+    "BookingStatus:Completed": "Hoàn tất",
+    "BookingStatus:Cancelled": "Đã hủy",
+
+    "PaymentStatus:Unpaid": "Chưa thanh toán",
+    "PaymentStatus:Partial": "Thanh toán một phần",
+    "PaymentStatus:Paid": "Đã thanh toán",
+    "PaymentStatus:Refunded": "Đã hoàn tiền",
+
+    "CheckinStatus:NotCheckedIn": "Chưa check-in",
+    "CheckinStatus:CheckedIn": "Đã check-in",
+    "CheckinStatus:NoShow": "Vắng mặt"
   }
 }

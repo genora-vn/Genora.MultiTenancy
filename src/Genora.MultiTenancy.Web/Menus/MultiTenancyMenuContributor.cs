@@ -15,6 +15,7 @@ using Genora.MultiTenancy.Features.AppSpecialDates;
 using Genora.MultiTenancy.Features.AppPaymentConfigurationFeatures;
 using Genora.MultiTenancy.Features.AppZaloAuths;
 using Genora.MultiTenancy.Features.AppZaloLogs;
+using Genora.MultiTenancy.Features.SalonBeauty;
 using Genora.MultiTenancy.Localization;
 using Genora.MultiTenancy.Permissions;
 using Microsoft.Extensions.DependencyInjection;
@@ -155,6 +156,15 @@ public class MultiTenancyMenuContributor : IMenuContributor
             var canSeePaymentConfigurations =
                 await feature.IsEnabledAsync(AppPaymentConfigurationFeatures.Management) &&
                 await perms.IsGrantedAsync(MultiTenancyPermissions.AppPaymentConfigurations.Default);
+
+            var canSeeSalonBeauty =
+                await feature.IsEnabledAsync(SalonBeautyFeatures.Management) &&
+                (
+                    await perms.IsGrantedAsync(MultiTenancyPermissions.SalonBeautyCustomers.Default) ||
+                    await perms.IsGrantedAsync(MultiTenancyPermissions.SalonBeautyServices.Default) ||
+                    await perms.IsGrantedAsync(MultiTenancyPermissions.SalonBeautyStylists.Default) ||
+                    await perms.IsGrantedAsync(MultiTenancyPermissions.SalonBeautyBookings.Default)
+                );
 
             // ===== Home Page Config (Theme + Widgets) =====
             var canSeeHomePageConfigs =
@@ -306,6 +316,71 @@ public class MultiTenancyMenuContributor : IMenuContributor
                 }
 
                 context.Menu.AddItem(groupPro);
+            }
+
+            // ── SALON BEAUTY ──────────────────────────────────────────────────
+            if (canSeeSalonBeauty)
+            {
+                var groupSalonBeauty = new ApplicationMenuItem(
+                    name: "MenuGroup.SalonBeauty",
+                    displayName: l["MenuGroup:SalonBeauty"],
+                    icon: "fa fa-spa",
+                    order: 47
+                );
+
+                if (await perms.IsGrantedAsync(MultiTenancyPermissions.SalonBeautyCustomers.Default))
+                {
+                    groupSalonBeauty.AddItem(
+                        new ApplicationMenuItem(
+                            name: "SalonBeautyCustomers",
+                            displayName: l["Menu:SalonBeautyCustomers"],
+                            url: "/SalonBeautyCustomers",
+                            icon: "fa fa-user",
+                            order: 1
+                        ).RequirePermissions(MultiTenancyPermissions.SalonBeautyCustomers.Default)
+                    );
+                }
+
+                if (await perms.IsGrantedAsync(MultiTenancyPermissions.SalonBeautyServices.Default))
+                {
+                    groupSalonBeauty.AddItem(
+                        new ApplicationMenuItem(
+                            name: "SalonBeautyServices",
+                            displayName: l["Menu:SalonBeautyServices"],
+                            url: "/SalonBeautyServices",
+                            icon: "fa fa-scissors",
+                            order: 2
+                        ).RequirePermissions(MultiTenancyPermissions.SalonBeautyServices.Default)
+                    );
+                }
+
+                if (await perms.IsGrantedAsync(MultiTenancyPermissions.SalonBeautyStylists.Default))
+                {
+                    groupSalonBeauty.AddItem(
+                        new ApplicationMenuItem(
+                            name: "SalonBeautyStylists",
+                            displayName: l["Menu:SalonBeautyStylists"],
+                            url: "/SalonBeautyStylists",
+                            icon: "fa fa-id-card",
+                            order: 3
+                        ).RequirePermissions(MultiTenancyPermissions.SalonBeautyStylists.Default)
+                    );
+                }
+
+                if (await perms.IsGrantedAsync(MultiTenancyPermissions.SalonBeautyBookings.Default))
+                {
+                    groupSalonBeauty.AddItem(
+                        new ApplicationMenuItem(
+                            name: "SalonBeautyBookings",
+                            displayName: l["Menu:SalonBeautyBookings"],
+                            url: "/SalonBeautyBookings",
+                            icon: "fa fa-calendar-check",
+                            order: 4
+                        ).RequirePermissions(MultiTenancyPermissions.SalonBeautyBookings.Default)
+                    );
+                }
+
+                context.Menu.AddItem(groupSalonBeauty);
             }
 
             // =========================================================
@@ -768,6 +843,12 @@ public class MultiTenancyMenuContributor : IMenuContributor
             var hostCanSpecialDates = await perms.IsGrantedAsync(MultiTenancyPermissions.HostAppSpecialDates.Default);
             var hostCanPaymentConfigurations = await perms.IsGrantedAsync(MultiTenancyPermissions.HostAppPaymentConfigurations.Default);
 
+            var hostCanSeeSalonBeauty =
+                await perms.IsGrantedAsync(MultiTenancyPermissions.HostSalonBeautyCustomers.Default) ||
+                await perms.IsGrantedAsync(MultiTenancyPermissions.HostSalonBeautyServices.Default) ||
+                await perms.IsGrantedAsync(MultiTenancyPermissions.HostSalonBeautyStylists.Default) ||
+                await perms.IsGrantedAsync(MultiTenancyPermissions.HostSalonBeautyBookings.Default);
+
             var hostCanSeeFnb =
                 await perms.IsGrantedAsync(MultiTenancyPermissions.HostAppFnbCategories.Default) ||
                 await perms.IsGrantedAsync(MultiTenancyPermissions.HostAppFnbItems.Default) ||
@@ -907,6 +988,71 @@ public class MultiTenancyMenuContributor : IMenuContributor
                 }
 
                 context.Menu.AddItem(groupPro);
+            }
+
+            // ── SALON BEAUTY (HOST) ────────────────────────────────────────────────
+            if (hostCanSeeSalonBeauty)
+            {
+                var groupSalonBeauty = new ApplicationMenuItem(
+                    name: "MenuGroup.SalonBeauty",
+                    displayName: l["MenuGroup:SalonBeauty"],
+                    icon: "fa fa-spa",
+                    order: 47
+                );
+
+                if (await perms.IsGrantedAsync(MultiTenancyPermissions.HostSalonBeautyCustomers.Default))
+                {
+                    groupSalonBeauty.AddItem(
+                        new ApplicationMenuItem(
+                            name: "SalonBeautyCustomersHost",
+                            displayName: l["Menu:SalonBeautyCustomers"],
+                            url: "/SalonBeautyCustomers",
+                            icon: "fa fa-user",
+                            order: 1
+                        ).RequirePermissions(MultiTenancyPermissions.HostSalonBeautyCustomers.Default)
+                    );
+                }
+
+                if (await perms.IsGrantedAsync(MultiTenancyPermissions.HostSalonBeautyServices.Default))
+                {
+                    groupSalonBeauty.AddItem(
+                        new ApplicationMenuItem(
+                            name: "SalonBeautyServicesHost",
+                            displayName: l["Menu:SalonBeautyServices"],
+                            url: "/SalonBeautyServices",
+                            icon: "fa fa-scissors",
+                            order: 2
+                        ).RequirePermissions(MultiTenancyPermissions.HostSalonBeautyServices.Default)
+                    );
+                }
+
+                if (await perms.IsGrantedAsync(MultiTenancyPermissions.HostSalonBeautyStylists.Default))
+                {
+                    groupSalonBeauty.AddItem(
+                        new ApplicationMenuItem(
+                            name: "SalonBeautyStylistsHost",
+                            displayName: l["Menu:SalonBeautyStylists"],
+                            url: "/SalonBeautyStylists",
+                            icon: "fa fa-id-card",
+                            order: 3
+                        ).RequirePermissions(MultiTenancyPermissions.HostSalonBeautyStylists.Default)
+                    );
+                }
+
+                if (await perms.IsGrantedAsync(MultiTenancyPermissions.HostSalonBeautyBookings.Default))
+                {
+                    groupSalonBeauty.AddItem(
+                        new ApplicationMenuItem(
+                            name: "SalonBeautyBookingsHost",
+                            displayName: l["Menu:SalonBeautyBookings"],
+                            url: "/SalonBeautyBookings",
+                            icon: "fa fa-calendar-check",
+                            order: 4
+                        ).RequirePermissions(MultiTenancyPermissions.HostSalonBeautyBookings.Default)
+                    );
+                }
+
+                context.Menu.AddItem(groupSalonBeauty);
             }
 
             // ===== Home Page Config (Theme + Widgets) - HOST =====

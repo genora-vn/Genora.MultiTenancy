@@ -389,6 +389,94 @@ public static class MultiTenancyPermissions
 
     #endregion
 
+    #region Salon Beauty Permissions
+    public static class SalonBeautyCustomers
+    {
+        public const string Default = GroupName + ".SalonBeautyCustomers";
+        public const string Create = Default + ".Create";
+        public const string Edit = Default + ".Edit";
+        public const string Delete = Default + ".Delete";
+    }
+
+    public static class HostSalonBeautyCustomers
+    {
+        public const string Default = GroupName + ".HostSalonBeautyCustomers";
+        public const string Create = Default + ".Create";
+        public const string Edit = Default + ".Edit";
+        public const string Delete = Default + ".Delete";
+    }
+
+    public static class SalonBeautyServiceCategories
+    {
+        public const string Default = GroupName + ".SalonBeautyServiceCategories";
+        public const string Create = Default + ".Create";
+        public const string Edit = Default + ".Edit";
+        public const string Delete = Default + ".Delete";
+    }
+
+    public static class HostSalonBeautyServiceCategories
+    {
+        public const string Default = GroupName + ".HostSalonBeautyServiceCategories";
+        public const string Create = Default + ".Create";
+        public const string Edit = Default + ".Edit";
+        public const string Delete = Default + ".Delete";
+    }
+
+    public static class SalonBeautyServices
+    {
+        public const string Default = GroupName + ".SalonBeautyServices";
+        public const string Create = Default + ".Create";
+        public const string Edit = Default + ".Edit";
+        public const string Delete = Default + ".Delete";
+    }
+
+    public static class HostSalonBeautyServices
+    {
+        public const string Default = GroupName + ".HostSalonBeautyServices";
+        public const string Create = Default + ".Create";
+        public const string Edit = Default + ".Edit";
+        public const string Delete = Default + ".Delete";
+    }
+
+    public static class SalonBeautyStylists
+    {
+        public const string Default = GroupName + ".SalonBeautyStylists";
+        public const string Create = Default + ".Create";
+        public const string Edit = Default + ".Edit";
+        public const string Delete = Default + ".Delete";
+    }
+
+    public static class HostSalonBeautyStylists
+    {
+        public const string Default = GroupName + ".HostSalonBeautyStylists";
+        public const string Create = Default + ".Create";
+        public const string Edit = Default + ".Edit";
+        public const string Delete = Default + ".Delete";
+    }
+
+    public static class SalonBeautyBookings
+    {
+        public const string Default = GroupName + ".SalonBeautyBookings";
+        public const string Create = Default + ".Create";
+        public const string Edit = Default + ".Edit";
+        public const string Delete = Default + ".Delete";
+        public const string Checkin = Default + ".Checkin";
+        public const string UpdatePayment = Default + ".UpdatePayment";
+        public const string Cancel = Default + ".Cancel";
+    }
+
+    public static class HostSalonBeautyBookings
+    {
+        public const string Default = GroupName + ".HostSalonBeautyBookings";
+        public const string Create = Default + ".Create";
+        public const string Edit = Default + ".Edit";
+        public const string Delete = Default + ".Delete";
+        public const string Checkin = Default + ".Checkin";
+        public const string UpdatePayment = Default + ".UpdatePayment";
+        public const string Cancel = Default + ".Cancel";
+    }
+    #endregion
+
     //Add your own permission names. Example:
     //public const string MyPermission1 = GroupName + ".MyPermission1";
 }

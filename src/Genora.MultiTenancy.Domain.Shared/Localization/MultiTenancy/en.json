@@ -618,6 +618,7 @@
     "Permission:MiniAppProOrders.Delete": "Delete",
 
     "MenuGroup:Proshop": "Proshop",
+    "MenuGroup:SalonBeauty": "Salon Beauty",
     "Menu:AppProCategories": "Categories",
     "Menu:AppProItems": "Products",
     "Menu:AppProOrders": "Orders",
@@ -809,6 +810,71 @@
     "CustomerSource:Manual": "Manual (CMS)",
     "CustomerSource:Extent": "Sync / Import",
     "CustomerSource:Other": "Other",
-    "DeletionConfirmationMessage": "Are you sure you want to delete '{0}'?"
+    "DeletionConfirmationMessage": "Are you sure you want to delete '{0}'?",
+
+    "PermissionGroup:SalonBeauty": "Salon Beauty",
+    "PermissionGroup:SalonBeautyHost": "Salon Beauty (Host)",
+    "Feature:SalonBeautyManagementGroup": "Salon Beauty System",
+    "Feature:SalonBeautyManagement": "Salon Beauty Management",
+    "Feature:SalonBeautyManagementDesc": "Enable salon beauty management system",
+
+    "Permission:SalonBeautyCustomers": "Customer Management",
+    "Permission:SalonBeautyServiceCategories": "Service Category Management",
+    "Permission:SalonBeautyServices": "Service Management",
+    "Permission:SalonBeautyStylists": "Stylist Management",
+    "Permission:SalonBeautyBookings": "Booking Management",
+    "Permission:Create": "Create",
+    "Permission:Edit": "Edit",
+    "Permission:Delete": "Delete",
+    "Permission:Checkin": "Check-in",
+    "Permission:UpdatePayment": "Update Payment",
+    "Permission:Cancel": "Cancel",
+
+    "Menu:SalonBeauty": "Salon Beauty",
+    "Menu:SalonBeautyCustomers": "Customers",
+    "Menu:SalonBeautyServices": "Services",
+    "Menu:SalonBeautyServiceCategories": "Service Categories",
+    "Menu:SalonBeautyStylists": "Stylists",
+    "Menu:SalonBeautyBookings": "Bookings",
+
+    "SalonBeautyCustomer:Code": "Customer Code",
+    "SalonBeautyCustomer:Name": "Full Name",
+    "SalonBeautyCustomer:Phone": "Phone",
+    "SalonBeautyCustomer:Email": "Email",
+    "SalonBeautyCustomer:Gender": "Gender",
+    "SalonBeautyCustomer:Birthday": "Birthday",
+    "SalonBeautyCustomer:Source": "Source",
+    "SalonBeautyCustomer:Status": "Status",
+
+    "SalonBeautyService:Name": "Service Name",
+    "SalonBeautyService:Category": "Category",
+    "SalonBeautyService:Price": "Price",
+    "SalonBeautyService:Duration": "Duration (min)",
+    "SalonBeautyService:Status": "Status",
+
+    "SalonBeautyBooking:Code": "Booking Code",
+    "SalonBeautyBooking:Customer": "Customer",
+    "SalonBeautyBooking:Service": "Service",
+    "SalonBeautyBooking:Stylist": "Stylist",
+    "SalonBeautyBooking:Date": "Date",
+    "SalonBeautyBooking:Time": "Time",
+    "SalonBeautyBooking:Amount": "Amount",
+    "SalonBeautyBooking:Status": "Status",
+    "SalonBeautyBooking:PaymentStatus": "Payment",
+    "SalonBeautyBooking:CheckinStatus": "Check-in",
+
+    "BookingStatus:New": "New",
+    "BookingStatus:Confirmed": "Confirmed",
+    "BookingStatus:Completed": "Completed",
+    "BookingStatus:Cancelled": "Cancelled",
+
+    "PaymentStatus:Unpaid": "Unpaid",
+    "PaymentStatus:Partial": "Partial",
+    "PaymentStatus:Paid": "Paid",
+    "PaymentStatus:Refunded": "Refunded",
+
+    "CheckinStatus:NotCheckedIn": "Not checked in",
+    "CheckinStatus:CheckedIn": "Checked in",
+    "CheckinStatus:NoShow": "No show"
   }
 }

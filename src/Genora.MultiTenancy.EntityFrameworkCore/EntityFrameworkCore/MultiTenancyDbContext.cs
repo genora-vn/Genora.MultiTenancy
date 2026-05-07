@@ -26,6 +26,7 @@ using Genora.MultiTenancy.DomainModels.AppPaymentConfigurations;
 using Genora.MultiTenancy.DomainModels.AppPromotionTypes;
 using Genora.MultiTenancy.DomainModels.AppSpecialDates;
 using Genora.MultiTenancy.DomainModels.AppZaloAuth;
+using Genora.MultiTenancy.DomainModels.AppSalonBeauty;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Hosting;
 using Volo.Abp.AuditLogging.EntityFrameworkCore;
@@ -96,6 +97,16 @@ public class MultiTenancyDbContext :
 
     // Payment
     public DbSet<PaymentConfiguration> AppPaymentConfigurations { get; set; }
+
+    // Salon Beauty
+    public DbSet<SalonBeautyCustomer> SalonBeautyCustomer { get; set; }
+    public DbSet<SalonBeautyServiceCategory> SalonBeautyServiceCategory { get; set; }
+    public DbSet<SalonBeautyService> SalonBeautyService { get; set; }
+    public DbSet<SalonBeautyStylist> SalonBeautyStylist { get; set; }
+    public DbSet<SalonBeautyBooking> SalonBeautyBooking { get; set; }
+    public DbSet<SalonBeautyBookingService> SalonBeautyBookingService { get; set; }
+    public DbSet<SalonBeautyCustomerLoyaltyBalance> SalonBeautyCustomerLoyaltyBalance { get; set; }
+    public DbSet<SalonBeautyCustomerLoyaltyTransaction> SalonBeautyCustomerLoyaltyTransaction { get; set; }
 
     // Identity
     public DbSet<IdentityUser> Users { get; set; }
@@ -171,6 +182,7 @@ public class MultiTenancyDbContext :
         builder.ConfigureFnbModule();
         builder.ConfigureProshopModule();
         builder.ConfigurePaymentModule();
+        builder.ConfigureSalonBeautyModule();
 
         builder.Entity<ZaloAuth>(b =>
         {
