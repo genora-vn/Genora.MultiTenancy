@@ -29,13 +29,18 @@ namespace Genora.MultiTenancy.AppServices.AppNewsServices
 
         public async Task<MiniAppNewsDetailDto> GetAsync(Guid id)
         {
-            // 1) bài chính
-            var news = await _newsRepository.GetAsync(id);
+            // Eager-load RelatedNewsLinks tránh N+1 queries
+            var newsQ = await _newsRepository.WithDetailsAsync(x => x.RelatedNewsLinks);
+            var news = await AsyncExecuter.FirstOrDefaultAsync(newsQ.Where(x => x.Id == id));
+
+            if (news == null)
+                throw new Exception($"News with id {id} not found");
+
             var result = ObjectMapper.Map<News, MiniAppNewsData>(news);
             result.ThumbnailUrl = ImageHelper.NormalizeThumb(_configuration, result.ThumbnailUrl);
 
-            var relRows = await _newsRelatedRepository.GetListAsync(x => x.NewsId == id);
-            var relIds = relRows
+            // Get RelatedNews IDs từ eager-loaded RelatedNewsLinks (không query lại)
+            var relIds = news.RelatedNewsLinks
                 .Select(x => x.RelatedNewsId)
                 .Where(x => x != Guid.Empty && x != id)
                 .Distinct()
@@ -43,12 +48,11 @@ namespace Genora.MultiTenancy.AppServices.AppNewsServices
 
             if (relIds.Count > 0)
             {
-                var q = await _newsRepository.GetQueryableAsync();
-
+                // Batch query: lấy tất cả Related News cùng một lần
+                var relatedQ = await _newsRepository.GetQueryableAsync();
                 var relatedEntities = await AsyncExecuter.ToListAsync(
-                    q.Where(x => relIds.Contains(x.Id))
-                     .Where(x => x.Status == (byte)NewsStatus.Published)
-                     .OrderBy(nameof(News.DisplayOrder) + " asc, " + nameof(News.PublishedAt) + " desc")
+                    relatedQ.Where(x => relIds.Contains(x.Id) && x.Status == (byte)NewsStatus.Published)
+                            .OrderBy(nameof(News.DisplayOrder) + " asc, " + nameof(News.PublishedAt) + " desc")
                 );
 
                 var relatedDtos = ObjectMapper.Map<List<News>, List<MiniAppRelatedNewsData>>(relatedEntities);
@@ -100,13 +104,16 @@ namespace Genora.MultiTenancy.AppServices.AppNewsServices
             var newsIds = dtoList.Select(x => x.Id).Distinct().ToList();
             if (newsIds.Count > 0)
             {
+                // Batch query: lấy tất cả NewsRelated + RelatedNews entity trong 2 queries
                 var relQ = await _newsRelatedRepository.GetQueryableAsync();
-                var relRows = await AsyncExecuter.ToListAsync(relQ.Where(r => newsIds.Contains(r.NewsId)));
+                var relRows = await AsyncExecuter.ToListAsync(
+                    relQ.Where(r => newsIds.Contains(r.NewsId)));
 
                 if (relRows.Count > 0)
                 {
                     var relatedIds = relRows.Select(r => r.RelatedNewsId).Distinct().ToList();
 
+                    // Batch query tất cả Related News cùng một lần
                     var relatedNewsQ = await _newsRepository.GetQueryableAsync();
                     var relatedEntities = await AsyncExecuter.ToListAsync(
                         relatedNewsQ.Where(n => relatedIds.Contains(n.Id) && n.Status == (byte)NewsStatus.Published)

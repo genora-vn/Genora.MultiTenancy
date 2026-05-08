@@ -15,6 +15,7 @@
 <form asp-page="/AppNews/EditModal" method="post" id="EditNewsForm" enctype="multipart/form-data">
     <input type="hidden" asp-for="Id" />
     <input type="hidden" id="IsUploadImageHiddenEdit" asp-for="News.IsUploadImage" value="false" />
+    <input type="hidden" id="OriginalThumbnailUrl" value="@Model.News?.ThumbnailUrl" />
 
     <abp-modal size="ExtraLarge">
         <abp-modal-header title="@L["EditAppNews"]"></abp-modal-header>
@@ -633,6 +634,13 @@
                 if (fileInput) fileInput.value = '';
 
                 resetUnobtrusive();
+
+                // Fallback to original URL if input is empty
+                if (!$thumbInput.val().trim()) {
+                    const originalUrl = $('#OriginalThumbnailUrl').val();
+                    if (originalUrl) $thumbInput.val(originalUrl);
+                }
+
                 bindingPreviewFromUrl();
 
                 if ($thumbInput.rules) $thumbInput.rules('add', { required: true });

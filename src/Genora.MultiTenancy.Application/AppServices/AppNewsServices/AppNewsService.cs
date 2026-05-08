@@ -99,11 +99,24 @@ public class AppNewsService :
     {
         await CheckGetPolicyAsync();
 
-        var entity = await Repository.GetAsync(id);
+        // Eager-load RelatedNewsLinks để tránh lazy-load khi map
+        var query = await Repository.WithDetailsAsync(x => x.RelatedNewsLinks);
+        var entity = await AsyncExecuter.FirstOrDefaultAsync(query.Where(x => x.Id == id))
+            ?? throw new Volo.Abp.Domain.Entities.EntityNotFoundException(typeof(News), id);
+
         var dto = ObjectMapper.Map<News, AppNewsDto>(entity);
 
-        var rel = await _newsRelatedRepo.GetListAsync(x => x.NewsId == id);
-        dto.RelatedNewsIds = rel.Select(x => x.RelatedNewsId).ToList();
+        // Lấy RelatedNewsIds từ eager-loaded RelatedNewsLinks
+        dto.RelatedNewsIds = entity.RelatedNewsLinks
+            .Select(x => x.RelatedNewsId)
+            .ToList();
+
+        // Batch query title của related news
+        if (dto.RelatedNewsIds.Count > 0)
+        {
+            var relatedNews = await Repository.GetListAsync(x => dto.RelatedNewsIds.Contains(x.Id));
+            dto.RelatedNewsTitles = relatedNews.ToDictionary(x => x.Id, x => x.Title);
+        }
 
         return dto;
     }

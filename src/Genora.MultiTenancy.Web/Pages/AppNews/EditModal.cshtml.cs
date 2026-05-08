@@ -35,12 +35,8 @@ public class EditModalModel : MultiTenancyPageModel
         var dto = await _newsService.GetAsync(Id);
         News = ObjectMapper.Map<AppNewsDto, CreateUpdateAppNewsDto>(dto);
 
-        if (dto.RelatedNewsIds != null && dto.RelatedNewsIds.Count > 0)
-        {
-            var ids = dto.RelatedNewsIds.Distinct().ToList();
-            var list = await _newsRepo.GetListAsync(x => ids.Contains(x.Id));
-            RelatedNewsTitles = list.ToDictionary(x => x.Id, x => x.Title);
-        }
+        // RelatedNewsTitles đã được populate bởi AppNewsService
+        RelatedNewsTitles = dto.RelatedNewsTitles ?? new Dictionary<Guid, string>();
 
         News.IsUploadImage = false;
         News.Images = null;
@@ -49,8 +45,6 @@ public class EditModalModel : MultiTenancyPageModel
     public async Task<IActionResult> OnPostAsync()
     {
         if (News == null) News = new CreateUpdateAppNewsDto();
-
-        var current = await _newsService.GetAsync(Id);
 
         if (News.IsUploadImage)
         {
@@ -65,9 +59,6 @@ public class EditModalModel : MultiTenancyPageModel
         }
         else
         {
-            if (string.IsNullOrWhiteSpace(News.ThumbnailUrl))
-                News.ThumbnailUrl = current.ThumbnailUrl;
-
             if (string.IsNullOrWhiteSpace(News.ThumbnailUrl))
                 ModelState.AddModelError("News.ThumbnailUrl", "Vui lòng nhập URL ảnh đại diện.");
 

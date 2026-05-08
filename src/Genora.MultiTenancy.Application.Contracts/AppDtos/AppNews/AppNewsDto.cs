@@ -20,4 +20,6 @@ public class AppNewsDto : FullAuditedEntityDto<Guid>
     public int DisplayOrder { get; set; }
 
     public List<Guid> RelatedNewsIds { get; set; } = new();
+
+    public Dictionary<Guid, string> RelatedNewsTitles { get; set; } = new();
 }
