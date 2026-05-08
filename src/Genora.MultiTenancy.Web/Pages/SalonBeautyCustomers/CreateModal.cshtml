@@ -1,0 +1,120 @@
+﻿@page
+@using Genora.MultiTenancy.Localization
+@using Microsoft.Extensions.Localization
+@using Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.TagHelpers.Modal
+@model Genora.MultiTenancy.Web.Pages.SalonBeautyCustomers.CreateModalModel
+@inject IStringLocalizer<MultiTenancyResource> L
+@{
+    Layout = null;
+
+    var birthdayText = Model.Customer?.Birthday.HasValue == true
+        ? Model.Customer.Birthday.Value.ToString("dd/MM/yyyy")
+        : string.Empty;
+}
+
+<form asp-page="/SalonBeautyCustomers/CreateModal" id="CreateSalonCustomerForm" class="salon-customer-form" method="post" autocomplete="off" novalidate>
+    <abp-modal size="Large">
+        <abp-modal-body class="p-0">
+            <div class="salon-customer-modal">
+                <div class="salon-modal-header">
+                    <div class="salon-modal-title-wrap">
+                        <div class="salon-modal-icon"><i class="fa fa-user-plus"></i></div>
+                        <div>
+                            <h3>@L["SalonBeautyCustomers:CreateTitle"]</h3>
+                            <p>@L["SalonBeautyCustomers:CreateSubTitle"]</p>
+                        </div>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="@L["Close"]"></button>
+                </div>
+
+                <div class="salon-modal-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="salon-form-label" asp-for="Customer.Name">@L["SalonBeautyCustomer:Name"] <span class="text-danger">*</span></label>
+                            <div class="salon-input-icon">
+                                <input asp-for="Customer.Name" class="form-control salon-required" required maxlength="255" placeholder="@L["SalonBeautyCustomers:NamePlaceholder"]" />
+                                <i class="fa fa-user"></i>
+                            </div>
+                            <span asp-validation-for="Customer.Name" class="text-danger"></span>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="salon-form-label" asp-for="Customer.Phone">@L["SalonBeautyCustomer:Phone"] <span class="text-danger">*</span></label>
+                            <div class="salon-input-icon">
+                                <input asp-for="Customer.Phone" class="form-control salon-required salon-phone-input" required inputmode="numeric" pattern="^0\d{9,10}$" maxlength="11" placeholder="@L["SalonBeautyCustomers:PhonePlaceholder"]" />
+                                <i class="fa fa-phone"></i>
+                            </div>
+                            <small class="form-text text-muted">@L["SalonBeautyCustomers:PhoneHint"]</small>
+                            <span asp-validation-for="Customer.Phone" class="text-danger"></span>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="salon-form-label" asp-for="Customer.Email">@L["SalonBeautyCustomer:Email"]</label>
+                            <div class="salon-input-icon">
+                                <input asp-for="Customer.Email" type="email" class="form-control" maxlength="255" placeholder="example@gmail.com" />
+                                <i class="fa fa-envelope"></i>
+                            </div>
+                            <span asp-validation-for="Customer.Email" class="text-danger"></span>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="salon-form-label" asp-for="Customer.Birthday">@L["SalonBeautyCustomer:Birthday"]</label>
+                            <div class="salon-input-icon">
+                                <input asp-for="Customer.Birthday"
+                                       type="text"
+                                       class="form-control salon-birthday-input dob-input"
+                                       value="@birthdayText"
+                                       placeholder="dd/MM/yyyy"
+                                       autocomplete="off"
+                                       data-max-date="@DateTime.Now.ToString("dd/MM/yyyy")" />
+                                <i class="fa fa-calendar salon-date-picker-trigger"></i>
+                            </div>
+                            <span asp-validation-for="Customer.Birthday" class="text-danger"></span>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="salon-form-label" asp-for="Customer.Gender">@L["SalonBeautyCustomer:Gender"]</label>
+                            <select asp-for="Customer.Gender" asp-items="Model.GenderItems" class="form-select">
+                                <option value="">@L["SalonBeautyCustomers:GenderPlaceholder"]</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="salon-form-label" asp-for="Customer.Source">@L["SalonBeautyCustomer:Source"] <span class="text-danger">*</span></label>
+                            <select asp-for="Customer.Source" asp-items="Model.SourceItems" class="form-select salon-required" required>
+                                <option value="">@L["SalonBeautyCustomers:SourcePlaceholder"]</option>
+                            </select>
+                            <span asp-validation-for="Customer.Source" class="text-danger"></span>
+                        </div>
+                        <div class="col-12">
+                            <label class="salon-form-label" asp-for="Customer.Note">@L["SalonBeautyCustomer:Note"]</label>
+                            <textarea asp-for="Customer.Note" rows="4" maxlength="500" class="form-control salon-note" placeholder="@L["SalonBeautyCustomers:NotePlaceholder"]"></textarea>
+                            <span asp-validation-for="Customer.Note" class="text-danger"></span>
+                        </div>
+                        <div class="col-12">
+                            <div class="salon-status-box">
+                                <div class="salon-status-icon"><i class="fa fa-shield"></i></div>
+                                <div class="flex-grow-1">
+                                    <strong>@L["SalonBeautyCustomers:StatusBoxTitle"]</strong>
+                                    <span>@L["SalonBeautyCustomers:StatusBoxDescription"]</span>
+                                </div>
+                                <input asp-for="Customer.Status" type="hidden" class="salon-status-value" />
+                                <div class="salon-switch-wrap">
+                                    <label class="salon-switch">
+                                        <input type="checkbox" class="salon-status-toggle" @(Model.Customer.Status == 1 ? "checked" : "") />
+                                        <span class="salon-switch-slider"></span>
+                                    </label>
+                                    <strong class="salon-status-toggle-text"
+                                            data-active="@L["SalonBeautyCustomer:StatusActive"]"
+                                            data-inactive="@L["SalonBeautyCustomer:StatusInactive"]">
+                                        @(Model.Customer.Status == 1 ? L["SalonBeautyCustomer:StatusActive"] : L["SalonBeautyCustomer:StatusInactive"])
+                                    </strong>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="salon-modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">@L["Cancel"]</button>
+                    <button type="button" class="btn salon-btn-primary salon-submit-button" disabled><i class="fa fa-save"></i> @L["Save"]</button>
+                </div>
+            </div>
+        </abp-modal-body>
+    </abp-modal>
+</form>

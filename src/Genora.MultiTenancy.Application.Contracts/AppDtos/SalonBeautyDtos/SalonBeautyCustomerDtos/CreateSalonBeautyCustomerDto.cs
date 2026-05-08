@@ -1,26 +1,28 @@
 using System;
 using System.ComponentModel.DataAnnotations;
+using Genora.MultiTenancy.Enums;
 
 namespace Genora.MultiTenancy.AppDtos.SalonBeautyDtos.SalonBeautyCustomerDtos;
 
 public class CreateSalonBeautyCustomerDto
 {
-    [Required]
     [StringLength(50)]
-    public string CustomerCode { get; set; } = null!;
+    public string? CustomerCode { get; set; }
 
-    [Required]
+    [Required(ErrorMessage = "SalonBeautyCustomer:NameRequired")]
     [StringLength(255)]
     public string Name { get; set; } = null!;
 
+    [Required(ErrorMessage = "SalonBeautyCustomer:PhoneRequired")]
     [StringLength(15)]
-    public string? Phone { get; set; }
+    [RegularExpression(@"^0\d{9,10}$", ErrorMessage = "SalonBeautyCustomer:PhoneInvalid")]
+    public string Phone { get; set; } = null!;
 
     [StringLength(255)]
-    [EmailAddress]
+    [EmailAddress(ErrorMessage = "SalonBeautyCustomer:EmailInvalid")]
     public string? Email { get; set; }
 
-    public byte? Gender { get; set; }
+    public SalonBeautyGender? Gender { get; set; }
     public DateTime? Birthday { get; set; }
 
     [StringLength(500)]
@@ -30,7 +32,7 @@ public class CreateSalonBeautyCustomerDto
     public string? ZaloUserId { get; set; }
 
     public bool IsFollowOa { get; set; }
-    public byte? Source { get; set; }
+    public SalonBeautyCustomerSource? Source { get; set; } = SalonBeautyCustomerSource.Zalo;
     public byte Status { get; set; } = 1;
 
     [StringLength(500)]

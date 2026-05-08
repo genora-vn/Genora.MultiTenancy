@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Genora.MultiTenancy.AppDtos.SalonBeautyDtos;
 using Genora.MultiTenancy.AppDtos.SalonBeautyDtos.SalonBeautyCustomerDtos;
@@ -6,8 +7,8 @@ using Genora.MultiTenancy.Permissions;
 using Genora.MultiTenancy.SalonBeauty;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Volo.Abp.AspNetCore.Mvc;
 using Volo.Abp.Application.Dtos;
+using Volo.Abp.AspNetCore.Mvc;
 
 namespace Genora.MultiTenancy.HttpApi.Controllers;
 
@@ -33,6 +34,18 @@ public class SalonBeautyCustomerController : AbpController
     public async Task<SalonBeautyCustomerDto> GetAsync(Guid id)
     {
         return await _service.GetAsync(id);
+    }
+
+    [HttpGet("{id}/booking-history")]
+    public async Task<List<SalonBeautyCustomerBookingHistoryDto>> GetBookingHistoryAsync(Guid id, [FromQuery] int maxResultCount = 20)
+    {
+        return await _service.GetBookingHistoryAsync(id, maxResultCount);
+    }
+
+    [HttpGet("{id}/loyalty-transactions")]
+    public async Task<List<SalonBeautyCustomerLoyaltyTransactionDto>> GetLoyaltyTransactionsAsync(Guid id, [FromQuery] int maxResultCount = 20)
+    {
+        return await _service.GetLoyaltyTransactionsAsync(id, maxResultCount);
     }
 
     [HttpPost]

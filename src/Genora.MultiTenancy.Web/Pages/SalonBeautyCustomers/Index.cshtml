@@ -1,0 +1,111 @@
+﻿@page
+@using Genora.MultiTenancy.Enums
+@using Genora.MultiTenancy.Localization
+@using Genora.MultiTenancy.Permissions
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.Extensions.Localization
+@inject IStringLocalizer<MultiTenancyResource> L
+@inject IAuthorizationService AuthorizationService
+@inject Volo.Abp.MultiTenancy.ICurrentTenant CurrentTenant
+@model Genora.MultiTenancy.Web.Pages.SalonBeautyCustomers.IndexModel
+
+@section styles {
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
+    <abp-style src="/pages/salon/salon-shared.css" />
+}
+
+@section scripts {
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <abp-script src="/Pages/SalonBeautyCustomers/index.js" />
+}
+
+@{
+    var canCreate = CurrentTenant.IsAvailable
+        ? await AuthorizationService.IsGrantedAsync(MultiTenancyPermissions.SalonBeautyCustomers.Create)
+        : await AuthorizationService.IsGrantedAsync(MultiTenancyPermissions.HostSalonBeautyCustomers.Create);
+
+    var canEdit = CurrentTenant.IsAvailable
+        ? await AuthorizationService.IsGrantedAsync(MultiTenancyPermissions.SalonBeautyCustomers.Edit)
+        : await AuthorizationService.IsGrantedAsync(MultiTenancyPermissions.HostSalonBeautyCustomers.Edit);
+
+    var canDelete = CurrentTenant.IsAvailable
+        ? await AuthorizationService.IsGrantedAsync(MultiTenancyPermissions.SalonBeautyCustomers.Delete)
+        : await AuthorizationService.IsGrantedAsync(MultiTenancyPermissions.HostSalonBeautyCustomers.Delete);
+}
+
+<div class="salon-customer-page">
+    <div class="salon-page-head">
+        <div>
+            <h1>@L["SalonBeautyCustomers:PageTitle"]</h1>
+            <p>@L["SalonBeautyCustomers:PageSubTitle"]</p>
+        </div>
+        <div class="salon-head-actions">
+            <button type="button" id="ExportSalonCustomerButton" class="btn salon-btn-light">
+                <i class="fa fa-download"></i> @L["SalonBeautyCustomers:ExportList"]
+            </button>
+            @if (canCreate)
+            {
+                <button type="button" id="NewSalonCustomerButton" class="btn salon-btn-primary">
+                    <i class="fa fa-plus"></i> @L["SalonBeautyCustomers:AddCustomer"]
+                </button>
+            }
+        </div>
+    </div>
+
+    <div class="salon-filter-card">
+        <div class="row g-3 align-items-end">
+            <div class="col-lg-3 col-md-6">
+                <label class="salon-filter-label" for="SalonKeywordFilter">@L["Search"]</label>
+                <input id="SalonKeywordFilter" class="form-control salon-filter-control" placeholder="@L["SalonBeautyCustomers:KeywordPlaceholder"]" />
+            </div>
+            <div class="col-lg-2 col-md-6">
+                <label class="salon-filter-label" for="SalonTimePeriodFilter">@L["SalonBeautyCustomers:TimePeriod"]</label>
+                <select id="SalonTimePeriodFilter" class="form-select salon-filter-control">
+                    <option value="">@L["SalonBeautyCustomers:AllTime"]</option>
+                    <option value="today">@L["SalonBeautyCustomers:Today"]</option>
+                    <option value="7">@L["SalonBeautyCustomers:Last7Days"]</option>
+                    <option value="30">@L["SalonBeautyCustomers:Last30Days"]</option>
+                    <option value="90">@L["SalonBeautyCustomers:Last90Days"]</option>
+                </select>
+            </div>
+            <div class="col-lg-2 col-md-6">
+                <label class="salon-filter-label" for="SalonCustomerGroupFilter">@L["SalonBeautyCustomers:CustomerGroup"]</label>
+                <select id="SalonCustomerGroupFilter" class="form-select salon-filter-control">
+                    <option value="">@L["SalonBeautyCustomers:AllGroups"]</option>
+                    <option value="NEW">NEW</option>
+                    <option value="REGULAR">REGULAR</option>
+                    <option value="VIP">VIP</option>
+                </select>
+            </div>
+            <div class="col-lg-2 col-md-6">
+                <label class="salon-filter-label" for="SalonSourceFilter">@L["SalonBeautyCustomers:SourceChannel"]</label>
+                <select id="SalonSourceFilter" class="form-select salon-filter-control">
+                    <option value="">@L["SalonBeautyCustomers:AllSources"]</option>
+                    @foreach (SalonBeautyCustomerSource source in Enum.GetValues(typeof(SalonBeautyCustomerSource)))
+                    {
+                        <option value="@((byte)source)">@L["Enum:SalonBeautyCustomerSource." + source]</option>
+                    }
+                </select>
+            </div>
+            <div class="col-lg-2 col-md-6">
+                <label class="salon-filter-label" for="SalonStatusFilter">@L["SalonBeautyCustomers:OperationalStatus"]</label>
+                <select id="SalonStatusFilter" class="form-select salon-filter-control">
+                    <option value="">@L["SalonBeautyCustomers:AllStatus"]</option>
+                    <option value="1">@L["SalonBeautyCustomer:StatusActive"]</option>
+                    <option value="0">@L["SalonBeautyCustomer:StatusInactive"]</option>
+                </select>
+            </div>
+            <div class="col-lg-1 col-md-6 d-grid">
+                <button type="button" id="SearchSalonCustomerButton" class="btn salon-btn-primary">
+                    <i class="fa fa-search"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="salon-table-card">
+        <input type="hidden" id="CanEditSalonCustomer" value="@(canEdit ? "true" : "false")" />
+        <input type="hidden" id="CanDeleteSalonCustomer" value="@(canDelete ? "true" : "false")" />
+        <table id="SalonCustomersTable" class="table w-100"></table>
+    </div>
+</div>

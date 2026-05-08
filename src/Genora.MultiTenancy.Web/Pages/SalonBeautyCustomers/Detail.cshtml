@@ -1,0 +1,197 @@
+﻿@page
+@using Genora.MultiTenancy.Localization
+@using Microsoft.Extensions.Localization
+@model Genora.MultiTenancy.Web.Pages.SalonBeautyCustomers.DetailModel
+@inject IStringLocalizer<MultiTenancyResource> L
+
+@section scripts {
+    <abp-style src="/Pages/SalonBeautyCustomers/index.css" />
+    <abp-style src="/pages/salon/salon-shared.css" />
+}
+
+@{
+    var avatar = string.IsNullOrWhiteSpace(Model.Customer.Avatar)
+        ? "/images/getting-started/no-photo-square.png"
+        : Model.Customer.Avatar;
+}
+
+<div class="salon-customer-page salon-detail-page">
+    <div class="salon-detail-topbar">
+        <a href="/SalonBeautyCustomers" class="btn btn-outline-secondary"><i class="fa fa-arrow-left"></i> @L["Back"]</a>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-xl-8">
+            <div class="salon-profile-card">
+                <div class="salon-profile-avatar-wrap">
+                    <img class="salon-profile-avatar" src="@avatar" alt="@Model.Customer.Name" />
+                    <span class="salon-status-pill @(Model.Customer.Status == 1 ? "active" : "inactive")">@Model.Customer.StatusText</span>
+                </div>
+                <div class="salon-profile-main">
+                    <h2>@Model.Customer.Name</h2>
+                    <div class="salon-code-pill">@L["SalonBeautyCustomer:CustomerCode"]: <strong>@Model.Customer.CustomerCode</strong></div>
+                    <div class="mt-2">
+                        <span class="salon-member-badge @Model.Customer.MembershipLevel.ToLowerInvariant()">@Model.Customer.MembershipLevel</span>
+                    </div>
+                    <div class="salon-profile-contact">
+                        <span><i class="fa fa-phone"></i> @Model.Customer.Phone</span>
+                        <span><i class="fa fa-envelope"></i> @(Model.Customer.Email ?? "--")</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-4">
+            <div class="salon-next-card">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>@L["SalonBeautyCustomers:NextBooking"]</div>
+                    <i class="fa fa-calendar"></i>
+                </div>
+                @if (Model.NextBooking != null)
+                {
+                    <h3>@Model.NextBooking.BookingDate.ToString("dd MMM, yyyy")</h3>
+                    <p>@Model.TimeText(Model.NextBooking.StartTime) - @Model.NextBooking.ServiceName</p>
+                    <a class="btn w-100" href="#booking-history">@L["SalonBeautyCustomers:ViewDetail"]</a>
+                }
+                else
+                {
+                    <h3>@L["SalonBeautyCustomers:NoNextBooking"]</h3>
+                    <p>@L["SalonBeautyCustomers:NoNextBookingDescription"]</p>
+                    <a class="btn w-100" href="#booking-history">@L["SalonBeautyCustomers:ViewHistory"]</a>
+                }
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4 mt-1">
+        <div class="col-lg-3 col-md-6">
+            <div class="salon-metric-card">
+                <span>@L["SalonBeautyCustomers:TotalSpent"]</span>
+                <strong>@Model.Money(Model.Customer.TotalSpent)</strong>
+                <small>@L["Common:CurrencySuffix"]</small>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6">
+            <div class="salon-metric-card">
+                <span>@L["SalonBeautyCustomers:TotalVisit"]</span>
+                <strong>@Model.Customer.TotalBooking</strong>
+                <small>@L["SalonBeautyCustomers:Times"]</small>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6">
+            <div class="salon-metric-card">
+                <span>@L["SalonBeautyCustomers:Aov"]</span>
+                <strong>@Model.Money(Model.Customer.AverageOrderValue)</strong>
+                <small>@L["Common:CurrencySuffix"]</small>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6">
+            <div class="salon-metric-card accent">
+                <span>@L["SalonBeautyCustomers:LoyaltyPoint"]</span>
+                <strong>@Model.Customer.LoyaltyPoint.ToString("N0")</strong>
+                <small>@L["SalonBeautyCustomers:Point"]</small>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4 mt-1">
+        <div class="col-xl-3">
+            <div class="salon-info-card">
+                <h5><i class="fa fa-id-card"></i> @L["SalonBeautyCustomers:DetailInfo"]</h5>
+                <div class="salon-info-row"><span>@L["SalonBeautyCustomer:Gender"]</span><strong>@Model.Customer.GenderText</strong></div>
+                <div class="salon-info-row"><span>@L["SalonBeautyCustomer:Birthday"]</span><strong>@Model.DateText(Model.Customer.Birthday)</strong></div>
+                <div class="salon-info-row"><span>@L["SalonBeautyCustomer:Source"]</span><strong>@Model.Customer.SourceText</strong></div>
+                <div class="salon-info-row"><span>@L["SalonBeautyCustomer:ZaloUserId"]</span><strong>@(Model.Customer.ZaloUserId ?? "--")</strong></div>
+                <div class="salon-info-row"><span>@L["SalonBeautyCustomer:IsFollowOa"]</span><strong>@(Model.Customer.IsFollowOa? L["SalonBeautyCustomers:Followed"] : L["SalonBeautyCustomers:NotFollowed"])</strong></div>
+                <div class="salon-info-row"><span>@L["SalonBeautyCustomers:LastServiceDate"]</span><strong>@Model.DateText(Model.Customer.LastBookingDate)</strong></div>
+                <div class="salon-note-box">@(Model.Customer.Note ?? L["SalonBeautyCustomers:NoNote"].Value)</div>
+            </div>
+        </div>
+        <div class="col-xl-9">
+            <div class="salon-tabs-card">
+                <ul class="nav nav-tabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#booking-history" type="button" role="tab">@L["SalonBeautyCustomers:BookingHistory"]</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#purchase-history" type="button" role="tab">@L["SalonBeautyCustomers:PurchaseHistory"]</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#loyalty-history" type="button" role="tab">@L["SalonBeautyCustomers:LoyaltyVoucher"]</button>
+                    </li>
+                </ul>
+                <div class="tab-content p-4">
+                    <div class="tab-pane fade show active" id="booking-history" role="tabpanel">
+                        <div class="table-responsive salon-inner-table-wrap">
+                            <table class="table salon-inner-table">
+                                <thead>
+                                    <tr>
+                                        <th>@L["SalonBeautyBooking:Date"]</th>
+                                        <th>@L["SalonBeautyBooking:Service"]</th>
+                                        <th>@L["SalonBeautyBooking:Stylist"]</th>
+                                        <th>@L["SalonBeautyBooking:Amount"]</th>
+                                        <th>@L["SalonBeautyBooking:Status"]</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @if (Model.BookingHistory.Count == 0)
+                                    {
+                                        <tr><td colspan="5" class="text-center text-muted py-4">@L["SalonBeautyCustomers:NoBookingHistory"]</td></tr>
+                                    }
+                                    else
+                                    {
+                                        foreach (var item in Model.BookingHistory)
+                                        {
+                                            <tr>
+                                                <td>@item.BookingDate.ToString("dd/MM/yyyy") @Model.TimeText(item.StartTime)</td>
+                                                <td>@item.ServiceName</td>
+                                                <td>@item.StylistName</td>
+                                                <td>@Model.Money(item.Amount)</td>
+                                                <td><span class="salon-table-status">@item.Status</span></td>
+                                            </tr>
+                                        }
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="tab-pane fade" id="purchase-history" role="tabpanel">
+                        <div class="salon-empty-state">@L["SalonBeautyCustomers:ProductShopEmpty"]</div>
+                    </div>
+                    <div class="tab-pane fade" id="loyalty-history" role="tabpanel">
+                        <div class="table-responsive salon-inner-table-wrap">
+                            <table class="table salon-inner-table">
+                                <thead>
+                                    <tr>
+                                        <th>@L["SalonBeautyBooking:Time"]</th>
+                                        <th>@L["SalonBeautyCustomers:Type"]</th>
+                                        <th>@L["SalonBeautyCustomers:Point"]</th>
+                                        <th>@L["SalonBeautyCustomers:Description"]</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @if (Model.LoyaltyTransactions.Count == 0)
+                                    {
+                                        <tr><td colspan="4" class="text-center text-muted py-4">@L["SalonBeautyCustomers:NoLoyaltyHistory"]</td></tr>
+                                    }
+                                    else
+                                    {
+                                        foreach (var item in Model.LoyaltyTransactions)
+                                        {
+                                            <tr>
+                                                <td>@item.CreatedAt.ToString("dd/MM/yyyy HH:mm")</td>
+                                                <td>@item.TypeText</td>
+                                                <td>@item.Point.ToString("N0")</td>
+                                                <td>@(item.Description ?? "--")</td>
+                                            </tr>
+                                        }
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="salon-empty-state mt-3">@L["SalonBeautyCustomers:VoucherWalletEmpty"]</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
