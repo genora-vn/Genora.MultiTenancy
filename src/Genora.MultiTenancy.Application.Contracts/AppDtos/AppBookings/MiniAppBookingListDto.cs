@@ -21,6 +21,7 @@ namespace Genora.MultiTenancy.AppDtos.AppBookings
         public DateTime PlayDate { get; set; }
         public DateTime CreationTime { get; set; }
         public int NumberOfGolfers { get; set; }
+        public int MaxSlots { get; set; }
         public decimal? PricePerGolfer { get; set; }
         public decimal TotalAmount { get; set; }
         public string? FrameTimes { get; set; }

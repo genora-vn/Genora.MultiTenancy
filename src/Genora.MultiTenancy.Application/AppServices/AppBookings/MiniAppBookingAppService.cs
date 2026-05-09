@@ -711,6 +711,7 @@ public class MiniAppBookingAppService : ApplicationService, IMiniAppBookingAppSe
             {
                 item.VNDayOfWeek = FormatDateTimeHelper.GetVietnameseDayOfWeek(item.PlayDate);
                 item.IsCancellationPolicy = false;
+                item.MaxSlots = item.NumberOfGolfers;
 
                 CalendarSlot? calendar = null;
                 if (item.CalendarSlotId.HasValue && item.CalendarSlotId.Value != Guid.Empty)
@@ -754,6 +755,7 @@ public class MiniAppBookingAppService : ApplicationService, IMiniAppBookingAppSe
 
             var dto = ObjectMapper.Map<Booking, BookingDetailData>(booking);
             dto.VNDayOfWeek = FormatDateTimeHelper.GetVietnameseDayOfWeek(dto.PlayDate);
+            dto.MaxSlots = booking.NumberOfGolfers;
 
             var players = await _playerRepo.GetListAsync(x => x.BookingId == id);
             dto.Players = ObjectMapper.Map<List<BookingPlayer>, List<AppBookingPlayerDto>>(players);
@@ -791,7 +793,6 @@ public class MiniAppBookingAppService : ApplicationService, IMiniAppBookingAppSe
                 if (calendar != null)
                 {
                     dto.FrameTimes = $"{calendar.TimeFrom} - {calendar.TimeTo}";
-                    dto.MaxSlots = calendar.MaxSlots;
                 }
 
                 // Load tất cả customer types cần dùng trong 1 lần
