@@ -711,7 +711,6 @@ public class MiniAppBookingAppService : ApplicationService, IMiniAppBookingAppSe
             {
                 item.VNDayOfWeek = FormatDateTimeHelper.GetVietnameseDayOfWeek(item.PlayDate);
                 item.IsCancellationPolicy = false;
-                item.MaxSlots = item.NumberOfGolfers;
 
                 CalendarSlot? calendar = null;
                 if (item.CalendarSlotId.HasValue && item.CalendarSlotId.Value != Guid.Empty)

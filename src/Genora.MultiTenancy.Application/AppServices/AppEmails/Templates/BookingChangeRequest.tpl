@@ -1,7 +1,7 @@
 ﻿<table cellpadding="0" cellspacing="0" border="0" width="600" style="width:600px;border-collapse:collapse;font-family:Arial,sans-serif;font-size:14px;color:#000;border:1px solid #b7b7b7;">
     <tr><td style="background:#355f93;color:#fff;text-align:center;padding:10px 16px 6px 16px;font-size:18px;font-weight:700;">YÊU CẦU THAY ĐỔI ĐẶT CHỖ</td></tr>
     <tr><td style="background:#355f93;color:#fff;text-align:center;padding:0 16px 6px 16px;font-size:16px;font-style:italic;">{{ model.GolfCourseName }}</td></tr>
-    <tr><td style="background:#355f93;color:#fff;padding:0 16px 10px 16px;font-size:12px;text-align:right;">Hotline:: {{ model.GolfCourseHotline }}<br />Địa chỉ: {{ model.GolfCourseAddress }}</td></tr>
+    <tr><td style="background:#355f93;color:#fff;padding:0 16px 10px 16px;font-size:12px;text-align:right;">Hotline: {{ model.GolfCourseHotline }}<br />Địa chỉ: {{ model.GolfCourseAddress }}</td></tr>
 
     <tr><td style="background:#e9eef4;height:8px;"></td></tr>
 

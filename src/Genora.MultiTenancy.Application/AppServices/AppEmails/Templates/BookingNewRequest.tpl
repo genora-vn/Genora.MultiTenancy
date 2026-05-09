@@ -11,7 +11,7 @@
     </tr>
     <tr>
         <td style="background:#355f93;color:#fff;padding:0 16px 10px 16px;font-size:12px;text-align:right;">
-            Hotline:: {{ model.GolfCourseHotline }}<br />
+            Hotline: {{ model.GolfCourseHotline }}<br />
             Địa chỉ: {{ model.GolfCourseAddress }}
         </td>
     </tr>
