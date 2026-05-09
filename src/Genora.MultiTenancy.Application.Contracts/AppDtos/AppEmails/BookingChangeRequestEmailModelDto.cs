@@ -1,4 +1,6 @@
-﻿namespace Genora.MultiTenancy.AppDtos.AppEmails;
+﻿using System.Collections.Generic;
+
+namespace Genora.MultiTenancy.AppDtos.AppEmails;
 public class BookingChangeRequestEmailModelDto
 {
     public string BookingCode { get; set; } = "";
@@ -38,4 +40,6 @@ public class BookingChangeRequestEmailModelDto
 
     public bool HasPlayerChanges { get; set; }
     public bool HasHeaderChanges { get; set; }
+
+    public List<PriceBreakdownItemDto> PriceBreakdownItems { get; set; } = new();
 }

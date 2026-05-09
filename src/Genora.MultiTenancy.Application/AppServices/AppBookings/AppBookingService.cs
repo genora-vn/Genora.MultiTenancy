@@ -5,6 +5,7 @@ using Genora.MultiTenancy.AppServices.AppZaloAuths;
 using Genora.MultiTenancy.DomainModels.AppBookingPlayers;
 using Genora.MultiTenancy.DomainModels.AppBookings;
 using Genora.MultiTenancy.DomainModels.AppCalendarSlots;
+using Genora.MultiTenancy.DomainModels.AppCalendarSlotPrices;
 using Genora.MultiTenancy.DomainModels.AppCustomers;
 using Genora.MultiTenancy.DomainModels.AppCustomerTypes;
 using Genora.MultiTenancy.DomainModels.AppGolfCourses;
@@ -57,6 +58,7 @@ public class AppBookingService :
     private readonly IRepository<GolfCourse, Guid> _golfCourseRepository;
     private readonly IRepository<BookingPlayer, Guid> _playerRepository;
     private readonly IRepository<CalendarSlot, Guid> _calendarSlotRepository;
+    private readonly IRepository<CalendarSlotPrice, Guid> _calendarSlotPriceRepository;
     private readonly IRepository<Genora.MultiTenancy.DomainModels.AppPromotionTypes.PromotionType, Guid> _promotionTypeRepository;
     private readonly IAppEmailSenderService _appEmailSenderService;
     private readonly AppBookingExcelExporter _excelExporter;
@@ -82,6 +84,7 @@ public class AppBookingService :
         AppBookingExcelImporter excelImporter,
         AppBookingExcelTemplateGenerator templateGenerator,
         IRepository<CalendarSlot, Guid> calendarSlotRepository,
+        IRepository<CalendarSlotPrice, Guid> calendarSlotPriceRepository,
         IStringLocalizer<MultiTenancyResource> l,
         IAppEmailSenderService appEmailSenderService,
         IRepository<OptionExtend, Guid> optionExtendRepo,
@@ -106,6 +109,7 @@ public class AppBookingService :
         _excelImporter = excelImporter;
         _templateGenerator = templateGenerator;
         _calendarSlotRepository = calendarSlotRepository;
+        _calendarSlotPriceRepository = calendarSlotPriceRepository;
         _l = l;
         _appEmailSenderService = appEmailSenderService;
         _optionExtendRepo = optionExtendRepo;
@@ -410,12 +414,27 @@ public class AppBookingService :
                 paymentText = entity.PaymentMethod.ToString();
 
             var golfInfo = await GetGolfCourseInfoAsync(entity.GolfCourseId);
+            var golfCourse = await _golfCourseRepository.FindAsync(entity.GolfCourseId);
             var promotionText = await GetPromotionNameAsync(entity.CalendarSlotId);
             var savedPlayers = await _playerRepository.GetListAsync(p => p.BookingId == entity.Id);
             var playersText = BuildPlayersInlineText(savedPlayers, customer.FullName);
 
-            if (string.IsNullOrWhiteSpace(paymentText) || paymentText.StartsWith("PaymentMethod:", StringComparison.OrdinalIgnoreCase))
-                paymentText = entity.PaymentMethod.ToString();
+            // TotalAmount thực tế = tổng PricePerPlayer của từng người chơi
+            // (mỗi golfer có thể là Member / MemberGuest / Visitor với giá khác nhau)
+            var emailTotalAmount = savedPlayers.Sum(p => p.PricePerPlayer ?? 0m);
+            if (emailTotalAmount <= 0m)
+            {
+                emailTotalAmount = entity.TotalAmount;
+            }
+
+            var emailPricePerGolfer = entity.NumberOfGolfers > 0 ? emailTotalAmount / entity.NumberOfGolfers : 0m;
+
+            var priceBreakdown = await BuildPriceBreakdownAsync(
+                entity.CalendarSlotId.HasValue ? entity.CalendarSlotId.Value : Guid.Empty,
+                ct?.Code,
+                golfCourse,
+                entity.NumberOfGolfers
+            );
 
             var model = new BookingNewRequestEmailModelDto
             {
@@ -439,11 +458,11 @@ public class AppBookingService :
                 PlayersText = playersText,
                 PromotionText = promotionText,
 
-                PricePerGolfer = entity.PricePerGolfer ?? 0m,
-                PricePerGolferText = MoneyText(entity.PricePerGolfer),
+                PricePerGolfer = emailPricePerGolfer,
+                PricePerGolferText = MoneyText(emailPricePerGolfer),
 
-                TotalAmount = entity.TotalAmount,
-                TotalAmountText = MoneyText(entity.TotalAmount),
+                TotalAmount = emailTotalAmount,
+                TotalAmountText = MoneyText(emailTotalAmount),
 
                 PaymentMethod = paymentText,
                 OtherRequests = otherRequestsText,
@@ -452,7 +471,9 @@ public class AppBookingService :
                 CompanyName = entity.CompanyName,
                 TaxCode = entity.TaxCode,
                 CompanyAddress = entity.CompanyAddress,
-                InvoiceEmail = entity.InvoiceEmail
+                InvoiceEmail = entity.InvoiceEmail,
+
+                PriceBreakdownItems = priceBreakdown
             };
 
             var cfg = await GetEmailConfigAsync(
@@ -732,6 +753,23 @@ public class AppBookingService :
 
                 var updatedByText = BuildUpdatedByText();
 
+                // TotalAmount thực tế = tổng PricePerPlayer của từng người chơi
+                var emailTotalAmount = newPlayers.Sum(p => p.PricePerPlayer ?? 0m);
+                if (emailTotalAmount <= 0m)
+                {
+                    emailTotalAmount = entity.TotalAmount;
+                }
+
+                var emailPricePerGolfer = entity.NumberOfGolfers > 0 ? emailTotalAmount / entity.NumberOfGolfers : 0m;
+
+                var golfCourse = await _golfCourseRepository.FindAsync(entity.GolfCourseId);
+                var priceBreakdown = await BuildPriceBreakdownAsync(
+                    entity.CalendarSlotId.HasValue ? entity.CalendarSlotId.Value : Guid.Empty,
+                    newCustomerType?.Code,
+                    golfCourse,
+                    entity.NumberOfGolfers
+                );
+
                 var changeModel = new BookingChangeRequestEmailModelDto
                 {
                     BookingCode = entity.BookingCode,
@@ -764,16 +802,15 @@ public class AppBookingService :
                     NewPlayersText = newPlayersInline,
                     NewUpdatedByText = updatedByText,
 
-                    PricePerGolferText = entity.PricePerGolfer.HasValue
-                        ? MoneyText(entity.PricePerGolfer)
-                        : MoneyText(input.PricePerGolfer),
-
-                    TotalAmountText = totalAmountText,
+                    PricePerGolferText = MoneyText(emailPricePerGolfer),
+                    TotalAmountText = MoneyText(emailTotalAmount),
                     OtherRequestsText = otherRequestsText,
                     InvoiceInfoText = invoiceInfoText,
 
                     HasPlayerChanges = hasPlayerChanges,
-                    HasHeaderChanges = hasHeaderChanges
+                    HasHeaderChanges = hasHeaderChanges,
+
+                    PriceBreakdownItems = priceBreakdown
                 };
 
                 var cfg = await GetEmailConfigAsync(
@@ -1266,5 +1303,102 @@ public class AppBookingService :
             return $"{displayName} ({role})";
 
         return $"{displayName} ({role})";
+    }
+
+    private async Task<List<PriceBreakdownItemDto>> BuildPriceBreakdownAsync(
+        Guid calendarSlotId,
+        string? bookerCustomerTypeCode,
+        GolfCourse? golfCourse,
+        int numberOfGolfers)
+    {
+        var result = new List<PriceBreakdownItemDto>();
+
+        if (numberOfGolfers <= 0 || calendarSlotId == Guid.Empty)
+            return result;
+
+        // Get all customer types
+        var allCts = await _customerType.GetListAsync(c => new[] { "MB", "MBG", "VIS" }.Contains(c.Code));
+        var mbCt = allCts.FirstOrDefault(c => c.Code == "MB");
+        var mbgCt = allCts.FirstOrDefault(c => c.Code == "MBG");
+        var visCt = allCts.FirstOrDefault(c => c.Code == "VIS");
+
+        // Get slot prices
+        var slotPrices = await _calendarSlotPriceRepository.GetListAsync(x => x.CalendarSlotId == calendarSlotId);
+
+        // Determine breakdown based on customer type
+        if (bookerCustomerTypeCode == "MB" && mbCt != null && mbgCt != null && golfCourse?.IsMemberSupported == true)
+        {
+            // Member booking: 1 MB + (up to MaxMemberGuest) MBG + overflow VIS
+            int maxMbg = golfCourse.MaxMemberGuest ?? 0;
+            int mbCount = 1;
+            int mbgCount = Math.Min(numberOfGolfers - 1, maxMbg);
+            int visCount = numberOfGolfers - mbCount - mbgCount;
+
+            // Get MB price
+            var mbPrice = slotPrices.FirstOrDefault(x => x.CustomerTypeId == mbCt.Id);
+            if (mbPrice != null)
+            {
+                var mbPriceValue = mbPrice.Price18;
+                result.Add(new PriceBreakdownItemDto
+                {
+                    CustomerTypeCode = "MB",
+                    CustomerTypeName = mbCt.Name ?? mbCt.Code ?? "Member",
+                    Price = mbPriceValue,
+                    Count = mbCount
+                });
+            }
+
+            // Get MBG price
+            if (mbgCount > 0)
+            {
+                var mbgPrice = slotPrices.FirstOrDefault(x => x.CustomerTypeId == mbgCt.Id);
+                if (mbgPrice != null)
+                {
+                    var mbgPriceValue = mbgPrice.Price18;
+                    result.Add(new PriceBreakdownItemDto
+                    {
+                        CustomerTypeCode = "MBG",
+                        CustomerTypeName = mbgCt.Name ?? mbgCt.Code ?? "Member Guest",
+                        Price = mbgPriceValue,
+                        Count = mbgCount
+                    });
+                }
+            }
+
+            // Get VIS price
+            if (visCount > 0 && visCt != null)
+            {
+                var visPrice = slotPrices.FirstOrDefault(x => x.CustomerTypeId == visCt.Id);
+                if (visPrice != null)
+                {
+                    var visPriceValue = visPrice.Price18;
+                    result.Add(new PriceBreakdownItemDto
+                    {
+                        CustomerTypeCode = "VIS",
+                        CustomerTypeName = visCt.Name ?? visCt.Code ?? "Visitor",
+                        Price = visPriceValue,
+                        Count = visCount
+                    });
+                }
+            }
+        }
+        else if (visCt != null)
+        {
+            // Visitor booking: all VIS
+            var visPrice = slotPrices.FirstOrDefault(x => x.CustomerTypeId == visCt.Id);
+            if (visPrice != null)
+            {
+                var visPriceValue = visPrice.Price18;
+                result.Add(new PriceBreakdownItemDto
+                {
+                    CustomerTypeCode = "VIS",
+                    CustomerTypeName = visCt.Name ?? visCt.Code ?? "Visitor",
+                    Price = visPriceValue,
+                    Count = numberOfGolfers
+                });
+            }
+        }
+
+        return result;
     }
 }

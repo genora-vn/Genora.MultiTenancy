@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace Genora.MultiTenancy.AppDtos.AppEmails;
 public class BookingNewRequestEmailModelDto
@@ -35,4 +36,6 @@ public class BookingNewRequestEmailModelDto
     public string? TaxCode { get; set; }
     public string? CompanyAddress { get; set; }
     public string? InvoiceEmail { get; set; }
+
+    public List<PriceBreakdownItemDto> PriceBreakdownItems { get; set; } = new();
 }
