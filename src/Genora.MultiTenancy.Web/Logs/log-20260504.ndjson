@@ -1,0 +1,1319 @@
+2026-05-04 11:29:38.368 +07:00 [WRN] IEmailSender implementation = Volo.Abp.MailKit.MailKitSmtpEmailSender
+2026-05-04 11:29:38.370 +07:00 [WRN] IBackgroundJobManager implementation = Volo.Abp.BackgroundJobs.DefaultBackgroundJobManager
+2026-05-04 11:29:39.029 +07:00 [INF] Start installing Hangfire SQL objects...
+2026-05-04 11:29:39.998 +07:00 [INF] Hangfire SQL objects installed.
+2026-05-04 11:29:40.370 +07:00 [WRN] Hangfire recurring registered: booking-reminder-zbs (queue=local)
+2026-05-04 11:29:41.434 +07:00 [INF] Initialized all ABP modules.
+2026-05-04 11:29:41.500 +07:00 [WRN] No XML encryptor configured. Key {b2a848da-758e-4a97-bd4b-61daee96835b} may be persisted to storage in unencrypted form.
+2026-05-04 11:29:41.521 +07:00 [INF] Initializing UI Database
+2026-05-04 11:29:41.743 +07:00 [INF] Saving healthchecks configuration to database
+2026-05-04 11:29:42.886 +07:00 [INF] Start processing HTTP request GET https://staging.genora.vn/health-status
+2026-05-04 11:29:42.888 +07:00 [INF] Sending HTTP request GET https://staging.genora.vn/health-status
+2026-05-04 11:29:42.987 +07:00 [INF] Starting Hangfire Server using job storage: 'SQL Server: 103.157.218.187,1433@GenoraMultiTenancy'
+2026-05-04 11:29:42.987 +07:00 [INF] Using the following options for SQL Server job storage: Queue poll interval: 00:00:05.
+2026-05-04 11:29:42.987 +07:00 [INF] Using the following options for Hangfire Server:
+    Worker count: 20
+    Listening queues: 'local', 'default', 'local'
+    Shutdown timeout: 00:00:15
+    Schedule polling interval: 00:00:15
+2026-05-04 11:29:43.040 +07:00 [INF] Server tandv:development:3b88fbe57ec64fada55d68ad10125d92:48836:c017530a-d110-4a1e-81c6-7a0beefee533 successfully announced in 21.9843 ms
+2026-05-04 11:29:43.050 +07:00 [INF] Server tandv:development:3b88fbe57ec64fada55d68ad10125d92:48836:c017530a-d110-4a1e-81c6-7a0beefee533 is starting the registered dispatchers: ServerWatchdog, ServerJobCancellationWatcher, SqlServerHeartbeatProcess, ExpirationManager, CountersAggregator, Worker, DelayedJobScheduler, RecurringJobScheduler...
+2026-05-04 11:29:43.413 +07:00 [INF] Server tandv:development:3b88fbe57ec64fada55d68ad10125d92:48836:c017530a-d110-4a1e-81c6-7a0beefee533 all the dispatchers started
+2026-05-04 11:29:43.609 +07:00 [INF] Received HTTP response headers after 718.0861ms - 200
+2026-05-04 11:29:43.609 +07:00 [INF] End processing HTTP request after 726.8639ms - 200
+2026-05-04 11:29:44.199 +07:00 [INF] Start processing HTTP request GET https://localhost:44374/health-status
+2026-05-04 11:29:44.199 +07:00 [INF] Sending HTTP request GET https://localhost:44374/health-status
+2026-05-04 11:29:45.521 +07:00 [INF] Skipping the execution of current filter as its not the most effective filter implementing the policy Microsoft.AspNetCore.Mvc.ViewFeatures.IAntiforgeryPolicy
+2026-05-04 11:29:46.099 +07:00 [ERR] Could not find the bundle file '/libs/abp/core/abp.css' for the bundle 'LeptonXLite.Global'!
+2026-05-04 11:29:46.102 +07:00 [ERR] Could not find the bundle file '/libs/@fortawesome/fontawesome-free/css/all.css' for the bundle 'LeptonXLite.Global'!
+2026-05-04 11:29:46.102 +07:00 [ERR] Could not find the bundle file '/libs/@fortawesome/fontawesome-free/css/v4-shims.css' for the bundle 'LeptonXLite.Global'!
+2026-05-04 11:29:46.103 +07:00 [ERR] Could not find the bundle file '/libs/select2/css/select2.min.css' for the bundle 'LeptonXLite.Global'!
+2026-05-04 11:29:46.103 +07:00 [ERR] Could not find the bundle file '/libs/malihu-custom-scrollbar-plugin/jquery.mCustomScrollbar.css' for the bundle 'LeptonXLite.Global'!
+2026-05-04 11:29:46.103 +07:00 [ERR] Could not find the bundle file '/libs/datatables.net-bs5/css/dataTables.bootstrap5.css' for the bundle 'LeptonXLite.Global'!
+2026-05-04 11:29:46.104 +07:00 [ERR] Could not find the bundle file '/libs/bootstrap-datepicker/bootstrap-datepicker.min.css' for the bundle 'LeptonXLite.Global'!
+2026-05-04 11:29:46.104 +07:00 [ERR] Could not find the bundle file '/libs/bootstrap-daterangepicker/daterangepicker.css' for the bundle 'LeptonXLite.Global'!
+2026-05-04 11:29:47.052 +07:00 [ERR] Could not find the bundle file '/libs/abp/utils/abp-utils.umd.min.js' for the bundle 'LeptonXLite.Global'!
+2026-05-04 11:29:47.052 +07:00 [ERR] Could not find the bundle file '/libs/abp/core/abp.js' for the bundle 'LeptonXLite.Global'!
+2026-05-04 11:29:47.052 +07:00 [ERR] Could not find the bundle file '/libs/jquery/jquery.js' for the bundle 'LeptonXLite.Global'!
+2026-05-04 11:29:47.053 +07:00 [ERR] Could not find the bundle file '/libs/abp/jquery/abp.jquery.js' for the bundle 'LeptonXLite.Global'!
+2026-05-04 11:29:47.053 +07:00 [ERR] Could not find the bundle file '/libs/bootstrap/js/bootstrap.bundle.js' for the bundle 'LeptonXLite.Global'!
+2026-05-04 11:29:47.053 +07:00 [ERR] Could not find the bundle file '/libs/lodash/lodash.min.js' for the bundle 'LeptonXLite.Global'!
+2026-05-04 11:29:47.054 +07:00 [ERR] Could not find the bundle file '/libs/jquery-validation/jquery.validate.js' for the bundle 'LeptonXLite.Global'!
+2026-05-04 11:29:47.054 +07:00 [ERR] Could not find the bundle file '/libs/jquery-validation-unobtrusive/jquery.validate.unobtrusive.js' for the bundle 'LeptonXLite.Global'!
+2026-05-04 11:29:47.054 +07:00 [ERR] Could not find the bundle file '/libs/jquery-form/jquery.form.min.js' for the bundle 'LeptonXLite.Global'!
+2026-05-04 11:29:47.055 +07:00 [ERR] Could not find the bundle file '/libs/select2/js/select2.min.js' for the bundle 'LeptonXLite.Global'!
+2026-05-04 11:29:47.055 +07:00 [ERR] Could not find the bundle file '/libs/datatables.net/js/dataTables.min.js' for the bundle 'LeptonXLite.Global'!
+2026-05-04 11:29:47.056 +07:00 [ERR] Could not find the bundle file '/libs/datatables.net-bs5/js/dataTables.bootstrap5.js' for the bundle 'LeptonXLite.Global'!
+2026-05-04 11:29:47.056 +07:00 [ERR] Could not find the bundle file '/libs/sweetalert2/sweetalert2.all.min.js' for the bundle 'LeptonXLite.Global'!
+2026-05-04 11:29:47.056 +07:00 [ERR] Could not find the bundle file '/libs/malihu-custom-scrollbar-plugin/jquery.mCustomScrollbar.concat.min.js' for the bundle 'LeptonXLite.Global'!
+2026-05-04 11:29:47.057 +07:00 [ERR] Could not find the bundle file '/libs/luxon/luxon.min.js' for the bundle 'LeptonXLite.Global'!
+2026-05-04 11:29:47.057 +07:00 [ERR] Could not find the bundle file '/libs/abp/luxon/abp.luxon.js' for the bundle 'LeptonXLite.Global'!
+2026-05-04 11:29:47.057 +07:00 [ERR] Could not find the bundle file '/libs/timeago/jquery.timeago.js' for the bundle 'LeptonXLite.Global'!
+2026-05-04 11:29:47.057 +07:00 [ERR] Could not find the bundle file '/libs/bootstrap-datepicker/bootstrap-datepicker.min.js' for the bundle 'LeptonXLite.Global'!
+2026-05-04 11:29:47.058 +07:00 [ERR] Could not find the bundle file '/libs/moment/moment.min.js' for the bundle 'LeptonXLite.Global'!
+2026-05-04 11:29:47.058 +07:00 [ERR] Could not find the bundle file '/libs/bootstrap-daterangepicker/daterangepicker.js' for the bundle 'LeptonXLite.Global'!
+2026-05-04 11:29:47.119 +07:00 [INF] HTTP GET / responded 200 in 3398.4002 ms
+2026-05-04 11:29:47.151 +07:00 [WRN] The static asset '/global-styles.css' was not found in the built time manifest. This file will not be available at runtime if it is not available at compile time during the publish process. If the file was not added to the project during development, and is created at runtime, use the StaticFiles middleware to serve it instead.
+2026-05-04 11:29:47.235 +07:00 [INF] HTTP GET /Pages/Index.css responded 200 in 118.7093 ms
+2026-05-04 11:29:47.423 +07:00 [WRN] The static asset '/global-scripts.js' was not found in the built time manifest. This file will not be available at runtime if it is not available at compile time during the publish process. If the file was not added to the project during development, and is created at runtime, use the StaticFiles middleware to serve it instead.
+2026-05-04 11:29:47.424 +07:00 [WRN] The static asset '/global-error-toast.js' was not found in the built time manifest. This file will not be available at runtime if it is not available at compile time during the publish process. If the file was not added to the project during development, and is created at runtime, use the StaticFiles middleware to serve it instead.
+2026-05-04 11:29:47.432 +07:00 [INF] HTTP GET /global-styles.css responded 200 in 316.1261 ms
+2026-05-04 11:29:47.475 +07:00 [INF] HTTP GET /global-scripts.js responded 200 in 314.0064 ms
+2026-05-04 11:29:47.475 +07:00 [INF] HTTP GET /global-error-toast.js responded 200 in 314.2603 ms
+2026-05-04 11:29:55.439 +07:00 [WRN] Sensitive data logging is enabled. Log entries and exception messages may include sensitive application data; this mode should only be enabled during development.
+2026-05-04 11:29:57.134 +07:00 [WRN] The foreign key property 'NewsRelated.NewsId1' was created in shadow state because a conflicting property with the simple name 'NewsId' exists in the entity type, but is either not mapped, is already used for another relationship, or is incompatible with the associated primary key type. See https://aka.ms/efcore-relationships for information on mapping relationships in EF Core.
+2026-05-04 11:29:57.180 +07:00 [INF] HTTP GET /Abp/ApplicationLocalizationScript responded 200 in 9943.7679 ms
+2026-05-04 11:29:57.216 +07:00 [INF] HTTP GET /Abp/ServiceProxyScript responded 200 in 9950.8391 ms
+2026-05-04 11:31:28.122 +07:00 [ERR] GetHealthReport threw an exception when trying to get report from /health-status configured with name MultiTenancy Health Status.
+System.Threading.Tasks.TaskCanceledException: The request was canceled due to the configured HttpClient.Timeout of 100 seconds elapsing.
+ ---> System.TimeoutException: The operation was canceled.
+ ---> System.Threading.Tasks.TaskCanceledException: The operation was canceled.
+ ---> System.IO.IOException: Unable to read data from the transport connection: The I/O operation has been aborted because of either a thread exit or an application request..
+ ---> System.Net.Sockets.SocketException (995): The I/O operation has been aborted because of either a thread exit or an application request.
+   --- End of inner exception stack trace ---
+   at System.Net.Sockets.Socket.AwaitableSocketAsyncEventArgs.ThrowException(SocketError error, CancellationToken cancellationToken)
+   at System.Net.Sockets.Socket.AwaitableSocketAsyncEventArgs.System.Threading.Tasks.Sources.IValueTaskSource<System.Int32>.GetResult(Int16 token)
+   at System.Net.Security.SslStream.EnsureFullTlsFrameAsync[TIOAdapter](CancellationToken cancellationToken, Int32 estimatedSize)
+   at System.Runtime.CompilerServices.PoolingAsyncValueTaskMethodBuilder`1.StateMachineBox`1.System.Threading.Tasks.Sources.IValueTaskSource<TResult>.GetResult(Int16 token)
+   at System.Net.Security.SslStream.ReadAsyncInternal[TIOAdapter](Memory`1 buffer, CancellationToken cancellationToken)
+   at System.Runtime.CompilerServices.PoolingAsyncValueTaskMethodBuilder`1.StateMachineBox`1.System.Threading.Tasks.Sources.IValueTaskSource<TResult>.GetResult(Int16 token)
+   at System.Net.Http.HttpConnection.InitialFillAsync(Boolean async)
+   at System.Net.Http.HttpConnection.SendAsync(HttpRequestMessage request, Boolean async, CancellationToken cancellationToken)
+   --- End of inner exception stack trace ---
+   at System.Net.Http.HttpConnection.SendAsync(HttpRequestMessage request, Boolean async, CancellationToken cancellationToken)
+   at System.Net.Http.HttpConnectionPool.SendWithVersionDetectionAndRetryAsync(HttpRequestMessage request, Boolean async, Boolean doRequestAuth, CancellationToken cancellationToken)
+   at System.Net.Http.DiagnosticsHandler.SendAsyncCore(HttpRequestMessage request, Boolean async, CancellationToken cancellationToken)
+   at System.Net.Http.RedirectHandler.SendAsync(HttpRequestMessage request, Boolean async, CancellationToken cancellationToken)
+   at Microsoft.Extensions.Http.Logging.LoggingHttpMessageHandler.<SendCoreAsync>g__Core|4_0(HttpRequestMessage request, Boolean useAsync, CancellationToken cancellationToken)
+   at Microsoft.Extensions.Http.Logging.LoggingScopeHttpMessageHandler.<SendCoreAsync>g__Core|4_0(HttpRequestMessage request, Boolean useAsync, CancellationToken cancellationToken)
+   at System.Net.Http.HttpClient.<SendAsync>g__Core|83_0(HttpRequestMessage request, HttpCompletionOption completionOption, CancellationTokenSource cts, Boolean disposeCts, CancellationTokenSource pendingRequestsCts, CancellationToken originalCancellationToken)
+   --- End of inner exception stack trace ---
+   --- End of inner exception stack trace ---
+   at System.Net.Http.HttpClient.HandleFailure(Exception e, Boolean telemetryStarted, HttpResponseMessage response, CancellationTokenSource cts, CancellationToken cancellationToken, CancellationTokenSource pendingRequestsCts)
+   at System.Net.Http.HttpClient.<SendAsync>g__Core|83_0(HttpRequestMessage request, HttpCompletionOption completionOption, CancellationTokenSource cts, Boolean disposeCts, CancellationTokenSource pendingRequestsCts, CancellationToken originalCancellationToken)
+   at HealthChecks.UI.Core.HostedService.HealthCheckReportCollector.GetHealthReportAsync(HealthCheckConfiguration configuration) in /home/runner/work/AspNetCore.Diagnostics.HealthChecks/AspNetCore.Diagnostics.HealthChecks/src/HealthChecks.UI/Core/HostedService/HealthCheckReportCollector.cs:line 142
+2026-05-04 11:31:28.683 +07:00 [INF] HTTP GET /Abp/ApplicationConfigurationScript responded 200 in 101522.7556 ms
+2026-05-04 11:31:44.141 +07:00 [WRN] IEmailSender implementation = Volo.Abp.MailKit.MailKitSmtpEmailSender
+2026-05-04 11:31:44.145 +07:00 [WRN] IBackgroundJobManager implementation = Volo.Abp.BackgroundJobs.DefaultBackgroundJobManager
+2026-05-04 11:31:44.385 +07:00 [INF] Start installing Hangfire SQL objects...
+2026-05-04 11:31:44.674 +07:00 [INF] Hangfire SQL objects installed.
+2026-05-04 11:31:44.836 +07:00 [WRN] Hangfire recurring registered: booking-reminder-zbs (queue=local)
+2026-05-04 11:31:45.444 +07:00 [INF] Initialized all ABP modules.
+2026-05-04 11:31:45.495 +07:00 [INF] Initializing UI Database
+2026-05-04 11:31:45.627 +07:00 [INF] Saving healthchecks configuration to database
+2026-05-04 11:31:46.019 +07:00 [INF] Start processing HTTP request GET https://staging.genora.vn/health-status
+2026-05-04 11:31:46.022 +07:00 [INF] Sending HTTP request GET https://staging.genora.vn/health-status
+2026-05-04 11:31:46.066 +07:00 [INF] Starting Hangfire Server using job storage: 'SQL Server: 103.157.218.187,1433@GenoraMultiTenancy'
+2026-05-04 11:31:46.066 +07:00 [INF] Using the following options for SQL Server job storage: Queue poll interval: 00:00:05.
+2026-05-04 11:31:46.066 +07:00 [INF] Using the following options for Hangfire Server:
+    Worker count: 20
+    Listening queues: 'local', 'default', 'local'
+    Shutdown timeout: 00:00:15
+    Schedule polling interval: 00:00:15
+2026-05-04 11:31:46.129 +07:00 [INF] Server tandv:development:23553d0deb6c4582a88c90ad908e412b:28348:b4b7b5c9-4a25-4faf-8aff-9624c5cebe9d successfully announced in 21.1421 ms
+2026-05-04 11:31:46.135 +07:00 [INF] Server tandv:development:23553d0deb6c4582a88c90ad908e412b:28348:b4b7b5c9-4a25-4faf-8aff-9624c5cebe9d is starting the registered dispatchers: ServerWatchdog, ServerJobCancellationWatcher, SqlServerHeartbeatProcess, ExpirationManager, CountersAggregator, Worker, DelayedJobScheduler, RecurringJobScheduler...
+2026-05-04 11:31:46.395 +07:00 [INF] Server tandv:development:23553d0deb6c4582a88c90ad908e412b:28348:b4b7b5c9-4a25-4faf-8aff-9624c5cebe9d all the dispatchers started
+2026-05-04 11:31:46.521 +07:00 [INF] Received HTTP response headers after 496.436ms - 200
+2026-05-04 11:31:46.522 +07:00 [INF] End processing HTTP request after 511.073ms - 200
+2026-05-04 11:31:47.144 +07:00 [INF] Start processing HTTP request GET https://localhost:44374/health-status
+2026-05-04 11:31:47.144 +07:00 [INF] Sending HTTP request GET https://localhost:44374/health-status
+2026-05-04 11:31:47.881 +07:00 [INF] Skipping the execution of current filter as its not the most effective filter implementing the policy Microsoft.AspNetCore.Mvc.ViewFeatures.IAntiforgeryPolicy
+2026-05-04 11:31:49.217 +07:00 [INF] HTTP GET / responded 200 in 2446.6480 ms
+2026-05-04 11:31:49.624 +07:00 [INF] HTTP GET /libs/moment/moment.min.js.map responded 404 in 20.2260 ms
+2026-05-04 11:31:49.626 +07:00 [WRN] The static asset '/libs/abp/utils/abp-utils.umd.min.js.map' was not found in the built time manifest. This file will not be available at runtime if it is not available at compile time during the publish process. If the file was not added to the project during development, and is created at runtime, use the StaticFiles middleware to serve it instead.
+2026-05-04 11:31:49.626 +07:00 [WRN] The static asset '/libs/bootstrap/js/bootstrap.bundle.js.map' was not found in the built time manifest. This file will not be available at runtime if it is not available at compile time during the publish process. If the file was not added to the project during development, and is created at runtime, use the StaticFiles middleware to serve it instead.
+2026-05-04 11:31:49.708 +07:00 [INF] HTTP GET /libs/moment/moment.min.js.map responded 404 in 69.1775 ms
+2026-05-04 11:31:49.718 +07:00 [INF] HTTP GET /libs/abp/utils/abp-utils.umd.min.js.map responded 200 in 114.2234 ms
+2026-05-04 11:31:49.735 +07:00 [INF] HTTP GET /libs/bootstrap/js/bootstrap.bundle.js.map responded 200 in 130.4026 ms
+2026-05-04 11:31:49.877 +07:00 [INF] HTTP GET /Abp/ApplicationLocalizationScript responded 200 in 615.6211 ms
+2026-05-04 11:31:50.011 +07:00 [INF] HTTP GET /Abp/ServiceProxyScript responded 200 in 749.6576 ms
+2026-05-04 11:31:50.217 +07:00 [WRN] Sensitive data logging is enabled. Log entries and exception messages may include sensitive application data; this mode should only be enabled during development.
+2026-05-04 11:31:50.245 +07:00 [WRN] The foreign key property 'NewsRelated.NewsId1' was created in shadow state because a conflicting property with the simple name 'NewsId' exists in the entity type, but is either not mapped, is already used for another relationship, or is incompatible with the associated primary key type. See https://aka.ms/efcore-relationships for information on mapping relationships in EF Core.
+2026-05-04 11:31:50.353 +07:00 [INF] HTTP GET /Abp/ApplicationConfigurationScript responded 200 in 1094.5491 ms
+2026-05-04 11:31:50.410 +07:00 [WRN] The static asset '/favicon.svg' was not found in the built time manifest. This file will not be available at runtime if it is not available at compile time during the publish process. If the file was not added to the project during development, and is created at runtime, use the StaticFiles middleware to serve it instead.
+2026-05-04 11:31:50.430 +07:00 [INF] HTTP GET /favicon.svg responded 200 in 57.3425 ms
+2026-05-04 11:31:52.120 +07:00 [INF] HTTP GET /health-status responded 200 in 4935.9771 ms
+2026-05-04 11:31:52.140 +07:00 [INF] Received HTTP response headers after 4996.2992ms - 200
+2026-05-04 11:31:52.140 +07:00 [INF] End processing HTTP request after 4997.1503ms - 200
+2026-05-04 11:32:00.639 +07:00 [INF] Skipping the execution of current filter as its not the most effective filter implementing the policy Microsoft.AspNetCore.Mvc.ViewFeatures.IAntiforgeryPolicy
+2026-05-04 11:32:01.571 +07:00 [INF] HTTP GET /Account/Login responded 200 in 964.1030 ms
+2026-05-04 11:32:01.584 +07:00 [INF] HTTP GET /Pages/Account/Login.js responded 304 in 1.4678 ms
+2026-05-04 11:32:01.769 +07:00 [INF] HTTP GET /Abp/ServiceProxyScript responded 200 in 187.6579 ms
+2026-05-04 11:32:01.772 +07:00 [INF] HTTP GET /Abp/ApplicationLocalizationScript responded 200 in 190.9138 ms
+2026-05-04 11:32:01.780 +07:00 [INF] HTTP GET /Abp/ApplicationConfigurationScript responded 200 in 199.1205 ms
+2026-05-04 11:32:02.204 +07:00 [INF] Start processing HTTP request GET https://staging.genora.vn/health-status
+2026-05-04 11:32:02.204 +07:00 [INF] Sending HTTP request GET https://staging.genora.vn/health-status
+2026-05-04 11:32:02.446 +07:00 [INF] Received HTTP response headers after 242.068ms - 200
+2026-05-04 11:32:02.446 +07:00 [INF] End processing HTTP request after 242.3153ms - 200
+2026-05-04 11:32:02.449 +07:00 [INF] Start processing HTTP request GET https://localhost:44374/health-status
+2026-05-04 11:32:02.449 +07:00 [INF] Sending HTTP request GET https://localhost:44374/health-status
+2026-05-04 11:32:02.484 +07:00 [INF] HTTP GET /health-status responded 200 in 19.4311 ms
+2026-05-04 11:32:02.493 +07:00 [INF] Received HTTP response headers after 43.2916ms - 200
+2026-05-04 11:32:02.493 +07:00 [INF] End processing HTTP request after 43.4712ms - 200
+2026-05-04 11:32:06.301 +07:00 [INF] Skipping the execution of current filter as its not the most effective filter implementing the policy Microsoft.AspNetCore.Mvc.ViewFeatures.IAntiforgeryPolicy
+2026-05-04 11:32:07.510 +07:00 [INF] HTTP POST /Account/Login responded 302 in 1244.2115 ms
+2026-05-04 11:32:07.853 +07:00 [INF] Skipping the execution of current filter as its not the most effective filter implementing the policy Microsoft.AspNetCore.Mvc.ViewFeatures.IAntiforgeryPolicy
+2026-05-04 11:32:08.015 +07:00 [INF] HTTP GET / responded 200 in 501.3040 ms
+2026-05-04 11:32:08.258 +07:00 [INF] HTTP GET /Abp/ServiceProxyScript responded 200 in 224.8000 ms
+2026-05-04 11:32:08.260 +07:00 [INF] HTTP GET /Abp/ApplicationLocalizationScript responded 200 in 233.6055 ms
+2026-05-04 11:32:08.288 +07:00 [INF] HTTP GET /Abp/ApplicationConfigurationScript responded 200 in 261.7556 ms
+2026-05-04 11:32:12.507 +07:00 [INF] Start processing HTTP request GET https://staging.genora.vn/health-status
+2026-05-04 11:32:12.508 +07:00 [INF] Sending HTTP request GET https://staging.genora.vn/health-status
+2026-05-04 11:32:12.551 +07:00 [INF] Received HTTP response headers after 43.2351ms - 200
+2026-05-04 11:32:12.551 +07:00 [INF] End processing HTTP request after 43.5956ms - 200
+2026-05-04 11:32:12.552 +07:00 [INF] Start processing HTTP request GET https://localhost:44374/health-status
+2026-05-04 11:32:12.552 +07:00 [INF] Sending HTTP request GET https://localhost:44374/health-status
+2026-05-04 11:32:12.580 +07:00 [INF] HTTP GET /health-status responded 200 in 16.5667 ms
+2026-05-04 11:32:12.591 +07:00 [INF] Received HTTP response headers after 38.8095ms - 200
+2026-05-04 11:32:12.591 +07:00 [INF] End processing HTTP request after 38.9811ms - 200
+2026-05-04 11:32:22.598 +07:00 [INF] Start processing HTTP request GET https://staging.genora.vn/health-status
+2026-05-04 11:32:22.598 +07:00 [INF] Sending HTTP request GET https://staging.genora.vn/health-status
+2026-05-04 11:32:22.639 +07:00 [INF] Received HTTP response headers after 40.9278ms - 200
+2026-05-04 11:32:22.639 +07:00 [INF] End processing HTTP request after 41.1011ms - 200
+2026-05-04 11:32:22.640 +07:00 [INF] Start processing HTTP request GET https://localhost:44374/health-status
+2026-05-04 11:32:22.640 +07:00 [INF] Sending HTTP request GET https://localhost:44374/health-status
+2026-05-04 11:32:22.686 +07:00 [INF] HTTP GET /health-status responded 200 in 31.1022 ms
+2026-05-04 11:32:22.687 +07:00 [INF] Received HTTP response headers after 46.2934ms - 200
+2026-05-04 11:32:22.687 +07:00 [INF] End processing HTTP request after 46.435ms - 200
+2026-05-04 11:32:32.709 +07:00 [INF] Start processing HTTP request GET https://staging.genora.vn/health-status
+2026-05-04 11:32:32.709 +07:00 [INF] Sending HTTP request GET https://staging.genora.vn/health-status
+2026-05-04 11:32:32.743 +07:00 [INF] Received HTTP response headers after 33.8902ms - 200
+2026-05-04 11:32:32.743 +07:00 [INF] End processing HTTP request after 34.0465ms - 200
+2026-05-04 11:32:32.745 +07:00 [INF] Start processing HTTP request GET https://localhost:44374/health-status
+2026-05-04 11:32:32.745 +07:00 [INF] Sending HTTP request GET https://localhost:44374/health-status
+2026-05-04 11:32:32.806 +07:00 [INF] HTTP GET /health-status responded 200 in 15.4479 ms
+2026-05-04 11:32:32.814 +07:00 [INF] Received HTTP response headers after 68.716ms - 200
+2026-05-04 11:32:32.814 +07:00 [INF] End processing HTTP request after 69.1789ms - 200
+2026-05-04 11:32:42.822 +07:00 [INF] Start processing HTTP request GET https://staging.genora.vn/health-status
+2026-05-04 11:32:42.822 +07:00 [INF] Sending HTTP request GET https://staging.genora.vn/health-status
+2026-05-04 11:32:42.855 +07:00 [INF] Received HTTP response headers after 32.7933ms - 200
+2026-05-04 11:32:42.855 +07:00 [INF] End processing HTTP request after 33.0346ms - 200
+2026-05-04 11:32:42.856 +07:00 [INF] Start processing HTTP request GET https://localhost:44374/health-status
+2026-05-04 11:32:42.856 +07:00 [INF] Sending HTTP request GET https://localhost:44374/health-status
+2026-05-04 11:32:42.882 +07:00 [INF] HTTP GET /health-status responded 200 in 15.4566 ms
+2026-05-04 11:32:42.892 +07:00 [INF] Received HTTP response headers after 36.28ms - 200
+2026-05-04 11:32:42.892 +07:00 [INF] End processing HTTP request after 36.3717ms - 200
+2026-05-04 11:32:52.901 +07:00 [INF] Start processing HTTP request GET https://staging.genora.vn/health-status
+2026-05-04 11:32:52.901 +07:00 [INF] Sending HTTP request GET https://staging.genora.vn/health-status
+2026-05-04 11:32:52.948 +07:00 [INF] Received HTTP response headers after 46.8434ms - 200
+2026-05-04 11:32:52.948 +07:00 [INF] End processing HTTP request after 47.1219ms - 200
+2026-05-04 11:32:52.948 +07:00 [INF] Start processing HTTP request GET https://localhost:44374/health-status
+2026-05-04 11:32:52.948 +07:00 [INF] Sending HTTP request GET https://localhost:44374/health-status
+2026-05-04 11:32:52.985 +07:00 [INF] HTTP GET /health-status responded 200 in 21.2639 ms
+2026-05-04 11:32:52.993 +07:00 [INF] Received HTTP response headers after 45.0328ms - 200
+2026-05-04 11:32:52.993 +07:00 [INF] End processing HTTP request after 45.13ms - 200
+2026-05-04 11:33:02.998 +07:00 [INF] Start processing HTTP request GET https://staging.genora.vn/health-status
+2026-05-04 11:33:02.999 +07:00 [INF] Sending HTTP request GET https://staging.genora.vn/health-status
+2026-05-04 11:33:03.035 +07:00 [INF] Received HTTP response headers after 36.5053ms - 200
+2026-05-04 11:33:03.035 +07:00 [INF] End processing HTTP request after 36.6271ms - 200
+2026-05-04 11:33:03.036 +07:00 [INF] Start processing HTTP request GET https://localhost:44374/health-status
+2026-05-04 11:33:03.036 +07:00 [INF] Sending HTTP request GET https://localhost:44374/health-status
+2026-05-04 11:33:03.076 +07:00 [INF] HTTP GET /health-status responded 200 in 22.5622 ms
+2026-05-04 11:33:03.085 +07:00 [INF] Received HTTP response headers after 48.3532ms - 200
+2026-05-04 11:33:03.085 +07:00 [INF] End processing HTTP request after 48.5647ms - 200
+2026-05-04 11:33:13.093 +07:00 [INF] Start processing HTTP request GET https://staging.genora.vn/health-status
+2026-05-04 11:33:13.094 +07:00 [INF] Sending HTTP request GET https://staging.genora.vn/health-status
+2026-05-04 11:33:13.150 +07:00 [INF] Received HTTP response headers after 56.6939ms - 200
+2026-05-04 11:33:13.150 +07:00 [INF] End processing HTTP request after 56.9108ms - 200
+2026-05-04 11:33:13.151 +07:00 [INF] Start processing HTTP request GET https://localhost:44374/health-status
+2026-05-04 11:33:13.151 +07:00 [INF] Sending HTTP request GET https://localhost:44374/health-status
+2026-05-04 11:33:13.192 +07:00 [INF] HTTP GET /health-status responded 200 in 29.2490 ms
+2026-05-04 11:33:13.199 +07:00 [INF] Received HTTP response headers after 47.7967ms - 200
+2026-05-04 11:33:13.199 +07:00 [INF] End processing HTTP request after 47.8837ms - 200
+2026-05-04 11:33:23.209 +07:00 [INF] Start processing HTTP request GET https://staging.genora.vn/health-status
+2026-05-04 11:33:23.209 +07:00 [INF] Sending HTTP request GET https://staging.genora.vn/health-status
+2026-05-04 11:33:23.248 +07:00 [INF] Received HTTP response headers after 38.8835ms - 200
+2026-05-04 11:33:23.248 +07:00 [INF] End processing HTTP request after 39.1609ms - 200
+2026-05-04 11:33:23.249 +07:00 [INF] Start processing HTTP request GET https://localhost:44374/health-status
+2026-05-04 11:33:23.249 +07:00 [INF] Sending HTTP request GET https://localhost:44374/health-status
+2026-05-04 11:33:23.360 +07:00 [INF] HTTP GET /health-status responded 200 in 91.8802 ms
+2026-05-04 11:33:23.371 +07:00 [INF] Received HTTP response headers after 121.8924ms - 200
+2026-05-04 11:33:23.371 +07:00 [INF] End processing HTTP request after 122.0061ms - 200
+2026-05-04 11:33:33.384 +07:00 [INF] Start processing HTTP request GET https://staging.genora.vn/health-status
+2026-05-04 11:33:33.385 +07:00 [INF] Sending HTTP request GET https://staging.genora.vn/health-status
+2026-05-04 11:33:33.425 +07:00 [INF] Received HTTP response headers after 40.0911ms - 200
+2026-05-04 11:33:33.425 +07:00 [INF] End processing HTTP request after 40.3108ms - 200
+2026-05-04 11:33:33.425 +07:00 [INF] Start processing HTTP request GET https://localhost:44374/health-status
+2026-05-04 11:33:33.425 +07:00 [INF] Sending HTTP request GET https://localhost:44374/health-status
+2026-05-04 11:33:33.458 +07:00 [INF] HTTP GET /health-status responded 200 in 17.4681 ms
+2026-05-04 11:33:33.468 +07:00 [INF] Received HTTP response headers after 42.5216ms - 200
+2026-05-04 11:33:33.468 +07:00 [INF] End processing HTTP request after 42.6003ms - 200
+2026-05-04 11:33:43.471 +07:00 [INF] Start processing HTTP request GET https://staging.genora.vn/health-status
+2026-05-04 11:33:43.471 +07:00 [INF] Sending HTTP request GET https://staging.genora.vn/health-status
+2026-05-04 11:33:43.526 +07:00 [INF] Received HTTP response headers after 54.4699ms - 200
+2026-05-04 11:33:43.526 +07:00 [INF] End processing HTTP request after 54.7049ms - 200
+2026-05-04 11:33:43.527 +07:00 [INF] Start processing HTTP request GET https://localhost:44374/health-status
+2026-05-04 11:33:43.527 +07:00 [INF] Sending HTTP request GET https://localhost:44374/health-status
+2026-05-04 11:33:43.556 +07:00 [INF] HTTP GET /health-status responded 200 in 13.6982 ms
+2026-05-04 11:33:43.588 +07:00 [INF] Received HTTP response headers after 60.8968ms - 200
+2026-05-04 11:33:43.588 +07:00 [INF] End processing HTTP request after 61.0001ms - 200
+2026-05-04 11:33:53.606 +07:00 [INF] Start processing HTTP request GET https://staging.genora.vn/health-status
+2026-05-04 11:33:53.606 +07:00 [INF] Sending HTTP request GET https://staging.genora.vn/health-status
+2026-05-04 11:33:53.830 +07:00 [INF] Received HTTP response headers after 223.5026ms - 200
+2026-05-04 11:33:53.830 +07:00 [INF] End processing HTTP request after 223.9144ms - 200
+2026-05-04 11:33:53.831 +07:00 [INF] Start processing HTTP request GET https://localhost:44374/health-status
+2026-05-04 11:33:53.831 +07:00 [INF] Sending HTTP request GET https://localhost:44374/health-status
+2026-05-04 11:33:53.872 +07:00 [INF] HTTP GET /health-status responded 200 in 21.3130 ms
+2026-05-04 11:33:53.881 +07:00 [INF] Received HTTP response headers after 50.2796ms - 200
+2026-05-04 11:33:53.881 +07:00 [INF] End processing HTTP request after 50.3764ms - 200
+2026-05-04 11:34:03.889 +07:00 [INF] Start processing HTTP request GET https://staging.genora.vn/health-status
+2026-05-04 11:34:03.889 +07:00 [INF] Sending HTTP request GET https://staging.genora.vn/health-status
+2026-05-04 11:34:03.926 +07:00 [INF] Received HTTP response headers after 36.7979ms - 200
+2026-05-04 11:34:03.926 +07:00 [INF] End processing HTTP request after 36.9125ms - 200
+2026-05-04 11:34:03.927 +07:00 [INF] Start processing HTTP request GET https://localhost:44374/health-status
+2026-05-04 11:34:03.927 +07:00 [INF] Sending HTTP request GET https://localhost:44374/health-status
+2026-05-04 11:34:03.955 +07:00 [INF] HTTP GET /health-status responded 200 in 16.4677 ms
+2026-05-04 11:34:03.988 +07:00 [INF] Received HTTP response headers after 61.5615ms - 200
+2026-05-04 11:34:03.988 +07:00 [INF] End processing HTTP request after 61.6604ms - 200
+2026-05-04 11:34:13.995 +07:00 [INF] Start processing HTTP request GET https://staging.genora.vn/health-status
+2026-05-04 11:34:13.995 +07:00 [INF] Sending HTTP request GET https://staging.genora.vn/health-status
+2026-05-04 11:34:14.039 +07:00 [INF] Received HTTP response headers after 43.987ms - 200
+2026-05-04 11:34:14.039 +07:00 [INF] End processing HTTP request after 44.0938ms - 200
+2026-05-04 11:34:14.039 +07:00 [INF] Start processing HTTP request GET https://localhost:44374/health-status
+2026-05-04 11:34:14.039 +07:00 [INF] Sending HTTP request GET https://localhost:44374/health-status
+2026-05-04 11:34:14.074 +07:00 [INF] HTTP GET /health-status responded 200 in 18.2980 ms
+2026-05-04 11:34:14.083 +07:00 [INF] Received HTTP response headers after 43.5975ms - 200
+2026-05-04 11:34:14.083 +07:00 [INF] End processing HTTP request after 43.7406ms - 200
+2026-05-04 11:34:24.094 +07:00 [INF] Start processing HTTP request GET https://staging.genora.vn/health-status
+2026-05-04 11:34:24.094 +07:00 [INF] Sending HTTP request GET https://staging.genora.vn/health-status
+2026-05-04 11:34:24.143 +07:00 [INF] Received HTTP response headers after 48.6092ms - 200
+2026-05-04 11:34:24.143 +07:00 [INF] End processing HTTP request after 48.8756ms - 200
+2026-05-04 11:34:24.144 +07:00 [INF] Start processing HTTP request GET https://localhost:44374/health-status
+2026-05-04 11:34:24.144 +07:00 [INF] Sending HTTP request GET https://localhost:44374/health-status
+2026-05-04 11:34:24.182 +07:00 [INF] HTTP GET /health-status responded 200 in 18.7455 ms
+2026-05-04 11:34:24.193 +07:00 [INF] Received HTTP response headers after 48.3122ms - 200
+2026-05-04 11:34:24.193 +07:00 [INF] End processing HTTP request after 48.5121ms - 200
+2026-05-04 11:34:34.197 +07:00 [INF] Start processing HTTP request GET https://staging.genora.vn/health-status
+2026-05-04 11:34:34.197 +07:00 [INF] Sending HTTP request GET https://staging.genora.vn/health-status
+2026-05-04 11:34:34.239 +07:00 [INF] Received HTTP response headers after 42.1393ms - 200
+2026-05-04 11:34:34.239 +07:00 [INF] End processing HTTP request after 42.2446ms - 200
+2026-05-04 11:34:34.240 +07:00 [INF] Start processing HTTP request GET https://localhost:44374/health-status
+2026-05-04 11:34:34.240 +07:00 [INF] Sending HTTP request GET https://localhost:44374/health-status
+2026-05-04 11:34:34.280 +07:00 [INF] HTTP GET /health-status responded 200 in 25.7340 ms
+2026-05-04 11:34:34.287 +07:00 [INF] Received HTTP response headers after 47.1914ms - 200
+2026-05-04 11:34:34.287 +07:00 [INF] End processing HTTP request after 47.2642ms - 200
+2026-05-04 11:34:44.290 +07:00 [INF] Start processing HTTP request GET https://staging.genora.vn/health-status
+2026-05-04 11:34:44.290 +07:00 [INF] Sending HTTP request GET https://staging.genora.vn/health-status
+2026-05-04 11:34:44.328 +07:00 [INF] Received HTTP response headers after 37.1018ms - 200
+2026-05-04 11:34:44.328 +07:00 [INF] End processing HTTP request after 37.224ms - 200
+2026-05-04 11:34:44.328 +07:00 [INF] Start processing HTTP request GET https://localhost:44374/health-status
+2026-05-04 11:34:44.328 +07:00 [INF] Sending HTTP request GET https://localhost:44374/health-status
+2026-05-04 11:34:44.357 +07:00 [INF] HTTP GET /health-status responded 200 in 15.1066 ms
+2026-05-04 11:34:44.390 +07:00 [INF] Received HTTP response headers after 62.0043ms - 200
+2026-05-04 11:34:44.390 +07:00 [INF] End processing HTTP request after 62.0775ms - 200
+2026-05-04 11:34:54.395 +07:00 [INF] Start processing HTTP request GET https://staging.genora.vn/health-status
+2026-05-04 11:34:54.395 +07:00 [INF] Sending HTTP request GET https://staging.genora.vn/health-status
+2026-05-04 11:34:54.450 +07:00 [INF] Received HTTP response headers after 54.6874ms - 200
+2026-05-04 11:34:54.450 +07:00 [INF] End processing HTTP request after 54.852ms - 200
+2026-05-04 11:34:54.451 +07:00 [INF] Start processing HTTP request GET https://localhost:44374/health-status
+2026-05-04 11:34:54.451 +07:00 [INF] Sending HTTP request GET https://localhost:44374/health-status
+2026-05-04 11:34:54.484 +07:00 [INF] HTTP GET /health-status responded 200 in 19.5565 ms
+2026-05-04 11:34:54.495 +07:00 [INF] Received HTTP response headers after 44.1423ms - 200
+2026-05-04 11:34:54.495 +07:00 [INF] End processing HTTP request after 44.2289ms - 200
+2026-05-04 11:35:04.511 +07:00 [INF] Start processing HTTP request GET https://staging.genora.vn/health-status
+2026-05-04 11:35:04.511 +07:00 [INF] Sending HTTP request GET https://staging.genora.vn/health-status
+2026-05-04 11:35:04.562 +07:00 [INF] Received HTTP response headers after 51.2313ms - 200
+2026-05-04 11:35:04.563 +07:00 [INF] End processing HTTP request after 51.4311ms - 200
+2026-05-04 11:35:04.563 +07:00 [INF] Start processing HTTP request GET https://localhost:44374/health-status
+2026-05-04 11:35:04.563 +07:00 [INF] Sending HTTP request GET https://localhost:44374/health-status
+2026-05-04 11:35:04.592 +07:00 [INF] HTTP GET /health-status responded 200 in 16.9501 ms
+2026-05-04 11:35:04.598 +07:00 [INF] Received HTTP response headers after 34.5679ms - 200
+2026-05-04 11:35:04.598 +07:00 [INF] End processing HTTP request after 34.6395ms - 200
+2026-05-04 11:35:14.611 +07:00 [INF] Start processing HTTP request GET https://staging.genora.vn/health-status
+2026-05-04 11:35:14.611 +07:00 [INF] Sending HTTP request GET https://staging.genora.vn/health-status
+2026-05-04 11:35:14.666 +07:00 [INF] Received HTTP response headers after 54.458ms - 200
+2026-05-04 11:35:14.666 +07:00 [INF] End processing HTTP request after 54.6747ms - 200
+2026-05-04 11:35:14.666 +07:00 [INF] Start processing HTTP request GET https://localhost:44374/health-status
+2026-05-04 11:35:14.667 +07:00 [INF] Sending HTTP request GET https://localhost:44374/health-status
+2026-05-04 11:35:14.739 +07:00 [INF] HTTP GET /health-status responded 200 in 19.4602 ms
+2026-05-04 11:35:14.774 +07:00 [INF] Received HTTP response headers after 107.6344ms - 200
+2026-05-04 11:35:14.774 +07:00 [INF] End processing HTTP request after 107.6996ms - 200
+2026-05-04 11:35:24.791 +07:00 [INF] Start processing HTTP request GET https://staging.genora.vn/health-status
+2026-05-04 11:35:24.791 +07:00 [INF] Sending HTTP request GET https://staging.genora.vn/health-status
+2026-05-04 11:35:24.847 +07:00 [INF] Received HTTP response headers after 56.2256ms - 200
+2026-05-04 11:35:24.847 +07:00 [INF] End processing HTTP request after 56.4002ms - 200
+2026-05-04 11:35:24.847 +07:00 [INF] Start processing HTTP request GET https://localhost:44374/health-status
+2026-05-04 11:35:24.847 +07:00 [INF] Sending HTTP request GET https://localhost:44374/health-status
+2026-05-04 11:35:24.883 +07:00 [INF] HTTP GET /health-status responded 200 in 17.1689 ms
+2026-05-04 11:35:24.890 +07:00 [INF] Received HTTP response headers after 42.398ms - 200
+2026-05-04 11:35:24.890 +07:00 [INF] End processing HTTP request after 42.4608ms - 200
+2026-05-04 11:35:34.905 +07:00 [INF] Start processing HTTP request GET https://staging.genora.vn/health-status
+2026-05-04 11:35:34.905 +07:00 [INF] Sending HTTP request GET https://staging.genora.vn/health-status
+2026-05-04 11:35:34.959 +07:00 [INF] Received HTTP response headers after 54.2754ms - 200
+2026-05-04 11:35:34.959 +07:00 [INF] End processing HTTP request after 54.4118ms - 200
+2026-05-04 11:35:34.960 +07:00 [INF] Start processing HTTP request GET https://localhost:44374/health-status
+2026-05-04 11:35:34.960 +07:00 [INF] Sending HTTP request GET https://localhost:44374/health-status
+2026-05-04 11:35:34.998 +07:00 [INF] HTTP GET /health-status responded 200 in 25.7802 ms
+2026-05-04 11:35:35.006 +07:00 [INF] Received HTTP response headers after 46.1714ms - 200
+2026-05-04 11:35:35.006 +07:00 [INF] End processing HTTP request after 46.2544ms - 200
+2026-05-04 11:35:45.022 +07:00 [INF] Start processing HTTP request GET https://staging.genora.vn/health-status
+2026-05-04 11:35:45.022 +07:00 [INF] Sending HTTP request GET https://staging.genora.vn/health-status
+2026-05-04 11:35:45.059 +07:00 [INF] Received HTTP response headers after 37.5069ms - 200
+2026-05-04 11:35:45.059 +07:00 [INF] End processing HTTP request after 37.7118ms - 200
+2026-05-04 11:35:45.060 +07:00 [INF] Start processing HTTP request GET https://localhost:44374/health-status
+2026-05-04 11:35:45.060 +07:00 [INF] Sending HTTP request GET https://localhost:44374/health-status
+2026-05-04 11:35:45.131 +07:00 [INF] HTTP GET /health-status responded 200 in 29.1129 ms
+2026-05-04 11:35:45.131 +07:00 [INF] Received HTTP response headers after 71.347ms - 200
+2026-05-04 11:35:45.131 +07:00 [INF] End processing HTTP request after 71.4039ms - 200
+2026-05-04 11:35:55.140 +07:00 [INF] Start processing HTTP request GET https://staging.genora.vn/health-status
+2026-05-04 11:35:55.140 +07:00 [INF] Sending HTTP request GET https://staging.genora.vn/health-status
+2026-05-04 11:35:55.363 +07:00 [INF] Received HTTP response headers after 223.2642ms - 200
+2026-05-04 11:35:55.363 +07:00 [INF] End processing HTTP request after 223.4846ms - 200
+2026-05-04 11:35:55.364 +07:00 [INF] Start processing HTTP request GET https://localhost:44374/health-status
+2026-05-04 11:35:55.364 +07:00 [INF] Sending HTTP request GET https://localhost:44374/health-status
+2026-05-04 11:35:55.405 +07:00 [INF] HTTP GET /health-status responded 200 in 16.6168 ms
+2026-05-04 11:35:55.415 +07:00 [INF] Received HTTP response headers after 51.2326ms - 200
+2026-05-04 11:35:55.415 +07:00 [INF] End processing HTTP request after 51.3396ms - 200
+2026-05-04 11:36:05.417 +07:00 [INF] Start processing HTTP request GET https://staging.genora.vn/health-status
+2026-05-04 11:36:05.417 +07:00 [INF] Sending HTTP request GET https://staging.genora.vn/health-status
+2026-05-04 11:36:05.455 +07:00 [INF] Received HTTP response headers after 37.7427ms - 200
+2026-05-04 11:36:05.455 +07:00 [INF] End processing HTTP request after 37.8193ms - 200
+2026-05-04 11:36:05.456 +07:00 [INF] Start processing HTTP request GET https://localhost:44374/health-status
+2026-05-04 11:36:05.456 +07:00 [INF] Sending HTTP request GET https://localhost:44374/health-status
+2026-05-04 11:36:05.484 +07:00 [INF] HTTP GET /health-status responded 200 in 16.8096 ms
+2026-05-04 11:36:05.518 +07:00 [INF] Received HTTP response headers after 62.4521ms - 200
+2026-05-04 11:36:05.518 +07:00 [INF] End processing HTTP request after 62.5364ms - 200
+2026-05-04 11:36:15.531 +07:00 [INF] Start processing HTTP request GET https://staging.genora.vn/health-status
+2026-05-04 11:36:15.531 +07:00 [INF] Sending HTTP request GET https://staging.genora.vn/health-status
+2026-05-04 11:36:15.569 +07:00 [INF] Received HTTP response headers after 37.6996ms - 200
+2026-05-04 11:36:15.569 +07:00 [INF] End processing HTTP request after 38.0612ms - 200
+2026-05-04 11:36:15.569 +07:00 [INF] Start processing HTTP request GET https://localhost:44374/health-status
+2026-05-04 11:36:15.569 +07:00 [INF] Sending HTTP request GET https://localhost:44374/health-status
+2026-05-04 11:36:15.614 +07:00 [INF] HTTP GET /health-status responded 200 in 21.5885 ms
+2026-05-04 11:36:15.614 +07:00 [INF] Received HTTP response headers after 44.9861ms - 200
+2026-05-04 11:36:15.614 +07:00 [INF] End processing HTTP request after 45.0623ms - 200
+2026-05-04 11:36:25.628 +07:00 [INF] Start processing HTTP request GET https://staging.genora.vn/health-status
+2026-05-04 11:36:25.628 +07:00 [INF] Sending HTTP request GET https://staging.genora.vn/health-status
+2026-05-04 11:36:25.679 +07:00 [INF] Received HTTP response headers after 50.5003ms - 200
+2026-05-04 11:36:25.679 +07:00 [INF] End processing HTTP request after 50.7304ms - 200
+2026-05-04 11:36:25.680 +07:00 [INF] Start processing HTTP request GET https://localhost:44374/health-status
+2026-05-04 11:36:25.680 +07:00 [INF] Sending HTTP request GET https://localhost:44374/health-status
+2026-05-04 11:36:25.715 +07:00 [INF] HTTP GET /health-status responded 200 in 19.5943 ms
+2026-05-04 11:36:25.723 +07:00 [INF] Received HTTP response headers after 43.437ms - 200
+2026-05-04 11:36:25.723 +07:00 [INF] End processing HTTP request after 43.5079ms - 200
+2026-05-04 11:36:35.732 +07:00 [INF] Start processing HTTP request GET https://staging.genora.vn/health-status
+2026-05-04 11:36:35.732 +07:00 [INF] Sending HTTP request GET https://staging.genora.vn/health-status
+2026-05-04 11:36:35.784 +07:00 [INF] Received HTTP response headers after 52.6661ms - 200
+2026-05-04 11:36:35.785 +07:00 [INF] End processing HTTP request after 52.8512ms - 200
+2026-05-04 11:36:35.785 +07:00 [INF] Start processing HTTP request GET https://localhost:44374/health-status
+2026-05-04 11:36:35.785 +07:00 [INF] Sending HTTP request GET https://localhost:44374/health-status
+2026-05-04 11:36:35.830 +07:00 [INF] HTTP GET /health-status responded 200 in 33.8047 ms
+2026-05-04 11:36:35.831 +07:00 [INF] Received HTTP response headers after 45.892ms - 200
+2026-05-04 11:36:35.831 +07:00 [INF] End processing HTTP request after 45.9599ms - 200
+2026-05-04 11:36:44.395 +07:00 [INF] [AuditCleanup] Deleted logs older than 2026-05-04 11:30:44Z
+2026-05-04 11:36:45.844 +07:00 [INF] Start processing HTTP request GET https://staging.genora.vn/health-status
+2026-05-04 11:36:45.844 +07:00 [INF] Sending HTTP request GET https://staging.genora.vn/health-status
+2026-05-04 11:36:45.888 +07:00 [INF] Received HTTP response headers after 43.4526ms - 200
+2026-05-04 11:36:45.888 +07:00 [INF] End processing HTTP request after 43.7929ms - 200
+2026-05-04 11:36:45.888 +07:00 [INF] Start processing HTTP request GET https://localhost:44374/health-status
+2026-05-04 11:36:45.889 +07:00 [INF] Sending HTTP request GET https://localhost:44374/health-status
+2026-05-04 11:36:45.917 +07:00 [INF] HTTP GET /health-status responded 200 in 16.9739 ms
+2026-05-04 11:36:45.925 +07:00 [INF] Received HTTP response headers after 36.812ms - 200
+2026-05-04 11:36:45.925 +07:00 [INF] End processing HTTP request after 36.894ms - 200
+2026-05-04 11:36:47.451 +07:00 [INF] 1 servers were removed due to timeout
+2026-05-04 11:36:55.930 +07:00 [INF] Start processing HTTP request GET https://staging.genora.vn/health-status
+2026-05-04 11:36:55.930 +07:00 [INF] Sending HTTP request GET https://staging.genora.vn/health-status
+2026-05-04 11:36:55.960 +07:00 [INF] Received HTTP response headers after 29.6628ms - 200
+2026-05-04 11:36:55.960 +07:00 [INF] End processing HTTP request after 29.7851ms - 200
+2026-05-04 11:36:55.960 +07:00 [INF] Start processing HTTP request GET https://localhost:44374/health-status
+2026-05-04 11:36:55.960 +07:00 [INF] Sending HTTP request GET https://localhost:44374/health-status
+2026-05-04 11:36:56.028 +07:00 [INF] HTTP GET /health-status responded 200 in 54.1002 ms
+2026-05-04 11:36:56.040 +07:00 [INF] Received HTTP response headers after 79.92ms - 200
+2026-05-04 11:36:56.040 +07:00 [INF] End processing HTTP request after 80.0104ms - 200
+2026-05-04 11:37:06.045 +07:00 [INF] Start processing HTTP request GET https://staging.genora.vn/health-status
+2026-05-04 11:37:06.046 +07:00 [INF] Sending HTTP request GET https://staging.genora.vn/health-status
+2026-05-04 11:37:06.100 +07:00 [INF] Received HTTP response headers after 54.6418ms - 200
+2026-05-04 11:37:06.100 +07:00 [INF] End processing HTTP request after 54.9166ms - 200
+2026-05-04 11:37:06.101 +07:00 [INF] Start processing HTTP request GET https://localhost:44374/health-status
+2026-05-04 11:37:06.101 +07:00 [INF] Sending HTTP request GET https://localhost:44374/health-status
+2026-05-04 11:37:06.139 +07:00 [INF] HTTP GET /health-status responded 200 in 22.1712 ms
+2026-05-04 11:37:06.186 +07:00 [INF] Received HTTP response headers after 85.5023ms - 200
+2026-05-04 11:37:06.186 +07:00 [INF] End processing HTTP request after 85.5912ms - 200
+2026-05-04 11:37:16.197 +07:00 [INF] Start processing HTTP request GET https://staging.genora.vn/health-status
+2026-05-04 11:37:16.198 +07:00 [INF] Sending HTTP request GET https://staging.genora.vn/health-status
+2026-05-04 11:37:16.407 +07:00 [INF] Received HTTP response headers after 209.0818ms - 200
+2026-05-04 11:37:16.407 +07:00 [INF] End processing HTTP request after 209.3599ms - 200
+2026-05-04 11:37:16.408 +07:00 [INF] Start processing HTTP request GET https://localhost:44374/health-status
+2026-05-04 11:37:16.408 +07:00 [INF] Sending HTTP request GET https://localhost:44374/health-status
+2026-05-04 11:37:16.441 +07:00 [INF] HTTP GET /health-status responded 200 in 15.7408 ms
+2026-05-04 11:37:16.450 +07:00 [INF] Received HTTP response headers after 41.8339ms - 200
+2026-05-04 11:37:16.450 +07:00 [INF] End processing HTTP request after 41.9366ms - 200
+2026-05-04 11:37:26.462 +07:00 [INF] Start processing HTTP request GET https://staging.genora.vn/health-status
+2026-05-04 11:37:26.462 +07:00 [INF] Sending HTTP request GET https://staging.genora.vn/health-status
+2026-05-04 11:37:26.511 +07:00 [INF] Received HTTP response headers after 48.7399ms - 200
+2026-05-04 11:37:26.511 +07:00 [INF] End processing HTTP request after 48.8244ms - 200
+2026-05-04 11:37:26.512 +07:00 [INF] Start processing HTTP request GET https://localhost:44374/health-status
+2026-05-04 11:37:26.512 +07:00 [INF] Sending HTTP request GET https://localhost:44374/health-status
+2026-05-04 11:37:26.537 +07:00 [INF] HTTP GET /health-status responded 200 in 14.2923 ms
+2026-05-04 11:37:26.545 +07:00 [INF] Received HTTP response headers after 32.8554ms - 200
+2026-05-04 11:37:26.545 +07:00 [INF] End processing HTTP request after 32.9531ms - 200
+2026-05-04 11:37:26.548 +07:00 [INF] Skipping the execution of current filter as its not the most effective filter implementing the policy Microsoft.AspNetCore.Mvc.ViewFeatures.IAntiforgeryPolicy
+2026-05-04 11:37:26.560 +07:00 [INF] HTTP GET / responded 200 in 32.3362 ms
+2026-05-04 11:37:26.727 +07:00 [WRN] The static asset '/libs/abp/core/abp.css' was not found in the built time manifest. This file will not be available at runtime if it is not available at compile time during the publish process. If the file was not added to the project during development, and is created at runtime, use the StaticFiles middleware to serve it instead.
+2026-05-04 11:37:26.728 +07:00 [INF] HTTP GET /libs/abp/core/abp.css responded 200 in 7.2790 ms
+2026-05-04 11:37:26.841 +07:00 [WRN] The static asset '/libs/@fortawesome/fontawesome-free/css/all.css' was not found in the built time manifest. This file will not be available at runtime if it is not available at compile time during the publish process. If the file was not added to the project during development, and is created at runtime, use the StaticFiles middleware to serve it instead.
+2026-05-04 11:37:26.845 +07:00 [WRN] The static asset '/libs/malihu-custom-scrollbar-plugin/jquery.mCustomScrollbar.css' was not found in the built time manifest. This file will not be available at runtime if it is not available at compile time during the publish process. If the file was not added to the project during development, and is created at runtime, use the StaticFiles middleware to serve it instead.
+2026-05-04 11:37:26.949 +07:00 [WRN] The static asset '/libs/@fortawesome/fontawesome-free/css/v4-shims.css' was not found in the built time manifest. This file will not be available at runtime if it is not available at compile time during the publish process. If the file was not added to the project during development, and is created at runtime, use the StaticFiles middleware to serve it instead.
+2026-05-04 11:37:26.999 +07:00 [INF] HTTP GET /libs/@fortawesome/fontawesome-free/css/v4-shims.css responded 200 in 163.7274 ms
+2026-05-04 11:37:26.999 +07:00 [INF] HTTP GET /libs/malihu-custom-scrollbar-plugin/jquery.mCustomScrollbar.css responded 200 in 231.9259 ms
+2026-05-04 11:37:26.999 +07:00 [WRN] The static asset '/libs/select2/css/select2.min.css' was not found in the built time manifest. This file will not be available at runtime if it is not available at compile time during the publish process. If the file was not added to the project during development, and is created at runtime, use the StaticFiles middleware to serve it instead.
+2026-05-04 11:37:26.999 +07:00 [INF] HTTP GET /Themes/LeptonXLite/Global/side-menu/css/font-bundle.css responded 200 in 0.8636 ms
+2026-05-04 11:37:26.999 +07:00 [WRN] The static asset '/images/getting-started/instagram.svg' was not found in the built time manifest. This file will not be available at runtime if it is not available at compile time during the publish process. If the file was not added to the project during development, and is created at runtime, use the StaticFiles middleware to serve it instead.
+2026-05-04 11:37:26.999 +07:00 [WRN] The static asset '/images/getting-started/img-support.png' was not found in the built time manifest. This file will not be available at runtime if it is not available at compile time during the publish process. If the file was not added to the project during development, and is created at runtime, use the StaticFiles middleware to serve it instead.
+2026-05-04 11:37:27.000 +07:00 [WRN] The static asset '/images/getting-started/x-white.svg' was not found in the built time manifest. This file will not be available at runtime if it is not available at compile time during the publish process. If the file was not added to the project during development, and is created at runtime, use the StaticFiles middleware to serve it instead.
+2026-05-04 11:37:27.001 +07:00 [INF] HTTP GET /libs/@fortawesome/fontawesome-free/css/all.css responded 200 in 234.4796 ms
+2026-05-04 11:37:27.001 +07:00 [INF] HTTP GET /libs/select2/css/select2.min.css responded 200 in 101.8529 ms
+2026-05-04 11:37:27.001 +07:00 [INF] HTTP GET /Themes/LeptonXLite/Global/side-menu/css/js-bundle.css responded 200 in 3.4632 ms
+2026-05-04 11:37:27.008 +07:00 [INF] HTTP GET /Pages/Index.css responded 200 in 1.5849 ms
+2026-05-04 11:37:27.008 +07:00 [INF] HTTP GET /libs/abp/aspnetcore-mvc-ui-theme-shared/date-range-picker/date-range-picker-styles.css responded 200 in 0.7956 ms
+2026-05-04 11:37:27.008 +07:00 [INF] HTTP GET /Themes/LeptonXLite/Global/side-menu/css/bootstrap-dim.css responded 200 in 241.2006 ms
+2026-05-04 11:37:27.009 +07:00 [INF] HTTP GET /libs/abp/aspnetcore-mvc-ui-theme-shared/toast/abp-toast.css responded 200 in 0.5534 ms
+2026-05-04 11:37:27.009 +07:00 [INF] HTTP GET /libs/abp/aspnetcore-mvc-ui-theme-shared/datatables/datatables-styles.css responded 200 in 0.5243 ms
+2026-05-04 11:37:27.019 +07:00 [INF] HTTP GET /images/getting-started/img-support.png responded 200 in 70.7907 ms
+2026-05-04 11:37:27.065 +07:00 [INF] HTTP GET /images/getting-started/x-white.svg responded 200 in 116.0540 ms
+2026-05-04 11:37:27.065 +07:00 [INF] HTTP GET /images/getting-started/instagram.svg responded 200 in 116.3952 ms
+2026-05-04 11:37:27.066 +07:00 [WRN] The static asset '/libs/bootstrap/js/bootstrap.bundle.js' was not found in the built time manifest. This file will not be available at runtime if it is not available at compile time during the publish process. If the file was not added to the project during development, and is created at runtime, use the StaticFiles middleware to serve it instead.
+2026-05-04 11:37:27.066 +07:00 [WRN] The static asset '/images/getting-started/img-blog.png' was not found in the built time manifest. This file will not be available at runtime if it is not available at compile time during the publish process. If the file was not added to the project during development, and is created at runtime, use the StaticFiles middleware to serve it instead.
+2026-05-04 11:37:27.066 +07:00 [WRN] The static asset '/images/getting-started/discord.svg' was not found in the built time manifest. This file will not be available at runtime if it is not available at compile time during the publish process. If the file was not added to the project during development, and is created at runtime, use the StaticFiles middleware to serve it instead.
+2026-05-04 11:37:27.067 +07:00 [WRN] The static asset '/images/getting-started/book.png' was not found in the built time manifest. This file will not be available at runtime if it is not available at compile time during the publish process. If the file was not added to the project during development, and is created at runtime, use the StaticFiles middleware to serve it instead.
+2026-05-04 11:37:27.068 +07:00 [WRN] The static asset '/libs/datatables.net-bs5/css/dataTables.bootstrap5.css' was not found in the built time manifest. This file will not be available at runtime if it is not available at compile time during the publish process. If the file was not added to the project during development, and is created at runtime, use the StaticFiles middleware to serve it instead.
+2026-05-04 11:37:27.069 +07:00 [INF] HTTP GET /Themes/LeptonXLite/Global/side-menu/css/abp-bundle.css responded 200 in 3.8875 ms
+2026-05-04 11:37:27.070 +07:00 [INF] HTTP GET /libs/datatables.net-bs5/css/dataTables.bootstrap5.css responded 200 in 66.4345 ms
+2026-05-04 11:37:27.070 +07:00 [INF] HTTP GET /Themes/LeptonXLite/Global/side-menu/libs/bootstrap-icons/font/bootstrap-icons.css responded 200 in 61.8696 ms
+2026-05-04 11:37:27.085 +07:00 [INF] HTTP GET /libs/abp/aspnetcore-mvc-ui-theme-shared/jquery-form/jquery-form-extensions.js responded 200 in 0.8028 ms
+2026-05-04 11:37:27.085 +07:00 [INF] HTTP GET /libs/abp/aspnetcore-mvc-ui-theme-shared/ui-extensions.js responded 200 in 1.3957 ms
+2026-05-04 11:37:27.087 +07:00 [INF] HTTP GET /images/getting-started/img-blog.png responded 200 in 84.1427 ms
+2026-05-04 11:37:27.087 +07:00 [INF] HTTP GET /images/getting-started/discord.svg responded 200 in 87.9826 ms
+2026-05-04 11:37:27.087 +07:00 [INF] HTTP GET /Pages/Abp/MultiTenancy/tenant-switch.js responded 200 in 0.8471 ms
+2026-05-04 11:37:27.088 +07:00 [INF] HTTP GET /Themes/LeptonXLite/Global/side-menu/css/layout-bundle.css responded 200 in 1.5820 ms
+2026-05-04 11:37:27.088 +07:00 [INF] HTTP GET /libs/abp/aspnetcore-mvc-ui-theme-shared/datatables/datatables-extensions.js responded 200 in 1.1895 ms
+2026-05-04 11:37:27.088 +07:00 [INF] HTTP GET /libs/abp/aspnetcore-mvc-ui-theme-shared/sweetalert2/abp-sweetalert2.js responded 200 in 0.7283 ms
+2026-05-04 11:37:27.088 +07:00 [INF] HTTP GET /libs/abp/aspnetcore-mvc-ui-theme-shared/authentication-state/authentication-state-listener.js responded 200 in 1.0806 ms
+2026-05-04 11:37:27.088 +07:00 [INF] HTTP GET /libs/abp/aspnetcore-mvc-ui-theme-shared/bootstrap/modal-manager.js responded 200 in 0.9892 ms
+2026-05-04 11:37:27.089 +07:00 [INF] HTTP GET /libs/abp/aspnetcore-mvc-ui-theme-shared/date-range-picker/date-range-picker-extensions.js responded 200 in 1.1198 ms
+2026-05-04 11:37:27.089 +07:00 [INF] HTTP GET /Themes/LeptonXLite/Global/side-menu/js/lepton-x.bundle.min.js responded 200 in 1.6639 ms
+2026-05-04 11:37:27.089 +07:00 [WRN] The static asset '/libs/bootstrap-daterangepicker/daterangepicker.css' was not found in the built time manifest. This file will not be available at runtime if it is not available at compile time during the publish process. If the file was not added to the project during development, and is created at runtime, use the StaticFiles middleware to serve it instead.
+2026-05-04 11:37:27.089 +07:00 [WRN] The static asset '/libs/jquery/jquery.js' was not found in the built time manifest. This file will not be available at runtime if it is not available at compile time during the publish process. If the file was not added to the project during development, and is created at runtime, use the StaticFiles middleware to serve it instead.
+2026-05-04 11:37:27.090 +07:00 [INF] HTTP GET /libs/bootstrap/js/bootstrap.bundle.js responded 200 in 89.9688 ms
+2026-05-04 11:37:27.090 +07:00 [INF] HTTP GET /libs/abp/aspnetcore-mvc-ui-theme-shared/jquery/widget-manager.js responded 200 in 0.8288 ms
+2026-05-04 11:37:27.090 +07:00 [INF] HTTP GET /libs/bootstrap-daterangepicker/daterangepicker.css responded 200 in 32.9908 ms
+2026-05-04 11:37:27.091 +07:00 [INF] HTTP GET /libs/abp/aspnetcore-mvc-ui-theme-shared/bootstrap/dom-event-handlers.js responded 200 in 2.0493 ms
+2026-05-04 11:37:27.091 +07:00 [WRN] The static asset '/images/getting-started/stack-overflow.svg' was not found in the built time manifest. This file will not be available at runtime if it is not available at compile time during the publish process. If the file was not added to the project during development, and is created at runtime, use the StaticFiles middleware to serve it instead.
+2026-05-04 11:37:27.098 +07:00 [WRN] The static asset '/images/getting-started/youtube.svg' was not found in the built time manifest. This file will not be available at runtime if it is not available at compile time during the publish process. If the file was not added to the project during development, and is created at runtime, use the StaticFiles middleware to serve it instead.
+2026-05-04 11:37:27.098 +07:00 [WRN] The static asset '/images/getting-started/bg-01.png' was not found in the built time manifest. This file will not be available at runtime if it is not available at compile time during the publish process. If the file was not added to the project during development, and is created at runtime, use the StaticFiles middleware to serve it instead.
+2026-05-04 11:37:27.099 +07:00 [INF] HTTP GET /libs/abp/aspnetcore-mvc-ui-theme-shared/toast/abp-toast.js responded 200 in 2.0230 ms
+2026-05-04 11:37:27.100 +07:00 [WRN] The static asset '/libs/timeago/locales/jquery.timeago.vi.js' was not found in the built time manifest. This file will not be available at runtime if it is not available at compile time during the publish process. If the file was not added to the project during development, and is created at runtime, use the StaticFiles middleware to serve it instead.
+2026-05-04 11:37:27.100 +07:00 [INF] HTTP GET /libs/abp/aspnetcore-mvc-ui-theme-shared/jquery/jquery-extensions.js responded 200 in 0.5383 ms
+2026-05-04 11:37:27.101 +07:00 [INF] HTTP GET /Themes/LeptonXLite/Global/scripts/leptonx-mvc-ui-initializer.js responded 200 in 1.0276 ms
+2026-05-04 11:37:27.101 +07:00 [INF] HTTP GET /libs/timeago/locales/jquery.timeago.vi.js responded 200 in 13.8064 ms
+2026-05-04 11:37:27.103 +07:00 [INF] HTTP GET /images/getting-started/stack-overflow.svg responded 200 in 28.7655 ms
+2026-05-04 11:37:27.107 +07:00 [INF] HTTP GET /images/getting-started/bg-01.png responded 200 in 49.4281 ms
+2026-05-04 11:37:27.108 +07:00 [WRN] The static asset '/libs/moment/locale/vi.js' was not found in the built time manifest. This file will not be available at runtime if it is not available at compile time during the publish process. If the file was not added to the project during development, and is created at runtime, use the StaticFiles middleware to serve it instead.
+2026-05-04 11:37:27.108 +07:00 [WRN] The static asset '/global-scripts.js' was not found in the built time manifest. This file will not be available at runtime if it is not available at compile time during the publish process. If the file was not added to the project during development, and is created at runtime, use the StaticFiles middleware to serve it instead.
+2026-05-04 11:37:27.108 +07:00 [WRN] The static asset '/libs/select2/js/i18n/vi.js' was not found in the built time manifest. This file will not be available at runtime if it is not available at compile time during the publish process. If the file was not added to the project during development, and is created at runtime, use the StaticFiles middleware to serve it instead.
+2026-05-04 11:37:27.108 +07:00 [WRN] The static asset '/libs/datatables.net-bs5/js/dataTables.bootstrap5.js' was not found in the built time manifest. This file will not be available at runtime if it is not available at compile time during the publish process. If the file was not added to the project during development, and is created at runtime, use the StaticFiles middleware to serve it instead.
+2026-05-04 11:37:27.108 +07:00 [INF] HTTP GET /images/getting-started/youtube.svg responded 200 in 33.9953 ms
+2026-05-04 11:37:27.108 +07:00 [INF] HTTP GET /global-scripts.js responded 200 in 19.9748 ms
+2026-05-04 11:37:27.109 +07:00 [INF] HTTP GET /libs/select2/js/i18n/vi.js responded 200 in 20.6663 ms
+2026-05-04 11:37:27.109 +07:00 [INF] HTTP GET /libs/moment/locale/vi.js responded 200 in 21.3389 ms
+2026-05-04 11:37:27.109 +07:00 [INF] HTTP GET /libs/datatables.net-bs5/js/dataTables.bootstrap5.js responded 200 in 19.4017 ms
+2026-05-04 11:37:27.205 +07:00 [INF] HTTP GET /libs/jquery/jquery.js responded 200 in 133.9773 ms
+2026-05-04 11:37:27.205 +07:00 [INF] HTTP GET /images/getting-started/book.png responded 200 in 207.3758 ms
+2026-05-04 11:37:27.206 +07:00 [INF] HTTP GET /Abp/ServiceProxyScript responded 200 in 108.6203 ms
+2026-05-04 11:37:27.223 +07:00 [WRN] The static asset '/global-styles.css' was not found in the built time manifest. This file will not be available at runtime if it is not available at compile time during the publish process. If the file was not added to the project during development, and is created at runtime, use the StaticFiles middleware to serve it instead.
+2026-05-04 11:37:27.223 +07:00 [WRN] The static asset '/images/getting-started/img-community.png' was not found in the built time manifest. This file will not be available at runtime if it is not available at compile time during the publish process. If the file was not added to the project during development, and is created at runtime, use the StaticFiles middleware to serve it instead.
+2026-05-04 11:37:27.223 +07:00 [WRN] The static asset '/libs/abp/core/abp.js' was not found in the built time manifest. This file will not be available at runtime if it is not available at compile time during the publish process. If the file was not added to the project during development, and is created at runtime, use the StaticFiles middleware to serve it instead.
+2026-05-04 11:37:27.223 +07:00 [WRN] The static asset '/libs/abp/jquery/abp.jquery.js' was not found in the built time manifest. This file will not be available at runtime if it is not available at compile time during the publish process. If the file was not added to the project during development, and is created at runtime, use the StaticFiles middleware to serve it instead.
+2026-05-04 11:37:27.223 +07:00 [WRN] The static asset '/libs/jquery-validation-unobtrusive/jquery.validate.unobtrusive.js' was not found in the built time manifest. This file will not be available at runtime if it is not available at compile time during the publish process. If the file was not added to the project during development, and is created at runtime, use the StaticFiles middleware to serve it instead.
+2026-05-04 11:37:27.223 +07:00 [WRN] The static asset '/libs/bootstrap-datepicker/bootstrap-datepicker.min.css' was not found in the built time manifest. This file will not be available at runtime if it is not available at compile time during the publish process. If the file was not added to the project during development, and is created at runtime, use the StaticFiles middleware to serve it instead.
+2026-05-04 11:37:27.224 +07:00 [INF] HTTP GET /global-styles.css responded 200 in 217.1988 ms
+2026-05-04 11:37:27.224 +07:00 [INF] HTTP GET /libs/abp/jquery/abp.jquery.js responded 200 in 216.8264 ms
+2026-05-04 11:37:27.224 +07:00 [INF] HTTP GET /libs/jquery-validation-unobtrusive/jquery.validate.unobtrusive.js responded 200 in 146.5869 ms
+2026-05-04 11:37:27.224 +07:00 [INF] HTTP GET /libs/bootstrap-datepicker/bootstrap-datepicker.min.css responded 200 in 214.0022 ms
+2026-05-04 11:37:27.224 +07:00 [INF] HTTP GET /libs/abp/core/abp.js responded 200 in 149.6257 ms
+2026-05-04 11:37:27.231 +07:00 [INF] HTTP GET /images/getting-started/img-community.png responded 200 in 222.3801 ms
+2026-05-04 11:37:27.326 +07:00 [WRN] The static asset '/libs/malihu-custom-scrollbar-plugin/jquery.mCustomScrollbar.concat.min.js' was not found in the built time manifest. This file will not be available at runtime if it is not available at compile time during the publish process. If the file was not added to the project during development, and is created at runtime, use the StaticFiles middleware to serve it instead.
+2026-05-04 11:37:27.328 +07:00 [INF] HTTP GET /libs/malihu-custom-scrollbar-plugin/jquery.mCustomScrollbar.concat.min.js responded 200 in 245.9649 ms
+2026-05-04 11:37:27.329 +07:00 [WRN] The static asset '/libs/sweetalert2/sweetalert2.all.min.js' was not found in the built time manifest. This file will not be available at runtime if it is not available at compile time during the publish process. If the file was not added to the project during development, and is created at runtime, use the StaticFiles middleware to serve it instead.
+2026-05-04 11:37:27.330 +07:00 [WRN] The static asset '/libs/moment/moment.min.js' was not found in the built time manifest. This file will not be available at runtime if it is not available at compile time during the publish process. If the file was not added to the project during development, and is created at runtime, use the StaticFiles middleware to serve it instead.
+2026-05-04 11:37:27.331 +07:00 [WRN] The static asset '/libs/abp/utils/abp-utils.umd.min.js' was not found in the built time manifest. This file will not be available at runtime if it is not available at compile time during the publish process. If the file was not added to the project during development, and is created at runtime, use the StaticFiles middleware to serve it instead.
+2026-05-04 11:37:27.332 +07:00 [WRN] The static asset '/libs/jquery-validation/jquery.validate.js' was not found in the built time manifest. This file will not be available at runtime if it is not available at compile time during the publish process. If the file was not added to the project during development, and is created at runtime, use the StaticFiles middleware to serve it instead.
+2026-05-04 11:37:27.332 +07:00 [WRN] The static asset '/libs/bootstrap-datepicker/bootstrap-datepicker.min.js' was not found in the built time manifest. This file will not be available at runtime if it is not available at compile time during the publish process. If the file was not added to the project during development, and is created at runtime, use the StaticFiles middleware to serve it instead.
+2026-05-04 11:37:27.332 +07:00 [WRN] The static asset '/libs/datatables.net/js/dataTables.min.js' was not found in the built time manifest. This file will not be available at runtime if it is not available at compile time during the publish process. If the file was not added to the project during development, and is created at runtime, use the StaticFiles middleware to serve it instead.
+2026-05-04 11:37:27.333 +07:00 [INF] HTTP GET /libs/moment/moment.min.js responded 200 in 250.9009 ms
+2026-05-04 11:37:27.334 +07:00 [INF] HTTP GET /libs/abp/utils/abp-utils.umd.min.js responded 200 in 253.1276 ms
+2026-05-04 11:37:27.334 +07:00 [INF] HTTP GET /libs/bootstrap-datepicker/bootstrap-datepicker.min.js responded 200 in 254.1507 ms
+2026-05-04 11:37:27.335 +07:00 [INF] HTTP GET /libs/sweetalert2/sweetalert2.all.min.js responded 200 in 251.9905 ms
+2026-05-04 11:37:27.335 +07:00 [INF] HTTP GET /libs/jquery-validation/jquery.validate.js responded 200 in 255.2480 ms
+2026-05-04 11:37:27.338 +07:00 [INF] HTTP GET /libs/datatables.net/js/dataTables.min.js responded 200 in 258.8018 ms
+2026-05-04 11:37:27.412 +07:00 [WRN] The static asset '/libs/lodash/lodash.min.js' was not found in the built time manifest. This file will not be available at runtime if it is not available at compile time during the publish process. If the file was not added to the project during development, and is created at runtime, use the StaticFiles middleware to serve it instead.
+2026-05-04 11:37:27.413 +07:00 [WRN] The static asset '/global-error-toast.js' was not found in the built time manifest. This file will not be available at runtime if it is not available at compile time during the publish process. If the file was not added to the project during development, and is created at runtime, use the StaticFiles middleware to serve it instead.
+2026-05-04 11:37:27.413 +07:00 [WRN] The static asset '/libs/jquery-form/jquery.form.min.js' was not found in the built time manifest. This file will not be available at runtime if it is not available at compile time during the publish process. If the file was not added to the project during development, and is created at runtime, use the StaticFiles middleware to serve it instead.
+2026-05-04 11:37:27.417 +07:00 [INF] HTTP GET /global-error-toast.js responded 200 in 331.3301 ms
+2026-05-04 11:37:27.417 +07:00 [INF] HTTP GET /libs/jquery-form/jquery.form.min.js responded 200 in 332.0694 ms
+2026-05-04 11:37:27.418 +07:00 [INF] HTTP GET /libs/lodash/lodash.min.js responded 200 in 334.4400 ms
+2026-05-04 11:37:27.425 +07:00 [WRN] The static asset '/libs/timeago/jquery.timeago.js' was not found in the built time manifest. This file will not be available at runtime if it is not available at compile time during the publish process. If the file was not added to the project during development, and is created at runtime, use the StaticFiles middleware to serve it instead.
+2026-05-04 11:37:27.425 +07:00 [WRN] The static asset '/libs/abp/luxon/abp.luxon.js' was not found in the built time manifest. This file will not be available at runtime if it is not available at compile time during the publish process. If the file was not added to the project during development, and is created at runtime, use the StaticFiles middleware to serve it instead.
+2026-05-04 11:37:27.425 +07:00 [WRN] The static asset '/libs/luxon/luxon.min.js' was not found in the built time manifest. This file will not be available at runtime if it is not available at compile time during the publish process. If the file was not added to the project during development, and is created at runtime, use the StaticFiles middleware to serve it instead.
+2026-05-04 11:37:27.425 +07:00 [WRN] The static asset '/libs/select2/js/select2.min.js' was not found in the built time manifest. This file will not be available at runtime if it is not available at compile time during the publish process. If the file was not added to the project during development, and is created at runtime, use the StaticFiles middleware to serve it instead.
+2026-05-04 11:37:27.429 +07:00 [INF] HTTP GET /libs/timeago/jquery.timeago.js responded 200 in 342.7997 ms
+2026-05-04 11:37:27.429 +07:00 [INF] HTTP GET /libs/abp/luxon/abp.luxon.js responded 200 in 344.6825 ms
+2026-05-04 11:37:27.430 +07:00 [INF] HTTP GET /libs/select2/js/select2.min.js responded 200 in 346.8151 ms
+2026-05-04 11:37:27.431 +07:00 [INF] HTTP GET /libs/luxon/luxon.min.js responded 200 in 333.3100 ms
+2026-05-04 11:37:27.470 +07:00 [INF] HTTP GET /Abp/ApplicationConfigurationScript responded 200 in 372.6750 ms
+2026-05-04 11:37:27.483 +07:00 [WRN] The static asset '/libs/bootstrap-datepicker/locales/bootstrap-datepicker.vi.min.js' was not found in the built time manifest. This file will not be available at runtime if it is not available at compile time during the publish process. If the file was not added to the project during development, and is created at runtime, use the StaticFiles middleware to serve it instead.
+2026-05-04 11:37:27.483 +07:00 [WRN] The static asset '/libs/bootstrap-daterangepicker/daterangepicker.js' was not found in the built time manifest. This file will not be available at runtime if it is not available at compile time during the publish process. If the file was not added to the project during development, and is created at runtime, use the StaticFiles middleware to serve it instead.
+2026-05-04 11:37:27.485 +07:00 [INF] HTTP GET /libs/bootstrap-datepicker/locales/bootstrap-datepicker.vi.min.js responded 200 in 385.5090 ms
+2026-05-04 11:37:27.538 +07:00 [INF] HTTP GET /libs/bootstrap-daterangepicker/daterangepicker.js responded 200 in 437.0576 ms
+2026-05-04 11:37:27.539 +07:00 [WRN] The static asset '/libs/jquery-validation/localization/messages_vi.js' was not found in the built time manifest. This file will not be available at runtime if it is not available at compile time during the publish process. If the file was not added to the project during development, and is created at runtime, use the StaticFiles middleware to serve it instead.
+2026-05-04 11:37:27.540 +07:00 [INF] HTTP GET /libs/jquery-validation/localization/messages_vi.js responded 200 in 442.1573 ms
+2026-05-04 11:37:27.540 +07:00 [INF] HTTP GET /Abp/ApplicationLocalizationScript responded 200 in 443.0148 ms
+2026-05-04 11:37:27.546 +07:00 [WRN] The static asset '/images/logo/genora/genora-logo-light.png' was not found in the built time manifest. This file will not be available at runtime if it is not available at compile time during the publish process. If the file was not added to the project during development, and is created at runtime, use the StaticFiles middleware to serve it instead.
+2026-05-04 11:37:27.554 +07:00 [INF] HTTP GET /images/logo/genora/genora-logo-light.png responded 200 in 16.4075 ms
+2026-05-04 11:37:27.557 +07:00 [INF] HTTP GET /Themes/LeptonXLite/Global/side-menu/libs/bootstrap-icons/font/fonts/bootstrap-icons.woff2 responded 200 in 3.9603 ms
+2026-05-04 11:37:27.567 +07:00 [WRN] The static asset '/libs/@fortawesome/fontawesome-free/webfonts/fa-solid-900.woff2' was not found in the built time manifest. This file will not be available at runtime if it is not available at compile time during the publish process. If the file was not added to the project during development, and is created at runtime, use the StaticFiles middleware to serve it instead.
+2026-05-04 11:37:27.569 +07:00 [INF] HTTP GET /libs/@fortawesome/fontawesome-free/webfonts/fa-solid-900.woff2 responded 200 in 15.8725 ms
+2026-05-04 11:37:27.841 +07:00 [WRN] The static asset '/favicon.svg' was not found in the built time manifest. This file will not be available at runtime if it is not available at compile time during the publish process. If the file was not added to the project during development, and is created at runtime, use the StaticFiles middleware to serve it instead.
+2026-05-04 11:37:27.842 +07:00 [INF] HTTP GET /favicon.svg responded 200 in 7.8797 ms
+2026-05-04 11:37:36.555 +07:00 [INF] Start processing HTTP request GET https://staging.genora.vn/health-status
+2026-05-04 11:37:36.555 +07:00 [INF] Sending HTTP request GET https://staging.genora.vn/health-status
+2026-05-04 11:37:36.583 +07:00 [INF] Received HTTP response headers after 28.4776ms - 200
+2026-05-04 11:37:36.583 +07:00 [INF] End processing HTTP request after 28.6214ms - 200
+2026-05-04 11:37:36.584 +07:00 [INF] Start processing HTTP request GET https://localhost:44374/health-status
+2026-05-04 11:37:36.584 +07:00 [INF] Sending HTTP request GET https://localhost:44374/health-status
+2026-05-04 11:37:36.623 +07:00 [INF] HTTP GET /health-status responded 200 in 26.7332 ms
+2026-05-04 11:37:36.632 +07:00 [INF] Received HTTP response headers after 47.9414ms - 200
+2026-05-04 11:37:36.632 +07:00 [INF] End processing HTTP request after 48.0173ms - 200
+2026-05-04 11:37:37.914 +07:00 [INF] Skipping the execution of current filter as its not the most effective filter implementing the policy Microsoft.AspNetCore.Mvc.ViewFeatures.IAntiforgeryPolicy
+2026-05-04 11:37:37.922 +07:00 [INF] HTTP GET / responded 200 in 18.7253 ms
+2026-05-04 11:37:38.218 +07:00 [INF] HTTP GET /Abp/ServiceProxyScript responded 200 in 83.5033 ms
+2026-05-04 11:37:38.220 +07:00 [INF] HTTP GET /Abp/ApplicationLocalizationScript responded 200 in 85.6217 ms
+2026-05-04 11:37:38.270 +07:00 [INF] HTTP GET /Abp/ApplicationConfigurationScript responded 200 in 51.6570 ms
+2026-05-04 11:37:46.638 +07:00 [INF] Start processing HTTP request GET https://staging.genora.vn/health-status
+2026-05-04 11:37:46.638 +07:00 [INF] Sending HTTP request GET https://staging.genora.vn/health-status
+2026-05-04 11:37:46.696 +07:00 [INF] Received HTTP response headers after 57.9965ms - 200
+2026-05-04 11:37:46.696 +07:00 [INF] End processing HTTP request after 58.1766ms - 200
+2026-05-04 11:37:46.697 +07:00 [INF] Start processing HTTP request GET https://localhost:44374/health-status
+2026-05-04 11:37:46.697 +07:00 [INF] Sending HTTP request GET https://localhost:44374/health-status
+2026-05-04 11:37:46.730 +07:00 [INF] HTTP GET /health-status responded 200 in 21.0539 ms
+2026-05-04 11:37:46.740 +07:00 [INF] Received HTTP response headers after 43.2851ms - 200
+2026-05-04 11:37:46.740 +07:00 [INF] End processing HTTP request after 43.3859ms - 200
+2026-05-04 11:37:56.753 +07:00 [INF] Start processing HTTP request GET https://staging.genora.vn/health-status
+2026-05-04 11:37:56.753 +07:00 [INF] Sending HTTP request GET https://staging.genora.vn/health-status
+2026-05-04 11:37:56.965 +07:00 [INF] Received HTTP response headers after 211.7983ms - 200
+2026-05-04 11:37:56.965 +07:00 [INF] End processing HTTP request after 212.0034ms - 200
+2026-05-04 11:37:56.966 +07:00 [INF] Start processing HTTP request GET https://localhost:44374/health-status
+2026-05-04 11:37:56.967 +07:00 [INF] Sending HTTP request GET https://localhost:44374/health-status
+2026-05-04 11:37:57.002 +07:00 [INF] HTTP GET /health-status responded 200 in 13.9150 ms
+2026-05-04 11:37:57.012 +07:00 [INF] Received HTTP response headers after 45.4521ms - 200
+2026-05-04 11:37:57.012 +07:00 [INF] End processing HTTP request after 45.5997ms - 200
+2026-05-04 11:38:07.018 +07:00 [INF] Start processing HTTP request GET https://staging.genora.vn/health-status
+2026-05-04 11:38:07.018 +07:00 [INF] Sending HTTP request GET https://staging.genora.vn/health-status
+2026-05-04 11:38:07.056 +07:00 [INF] Received HTTP response headers after 38.5213ms - 200
+2026-05-04 11:38:07.056 +07:00 [INF] End processing HTTP request after 38.7398ms - 200
+2026-05-04 11:38:07.057 +07:00 [INF] Start processing HTTP request GET https://localhost:44374/health-status
+2026-05-04 11:38:07.057 +07:00 [INF] Sending HTTP request GET https://localhost:44374/health-status
+2026-05-04 11:38:07.086 +07:00 [INF] HTTP GET /health-status responded 200 in 18.1918 ms
+2026-05-04 11:38:07.092 +07:00 [INF] Received HTTP response headers after 35.4158ms - 200
+2026-05-04 11:38:07.092 +07:00 [INF] End processing HTTP request after 35.4724ms - 200
+2026-05-04 11:38:17.109 +07:00 [INF] Start processing HTTP request GET https://staging.genora.vn/health-status
+2026-05-04 11:38:17.109 +07:00 [INF] Sending HTTP request GET https://staging.genora.vn/health-status
+2026-05-04 11:38:17.146 +07:00 [INF] Received HTTP response headers after 36.7148ms - 200
+2026-05-04 11:38:17.146 +07:00 [INF] End processing HTTP request after 36.8941ms - 200
+2026-05-04 11:38:17.146 +07:00 [INF] Start processing HTTP request GET https://localhost:44374/health-status
+2026-05-04 11:38:17.146 +07:00 [INF] Sending HTTP request GET https://localhost:44374/health-status
+2026-05-04 11:38:17.169 +07:00 [INF] HTTP GET /health-status responded 200 in 13.6885 ms
+2026-05-04 11:38:17.176 +07:00 [INF] Received HTTP response headers after 29.9949ms - 200
+2026-05-04 11:38:17.177 +07:00 [INF] End processing HTTP request after 30.0615ms - 200
+2026-05-04 11:38:23.389 +07:00 [INF] HTTP OPTIONS /api/mini-app/get-golf-courses responded 204 in 0.9572 ms
+2026-05-04 11:38:23.391 +07:00 [INF] HTTP OPTIONS /api/mini-app/get-home-page-widgets responded 204 in 0.0643 ms
+2026-05-04 11:38:23.395 +07:00 [INF] HTTP OPTIONS /api/mini-app/get-app-settings responded 204 in 0.0544 ms
+2026-05-04 11:38:23.395 +07:00 [INF] HTTP OPTIONS /api/mini-app/get-golf-courses responded 204 in 0.0544 ms
+2026-05-04 11:38:23.395 +07:00 [INF] HTTP OPTIONS /api/mini-app/get-golf-courses responded 204 in 0.0544 ms
+2026-05-04 11:38:23.519 +07:00 [INF] Skipping the execution of current filter as its not the most effective filter implementing the policy Microsoft.AspNetCore.Mvc.ViewFeatures.IAntiforgeryPolicy
+2026-05-04 11:38:23.523 +07:00 [INF] Skipping the execution of current filter as its not the most effective filter implementing the policy Microsoft.AspNetCore.Mvc.ViewFeatures.IAntiforgeryPolicy
+2026-05-04 11:38:23.584 +07:00 [INF] Skipping the execution of current filter as its not the most effective filter implementing the policy Microsoft.AspNetCore.Mvc.ViewFeatures.IAntiforgeryPolicy
+2026-05-04 11:38:23.584 +07:00 [INF] Skipping the execution of current filter as its not the most effective filter implementing the policy Microsoft.AspNetCore.Mvc.ViewFeatures.IAntiforgeryPolicy
+2026-05-04 11:38:23.593 +07:00 [INF] Skipping the execution of current filter as its not the most effective filter implementing the policy Microsoft.AspNetCore.Mvc.ViewFeatures.IAntiforgeryPolicy
+2026-05-04 11:38:27.236 +07:00 [INF] Start processing HTTP request GET https://staging.genora.vn/health-status
+2026-05-04 11:38:27.236 +07:00 [INF] Sending HTTP request GET https://staging.genora.vn/health-status
+2026-05-04 11:38:27.290 +07:00 [INF] Received HTTP response headers after 53.4273ms - 200
+2026-05-04 11:38:27.290 +07:00 [INF] End processing HTTP request after 53.551ms - 200
+2026-05-04 11:38:27.291 +07:00 [INF] Start processing HTTP request GET https://localhost:44374/health-status
+2026-05-04 11:38:27.291 +07:00 [INF] Sending HTTP request GET https://localhost:44374/health-status
+2026-05-04 11:38:27.330 +07:00 [INF] HTTP GET /health-status responded 200 in 19.9861 ms
+2026-05-04 11:38:27.370 +07:00 [INF] Received HTTP response headers after 78.7916ms - 200
+2026-05-04 11:38:27.370 +07:00 [INF] End processing HTTP request after 78.9076ms - 200
+2026-05-04 11:38:27.910 +07:00 [WRN] The query uses a row limiting operator ('Skip'/'Take') without an 'OrderBy' operator. This may lead to unpredictable results. If the 'Distinct' operator is used after 'OrderBy', then make sure to use the 'OrderBy' operator after 'Distinct' as the ordering would otherwise get erased.
+2026-05-04 11:38:27.910 +07:00 [WRN] The query uses a row limiting operator ('Skip'/'Take') without an 'OrderBy' operator. This may lead to unpredictable results. If the 'Distinct' operator is used after 'OrderBy', then make sure to use the 'OrderBy' operator after 'Distinct' as the ordering would otherwise get erased.
+2026-05-04 11:38:27.910 +07:00 [WRN] The query uses a row limiting operator ('Skip'/'Take') without an 'OrderBy' operator. This may lead to unpredictable results. If the 'Distinct' operator is used after 'OrderBy', then make sure to use the 'OrderBy' operator after 'Distinct' as the ordering would otherwise get erased.
+2026-05-04 11:38:27.910 +07:00 [WRN] The query uses a row limiting operator ('Skip'/'Take') without an 'OrderBy' operator. This may lead to unpredictable results. If the 'Distinct' operator is used after 'OrderBy', then make sure to use the 'OrderBy' operator after 'Distinct' as the ordering would otherwise get erased.
+2026-05-04 11:38:28.009 +07:00 [INF] HTTP GET /api/mini-app/get-app-settings responded 200 in 4498.1711 ms
+2026-05-04 11:38:28.018 +07:00 [INF] HTTP GET /api/mini-app/get-home-page-widgets responded 200 in 4524.1549 ms
+2026-05-04 11:38:28.141 +07:00 [INF] HTTP GET /api/mini-app/get-golf-courses responded 200 in 4647.3500 ms
+2026-05-04 11:38:28.141 +07:00 [INF] HTTP GET /api/mini-app/get-golf-courses responded 200 in 4628.9412 ms
+2026-05-04 11:38:28.141 +07:00 [INF] HTTP GET /api/mini-app/get-golf-courses responded 200 in 4631.6516 ms
+2026-05-04 11:38:28.141 +07:00 [INF] Skipping the execution of current filter as its not the most effective filter implementing the policy Microsoft.AspNetCore.Mvc.ViewFeatures.IAntiforgeryPolicy
+2026-05-04 11:38:28.204 +07:00 [INF] HTTP OPTIONS /api/mini-app/get-home-page-feature-grid responded 204 in 0.0751 ms
+2026-05-04 11:38:28.205 +07:00 [INF] HTTP OPTIONS /api/mini-app/get-calendar-slots responded 204 in 0.1570 ms
+2026-05-04 11:38:28.268 +07:00 [INF] HTTP OPTIONS /api/mini-app/get-news responded 204 in 28.7622 ms
+2026-05-04 11:38:28.268 +07:00 [INF] HTTP OPTIONS /api/mini-app/get-calendar-slots responded 204 in 0.0469 ms
+2026-05-04 11:38:28.269 +07:00 [INF] Skipping the execution of current filter as its not the most effective filter implementing the policy Microsoft.AspNetCore.Mvc.ViewFeatures.IAntiforgeryPolicy
+2026-05-04 11:38:28.301 +07:00 [INF] HTTP GET /api/mini-app/get-golf-courses responded 200 in 170.4485 ms
+2026-05-04 11:38:28.312 +07:00 [INF] HTTP GET /api/mini-app/get-golf-courses responded 200 in 133.6498 ms
+2026-05-04 11:38:28.316 +07:00 [INF] Skipping the execution of current filter as its not the most effective filter implementing the policy Microsoft.AspNetCore.Mvc.ViewFeatures.IAntiforgeryPolicy
+2026-05-04 11:38:28.380 +07:00 [INF] Skipping the execution of current filter as its not the most effective filter implementing the policy Microsoft.AspNetCore.Mvc.ViewFeatures.IAntiforgeryPolicy
+2026-05-04 11:38:28.382 +07:00 [INF] Skipping the execution of current filter as its not the most effective filter implementing the policy Microsoft.AspNetCore.Mvc.ViewFeatures.IAntiforgeryPolicy
+2026-05-04 11:38:28.382 +07:00 [INF] Skipping the execution of current filter as its not the most effective filter implementing the policy Microsoft.AspNetCore.Mvc.ViewFeatures.IAntiforgeryPolicy
+2026-05-04 11:38:28.538 +07:00 [INF] HTTP GET /api/mini-app/get-home-page-feature-grid responded 200 in 232.6108 ms
+2026-05-04 11:38:28.561 +07:00 [INF] HTTP GET /api/mini-app/get-calendar-slots responded 200 in 219.1895 ms
+2026-05-04 11:38:28.664 +07:00 [INF] HTTP GET /api/mini-app/get-news responded 200 in 294.7947 ms
+2026-05-04 11:38:28.710 +07:00 [INF] HTTP GET /api/mini-app/get-calendar-slots responded 200 in 343.5382 ms
+2026-05-04 11:38:31.286 +07:00 [INF] HTTP OPTIONS /api/mini-app/decode-location responded 204 in 0.0632 ms
+2026-05-04 11:38:31.409 +07:00 [INF] Skipping the execution of current filter as its not the most effective filter implementing the policy Microsoft.AspNetCore.Mvc.ViewFeatures.IAntiforgeryPolicy
+2026-05-04 11:38:31.452 +07:00 [INF] Start processing HTTP request GET https://graph.zalo.me/v2.0/me/info
+2026-05-04 11:38:31.452 +07:00 [INF] Sending HTTP request GET https://graph.zalo.me/v2.0/me/info
+2026-05-04 11:38:31.644 +07:00 [INF] Received HTTP response headers after 192.069ms - 200
+2026-05-04 11:38:31.644 +07:00 [INF] End processing HTTP request after 192.1918ms - 200
+2026-05-04 11:38:31.650 +07:00 [INF] Zalo DECODE_LOCATION GET https://graph.zalo.me/v2.0/me/info -> 200 in 196ms
+2026-05-04 11:38:31.689 +07:00 [WRN] Savepoints are disabled because Multiple Active Result Sets (MARS) is enabled. If 'SaveChanges' fails, then the transaction cannot be automatically rolled back to a known clean state. Instead, the transaction should be rolled back by the application before retrying 'SaveChanges'. See https://go.microsoft.com/fwlink/?linkid=2149338 for more information and examples. To identify the code which triggers this warning, call 'ConfigureWarnings(w => w.Throw(SqlServerEventId.SavepointsDisabledBecauseOfMARS))'.
+2026-05-04 11:38:31.724 +07:00 [INF] HTTP POST /api/mini-app/decode-location responded 200 in 333.3520 ms
+2026-05-04 11:38:35.817 +07:00 [INF] HTTP OPTIONS /api/mini-app/get-fnb-categories responded 204 in 0.1574 ms
+2026-05-04 11:38:35.817 +07:00 [INF] HTTP OPTIONS /api/mini-app/get-fnb-items responded 204 in 0.1785 ms
+2026-05-04 11:38:35.941 +07:00 [INF] Skipping the execution of current filter as its not the most effective filter implementing the policy Microsoft.AspNetCore.Mvc.ViewFeatures.IAntiforgeryPolicy
+2026-05-04 11:38:35.941 +07:00 [INF] Skipping the execution of current filter as its not the most effective filter implementing the policy Microsoft.AspNetCore.Mvc.ViewFeatures.IAntiforgeryPolicy
+2026-05-04 11:38:36.081 +07:00 [INF] HTTP GET /api/mini-app/get-fnb-categories responded 200 in 155.0024 ms
+2026-05-04 11:38:36.123 +07:00 [INF] HTTP GET /api/mini-app/get-fnb-items responded 200 in 197.1883 ms
+2026-05-04 11:38:37.377 +07:00 [INF] Start processing HTTP request GET https://staging.genora.vn/health-status
+2026-05-04 11:38:37.377 +07:00 [INF] Sending HTTP request GET https://staging.genora.vn/health-status
+2026-05-04 11:38:37.428 +07:00 [INF] Received HTTP response headers after 50.9826ms - 200
+2026-05-04 11:38:37.429 +07:00 [INF] End processing HTTP request after 51.2006ms - 200
+2026-05-04 11:38:37.430 +07:00 [INF] Start processing HTTP request GET https://localhost:44374/health-status
+2026-05-04 11:38:37.430 +07:00 [INF] Sending HTTP request GET https://localhost:44374/health-status
+2026-05-04 11:38:37.496 +07:00 [INF] HTTP GET /health-status responded 200 in 41.2850 ms
+2026-05-04 11:38:37.497 +07:00 [INF] Received HTTP response headers after 66.717ms - 200
+2026-05-04 11:38:37.497 +07:00 [INF] End processing HTTP request after 66.9144ms - 200
+2026-05-04 11:38:41.650 +07:00 [INF] HTTP OPTIONS /api/mini-app/get-calendar-slots responded 204 in 0.6121 ms
+2026-05-04 11:38:41.767 +07:00 [INF] Skipping the execution of current filter as its not the most effective filter implementing the policy Microsoft.AspNetCore.Mvc.ViewFeatures.IAntiforgeryPolicy
+2026-05-04 11:38:41.860 +07:00 [INF] HTTP GET /api/mini-app/get-calendar-slots responded 200 in 107.9152 ms
+2026-05-04 11:38:42.990 +07:00 [INF] HTTP OPTIONS /api/mini-app/get-pro-items responded 204 in 0.0745 ms
+2026-05-04 11:38:42.990 +07:00 [INF] HTTP OPTIONS /api/mini-app/get-pro-categories responded 204 in 0.0746 ms
+2026-05-04 11:38:43.116 +07:00 [INF] Skipping the execution of current filter as its not the most effective filter implementing the policy Microsoft.AspNetCore.Mvc.ViewFeatures.IAntiforgeryPolicy
+2026-05-04 11:38:43.116 +07:00 [INF] Skipping the execution of current filter as its not the most effective filter implementing the policy Microsoft.AspNetCore.Mvc.ViewFeatures.IAntiforgeryPolicy
+2026-05-04 11:38:43.262 +07:00 [INF] HTTP GET /api/mini-app/get-pro-categories responded 200 in 168.4544 ms
+2026-05-04 11:38:43.299 +07:00 [INF] HTTP GET /api/mini-app/get-pro-items responded 200 in 205.8041 ms
+2026-05-04 11:38:47.514 +07:00 [INF] Start processing HTTP request GET https://staging.genora.vn/health-status
+2026-05-04 11:38:47.514 +07:00 [INF] Sending HTTP request GET https://staging.genora.vn/health-status
+2026-05-04 11:38:47.565 +07:00 [INF] Received HTTP response headers after 51.1352ms - 200
+2026-05-04 11:38:47.565 +07:00 [INF] End processing HTTP request after 51.3489ms - 200
+2026-05-04 11:38:47.566 +07:00 [INF] Start processing HTTP request GET https://localhost:44374/health-status
+2026-05-04 11:38:47.566 +07:00 [INF] Sending HTTP request GET https://localhost:44374/health-status
+2026-05-04 11:38:47.596 +07:00 [INF] HTTP GET /health-status responded 200 in 16.4448 ms
+2026-05-04 11:38:47.608 +07:00 [INF] Received HTTP response headers after 42.113ms - 200
+2026-05-04 11:38:47.608 +07:00 [INF] End processing HTTP request after 42.2323ms - 200
+2026-05-04 11:38:47.679 +07:00 [INF] HTTP OPTIONS /api/mini-app/get-calendar-slots responded 204 in 0.1713 ms
+2026-05-04 11:38:47.791 +07:00 [INF] Skipping the execution of current filter as its not the most effective filter implementing the policy Microsoft.AspNetCore.Mvc.ViewFeatures.IAntiforgeryPolicy
+2026-05-04 11:38:47.892 +07:00 [INF] HTTP GET /api/mini-app/get-calendar-slots responded 200 in 112.3682 ms
+2026-05-04 11:38:52.495 +07:00 [INF] HTTP OPTIONS /api/mini-app/get-fnb-items responded 204 in 0.5184 ms
+2026-05-04 11:38:52.495 +07:00 [INF] HTTP OPTIONS /api/mini-app/get-fnb-categories responded 204 in 0.3020 ms
+2026-05-04 11:38:52.609 +07:00 [INF] Skipping the execution of current filter as its not the most effective filter implementing the policy Microsoft.AspNetCore.Mvc.ViewFeatures.IAntiforgeryPolicy
+2026-05-04 11:38:52.609 +07:00 [INF] Skipping the execution of current filter as its not the most effective filter implementing the policy Microsoft.AspNetCore.Mvc.ViewFeatures.IAntiforgeryPolicy
+2026-05-04 11:38:52.744 +07:00 [INF] HTTP GET /api/mini-app/get-fnb-categories responded 200 in 147.2391 ms
+2026-05-04 11:38:52.758 +07:00 [INF] HTTP GET /api/mini-app/get-fnb-items responded 200 in 161.4007 ms
+2026-05-04 11:38:57.625 +07:00 [INF] Start processing HTTP request GET https://staging.genora.vn/health-status
+2026-05-04 11:38:57.625 +07:00 [INF] Sending HTTP request GET https://staging.genora.vn/health-status
+2026-05-04 11:38:57.690 +07:00 [INF] Received HTTP response headers after 64.45ms - 200
+2026-05-04 11:38:57.690 +07:00 [INF] End processing HTTP request after 64.6603ms - 200
+2026-05-04 11:38:57.691 +07:00 [INF] Start processing HTTP request GET https://localhost:44374/health-status
+2026-05-04 11:38:57.691 +07:00 [INF] Sending HTTP request GET https://localhost:44374/health-status
+2026-05-04 11:38:57.740 +07:00 [INF] HTTP GET /health-status responded 200 in 29.6095 ms
+2026-05-04 11:38:57.756 +07:00 [INF] Received HTTP response headers after 65.7248ms - 200
+2026-05-04 11:38:57.756 +07:00 [INF] End processing HTTP request after 65.842ms - 200
+2026-05-04 11:39:07.758 +07:00 [INF] Start processing HTTP request GET https://staging.genora.vn/health-status
+2026-05-04 11:39:07.758 +07:00 [INF] Sending HTTP request GET https://staging.genora.vn/health-status
+2026-05-04 11:39:07.813 +07:00 [INF] Received HTTP response headers after 54.2333ms - 200
+2026-05-04 11:39:07.813 +07:00 [INF] End processing HTTP request after 54.409ms - 200
+2026-05-04 11:39:07.813 +07:00 [INF] Start processing HTTP request GET https://localhost:44374/health-status
+2026-05-04 11:39:07.813 +07:00 [INF] Sending HTTP request GET https://localhost:44374/health-status
+2026-05-04 11:39:07.851 +07:00 [INF] HTTP GET /health-status responded 200 in 19.3320 ms
+2026-05-04 11:39:07.862 +07:00 [INF] Received HTTP response headers after 49.0972ms - 200
+2026-05-04 11:39:07.862 +07:00 [INF] End processing HTTP request after 49.1945ms - 200
+2026-05-04 11:39:17.868 +07:00 [INF] Start processing HTTP request GET https://staging.genora.vn/health-status
+2026-05-04 11:39:17.868 +07:00 [INF] Sending HTTP request GET https://staging.genora.vn/health-status
+2026-05-04 11:39:17.913 +07:00 [INF] Received HTTP response headers after 45.006ms - 200
+2026-05-04 11:39:17.913 +07:00 [INF] End processing HTTP request after 45.2156ms - 200
+2026-05-04 11:39:17.914 +07:00 [INF] Start processing HTTP request GET https://localhost:44374/health-status
+2026-05-04 11:39:17.914 +07:00 [INF] Sending HTTP request GET https://localhost:44374/health-status
+2026-05-04 11:39:17.949 +07:00 [INF] HTTP GET /health-status responded 200 in 21.8442 ms
+2026-05-04 11:39:17.957 +07:00 [INF] Received HTTP response headers after 43.0748ms - 200
+2026-05-04 11:39:17.957 +07:00 [INF] End processing HTTP request after 43.1513ms - 200
+2026-05-04 11:39:27.968 +07:00 [INF] Start processing HTTP request GET https://staging.genora.vn/health-status
+2026-05-04 11:39:27.968 +07:00 [INF] Sending HTTP request GET https://staging.genora.vn/health-status
+2026-05-04 11:39:28.005 +07:00 [INF] Received HTTP response headers after 36.1213ms - 200
+2026-05-04 11:39:28.005 +07:00 [INF] End processing HTTP request after 36.2937ms - 200
+2026-05-04 11:39:28.005 +07:00 [INF] Start processing HTTP request GET https://localhost:44374/health-status
+2026-05-04 11:39:28.005 +07:00 [INF] Sending HTTP request GET https://localhost:44374/health-status
+2026-05-04 11:39:28.037 +07:00 [INF] HTTP GET /health-status responded 200 in 22.2887 ms
+2026-05-04 11:39:28.038 +07:00 [INF] Received HTTP response headers after 32.44ms - 200
+2026-05-04 11:39:28.038 +07:00 [INF] End processing HTTP request after 32.5001ms - 200
+2026-05-04 11:39:38.058 +07:00 [INF] Start processing HTTP request GET https://staging.genora.vn/health-status
+2026-05-04 11:39:38.058 +07:00 [INF] Sending HTTP request GET https://staging.genora.vn/health-status
+2026-05-04 11:39:38.100 +07:00 [INF] Received HTTP response headers after 41.8333ms - 200
+2026-05-04 11:39:38.100 +07:00 [INF] End processing HTTP request after 41.9232ms - 200
+2026-05-04 11:39:38.100 +07:00 [INF] Start processing HTTP request GET https://localhost:44374/health-status
+2026-05-04 11:39:38.100 +07:00 [INF] Sending HTTP request GET https://localhost:44374/health-status
+2026-05-04 11:39:38.125 +07:00 [INF] HTTP GET /health-status responded 200 in 14.5183 ms
+2026-05-04 11:39:38.132 +07:00 [INF] Received HTTP response headers after 31.2783ms - 200
+2026-05-04 11:39:38.132 +07:00 [INF] End processing HTTP request after 31.3471ms - 200
+2026-05-04 11:39:48.134 +07:00 [INF] Start processing HTTP request GET https://staging.genora.vn/health-status
+2026-05-04 11:39:48.134 +07:00 [INF] Sending HTTP request GET https://staging.genora.vn/health-status
+2026-05-04 11:39:48.173 +07:00 [INF] Received HTTP response headers after 38.953ms - 200
+2026-05-04 11:39:48.173 +07:00 [INF] End processing HTTP request after 39.0401ms - 200
+2026-05-04 11:39:48.173 +07:00 [INF] Start processing HTTP request GET https://localhost:44374/health-status
+2026-05-04 11:39:48.173 +07:00 [INF] Sending HTTP request GET https://localhost:44374/health-status
+2026-05-04 11:39:48.206 +07:00 [INF] HTTP GET /health-status responded 200 in 16.1332 ms
+2026-05-04 11:39:48.216 +07:00 [INF] Received HTTP response headers after 43.0381ms - 200
+2026-05-04 11:39:48.216 +07:00 [INF] End processing HTTP request after 43.1159ms - 200
+2026-05-04 11:39:52.751 +07:00 [INF] Skipping the execution of current filter as its not the most effective filter implementing the policy Microsoft.AspNetCore.Mvc.ViewFeatures.IAntiforgeryPolicy
+2026-05-04 11:39:52.810 +07:00 [INF] HTTP GET /AppFnbOrders responded 200 in 113.8926 ms
+2026-05-04 11:39:52.885 +07:00 [WRN] The static asset '/pages/fnb/fnb-shared.css' was not found in the built time manifest. This file will not be available at runtime if it is not available at compile time during the publish process. If the file was not added to the project during development, and is created at runtime, use the StaticFiles middleware to serve it instead.
+2026-05-04 11:39:52.898 +07:00 [INF] HTTP GET /pages/fnb/fnb-shared.css responded 200 in 31.0886 ms
+2026-05-04 11:39:53.014 +07:00 [INF] HTTP GET /Abp/ApplicationLocalizationScript responded 200 in 109.9573 ms
+2026-05-04 11:39:53.020 +07:00 [INF] HTTP GET /Abp/ApplicationConfigurationScript responded 200 in 116.1442 ms
+2026-05-04 11:39:53.059 +07:00 [INF] HTTP GET /Abp/ServiceProxyScript responded 200 in 40.8268 ms
+2026-05-04 11:39:53.079 +07:00 [WRN] The static asset '/pages/fnb/fnb-shared.js' was not found in the built time manifest. This file will not be available at runtime if it is not available at compile time during the publish process. If the file was not added to the project during development, and is created at runtime, use the StaticFiles middleware to serve it instead.
+2026-05-04 11:39:53.108 +07:00 [INF] HTTP GET /pages/fnb/fnb-shared.js responded 200 in 45.1493 ms
+2026-05-04 11:39:53.125 +07:00 [WRN] The static asset '/pages/fnb/fnb-notify.js' was not found in the built time manifest. This file will not be available at runtime if it is not available at compile time during the publish process. If the file was not added to the project during development, and is created at runtime, use the StaticFiles middleware to serve it instead.
+2026-05-04 11:39:53.163 +07:00 [INF] HTTP GET /Pages/AppFnbOrders/index.js responded 200 in 47.8501 ms
+2026-05-04 11:39:53.166 +07:00 [INF] HTTP GET /pages/fnb/fnb-notify.js responded 200 in 62.2940 ms
+2026-05-04 11:39:53.325 +07:00 [INF] HTTP POST /signalr-hubs/fnb-orders/negotiate responded 200 in 60.4105 ms
+2026-05-04 11:39:53.343 +07:00 [WRN] The static asset '/images/fnb/default-food.png' was not found in the built time manifest. This file will not be available at runtime if it is not available at compile time during the publish process. If the file was not added to the project during development, and is created at runtime, use the StaticFiles middleware to serve it instead.
+2026-05-04 11:39:53.349 +07:00 [INF] HTTP GET /images/fnb/default-food.png responded 200 in 24.2041 ms
+2026-05-04 11:39:53.464 +07:00 [INF] HTTP GET /api/app/app-fnb-order responded 200 in 212.4894 ms
+2026-05-04 11:39:55.207 +07:00 [INF] Skipping the execution of current filter as its not the most effective filter implementing the policy Microsoft.AspNetCore.Mvc.ViewFeatures.IAntiforgeryPolicy
+2026-05-04 11:39:55.247 +07:00 [INF] HTTP GET /AppProOrders responded 200 in 89.4799 ms
+2026-05-04 11:39:55.527 +07:00 [INF] HTTP GET /Abp/ServiceProxyScript responded 200 in 178.4836 ms
+2026-05-04 11:39:55.531 +07:00 [INF] HTTP GET /Abp/ApplicationLocalizationScript responded 200 in 182.5071 ms
+2026-05-04 11:39:55.535 +07:00 [INF] HTTP GET /Abp/ApplicationConfigurationScript responded 200 in 186.9829 ms
+2026-05-04 11:39:55.563 +07:00 [WRN] The static asset '/pages/fnb/pro-notify.js' was not found in the built time manifest. This file will not be available at runtime if it is not available at compile time during the publish process. If the file was not added to the project during development, and is created at runtime, use the StaticFiles middleware to serve it instead.
+2026-05-04 11:39:55.587 +07:00 [INF] HTTP GET /Pages/AppProOrders/index.js responded 200 in 49.5392 ms
+2026-05-04 11:39:55.593 +07:00 [INF] HTTP GET /Abp/ApplicationConfigurationScript responded 200 in 50.6127 ms
+2026-05-04 11:39:55.599 +07:00 [INF] HTTP GET /pages/fnb/pro-notify.js responded 200 in 61.4588 ms
+2026-05-04 11:39:55.746 +07:00 [INF] HTTP POST /signalr-hubs/pro-orders/negotiate responded 200 in 57.4819 ms
+2026-05-04 11:39:55.755 +07:00 [WRN] The static asset '/uploads/images/host/d8803696f07f4b63b75c0adb5c7ca76a.jpg' was not found in the built time manifest. This file will not be available at runtime if it is not available at compile time during the publish process. If the file was not added to the project during development, and is created at runtime, use the StaticFiles middleware to serve it instead.
+2026-05-04 11:39:55.762 +07:00 [INF] HTTP GET /uploads/images/host/d8803696f07f4b63b75c0adb5c7ca76a.jpg responded 200 in 42.4075 ms
+2026-05-04 11:39:55.913 +07:00 [INF] HTTP GET /api/app/app-pro-order responded 200 in 235.6799 ms
+2026-05-04 11:39:57.771 +07:00 [INF] Skipping the execution of current filter as its not the most effective filter implementing the policy Microsoft.AspNetCore.Mvc.ViewFeatures.IAntiforgeryPolicy
+2026-05-04 11:39:58.165 +07:00 [INF] HTTP GET /AppFnbOrders/Kitchen responded 200 in 464.9909 ms
+2026-05-04 11:39:58.240 +07:00 [INF] Start processing HTTP request GET https://staging.genora.vn/health-status
+2026-05-04 11:39:58.240 +07:00 [INF] Sending HTTP request GET https://staging.genora.vn/health-status
+2026-05-04 11:39:58.326 +07:00 [INF] HTTP GET /Abp/ServiceProxyScript responded 200 in 87.9158 ms
+2026-05-04 11:39:58.328 +07:00 [INF] HTTP GET /Abp/ApplicationLocalizationScript responded 200 in 90.8410 ms
+2026-05-04 11:39:58.335 +07:00 [INF] HTTP GET /Abp/ApplicationConfigurationScript responded 200 in 96.2344 ms
+2026-05-04 11:39:58.393 +07:00 [INF] Received HTTP response headers after 153.2431ms - 200
+2026-05-04 11:39:58.393 +07:00 [INF] End processing HTTP request after 153.342ms - 200
+2026-05-04 11:39:58.394 +07:00 [INF] Start processing HTTP request GET https://localhost:44374/health-status
+2026-05-04 11:39:58.394 +07:00 [INF] Sending HTTP request GET https://localhost:44374/health-status
+2026-05-04 11:39:58.414 +07:00 [INF] HTTP GET /Abp/ApplicationConfigurationScript responded 200 in 73.3427 ms
+2026-05-04 11:39:58.430 +07:00 [INF] HTTP GET /health-status responded 200 in 14.4411 ms
+2026-05-04 11:39:58.439 +07:00 [INF] Received HTTP response headers after 45.0651ms - 200
+2026-05-04 11:39:58.439 +07:00 [INF] End processing HTTP request after 45.145ms - 200
+2026-05-04 11:39:58.472 +07:00 [INF] HTTP POST /signalr-hubs/fnb-orders/negotiate responded 200 in 29.5112 ms
+2026-05-04 11:39:59.097 +07:00 [INF] Skipping the execution of current filter as its not the most effective filter implementing the policy Microsoft.AspNetCore.Mvc.ViewFeatures.IAntiforgeryPolicy
+2026-05-04 11:39:59.396 +07:00 [INF] HTTP GET /AppProOrders/Board responded 200 in 376.5714 ms
+2026-05-04 11:40:00.128 +07:00 [WRN] The static asset '/sounds/notification.mp3' was not found in the built time manifest. This file will not be available at runtime if it is not available at compile time during the publish process. If the file was not added to the project during development, and is created at runtime, use the StaticFiles middleware to serve it instead.
+2026-05-04 11:40:00.142 +07:00 [INF] HTTP GET /sounds/notification.mp3 responded 206 in 33.9104 ms
+2026-05-04 11:40:01.725 +07:00 [INF] HTTP GET /Abp/ServiceProxyScript responded 200 in 104.0987 ms
+2026-05-04 11:40:01.764 +07:00 [INF] HTTP GET /Abp/ApplicationLocalizationScript responded 200 in 143.6150 ms
+2026-05-04 11:40:01.768 +07:00 [INF] HTTP GET /Abp/ApplicationConfigurationScript responded 200 in 147.3773 ms
+2026-05-04 11:40:01.865 +07:00 [INF] HTTP GET /Abp/ApplicationConfigurationScript responded 200 in 74.5332 ms
+2026-05-04 11:40:01.929 +07:00 [INF] HTTP POST /signalr-hubs/pro-orders/negotiate responded 200 in 32.8070 ms
+2026-05-04 11:40:06.689 +07:00 [WRN] Savepoints are disabled because Multiple Active Result Sets (MARS) is enabled. If 'SaveChanges' fails, then the transaction cannot be automatically rolled back to a known clean state. Instead, the transaction should be rolled back by the application before retrying 'SaveChanges'. See https://go.microsoft.com/fwlink/?linkid=2149338 for more information and examples. To identify the code which triggers this warning, call 'ConfigureWarnings(w => w.Throw(SqlServerEventId.SavepointsDisabledBecauseOfMARS))'.
+2026-05-04 11:40:06.708 +07:00 [WRN] Savepoints are disabled because Multiple Active Result Sets (MARS) is enabled. If 'SaveChanges' fails, then the transaction cannot be automatically rolled back to a known clean state. Instead, the transaction should be rolled back by the application before retrying 'SaveChanges'. See https://go.microsoft.com/fwlink/?linkid=2149338 for more information and examples. To identify the code which triggers this warning, call 'ConfigureWarnings(w => w.Throw(SqlServerEventId.SavepointsDisabledBecauseOfMARS))'.
+2026-05-04 11:40:06.891 +07:00 [INF] Broadcast fnb.order.updated "d6fbc6fd-4f51-2db3-8519-3a20cf776ba6" | TenantId=null | Group=fnb-orders:host
+2026-05-04 11:40:06.924 +07:00 [INF] HTTP PUT /api/app/app-fnb-order/d6fbc6fd-4f51-2db3-8519-3a20cf776ba6/service-status responded 200 in 360.0919 ms
+2026-05-04 11:40:07.282 +07:00 [WRN] Savepoints are disabled because Multiple Active Result Sets (MARS) is enabled. If 'SaveChanges' fails, then the transaction cannot be automatically rolled back to a known clean state. Instead, the transaction should be rolled back by the application before retrying 'SaveChanges'. See https://go.microsoft.com/fwlink/?linkid=2149338 for more information and examples. To identify the code which triggers this warning, call 'ConfigureWarnings(w => w.Throw(SqlServerEventId.SavepointsDisabledBecauseOfMARS))'.
+2026-05-04 11:40:07.293 +07:00 [WRN] Savepoints are disabled because Multiple Active Result Sets (MARS) is enabled. If 'SaveChanges' fails, then the transaction cannot be automatically rolled back to a known clean state. Instead, the transaction should be rolled back by the application before retrying 'SaveChanges'. See https://go.microsoft.com/fwlink/?linkid=2149338 for more information and examples. To identify the code which triggers this warning, call 'ConfigureWarnings(w => w.Throw(SqlServerEventId.SavepointsDisabledBecauseOfMARS))'.
+2026-05-04 11:40:07.338 +07:00 [INF] Broadcast fnb.order.updated "3e745df2-f6bc-5ba5-ad2c-3a20cf97883f" | TenantId=null | Group=fnb-orders:host
+2026-05-04 11:40:07.371 +07:00 [INF] HTTP PUT /api/app/app-fnb-order/3e745df2-f6bc-5ba5-ad2c-3a20cf97883f/service-status responded 200 in 156.4817 ms
+2026-05-04 11:40:07.853 +07:00 [WRN] Savepoints are disabled because Multiple Active Result Sets (MARS) is enabled. If 'SaveChanges' fails, then the transaction cannot be automatically rolled back to a known clean state. Instead, the transaction should be rolled back by the application before retrying 'SaveChanges'. See https://go.microsoft.com/fwlink/?linkid=2149338 for more information and examples. To identify the code which triggers this warning, call 'ConfigureWarnings(w => w.Throw(SqlServerEventId.SavepointsDisabledBecauseOfMARS))'.
+2026-05-04 11:40:07.865 +07:00 [WRN] Savepoints are disabled because Multiple Active Result Sets (MARS) is enabled. If 'SaveChanges' fails, then the transaction cannot be automatically rolled back to a known clean state. Instead, the transaction should be rolled back by the application before retrying 'SaveChanges'. See https://go.microsoft.com/fwlink/?linkid=2149338 for more information and examples. To identify the code which triggers this warning, call 'ConfigureWarnings(w => w.Throw(SqlServerEventId.SavepointsDisabledBecauseOfMARS))'.
+2026-05-04 11:40:07.926 +07:00 [INF] Broadcast fnb.order.updated "23d118f3-3c85-0efd-956b-3a20cf9a2683" | TenantId=null | Group=fnb-orders:host
+2026-05-04 11:40:07.968 +07:00 [INF] HTTP PUT /api/app/app-fnb-order/23d118f3-3c85-0efd-956b-3a20cf9a2683/service-status responded 200 in 175.4425 ms
+2026-05-04 11:40:08.362 +07:00 [WRN] Savepoints are disabled because Multiple Active Result Sets (MARS) is enabled. If 'SaveChanges' fails, then the transaction cannot be automatically rolled back to a known clean state. Instead, the transaction should be rolled back by the application before retrying 'SaveChanges'. See https://go.microsoft.com/fwlink/?linkid=2149338 for more information and examples. To identify the code which triggers this warning, call 'ConfigureWarnings(w => w.Throw(SqlServerEventId.SavepointsDisabledBecauseOfMARS))'.
+2026-05-04 11:40:08.368 +07:00 [WRN] Savepoints are disabled because Multiple Active Result Sets (MARS) is enabled. If 'SaveChanges' fails, then the transaction cannot be automatically rolled back to a known clean state. Instead, the transaction should be rolled back by the application before retrying 'SaveChanges'. See https://go.microsoft.com/fwlink/?linkid=2149338 for more information and examples. To identify the code which triggers this warning, call 'ConfigureWarnings(w => w.Throw(SqlServerEventId.SavepointsDisabledBecauseOfMARS))'.
+2026-05-04 11:40:08.409 +07:00 [INF] Broadcast fnb.order.updated "934bbf1e-2fe0-ea01-429e-3a20d0083fab" | TenantId=null | Group=fnb-orders:host
+2026-05-04 11:40:08.448 +07:00 [INF] HTTP PUT /api/app/app-fnb-order/934bbf1e-2fe0-ea01-429e-3a20d0083fab/service-status responded 200 in 152.7486 ms
+2026-05-04 11:40:08.452 +07:00 [INF] Start processing HTTP request GET https://staging.genora.vn/health-status
+2026-05-04 11:40:08.452 +07:00 [INF] Sending HTTP request GET https://staging.genora.vn/health-status
+2026-05-04 11:40:08.505 +07:00 [INF] Received HTTP response headers after 52.289ms - 200
+2026-05-04 11:40:08.505 +07:00 [INF] End processing HTTP request after 52.5723ms - 200
+2026-05-04 11:40:08.505 +07:00 [INF] Start processing HTTP request GET https://localhost:44374/health-status
+2026-05-04 11:40:08.505 +07:00 [INF] Sending HTTP request GET https://localhost:44374/health-status
+2026-05-04 11:40:08.538 +07:00 [INF] HTTP GET /health-status responded 200 in 18.6252 ms
+2026-05-04 11:40:08.551 +07:00 [INF] Received HTTP response headers after 45.7764ms - 200
+2026-05-04 11:40:08.551 +07:00 [INF] End processing HTTP request after 45.8695ms - 200
+2026-05-04 11:40:08.908 +07:00 [WRN] Savepoints are disabled because Multiple Active Result Sets (MARS) is enabled. If 'SaveChanges' fails, then the transaction cannot be automatically rolled back to a known clean state. Instead, the transaction should be rolled back by the application before retrying 'SaveChanges'. See https://go.microsoft.com/fwlink/?linkid=2149338 for more information and examples. To identify the code which triggers this warning, call 'ConfigureWarnings(w => w.Throw(SqlServerEventId.SavepointsDisabledBecauseOfMARS))'.
+2026-05-04 11:40:08.914 +07:00 [WRN] Savepoints are disabled because Multiple Active Result Sets (MARS) is enabled. If 'SaveChanges' fails, then the transaction cannot be automatically rolled back to a known clean state. Instead, the transaction should be rolled back by the application before retrying 'SaveChanges'. See https://go.microsoft.com/fwlink/?linkid=2149338 for more information and examples. To identify the code which triggers this warning, call 'ConfigureWarnings(w => w.Throw(SqlServerEventId.SavepointsDisabledBecauseOfMARS))'.
+2026-05-04 11:40:08.966 +07:00 [INF] Broadcast fnb.order.updated "336ebc21-daf8-f581-bea1-3a20d0f717b4" | TenantId=null | Group=fnb-orders:host
+2026-05-04 11:40:09.004 +07:00 [INF] HTTP PUT /api/app/app-fnb-order/336ebc21-daf8-f581-bea1-3a20d0f717b4/service-status responded 200 in 145.5347 ms
+2026-05-04 11:40:10.439 +07:00 [WRN] Savepoints are disabled because Multiple Active Result Sets (MARS) is enabled. If 'SaveChanges' fails, then the transaction cannot be automatically rolled back to a known clean state. Instead, the transaction should be rolled back by the application before retrying 'SaveChanges'. See https://go.microsoft.com/fwlink/?linkid=2149338 for more information and examples. To identify the code which triggers this warning, call 'ConfigureWarnings(w => w.Throw(SqlServerEventId.SavepointsDisabledBecauseOfMARS))'.
+2026-05-04 11:40:10.446 +07:00 [WRN] Savepoints are disabled because Multiple Active Result Sets (MARS) is enabled. If 'SaveChanges' fails, then the transaction cannot be automatically rolled back to a known clean state. Instead, the transaction should be rolled back by the application before retrying 'SaveChanges'. See https://go.microsoft.com/fwlink/?linkid=2149338 for more information and examples. To identify the code which triggers this warning, call 'ConfigureWarnings(w => w.Throw(SqlServerEventId.SavepointsDisabledBecauseOfMARS))'.
+2026-05-04 11:40:10.507 +07:00 [INF] Broadcast fnb.order.updated "d6fbc6fd-4f51-2db3-8519-3a20cf776ba6" | TenantId=null | Group=fnb-orders:host
+2026-05-04 11:40:10.536 +07:00 [INF] HTTP PUT /api/app/app-fnb-order/d6fbc6fd-4f51-2db3-8519-3a20cf776ba6/service-status responded 200 in 166.7917 ms
+2026-05-04 11:40:10.916 +07:00 [WRN] Savepoints are disabled because Multiple Active Result Sets (MARS) is enabled. If 'SaveChanges' fails, then the transaction cannot be automatically rolled back to a known clean state. Instead, the transaction should be rolled back by the application before retrying 'SaveChanges'. See https://go.microsoft.com/fwlink/?linkid=2149338 for more information and examples. To identify the code which triggers this warning, call 'ConfigureWarnings(w => w.Throw(SqlServerEventId.SavepointsDisabledBecauseOfMARS))'.
+2026-05-04 11:40:10.924 +07:00 [WRN] Savepoints are disabled because Multiple Active Result Sets (MARS) is enabled. If 'SaveChanges' fails, then the transaction cannot be automatically rolled back to a known clean state. Instead, the transaction should be rolled back by the application before retrying 'SaveChanges'. See https://go.microsoft.com/fwlink/?linkid=2149338 for more information and examples. To identify the code which triggers this warning, call 'ConfigureWarnings(w => w.Throw(SqlServerEventId.SavepointsDisabledBecauseOfMARS))'.
+2026-05-04 11:40:10.975 +07:00 [INF] Broadcast fnb.order.updated "3e745df2-f6bc-5ba5-ad2c-3a20cf97883f" | TenantId=null | Group=fnb-orders:host
+2026-05-04 11:40:11.011 +07:00 [INF] HTTP PUT /api/app/app-fnb-order/3e745df2-f6bc-5ba5-ad2c-3a20cf97883f/service-status responded 200 in 156.0168 ms
+2026-05-04 11:40:11.414 +07:00 [WRN] Savepoints are disabled because Multiple Active Result Sets (MARS) is enabled. If 'SaveChanges' fails, then the transaction cannot be automatically rolled back to a known clean state. Instead, the transaction should be rolled back by the application before retrying 'SaveChanges'. See https://go.microsoft.com/fwlink/?linkid=2149338 for more information and examples. To identify the code which triggers this warning, call 'ConfigureWarnings(w => w.Throw(SqlServerEventId.SavepointsDisabledBecauseOfMARS))'.
+2026-05-04 11:40:11.423 +07:00 [WRN] Savepoints are disabled because Multiple Active Result Sets (MARS) is enabled. If 'SaveChanges' fails, then the transaction cannot be automatically rolled back to a known clean state. Instead, the transaction should be rolled back by the application before retrying 'SaveChanges'. See https://go.microsoft.com/fwlink/?linkid=2149338 for more information and examples. To identify the code which triggers this warning, call 'ConfigureWarnings(w => w.Throw(SqlServerEventId.SavepointsDisabledBecauseOfMARS))'.
+2026-05-04 11:40:11.471 +07:00 [INF] Broadcast fnb.order.updated "23d118f3-3c85-0efd-956b-3a20cf9a2683" | TenantId=null | Group=fnb-orders:host
+2026-05-04 11:40:11.506 +07:00 [INF] HTTP PUT /api/app/app-fnb-order/23d118f3-3c85-0efd-956b-3a20cf9a2683/service-status responded 200 in 154.5052 ms
+2026-05-04 11:40:11.888 +07:00 [WRN] Savepoints are disabled because Multiple Active Result Sets (MARS) is enabled. If 'SaveChanges' fails, then the transaction cannot be automatically rolled back to a known clean state. Instead, the transaction should be rolled back by the application before retrying 'SaveChanges'. See https://go.microsoft.com/fwlink/?linkid=2149338 for more information and examples. To identify the code which triggers this warning, call 'ConfigureWarnings(w => w.Throw(SqlServerEventId.SavepointsDisabledBecauseOfMARS))'.
+2026-05-04 11:40:11.894 +07:00 [WRN] Savepoints are disabled because Multiple Active Result Sets (MARS) is enabled. If 'SaveChanges' fails, then the transaction cannot be automatically rolled back to a known clean state. Instead, the transaction should be rolled back by the application before retrying 'SaveChanges'. See https://go.microsoft.com/fwlink/?linkid=2149338 for more information and examples. To identify the code which triggers this warning, call 'ConfigureWarnings(w => w.Throw(SqlServerEventId.SavepointsDisabledBecauseOfMARS))'.
+2026-05-04 11:40:11.935 +07:00 [INF] Broadcast fnb.order.updated "934bbf1e-2fe0-ea01-429e-3a20d0083fab" | TenantId=null | Group=fnb-orders:host
+2026-05-04 11:40:11.967 +07:00 [INF] HTTP PUT /api/app/app-fnb-order/934bbf1e-2fe0-ea01-429e-3a20d0083fab/service-status responded 200 in 141.2712 ms
+2026-05-04 11:40:12.438 +07:00 [WRN] Savepoints are disabled because Multiple Active Result Sets (MARS) is enabled. If 'SaveChanges' fails, then the transaction cannot be automatically rolled back to a known clean state. Instead, the transaction should be rolled back by the application before retrying 'SaveChanges'. See https://go.microsoft.com/fwlink/?linkid=2149338 for more information and examples. To identify the code which triggers this warning, call 'ConfigureWarnings(w => w.Throw(SqlServerEventId.SavepointsDisabledBecauseOfMARS))'.
+2026-05-04 11:40:12.445 +07:00 [WRN] Savepoints are disabled because Multiple Active Result Sets (MARS) is enabled. If 'SaveChanges' fails, then the transaction cannot be automatically rolled back to a known clean state. Instead, the transaction should be rolled back by the application before retrying 'SaveChanges'. See https://go.microsoft.com/fwlink/?linkid=2149338 for more information and examples. To identify the code which triggers this warning, call 'ConfigureWarnings(w => w.Throw(SqlServerEventId.SavepointsDisabledBecauseOfMARS))'.
+2026-05-04 11:40:12.492 +07:00 [INF] Broadcast fnb.order.updated "336ebc21-daf8-f581-bea1-3a20d0f717b4" | TenantId=null | Group=fnb-orders:host
+2026-05-04 11:40:12.516 +07:00 [INF] HTTP PUT /api/app/app-fnb-order/336ebc21-daf8-f581-bea1-3a20d0f717b4/service-status responded 200 in 145.9135 ms
+2026-05-04 11:40:13.639 +07:00 [WRN] Savepoints are disabled because Multiple Active Result Sets (MARS) is enabled. If 'SaveChanges' fails, then the transaction cannot be automatically rolled back to a known clean state. Instead, the transaction should be rolled back by the application before retrying 'SaveChanges'. See https://go.microsoft.com/fwlink/?linkid=2149338 for more information and examples. To identify the code which triggers this warning, call 'ConfigureWarnings(w => w.Throw(SqlServerEventId.SavepointsDisabledBecauseOfMARS))'.
+2026-05-04 11:40:13.645 +07:00 [WRN] Savepoints are disabled because Multiple Active Result Sets (MARS) is enabled. If 'SaveChanges' fails, then the transaction cannot be automatically rolled back to a known clean state. Instead, the transaction should be rolled back by the application before retrying 'SaveChanges'. See https://go.microsoft.com/fwlink/?linkid=2149338 for more information and examples. To identify the code which triggers this warning, call 'ConfigureWarnings(w => w.Throw(SqlServerEventId.SavepointsDisabledBecauseOfMARS))'.
+2026-05-04 11:40:13.700 +07:00 [INF] Broadcast fnb.order.updated "d6fbc6fd-4f51-2db3-8519-3a20cf776ba6" | TenantId=null | Group=fnb-orders:host
+2026-05-04 11:40:13.728 +07:00 [INF] HTTP PUT /api/app/app-fnb-order/d6fbc6fd-4f51-2db3-8519-3a20cf776ba6/service-status responded 200 in 152.0737 ms
+2026-05-04 11:40:14.073 +07:00 [WRN] Savepoints are disabled because Multiple Active Result Sets (MARS) is enabled. If 'SaveChanges' fails, then the transaction cannot be automatically rolled back to a known clean state. Instead, the transaction should be rolled back by the application before retrying 'SaveChanges'. See https://go.microsoft.com/fwlink/?linkid=2149338 for more information and examples. To identify the code which triggers this warning, call 'ConfigureWarnings(w => w.Throw(SqlServerEventId.SavepointsDisabledBecauseOfMARS))'.
+2026-05-04 11:40:14.079 +07:00 [WRN] Savepoints are disabled because Multiple Active Result Sets (MARS) is enabled. If 'SaveChanges' fails, then the transaction cannot be automatically rolled back to a known clean state. Instead, the transaction should be rolled back by the application before retrying 'SaveChanges'. See https://go.microsoft.com/fwlink/?linkid=2149338 for more information and examples. To identify the code which triggers this warning, call 'ConfigureWarnings(w => w.Throw(SqlServerEventId.SavepointsDisabledBecauseOfMARS))'.
+2026-05-04 11:40:14.142 +07:00 [INF] Broadcast fnb.order.updated "3e745df2-f6bc-5ba5-ad2c-3a20cf97883f" | TenantId=null | Group=fnb-orders:host
+2026-05-04 11:40:14.177 +07:00 [INF] HTTP PUT /api/app/app-fnb-order/3e745df2-f6bc-5ba5-ad2c-3a20cf97883f/service-status responded 200 in 166.6881 ms
+2026-05-04 11:40:14.511 +07:00 [WRN] Savepoints are disabled because Multiple Active Result Sets (MARS) is enabled. If 'SaveChanges' fails, then the transaction cannot be automatically rolled back to a known clean state. Instead, the transaction should be rolled back by the application before retrying 'SaveChanges'. See https://go.microsoft.com/fwlink/?linkid=2149338 for more information and examples. To identify the code which triggers this warning, call 'ConfigureWarnings(w => w.Throw(SqlServerEventId.SavepointsDisabledBecauseOfMARS))'.
+2026-05-04 11:40:14.521 +07:00 [WRN] Savepoints are disabled because Multiple Active Result Sets (MARS) is enabled. If 'SaveChanges' fails, then the transaction cannot be automatically rolled back to a known clean state. Instead, the transaction should be rolled back by the application before retrying 'SaveChanges'. See https://go.microsoft.com/fwlink/?linkid=2149338 for more information and examples. To identify the code which triggers this warning, call 'ConfigureWarnings(w => w.Throw(SqlServerEventId.SavepointsDisabledBecauseOfMARS))'.
+2026-05-04 11:40:14.570 +07:00 [INF] Broadcast fnb.order.updated "23d118f3-3c85-0efd-956b-3a20cf9a2683" | TenantId=null | Group=fnb-orders:host
+2026-05-04 11:40:14.597 +07:00 [INF] HTTP PUT /api/app/app-fnb-order/23d118f3-3c85-0efd-956b-3a20cf9a2683/service-status responded 200 in 139.4237 ms
+2026-05-04 11:40:14.986 +07:00 [WRN] Savepoints are disabled because Multiple Active Result Sets (MARS) is enabled. If 'SaveChanges' fails, then the transaction cannot be automatically rolled back to a known clean state. Instead, the transaction should be rolled back by the application before retrying 'SaveChanges'. See https://go.microsoft.com/fwlink/?linkid=2149338 for more information and examples. To identify the code which triggers this warning, call 'ConfigureWarnings(w => w.Throw(SqlServerEventId.SavepointsDisabledBecauseOfMARS))'.
+2026-05-04 11:40:14.994 +07:00 [WRN] Savepoints are disabled because Multiple Active Result Sets (MARS) is enabled. If 'SaveChanges' fails, then the transaction cannot be automatically rolled back to a known clean state. Instead, the transaction should be rolled back by the application before retrying 'SaveChanges'. See https://go.microsoft.com/fwlink/?linkid=2149338 for more information and examples. To identify the code which triggers this warning, call 'ConfigureWarnings(w => w.Throw(SqlServerEventId.SavepointsDisabledBecauseOfMARS))'.
+2026-05-04 11:40:15.037 +07:00 [INF] Broadcast fnb.order.updated "934bbf1e-2fe0-ea01-429e-3a20d0083fab" | TenantId=null | Group=fnb-orders:host
+2026-05-04 11:40:15.068 +07:00 [INF] HTTP PUT /api/app/app-fnb-order/934bbf1e-2fe0-ea01-429e-3a20d0083fab/service-status responded 200 in 148.8347 ms
+2026-05-04 11:40:15.436 +07:00 [WRN] Savepoints are disabled because Multiple Active Result Sets (MARS) is enabled. If 'SaveChanges' fails, then the transaction cannot be automatically rolled back to a known clean state. Instead, the transaction should be rolled back by the application before retrying 'SaveChanges'. See https://go.microsoft.com/fwlink/?linkid=2149338 for more information and examples. To identify the code which triggers this warning, call 'ConfigureWarnings(w => w.Throw(SqlServerEventId.SavepointsDisabledBecauseOfMARS))'.
+2026-05-04 11:40:15.442 +07:00 [WRN] Savepoints are disabled because Multiple Active Result Sets (MARS) is enabled. If 'SaveChanges' fails, then the transaction cannot be automatically rolled back to a known clean state. Instead, the transaction should be rolled back by the application before retrying 'SaveChanges'. See https://go.microsoft.com/fwlink/?linkid=2149338 for more information and examples. To identify the code which triggers this warning, call 'ConfigureWarnings(w => w.Throw(SqlServerEventId.SavepointsDisabledBecauseOfMARS))'.
+2026-05-04 11:40:15.485 +07:00 [INF] Broadcast fnb.order.updated "336ebc21-daf8-f581-bea1-3a20d0f717b4" | TenantId=null | Group=fnb-orders:host
+2026-05-04 11:40:15.516 +07:00 [INF] HTTP PUT /api/app/app-fnb-order/336ebc21-daf8-f581-bea1-3a20d0f717b4/service-status responded 200 in 139.4300 ms
+2026-05-04 11:40:18.558 +07:00 [INF] Start processing HTTP request GET https://staging.genora.vn/health-status
+2026-05-04 11:40:18.558 +07:00 [INF] Sending HTTP request GET https://staging.genora.vn/health-status
+2026-05-04 11:40:18.610 +07:00 [INF] Received HTTP response headers after 51.8583ms - 200
+2026-05-04 11:40:18.610 +07:00 [INF] End processing HTTP request after 52.0617ms - 200
+2026-05-04 11:40:18.611 +07:00 [INF] Start processing HTTP request GET https://localhost:44374/health-status
+2026-05-04 11:40:18.611 +07:00 [INF] Sending HTTP request GET https://localhost:44374/health-status
+2026-05-04 11:40:18.638 +07:00 [INF] HTTP GET /health-status responded 200 in 17.1620 ms
+2026-05-04 11:40:18.678 +07:00 [INF] Received HTTP response headers after 67.2766ms - 200
+2026-05-04 11:40:18.678 +07:00 [INF] End processing HTTP request after 67.3407ms - 200
+2026-05-04 11:40:20.678 +07:00 [WRN] The static asset '/sounds/notification.mp3' was not found in the built time manifest. This file will not be available at runtime if it is not available at compile time during the publish process. If the file was not added to the project during development, and is created at runtime, use the StaticFiles middleware to serve it instead.
+2026-05-04 11:40:20.682 +07:00 [INF] HTTP GET /sounds/notification.mp3 responded 206 in 21.5270 ms
+2026-05-04 11:40:25.638 +07:00 [INF] HTTP GET /api/app/app-pro-order responded 200 in 68.2169 ms
+2026-05-04 11:40:26.465 +07:00 [INF] HTTP GET /api/app/app-pro-order responded 200 in 71.8995 ms
+2026-05-04 11:40:28.685 +07:00 [INF] Start processing HTTP request GET https://staging.genora.vn/health-status
+2026-05-04 11:40:28.685 +07:00 [INF] Sending HTTP request GET https://staging.genora.vn/health-status
+2026-05-04 11:40:28.744 +07:00 [INF] Received HTTP response headers after 59.747ms - 200
+2026-05-04 11:40:28.745 +07:00 [INF] End processing HTTP request after 59.9187ms - 200
+2026-05-04 11:40:28.745 +07:00 [INF] Start processing HTTP request GET https://localhost:44374/health-status
+2026-05-04 11:40:28.745 +07:00 [INF] Sending HTTP request GET https://localhost:44374/health-status
+2026-05-04 11:40:28.786 +07:00 [INF] HTTP GET /health-status responded 200 in 30.1603 ms
+2026-05-04 11:40:28.796 +07:00 [INF] Received HTTP response headers after 50.9615ms - 200
+2026-05-04 11:40:28.796 +07:00 [INF] End processing HTTP request after 51.0574ms - 200
+2026-05-04 11:40:30.445 +07:00 [INF] HTTP GET /api/app/app-fnb-order responded 200 in 68.7401 ms
+2026-05-04 11:40:38.804 +07:00 [INF] Start processing HTTP request GET https://staging.genora.vn/health-status
+2026-05-04 11:40:38.804 +07:00 [INF] Sending HTTP request GET https://staging.genora.vn/health-status
+2026-05-04 11:40:38.842 +07:00 [INF] Received HTTP response headers after 37.4338ms - 200
+2026-05-04 11:40:38.842 +07:00 [INF] End processing HTTP request after 37.5685ms - 200
+2026-05-04 11:40:38.842 +07:00 [INF] Start processing HTTP request GET https://localhost:44374/health-status
+2026-05-04 11:40:38.842 +07:00 [INF] Sending HTTP request GET https://localhost:44374/health-status
+2026-05-04 11:40:38.867 +07:00 [INF] HTTP GET /health-status responded 200 in 13.8634 ms
+2026-05-04 11:40:38.879 +07:00 [INF] Received HTTP response headers after 37.3922ms - 200
+2026-05-04 11:40:38.879 +07:00 [INF] End processing HTTP request after 37.4883ms - 200
+2026-05-04 11:40:39.732 +07:00 [WRN] Savepoints are disabled because Multiple Active Result Sets (MARS) is enabled. If 'SaveChanges' fails, then the transaction cannot be automatically rolled back to a known clean state. Instead, the transaction should be rolled back by the application before retrying 'SaveChanges'. See https://go.microsoft.com/fwlink/?linkid=2149338 for more information and examples. To identify the code which triggers this warning, call 'ConfigureWarnings(w => w.Throw(SqlServerEventId.SavepointsDisabledBecauseOfMARS))'.
+2026-05-04 11:40:39.750 +07:00 [WRN] Savepoints are disabled because Multiple Active Result Sets (MARS) is enabled. If 'SaveChanges' fails, then the transaction cannot be automatically rolled back to a known clean state. Instead, the transaction should be rolled back by the application before retrying 'SaveChanges'. See https://go.microsoft.com/fwlink/?linkid=2149338 for more information and examples. To identify the code which triggers this warning, call 'ConfigureWarnings(w => w.Throw(SqlServerEventId.SavepointsDisabledBecauseOfMARS))'.
+2026-05-04 11:40:39.853 +07:00 [INF] Broadcast pro.order.updated "489af5b7-b806-f179-1e1d-3a20cf7b6aae" | TenantId=null | Group=pro-orders:host
+2026-05-04 11:40:39.888 +07:00 [INF] HTTP PUT /api/app/app-pro-order/489af5b7-b806-f179-1e1d-3a20cf7b6aae/service-status responded 200 in 267.8906 ms
+2026-05-04 11:40:40.184 +07:00 [WRN] Savepoints are disabled because Multiple Active Result Sets (MARS) is enabled. If 'SaveChanges' fails, then the transaction cannot be automatically rolled back to a known clean state. Instead, the transaction should be rolled back by the application before retrying 'SaveChanges'. See https://go.microsoft.com/fwlink/?linkid=2149338 for more information and examples. To identify the code which triggers this warning, call 'ConfigureWarnings(w => w.Throw(SqlServerEventId.SavepointsDisabledBecauseOfMARS))'.
+2026-05-04 11:40:40.190 +07:00 [WRN] Savepoints are disabled because Multiple Active Result Sets (MARS) is enabled. If 'SaveChanges' fails, then the transaction cannot be automatically rolled back to a known clean state. Instead, the transaction should be rolled back by the application before retrying 'SaveChanges'. See https://go.microsoft.com/fwlink/?linkid=2149338 for more information and examples. To identify the code which triggers this warning, call 'ConfigureWarnings(w => w.Throw(SqlServerEventId.SavepointsDisabledBecauseOfMARS))'.
+2026-05-04 11:40:40.244 +07:00 [INF] Broadcast pro.order.updated "80579ae4-a7f9-ea8c-a065-3a20cf987a1e" | TenantId=null | Group=pro-orders:host
+2026-05-04 11:40:40.272 +07:00 [INF] HTTP PUT /api/app/app-pro-order/80579ae4-a7f9-ea8c-a065-3a20cf987a1e/service-status responded 200 in 144.0090 ms
+2026-05-04 11:40:40.640 +07:00 [WRN] Savepoints are disabled because Multiple Active Result Sets (MARS) is enabled. If 'SaveChanges' fails, then the transaction cannot be automatically rolled back to a known clean state. Instead, the transaction should be rolled back by the application before retrying 'SaveChanges'. See https://go.microsoft.com/fwlink/?linkid=2149338 for more information and examples. To identify the code which triggers this warning, call 'ConfigureWarnings(w => w.Throw(SqlServerEventId.SavepointsDisabledBecauseOfMARS))'.
+2026-05-04 11:40:40.656 +07:00 [WRN] Savepoints are disabled because Multiple Active Result Sets (MARS) is enabled. If 'SaveChanges' fails, then the transaction cannot be automatically rolled back to a known clean state. Instead, the transaction should be rolled back by the application before retrying 'SaveChanges'. See https://go.microsoft.com/fwlink/?linkid=2149338 for more information and examples. To identify the code which triggers this warning, call 'ConfigureWarnings(w => w.Throw(SqlServerEventId.SavepointsDisabledBecauseOfMARS))'.
+2026-05-04 11:40:40.728 +07:00 [INF] Broadcast pro.order.updated "33f81be7-b193-923c-bb42-3a20cf98c49d" | TenantId=null | Group=pro-orders:host
+2026-05-04 11:40:40.779 +07:00 [INF] HTTP PUT /api/app/app-pro-order/33f81be7-b193-923c-bb42-3a20cf98c49d/service-status responded 200 in 193.9701 ms
+2026-05-04 11:40:41.110 +07:00 [WRN] Savepoints are disabled because Multiple Active Result Sets (MARS) is enabled. If 'SaveChanges' fails, then the transaction cannot be automatically rolled back to a known clean state. Instead, the transaction should be rolled back by the application before retrying 'SaveChanges'. See https://go.microsoft.com/fwlink/?linkid=2149338 for more information and examples. To identify the code which triggers this warning, call 'ConfigureWarnings(w => w.Throw(SqlServerEventId.SavepointsDisabledBecauseOfMARS))'.
+2026-05-04 11:40:41.116 +07:00 [WRN] Savepoints are disabled because Multiple Active Result Sets (MARS) is enabled. If 'SaveChanges' fails, then the transaction cannot be automatically rolled back to a known clean state. Instead, the transaction should be rolled back by the application before retrying 'SaveChanges'. See https://go.microsoft.com/fwlink/?linkid=2149338 for more information and examples. To identify the code which triggers this warning, call 'ConfigureWarnings(w => w.Throw(SqlServerEventId.SavepointsDisabledBecauseOfMARS))'.
+2026-05-04 11:40:41.145 +07:00 [INF] Broadcast pro.order.updated "c7f4d72b-3434-a933-3866-3a20d0fcce6e" | TenantId=null | Group=pro-orders:host
+2026-05-04 11:40:41.178 +07:00 [INF] HTTP PUT /api/app/app-pro-order/c7f4d72b-3434-a933-3866-3a20d0fcce6e/service-status responded 200 in 131.3133 ms
+2026-05-04 11:40:42.055 +07:00 [WRN] Savepoints are disabled because Multiple Active Result Sets (MARS) is enabled. If 'SaveChanges' fails, then the transaction cannot be automatically rolled back to a known clean state. Instead, the transaction should be rolled back by the application before retrying 'SaveChanges'. See https://go.microsoft.com/fwlink/?linkid=2149338 for more information and examples. To identify the code which triggers this warning, call 'ConfigureWarnings(w => w.Throw(SqlServerEventId.SavepointsDisabledBecauseOfMARS))'.
+2026-05-04 11:40:42.066 +07:00 [WRN] Savepoints are disabled because Multiple Active Result Sets (MARS) is enabled. If 'SaveChanges' fails, then the transaction cannot be automatically rolled back to a known clean state. Instead, the transaction should be rolled back by the application before retrying 'SaveChanges'. See https://go.microsoft.com/fwlink/?linkid=2149338 for more information and examples. To identify the code which triggers this warning, call 'ConfigureWarnings(w => w.Throw(SqlServerEventId.SavepointsDisabledBecauseOfMARS))'.
+2026-05-04 11:40:42.096 +07:00 [INF] Broadcast pro.order.updated "489af5b7-b806-f179-1e1d-3a20cf7b6aae" | TenantId=null | Group=pro-orders:host
+2026-05-04 11:40:42.125 +07:00 [INF] HTTP PUT /api/app/app-pro-order/489af5b7-b806-f179-1e1d-3a20cf7b6aae/service-status responded 200 in 140.3401 ms
+2026-05-04 11:40:42.472 +07:00 [WRN] Savepoints are disabled because Multiple Active Result Sets (MARS) is enabled. If 'SaveChanges' fails, then the transaction cannot be automatically rolled back to a known clean state. Instead, the transaction should be rolled back by the application before retrying 'SaveChanges'. See https://go.microsoft.com/fwlink/?linkid=2149338 for more information and examples. To identify the code which triggers this warning, call 'ConfigureWarnings(w => w.Throw(SqlServerEventId.SavepointsDisabledBecauseOfMARS))'.
+2026-05-04 11:40:42.481 +07:00 [WRN] Savepoints are disabled because Multiple Active Result Sets (MARS) is enabled. If 'SaveChanges' fails, then the transaction cannot be automatically rolled back to a known clean state. Instead, the transaction should be rolled back by the application before retrying 'SaveChanges'. See https://go.microsoft.com/fwlink/?linkid=2149338 for more information and examples. To identify the code which triggers this warning, call 'ConfigureWarnings(w => w.Throw(SqlServerEventId.SavepointsDisabledBecauseOfMARS))'.
+2026-05-04 11:40:42.520 +07:00 [INF] Broadcast pro.order.updated "80579ae4-a7f9-ea8c-a065-3a20cf987a1e" | TenantId=null | Group=pro-orders:host
+2026-05-04 11:40:42.548 +07:00 [INF] HTTP PUT /api/app/app-pro-order/80579ae4-a7f9-ea8c-a065-3a20cf987a1e/service-status responded 200 in 131.6859 ms
+2026-05-04 11:40:42.882 +07:00 [WRN] Savepoints are disabled because Multiple Active Result Sets (MARS) is enabled. If 'SaveChanges' fails, then the transaction cannot be automatically rolled back to a known clean state. Instead, the transaction should be rolled back by the application before retrying 'SaveChanges'. See https://go.microsoft.com/fwlink/?linkid=2149338 for more information and examples. To identify the code which triggers this warning, call 'ConfigureWarnings(w => w.Throw(SqlServerEventId.SavepointsDisabledBecauseOfMARS))'.
+2026-05-04 11:40:42.891 +07:00 [WRN] Savepoints are disabled because Multiple Active Result Sets (MARS) is enabled. If 'SaveChanges' fails, then the transaction cannot be automatically rolled back to a known clean state. Instead, the transaction should be rolled back by the application before retrying 'SaveChanges'. See https://go.microsoft.com/fwlink/?linkid=2149338 for more information and examples. To identify the code which triggers this warning, call 'ConfigureWarnings(w => w.Throw(SqlServerEventId.SavepointsDisabledBecauseOfMARS))'.
+2026-05-04 11:40:42.933 +07:00 [INF] Broadcast pro.order.updated "33f81be7-b193-923c-bb42-3a20cf98c49d" | TenantId=null | Group=pro-orders:host
+2026-05-04 11:40:42.964 +07:00 [INF] HTTP PUT /api/app/app-pro-order/33f81be7-b193-923c-bb42-3a20cf98c49d/service-status responded 200 in 141.0649 ms
+2026-05-04 11:40:43.231 +07:00 [WRN] Savepoints are disabled because Multiple Active Result Sets (MARS) is enabled. If 'SaveChanges' fails, then the transaction cannot be automatically rolled back to a known clean state. Instead, the transaction should be rolled back by the application before retrying 'SaveChanges'. See https://go.microsoft.com/fwlink/?linkid=2149338 for more information and examples. To identify the code which triggers this warning, call 'ConfigureWarnings(w => w.Throw(SqlServerEventId.SavepointsDisabledBecauseOfMARS))'.
+2026-05-04 11:40:43.240 +07:00 [WRN] Savepoints are disabled because Multiple Active Result Sets (MARS) is enabled. If 'SaveChanges' fails, then the transaction cannot be automatically rolled back to a known clean state. Instead, the transaction should be rolled back by the application before retrying 'SaveChanges'. See https://go.microsoft.com/fwlink/?linkid=2149338 for more information and examples. To identify the code which triggers this warning, call 'ConfigureWarnings(w => w.Throw(SqlServerEventId.SavepointsDisabledBecauseOfMARS))'.
+2026-05-04 11:40:43.276 +07:00 [INF] Broadcast pro.order.updated "c7f4d72b-3434-a933-3866-3a20d0fcce6e" | TenantId=null | Group=pro-orders:host
+2026-05-04 11:40:43.310 +07:00 [INF] HTTP PUT /api/app/app-pro-order/c7f4d72b-3434-a933-3866-3a20d0fcce6e/service-status responded 200 in 127.5017 ms
+2026-05-04 11:40:43.993 +07:00 [WRN] Savepoints are disabled because Multiple Active Result Sets (MARS) is enabled. If 'SaveChanges' fails, then the transaction cannot be automatically rolled back to a known clean state. Instead, the transaction should be rolled back by the application before retrying 'SaveChanges'. See https://go.microsoft.com/fwlink/?linkid=2149338 for more information and examples. To identify the code which triggers this warning, call 'ConfigureWarnings(w => w.Throw(SqlServerEventId.SavepointsDisabledBecauseOfMARS))'.
+2026-05-04 11:40:44.004 +07:00 [WRN] Savepoints are disabled because Multiple Active Result Sets (MARS) is enabled. If 'SaveChanges' fails, then the transaction cannot be automatically rolled back to a known clean state. Instead, the transaction should be rolled back by the application before retrying 'SaveChanges'. See https://go.microsoft.com/fwlink/?linkid=2149338 for more information and examples. To identify the code which triggers this warning, call 'ConfigureWarnings(w => w.Throw(SqlServerEventId.SavepointsDisabledBecauseOfMARS))'.
+2026-05-04 11:40:44.042 +07:00 [INF] Broadcast pro.order.updated "489af5b7-b806-f179-1e1d-3a20cf7b6aae" | TenantId=null | Group=pro-orders:host
+2026-05-04 11:40:44.067 +07:00 [INF] HTTP PUT /api/app/app-pro-order/489af5b7-b806-f179-1e1d-3a20cf7b6aae/service-status responded 200 in 130.0660 ms
+2026-05-04 11:40:44.491 +07:00 [WRN] Savepoints are disabled because Multiple Active Result Sets (MARS) is enabled. If 'SaveChanges' fails, then the transaction cannot be automatically rolled back to a known clean state. Instead, the transaction should be rolled back by the application before retrying 'SaveChanges'. See https://go.microsoft.com/fwlink/?linkid=2149338 for more information and examples. To identify the code which triggers this warning, call 'ConfigureWarnings(w => w.Throw(SqlServerEventId.SavepointsDisabledBecauseOfMARS))'.
+2026-05-04 11:40:44.496 +07:00 [WRN] Savepoints are disabled because Multiple Active Result Sets (MARS) is enabled. If 'SaveChanges' fails, then the transaction cannot be automatically rolled back to a known clean state. Instead, the transaction should be rolled back by the application before retrying 'SaveChanges'. See https://go.microsoft.com/fwlink/?linkid=2149338 for more information and examples. To identify the code which triggers this warning, call 'ConfigureWarnings(w => w.Throw(SqlServerEventId.SavepointsDisabledBecauseOfMARS))'.
+2026-05-04 11:40:44.524 +07:00 [INF] Broadcast pro.order.updated "80579ae4-a7f9-ea8c-a065-3a20cf987a1e" | TenantId=null | Group=pro-orders:host
+2026-05-04 11:40:44.551 +07:00 [INF] HTTP PUT /api/app/app-pro-order/80579ae4-a7f9-ea8c-a065-3a20cf987a1e/service-status responded 200 in 117.8936 ms
+2026-05-04 11:40:44.918 +07:00 [WRN] Savepoints are disabled because Multiple Active Result Sets (MARS) is enabled. If 'SaveChanges' fails, then the transaction cannot be automatically rolled back to a known clean state. Instead, the transaction should be rolled back by the application before retrying 'SaveChanges'. See https://go.microsoft.com/fwlink/?linkid=2149338 for more information and examples. To identify the code which triggers this warning, call 'ConfigureWarnings(w => w.Throw(SqlServerEventId.SavepointsDisabledBecauseOfMARS))'.
+2026-05-04 11:40:44.922 +07:00 [WRN] Savepoints are disabled because Multiple Active Result Sets (MARS) is enabled. If 'SaveChanges' fails, then the transaction cannot be automatically rolled back to a known clean state. Instead, the transaction should be rolled back by the application before retrying 'SaveChanges'. See https://go.microsoft.com/fwlink/?linkid=2149338 for more information and examples. To identify the code which triggers this warning, call 'ConfigureWarnings(w => w.Throw(SqlServerEventId.SavepointsDisabledBecauseOfMARS))'.
+2026-05-04 11:40:44.962 +07:00 [INF] Broadcast pro.order.updated "33f81be7-b193-923c-bb42-3a20cf98c49d" | TenantId=null | Group=pro-orders:host
+2026-05-04 11:40:44.999 +07:00 [INF] HTTP PUT /api/app/app-pro-order/33f81be7-b193-923c-bb42-3a20cf98c49d/service-status responded 200 in 134.9366 ms
+2026-05-04 11:40:45.278 +07:00 [WRN] Savepoints are disabled because Multiple Active Result Sets (MARS) is enabled. If 'SaveChanges' fails, then the transaction cannot be automatically rolled back to a known clean state. Instead, the transaction should be rolled back by the application before retrying 'SaveChanges'. See https://go.microsoft.com/fwlink/?linkid=2149338 for more information and examples. To identify the code which triggers this warning, call 'ConfigureWarnings(w => w.Throw(SqlServerEventId.SavepointsDisabledBecauseOfMARS))'.
+2026-05-04 11:40:45.284 +07:00 [WRN] Savepoints are disabled because Multiple Active Result Sets (MARS) is enabled. If 'SaveChanges' fails, then the transaction cannot be automatically rolled back to a known clean state. Instead, the transaction should be rolled back by the application before retrying 'SaveChanges'. See https://go.microsoft.com/fwlink/?linkid=2149338 for more information and examples. To identify the code which triggers this warning, call 'ConfigureWarnings(w => w.Throw(SqlServerEventId.SavepointsDisabledBecauseOfMARS))'.
+2026-05-04 11:40:45.326 +07:00 [INF] Broadcast pro.order.updated "c7f4d72b-3434-a933-3866-3a20d0fcce6e" | TenantId=null | Group=pro-orders:host
+2026-05-04 11:40:45.369 +07:00 [INF] HTTP PUT /api/app/app-pro-order/c7f4d72b-3434-a933-3866-3a20d0fcce6e/service-status responded 200 in 136.7685 ms
+2026-05-04 11:40:48.904 +07:00 [INF] Start processing HTTP request GET https://staging.genora.vn/health-status
+2026-05-04 11:40:48.904 +07:00 [INF] Sending HTTP request GET https://staging.genora.vn/health-status
+2026-05-04 11:40:48.937 +07:00 [INF] Received HTTP response headers after 32.6739ms - 200
+2026-05-04 11:40:48.937 +07:00 [INF] End processing HTTP request after 32.7518ms - 200
+2026-05-04 11:40:48.937 +07:00 [INF] HTTP GET /api/app/app-pro-order responded 200 in 72.8507 ms
+2026-05-04 11:40:48.938 +07:00 [INF] Start processing HTTP request GET https://localhost:44374/health-status
+2026-05-04 11:40:48.938 +07:00 [INF] Sending HTTP request GET https://localhost:44374/health-status
+2026-05-04 11:40:48.971 +07:00 [INF] HTTP GET /health-status responded 200 in 22.2624 ms
+2026-05-04 11:40:48.978 +07:00 [INF] Received HTTP response headers after 40.7524ms - 200
+2026-05-04 11:40:48.978 +07:00 [INF] End processing HTTP request after 40.8492ms - 200
+2026-05-04 11:40:58.990 +07:00 [INF] Start processing HTTP request GET https://staging.genora.vn/health-status
+2026-05-04 11:40:58.990 +07:00 [INF] Sending HTTP request GET https://staging.genora.vn/health-status
+2026-05-04 11:40:59.054 +07:00 [INF] Received HTTP response headers after 63.7286ms - 200
+2026-05-04 11:40:59.054 +07:00 [INF] End processing HTTP request after 63.9136ms - 200
+2026-05-04 11:40:59.055 +07:00 [INF] Start processing HTTP request GET https://localhost:44374/health-status
+2026-05-04 11:40:59.055 +07:00 [INF] Sending HTTP request GET https://localhost:44374/health-status
+2026-05-04 11:40:59.206 +07:00 [INF] HTTP GET /health-status responded 200 in 139.8205 ms
+2026-05-04 11:40:59.232 +07:00 [INF] Received HTTP response headers after 177.364ms - 200
+2026-05-04 11:40:59.232 +07:00 [INF] End processing HTTP request after 177.488ms - 200
+2026-05-04 11:41:09.236 +07:00 [INF] Start processing HTTP request GET https://staging.genora.vn/health-status
+2026-05-04 11:41:09.236 +07:00 [INF] Sending HTTP request GET https://staging.genora.vn/health-status
+2026-05-04 11:41:09.269 +07:00 [INF] Received HTTP response headers after 32.9067ms - 200
+2026-05-04 11:41:09.269 +07:00 [INF] End processing HTTP request after 33.0065ms - 200
+2026-05-04 11:41:09.269 +07:00 [INF] Start processing HTTP request GET https://localhost:44374/health-status
+2026-05-04 11:41:09.269 +07:00 [INF] Sending HTTP request GET https://localhost:44374/health-status
+2026-05-04 11:41:09.318 +07:00 [INF] HTTP GET /health-status responded 200 in 38.0273 ms
+2026-05-04 11:41:09.325 +07:00 [INF] Received HTTP response headers after 55.5873ms - 200
+2026-05-04 11:41:09.325 +07:00 [INF] End processing HTTP request after 55.6534ms - 200
+2026-05-04 11:41:19.339 +07:00 [INF] Start processing HTTP request GET https://staging.genora.vn/health-status
+2026-05-04 11:41:19.339 +07:00 [INF] Sending HTTP request GET https://staging.genora.vn/health-status
+2026-05-04 11:41:19.379 +07:00 [INF] Received HTTP response headers after 40.0265ms - 200
+2026-05-04 11:41:19.379 +07:00 [INF] End processing HTTP request after 40.198ms - 200
+2026-05-04 11:41:19.380 +07:00 [INF] Start processing HTTP request GET https://localhost:44374/health-status
+2026-05-04 11:41:19.380 +07:00 [INF] Sending HTTP request GET https://localhost:44374/health-status
+2026-05-04 11:41:19.412 +07:00 [INF] HTTP GET /health-status responded 200 in 17.3343 ms
+2026-05-04 11:41:19.422 +07:00 [INF] Received HTTP response headers after 42.4578ms - 200
+2026-05-04 11:41:19.422 +07:00 [INF] End processing HTTP request after 42.5592ms - 200
+2026-05-04 11:41:29.435 +07:00 [INF] Start processing HTTP request GET https://staging.genora.vn/health-status
+2026-05-04 11:41:29.435 +07:00 [INF] Sending HTTP request GET https://staging.genora.vn/health-status
+2026-05-04 11:41:29.485 +07:00 [INF] Received HTTP response headers after 49.772ms - 200
+2026-05-04 11:41:29.485 +07:00 [INF] End processing HTTP request after 49.8685ms - 200
+2026-05-04 11:41:29.486 +07:00 [INF] Start processing HTTP request GET https://localhost:44374/health-status
+2026-05-04 11:41:29.486 +07:00 [INF] Sending HTTP request GET https://localhost:44374/health-status
+2026-05-04 11:41:29.527 +07:00 [INF] HTTP GET /health-status responded 200 in 21.1586 ms
+2026-05-04 11:41:29.541 +07:00 [INF] Received HTTP response headers after 55.4936ms - 200
+2026-05-04 11:41:29.541 +07:00 [INF] End processing HTTP request after 55.5977ms - 200
+2026-05-04 11:41:30.356 +07:00 [INF] HTTP GET /api/app/app-fnb-order responded 200 in 61.3037 ms
+2026-05-04 11:41:36.350 +07:00 [INF] HTTP GET /api/app/app-pro-order responded 200 in 87.3875 ms
+2026-05-04 11:41:39.545 +07:00 [INF] Start processing HTTP request GET https://staging.genora.vn/health-status
+2026-05-04 11:41:39.545 +07:00 [INF] Sending HTTP request GET https://staging.genora.vn/health-status
+2026-05-04 11:41:39.582 +07:00 [INF] Received HTTP response headers after 36.1919ms - 200
+2026-05-04 11:41:39.582 +07:00 [INF] End processing HTTP request after 36.3833ms - 200
+2026-05-04 11:41:39.582 +07:00 [INF] Start processing HTTP request GET https://localhost:44374/health-status
+2026-05-04 11:41:39.582 +07:00 [INF] Sending HTTP request GET https://localhost:44374/health-status
+2026-05-04 11:41:39.613 +07:00 [INF] HTTP GET /health-status responded 200 in 18.6815 ms
+2026-05-04 11:41:39.629 +07:00 [INF] Received HTTP response headers after 46.8187ms - 200
+2026-05-04 11:41:39.629 +07:00 [INF] End processing HTTP request after 46.9311ms - 200
+2026-05-04 11:41:44.423 +07:00 [INF] [AuditCleanup] Deleted logs older than 2026-05-04 11:35:44Z
+2026-05-04 11:41:44.706 +07:00 [INF] HTTP OPTIONS /api/mini-app/get-fnb-items responded 204 in 0.3462 ms
+2026-05-04 11:41:44.707 +07:00 [INF] HTTP OPTIONS /api/mini-app/get-fnb-categories responded 204 in 0.1336 ms
+2026-05-04 11:41:44.823 +07:00 [INF] Skipping the execution of current filter as its not the most effective filter implementing the policy Microsoft.AspNetCore.Mvc.ViewFeatures.IAntiforgeryPolicy
+2026-05-04 11:41:44.823 +07:00 [INF] Skipping the execution of current filter as its not the most effective filter implementing the policy Microsoft.AspNetCore.Mvc.ViewFeatures.IAntiforgeryPolicy
+2026-05-04 11:41:44.892 +07:00 [INF] HTTP GET /api/mini-app/get-fnb-categories responded 200 in 80.5409 ms
+2026-05-04 11:41:44.899 +07:00 [INF] HTTP GET /api/mini-app/get-fnb-items responded 200 in 89.2942 ms
+2026-05-04 11:41:45.845 +07:00 [INF] HTTP OPTIONS /api/mini-app/get-calendar-slots responded 204 in 0.1454 ms
+2026-05-04 11:41:45.959 +07:00 [INF] Skipping the execution of current filter as its not the most effective filter implementing the policy Microsoft.AspNetCore.Mvc.ViewFeatures.IAntiforgeryPolicy
+2026-05-04 11:41:46.090 +07:00 [INF] HTTP GET /api/mini-app/get-calendar-slots responded 200 in 144.6812 ms
+2026-05-04 11:41:49.645 +07:00 [INF] Start processing HTTP request GET https://staging.genora.vn/health-status
+2026-05-04 11:41:49.645 +07:00 [INF] Sending HTTP request GET https://staging.genora.vn/health-status
+2026-05-04 11:41:49.689 +07:00 [INF] Received HTTP response headers after 43.0929ms - 200
+2026-05-04 11:41:49.689 +07:00 [INF] End processing HTTP request after 43.2265ms - 200
+2026-05-04 11:41:49.689 +07:00 [INF] Start processing HTTP request GET https://localhost:44374/health-status
+2026-05-04 11:41:49.689 +07:00 [INF] Sending HTTP request GET https://localhost:44374/health-status
+2026-05-04 11:41:49.728 +07:00 [INF] HTTP GET /health-status responded 200 in 18.5545 ms
+2026-05-04 11:41:49.738 +07:00 [INF] Received HTTP response headers after 48.4614ms - 200
+2026-05-04 11:41:49.738 +07:00 [INF] End processing HTTP request after 48.5256ms - 200
+2026-05-04 11:41:59.752 +07:00 [INF] Start processing HTTP request GET https://staging.genora.vn/health-status
+2026-05-04 11:41:59.752 +07:00 [INF] Sending HTTP request GET https://staging.genora.vn/health-status
+2026-05-04 11:41:59.949 +07:00 [INF] Received HTTP response headers after 197.201ms - 200
+2026-05-04 11:41:59.949 +07:00 [INF] End processing HTTP request after 197.4488ms - 200
+2026-05-04 11:41:59.950 +07:00 [INF] Start processing HTTP request GET https://localhost:44374/health-status
+2026-05-04 11:41:59.950 +07:00 [INF] Sending HTTP request GET https://localhost:44374/health-status
+2026-05-04 11:41:59.987 +07:00 [INF] HTTP GET /health-status responded 200 in 16.2393 ms
+2026-05-04 11:41:59.994 +07:00 [INF] Received HTTP response headers after 43.6325ms - 200
+2026-05-04 11:41:59.994 +07:00 [INF] End processing HTTP request after 43.713ms - 200
+2026-05-04 11:42:00.359 +07:00 [INF] HTTP GET /api/app/app-fnb-order responded 200 in 57.9881 ms
+2026-05-04 11:42:06.338 +07:00 [INF] HTTP GET /api/app/app-pro-order responded 200 in 75.9056 ms
+2026-05-04 11:42:07.369 +07:00 [INF] Skipping the execution of current filter as its not the most effective filter implementing the policy Microsoft.AspNetCore.Mvc.ViewFeatures.IAntiforgeryPolicy
+2026-05-04 11:42:07.381 +07:00 [INF] HTTP GET / responded 200 in 21.7837 ms
+2026-05-04 11:42:09.998 +07:00 [INF] Start processing HTTP request GET https://staging.genora.vn/health-status
+2026-05-04 11:42:09.998 +07:00 [INF] Sending HTTP request GET https://staging.genora.vn/health-status
+2026-05-04 11:42:10.048 +07:00 [INF] Received HTTP response headers after 49.7591ms - 200
+2026-05-04 11:42:10.048 +07:00 [INF] End processing HTTP request after 49.9719ms - 200
+2026-05-04 11:42:10.048 +07:00 [INF] Start processing HTTP request GET https://localhost:44374/health-status
+2026-05-04 11:42:10.048 +07:00 [INF] Sending HTTP request GET https://localhost:44374/health-status
+2026-05-04 11:42:10.075 +07:00 [INF] HTTP GET /health-status responded 200 in 16.8725 ms
+2026-05-04 11:42:10.083 +07:00 [INF] Received HTTP response headers after 35.0817ms - 200
+2026-05-04 11:42:10.083 +07:00 [INF] End processing HTTP request after 35.1513ms - 200
+2026-05-04 11:42:20.097 +07:00 [INF] Start processing HTTP request GET https://staging.genora.vn/health-status
+2026-05-04 11:42:20.097 +07:00 [INF] Sending HTTP request GET https://staging.genora.vn/health-status
+2026-05-04 11:42:20.130 +07:00 [INF] Received HTTP response headers after 33.1573ms - 200
+2026-05-04 11:42:20.130 +07:00 [INF] End processing HTTP request after 33.2412ms - 200
+2026-05-04 11:42:20.130 +07:00 [INF] Start processing HTTP request GET https://localhost:44374/health-status
+2026-05-04 11:42:20.130 +07:00 [INF] Sending HTTP request GET https://localhost:44374/health-status
+2026-05-04 11:42:20.158 +07:00 [INF] HTTP GET /health-status responded 200 in 17.0370 ms
+2026-05-04 11:42:20.167 +07:00 [INF] Received HTTP response headers after 36.3607ms - 200
+2026-05-04 11:42:20.167 +07:00 [INF] End processing HTTP request after 36.434ms - 200
+2026-05-04 11:42:30.169 +07:00 [INF] Start processing HTTP request GET https://staging.genora.vn/health-status
+2026-05-04 11:42:30.169 +07:00 [INF] Sending HTTP request GET https://staging.genora.vn/health-status
+2026-05-04 11:42:30.206 +07:00 [INF] Received HTTP response headers after 37.0779ms - 200
+2026-05-04 11:42:30.206 +07:00 [INF] End processing HTTP request after 37.1631ms - 200
+2026-05-04 11:42:30.207 +07:00 [INF] Start processing HTTP request GET https://localhost:44374/health-status
+2026-05-04 11:42:30.207 +07:00 [INF] Sending HTTP request GET https://localhost:44374/health-status
+2026-05-04 11:42:30.233 +07:00 [INF] HTTP GET /health-status responded 200 in 15.6364 ms
+2026-05-04 11:42:30.241 +07:00 [INF] Received HTTP response headers after 33.815ms - 200
+2026-05-04 11:42:30.241 +07:00 [INF] End processing HTTP request after 33.8876ms - 200
+2026-05-04 11:42:30.369 +07:00 [INF] HTTP GET /api/app/app-fnb-order responded 200 in 69.0742 ms
+2026-05-04 11:42:36.347 +07:00 [INF] HTTP GET /api/app/app-pro-order responded 200 in 83.7148 ms
+2026-05-04 11:42:40.253 +07:00 [INF] Start processing HTTP request GET https://staging.genora.vn/health-status
+2026-05-04 11:42:40.253 +07:00 [INF] Sending HTTP request GET https://staging.genora.vn/health-status
+2026-05-04 11:42:40.295 +07:00 [INF] Received HTTP response headers after 42.0714ms - 200
+2026-05-04 11:42:40.295 +07:00 [INF] End processing HTTP request after 42.194ms - 200
+2026-05-04 11:42:40.295 +07:00 [INF] Start processing HTTP request GET https://localhost:44374/health-status
+2026-05-04 11:42:40.295 +07:00 [INF] Sending HTTP request GET https://localhost:44374/health-status
+2026-05-04 11:42:40.324 +07:00 [INF] HTTP GET /health-status responded 200 in 19.3635 ms
+2026-05-04 11:42:40.335 +07:00 [INF] Received HTTP response headers after 40.166ms - 200
+2026-05-04 11:42:40.335 +07:00 [INF] End processing HTTP request after 40.2266ms - 200
+2026-05-04 11:42:50.349 +07:00 [INF] Start processing HTTP request GET https://staging.genora.vn/health-status
+2026-05-04 11:42:50.349 +07:00 [INF] Sending HTTP request GET https://staging.genora.vn/health-status
+2026-05-04 11:42:50.395 +07:00 [INF] Received HTTP response headers after 46.0686ms - 200
+2026-05-04 11:42:50.395 +07:00 [INF] End processing HTTP request after 46.3049ms - 200
+2026-05-04 11:42:50.396 +07:00 [INF] Start processing HTTP request GET https://localhost:44374/health-status
+2026-05-04 11:42:50.396 +07:00 [INF] Sending HTTP request GET https://localhost:44374/health-status
+2026-05-04 11:42:50.424 +07:00 [INF] HTTP GET /health-status responded 200 in 15.4346 ms
+2026-05-04 11:42:50.433 +07:00 [INF] Received HTTP response headers after 37.0071ms - 200
+2026-05-04 11:42:50.433 +07:00 [INF] End processing HTTP request after 37.1275ms - 200
+2026-05-04 11:42:56.690 +07:00 [INF] HTTP OPTIONS /api/mini-app/get-app-settings responded 204 in 0.0676 ms
+2026-05-04 11:42:56.690 +07:00 [INF] HTTP OPTIONS /api/mini-app/get-home-page-widgets responded 204 in 0.0675 ms
+2026-05-04 11:42:56.713 +07:00 [INF] HTTP OPTIONS /api/mini-app/get-golf-courses responded 204 in 0.1020 ms
+2026-05-04 11:42:56.755 +07:00 [INF] HTTP OPTIONS /api/mini-app/get-golf-courses responded 204 in 0.1264 ms
+2026-05-04 11:42:56.756 +07:00 [INF] HTTP OPTIONS /api/mini-app/get-golf-courses responded 204 in 0.1118 ms
+2026-05-04 11:42:56.809 +07:00 [INF] Skipping the execution of current filter as its not the most effective filter implementing the policy Microsoft.AspNetCore.Mvc.ViewFeatures.IAntiforgeryPolicy
+2026-05-04 11:42:56.810 +07:00 [INF] Skipping the execution of current filter as its not the most effective filter implementing the policy Microsoft.AspNetCore.Mvc.ViewFeatures.IAntiforgeryPolicy
+2026-05-04 11:42:56.832 +07:00 [INF] Skipping the execution of current filter as its not the most effective filter implementing the policy Microsoft.AspNetCore.Mvc.ViewFeatures.IAntiforgeryPolicy
+2026-05-04 11:42:56.909 +07:00 [INF] Skipping the execution of current filter as its not the most effective filter implementing the policy Microsoft.AspNetCore.Mvc.ViewFeatures.IAntiforgeryPolicy
+2026-05-04 11:42:56.909 +07:00 [INF] Skipping the execution of current filter as its not the most effective filter implementing the policy Microsoft.AspNetCore.Mvc.ViewFeatures.IAntiforgeryPolicy
+2026-05-04 11:42:57.053 +07:00 [INF] HTTP GET /api/mini-app/get-home-page-widgets responded 200 in 256.7397 ms
+2026-05-04 11:42:57.055 +07:00 [INF] HTTP GET /api/mini-app/get-app-settings responded 200 in 258.7276 ms
+2026-05-04 11:42:57.055 +07:00 [INF] HTTP GET /api/mini-app/get-golf-courses responded 200 in 235.9238 ms
+2026-05-04 11:42:57.089 +07:00 [INF] HTTP GET /api/mini-app/get-golf-courses responded 200 in 203.1831 ms
+2026-05-04 11:42:57.089 +07:00 [INF] HTTP GET /api/mini-app/get-golf-courses responded 200 in 200.8603 ms
+2026-05-04 11:42:57.203 +07:00 [INF] HTTP OPTIONS /api/mini-app/get-home-page-feature-grid responded 204 in 0.0493 ms
+2026-05-04 11:42:57.208 +07:00 [INF] HTTP OPTIONS /api/mini-app/get-calendar-slots responded 204 in 0.0415 ms
+2026-05-04 11:42:57.209 +07:00 [INF] HTTP OPTIONS /api/mini-app/get-news responded 204 in 0.0333 ms
+2026-05-04 11:42:57.213 +07:00 [INF] Skipping the execution of current filter as its not the most effective filter implementing the policy Microsoft.AspNetCore.Mvc.ViewFeatures.IAntiforgeryPolicy
+2026-05-04 11:42:57.238 +07:00 [INF] HTTP OPTIONS /api/mini-app/get-calendar-slots responded 204 in 0.0345 ms
+2026-05-04 11:42:57.257 +07:00 [INF] HTTP GET /api/mini-app/get-golf-courses responded 200 in 53.3826 ms
+2026-05-04 11:42:57.311 +07:00 [INF] Skipping the execution of current filter as its not the most effective filter implementing the policy Microsoft.AspNetCore.Mvc.ViewFeatures.IAntiforgeryPolicy
+2026-05-04 11:42:57.333 +07:00 [INF] Skipping the execution of current filter as its not the most effective filter implementing the policy Microsoft.AspNetCore.Mvc.ViewFeatures.IAntiforgeryPolicy
+2026-05-04 11:42:57.333 +07:00 [INF] Skipping the execution of current filter as its not the most effective filter implementing the policy Microsoft.AspNetCore.Mvc.ViewFeatures.IAntiforgeryPolicy
+2026-05-04 11:42:57.457 +07:00 [INF] Skipping the execution of current filter as its not the most effective filter implementing the policy Microsoft.AspNetCore.Mvc.ViewFeatures.IAntiforgeryPolicy
+2026-05-04 11:42:57.462 +07:00 [INF] HTTP GET /api/mini-app/get-home-page-feature-grid responded 200 in 160.0607 ms
+2026-05-04 11:42:57.480 +07:00 [INF] HTTP GET /api/mini-app/get-calendar-slots responded 200 in 173.2970 ms
+2026-05-04 11:42:57.500 +07:00 [INF] HTTP GET /api/mini-app/get-news responded 200 in 192.8605 ms
+2026-05-04 11:42:57.518 +07:00 [INF] HTTP GET /api/mini-app/get-calendar-slots responded 200 in 69.8568 ms
+2026-05-04 11:43:00.440 +07:00 [INF] HTTP GET /api/app/app-fnb-order responded 200 in 139.3505 ms
+2026-05-04 11:43:00.451 +07:00 [INF] Start processing HTTP request GET https://staging.genora.vn/health-status
+2026-05-04 11:43:00.451 +07:00 [INF] Sending HTTP request GET https://staging.genora.vn/health-status
+2026-05-04 11:43:00.511 +07:00 [INF] Received HTTP response headers after 59.9002ms - 200
+2026-05-04 11:43:00.511 +07:00 [INF] End processing HTTP request after 60.1285ms - 200
+2026-05-04 11:43:00.512 +07:00 [INF] Start processing HTTP request GET https://localhost:44374/health-status
+2026-05-04 11:43:00.512 +07:00 [INF] Sending HTTP request GET https://localhost:44374/health-status
+2026-05-04 11:43:00.570 +07:00 [INF] HTTP GET /health-status responded 200 in 44.7777 ms
+2026-05-04 11:43:00.578 +07:00 [INF] Received HTTP response headers after 66.1173ms - 200
+2026-05-04 11:43:00.578 +07:00 [INF] End processing HTTP request after 66.2278ms - 200
+2026-05-04 11:43:06.337 +07:00 [INF] HTTP GET /api/app/app-pro-order responded 200 in 80.1098 ms
+2026-05-04 11:43:10.591 +07:00 [INF] Start processing HTTP request GET https://staging.genora.vn/health-status
+2026-05-04 11:43:10.591 +07:00 [INF] Sending HTTP request GET https://staging.genora.vn/health-status
+2026-05-04 11:43:10.630 +07:00 [INF] Received HTTP response headers after 39.4972ms - 200
+2026-05-04 11:43:10.630 +07:00 [INF] End processing HTTP request after 39.643ms - 200
+2026-05-04 11:43:10.631 +07:00 [INF] Start processing HTTP request GET https://localhost:44374/health-status
+2026-05-04 11:43:10.631 +07:00 [INF] Sending HTTP request GET https://localhost:44374/health-status
+2026-05-04 11:43:10.657 +07:00 [INF] HTTP GET /health-status responded 200 in 15.4080 ms
+2026-05-04 11:43:10.664 +07:00 [INF] Received HTTP response headers after 32.9373ms - 200
+2026-05-04 11:43:10.664 +07:00 [INF] End processing HTTP request after 33.0045ms - 200
+2026-05-04 11:43:10.693 +07:00 [INF] HTTP OPTIONS /api/mini-app/decode-phone responded 204 in 0.1329 ms
+2026-05-04 11:43:10.813 +07:00 [INF] Skipping the execution of current filter as its not the most effective filter implementing the policy Microsoft.AspNetCore.Mvc.ViewFeatures.IAntiforgeryPolicy
+2026-05-04 11:43:10.859 +07:00 [INF] Start processing HTTP request GET https://graph.zalo.me/v2.0/me/info
+2026-05-04 11:43:10.859 +07:00 [INF] Sending HTTP request GET https://graph.zalo.me/v2.0/me/info
+2026-05-04 11:43:11.063 +07:00 [INF] Received HTTP response headers after 204.1777ms - 200
+2026-05-04 11:43:11.063 +07:00 [INF] End processing HTTP request after 204.322ms - 200
+2026-05-04 11:43:11.064 +07:00 [INF] Zalo DECODE_PHONE GET https://graph.zalo.me/v2.0/me/info -> 200 in 204ms
+2026-05-04 11:43:11.073 +07:00 [WRN] Savepoints are disabled because Multiple Active Result Sets (MARS) is enabled. If 'SaveChanges' fails, then the transaction cannot be automatically rolled back to a known clean state. Instead, the transaction should be rolled back by the application before retrying 'SaveChanges'. See https://go.microsoft.com/fwlink/?linkid=2149338 for more information and examples. To identify the code which triggers this warning, call 'ConfigureWarnings(w => w.Throw(SqlServerEventId.SavepointsDisabledBecauseOfMARS))'.
+2026-05-04 11:43:11.087 +07:00 [INF] HTTP POST /api/mini-app/decode-phone responded 200 in 291.1714 ms
+2026-05-04 11:43:20.681 +07:00 [INF] Start processing HTTP request GET https://staging.genora.vn/health-status
+2026-05-04 11:43:20.681 +07:00 [INF] Sending HTTP request GET https://staging.genora.vn/health-status
+2026-05-04 11:43:20.729 +07:00 [INF] Received HTTP response headers after 48.0437ms - 200
+2026-05-04 11:43:20.729 +07:00 [INF] End processing HTTP request after 48.2477ms - 200
+2026-05-04 11:43:20.730 +07:00 [INF] Start processing HTTP request GET https://localhost:44374/health-status
+2026-05-04 11:43:20.730 +07:00 [INF] Sending HTTP request GET https://localhost:44374/health-status
+2026-05-04 11:43:20.754 +07:00 [INF] HTTP GET /health-status responded 200 in 15.1651 ms
+2026-05-04 11:43:20.765 +07:00 [INF] Received HTTP response headers after 35.3832ms - 200
+2026-05-04 11:43:20.765 +07:00 [INF] End processing HTTP request after 35.5103ms - 200
+2026-05-04 11:43:30.398 +07:00 [INF] HTTP GET /api/app/app-fnb-order responded 200 in 103.0661 ms
+2026-05-04 11:43:30.782 +07:00 [INF] Start processing HTTP request GET https://staging.genora.vn/health-status
+2026-05-04 11:43:30.782 +07:00 [INF] Sending HTTP request GET https://staging.genora.vn/health-status
+2026-05-04 11:43:30.833 +07:00 [INF] Received HTTP response headers after 50.466ms - 200
+2026-05-04 11:43:30.833 +07:00 [INF] End processing HTTP request after 50.6859ms - 200
+2026-05-04 11:43:30.834 +07:00 [INF] Start processing HTTP request GET https://localhost:44374/health-status
+2026-05-04 11:43:30.834 +07:00 [INF] Sending HTTP request GET https://localhost:44374/health-status
+2026-05-04 11:43:30.860 +07:00 [INF] HTTP GET /health-status responded 200 in 16.9680 ms
+2026-05-04 11:43:30.876 +07:00 [INF] Received HTTP response headers after 42.3327ms - 200
+2026-05-04 11:43:30.876 +07:00 [INF] End processing HTTP request after 42.444ms - 200
+2026-05-04 11:43:31.530 +07:00 [INF] Skipping the execution of current filter as its not the most effective filter implementing the policy Microsoft.AspNetCore.Mvc.ViewFeatures.IAntiforgeryPolicy
+2026-05-04 11:43:31.598 +07:00 [INF] HTTP GET /UpgradeSettings/ZaloZns responded 200 in 109.6669 ms
+2026-05-04 11:43:31.715 +07:00 [INF] HTTP GET /Abp/ServiceProxyScript responded 200 in 107.2595 ms
+2026-05-04 11:43:31.729 +07:00 [INF] HTTP GET /Abp/ApplicationConfigurationScript responded 200 in 122.0146 ms
+2026-05-04 11:43:31.734 +07:00 [INF] HTTP GET /Abp/ApplicationLocalizationScript responded 200 in 126.6825 ms
+2026-05-04 11:43:31.743 +07:00 [ERR] An error occurred using the connection to database 'GenoraMultiTenancy' on server '103.157.218.187,1433'.
+2026-05-04 11:43:33.968 +07:00 [INF] HTTP CONNECT /signalr-hubs/fnb-orders responded 200 in 220625.8799 ms
+2026-05-04 11:43:36.325 +07:00 [INF] HTTP GET /api/app/app-pro-order responded 200 in 66.4230 ms
+2026-05-04 11:43:40.893 +07:00 [INF] Start processing HTTP request GET https://staging.genora.vn/health-status
+2026-05-04 11:43:40.893 +07:00 [INF] Sending HTTP request GET https://staging.genora.vn/health-status
+2026-05-04 11:43:40.926 +07:00 [INF] Received HTTP response headers after 33.1045ms - 200
+2026-05-04 11:43:40.926 +07:00 [INF] End processing HTTP request after 33.3291ms - 200
+2026-05-04 11:43:40.927 +07:00 [INF] Start processing HTTP request GET https://localhost:44374/health-status
+2026-05-04 11:43:40.927 +07:00 [INF] Sending HTTP request GET https://localhost:44374/health-status
+2026-05-04 11:43:40.954 +07:00 [INF] HTTP GET /health-status responded 200 in 15.3243 ms
+2026-05-04 11:43:40.960 +07:00 [INF] Received HTTP response headers after 33.1674ms - 200
+2026-05-04 11:43:40.960 +07:00 [INF] End processing HTTP request after 33.3142ms - 200
+2026-05-04 11:43:50.968 +07:00 [INF] Start processing HTTP request GET https://staging.genora.vn/health-status
+2026-05-04 11:43:50.968 +07:00 [INF] Sending HTTP request GET https://staging.genora.vn/health-status
+2026-05-04 11:43:50.999 +07:00 [INF] Received HTTP response headers after 31.1509ms - 200
+2026-05-04 11:43:51.000 +07:00 [INF] End processing HTTP request after 31.3222ms - 200
+2026-05-04 11:43:51.000 +07:00 [INF] Start processing HTTP request GET https://localhost:44374/health-status
+2026-05-04 11:43:51.000 +07:00 [INF] Sending HTTP request GET https://localhost:44374/health-status
+2026-05-04 11:43:51.030 +07:00 [INF] HTTP GET /health-status responded 200 in 20.2046 ms
+2026-05-04 11:43:51.067 +07:00 [INF] Received HTTP response headers after 67.2844ms - 200
+2026-05-04 11:43:51.067 +07:00 [INF] End processing HTTP request after 67.3505ms - 200
+2026-05-04 11:43:51.464 +07:00 [INF] Skipping the execution of current filter as its not the most effective filter implementing the policy Microsoft.AspNetCore.Mvc.ViewFeatures.IAntiforgeryPolicy
+2026-05-04 11:43:51.485 +07:00 [INF] HTTP GET /AppHomePageConfigs responded 200 in 61.8789 ms
+2026-05-04 11:43:51.552 +07:00 [INF] HTTP GET /Pages/AppHomePageConfigs/Index.js responded 200 in 53.9341 ms
+2026-05-04 11:43:51.575 +07:00 [INF] HTTP GET /Abp/ApplicationLocalizationScript responded 200 in 77.5236 ms
+2026-05-04 11:43:51.598 +07:00 [INF] HTTP GET /Abp/ServiceProxyScript responded 200 in 100.1274 ms
+2026-05-04 11:43:51.606 +07:00 [INF] HTTP GET /Abp/ApplicationConfigurationScript responded 200 in 108.2806 ms
+2026-05-04 11:43:51.753 +07:00 [INF] HTTP GET /api/app/app-home-page-config/widget-list responded 200 in 114.4196 ms
+2026-05-04 11:43:53.384 +07:00 [INF] Skipping the execution of current filter as its not the most effective filter implementing the policy Microsoft.AspNetCore.Mvc.ViewFeatures.IAntiforgeryPolicy
+2026-05-04 11:43:53.409 +07:00 [INF] HTTP GET /AppSettings responded 200 in 61.6305 ms
+2026-05-04 11:43:53.525 +07:00 [INF] HTTP GET /Pages/AppSettings/Index.js responded 200 in 99.2636 ms
+2026-05-04 11:43:53.525 +07:00 [INF] HTTP GET /Abp/ServiceProxyScript responded 200 in 100.5803 ms
+2026-05-04 11:43:53.579 +07:00 [INF] HTTP GET /Abp/ApplicationLocalizationScript responded 200 in 154.8764 ms
+2026-05-04 11:43:53.587 +07:00 [INF] HTTP GET /Abp/ApplicationConfigurationScript responded 200 in 161.9697 ms
+2026-05-04 11:43:53.707 +07:00 [INF] HTTP GET /api/app/app-setting/with-filter responded 200 in 88.3408 ms
+2026-05-04 11:43:58.709 +07:00 [INF] Skipping the execution of current filter as its not the most effective filter implementing the policy Microsoft.AspNetCore.Mvc.ViewFeatures.IAntiforgeryPolicy
+2026-05-04 11:43:58.739 +07:00 [INF] HTTP GET /AppGolfCourses responded 200 in 86.4603 ms
+2026-05-04 11:43:58.854 +07:00 [INF] HTTP GET /Pages/AppGolfCourses/Index.js responded 200 in 102.7049 ms
+2026-05-04 11:43:58.855 +07:00 [INF] HTTP GET /Abp/ServiceProxyScript responded 200 in 103.0212 ms
+2026-05-04 11:43:58.877 +07:00 [INF] HTTP GET /Abp/ApplicationLocalizationScript responded 200 in 124.8913 ms
+2026-05-04 11:43:58.883 +07:00 [INF] HTTP GET /Abp/ApplicationConfigurationScript responded 200 in 130.9294 ms
+2026-05-04 11:43:59.014 +07:00 [INF] HTTP GET /api/app/app-golf-course responded 200 in 94.9837 ms
+2026-05-04 11:44:01.070 +07:00 [INF] Start processing HTTP request GET https://staging.genora.vn/health-status
+2026-05-04 11:44:01.070 +07:00 [INF] Sending HTTP request GET https://staging.genora.vn/health-status
+2026-05-04 11:44:01.256 +07:00 [INF] Received HTTP response headers after 186.4869ms - 200
+2026-05-04 11:44:01.256 +07:00 [INF] End processing HTTP request after 186.6073ms - 200
+2026-05-04 11:44:01.257 +07:00 [INF] Start processing HTTP request GET https://localhost:44374/health-status
+2026-05-04 11:44:01.257 +07:00 [INF] Sending HTTP request GET https://localhost:44374/health-status
+2026-05-04 11:44:01.286 +07:00 [INF] HTTP GET /health-status responded 200 in 14.4090 ms
+2026-05-04 11:44:01.293 +07:00 [INF] Received HTTP response headers after 36.056ms - 200
+2026-05-04 11:44:01.293 +07:00 [INF] End processing HTTP request after 36.1406ms - 200
+2026-05-04 11:44:06.335 +07:00 [INF] HTTP GET /api/app/app-pro-order responded 200 in 82.7888 ms
+2026-05-04 11:44:10.113 +07:00 [INF] Skipping the execution of current filter as its not the most effective filter implementing the policy Microsoft.AspNetCore.Mvc.ViewFeatures.IAntiforgeryPolicy
+2026-05-04 11:44:10.129 +07:00 [INF] HTTP GET /UpgradeSettings/ZaloZns responded 200 in 37.6677 ms
+2026-05-04 11:44:10.235 +07:00 [INF] HTTP GET /Abp/ServiceProxyScript responded 200 in 98.5903 ms
+2026-05-04 11:44:10.257 +07:00 [INF] HTTP GET /Abp/ApplicationLocalizationScript responded 200 in 120.6629 ms
+2026-05-04 11:44:10.263 +07:00 [INF] HTTP GET /Abp/ApplicationConfigurationScript responded 200 in 127.4412 ms
+2026-05-04 11:44:11.301 +07:00 [INF] Start processing HTTP request GET https://staging.genora.vn/health-status
+2026-05-04 11:44:11.302 +07:00 [INF] Sending HTTP request GET https://staging.genora.vn/health-status
+2026-05-04 11:44:11.334 +07:00 [INF] Received HTTP response headers after 32.022ms - 200
+2026-05-04 11:44:11.334 +07:00 [INF] End processing HTTP request after 32.2329ms - 200
+2026-05-04 11:44:11.334 +07:00 [INF] Start processing HTTP request GET https://localhost:44374/health-status
+2026-05-04 11:44:11.334 +07:00 [INF] Sending HTTP request GET https://localhost:44374/health-status
+2026-05-04 11:44:11.362 +07:00 [INF] HTTP GET /health-status responded 200 in 17.5591 ms
+2026-05-04 11:44:11.369 +07:00 [INF] Received HTTP response headers after 34.9325ms - 200
+2026-05-04 11:44:11.369 +07:00 [INF] End processing HTTP request after 35.0001ms - 200
+2026-05-04 11:44:21.378 +07:00 [INF] Start processing HTTP request GET https://staging.genora.vn/health-status
+2026-05-04 11:44:21.378 +07:00 [INF] Sending HTTP request GET https://staging.genora.vn/health-status
+2026-05-04 11:44:21.428 +07:00 [INF] Received HTTP response headers after 49.3694ms - 200
+2026-05-04 11:44:21.428 +07:00 [INF] End processing HTTP request after 49.6192ms - 200
+2026-05-04 11:44:21.429 +07:00 [INF] Start processing HTTP request GET https://localhost:44374/health-status
+2026-05-04 11:44:21.429 +07:00 [INF] Sending HTTP request GET https://localhost:44374/health-status
+2026-05-04 11:44:21.473 +07:00 [INF] HTTP GET /health-status responded 200 in 19.5756 ms
+2026-05-04 11:44:21.483 +07:00 [INF] Received HTTP response headers after 53.7676ms - 200
+2026-05-04 11:44:21.483 +07:00 [INF] End processing HTTP request after 53.9351ms - 200
+2026-05-04 11:44:31.488 +07:00 [INF] Start processing HTTP request GET https://staging.genora.vn/health-status
+2026-05-04 11:44:31.488 +07:00 [INF] Sending HTTP request GET https://staging.genora.vn/health-status
+2026-05-04 11:44:31.528 +07:00 [INF] Received HTTP response headers after 40.1453ms - 200
+2026-05-04 11:44:31.528 +07:00 [INF] End processing HTTP request after 40.5664ms - 200
+2026-05-04 11:44:31.529 +07:00 [INF] Start processing HTTP request GET https://localhost:44374/health-status
+2026-05-04 11:44:31.529 +07:00 [INF] Sending HTTP request GET https://localhost:44374/health-status
+2026-05-04 11:44:31.559 +07:00 [INF] HTTP GET /health-status responded 200 in 17.5484 ms
+2026-05-04 11:44:31.570 +07:00 [INF] Received HTTP response headers after 40.7646ms - 200
+2026-05-04 11:44:31.570 +07:00 [INF] End processing HTTP request after 40.8973ms - 200
+2026-05-04 11:44:36.334 +07:00 [INF] HTTP GET /api/app/app-pro-order responded 200 in 81.1271 ms
+2026-05-04 11:44:41.582 +07:00 [INF] Start processing HTTP request GET https://staging.genora.vn/health-status
+2026-05-04 11:44:41.582 +07:00 [INF] Sending HTTP request GET https://staging.genora.vn/health-status
+2026-05-04 11:44:41.641 +07:00 [INF] Received HTTP response headers after 59.0183ms - 200
+2026-05-04 11:44:41.641 +07:00 [INF] End processing HTTP request after 59.243ms - 200
+2026-05-04 11:44:41.642 +07:00 [INF] Start processing HTTP request GET https://localhost:44374/health-status
+2026-05-04 11:44:41.642 +07:00 [INF] Sending HTTP request GET https://localhost:44374/health-status
+2026-05-04 11:44:41.677 +07:00 [INF] HTTP GET /health-status responded 200 in 18.3801 ms
+2026-05-04 11:44:41.693 +07:00 [INF] Received HTTP response headers after 50.3884ms - 200
+2026-05-04 11:44:41.693 +07:00 [INF] End processing HTTP request after 50.6039ms - 200
+2026-05-04 11:44:51.698 +07:00 [INF] Start processing HTTP request GET https://staging.genora.vn/health-status
+2026-05-04 11:44:51.698 +07:00 [INF] Sending HTTP request GET https://staging.genora.vn/health-status
+2026-05-04 11:44:51.758 +07:00 [INF] Received HTTP response headers after 59.5856ms - 200
+2026-05-04 11:44:51.758 +07:00 [INF] End processing HTTP request after 60.4556ms - 200
+2026-05-04 11:44:51.759 +07:00 [INF] Start processing HTTP request GET https://localhost:44374/health-status
+2026-05-04 11:44:51.759 +07:00 [INF] Sending HTTP request GET https://localhost:44374/health-status
+2026-05-04 11:44:51.785 +07:00 [INF] HTTP GET /health-status responded 200 in 15.6027 ms
+2026-05-04 11:44:51.794 +07:00 [INF] Received HTTP response headers after 35.2149ms - 200
+2026-05-04 11:44:51.794 +07:00 [INF] End processing HTTP request after 35.2842ms - 200
+2026-05-04 11:45:01.805 +07:00 [INF] Start processing HTTP request GET https://staging.genora.vn/health-status
+2026-05-04 11:45:01.805 +07:00 [INF] Sending HTTP request GET https://staging.genora.vn/health-status
+2026-05-04 11:45:01.845 +07:00 [INF] Received HTTP response headers after 40.0743ms - 200
+2026-05-04 11:45:01.845 +07:00 [INF] End processing HTTP request after 40.2421ms - 200
+2026-05-04 11:45:01.846 +07:00 [INF] Start processing HTTP request GET https://localhost:44374/health-status
+2026-05-04 11:45:01.846 +07:00 [INF] Sending HTTP request GET https://localhost:44374/health-status
+2026-05-04 11:45:01.880 +07:00 [INF] HTTP GET /health-status responded 200 in 20.8154 ms
+2026-05-04 11:45:01.891 +07:00 [INF] Received HTTP response headers after 45.6763ms - 200
+2026-05-04 11:45:01.891 +07:00 [INF] End processing HTTP request after 45.7445ms - 200
+2026-05-04 11:45:11.902 +07:00 [INF] Start processing HTTP request GET https://staging.genora.vn/health-status
+2026-05-04 11:45:11.902 +07:00 [INF] Sending HTTP request GET https://staging.genora.vn/health-status
+2026-05-04 11:45:11.931 +07:00 [INF] Received HTTP response headers after 29.5805ms - 200
+2026-05-04 11:45:11.931 +07:00 [INF] End processing HTTP request after 29.688ms - 200
+2026-05-04 11:45:11.932 +07:00 [INF] Start processing HTTP request GET https://localhost:44374/health-status
+2026-05-04 11:45:11.932 +07:00 [INF] Sending HTTP request GET https://localhost:44374/health-status
+2026-05-04 11:45:11.961 +07:00 [INF] HTTP GET /health-status responded 200 in 19.1092 ms
+2026-05-04 11:45:11.967 +07:00 [INF] Received HTTP response headers after 35.7156ms - 200
+2026-05-04 11:45:11.967 +07:00 [INF] End processing HTTP request after 35.7975ms - 200
+2026-05-04 11:45:15.615 +07:00 [ERR] An error occurred using the connection to database 'GenoraMultiTenancy' on server '103.157.218.187,1433'.

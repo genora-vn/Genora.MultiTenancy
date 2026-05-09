@@ -1,0 +1,32 @@
+2026-05-07 08:47:43.995 +07:00 [INF] Initialized all ABP modules.
+2026-05-07 08:47:44.557 +07:00 [INF] Started database migrations...
+2026-05-07 08:47:45.656 +07:00 [WRN] Entity 'SalonBeautyBooking' has a global query filter defined and is the required end of a relationship with the entity 'SalonBeautyBookingService'. This may lead to unexpected results when the required entity is filtered out. Either configure the navigation as optional, or define matching query filters for both entities in the navigation. See https://go.microsoft.com/fwlink/?linkid=2131316 for more information.
+2026-05-07 08:47:45.707 +07:00 [WRN] The foreign key property 'NewsRelated.NewsId1' was created in shadow state because a conflicting property with the simple name 'NewsId' exists in the entity type, but is either not mapped, is already used for another relationship, or is incompatible with the associated primary key type. See https://aka.ms/efcore-relationships for information on mapping relationships in EF Core.
+2026-05-07 08:47:45.818 +07:00 [INF] Migrating DB: GenoraMultiTenancy
+2026-05-07 08:47:45.991 +07:00 [WRN] Savepoints are disabled because Multiple Active Result Sets (MARS) is enabled. If 'SaveChanges' fails, then the transaction cannot be automatically rolled back to a known clean state. Instead, the transaction should be rolled back by the application before retrying 'SaveChanges'. See https://go.microsoft.com/fwlink/?linkid=2149338 for more information and examples. To identify the code which triggers this warning, call 'ConfigureWarnings(w => w.Throw(SqlServerEventId.SavepointsDisabledBecauseOfMARS))'.
+2026-05-07 08:47:46.116 +07:00 [WRN] Savepoints are disabled because Multiple Active Result Sets (MARS) is enabled. If 'SaveChanges' fails, then the transaction cannot be automatically rolled back to a known clean state. Instead, the transaction should be rolled back by the application before retrying 'SaveChanges'. See https://go.microsoft.com/fwlink/?linkid=2149338 for more information and examples. To identify the code which triggers this warning, call 'ConfigureWarnings(w => w.Throw(SqlServerEventId.SavepointsDisabledBecauseOfMARS))'.
+2026-05-07 08:47:46.191 +07:00 [INF] Migrated DB OK: GenoraMultiTenancy
+2026-05-07 08:47:48.508 +07:00 [INF] Migrating DB: BlueDiamondGolfLinks
+2026-05-07 08:47:49.175 +07:00 [INF] Migrated DB OK: BlueDiamondGolfLinks
+2026-05-07 08:47:49.585 +07:00 [INF] Migrating DB: LagunaGolfLangCo
+2026-05-07 08:47:50.028 +07:00 [INF] Migrated DB OK: LagunaGolfLangCo
+2026-05-07 08:47:50.394 +07:00 [INF] Migrating DB: MontgomerieLinks
+2026-05-07 08:47:50.699 +07:00 [INF] Migrated DB OK: MontgomerieLinks
+2026-05-07 08:47:51.059 +07:00 [INF] Migrating DB: Test1
+2026-05-07 08:47:51.311 +07:00 [INF] Migrated DB OK: Test1
+2026-05-07 08:47:51.647 +07:00 [INF] Completed database migrations.
+2026-05-07 09:22:28.474 +07:00 [INF] Initialized all ABP modules.
+2026-05-07 09:22:28.734 +07:00 [INF] Started database migrations...
+2026-05-07 09:22:29.554 +07:00 [WRN] Entity 'SalonBeautyBooking' has a global query filter defined and is the required end of a relationship with the entity 'SalonBeautyBookingService'. This may lead to unexpected results when the required entity is filtered out. Either configure the navigation as optional, or define matching query filters for both entities in the navigation. See https://go.microsoft.com/fwlink/?linkid=2131316 for more information.
+2026-05-07 09:22:29.602 +07:00 [WRN] The foreign key property 'NewsRelated.NewsId1' was created in shadow state because a conflicting property with the simple name 'NewsId' exists in the entity type, but is either not mapped, is already used for another relationship, or is incompatible with the associated primary key type. See https://aka.ms/efcore-relationships for information on mapping relationships in EF Core.
+2026-05-07 09:22:29.672 +07:00 [INF] Migrating DB: GenoraMultiTenancy
+2026-05-07 09:22:30.147 +07:00 [INF] Migrated DB OK: GenoraMultiTenancy
+2026-05-07 09:22:31.772 +07:00 [INF] Migrating DB: BlueDiamondGolfLinks
+2026-05-07 09:22:32.444 +07:00 [INF] Migrated DB OK: BlueDiamondGolfLinks
+2026-05-07 09:22:33.004 +07:00 [INF] Migrating DB: LagunaGolfLangCo
+2026-05-07 09:22:33.257 +07:00 [INF] Migrated DB OK: LagunaGolfLangCo
+2026-05-07 09:22:33.556 +07:00 [INF] Migrating DB: MontgomerieLinks
+2026-05-07 09:22:33.817 +07:00 [INF] Migrated DB OK: MontgomerieLinks
+2026-05-07 09:22:34.124 +07:00 [INF] Migrating DB: Test1
+2026-05-07 09:22:34.423 +07:00 [INF] Migrated DB OK: Test1
+2026-05-07 09:22:34.691 +07:00 [INF] Completed database migrations.

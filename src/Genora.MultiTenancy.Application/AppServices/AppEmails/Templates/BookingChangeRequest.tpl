@@ -45,7 +45,7 @@
     <tr><td style="background:#cfd9e6;padding:6px 8px;font-weight:700;">THANH TOÁN</td></tr>
     <tr><td style="padding:0;">
         <table width="100%" cellpadding="4" cellspacing="0" border="0">
-            {{ if model.PriceBreakdownItems != empty and model.PriceBreakdownItems | size > 0 }}
+            {{ if model.PriceBreakdownItems != null and model.PriceBreakdownItems | size > 0 }}
                 {{ for item in model.PriceBreakdownItems }}
                     <tr><td width="38%">Đơn giá/Khách ({{ item.CustomerTypeName }})</td><td><b>{{ item.Price | format "N0" }} x {{ item.Count }}</b></td></tr>
                 {{ end }}
