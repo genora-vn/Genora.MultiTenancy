@@ -846,19 +846,19 @@ public class MiniAppBookingAppService : ApplicationService, IMiniAppBookingAppSe
                 if (golfCourse?.IsMemberSupported == true && currentCt?.Code == "MB")
                 {
                     decimal mbgSlotPrice = dto.MemberGuestPrice ?? 0m;
-                    int remaining        = Math.Max(0, numGolfers - maxMbg - 1);
+                    int visitorSlots     = Math.Max(0, numGolfers - maxMbg - 1);
 
                     dto.CustomerBillTotalPrice = mbSlotPrice
-                        + (mbgSlotPrice * maxMbg)
-                        + (remaining * dto.VisitorPrice);
+                        + (mbgSlotPrice * Math.Min(maxMbg, numGolfers - 1))
+                        + (visitorSlots * dto.VisitorPrice);
 
                     decimal mbOriginal  = mbCtx?.OriginalPrice  ?? 0m;
                     decimal mbgOriginal = mbgCtx?.OriginalPrice ?? 0m;
                     decimal visOriginal = visCtx?.OriginalPrice ?? 0m;
 
                     dto.OriginalBillTotalPrice = mbOriginal
-                        + (mbgOriginal * maxMbg)
-                        + (remaining * visOriginal);
+                        + (mbgOriginal * Math.Min(maxMbg, numGolfers - 1))
+                        + (visitorSlots * visOriginal);
                 }
                 else
                 {
