@@ -784,7 +784,16 @@ public class MiniAppBookingAppService : ApplicationService, IMiniAppBookingAppSe
 
             var golfCourse = await _golfCourseRepo.FindAsync(booking.GolfCourseId);
             dto.IsMemberSupported = golfCourse?.IsMemberSupported ?? false;
-            dto.MaxMemberGuest    = golfCourse?.IsMemberSupported == true ? golfCourse.MaxMemberGuest : null;
+
+            // Calculate actual MaxMemberGuest: how many guests get MemberGuest price in this booking
+            if (golfCourse?.IsMemberSupported == true && currentCt?.Code == "MB")
+            {
+                dto.MaxMemberGuest = Math.Min(booking.NumberOfGolfers - 1, golfCourse.MaxMemberGuest ?? 0);
+            }
+            else
+            {
+                dto.MaxMemberGuest = null;
+            }
 
             if (dto.CalendarSlotId.HasValue && dto.CalendarSlotId.Value != Guid.Empty)
             {
