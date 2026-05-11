@@ -99,9 +99,18 @@ namespace Genora.MultiTenancy.AppServices.AppCalendarSlots
             {
                 if(input.PromotionType != null)
                 {
-                    query = query.Where(x =>
-                    (x.ApplyDate.Date > DateTime.Now.Date) ||
-                    (x.ApplyDate.Date == DateTime.Now.Date && x.TimeTo >= DateTime.Now.TimeOfDay));
+                    if(input.Date == DateTime.Now.Date)
+                    {
+                        query = query.Where(x =>
+                        (x.ApplyDate.Date == DateTime.Now.Date && x.TimeTo >= DateTime.Now.TimeOfDay));
+                    }
+                    else
+                    {
+                        query = query.Where(x =>
+                        (x.ApplyDate.Date > DateTime.Now.Date) ||
+                        (x.ApplyDate.Date == DateTime.Now.Date && x.TimeTo >= DateTime.Now.TimeOfDay));
+                    }
+                        
                 } else
                 {
                     query = query.Where(x =>
