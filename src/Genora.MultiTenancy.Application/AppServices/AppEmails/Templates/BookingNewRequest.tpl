@@ -19,45 +19,87 @@
     <tr><td style="background:#e9eef4;height:8px;"></td></tr>
 
     <tr><td style="background:#cfd9e6;padding:6px 8px;font-weight:700;">THÔNG TIN ĐẶT CHỖ</td></tr>
-    <tr><td style="padding:0;">
-        <table width="100%" cellpadding="4" cellspacing="0" border="0" style="border-collapse:collapse;">
-            <tr style="background:#dfe6ee;"><td width="38%">Mã đặt chỗ:</td><td>{{ model.BookingCode }}</td></tr>
-            <tr style="background:#dfe6ee;"><td>Tên khách:</td><td>{{ model.BookerName }}</td></tr>
-            <tr style="background:#dfe6ee;"><td>Người chơi cùng:</td><td>{{ if model.PlayersText != "" }}{{ model.PlayersText }}{{ else }}Không có{{ end }}</td></tr>
-            <tr style="background:#dfe6ee;"><td>Số điện thoại:</td><td>{{ model.BookerPhone }}</td></tr>
-        </table>
-    </td></tr>
+    <tr>
+        <td style="padding:0;">
+            <table width="100%" cellpadding="4" cellspacing="0" border="0" style="border-collapse:collapse;">
+                <tr style="background:#dfe6ee;">
+                    <td width="38%">Mã đặt chỗ:</td>
+                    <td>{{ model.BookingCode }}</td>
+                </tr>
+                <tr style="background:#dfe6ee;">
+                    <td>Tên khách:</td>
+                    <td>{{ model.BookerName }}</td>
+                </tr>
+                <tr style="background:#dfe6ee;">
+                    <td>Người chơi cùng:</td>
+                    <td>{{ if model.PlayersText != "" }}{{ model.PlayersText }}{{ else }}Không có{{ end }}</td>
+                </tr>
+                <tr style="background:#dfe6ee;">
+                    <td>Số điện thoại:</td>
+                    <td>{{ model.BookerPhone }}</td>
+                </tr>
+            </table>
+        </td>
+    </tr>
 
     <tr><td style="background:#efefef;height:8px;"></td></tr>
 
-    <tr><td style="padding:0;">
-        <table width="100%" cellpadding="4" cellspacing="0" border="0" style="border-collapse:collapse;">
-            <tr style="background:#d8d8d8;"><td width="38%">Ngày chơi</td><td>{{ model.PlayDateText }}</td></tr>
-            <tr><td>Tee time đăng ký</td><td>{{ model.TeeTimeFromText }} - {{ model.TeeTimeToText }}</td></tr>
-            <tr style="background:#d8d8d8;"><td>Số lượng người chơi</td><td>{{ model.NumberOfGolfers }}</td></tr>
-            <tr><td>Loại khách</td><td>{{ model.CustomerTypeSummary }}</td></tr>
-            <tr style="background:#d8d8d8;"><td>Chương trình ưu đãi</td><td>{{ if model.PromotionText != "" }}{{ model.PromotionText }}{{ else }}Không có{{ end }}</td></tr>
-        </table>
-    </td></tr>
+    <tr>
+        <td style="padding:0;">
+            <table width="100%" cellpadding="4" cellspacing="0" border="0" style="border-collapse:collapse;">
+                <tr style="background:#d8d8d8;">
+                    <td width="38%">Ngày chơi</td>
+                    <td>{{ model.PlayDateText }}</td>
+                </tr>
+                <tr>
+                    <td>Tee time đăng ký</td>
+                    <td>{{ model.TeeTimeFromText }} - {{ model.TeeTimeToText }}</td>
+                </tr>
+                <tr style="background:#d8d8d8;">
+                    <td>Số lượng người chơi</td>
+                    <td>{{ model.NumberOfGolfers }}</td>
+                </tr>
+                <tr>
+                    <td>Loại khách</td>
+                    <td>{{ model.CustomerTypeSummary }}</td>
+                </tr>
+                <tr style="background:#d8d8d8;">
+                    <td>Chương trình ưu đãi</td>
+                    <td>{{ if model.PromotionText != "" }}{{ model.PromotionText }}{{ else }}Không có{{ end }}</td>
+                </tr>
+            </table>
+        </td>
+    </tr>
 
     <tr><td style="background:#cfd9e6;padding:6px 8px;font-weight:700;">THANH TOÁN</td></tr>
-    <tr><td style="padding:0;">
-        <table width="100%" cellpadding="4" cellspacing="0" border="0" style="border-collapse:collapse;">
-            {{ if model.PriceBreakdownItems != null }}
-                {{ if model.PriceBreakdownItems | size > 0 }}
+    <tr>
+        <td style="padding:0;">
+            <table width="100%" cellpadding="4" cellspacing="0" border="0" style="border-collapse:collapse;">
+                {{ if model.HasPriceBreakdownItems }}
                     {{ for item in model.PriceBreakdownItems }}
-                        <tr><td width="38%">Đơn giá/Khách ({{ item.CustomerTypeName }})</td><td><b>{{ item.Price | format "N0" }} x {{ item.Count }}</b></td></tr>
+                        <tr>
+                            <td width="38%">Đơn giá/Khách ({{ item.customer_type_name }})</td>
+                            <td><b>{{ item.price_text }} x {{ item.count }}</b></td>
+                        </tr>
                     {{ end }}
                 {{ else }}
-                    <tr><td width="38%">Đơn giá/Khách</td><td><b>{{ model.PricePerGolferText }}</b></td></tr>
+                    <tr>
+                        <td width="38%">Đơn giá/Khách</td>
+                        <td><b>{{ model.PricePerGolferText }} x {{ model.NumberOfGolfers }}</b></td>
+                    </tr>
                 {{ end }}
-            {{ else }}
-                <tr><td width="38%">Đơn giá/Khách</td><td><b>{{ model.PricePerGolferText }}</b></td></tr>
-            {{ end }}
-            <tr><td>Tổng giá trị đặt chỗ</td><td><b>{{ model.TotalAmountText }}</b></td></tr>
-            <tr><td>Phương thức thanh toán</td><td>{{ model.PaymentMethod }}</td></tr>
-        </table>
-    </td></tr>
+
+                <tr>
+                    <td>Tổng giá trị đặt chỗ</td>
+                    <td><b>{{ model.TotalAmountText }}</b></td>
+                </tr>
+                <tr>
+                    <td>Phương thức thanh toán</td>
+                    <td>{{ model.PaymentMethod }}</td>
+                </tr>
+            </table>
+        </td>
+    </tr>
 
     <tr><td style="background:#cfd9e6;padding:6px 8px;font-weight:700;">YÊU CẦU ĐẶC BIỆT KHÁC (nếu có)</td></tr>
     <tr>

@@ -244,6 +244,7 @@
     "EditAppCustomer": "Chỉnh sửa khách hàng",
     "PhoneNumber": "Số điện thoại",
     "FullName": "Họ tên",
+    "PromotionType": "Loại ưu đãi",
     "CustomerType": "Loại khách hàng",
     "CustomerCode": "Mã khách hàng",
     "CustomerStatus": "Được sử dụng",

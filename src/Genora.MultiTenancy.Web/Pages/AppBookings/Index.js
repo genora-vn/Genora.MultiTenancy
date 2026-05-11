@@ -202,16 +202,29 @@
                 { title: l('BookingCode'), data: "bookingCode" },
                 {
                     title: l('BookingCustomer'),
-                    data: null,
-                    render: function (data) {
-                        var name = (data && data.customerName) || '';
-                        var phone = (data && data.customerPhone) || '';
-                        if (name && phone) return name + ' (' + phone + ')';
-                        return name || phone || '';
+                    data: 'customerName',
+                    render: function (data, type, row) {
+                        var name = row.customerName || '';
+                        var phone = row.customerPhone || '';
+                        return phone ? name + '<br/><small>' + phone + '</small>' : name;
                     }
                 },
-
-                { title: l('CustomerType'), data: "customerType" },
+                {
+                    title: l('AppCustomerTypes'),
+                    data: 'customerType',
+                    orderable: false,
+                    render: function (data) {
+                        return data || '';
+                    }
+                },
+                {
+                    title: l('PromotionType'),
+                    data: 'promotionType',
+                    orderable: false,
+                    render: function (data) {
+                        return data || '';
+                    }
+                },
 
                 {
                     title: l('BookingPlayDate'),

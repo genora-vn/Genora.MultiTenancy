@@ -4,8 +4,8 @@ using Genora.MultiTenancy.AppServices.AppEmails;
 using Genora.MultiTenancy.AppServices.AppZaloAuths;
 using Genora.MultiTenancy.DomainModels.AppBookingPlayers;
 using Genora.MultiTenancy.DomainModels.AppBookings;
-using Genora.MultiTenancy.DomainModels.AppCalendarSlots;
 using Genora.MultiTenancy.DomainModels.AppCalendarSlotPrices;
+using Genora.MultiTenancy.DomainModels.AppCalendarSlots;
 using Genora.MultiTenancy.DomainModels.AppCustomers;
 using Genora.MultiTenancy.DomainModels.AppCustomerTypes;
 using Genora.MultiTenancy.DomainModels.AppGolfCourses;
@@ -84,7 +84,6 @@ public class AppBookingService :
         AppBookingExcelImporter excelImporter,
         AppBookingExcelTemplateGenerator templateGenerator,
         IRepository<CalendarSlot, Guid> calendarSlotRepository,
-        IRepository<CalendarSlotPrice, Guid> calendarSlotPriceRepository,
         IStringLocalizer<MultiTenancyResource> l,
         IAppEmailSenderService appEmailSenderService,
         IRepository<OptionExtend, Guid> optionExtendRepo,
@@ -92,7 +91,8 @@ public class AppBookingService :
         ISettingProvider settingProvider,
         IBackgroundJobManager jobManager,
         ILogger<AppBookingService> logger,
-        IRepository<DomainModels.AppPromotionTypes.PromotionType, Guid> promotionTypeRepository)
+        IRepository<DomainModels.AppPromotionTypes.PromotionType, Guid> promotionTypeRepository,
+        IRepository<CalendarSlotPrice, Guid> calendarSlotPriceRepository)
         : base(repository, currentTenant, featureChecker)
     {
         _customerRepository = customerRepository;
@@ -109,7 +109,6 @@ public class AppBookingService :
         _excelImporter = excelImporter;
         _templateGenerator = templateGenerator;
         _calendarSlotRepository = calendarSlotRepository;
-        _calendarSlotPriceRepository = calendarSlotPriceRepository;
         _l = l;
         _appEmailSenderService = appEmailSenderService;
         _optionExtendRepo = optionExtendRepo;
@@ -118,6 +117,7 @@ public class AppBookingService :
         _jobManager = jobManager;
         _logger = logger;
         _promotionTypeRepository = promotionTypeRepository;
+        _calendarSlotPriceRepository = calendarSlotPriceRepository;
     }
 
     private string NA() => _l["Common:NA"].Value;
@@ -203,8 +203,13 @@ public class AppBookingService :
         var customerIds = items.Select(x => x.CustomerId).Distinct().ToList();
         var golfCourseIds = items.Select(x => x.GolfCourseId).Distinct().ToList();
 
-        var customers = await _customerRepository.GetListAsync(c => customerIds.Contains(c.Id));
-        var golfCourses = await _golfCourseRepository.GetListAsync(g => golfCourseIds.Contains(g.Id));
+        var customers = customerIds.Count == 0
+            ? new List<Customer>()
+            : await _customerRepository.GetListAsync(c => customerIds.Contains(c.Id));
+
+        var golfCourses = golfCourseIds.Count == 0
+            ? new List<GolfCourse>()
+            : await _golfCourseRepository.GetListAsync(g => golfCourseIds.Contains(g.Id));
 
         var customerDict = customers.ToDictionary(c => c.Id, c => c);
         var golfDict = golfCourses.ToDictionary(g => g.Id, g => g);
@@ -221,6 +226,30 @@ public class AppBookingService :
 
         var slotDict = slots.ToDictionary(s => s.Id, s => s);
 
+        var customerTypeIds = customers
+            .Where(c => c.CustomerTypeId.HasValue && c.CustomerTypeId.Value != Guid.Empty)
+            .Select(c => c.CustomerTypeId!.Value)
+            .Distinct()
+            .ToList();
+
+        var customerTypes = customerTypeIds.Count == 0
+            ? new List<CustomerType>()
+            : await _customerType.GetListAsync(x => customerTypeIds.Contains(x.Id));
+
+        var customerTypeDict = customerTypes.ToDictionary(x => x.Id, x => x);
+
+        var promotionTypeIds = slots
+            .Where(s => s.PromotionTypeId != Guid.Empty)
+            .Select(s => s.PromotionTypeId)
+            .Distinct()
+            .ToList();
+
+        var promotionTypes = promotionTypeIds.Count == 0
+            ? new List<DomainModels.AppPromotionTypes.PromotionType>()
+            : await _promotionTypeRepository.GetListAsync(x => promotionTypeIds.Contains(x.Id));
+
+        var promotionTypeDict = promotionTypes.ToDictionary(x => x.Id, x => x);
+
         var dtoList = new List<AppBookingDto>();
 
         foreach (var b in items)
@@ -229,38 +258,57 @@ public class AppBookingService :
             golfDict.TryGetValue(b.GolfCourseId, out var g);
             slotDict.TryGetValue(b.CalendarSlotId ?? Guid.Empty, out var slot);
 
-            var ct = c?.CustomerTypeId.HasValue == true
-                ? await _customerType.FindAsync(x => x.Id == c.CustomerTypeId)
-                : null;
+            CustomerType? ct = null;
+            if (c?.CustomerTypeId.HasValue == true)
+            {
+                customerTypeDict.TryGetValue(c.CustomerTypeId.Value, out ct);
+            }
 
             var ctName = ct?.Name ?? ct?.Code ?? NA();
+
+            DomainModels.AppPromotionTypes.PromotionType? promotionType = null;
+            if (slot != null && slot.PromotionTypeId != Guid.Empty)
+            {
+                promotionTypeDict.TryGetValue(slot.PromotionTypeId, out promotionType);
+            }
+
+            var promotionTypeName = promotionType?.Name ?? "";
 
             dtoList.Add(new AppBookingDto
             {
                 Id = b.Id,
                 TenantId = b.TenantId,
                 BookingCode = b.BookingCode,
+
                 CustomerId = b.CustomerId,
                 CustomerType = ctName,
+                PromotionType = promotionTypeName,
+
                 CustomerName = c?.FullName,
                 CustomerPhone = c?.PhoneNumber,
+
                 GolfCourseId = b.GolfCourseId,
                 GolfCourseName = g?.Name,
+
                 CalendarSlotId = b.CalendarSlotId,
                 PlayDate = b.PlayDate,
                 TimeFrom = slot?.TimeFrom,
                 TimeTo = slot?.TimeTo,
+
                 NumberOfGolfers = b.NumberOfGolfers,
                 PricePerGolfer = b.PricePerGolfer,
                 TotalAmount = b.TotalAmount,
+
                 IsExportInvoice = b.IsExportInvoice,
                 CompanyName = b.CompanyName,
                 TaxCode = b.TaxCode,
                 CompanyAddress = b.CompanyAddress,
                 InvoiceEmail = b.InvoiceEmail,
+
                 PaymentMethod = b.PaymentMethod,
                 Status = b.Status,
                 Source = b.Source,
+
                 CreationTime = b.CreationTime,
                 CreatorId = b.CreatorId,
                 LastModificationTime = b.LastModificationTime,
@@ -279,48 +327,67 @@ public class AppBookingService :
         var customer = await _customerRepository.FindAsync(booking.CustomerId);
         var golfCourse = await _golfCourseRepository.FindAsync(booking.GolfCourseId);
         var players = await _playerRepository.GetListAsync(p => p.BookingId == id);
-        var calendarSlot = booking.CalendarSlotId.HasValue
-            ? await _calendarSlotRepository.FindAsync(p => p.Id == booking.CalendarSlotId)
+
+        var calendarSlot = booking.CalendarSlotId.HasValue && booking.CalendarSlotId.Value != Guid.Empty
+            ? await _calendarSlotRepository.FindAsync(p => p.Id == booking.CalendarSlotId.Value)
             : null;
 
         var ct = customer?.CustomerTypeId.HasValue == true
-            ? await _customerType.FindAsync(x => x.Id == customer.CustomerTypeId)
+            ? await _customerType.FindAsync(x => x.Id == customer.CustomerTypeId.Value)
             : null;
 
         var ctName = ct?.Name ?? ct?.Code ?? NA();
+
+        string promotionTypeName = "";
+        if (calendarSlot != null && calendarSlot.PromotionTypeId != Guid.Empty)
+        {
+            var promotionType = await _promotionTypeRepository.FindAsync(calendarSlot.PromotionTypeId);
+            promotionTypeName = promotionType?.Name ?? "";
+        }
 
         var dto = new AppBookingDto
         {
             Id = booking.Id,
             TenantId = booking.TenantId,
             BookingCode = booking.BookingCode,
+
             CustomerId = booking.CustomerId,
             CustomerType = ctName,
+            PromotionType = promotionTypeName,
+
             CustomerName = customer?.FullName,
             CustomerPhone = customer?.PhoneNumber,
+
             GolfCourseId = booking.GolfCourseId,
             GolfCourseName = golfCourse?.Name,
+
             CalendarSlotId = booking.CalendarSlotId,
             PlayDate = booking.PlayDate,
             TimeFrom = calendarSlot?.TimeFrom,
             TimeTo = calendarSlot?.TimeTo,
+
             NumberOfGolfers = booking.NumberOfGolfers,
             PricePerGolfer = booking.PricePerGolfer,
             TotalAmount = booking.TotalAmount,
+
             PaymentMethod = booking.PaymentMethod,
             Status = booking.Status,
             Source = booking.Source,
+
             CreationTime = booking.CreationTime,
             CreatorId = booking.CreatorId,
             LastModificationTime = booking.LastModificationTime,
             LastModifierId = booking.LastModifierId,
+
             Utilities = booking.Utility,
             NumberHoles = booking.NumberHole,
+
             IsExportInvoice = booking.IsExportInvoice,
             CompanyName = booking.CompanyName,
             TaxCode = booking.TaxCode,
             CompanyAddress = booking.CompanyAddress,
             InvoiceEmail = booking.InvoiceEmail,
+
             Players = players.Select(p => new AppBookingPlayerDto
             {
                 Id = p.Id,
@@ -398,7 +465,13 @@ public class AppBookingService :
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Enqueue EMAIL failed. BookingId={BookingId}, TenantId={TenantId}", entity.Id, CurrentTenant.Id);
+            _logger.LogWarning(
+                ex,
+                "[ZBS] Enqueue BookingCreated failed. BookingId={BookingId}, BookingCode={BookingCode}, TenantId={TenantId}",
+                entity.Id,
+                entity.BookingCode,
+                CurrentTenant.Id
+            );
         }
 
         var ct = await _customerType.FindAsync(x => x.Id == customer.CustomerTypeId);
@@ -414,27 +487,26 @@ public class AppBookingService :
                 paymentText = entity.PaymentMethod.ToString();
 
             var golfInfo = await GetGolfCourseInfoAsync(entity.GolfCourseId);
-            var golfCourse = await _golfCourseRepository.FindAsync(entity.GolfCourseId);
             var promotionText = await GetPromotionNameAsync(entity.CalendarSlotId);
             var savedPlayers = await _playerRepository.GetListAsync(p => p.BookingId == entity.Id);
             var playersText = BuildPlayersInlineText(savedPlayers, customer.FullName);
 
-            // TotalAmount thực tế = tổng PricePerPlayer của từng người chơi
-            // (mỗi golfer có thể là Member / MemberGuest / Visitor với giá khác nhau)
-            var emailTotalAmount = savedPlayers.Sum(p => p.PricePerPlayer ?? 0m);
+            if (string.IsNullOrWhiteSpace(paymentText) || paymentText.StartsWith("PaymentMethod:", StringComparison.OrdinalIgnoreCase))
+                paymentText = entity.PaymentMethod.ToString();
+
+            var priceBreakdownItems = await BuildPriceBreakdownItemsAsync(
+                customer,
+                entity.CalendarSlotId,
+                entity.NumberHole,
+                entity.NumberOfGolfers,
+                entity.GolfCourseId
+            );
+
+            var emailTotalAmount = SumPriceBreakdownItems(priceBreakdownItems);
             if (emailTotalAmount <= 0m)
             {
                 emailTotalAmount = entity.TotalAmount;
             }
-
-            var emailPricePerGolfer = entity.NumberOfGolfers > 0 ? emailTotalAmount / entity.NumberOfGolfers : 0m;
-
-            var priceBreakdown = await BuildPriceBreakdownAsync(
-                entity.CalendarSlotId.HasValue ? entity.CalendarSlotId.Value : Guid.Empty,
-                ct?.Code,
-                golfCourse,
-                entity.NumberOfGolfers
-            );
 
             var model = new BookingNewRequestEmailModelDto
             {
@@ -458,8 +530,11 @@ public class AppBookingService :
                 PlayersText = playersText,
                 PromotionText = promotionText,
 
-                PricePerGolfer = emailPricePerGolfer,
-                PricePerGolferText = MoneyText(emailPricePerGolfer),
+                PricePerGolfer = entity.PricePerGolfer ?? 0m,
+                PricePerGolferText = MoneyText(entity.PricePerGolfer),
+
+                HasPriceBreakdownItems = priceBreakdownItems.Any(),
+                PriceBreakdownItems = priceBreakdownItems,
 
                 TotalAmount = emailTotalAmount,
                 TotalAmountText = MoneyText(emailTotalAmount),
@@ -471,9 +546,7 @@ public class AppBookingService :
                 CompanyName = entity.CompanyName,
                 TaxCode = entity.TaxCode,
                 CompanyAddress = entity.CompanyAddress,
-                InvoiceEmail = entity.InvoiceEmail,
-
-                PriceBreakdownItems = priceBreakdown
+                InvoiceEmail = entity.InvoiceEmail
             };
 
             var cfg = await GetEmailConfigAsync(
@@ -498,7 +571,13 @@ public class AppBookingService :
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Enqueue ZBS failed. BookingId={BookingId}, TenantId={TenantId}", entity.Id, CurrentTenant.Id);
+            _logger.LogError(
+                ex,
+                "[BookingEmail] Failed to enqueue booking created email. BookingId={BookingId}, BookingCode={BookingCode}, TenantId={TenantId}",
+                entity.Id,
+                entity.BookingCode,
+                CurrentTenant.Id
+            );
         }
 
         return await GetAsync(entity.Id);
@@ -753,22 +832,19 @@ public class AppBookingService :
 
                 var updatedByText = BuildUpdatedByText();
 
-                // TotalAmount thực tế = tổng PricePerPlayer của từng người chơi
-                var emailTotalAmount = newPlayers.Sum(p => p.PricePerPlayer ?? 0m);
+                var priceBreakdownItems = await BuildPriceBreakdownItemsAsync(
+                    newCustomer,
+                    entity.CalendarSlotId,
+                    entity.NumberHole,
+                    entity.NumberOfGolfers,
+                    entity.GolfCourseId
+                );
+
+                var emailTotalAmount = SumPriceBreakdownItems(priceBreakdownItems);
                 if (emailTotalAmount <= 0m)
                 {
                     emailTotalAmount = entity.TotalAmount;
                 }
-
-                var emailPricePerGolfer = entity.NumberOfGolfers > 0 ? emailTotalAmount / entity.NumberOfGolfers : 0m;
-
-                var golfCourse = await _golfCourseRepository.FindAsync(entity.GolfCourseId);
-                var priceBreakdown = await BuildPriceBreakdownAsync(
-                    entity.CalendarSlotId.HasValue ? entity.CalendarSlotId.Value : Guid.Empty,
-                    newCustomerType?.Code,
-                    golfCourse,
-                    entity.NumberOfGolfers
-                );
 
                 var changeModel = new BookingChangeRequestEmailModelDto
                 {
@@ -802,15 +878,20 @@ public class AppBookingService :
                     NewPlayersText = newPlayersInline,
                     NewUpdatedByText = updatedByText,
 
-                    PricePerGolferText = MoneyText(emailPricePerGolfer),
+                    PricePerGolferText = entity.PricePerGolfer.HasValue
+                    ? MoneyText(entity.PricePerGolfer)
+                    : MoneyText(input.PricePerGolfer),
+
+                    HasPriceBreakdownItems = priceBreakdownItems.Any(),
+                    PriceBreakdownItems = priceBreakdownItems,
+
                     TotalAmountText = MoneyText(emailTotalAmount),
+
                     OtherRequestsText = otherRequestsText,
                     InvoiceInfoText = invoiceInfoText,
 
                     HasPlayerChanges = hasPlayerChanges,
-                    HasHeaderChanges = hasHeaderChanges,
-
-                    PriceBreakdownItems = priceBreakdown
+                    HasHeaderChanges = hasHeaderChanges
                 };
 
                 var cfg = await GetEmailConfigAsync(
@@ -834,9 +915,15 @@ public class AppBookingService :
                 );
             }
         }
-        catch
+        catch (Exception ex)
         {
-            // không throw để không ảnh hưởng Update booking
+            _logger.LogError(
+                ex,
+                "[BookingEmail] Failed to enqueue booking update/cancel email or ZBS. BookingId={BookingId}, BookingCode={BookingCode}, TenantId={TenantId}",
+                entity.Id,
+                entity.BookingCode,
+                CurrentTenant.Id
+            );
         }
 
         return await GetAsync(entity.Id);
@@ -1065,34 +1152,72 @@ public class AppBookingService :
         var list = await AsyncExecuter.ToListAsync(query);
 
         var customerIds = list.Select(x => x.CustomerId).Distinct().ToList();
-        var customers = customerIds.Count == 0 ? new List<Customer>() : await _customerRepository.GetListAsync(x => customerIds.Contains(x.Id));
+
+        var customers = customerIds.Count == 0
+            ? new List<Customer>()
+            : await _customerRepository.GetListAsync(x => customerIds.Contains(x.Id));
+
         var customerDict = customers.ToDictionary(x => x.Id, x => x);
 
-        var slotIds = list.Where(x => x.CalendarSlotId.HasValue && x.CalendarSlotId.Value != Guid.Empty)
+        var customerTypeIds = customers
+            .Where(x => x.CustomerTypeId.HasValue && x.CustomerTypeId.Value != Guid.Empty)
+            .Select(x => x.CustomerTypeId!.Value)
+            .Distinct()
+            .ToList();
+
+        var customerTypes = customerTypeIds.Count == 0
+            ? new List<CustomerType>()
+            : await _customerType.GetListAsync(x => customerTypeIds.Contains(x.Id));
+
+        var customerTypeDict = customerTypes.ToDictionary(x => x.Id, x => x);
+
+        var slotIds = list
+            .Where(x => x.CalendarSlotId.HasValue && x.CalendarSlotId.Value != Guid.Empty)
             .Select(x => x.CalendarSlotId!.Value)
             .Distinct()
             .ToList();
 
-        var slots = slotIds.Count == 0 ? new List<CalendarSlot>() : await _calendarSlotRepository.GetListAsync(s => slotIds.Contains(s.Id));
+        var slots = slotIds.Count == 0
+            ? new List<CalendarSlot>()
+            : await _calendarSlotRepository.GetListAsync(s => slotIds.Contains(s.Id));
+
         var slotDict = slots.ToDictionary(s => s.Id, s => s);
+
+        var promotionTypeIds = slots
+            .Where(x => x.PromotionTypeId != Guid.Empty)
+            .Select(x => x.PromotionTypeId)
+            .Distinct()
+            .ToList();
+
+        var promotionTypes = promotionTypeIds.Count == 0
+            ? new List<DomainModels.AppPromotionTypes.PromotionType>()
+            : await _promotionTypeRepository.GetListAsync(x => promotionTypeIds.Contains(x.Id));
+
+        var promotionTypeDict = promotionTypes.ToDictionary(x => x.Id, x => x);
 
         string LStatus(BookingStatus s)
         {
             var t = _l[$"BookingStatus:{s}"].Value;
-            return (string.IsNullOrWhiteSpace(t) || t.StartsWith("BookingStatus:", StringComparison.OrdinalIgnoreCase)) ? s.ToString() : t;
+            return (string.IsNullOrWhiteSpace(t) || t.StartsWith("BookingStatus:", StringComparison.OrdinalIgnoreCase))
+                ? s.ToString()
+                : t;
         }
 
         string LPayment(PaymentMethod? pm)
         {
             if (!pm.HasValue) return "";
             var t = _l[$"PaymentMethod:{pm.Value}"].Value;
-            return (string.IsNullOrWhiteSpace(t) || t.StartsWith("PaymentMethod:", StringComparison.OrdinalIgnoreCase)) ? pm.Value.ToString() : t;
+            return (string.IsNullOrWhiteSpace(t) || t.StartsWith("PaymentMethod:", StringComparison.OrdinalIgnoreCase))
+                ? pm.Value.ToString()
+                : t;
         }
 
         string LSource(BookingSource src)
         {
             var t = _l[$"BookingSource:{src}"].Value;
-            return (string.IsNullOrWhiteSpace(t) || t.StartsWith("BookingSource:", StringComparison.OrdinalIgnoreCase)) ? src.ToString() : t;
+            return (string.IsNullOrWhiteSpace(t) || t.StartsWith("BookingSource:", StringComparison.OrdinalIgnoreCase))
+                ? src.ToString()
+                : t;
         }
 
         var rows = list.Select(b =>
@@ -1101,20 +1226,45 @@ public class AppBookingService :
 
             CalendarSlot? slot = null;
             if (b.CalendarSlotId.HasValue)
+            {
                 slotDict.TryGetValue(b.CalendarSlotId.Value, out slot);
+            }
+
+            CustomerType? ct = null;
+            if (c?.CustomerTypeId.HasValue == true)
+            {
+                customerTypeDict.TryGetValue(c.CustomerTypeId.Value, out ct);
+            }
+
+            var customerTypeText = ct?.Name ?? ct?.Code ?? "";
+
+            DomainModels.AppPromotionTypes.PromotionType? promotionType = null;
+            if (slot != null && slot.PromotionTypeId != Guid.Empty)
+            {
+                promotionTypeDict.TryGetValue(slot.PromotionTypeId, out promotionType);
+            }
+
+            var promotionTypeText = promotionType?.Name ?? "";
 
             var customerDisplay = CustomerDisplayText(c);
 
             var from = ToHHmm(slot?.TimeFrom);
             var to = ToHHmm(slot?.TimeTo);
+
             var playTime = (!string.IsNullOrWhiteSpace(from) || !string.IsNullOrWhiteSpace(to))
-                ? (string.IsNullOrWhiteSpace(from) ? to : (string.IsNullOrWhiteSpace(to) ? from : F("Common:TimeRange", from, to)))
+                ? (string.IsNullOrWhiteSpace(from)
+                    ? to
+                    : (string.IsNullOrWhiteSpace(to) ? from : F("Common:TimeRange", from, to)))
                 : "";
 
             return new AppBookingExcelRowDto
             {
                 BookingCode = b.BookingCode,
                 Customer = customerDisplay,
+
+                CustomerType = customerTypeText,
+                PromotionType = promotionTypeText,
+
                 PlayDate = b.PlayDate,
                 PlayTime = playTime,
                 NumberOfGolfers = b.NumberOfGolfers,
@@ -1305,100 +1455,105 @@ public class AppBookingService :
         return $"{displayName} ({role})";
     }
 
-    private async Task<List<PriceBreakdownItemDto>> BuildPriceBreakdownAsync(
-        Guid calendarSlotId,
-        string? bookerCustomerTypeCode,
-        GolfCourse? golfCourse,
-        int numberOfGolfers)
+    private async Task<List<BookingPriceBreakdownEmailItemDto>> BuildPriceBreakdownItemsAsync(
+    Customer customer,
+    Guid? calendarSlotId,
+    short? numberHoles,
+    int numberOfGolfers,
+    Guid golfCourseId)
     {
-        var result = new List<PriceBreakdownItemDto>();
+        var result = new List<BookingPriceBreakdownEmailItemDto>();
 
-        if (numberOfGolfers <= 0 || calendarSlotId == Guid.Empty)
+        if (!calendarSlotId.HasValue || calendarSlotId.Value == Guid.Empty || numberOfGolfers <= 0)
+        {
             return result;
-
-        // Get all customer types
-        var allCts = await _customerType.GetListAsync(c => new[] { "MB", "MBG", "VIS" }.Contains(c.Code));
-        var mbCt = allCts.FirstOrDefault(c => c.Code == "MB");
-        var mbgCt = allCts.FirstOrDefault(c => c.Code == "MBG");
-        var visCt = allCts.FirstOrDefault(c => c.Code == "VIS");
-
-        // Get slot prices
-        var slotPrices = await _calendarSlotPriceRepository.GetListAsync(x => x.CalendarSlotId == calendarSlotId);
-
-        // Determine breakdown based on customer type
-        if (bookerCustomerTypeCode == "MB" && mbCt != null && mbgCt != null && golfCourse?.IsMemberSupported == true)
-        {
-            // Member booking: 1 MB + (up to MaxMemberGuest) MBG + overflow VIS
-            int maxMbg = golfCourse.MaxMemberGuest ?? 0;
-            int mbCount = 1;
-            int mbgCount = Math.Min(numberOfGolfers - 1, maxMbg);
-            int visCount = numberOfGolfers - mbCount - mbgCount;
-
-            // Get MB price
-            var mbPrice = slotPrices.FirstOrDefault(x => x.CustomerTypeId == mbCt.Id);
-            if (mbPrice != null)
-            {
-                var mbPriceValue = mbPrice.Price18;
-                result.Add(new PriceBreakdownItemDto
-                {
-                    CustomerTypeCode = "MB",
-                    CustomerTypeName = mbCt.Name ?? mbCt.Code ?? "Member",
-                    Price = mbPriceValue,
-                    Count = mbCount
-                });
-            }
-
-            // Get MBG price
-            if (mbgCount > 0)
-            {
-                var mbgPrice = slotPrices.FirstOrDefault(x => x.CustomerTypeId == mbgCt.Id);
-                if (mbgPrice != null)
-                {
-                    var mbgPriceValue = mbgPrice.Price18;
-                    result.Add(new PriceBreakdownItemDto
-                    {
-                        CustomerTypeCode = "MBG",
-                        CustomerTypeName = mbgCt.Name ?? mbgCt.Code ?? "Member Guest",
-                        Price = mbgPriceValue,
-                        Count = mbgCount
-                    });
-                }
-            }
-
-            // Get VIS price
-            if (visCount > 0 && visCt != null)
-            {
-                var visPrice = slotPrices.FirstOrDefault(x => x.CustomerTypeId == visCt.Id);
-                if (visPrice != null)
-                {
-                    var visPriceValue = visPrice.Price18;
-                    result.Add(new PriceBreakdownItemDto
-                    {
-                        CustomerTypeCode = "VIS",
-                        CustomerTypeName = visCt.Name ?? visCt.Code ?? "Visitor",
-                        Price = visPriceValue,
-                        Count = visCount
-                    });
-                }
-            }
-        }
-        else if (visCt != null)
-        {
-            // Visitor booking: all VIS
-            var visPrice = slotPrices.FirstOrDefault(x => x.CustomerTypeId == visCt.Id);
-            if (visPrice != null)
-            {
-                var visPriceValue = visPrice.Price18;
-                result.Add(new PriceBreakdownItemDto
-                {
-                    CustomerTypeCode = "VIS",
-                    CustomerTypeName = visCt.Name ?? visCt.Code ?? "Visitor",
-                    Price = visPriceValue,
-                    Count = numberOfGolfers
-                });
-            }
         }
 
+        var customerType = customer.CustomerTypeId.HasValue
+            ? await _customerType.FindAsync(x => x.Id == customer.CustomerTypeId.Value)
+            : null;
+
+        var customerTypeCode = (customerType?.Code ?? "").Trim().ToUpperInvariant();
+
+        var customerTypes = await _customerType.GetListAsync(x =>
+            x.Code == "MB" || x.Code == "MBG" || x.Code == "VIS");
+
+        var mbType = customerTypes.FirstOrDefault(x => x.Code == "MB");
+        var mbgType = customerTypes.FirstOrDefault(x => x.Code == "MBG");
+        var visType = customerTypes.FirstOrDefault(x => x.Code == "VIS");
+
+        var slotPrices = await _calendarSlotPriceRepository.GetListAsync(x =>
+            x.CalendarSlotId == calendarSlotId.Value);
+
+        decimal GetPrice(CustomerType? type)
+        {
+            if (type == null)
+            {
+                return 0m;
+            }
+
+            var row = slotPrices.FirstOrDefault(x => x.CustomerTypeId == type.Id);
+            return row == null
+                ? 0m
+                : PriceByHoleHelper.GetPriceByNumberHoles(row, numberHoles);
+        }
+
+        void AddItem(CustomerType? type, int count)
+        {
+            if (type == null || count <= 0)
+            {
+                return;
+            }
+
+            var price = GetPrice(type);
+
+            result.Add(new BookingPriceBreakdownEmailItemDto
+            {
+                CustomerTypeCode = type.Code ?? "",
+                CustomerTypeName = type.Code ?? type.Name ?? "",
+                Price = price,
+                PriceText = MoneyText(price),
+                Count = count
+            });
+        }
+
+        var golfCourse = await _golfCourseRepository.FindAsync(golfCourseId);
+        var isMemberSupported = golfCourse?.IsMemberSupported == true;
+
+        // Theo nghiệp vụ hiện tại: Member được 1 suất MB, tối đa 3 suất MBG, còn lại VIS.
+        // Nếu GolfCourse.MaxMemberGuest có cấu hình thì dùng cấu hình, nếu null thì mặc định 3.
+        var maxMemberGuest = isMemberSupported
+            ? Math.Max(0, golfCourse?.MaxMemberGuest ?? 3)
+            : 0;
+
+        if (customerTypeCode == "MB" && isMemberSupported)
+        {
+            AddItem(mbType, 1);
+
+            var remaining = Math.Max(0, numberOfGolfers - 1);
+            var mbgCount = Math.Min(maxMemberGuest, remaining);
+            var visCount = Math.Max(0, remaining - mbgCount);
+
+            AddItem(mbgType, mbgCount);
+            AddItem(visType, visCount);
+
+            return result;
+        }
+
+        if (customerTypeCode == "VIS")
+        {
+            AddItem(visType, numberOfGolfers);
+            return result;
+        }
+
+        AddItem(customerType ?? visType, numberOfGolfers);
         return result;
+    }
+
+    private static decimal SumPriceBreakdownItems(List<BookingPriceBreakdownEmailItemDto> items)
+    {
+        return items == null || items.Count == 0
+            ? 0m
+            : items.Sum(x => x.Price * x.Count);
     }
 }

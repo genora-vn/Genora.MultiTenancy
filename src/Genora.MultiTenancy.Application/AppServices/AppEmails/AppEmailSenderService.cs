@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
+using Volo.Abp.Authorization;
 using Volo.Abp.BackgroundJobs;
 using Volo.Abp.Caching;
 using Volo.Abp.Domain.Repositories;
@@ -17,6 +18,7 @@ using Volo.Abp.MultiTenancy;
 using Volo.Abp.TenantManagement;
 using Volo.Abp.TextTemplating;
 using Volo.Abp.Uow;
+using Volo.Abp.Validation;
 using Volo.Abp.VirtualFileSystem;
 
 namespace Genora.MultiTenancy.AppServices.AppEmails;
@@ -104,30 +106,73 @@ public class AppEmailSenderService : MultiTenancyAppService, IAppEmailSenderServ
 
     [UnitOfWork(true)]
     public async Task<Guid> EnqueueTemplateAsync<TModel>(
-         string templateName,
-         TModel model,
-         string toEmails,
-         string subject,
-         string? cc = null,
-         string? bcc = null,
-         Guid? bookingId = null,
-         string? bookingCode = null)
+     string templateName,
+     TModel model,
+     string toEmails,
+     string subject,
+     string? cc = null,
+     string? bcc = null,
+     Guid? bookingId = null,
+     string? bookingCode = null)
     {
-        _logger.LogWarning("[AppEmailSenderService] EnqueueTemplateAsync START TenantId={TenantId} Template={Template} To={To} Subject={Subject}",
-            CurrentTenant.Id, templateName, toEmails, subject);
+        _logger.LogWarning(
+            "[AppEmailSenderService] EnqueueTemplateAsync START TenantId={TenantId} Template={Template} To={To} Subject={Subject}",
+            CurrentTenant.Id,
+            templateName,
+            toEmails,
+            subject
+        );
 
         try
         {
-            await _featureChecker.CheckEnabledAsync(Features.AppEmails.AppEmailFeatures.Management);
+            if (string.IsNullOrWhiteSpace(toEmails))
+            {
+                throw new AbpValidationException("Email người nhận đang trống.");
+            }
+
+            var isHost = CurrentTenant.Id == null;
+
+            if (!isHost)
+            {
+                var enabled = await _featureChecker.IsEnabledAsync(Features.AppEmails.AppEmailFeatures.Management);
+
+                if (!enabled)
+                {
+                    _logger.LogWarning(
+                        "[AppEmailSenderService] Feature AppEmail Management is disabled. TenantId={TenantId}, Template={Template}",
+                        CurrentTenant.Id,
+                        templateName
+                    );
+
+                    throw new AbpAuthorizationException("Tính năng gửi email chưa được bật cho tenant này.");
+                }
+            }
+            else
+            {
+                _logger.LogWarning(
+                    "[AppEmailSenderService] Running as HOST, skip AppEmail feature check. Template={Template}",
+                    templateName
+                );
+            }
+
+            var scriptModel = new ScriptObject();
+            scriptModel.Import(model!, renamer: m => m.Name);
+
+            _logger.LogWarning("[TPL] Rendering template: {Template}", templateName);
 
             var body = await _templateRenderer.RenderAsync(
                 templateName,
-                model,
+                model: null,
                 globalContext: new Dictionary<string, object>
                 {
-                    ["model"] = model!
+                    ["model"] = scriptModel
                 }
             );
+
+            if (string.IsNullOrWhiteSpace(body))
+            {
+                throw new AbpValidationException($"Render template email rỗng. Template={templateName}");
+            }
 
             var email = new Email(GuidGenerator.Create())
             {
@@ -148,25 +193,37 @@ public class AppEmailSenderService : MultiTenancyAppService, IAppEmailSenderServ
             await _repo.InsertAsync(email, autoSave: true);
             await CurrentUnitOfWork.SaveChangesAsync();
 
-            _logger.LogWarning("[AppEmailSenderService] Inserted EmailId={EmailId} TenantId={TenantId}",
-                email.Id, CurrentTenant.Id);
+            _logger.LogWarning(
+                "[AppEmailSenderService] Inserted EmailId={EmailId} TenantId={TenantId}",
+                email.Id,
+                CurrentTenant.Id
+            );
 
-            // ✅ FIX: 반드시 truyền TenantId vào args (trước bạn thiếu chỗ này)
             await _jobManager.EnqueueAsync(new SendEmailJobArgs
             {
                 EmailId = email.Id,
                 TenantId = CurrentTenant.Id
             });
 
-            _logger.LogWarning("[AppEmailSenderService] Enqueued SendEmailJob EmailId={EmailId} TenantId={TenantId}",
-                email.Id, CurrentTenant.Id);
+            _logger.LogWarning(
+                "[AppEmailSenderService] Enqueued SendEmailJob EmailId={EmailId} TenantId={TenantId}",
+                email.Id,
+                CurrentTenant.Id
+            );
 
             return email.Id;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "[AppEmailSenderService] EnqueueTemplateAsync FAILED TenantId={TenantId} Template={Template}",
-                CurrentTenant.Id, templateName);
+            _logger.LogError(
+                ex,
+                "[AppEmailSenderService] EnqueueTemplateAsync FAILED TenantId={TenantId} Template={Template} BookingId={BookingId} BookingCode={BookingCode}",
+                CurrentTenant.Id,
+                templateName,
+                bookingId,
+                bookingCode
+            );
+
             throw;
         }
     }

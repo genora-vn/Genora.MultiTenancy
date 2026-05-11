@@ -31,6 +31,7 @@ public class AppBookingDto : FullAuditedEntityDto<Guid>
 
     public Guid CustomerId { get; set; }
     public string CustomerType { get; set; }
+    public string? PromotionType { get; set; }
     public string CustomerName { get; set; }
     public string CustomerPhone { get; set; }
 

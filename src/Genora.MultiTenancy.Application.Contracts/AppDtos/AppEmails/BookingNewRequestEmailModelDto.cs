@@ -37,5 +37,6 @@ public class BookingNewRequestEmailModelDto
     public string? CompanyAddress { get; set; }
     public string? InvoiceEmail { get; set; }
 
-    public List<PriceBreakdownItemDto> PriceBreakdownItems { get; set; } = new();
+    public bool HasPriceBreakdownItems { get; set; }
+    public List<BookingPriceBreakdownEmailItemDto> PriceBreakdownItems { get; set; } = new();
 }

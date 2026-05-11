@@ -41,5 +41,7 @@ public class BookingChangeRequestEmailModelDto
     public bool HasPlayerChanges { get; set; }
     public bool HasHeaderChanges { get; set; }
 
-    public List<PriceBreakdownItemDto> PriceBreakdownItems { get; set; } = new();
+    public bool HasPriceBreakdownItems { get; set; }
+
+    public List<BookingPriceBreakdownEmailItemDto> PriceBreakdownItems { get; set; } = new();
 }

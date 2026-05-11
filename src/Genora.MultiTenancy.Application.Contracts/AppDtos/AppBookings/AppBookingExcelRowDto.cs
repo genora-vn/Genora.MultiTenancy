@@ -5,6 +5,8 @@ public class AppBookingExcelRowDto
 {
     public string? BookingCode { get; set; }
     public string? Customer { get; set; }
+    public string? CustomerType { get; set; }
+    public string? PromotionType { get; set; }
     public DateTime PlayDate { get; set; }
     public string? PlayTime { get; set; }
     public int NumberOfGolfers { get; set; }

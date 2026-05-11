@@ -28,6 +28,10 @@
                     <strong>@L["AppCustomerTypes"]:</strong> @Model.Booking.CustomerType
                 </div>
                 <div class="mb-2">
+                    <strong>@L["PromotionType"]:</strong>
+                    @(string.IsNullOrWhiteSpace(Model.Booking.PromotionType) ? "Không có" : Model.Booking.PromotionType)
+                </div>
+                <div class="mb-2">
                     <strong>@L["BookingPlayDate"]:</strong> @Model.Booking.PlayDate.ToString("dd/MM/yyyy")
                 </div>
                 <div class="mb-2">
