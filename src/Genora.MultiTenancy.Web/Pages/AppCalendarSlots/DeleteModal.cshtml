@@ -1,0 +1,281 @@
+@page
+@using Genora.MultiTenancy.Localization
+@using Microsoft.Extensions.Localization
+@using Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.TagHelpers.Modal
+@model Genora.MultiTenancy.Web.Pages.AppCalendarSlots.DeleteModalModel
+@inject IStringLocalizer<MultiTenancyResource> L
+
+@{
+    Layout = null;
+}
+
+<form asp-page="/AppCalendarSlots/DeleteModal" method="post" id="DeleteSlotForm">
+    <input type="hidden" id="DeleteGolfCourseId" value="@Model.GolfCourseId" />
+
+    <abp-modal size="Large">
+        <abp-modal-header title="Xóa giờ chơi theo khoảng thời gian"></abp-modal-header>
+
+        <abp-modal-body>
+            <div class="alert alert-info mb-3">
+                <i class="fa fa-info-circle"></i>
+                <strong>Sân golf:</strong> @Model.GolfCourseName
+            </div>
+
+            <abp-row>
+                <abp-column size-md="_6">
+                    <div class="mb-3">
+                        <label class="form-label">Ngày bắt đầu xóa</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fa-regular fa-calendar"></i></span>
+                            <input name="ApplyDateFrom"
+                                   id="DeleteApplyDateFrom"
+                                   class="form-control calendar-date-input"
+                                   type="text"
+                                   autocomplete="off"
+                                   required />
+                        </div>
+                    </div>
+                </abp-column>
+
+                <abp-column size-md="_6">
+                    <div class="mb-3">
+                        <label class="form-label">Ngày kết thúc xóa</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fa-regular fa-calendar"></i></span>
+                            <input name="ApplyDateTo"
+                                   id="DeleteApplyDateTo"
+                                   class="form-control calendar-date-input"
+                                   type="text"
+                                   autocomplete="off"
+                                   required />
+                        </div>
+                    </div>
+                </abp-column>
+            </abp-row>
+
+            <abp-row>
+                <abp-column size-md="_6">
+                    <div class="mb-3">
+                        <label class="form-label">Giờ bắt đầu xóa</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fa-regular fa-clock"></i></span>
+                            <input name="TimeFrom"
+                                   id="DeleteTimeFrom"
+                                   class="form-control time-input"
+                                   type="text"
+                                   autocomplete="off"
+                                   placeholder="HH:mm"
+                                   required />
+                        </div>
+                    </div>
+                </abp-column>
+
+                <abp-column size-md="_6">
+                    <div class="mb-3">
+                        <label class="form-label">Giờ kết thúc xóa</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fa-regular fa-clock"></i></span>
+                            <input name="TimeTo"
+                                   id="DeleteTimeTo"
+                                   class="form-control time-input"
+                                   type="text"
+                                   autocomplete="off"
+                                   placeholder="HH:mm"
+                                   required />
+                        </div>
+                    </div>
+                </abp-column>
+            </abp-row>
+
+            <div class="alert alert-warning" role="alert">
+                <i class="fa fa-exclamation-triangle"></i>
+                <strong>Lưu ý:</strong> Chỉ những giờ chơi không có booking liên kết mới được xóa.
+            </div>
+        </abp-modal-body>
+
+        <abp-modal-footer buttons="@(AbpModalButtons.Cancel)">
+            <button type="button" id="ConfirmDeleteBtn" class="btn btn-danger">
+                <i class="fa fa-trash"></i> Xác nhận xóa
+            </button>
+        </abp-modal-footer>
+    </abp-modal>
+</form>
+
+<script>
+    (function () {
+        // ===== Date picker (Flatpickr) =====
+        function initDatePicker() {
+            if (!window.flatpickr) return;
+
+            ['DeleteApplyDateFrom', 'DeleteApplyDateTo'].forEach(function (id) {
+                var el = document.getElementById(id);
+                if (!el) return;
+
+                flatpickr(el, {
+                    dateFormat: "d/m/Y",
+                    allowInput: true,
+                    defaultDate: new Date()
+                });
+            });
+        }
+
+        // ===== Time picker (Flatpickr) =====
+        function initTimePicker() {
+            if (!window.flatpickr) return;
+
+            ['DeleteTimeFrom', 'DeleteTimeTo'].forEach(function (id) {
+                var el = document.getElementById(id);
+                if (!el) return;
+
+                flatpickr(el, {
+                    enableTime: true,
+                    noCalendar: true,
+                    time_24hr: true,
+                    dateFormat: "H:i",
+                    allowInput: true,
+                    defaultDate: "06:00"
+                });
+            });
+        }
+
+        // ===== Parse dd/mm/yyyy to Date object =====
+        function parseDdMmYyyy(text) {
+            if (!text) return null;
+            var parts = String(text).split('/');
+            if (parts.length !== 3) return null;
+            return new Date(parts[2], parts[1] - 1, parts[0]);
+        }
+
+        // ===== Form validation =====
+        function validateForm() {
+            var fromDate = $('#DeleteApplyDateFrom').val();
+            var toDate = $('#DeleteApplyDateTo').val();
+            var timeFrom = $('#DeleteTimeFrom').val();
+            var timeTo = $('#DeleteTimeTo').val();
+
+            if (!fromDate || !toDate) {
+                abp.notify.warn('Vui lòng chọn ngày bắt đầu và ngày kết thúc.');
+                return false;
+            }
+
+            if (!timeFrom || !timeTo) {
+                abp.notify.warn('Vui lòng chọn giờ bắt đầu và giờ kết thúc.');
+                return false;
+            }
+
+            // Validate date range
+            var fromDateObj = parseDdMmYyyy(fromDate);
+            var toDateObj = parseDdMmYyyy(toDate);
+            if (fromDateObj && toDateObj && fromDateObj > toDateObj) {
+                abp.notify.warn('Ngày bắt đầu xóa không được lớn hơn ngày kết thúc.');
+                return false;
+            }
+
+            // Validate time range (only if same day)
+            if (fromDateObj && toDateObj && fromDateObj.getTime() === toDateObj.getTime()) {
+                if (timeFrom >= timeTo) {
+                    abp.notify.warn('Giờ bắt đầu xóa phải nhỏ hơn giờ kết thúc.');
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        // ===== Convert dd/mm/yyyy to yyyy-mm-dd for API =====
+        function parseDdMmYyyyToIso(text) {
+            if (!text) return null;
+            var parts = String(text).split('/');
+            if (parts.length !== 3) return null;
+            return parts[2] + '-' + parts[1] + '-' + parts[0];
+        }
+
+        // ===== Close modal =====
+        function closeDeleteModal() {
+            var modalEl = document.querySelector('#DeleteSlotForm');
+            if (modalEl) {
+                var modal = bootstrap.Modal.getInstance(modalEl.closest('.modal'));
+                if (modal) modal.hide();
+            }
+        }
+
+        // ===== Show notify with 3s delay =====
+        function showSuccessNotify(title, message) {
+            abp.notify.success(message, title, { timeout: 6000 });
+        }
+
+        function showErrorNotify(title, message) {
+            abp.notify.error(message, title, { timeout: 6000 });
+        }
+
+        // ===== Confirm delete =====
+        $('#ConfirmDeleteBtn').click(function () {
+            if (!validateForm()) return;
+
+            var l = abp.localization.getResource('MultiTenancy');
+
+            abp.message.confirm(
+                'Bạn có muốn thực hiện xóa các giờ chơi không?',
+                'Xác nhận xóa',
+                function (confirmed) {
+                    if (!confirmed) return;
+
+                    var golfCourseId = $('#DeleteGolfCourseId').val();
+                    var applyDateFrom = parseDdMmYyyyToIso($('#DeleteApplyDateFrom').val());
+                    var applyDateTo = parseDdMmYyyyToIso($('#DeleteApplyDateTo').val());
+                    var timeFrom = $('#DeleteTimeFrom').val() + ':00';
+                    var timeTo = $('#DeleteTimeTo').val() + ':00';
+
+                    var service = genora.multiTenancy.appServices.appCalendarSlots.appCalendarSlot;
+
+                    service.calendareSlotDelete({
+                        golfCourseId: golfCourseId,
+                        applyDateFrom: applyDateFrom,
+                        applyDateTo: applyDateTo,
+                        timeFrom: timeFrom,
+                        timeTo: timeTo
+                    }).then(function (result) {
+                        // Close modal first
+                        closeDeleteModal();
+
+                        // Then show result notification
+                        if (result.success) {
+                            var message = 'Đã xóa thành công ' + result.deletedSlots + ' / ' + result.totalSlotsFound + ' giờ chơi.';
+                            if (result.skippedSlots > 0 && result.errorMessage) {
+                                message += '\n' + String(result.errorMessage);
+                            }
+                            showSuccessNotify('Thành công', message);
+                        } else {
+                            var errMsg = result.errorMessage ? String(result.errorMessage) : 'Xóa thất bại!';
+                            showErrorNotify('Lỗi', errMsg);
+                        }
+                    }).catch(function (error) {
+                        // Close modal first
+                        closeDeleteModal();
+
+                        // Then show error notification
+                        var errorMsg = 'Xóa thất bại!';
+                        if (error) {
+                            // ABP error response structure: error.error, error.message, or nested
+                            if (typeof error === 'string') {
+                                errorMsg = error;
+                            } else if (error.error && typeof error.error === 'string') {
+                                errorMsg = error.error;
+                            } else if (error.message && typeof error.message === 'string') {
+                                errorMsg = error.message;
+                            } else if (error.error && error.error.error && typeof error.error.error === 'string') {
+                                errorMsg = error.error.error;
+                            } else if (error.error && error.error.details && typeof error.error.details === 'string') {
+                                errorMsg = error.error.details;
+                            }
+                        }
+                        showErrorNotify('Lỗi', errorMsg);
+                    });
+                }
+            );
+        });
+
+        initDatePicker();
+        initTimePicker();
+    })();
+</script>
