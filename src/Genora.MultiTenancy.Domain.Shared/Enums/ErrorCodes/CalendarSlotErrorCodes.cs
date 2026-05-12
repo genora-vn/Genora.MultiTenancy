@@ -25,4 +25,11 @@ public static class CalendarSlotErrorCodes
 
     public const string ImportDayTypeRequired = Prefix + "ImportDayTypeRequired";
     public const string ImportDayTypeInvalid = Prefix + "ImportDayTypeInvalid";
+
+    // ===== Delete CalendarSlot =====
+    public const string DeleteGolfCourseRequired = Prefix + "DeleteGolfCourseRequired";
+    public const string DeleteDateRangeInvalid = Prefix + "DeleteDateRangeInvalid";
+    public const string DeleteTimeRangeInvalid = Prefix + "DeleteTimeRangeInvalid";
+    public const string DeleteHasBookingConstraint = Prefix + "DeleteHasBookingConstraint";
+    public const string DeleteNoSlotsFound = Prefix + "DeleteNoSlotsFound";
 }

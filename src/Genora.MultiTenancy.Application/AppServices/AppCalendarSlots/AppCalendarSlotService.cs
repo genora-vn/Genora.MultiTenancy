@@ -710,6 +710,105 @@ public class AppCalendarSlotService :
     }
 
     // =========================================================
+    // Xóa giờ chơi theo khoảng thời gian
+    // =========================================================
+    public async Task<CalendarSlotDeleteResultDto> CalendareSlotDeleteAsync(CalendarSlotDeleteDto input)
+    {
+        await CheckDeletePolicyAsync();
+
+        // Validate input
+        if (input.GolfCourseId == Guid.Empty)
+        {
+            throw new BusinessException(CalendarSlotErrorCodes.DeleteGolfCourseRequired);
+        }
+
+        if (input.ApplyDateFrom > input.ApplyDateTo)
+        {
+            throw new BusinessException(CalendarSlotErrorCodes.DeleteDateRangeInvalid)
+                .WithData("ApplyDateFrom", input.ApplyDateFrom.ToString("yyyy-MM-dd"))
+                .WithData("ApplyDateTo", input.ApplyDateTo.ToString("yyyy-MM-dd"));
+        }
+
+        if (input.TimeFrom >= input.TimeTo)
+        {
+            throw new BusinessException(CalendarSlotErrorCodes.DeleteTimeRangeInvalid)
+                .WithData("TimeFrom", input.TimeFrom)
+                .WithData("TimeTo", input.TimeTo);
+        }
+
+        // Tìm tất cả slots trong khoảng thời gian
+        var queryable = await Repository.GetQueryableAsync();
+        var matchingSlots = queryable
+            .Where(x => x.GolfCourseId == input.GolfCourseId)
+            .Where(x => x.ApplyDate.Date >= input.ApplyDateFrom.Date)
+            .Where(x => x.ApplyDate.Date <= input.ApplyDateTo.Date)
+            .Where(x => x.TimeFrom < input.TimeTo && x.TimeTo > input.TimeFrom)
+            .ToList();
+
+        if (matchingSlots.Count == 0)
+        {
+            return new CalendarSlotDeleteResultDto
+            {
+                TotalSlotsFound = 0,
+                DeletedSlots = 0,
+                DeletedPrices = 0,
+                SkippedSlots = 0,
+                ErrorMessage = null
+            };
+        }
+
+        var slotIds = matchingSlots.Select(x => x.Id).ToList();
+
+        // Kiểm tra FK constraint - nếu có booking đang reference thì không xóa
+        var bookingsWithSlots = await _bookingRepository.GetListAsync(x => slotIds.Contains(x.CalendarSlotId ?? Guid.Empty));
+        var bookedSlotIds = bookingsWithSlots
+            .Where(x => x.CalendarSlotId.HasValue && slotIds.Contains(x.CalendarSlotId.Value))
+            .Select(x => x.CalendarSlotId!.Value)
+            .ToHashSet();
+
+        var slotsCanDelete = matchingSlots.Where(x => !bookedSlotIds.Contains(x.Id)).ToList();
+        var slotsSkipped = matchingSlots.Count - slotsCanDelete.Count;
+
+        int deletedSlots = 0;
+        int deletedPrices = 0;
+
+        if (slotsCanDelete.Count > 0)
+        {
+            var deletableSlotIds = slotsCanDelete.Select(x => x.Id).ToList();
+
+            // Xóa prices trước (bảng con)
+            var pricesToDelete = await _priceRepository.GetListAsync(x => deletableSlotIds.Contains(x.CalendarSlotId));
+            if (pricesToDelete.Count > 0)
+            {
+                await _priceRepository.DeleteManyAsync(pricesToDelete, autoSave: false);
+                deletedPrices = pricesToDelete.Count;
+            }
+
+            // Xóa slots
+            await Repository.DeleteManyAsync(slotsCanDelete, autoSave: false);
+            deletedSlots = slotsCanDelete.Count;
+
+            await CurrentUnitOfWork.SaveChangesAsync();
+        }
+
+        // Nếu có slot bị skip do có booking, trả về thông báo
+        string? errorMessage = null;
+        if (slotsSkipped > 0)
+        {
+            errorMessage = $"Có {slotsSkipped} giờ chơi không thể xóa vì đang có booking liên kết.";
+        }
+
+        return new CalendarSlotDeleteResultDto
+        {
+            TotalSlotsFound = matchingSlots.Count,
+            DeletedSlots = deletedSlots,
+            DeletedPrices = deletedPrices,
+            SkippedSlots = slotsSkipped,
+            ErrorMessage = errorMessage
+        };
+    }
+
+    // =========================================================
     // Check trùng lặp
     // =========================================================
     private async Task EnsureNoOverlapAsync(CreateUpdateAppCalendarSlotDto input, Guid? currentId = null)

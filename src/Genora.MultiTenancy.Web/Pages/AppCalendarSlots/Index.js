@@ -4,6 +4,7 @@
     var l = abp.localization.getResource('MultiTenancy');
     var service = genora.multiTenancy.appServices.appCalendarSlots.appCalendarSlot;
     var detailModal = new abp.ModalManager('/AppCalendarSlots/DetailModal');
+    var deleteModal = new abp.ModalManager('/AppCalendarSlots/DeleteModal');
 
     // =========================
     // Date picker
@@ -387,4 +388,32 @@
         abp.notify.success(l('SavedSuccessfully'));
         loadSlotsForDay();
     });
+
+    // Delete modal
+    $('#DeleteSlotButton').click(function (e) {
+        e.preventDefault();
+
+        var golfCourseId = getSelectedGolfCourseId();
+        var golfCourseName = $('#SelectedGolfCourseId option:selected').text();
+
+        if (!golfCourseId) {
+            abp.notify.warn(l('PleaseSelectGolfCourse'));
+            return;
+        }
+
+        deleteModal.open({
+            golfCourseId: golfCourseId,
+            golfCourseName: golfCourseName
+        });
+    });
+
+    // Callback after successful delete
+    deleteModal.onResult(function () {
+        loadSlotsForDay();
+    });
+
+    // Global callback for delete modal (called from DeleteModal.cshtml)
+    window.onCalendarSlotDeleted = function (result) {
+        loadSlotsForDay();
+    };
 });
