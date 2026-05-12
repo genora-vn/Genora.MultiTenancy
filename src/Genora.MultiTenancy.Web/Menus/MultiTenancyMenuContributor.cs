@@ -161,6 +161,7 @@ public class MultiTenancyMenuContributor : IMenuContributor
                 await feature.IsEnabledAsync(SalonBeautyFeatures.Management) &&
                 (
                     await perms.IsGrantedAsync(MultiTenancyPermissions.SalonBeautyCustomers.Default) ||
+                    await perms.IsGrantedAsync(MultiTenancyPermissions.SalonBeautyServiceCategories.Default) ||
                     await perms.IsGrantedAsync(MultiTenancyPermissions.SalonBeautyServices.Default) ||
                     await perms.IsGrantedAsync(MultiTenancyPermissions.SalonBeautyStylists.Default) ||
                     await perms.IsGrantedAsync(MultiTenancyPermissions.SalonBeautyBookings.Default)
@@ -340,6 +341,20 @@ public class MultiTenancyMenuContributor : IMenuContributor
                         ).RequirePermissions(MultiTenancyPermissions.SalonBeautyCustomers.Default)
                     );
                 }
+
+                if (await perms.IsGrantedAsync(MultiTenancyPermissions.SalonBeautyServiceCategories.Default))
+                {
+                    groupSalonBeauty.AddItem(
+                        new ApplicationMenuItem(
+                            name: "SalonBeautyServiceCategories",
+                            displayName: l["Menu:SalonBeautyServiceCategories"],
+                            url: "/SalonBeautyServiceCategories",
+                            icon: "fa fa-folder-open",
+                            order: 2
+                        ).RequirePermissions(MultiTenancyPermissions.SalonBeautyServiceCategories.Default)
+                    );
+                }
+
 
                 if (await perms.IsGrantedAsync(MultiTenancyPermissions.SalonBeautyServices.Default))
                 {
@@ -845,6 +860,7 @@ public class MultiTenancyMenuContributor : IMenuContributor
 
             var hostCanSeeSalonBeauty =
                 await perms.IsGrantedAsync(MultiTenancyPermissions.HostSalonBeautyCustomers.Default) ||
+                await perms.IsGrantedAsync(MultiTenancyPermissions.HostSalonBeautyServiceCategories.Default) ||
                 await perms.IsGrantedAsync(MultiTenancyPermissions.HostSalonBeautyServices.Default) ||
                 await perms.IsGrantedAsync(MultiTenancyPermissions.HostSalonBeautyStylists.Default) ||
                 await perms.IsGrantedAsync(MultiTenancyPermissions.HostSalonBeautyBookings.Default);
@@ -1012,6 +1028,20 @@ public class MultiTenancyMenuContributor : IMenuContributor
                         ).RequirePermissions(MultiTenancyPermissions.HostSalonBeautyCustomers.Default)
                     );
                 }
+
+                if (await perms.IsGrantedAsync(MultiTenancyPermissions.HostSalonBeautyServiceCategories.Default))
+                {
+                    groupSalonBeauty.AddItem(
+                        new ApplicationMenuItem(
+                            name: "SalonBeautyServiceCategories",
+                            displayName: l["Menu:SalonBeautyServiceCategories"],
+                            url: "/SalonBeautyServiceCategories",
+                            icon: "fa fa-folder-open",
+                            order: 2
+                        ).RequirePermissions(MultiTenancyPermissions.HostSalonBeautyServiceCategories.Default)
+                    );
+                }
+
 
                 if (await perms.IsGrantedAsync(MultiTenancyPermissions.HostSalonBeautyServices.Default))
                 {

@@ -1,0 +1,84 @@
+﻿@page
+@using Genora.MultiTenancy.Localization
+@using Microsoft.Extensions.Localization
+@using Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.TagHelpers.Modal
+@using Genora.MultiTenancy.Web.Pages.SalonBeautyStylists
+@model DetailModalModel
+@inject IStringLocalizer<MultiTenancyResource> L
+@{
+    Layout = null;
+}
+
+<abp-modal size="Large">
+    <abp-modal-body class="p-0">
+        <div class="stylist-modal stylist-detail-modal">
+            <div class="stylist-modal-header">
+                <div class="stylist-modal-title-wrap">
+                    <h3>@L["SalonBeautyStylists:DetailTitle"]</h3>
+                    <p>@L["SalonBeautyStylists:DetailSubTitle"]</p>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="@L["Close"]"></button>
+            </div>
+
+            <div class="stylist-modal-body">
+                <div class="stylist-detail-profile">
+                    <img src="@(string.IsNullOrWhiteSpace(Model.Stylist.Avatar) ? "/images/getting-started/no-photo-square.png" : Model.Stylist.Avatar)" alt="" />
+                    <div>
+                        <h4>@Model.Stylist.DisplayName</h4>
+                        <div class="stylist-detail-badges">
+                            @if (!string.IsNullOrWhiteSpace(Model.Stylist.LevelText))
+                            {
+                                <span class="stylist-badge senior">@Model.Stylist.LevelText</span>
+                            }
+                            @if (!string.IsNullOrWhiteSpace(Model.Stylist.RoleText))
+                            {
+                                <span class="stylist-badge hair-stylist">@Model.Stylist.RoleText</span>
+                            }
+                            <span class="stylist-status-dot @(Model.Stylist.Status == 1 ? "active" : "inactive")">@Model.Stylist.StatusText</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="stylist-detail-grid">
+                    <div class="stylist-detail-item">
+                        <span>@L["SalonBeautyStylist:Phone"]</span>
+                        <strong>@(Model.Stylist.Phone ?? "--")</strong>
+                    </div>
+                    <div class="stylist-detail-item">
+                        <span>@L["SalonBeautyStylist:Gender"]</span>
+                        <strong>@(Model.Stylist.GenderText ?? "--")</strong>
+                    </div>
+                    <div class="stylist-detail-item">
+                        <span>@L["SalonBeautyStylist:ExperienceYear"]</span>
+                        <strong>@Model.Stylist.ExperienceYear @L["SalonBeautyStylists:YearsUnit"]</strong>
+                    </div>
+                    <div class="stylist-detail-item">
+                        <span>@L["SalonBeautyStylist:TotalBooking"]</span>
+                        <strong>@Model.Stylist.TotalBooking</strong>
+                    </div>
+                    <div class="stylist-detail-item">
+                        <span>@L["SalonBeautyStylist:RatingAvg"]</span>
+                        <strong>@Model.Stylist.RatingAvg.ToString("0.0")</strong>
+                    </div>
+                    <div class="stylist-detail-item">
+                        <span>@L["SalonBeautyStylist:IsShowOnApp"]</span>
+                        <strong>@Model.Stylist.IsShowOnAppText</strong>
+                    </div>
+                    <div class="stylist-detail-item">
+                        <span>@L["SalonBeautyStylist:SortOrder"]</span>
+                        <strong>@Model.Stylist.SortOrder</strong>
+                    </div>
+                </div>
+
+                <div class="stylist-detail-note">
+                    <span>@L["SalonBeautyStylist:Note"]</span>
+                    <p>@(string.IsNullOrWhiteSpace(Model.Stylist.Note) ? "--" : Model.Stylist.Note)</p>
+                </div>
+            </div>
+
+            <div class="stylist-modal-footer">
+                <button type="button" class="btn stylist-btn-secondary" data-bs-dismiss="modal">@L["Close"]</button>
+            </div>
+        </div>
+    </abp-modal-body>
+</abp-modal>

@@ -5,8 +5,6 @@ using Genora.MultiTenancy.AppServices.AppEmails;
 using Genora.MultiTenancy.AppServices.AppEmails.Templates;
 using Genora.MultiTenancy.AppServices.AppPayments;
 using Genora.MultiTenancy.AppServices.AppZaloAuths;
-using Genora.MultiTenancy.Application.SalonBeauty;
-using Genora.MultiTenancy.SalonBeauty;
 using Microsoft.Extensions.DependencyInjection;
 using SixLabors.ImageSharp;
 using System;
@@ -26,6 +24,13 @@ using Volo.Abp.TenantManagement;
 using Volo.Abp.TextTemplating;
 using Volo.Abp.TextTemplating.Scriban;
 using Volo.Abp.VirtualFileSystem;
+using Genora.MultiTenancy.AppDtos.SalonBeauties.SalonBeautyBookings;
+using Genora.MultiTenancy.AppDtos.SalonBeauties.SalonBeautyCustomers;
+using Genora.MultiTenancy.AppDtos.SalonBeauties.SalonBeautyServiceCategories;
+using Genora.MultiTenancy.AppDtos.SalonBeauties.SalonBeautyServices;
+using Genora.MultiTenancy.AppDtos.SalonBeauties.SalonBeautyStylists;
+using Genora.MultiTenancy.AppDtos.SalonBeauties.SalonBeautyLoyalties;
+using Genora.MultiTenancy.AppServices.SalonBeauty;
 
 namespace Genora.MultiTenancy;
 

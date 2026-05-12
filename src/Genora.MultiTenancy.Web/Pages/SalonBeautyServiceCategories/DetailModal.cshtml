@@ -1,0 +1,60 @@
+@page
+@using Genora.MultiTenancy.Localization
+@using Microsoft.Extensions.Localization
+@using Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.TagHelpers.Modal
+@using Genora.MultiTenancy.Web.Pages.SalonBeautyServiceCategories
+@model DetailModalModel
+@inject IStringLocalizer<MultiTenancyResource> L
+@{
+    Layout = null;
+}
+
+<abp-modal size="Large">
+    <abp-modal-body class="p-0">
+        <div class="service-modal service-category-modal">
+            <div class="service-modal-header">
+                <div class="service-modal-title-wrap">
+                    <div class="service-modal-icon"><i class="fa fa-folder-open"></i></div>
+                    <div>
+                        <h3>@L["SalonBeautyServiceCategories:DetailTitle"]</h3>
+                        <p>@L["SalonBeautyServiceCategories:DetailSubTitle"]</p>
+                    </div>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="@L["Close"]"></button>
+            </div>
+
+            <div class="service-modal-body">
+                <div class="service-detail-profile">
+                    <div class="service-info-icon service-category-detail-icon"><i class="fa fa-folder-open"></i></div>
+                    <div class="service-info-text">
+                        <strong>@Model.Category.Name</strong>
+                        <span>ID: @Model.Category.Id</span>
+                    </div>
+                </div>
+
+                <div class="service-detail-grid">
+                    <div class="service-detail-item">
+                        <span>@L["SalonBeautyServiceCategory:Status"]</span>
+                        <strong>@Model.Category.StatusText</strong>
+                    </div>
+                    <div class="service-detail-item">
+                        <span>@L["SalonBeautyServiceCategory:SortOrder"]</span>
+                        <strong>@Model.Category.SortOrder</strong>
+                    </div>
+                    <div class="service-detail-item service-detail-item-full">
+                        <span>@L["SalonBeautyServiceCategory:Description"]</span>
+                        <strong>@(string.IsNullOrWhiteSpace(Model.Category.Description) ? "--" : Model.Category.Description)</strong>
+                    </div>
+                    <div class="service-detail-item service-detail-item-full">
+                        <span>@L["SalonBeautyServiceCategory:Note"]</span>
+                        <strong>@(string.IsNullOrWhiteSpace(Model.Category.Note) ? "--" : Model.Category.Note)</strong>
+                    </div>
+                </div>
+            </div>
+
+            <div class="service-modal-footer">
+                <button type="button" class="service-btn-secondary" data-bs-dismiss="modal">@L["Close"]</button>
+            </div>
+        </div>
+    </abp-modal-body>
+</abp-modal>

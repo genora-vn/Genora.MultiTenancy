@@ -1,0 +1,82 @@
+@page
+@using Genora.MultiTenancy.Localization
+@using Genora.MultiTenancy.Permissions
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.Extensions.Localization
+@inject IStringLocalizer<MultiTenancyResource> L
+@inject IAuthorizationService AuthorizationService
+@inject Volo.Abp.MultiTenancy.ICurrentTenant CurrentTenant
+@model Genora.MultiTenancy.Web.Pages.SalonBeautyServiceCategories.IndexModel
+
+@section styles {
+    <abp-style src="/pages/salon/service-category-shared.css" />
+}
+
+@section scripts {
+    <abp-script src="/Pages/SalonBeautyServiceCategories/index.js" />
+}
+
+@{
+    var canCreate = CurrentTenant.IsAvailable
+        ? await AuthorizationService.IsGrantedAsync(MultiTenancyPermissions.SalonBeautyServiceCategories.Create)
+        : await AuthorizationService.IsGrantedAsync(MultiTenancyPermissions.HostSalonBeautyServiceCategories.Create);
+
+    var canEdit = CurrentTenant.IsAvailable
+        ? await AuthorizationService.IsGrantedAsync(MultiTenancyPermissions.SalonBeautyServiceCategories.Edit)
+        : await AuthorizationService.IsGrantedAsync(MultiTenancyPermissions.HostSalonBeautyServiceCategories.Edit);
+
+    var canDelete = CurrentTenant.IsAvailable
+        ? await AuthorizationService.IsGrantedAsync(MultiTenancyPermissions.SalonBeautyServiceCategories.Delete)
+        : await AuthorizationService.IsGrantedAsync(MultiTenancyPermissions.HostSalonBeautyServiceCategories.Delete);
+}
+
+<div class="service-page service-category-page">
+    <div class="service-header-row">
+        <div class="service-page-header">
+            <h1>@L["SalonBeautyServiceCategories:PageTitle"]</h1>
+            <p>@L["SalonBeautyServiceCategories:PageSubTitle"]</p>
+        </div>
+        @if (canCreate)
+        {
+            @* <button type="button" id="NewSalonServiceCategoryButton" class="service-btn-primary">
+                <i class="fa fa-plus-circle"></i> @L["SalonBeautyServiceCategories:AddCategory"]
+            </button> *@
+            <button type="button" id="NewSalonServiceCategoryButton" class="btn btn-outline-primary">
+                <i class="fa fa-plus"></i> @L["SalonBeautyServiceCategories:AddCategory"]
+            </button>
+        }
+    </div>
+
+    <div class="service-filter-card">
+        <div class="row g-3 align-items-end">
+            <div class="col-lg-2 col-md-2">
+                <label class="service-filter-label" for="SalonServiceCategoryKeywordFilter">@L["SalonBeautyServiceCategories:KeywordLabel"]</label>
+                <input id="SalonServiceCategoryKeywordFilter" class="form-control service-form-control" placeholder="@L["SalonBeautyServiceCategories:KeywordPlaceholder"]" />
+            </div>
+            <div class="col-lg-2 col-md-2">
+                <label class="service-filter-label" for="SalonServiceCategoryStatusFilter">@L["SalonBeautyServiceCategory:Status"]</label>
+                <select id="SalonServiceCategoryStatusFilter" class="form-select service-form-select">
+                    <option value="">@L["SalonBeautyServiceCategories:AllStatus"]</option>
+                    <option value="1">@L["SalonBeautyCustomer:StatusActive"]</option>
+                    <option value="0">@L["SalonBeautyCustomer:StatusInactive"]</option>
+                </select>
+            </div>
+            <div class="col-lg-2 col-md-2">
+                @* <button type="button" id="SearchSalonServiceCategoryButton" class="btn service-btn-primary">
+                    <i class="fa fa-search"></i>
+                </button> *@
+                <abp-button id="SearchSalonServiceCategoryButton"
+                            text="@L["Search"]"
+                            button-type="Outline_Primary"
+                            style="height: 45px"
+                            icon="search" />
+            </div>
+        </div>
+    </div>
+
+    <div class="service-table-card">
+        <input type="hidden" id="CanEditSalonServiceCategory" value="@(canEdit ? "true" : "false")" />
+        <input type="hidden" id="CanDeleteSalonServiceCategory" value="@(canDelete ? "true" : "false")" />
+        <table id="SalonServiceCategoriesTable" class="table w-100"></table>
+    </div>
+</div>

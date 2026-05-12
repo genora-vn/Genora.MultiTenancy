@@ -2,8 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Genora.MultiTenancy.AppDtos.SalonBeautyDtos.SalonBeautyCustomerDtos;
-using Genora.MultiTenancy.SalonBeauty;
+using Genora.MultiTenancy.AppDtos.SalonBeauties.SalonBeautyCustomers;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Genora.MultiTenancy.Web.Pages.SalonBeautyCustomers;

@@ -1,0 +1,108 @@
+@page
+@using Genora.MultiTenancy.Enums
+@using Genora.MultiTenancy.Localization
+@using Genora.MultiTenancy.Permissions
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.Extensions.Localization
+@using Genora.MultiTenancy.Web.Pages.SalonBeautyStylists
+@inject IStringLocalizer<MultiTenancyResource> L
+@inject IAuthorizationService AuthorizationService
+@inject Volo.Abp.MultiTenancy.ICurrentTenant CurrentTenant
+@model IndexModel
+
+@section styles {
+    <abp-style src="/pages/salon/stylist-shared.css" />
+}
+
+@section scripts {
+    <abp-script src="/Pages/SalonBeautyStylists/index.js" />
+}
+
+@{
+    var canCreate = CurrentTenant.IsAvailable
+        ? await AuthorizationService.IsGrantedAsync(MultiTenancyPermissions.SalonBeautyStylists.Create)
+        : await AuthorizationService.IsGrantedAsync(MultiTenancyPermissions.HostSalonBeautyStylists.Create);
+
+    var canEdit = CurrentTenant.IsAvailable
+        ? await AuthorizationService.IsGrantedAsync(MultiTenancyPermissions.SalonBeautyStylists.Edit)
+        : await AuthorizationService.IsGrantedAsync(MultiTenancyPermissions.HostSalonBeautyStylists.Edit);
+
+    var canDelete = CurrentTenant.IsAvailable
+        ? await AuthorizationService.IsGrantedAsync(MultiTenancyPermissions.SalonBeautyStylists.Delete)
+        : await AuthorizationService.IsGrantedAsync(MultiTenancyPermissions.HostSalonBeautyStylists.Delete);
+}
+
+<div class="stylist-page">
+    <div class="stylist-header-row">
+        <div class="stylist-page-header">
+            <h1>@L["SalonBeautyStylists:PageTitle"]</h1>
+            <p>@L["SalonBeautyStylists:PageSubTitle"]</p>
+        </div>
+        @if (canCreate)
+        {
+            <button type="button" id="NewSalonStylistButton" class="btn btn-outline-primary">
+                <i class="fa fa-plus"></i> @L["SalonBeautyStylists:AddStylist"]
+            </button>
+        }
+    </div>
+
+    <div class="stylist-filter-card">
+        <div class="row g-3 align-items-end">
+            <div class="col-lg-3 col-md-6">
+                <label class="stylist-filter-label" for="SalonStylistKeywordFilter">@L["Search"]</label>
+                <input id="SalonStylistKeywordFilter" class="form-control stylist-form-control" placeholder="@L["SalonBeautyStylists:KeywordPlaceholder"]" />
+            </div>
+            <div class="col-lg-2 col-md-6">
+                <label class="stylist-filter-label" for="SalonStylistLevelFilter">@L["SalonBeautyStylist:Level"]</label>
+                <select id="SalonStylistLevelFilter" class="form-select stylist-form-select">
+                    <option value="">@L["SalonBeautyStylists:AllLevels"]</option>
+                    @foreach (SalonBeautyStylistLevel level in Enum.GetValues(typeof(SalonBeautyStylistLevel)))
+                    {
+                        <option value="@((byte)level)">@L["Enum:SalonBeautyStylistLevel." + level]</option>
+                    }
+                </select>
+            </div>
+            <div class="col-lg-2 col-md-6">
+                <label class="stylist-filter-label" for="SalonStylistRoleFilter">@L["SalonBeautyStylist:Role"]</label>
+                <select id="SalonStylistRoleFilter" class="form-select stylist-form-select">
+                    <option value="">@L["SalonBeautyStylists:AllRoles"]</option>
+                    @foreach (SalonBeautyStylistRole role in Enum.GetValues(typeof(SalonBeautyStylistRole)))
+                    {
+                        <option value="@((byte)role)">@L["Enum:SalonBeautyStylistRole." + role]</option>
+                    }
+                </select>
+            </div>
+            <div class="col-lg-2 col-md-6">
+                <label class="stylist-filter-label" for="SalonStylistStatusFilter">@L["SalonBeautyStylist:Status"]</label>
+                <select id="SalonStylistStatusFilter" class="form-select stylist-form-select">
+                    <option value="">@L["SalonBeautyStylists:AllStatus"]</option>
+                    <option value="1">@L["SalonBeautyCustomer:StatusActive"]</option>
+                    <option value="0">@L["SalonBeautyCustomer:StatusInactive"]</option>
+                </select>
+            </div>
+            <div class="col-lg-2 col-md-6">
+                <label class="stylist-filter-label" for="SalonStylistShowOnAppFilter">@L["SalonBeautyStylist:IsShowOnApp"]</label>
+                <select id="SalonStylistShowOnAppFilter" class="form-select stylist-form-select">
+                    <option value="">@L["SalonBeautyStylists:AllShowOnApp"]</option>
+                    <option value="true">@L["Yes"]</option>
+                    <option value="false">@L["No"]</option>
+                </select>
+            </div>
+            
+            <div class="col-lg-1 col-md-6 d-grid">
+                <abp-button id="SearchSalonStylistButton"
+                            text="@L["Search"]"
+                            button-type="Outline_Primary"
+                            style="height: 45px"
+                            icon="search" />
+
+            </div>
+        </div>
+    </div>
+
+    <div class="stylist-table-card">
+        <input type="hidden" id="CanEditSalonStylist" value="@(canEdit ? "true" : "false")" />
+        <input type="hidden" id="CanDeleteSalonStylist" value="@(canDelete ? "true" : "false")" />
+        <table id="SalonStylistsTable" class="table w-100"></table>
+    </div>
+</div>

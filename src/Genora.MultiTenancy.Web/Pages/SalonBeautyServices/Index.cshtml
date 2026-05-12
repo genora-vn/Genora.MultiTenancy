@@ -1,0 +1,101 @@
+@page
+@using Genora.MultiTenancy.Enums
+@using Genora.MultiTenancy.Localization
+@using Genora.MultiTenancy.Permissions
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.Extensions.Localization
+@inject IStringLocalizer<MultiTenancyResource> L
+@inject IAuthorizationService AuthorizationService
+@inject Volo.Abp.MultiTenancy.ICurrentTenant CurrentTenant
+@model Genora.MultiTenancy.Web.Pages.SalonBeautyServices.IndexModel
+
+@section styles {
+    <abp-style src="/pages/salon/service-shared.css" />
+}
+
+@section scripts {
+    <abp-script src="/Pages/SalonBeautyServices/index.js" />
+}
+
+@{
+    var canCreate = CurrentTenant.IsAvailable
+        ? await AuthorizationService.IsGrantedAsync(MultiTenancyPermissions.SalonBeautyServices.Create)
+        : await AuthorizationService.IsGrantedAsync(MultiTenancyPermissions.HostSalonBeautyServices.Create);
+
+    var canEdit = CurrentTenant.IsAvailable
+        ? await AuthorizationService.IsGrantedAsync(MultiTenancyPermissions.SalonBeautyServices.Edit)
+        : await AuthorizationService.IsGrantedAsync(MultiTenancyPermissions.HostSalonBeautyServices.Edit);
+
+    var canDelete = CurrentTenant.IsAvailable
+        ? await AuthorizationService.IsGrantedAsync(MultiTenancyPermissions.SalonBeautyServices.Delete)
+        : await AuthorizationService.IsGrantedAsync(MultiTenancyPermissions.HostSalonBeautyServices.Delete);
+}
+
+<div class="service-page">
+    <div class="service-header-row">
+        <div class="service-page-header">
+            <h1>@L["SalonBeautyServices:PageTitle"]</h1>
+            <p>@L["SalonBeautyServices:PageSubTitle"]</p>
+        </div>
+        @if (canCreate)
+        {
+            @* <button type="button" id="NewSalonServiceButton" class="service-btn-primary">
+                <i class="fa fa-plus-circle"></i> @L["SalonBeautyServices:AddService"]
+            </button> *@
+            <button type="button" id="NewSalonServiceButton" class="btn btn-outline-primary">
+                <i class="fa fa-plus"></i> @L["SalonBeautyServices:AddService"]
+            </button>
+        }
+    </div>
+
+    <div class="service-filter-card">
+        <div class="row g-3 align-items-end">
+            <div class="col-lg-4 col-md-6">
+                <label class="service-filter-label" for="SalonServiceKeywordFilter">@L["SalonBeautyServices:KeywordLabel"]</label>
+                <input id="SalonServiceKeywordFilter" class="form-control service-form-control" placeholder="@L["SalonBeautyServices:KeywordPlaceholder"]" />
+            </div>
+            <div class="col-lg-3 col-md-6">
+                <label class="service-filter-label" for="SalonServiceCategoryFilter">@L["SalonBeautyService:Category"]</label>
+                <select id="SalonServiceCategoryFilter" class="form-select service-form-select">
+                    <option value="">@L["SalonBeautyServices:AllCategories"]</option>
+                    @foreach (var category in Model.CategoryItems)
+                    {
+                        <option value="@category.Value">@category.Text</option>
+                    }
+                </select>
+            </div>
+            <div class="col-lg-2 col-md-6">
+                <label class="service-filter-label" for="SalonServiceStatusFilter">@L["SalonBeautyService:Status"]</label>
+                <select id="SalonServiceStatusFilter" class="form-select service-form-select">
+                    <option value="">@L["SalonBeautyServices:AllStatus"]</option>
+                    <option value="1">@L["SalonBeautyCustomer:StatusActive"]</option>
+                    <option value="0">@L["SalonBeautyCustomer:StatusInactive"]</option>
+                </select>
+            </div>
+            <div class="col-lg-2 col-md-6">
+                <label class="service-filter-label" for="SalonServiceShowOnAppFilter">@L["SalonBeautyService:IsShowOnApp"]</label>
+                <select id="SalonServiceShowOnAppFilter" class="form-select service-form-select">
+                    <option value="">@L["SalonBeautyServices:AllShowOnApp"]</option>
+                    <option value="true">@L["Yes"]</option>
+                    <option value="false">@L["No"]</option>
+                </select>
+            </div>
+            <div class="col-lg-1 col-md-6 d-grid">
+                @* <button type="button" id="SearchSalonServiceButton" class="btn service-btn-primary">
+                    <i class="fa fa-search"></i>
+                </button> *@
+                <abp-button id="SearchSalonServiceButton"
+                            text="@L["Search"]"
+                            button-type="Outline_Primary"
+                            style="height: 45px"
+                            icon="search" />
+            </div>
+        </div>
+    </div>
+
+    <div class="service-table-card">
+        <input type="hidden" id="CanEditSalonService" value="@(canEdit ? "true" : "false")" />
+        <input type="hidden" id="CanDeleteSalonService" value="@(canDelete ? "true" : "false")" />
+        <table id="SalonServicesTable" class="table w-100"></table>
+    </div>
+</div>

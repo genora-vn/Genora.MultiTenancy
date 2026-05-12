@@ -1,0 +1,141 @@
+@page
+@using Genora.MultiTenancy.Localization
+@using Microsoft.Extensions.Localization
+@using Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.TagHelpers.Modal
+@using Genora.MultiTenancy.Web.Pages.SalonBeautyServices
+@model CreateModalModel
+@inject IStringLocalizer<MultiTenancyResource> L
+@{
+    Layout = null;
+}
+
+<form asp-page="/SalonBeautyServices/CreateModal" id="CreateSalonServiceForm" class="service-form" method="post" autocomplete="off" novalidate>
+    <abp-modal size="Large">
+        <abp-modal-body class="p-0">
+            <div class="service-modal">
+                <div class="service-modal-header">
+                    <div class="service-modal-title-wrap">
+                        <div class="service-modal-icon"><i class="fa fa-plus-square"></i></div>
+                        <div>
+                            <h3>@L["SalonBeautyServices:CreateTitle"]</h3>
+                            <p>@L["SalonBeautyServices:CreateSubTitle"]</p>
+                        </div>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="@L["Close"]"></button>
+                </div>
+
+                <div class="service-modal-body">
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label class="service-form-label" asp-for="Service.Name">@L["SalonBeautyService:Name"] <span class="text-danger">*</span></label>
+                            <input asp-for="Service.Name" class="form-control service-form-control service-required" required maxlength="255" placeholder="@L["SalonBeautyServices:NamePlaceholder"]" />
+                            <span asp-validation-for="Service.Name" class="text-danger"></span>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="service-form-label" asp-for="Service.CategoryId">@L["SalonBeautyService:Category"] <span class="text-danger">*</span></label>
+                            <select asp-for="Service.CategoryId" asp-items="Model.CategoryItems" class="form-select service-form-select service-required" required>
+                                <option value="">@L["SalonBeautyServices:CategoryPlaceholder"]</option>
+                            </select>
+                            <span asp-validation-for="Service.CategoryId" class="text-danger"></span>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="service-form-label" asp-for="Service.Duration">@L["SalonBeautyService:Duration"] <span class="text-danger">*</span></label>
+                            <div class="service-input-addon">
+                                <input asp-for="Service.Duration" type="number" min="1" max="1440" class="form-control service-form-control service-required service-number-input" required placeholder="60" />
+                                <span>@L["SalonBeautyServices:MinutesUnit"]</span>
+                            </div>
+                            <span asp-validation-for="Service.Duration" class="text-danger"></span>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="service-form-label" asp-for="Service.Price">@L["SalonBeautyService:Price"] <span class="text-danger">*</span></label>
+                            <div class="service-input-addon">
+                                <input asp-for="Service.Price" type="text" inputmode="numeric" class="form-control service-form-control service-required service-price-input" required placeholder="500,000" />
+                                <span>VND</span>
+                            </div>
+                            <span asp-validation-for="Service.Price" class="text-danger"></span>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="service-form-label" asp-for="Service.ApplicableRole">@L["SalonBeautyService:ApplicableRole"] <span class="text-danger">*</span></label>
+                            <select asp-for="Service.ApplicableRole" asp-items="Model.RoleItems" class="form-select service-form-select service-required" required>
+                                <option value="">@L["SalonBeautyServices:RolePlaceholder"]</option>
+                            </select>
+                            <span asp-validation-for="Service.ApplicableRole" class="text-danger"></span>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="service-form-label" asp-for="Service.ApplicableLevel">@L["SalonBeautyService:ApplicableLevel"] <span class="text-danger">*</span></label>
+                            <select asp-for="Service.ApplicableLevel" asp-items="Model.LevelItems" class="form-select service-form-select service-required" required>
+                                <option value="">@L["SalonBeautyServices:LevelPlaceholder"]</option>
+                            </select>
+                            <span asp-validation-for="Service.ApplicableLevel" class="text-danger"></span>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="service-form-label" asp-for="Service.SortOrder">@L["SalonBeautyService:SortOrder"]</label>
+                            <input asp-for="Service.SortOrder" type="number" min="0" class="form-control service-form-control" placeholder="1" />
+                            <span asp-validation-for="Service.SortOrder" class="text-danger"></span>
+                        </div>
+
+                        <div class="col-12">
+                            <label class="service-form-label" asp-for="Service.Note">@L["SalonBeautyService:Note"]</label>
+                            <textarea asp-for="Service.Note" rows="3" maxlength="500" class="form-control service-form-textarea" placeholder="@L["SalonBeautyServices:NotePlaceholder"]"></textarea>
+                            <span asp-validation-for="Service.Note" class="text-danger"></span>
+                        </div>
+
+                        <div class="col-12">
+                            <div class="service-status-box service-status-box-wide">
+                                <div class="service-status-icon"><i class="fa fa-shield"></i></div>
+                                <div class="flex-grow-1">
+                                    <strong>@L["SalonBeautyServices:StatusBoxTitle"]</strong>
+                                    <span>@L["SalonBeautyServices:StatusBoxDescription"]</span>
+                                </div>
+                                <input asp-for="Service.Status" type="hidden" class="service-status-value" />
+                                <div class="service-switch-wrap">
+                                    <label class="service-switch">
+                                        <input type="checkbox" class="service-status-toggle" @(Model.Service.Status == 1 ? "checked" : "") />
+                                        <span class="service-switch-slider"></span>
+                                    </label>
+                                    <strong class="service-status-toggle-text"
+                                            data-active="@L["SalonBeautyCustomer:StatusActive"]"
+                                            data-inactive="@L["SalonBeautyCustomer:StatusInactive"]">
+                                        @(Model.Service.Status == 1 ? L["SalonBeautyCustomer:StatusActive"] : L["SalonBeautyCustomer:StatusInactive"])
+                                    </strong>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-12">
+                            <div class="service-status-box service-status-box-wide">
+                                <div class="service-status-icon"><i class="fa fa-mobile"></i></div>
+                                <div class="flex-grow-1">
+                                    <strong>@L["SalonBeautyServices:ShowOnAppBoxTitle"]</strong>
+                                    <span>@L["SalonBeautyServices:ShowOnAppBoxDescription"]</span>
+                                </div>
+                                <input asp-for="Service.IsShowOnApp" type="hidden" class="service-showonapp-value" />
+                                <div class="service-switch-wrap">
+                                    <label class="service-switch">
+                                        <input type="checkbox" class="service-showonapp-toggle" @(Model.Service.IsShowOnApp ? "checked" : "") />
+                                        <span class="service-switch-slider"></span>
+                                    </label>
+                                    <strong class="service-showonapp-toggle-text"
+                                            data-active="@L["SalonBeautyServices:ShowOnAppActive"]"
+                                            data-inactive="@L["SalonBeautyServices:ShowOnAppInactive"]">
+                                        @(Model.Service.IsShowOnApp ? L["SalonBeautyServices:ShowOnAppActive"] : L["SalonBeautyServices:ShowOnAppInactive"])
+                                    </strong>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="service-modal-footer">
+                    <button type="button" class="service-btn-secondary" data-bs-dismiss="modal">@L["Cancel"]</button>
+                    <button type="submit" class="service-btn-primary service-submit-button">
+                        <i class="fa fa-save"></i> @L["SalonBeautyServices:SaveButton"]
+                    </button>
+                </div>
+            </div>
+        </abp-modal-body>
+    </abp-modal>
+</form>

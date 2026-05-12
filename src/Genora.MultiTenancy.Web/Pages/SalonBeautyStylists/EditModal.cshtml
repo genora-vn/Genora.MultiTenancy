@@ -1,0 +1,172 @@
+@page
+@using Genora.MultiTenancy.Localization
+@using Microsoft.Extensions.Localization
+@using Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.TagHelpers.Modal
+@using Genora.MultiTenancy.Web.Pages.SalonBeautyStylists
+@model EditModalModel
+@inject IStringLocalizer<MultiTenancyResource> L
+@{
+    Layout = null;
+}
+
+<form asp-page="/SalonBeautyStylists/EditModal" id="EditSalonStylistForm" class="stylist-form" method="post" enctype="multipart/form-data" autocomplete="off" novalidate>
+    <input type="hidden" asp-for="Stylist.Id" />
+    <abp-modal size="Large">
+        <abp-modal-body class="p-0">
+            <div class="stylist-modal">
+                <div class="stylist-modal-header">
+                    <div class="stylist-modal-title-wrap">
+                        <h3>@L["SalonBeautyStylists:EditTitle"]</h3>
+                        <p>@L["SalonBeautyStylists:EditSubTitle"]</p>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="@L["Close"]"></button>
+                </div>
+
+                <div class="stylist-modal-body">
+                    <!-- Avatar Upload -->
+                    <input type="hidden" class="stylist-is-upload-image" asp-for="Stylist.IsUploadImage" value="false" />
+                    <input asp-for="Stylist.Avatar" type="hidden" class="stylist-avatar-url-input" />
+
+                    <div class="stylist-avatar-card">
+                        <div class="stylist-avatar-card-header">
+                            <div>
+                                <strong>@L["SalonBeautyStylist:Avatar"]</strong>
+                                <span>@L["SalonBeautyStylists:AvatarHelp"]</span>
+                            </div>
+                            <span class="stylist-avatar-limit">@L["SalonBeautyStylists:AvatarLimit"]</span>
+                        </div>
+
+                        <div class="stylist-avatar-mode-row">
+                            <label class="stylist-avatar-mode active">
+                                <input type="radio" name="AvatarMode" value="url" checked />
+                                <span>@L["SalonBeautyStylists:AvatarModeUrl"]</span>
+                            </label>
+                            <label class="stylist-avatar-mode">
+                                <input type="radio" name="AvatarMode" value="upload" />
+                                <span>@L["SalonBeautyStylists:AvatarModeUpload"]</span>
+                            </label>
+                        </div>
+
+                        <div class="stylist-avatar-url-panel">
+                            <label class="stylist-form-label">@L["SalonBeautyStylists:AvatarUrlLabel"]</label>
+                            <input type="url" class="form-control stylist-form-control stylist-avatar-url-text" placeholder="https://..." value="@Model.Stylist.Avatar" />
+                            <small class="text-muted d-block mt-1">@L["SalonBeautyStylists:AvatarUrlHint"]</small>
+                        </div>
+
+                        <div class="stylist-avatar-upload-panel" style="display:none;">
+                            <div class="stylist-avatar-drop-zone" tabindex="0">
+                                <div class="stylist-avatar-drop-preview">
+                                    <img class="stylist-avatar-preview-img" src="@(string.IsNullOrWhiteSpace(Model.Stylist.Avatar) ? "/images/getting-started/no-photo-square.png" : Model.Stylist.Avatar)" alt="Avatar" />
+                                </div>
+                                <div class="stylist-avatar-drop-content">
+                                    <strong>@L["SalonBeautyStylists:AvatarUploadTitle"]</strong>
+                                    <span>@L["SalonBeautyStylists:AvatarUploadDescription"]</span>
+                                    <small>@L["SalonBeautyStylists:AvatarUploadSpec"]</small>
+                                </div>
+                                <input asp-for="Stylist.Images" type="file" class="stylist-avatar-file-input" accept="image/jpeg,image/png,image/webp" style="display:none;" />
+                            </div>
+                            <small class="text-muted d-block mt-2 stylist-avatar-file-hint">@L["SalonBeautyStylists:AvatarNoFile"]</small>
+                        </div>
+
+                        <span asp-validation-for="Stylist.Avatar" class="text-danger"></span>
+                        <span asp-validation-for="Stylist.Images" class="text-danger"></span>
+                    </div>
+
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="stylist-form-label" asp-for="Stylist.DisplayName">@L["SalonBeautyStylist:DisplayName"] <span class="text-danger">*</span></label>
+                            <input asp-for="Stylist.DisplayName" class="form-control stylist-form-control stylist-required" required maxlength="255" placeholder="@L["SalonBeautyStylists:DisplayNamePlaceholder"]" />
+                            <span asp-validation-for="Stylist.DisplayName" class="text-danger"></span>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="stylist-form-label" asp-for="Stylist.Phone">@L["SalonBeautyStylist:Phone"]</label>
+                            <input asp-for="Stylist.Phone" class="form-control stylist-form-control stylist-phone-input" inputmode="numeric" pattern="^0\d{9,10}$" maxlength="11" placeholder="@L["SalonBeautyStylists:PhonePlaceholder"]" />
+                            <span asp-validation-for="Stylist.Phone" class="text-danger"></span>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="stylist-form-label" asp-for="Stylist.Gender">@L["SalonBeautyStylist:Gender"]</label>
+                            <select asp-for="Stylist.Gender" asp-items="Model.GenderItems" class="form-select stylist-form-select">
+                                <option value="">@L["SalonBeautyStylists:GenderPlaceholder"]</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="stylist-form-label" asp-for="Stylist.Role">@L["SalonBeautyStylist:Role"] <span class="text-danger">*</span></label>
+                            <select asp-for="Stylist.Role" asp-items="Model.RoleItems" class="form-select stylist-form-select stylist-required" required>
+                                <option value="">@L["SalonBeautyStylists:RolePlaceholder"]</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="stylist-form-label" asp-for="Stylist.Level">@L["SalonBeautyStylist:Level"] <span class="text-danger">*</span></label>
+                            <select asp-for="Stylist.Level" asp-items="Model.LevelItems" class="form-select stylist-form-select stylist-required" required>
+                                <option value="">@L["SalonBeautyStylists:LevelPlaceholder"]</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="stylist-form-label" asp-for="Stylist.ExperienceYear">@L["SalonBeautyStylist:ExperienceYear"]</label>
+                            <input asp-for="Stylist.ExperienceYear" type="number" min="0" max="50" class="form-control stylist-form-control" placeholder="0" />
+                            <span asp-validation-for="Stylist.ExperienceYear" class="text-danger"></span>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="stylist-form-label" asp-for="Stylist.SortOrder">@L["SalonBeautyStylist:SortOrder"]</label>
+                            <input asp-for="Stylist.SortOrder" type="number" min="0" class="form-control stylist-form-control" placeholder="1" />
+                            <span asp-validation-for="Stylist.SortOrder" class="text-danger"></span>
+                        </div>
+                        <div class="col-12">
+                            <label class="stylist-form-label" asp-for="Stylist.Note">@L["SalonBeautyStylist:Note"]</label>
+                            <textarea asp-for="Stylist.Note" rows="3" maxlength="500" class="form-control stylist-form-textarea" placeholder="@L["SalonBeautyStylists:NotePlaceholder"]"></textarea>
+                            <span asp-validation-for="Stylist.Note" class="text-danger"></span>
+                        </div>
+                        <div class="col-12">
+                            <div class="stylist-status-box">
+                                <div class="stylist-status-icon"><i class="fa fa-shield"></i></div>
+                                <div class="flex-grow-1">
+                                    <strong>@L["SalonBeautyStylists:StatusBoxTitle"]</strong>
+                                    <span>@L["SalonBeautyStylists:StatusBoxDescription"]</span>
+                                </div>
+                                <input asp-for="Stylist.Status" type="hidden" class="stylist-status-value" />
+                                <div class="stylist-switch-wrap">
+                                    <label class="stylist-switch">
+                                        <input type="checkbox" class="stylist-status-toggle" @(Model.Stylist.Status == 1 ? "checked" : "") />
+                                        <span class="stylist-switch-slider"></span>
+                                    </label>
+                                    <strong class="stylist-status-toggle-text"
+                                            data-active="@L["SalonBeautyCustomer:StatusActive"]"
+                                            data-inactive="@L["SalonBeautyCustomer:StatusInactive"]">
+                                        @(Model.Stylist.Status == 1 ? L["SalonBeautyCustomer:StatusActive"] : L["SalonBeautyCustomer:StatusInactive"])
+                                    </strong>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <div class="stylist-status-box">
+                                <div class="stylist-status-icon"><i class="fa fa-mobile"></i></div>
+                                <div class="flex-grow-1">
+                                    <strong>@L["SalonBeautyStylists:ShowOnAppBoxTitle"]</strong>
+                                    <span>@L["SalonBeautyStylists:ShowOnAppBoxDescription"]</span>
+                                </div>
+                                <input asp-for="Stylist.IsShowOnApp" type="hidden" class="stylist-showonapp-value" />
+                                <div class="stylist-switch-wrap">
+                                    <label class="stylist-switch">
+                                        <input type="checkbox" class="stylist-showonapp-toggle" @(Model.Stylist.IsShowOnApp ? "checked" : "") />
+                                        <span class="stylist-switch-slider"></span>
+                                    </label>
+                                    <strong class="stylist-showonapp-toggle-text"
+                                            data-active="@L["Yes"]"
+                                            data-inactive="@L["No"]">
+                                        @(Model.Stylist.IsShowOnApp? L["Yes"] : L["No"])
+                                    </strong>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="stylist-modal-footer">
+                    <button type="button" class="btn stylist-btn-secondary" data-bs-dismiss="modal">@L["Cancel"]</button>
+                    <button type="button" class="btn stylist-btn-primary stylist-submit-button" disabled><i class="fa fa-save"></i> @L["Save"]</button>
+                </div>
+            </div>
+        </abp-modal-body>
+    </abp-modal>
+</form>
+

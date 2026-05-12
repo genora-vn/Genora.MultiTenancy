@@ -1,17 +1,42 @@
 $(function () {
     var l = abp.localization.getResource('MultiTenancy');
 
-    var service = null;
-    if (window.genora && genora.multiTenancy) {
-        service = genora.multiTenancy.application?.salonBeauty?.salonBeautyCustomer
-            || genora.multiTenancy.salonBeauty?.salonBeautyCustomer
-            || genora.multiTenancy.httpApi?.controllers?.salonBeautyCustomer;
-    }
-
-    if (!service) {
-        abp.notify.error(l('SalonBeautyCustomers:ProxyNotFound'));
-        return;
-    }
+    // Service wrapper using direct API calls to SalonBeautyController
+    var service = {
+        getList: function (input) {
+            return abp.ajax({
+                url: '/api/app/salon-beauty/customers',
+                method: 'GET',
+                data: input
+            });
+        },
+        get: function (id) {
+            return abp.ajax({
+                url: '/api/app/salon-beauty/customers/' + id,
+                method: 'GET'
+            });
+        },
+        create: function (input) {
+            return abp.ajax({
+                url: '/api/app/salon-beauty/customers',
+                method: 'POST',
+                data: input
+            });
+        },
+        update: function (id, input) {
+            return abp.ajax({
+                url: '/api/app/salon-beauty/customers/' + id,
+                method: 'PUT',
+                data: input
+            });
+        },
+        delete: function (id) {
+            return abp.ajax({
+                url: '/api/app/salon-beauty/customers/' + id,
+                method: 'DELETE'
+            });
+        }
+    };
 
     var createModal = new abp.ModalManager('/SalonBeautyCustomers/CreateModal');
     var editModal = new abp.ModalManager('/SalonBeautyCustomers/EditModal');

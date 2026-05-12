@@ -1,12 +1,18 @@
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
-using Genora.MultiTenancy.AppDtos.SalonBeautyDtos;
+using Genora.MultiTenancy.AppDtos.SalonBeauties;
 using Genora.MultiTenancy.Permissions;
-using Genora.MultiTenancy.SalonBeauty;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Volo.Abp.AspNetCore.Mvc;
 using Volo.Abp.Application.Dtos;
+using Genora.MultiTenancy.AppDtos.SalonBeauties.SalonBeautyBookings;
+using Genora.MultiTenancy.AppDtos.SalonBeauties.SalonBeautyCustomers;
+using Genora.MultiTenancy.AppDtos.SalonBeauties.SalonBeautyServiceCategories;
+using Genora.MultiTenancy.AppDtos.SalonBeauties.SalonBeautyServices;
+using Genora.MultiTenancy.AppDtos.SalonBeauties.SalonBeautyStylists;
+using Genora.MultiTenancy.AppDtos.SalonBeauties.SalonBeautyLoyalties;
 
 namespace Genora.MultiTenancy.HttpApi.Controllers;
 
@@ -15,6 +21,7 @@ namespace Genora.MultiTenancy.HttpApi.Controllers;
 [Authorize]
 public class SalonBeautyController : AbpController
 {
+    private readonly ISalonBeautyCustomerAppService _customerService;
     private readonly ISalonBeautyServiceCategoryAppService _categoryService;
     private readonly ISalonBeautyServiceAppService _serviceService;
     private readonly ISalonBeautyStylistAppService _stylistService;
@@ -22,18 +29,67 @@ public class SalonBeautyController : AbpController
     private readonly ISalonBeautyLoyaltyAppService _loyaltyService;
 
     public SalonBeautyController(
+        ISalonBeautyCustomerAppService customerService,
         ISalonBeautyServiceCategoryAppService categoryService,
         ISalonBeautyServiceAppService serviceService,
         ISalonBeautyStylistAppService stylistService,
         ISalonBeautyBookingAppService bookingService,
         ISalonBeautyLoyaltyAppService loyaltyService)
     {
+        _customerService = customerService;
         _categoryService = categoryService;
         _serviceService = serviceService;
         _stylistService = stylistService;
         _bookingService = bookingService;
         _loyaltyService = loyaltyService;
     }
+
+    #region Customers
+    [HttpGet("customers")]
+    public async Task<PagedResultDto<SalonBeautyCustomerDto>> GetCustomersAsync([FromQuery] GetSalonBeautyListInput input)
+    {
+        return await _customerService.GetListAsync(input);
+    }
+
+    [HttpGet("customers/{id}")]
+    public async Task<SalonBeautyCustomerDto> GetCustomerAsync(Guid id)
+    {
+        return await _customerService.GetAsync(id);
+    }
+
+    [HttpGet("customers/{id}/bookings")]
+    public async Task<List<SalonBeautyCustomerBookingHistoryDto>> GetCustomerBookingHistoryAsync(Guid id, [FromQuery] int maxResultCount = 50)
+    {
+        return await _customerService.GetBookingHistoryAsync(id, maxResultCount);
+    }
+
+    [HttpGet("customers/{id}/loyalty-transactions")]
+    public async Task<List<SalonBeautyCustomerLoyaltyTransactionDto>> GetCustomerLoyaltyTransactionsAsync(Guid id, [FromQuery] int maxResultCount = 50)
+    {
+        return await _customerService.GetLoyaltyTransactionsAsync(id, maxResultCount);
+    }
+
+    [HttpPost("customers")]
+    [Authorize(MultiTenancyPermissions.SalonBeautyCustomers.Create)]
+    public async Task<SalonBeautyCustomerDto> CreateCustomerAsync([FromBody] CreateSalonBeautyCustomerDto input)
+    {
+        return await _customerService.CreateAsync(input);
+    }
+
+    [HttpPut("customers/{id}")]
+    [Authorize(MultiTenancyPermissions.SalonBeautyCustomers.Edit)]
+    public async Task<SalonBeautyCustomerDto> UpdateCustomerAsync(Guid id, [FromBody] UpdateSalonBeautyCustomerDto input)
+    {
+        return await _customerService.UpdateAsync(id, input);
+    }
+
+    [HttpDelete("customers/{id}")]
+    [Authorize(MultiTenancyPermissions.SalonBeautyCustomers.Delete)]
+    public async Task DeleteCustomerAsync(Guid id)
+    {
+        await _customerService.DeleteAsync(id);
+    }
+    #endregion
 
     #region Service Categories
     [HttpGet("categories")]

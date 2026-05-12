@@ -3,13 +3,12 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Globalization;
 using System.Threading.Tasks;
-using Genora.MultiTenancy.AppDtos.SalonBeautyDtos.SalonBeautyCustomerDtos;
 using Genora.MultiTenancy.Enums;
 using Genora.MultiTenancy.Localization;
-using Genora.MultiTenancy.SalonBeauty;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.Extensions.Localization;
+using Genora.MultiTenancy.AppDtos.SalonBeauties.SalonBeautyCustomers;
 
 namespace Genora.MultiTenancy.Web.Pages.SalonBeautyCustomers;
 

@@ -11,7 +11,7 @@
 
 @section styles {
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
-    <abp-style src="/pages/salon/salon-shared.css" />
+    <abp-style src="/pages/salon/customer-shared.css" />
 }
 
 @section scripts {
@@ -40,12 +40,12 @@
             <p>@L["SalonBeautyCustomers:PageSubTitle"]</p>
         </div>
         <div class="salon-head-actions">
-            <button type="button" id="ExportSalonCustomerButton" class="btn salon-btn-light">
+            <button type="button" id="ExportSalonCustomerButton" class="btn btn-outline-secondary">
                 <i class="fa fa-download"></i> @L["SalonBeautyCustomers:ExportList"]
             </button>
             @if (canCreate)
             {
-                <button type="button" id="NewSalonCustomerButton" class="btn salon-btn-primary">
+                <button type="button" id="NewSalonCustomerButton" class="btn btn-outline-primary">
                     <i class="fa fa-plus"></i> @L["SalonBeautyCustomers:AddCustomer"]
                 </button>
             }
@@ -96,9 +96,14 @@
                 </select>
             </div>
             <div class="col-lg-1 col-md-6 d-grid">
-                <button type="button" id="SearchSalonCustomerButton" class="btn salon-btn-primary">
+                @* <button type="button" id="SearchSalonCustomerButton" class="btn salon-btn-primary">
                     <i class="fa fa-search"></i>
-                </button>
+                </button> *@
+                <abp-button id="SearchSalonCustomerButton"
+                            text="@L["Search"]"
+                            button-type="Outline_Primary"
+                            style="height: 45px"
+                            icon="search" />
             </div>
         </div>
     </div>

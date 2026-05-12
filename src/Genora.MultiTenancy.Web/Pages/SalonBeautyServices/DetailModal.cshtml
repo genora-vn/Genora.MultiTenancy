@@ -1,0 +1,77 @@
+@page
+@using Genora.MultiTenancy.Localization
+@using Microsoft.Extensions.Localization
+@using Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.TagHelpers.Modal
+@using Genora.MultiTenancy.Web.Pages.SalonBeautyServices
+@model DetailModalModel
+@inject IStringLocalizer<MultiTenancyResource> L
+@{
+    Layout = null;
+}
+
+<abp-modal size="Large">
+    <abp-modal-body class="p-0">
+        <div class="service-modal service-detail-modal">
+            <div class="service-modal-header">
+                <div class="service-modal-title-wrap">
+                    <div class="service-modal-icon"><i class="fa fa-spa"></i></div>
+                    <div>
+                        <h3>@L["SalonBeautyServices:DetailTitle"]</h3>
+                        <p>@L["SalonBeautyServices:DetailSubTitle"]</p>
+                    </div>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="@L["Close"]"></button>
+            </div>
+
+            <div class="service-modal-body">
+                <div class="service-detail-hero">
+                    <div class="service-detail-icon"><i class="fa fa-spa"></i></div>
+                    <div>
+                        <h4>@Model.Service.Name</h4>
+                        <p>@Model.Service.CategoryName</p>
+                        <span class="service-badge active">@Model.Service.StatusText</span>
+                        @if (Model.Service.IsShowOnApp)
+                        {
+                            <span class="service-badge show-app">@L["SalonBeautyServices:ShowOnAppActive"]</span>
+                        }
+                    </div>
+                </div>
+
+                <div class="service-detail-grid">
+                    <div class="service-detail-item">
+                        <label>@L["SalonBeautyService:Category"]</label>
+                        <strong>@(Model.Service.CategoryName ?? L["Common:NA"].Value)</strong>
+                    </div>
+                    <div class="service-detail-item">
+                        <label>@L["SalonBeautyService:Price"]</label>
+                        <strong>@Model.Service.PriceText VND</strong>
+                    </div>
+                    <div class="service-detail-item">
+                        <label>@L["SalonBeautyService:Duration"]</label>
+                        <strong>@Model.Service.DurationText</strong>
+                    </div>
+                    <div class="service-detail-item">
+                        <label>@L["SalonBeautyService:ApplicableRole"]</label>
+                        <strong>@(Model.Service.ApplicableRoleText ?? L["Common:NA"].Value)</strong>
+                    </div>
+                    <div class="service-detail-item">
+                        <label>@L["SalonBeautyService:ApplicableLevel"]</label>
+                        <strong>@(Model.Service.ApplicableLevelText ?? L["Common:NA"].Value)</strong>
+                    </div>
+                    <div class="service-detail-item">
+                        <label>@L["SalonBeautyService:SortOrder"]</label>
+                        <strong>@Model.Service.SortOrder</strong>
+                    </div>
+                    <div class="service-detail-item service-detail-item-full">
+                        <label>@L["SalonBeautyService:Note"]</label>
+                        <strong>@(string.IsNullOrWhiteSpace(Model.Service.Note) ? L["Common:NA"].Value : Model.Service.Note)</strong>
+                    </div>
+                </div>
+            </div>
+
+            <div class="service-modal-footer">
+                <button type="button" class="service-btn-secondary" data-bs-dismiss="modal">@L["Close"]</button>
+            </div>
+        </div>
+    </abp-modal-body>
+</abp-modal>
