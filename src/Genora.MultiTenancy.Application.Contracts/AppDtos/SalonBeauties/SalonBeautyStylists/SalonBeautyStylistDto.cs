@@ -1,10 +1,10 @@
 ﻿using System;
+using Volo.Abp.Application.Dtos;
 
 namespace Genora.MultiTenancy.AppDtos.SalonBeauties.SalonBeautyStylists;
 
-public class SalonBeautyStylistDto
+public class SalonBeautyStylistDto : EntityDto<Guid>
 {
-    public Guid Id { get; set; }
     public string DisplayName { get; set; } = null!;
     public string? Avatar { get; set; }
     public string? Phone { get; set; }

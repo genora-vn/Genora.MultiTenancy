@@ -10,6 +10,7 @@ using Genora.MultiTenancy.Enums;
 using Genora.MultiTenancy.Localization;
 using SalonBeautyStylistRole = Genora.MultiTenancy.Enums.SalonBeautyStylistRole;
 using Genora.MultiTenancy.Permissions;
+using Genora.MultiTenancy.AppServices;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Localization;
 using Volo.Abp;
@@ -17,12 +18,25 @@ using Volo.Abp.Application.Dtos;
 using Volo.Abp.Application.Services;
 using Volo.Abp.Authorization;
 using Volo.Abp.Domain.Repositories;
+using Volo.Abp.Features;
+using Volo.Abp.MultiTenancy;
 
-namespace Genora.MultiTenancy.AppServices.SalonBeauty;
+namespace Genora.MultiTenancy.AppServices.SalonBeauties;
 
 [Authorize]
-public class SalonBeautyBookingAppService : ApplicationService, ISalonBeautyBookingAppService
+public class SalonBeautyBookingAppService :
+    FeatureProtectedCrudAppService<
+        SalonBeautyBooking,
+        SalonBeautyBookingDetailDto,
+        Guid,
+        GetSalonBeautyBookingListInput,
+        CreateSalonBeautyBookingDto,
+        UpdateSalonBeautyBookingDto>,
+    ISalonBeautyBookingAppService
 {
+    protected override string FeatureName => string.Empty;
+    protected override string TenantDefaultPermission => MultiTenancyPermissions.SalonBeautyBookings.Default;
+    protected override string HostDefaultPermission => MultiTenancyPermissions.HostSalonBeautyBookings.Default;
     private const string InternalNoteSeparator = "\n---INTERNAL---\n";
 
     private readonly IRepository<SalonBeautyBooking, Guid> _bookingRepository;
@@ -42,7 +56,10 @@ public class SalonBeautyBookingAppService : ApplicationService, ISalonBeautyBook
         IRepository<SalonBeautyServiceCategory, Guid> categoryRepository,
         IRepository<SalonBeautyStylist, Guid> stylistRepository,
         IRepository<SalonBeautyCustomerLoyaltyBalance, Guid> loyaltyRepository,
-        IStringLocalizer<MultiTenancyResource> l)
+        IStringLocalizer<MultiTenancyResource> l,
+        ICurrentTenant currentTenant,
+        IFeatureChecker featureChecker)
+        : base(bookingRepository, currentTenant, featureChecker)
     {
         _bookingRepository = bookingRepository;
         _bookingServiceRepository = bookingServiceRepository;
@@ -54,7 +71,7 @@ public class SalonBeautyBookingAppService : ApplicationService, ISalonBeautyBook
         _l = l;
     }
 
-    public async Task<PagedResultDto<SalonBeautyBookingListDto>> GetListAsync(GetSalonBeautyBookingListInput input)
+    public override async Task<PagedResultDto<SalonBeautyBookingDetailDto>> GetListAsync(GetSalonBeautyBookingListInput input)
     {
         await CheckBookingPolicyAsync(
             MultiTenancyPermissions.SalonBeautyBookings.Default,
@@ -77,23 +94,23 @@ public class SalonBeautyBookingAppService : ApplicationService, ISalonBeautyBook
             .Skip(input.SkipCount)
             .Take(input.MaxResultCount));
 
-        var dtos = new List<SalonBeautyBookingListDto>();
+        var dtos = new List<SalonBeautyBookingDetailDto>();
         var bookingIds = items.Select(x => x.Id).ToList();
         var serviceMap = await BuildBookingItemsMapAsync(bookingIds);
 
         foreach (var item in items)
         {
-            dtos.Add(await MapToBookingListDto(item, serviceMap.GetValueOrDefault(item.Id) ?? new List<SalonBeautyBookingService>()));
+            dtos.Add(await MapToBookingListDetailDto(item, serviceMap.GetValueOrDefault(item.Id) ?? new List<SalonBeautyBookingService>()));
         }
 
-        return new PagedResultDto<SalonBeautyBookingListDto>
+        return new PagedResultDto<SalonBeautyBookingDetailDto>
         {
             TotalCount = totalCount,
             Items = dtos
         };
     }
 
-    public async Task<SalonBeautyBookingDetailDto> GetAsync(Guid id)
+    public override async Task<SalonBeautyBookingDetailDto> GetAsync(Guid id)
     {
         await CheckBookingPolicyAsync(
             MultiTenancyPermissions.SalonBeautyBookings.Default,
@@ -102,7 +119,7 @@ public class SalonBeautyBookingAppService : ApplicationService, ISalonBeautyBook
         return await MapToBookingDetailDto(booking);
     }
 
-    public async Task<SalonBeautyBookingDetailDto> CreateAsync(CreateSalonBeautyBookingDto input)
+    public override async Task<SalonBeautyBookingDetailDto> CreateAsync(CreateSalonBeautyBookingDto input)
     {
         await CheckBookingPolicyAsync(
             MultiTenancyPermissions.SalonBeautyBookings.Create,
@@ -148,7 +165,7 @@ public class SalonBeautyBookingAppService : ApplicationService, ISalonBeautyBook
         return await MapToBookingDetailDto(created);
     }
 
-    public async Task<SalonBeautyBookingDetailDto> UpdateAsync(Guid id, UpdateSalonBeautyBookingDto input)
+    public override async Task<SalonBeautyBookingDetailDto> UpdateAsync(Guid id, UpdateSalonBeautyBookingDto input)
     {
         await CheckBookingPolicyAsync(
             MultiTenancyPermissions.SalonBeautyBookings.Edit,
@@ -277,7 +294,7 @@ public class SalonBeautyBookingAppService : ApplicationService, ISalonBeautyBook
         return await MapToBookingDetailDto(updated);
     }
 
-    public async Task DeleteAsync(Guid id)
+    public override async Task DeleteAsync(Guid id)
     {
         await CheckBookingPolicyAsync(
             MultiTenancyPermissions.SalonBeautyBookings.Delete,
@@ -636,6 +653,42 @@ public class SalonBeautyBookingAppService : ApplicationService, ISalonBeautyBook
         };
     }
 
+    private async Task<SalonBeautyBookingDetailDto> MapToBookingListDetailDto(SalonBeautyBooking booking, List<SalonBeautyBookingService> items)
+    {
+        var customer = await _customerRepository.FindAsync(booking.CustomerId);
+        var stylist = await _stylistRepository.FindAsync(booking.StylistId);
+        var servicesSummary = await BuildServiceSummaryAsync(items, booking.ServiceId);
+
+        return new SalonBeautyBookingDetailDto
+        {
+            Id = booking.Id,
+            BookingCode = booking.BookingCode,
+            CustomerId = booking.CustomerId,
+            CustomerName = customer?.Name,
+            CustomerPhone = customer?.Phone,
+            CustomerPhoneMasked = PhoneHelper.MaskPhone(customer?.Phone),
+            CustomerAvatar = customer?.Avatar,
+            StylistId = booking.StylistId,
+            StylistName = stylist?.DisplayName,
+            BookingDate = booking.BookingDate,
+            StartTime = booking.StartTime,
+            EndTime = booking.EndTime,
+            TotalAmount = booking.TotalAmount,
+            Status = booking.Status,
+            StatusText = GetBookingStatusText(booking.Status),
+            PaymentStatus = booking.PaymentStatus,
+            PaymentStatusText = GetPaymentStatusText(booking.PaymentStatus),
+            CheckinStatus = booking.CheckinStatus,
+            CheckinStatusText = GetCheckinStatusText(booking.CheckinStatus),
+            ServicesSummary = servicesSummary,
+            ServiceCount = items.Count > 0 ? items.Count : 1,
+            CreationTime = booking.CreationTime,
+            LastModificationTime = booking.LastModificationTime,
+            Items = new List<SalonBeautyBookingItemDto>(),
+            Activities = new List<SalonBeautyBookingActivityDto>()
+        };
+    }
+
     private async Task<SalonBeautyBookingDetailDto> MapToBookingDetailDto(SalonBeautyBooking booking)
     {
         var customer = await _customerRepository.FindAsync(booking.CustomerId);
@@ -709,6 +762,8 @@ public class SalonBeautyBookingAppService : ApplicationService, ISalonBeautyBook
             StylistName = stylist?.DisplayName,
             StylistAvatar = stylist?.Avatar,
             StylistRoleText = stylist?.Role.HasValue == true ? GetStylistRoleText((SalonBeautyStylistRole)stylist.Role.Value) : null,
+            ServicesSummary = itemDtos.Count == 0 ? null : string.Join(", ", itemDtos.Select(x => x.ServiceName).Where(x => !string.IsNullOrWhiteSpace(x))),
+            ServiceCount = itemDtos.Count,
             BookingDate = booking.BookingDate,
             StartTime = booking.StartTime,
             EndTime = booking.EndTime,

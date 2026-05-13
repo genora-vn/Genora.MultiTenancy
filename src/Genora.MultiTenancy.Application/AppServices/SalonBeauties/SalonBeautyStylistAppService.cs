@@ -5,11 +5,13 @@ using Volo.Abp.Content;
 using System.Threading.Tasks;
 using Genora.MultiTenancy.AppDtos.SalonBeauties;
 using Genora.MultiTenancy.AppDtos.AppImages;
+using Genora.MultiTenancy.AppDtos.SalonBeauties.SalonBeautyStylists;
 using Genora.MultiTenancy.DomainModels.AppSalonBeauty;
 using Genora.MultiTenancy.Enums;
 using Genora.MultiTenancy.Helpers;
 using Genora.MultiTenancy.Localization;
 using Genora.MultiTenancy.Permissions;
+using Genora.MultiTenancy.AppServices;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Localization;
 using Volo.Abp;
@@ -17,15 +19,26 @@ using Volo.Abp.Application.Dtos;
 using Volo.Abp.Application.Services;
 using Volo.Abp.Authorization;
 using Volo.Abp.Domain.Repositories;
+using Volo.Abp.Features;
 using Volo.Abp.Linq;
 using Volo.Abp.MultiTenancy;
-using Genora.MultiTenancy.AppDtos.SalonBeauties.SalonBeautyStylists;
 
-namespace Genora.MultiTenancy.AppServices.SalonBeauty;
+namespace Genora.MultiTenancy.AppServices.SalonBeauties;
 
 [Authorize]
-public class SalonBeautyStylistAppService : ApplicationService, ISalonBeautyStylistAppService
+public class SalonBeautyStylistAppService :
+    FeatureProtectedCrudAppService<
+        SalonBeautyStylist,
+        SalonBeautyStylistDto,
+        Guid,
+        GetSalonBeautyListInput,
+        CreateSalonBeautyStylistDto,
+        UpdateSalonBeautyStylistDto>,
+    ISalonBeautyStylistAppService
 {
+    protected override string FeatureName => string.Empty;
+    protected override string TenantDefaultPermission => MultiTenancyPermissions.SalonBeautyStylists.Default;
+    protected override string HostDefaultPermission => MultiTenancyPermissions.HostSalonBeautyStylists.Default;
     private const long MaxAvatarBytes = 2 * 1024 * 1024;
     private static readonly string[] AvatarAllowedExtensions = { ".jpg", ".jpeg", ".png", ".webp" };
 
@@ -36,7 +49,10 @@ public class SalonBeautyStylistAppService : ApplicationService, ISalonBeautyStyl
     public SalonBeautyStylistAppService(
         IRepository<SalonBeautyStylist, Guid> repository,
         IStringLocalizer<MultiTenancyResource> l,
-        IManageImageService manageImageService)
+        IManageImageService manageImageService,
+        ICurrentTenant currentTenant,
+        IFeatureChecker featureChecker)
+        : base(repository, currentTenant, featureChecker)
     {
         _repository = repository;
         _l = l;
@@ -44,7 +60,7 @@ public class SalonBeautyStylistAppService : ApplicationService, ISalonBeautyStyl
         LocalizationResource = typeof(MultiTenancyResource);
     }
 
-    public async Task<PagedResultDto<SalonBeautyStylistDto>> GetListAsync(GetSalonBeautyListInput input)
+    public override async Task<PagedResultDto<SalonBeautyStylistDto>> GetListAsync(GetSalonBeautyListInput input)
     {
         await CheckStylistPolicyAsync(
             MultiTenancyPermissions.SalonBeautyStylists.Default,
@@ -59,8 +75,8 @@ public class SalonBeautyStylistAppService : ApplicationService, ISalonBeautyStyl
             var keyword = input.FilterText.Trim();
             query = query.Where(x =>
                 x.DisplayName.Contains(keyword) ||
-                x.Phone != null && x.Phone.Contains(keyword) ||
-                x.Note != null && x.Note.Contains(keyword));
+                (x.Phone != null && x.Phone.Contains(keyword)) ||
+                (x.Note != null && x.Note.Contains(keyword)));
         }
 
         if (input.Gender.HasValue)
@@ -92,7 +108,7 @@ public class SalonBeautyStylistAppService : ApplicationService, ISalonBeautyStyl
             items.Select(MapToDto).ToList());
     }
 
-    public async Task<SalonBeautyStylistDto> GetAsync(Guid id)
+    public override async Task<SalonBeautyStylistDto> GetAsync(Guid id)
     {
         await CheckStylistPolicyAsync(
             MultiTenancyPermissions.SalonBeautyStylists.Default,
@@ -102,7 +118,7 @@ public class SalonBeautyStylistAppService : ApplicationService, ISalonBeautyStyl
         return MapToDto(entity);
     }
 
-    public async Task<SalonBeautyStylistDto> CreateAsync(CreateSalonBeautyStylistDto input)
+    public override async Task<SalonBeautyStylistDto> CreateAsync(CreateSalonBeautyStylistDto input)
     {
         await CheckStylistPolicyAsync(
             MultiTenancyPermissions.SalonBeautyStylists.Create,
@@ -131,7 +147,7 @@ public class SalonBeautyStylistAppService : ApplicationService, ISalonBeautyStyl
         return MapToDto(created);
     }
 
-    public async Task<SalonBeautyStylistDto> UpdateAsync(Guid id, UpdateSalonBeautyStylistDto input)
+    public override async Task<SalonBeautyStylistDto> UpdateAsync(Guid id, UpdateSalonBeautyStylistDto input)
     {
         await CheckStylistPolicyAsync(
             MultiTenancyPermissions.SalonBeautyStylists.Edit,
@@ -163,15 +179,6 @@ public class SalonBeautyStylistAppService : ApplicationService, ISalonBeautyStyl
         return MapToDto(updated);
     }
 
-    public async Task DeleteAsync(Guid id)
-    {
-        await CheckStylistPolicyAsync(
-            MultiTenancyPermissions.SalonBeautyStylists.Delete,
-            MultiTenancyPermissions.HostSalonBeautyStylists.Delete);
-
-        await _repository.DeleteAsync(id, autoSave: true);
-    }
-
     public async Task UpdateShowOnAppAsync(Guid id, bool isShowOnApp)
     {
         await CheckStylistPolicyAsync(
@@ -188,6 +195,15 @@ public class SalonBeautyStylistAppService : ApplicationService, ISalonBeautyStyl
 
         entity.IsShowOnApp = isShowOnApp;
         await _repository.UpdateAsync(entity, autoSave: true);
+    }
+
+    public override async Task DeleteAsync(Guid id)
+    {
+        await CheckStylistPolicyAsync(
+            MultiTenancyPermissions.SalonBeautyStylists.Delete,
+            MultiTenancyPermissions.HostSalonBeautyStylists.Delete);
+
+        await _repository.DeleteAsync(id, autoSave: true);
     }
 
     private async Task<string?> ResolveAvatarAsync(

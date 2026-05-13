@@ -1,15 +1,15 @@
-using Volo.Abp.Application.Services;
-using Volo.Abp.Application.Dtos;
-using System.Threading.Tasks;
 using System;
+using Genora.MultiTenancy.AppDtos.SalonBeauties;
+using Volo.Abp.Application.Services;
 
 namespace Genora.MultiTenancy.AppDtos.SalonBeauties.SalonBeautyServiceCategories;
 
-public interface ISalonBeautyServiceCategoryAppService : IApplicationService
+public interface ISalonBeautyServiceCategoryAppService :
+    ICrudAppService<
+        SalonBeautyServiceCategoryDto,
+        Guid,
+        GetSalonBeautyListInput,
+        CreateSalonBeautyServiceCategoryDto,
+        UpdateSalonBeautyServiceCategoryDto>
 {
-    Task<PagedResultDto<SalonBeautyServiceCategoryDto>> GetListAsync(GetSalonBeautyListInput input);
-    Task<SalonBeautyServiceCategoryDto> GetAsync(Guid id);
-    Task<SalonBeautyServiceCategoryDto> CreateAsync(CreateSalonBeautyServiceCategoryDto input);
-    Task<SalonBeautyServiceCategoryDto> UpdateAsync(Guid id, UpdateSalonBeautyServiceCategoryDto input);
-    Task DeleteAsync(Guid id);
 }

@@ -1,42 +1,16 @@
 $(function () {
     var l = abp.localization.getResource('MultiTenancy');
 
-    // Service wrapper using direct API calls to SalonBeautyController
-    var service = {
-        getList: function (input) {
-            return abp.ajax({
-                url: '/api/app/salon-beauty/services',
-                method: 'GET',
-                data: input
-            });
-        },
-        get: function (id) {
-            return abp.ajax({
-                url: '/api/app/salon-beauty/services/' + id,
-                method: 'GET'
-            });
-        },
-        create: function (input) {
-            return abp.ajax({
-                url: '/api/app/salon-beauty/services',
-                method: 'POST',
-                data: input
-            });
-        },
-        update: function (id, input) {
-            return abp.ajax({
-                url: '/api/app/salon-beauty/services/' + id,
-                method: 'PUT',
-                data: input
-            });
-        },
-        delete: function (id) {
-            return abp.ajax({
-                url: '/api/app/salon-beauty/services/' + id,
-                method: 'DELETE'
-            });
+
+    function resolveSalonService(name) {
+        var root = genora.multiTenancy.appServices && genora.multiTenancy.appServices.salonBeauties;
+        if (!root || !root[name]) {
+            throw new Error('Salon Beauty application service proxy not found: genora.multiTenancy.appServices.salonBeauties.' + name);
         }
-    };
+        return root[name];
+    }
+
+    var service = resolveSalonService('salonBeautyService');
 
     var createModal = new abp.ModalManager('/SalonBeautyServices/CreateModal');
     var editModal = new abp.ModalManager('/SalonBeautyServices/EditModal');

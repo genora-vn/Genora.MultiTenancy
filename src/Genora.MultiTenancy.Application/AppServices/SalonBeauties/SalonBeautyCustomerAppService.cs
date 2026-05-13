@@ -10,6 +10,7 @@ using Genora.MultiTenancy.Enums;
 using Genora.MultiTenancy.Helpers;
 using Genora.MultiTenancy.Localization;
 using Genora.MultiTenancy.Permissions;
+using Genora.MultiTenancy.AppServices;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Localization;
 using Volo.Abp;
@@ -17,13 +18,25 @@ using Volo.Abp.Application.Dtos;
 using Volo.Abp.Application.Services;
 using Volo.Abp.Authorization;
 using Volo.Abp.Domain.Repositories;
+using Volo.Abp.Features;
 using Volo.Abp.MultiTenancy;
 
-namespace Genora.MultiTenancy.AppServices.SalonBeauty;
+namespace Genora.MultiTenancy.AppServices.SalonBeauties;
 
 [Authorize]
-public class SalonBeautyCustomerAppService : ApplicationService, ISalonBeautyCustomerAppService
+public class SalonBeautyCustomerAppService :
+    FeatureProtectedCrudAppService<
+        SalonBeautyCustomer,
+        SalonBeautyCustomerDto,
+        Guid,
+        GetSalonBeautyListInput,
+        CreateSalonBeautyCustomerDto,
+        UpdateSalonBeautyCustomerDto>,
+    ISalonBeautyCustomerAppService
 {
+    protected override string FeatureName => string.Empty;
+    protected override string TenantDefaultPermission => MultiTenancyPermissions.SalonBeautyCustomers.Default;
+    protected override string HostDefaultPermission => MultiTenancyPermissions.HostSalonBeautyCustomers.Default;
     private readonly IRepository<SalonBeautyCustomer, Guid> _customerRepository;
     private readonly IRepository<SalonBeautyBooking, Guid> _bookingRepository;
     private readonly IRepository<SalonBeautyCustomerLoyaltyBalance, Guid> _loyaltyBalanceRepository;
@@ -35,7 +48,10 @@ public class SalonBeautyCustomerAppService : ApplicationService, ISalonBeautyCus
         IRepository<SalonBeautyBooking, Guid> bookingRepository,
         IRepository<SalonBeautyCustomerLoyaltyBalance, Guid> loyaltyBalanceRepository,
         IRepository<SalonBeautyCustomerLoyaltyTransaction, Guid> loyaltyTransactionRepository,
-        IStringLocalizer<MultiTenancyResource> l)
+        IStringLocalizer<MultiTenancyResource> l,
+        ICurrentTenant currentTenant,
+        IFeatureChecker featureChecker)
+        : base(customerRepository, currentTenant, featureChecker)
     {
         _customerRepository = customerRepository;
         _bookingRepository = bookingRepository;
@@ -44,7 +60,7 @@ public class SalonBeautyCustomerAppService : ApplicationService, ISalonBeautyCus
         _l = l;
     }
 
-    public async Task<PagedResultDto<SalonBeautyCustomerDto>> GetListAsync(GetSalonBeautyListInput input)
+    public override async Task<PagedResultDto<SalonBeautyCustomerDto>> GetListAsync(GetSalonBeautyListInput input)
     {
         await CheckCustomerPolicyAsync(
             MultiTenancyPermissions.SalonBeautyCustomers.Default,
@@ -60,8 +76,8 @@ public class SalonBeautyCustomerAppService : ApplicationService, ISalonBeautyCus
             customersQuery = customersQuery.Where(x =>
                 x.Name.Contains(filter) ||
                 x.CustomerCode.Contains(filter) ||
-                x.Phone != null && x.Phone.Contains(filter) ||
-                x.Email != null && x.Email.Contains(filter));
+                (x.Phone != null && x.Phone.Contains(filter)) ||
+                (x.Email != null && x.Email.Contains(filter)));
         }
 
         if (input.DateFrom.HasValue)
@@ -109,7 +125,7 @@ public class SalonBeautyCustomerAppService : ApplicationService, ISalonBeautyCus
         return new PagedResultDto<SalonBeautyCustomerDto>(totalCount, pagedItems);
     }
 
-    public async Task<SalonBeautyCustomerDto> GetAsync(Guid id)
+    public override async Task<SalonBeautyCustomerDto> GetAsync(Guid id)
     {
         await CheckCustomerPolicyAsync(
             MultiTenancyPermissions.SalonBeautyCustomers.Default,
@@ -171,14 +187,14 @@ public class SalonBeautyCustomerAppService : ApplicationService, ISalonBeautyCus
         {
             Id = x.Id,
             Type = x.Type,
-            TypeText = x.Type == 1 ? "EARN" : x.Type == 2 ? "REDEEM" : x.Type.ToString(),
+            TypeText = x.Type == 1 ? "EARN" : (x.Type == 2 ? "REDEEM" : x.Type.ToString()),
             Point = x.Point,
             Description = x.Description,
             CreatedAt = x.CreationTime
         }).ToList();
     }
 
-    public async Task<SalonBeautyCustomerDto> CreateAsync(CreateSalonBeautyCustomerDto input)
+    public override async Task<SalonBeautyCustomerDto> CreateAsync(CreateSalonBeautyCustomerDto input)
     {
         await CheckCustomerPolicyAsync(
             MultiTenancyPermissions.SalonBeautyCustomers.Create,
@@ -208,7 +224,7 @@ public class SalonBeautyCustomerAppService : ApplicationService, ISalonBeautyCus
         return await GetAsync(created.Id);
     }
 
-    public async Task<SalonBeautyCustomerDto> UpdateAsync(Guid id, UpdateSalonBeautyCustomerDto input)
+    public override async Task<SalonBeautyCustomerDto> UpdateAsync(Guid id, UpdateSalonBeautyCustomerDto input)
     {
         await CheckCustomerPolicyAsync(
             MultiTenancyPermissions.SalonBeautyCustomers.Edit,
@@ -233,7 +249,7 @@ public class SalonBeautyCustomerAppService : ApplicationService, ISalonBeautyCus
         return await GetAsync(customer.Id);
     }
 
-    public async Task DeleteAsync(Guid id)
+    public override async Task DeleteAsync(Guid id)
     {
         await CheckCustomerPolicyAsync(
             MultiTenancyPermissions.SalonBeautyCustomers.Delete,

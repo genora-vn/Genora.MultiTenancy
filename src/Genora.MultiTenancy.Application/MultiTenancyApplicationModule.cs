@@ -31,6 +31,7 @@ using Genora.MultiTenancy.AppDtos.SalonBeauties.SalonBeautyServices;
 using Genora.MultiTenancy.AppDtos.SalonBeauties.SalonBeautyStylists;
 using Genora.MultiTenancy.AppDtos.SalonBeauties.SalonBeautyLoyalties;
 using Genora.MultiTenancy.AppServices.SalonBeauty;
+using Genora.MultiTenancy.AppServices.SalonBeauties;
 
 namespace Genora.MultiTenancy;
 

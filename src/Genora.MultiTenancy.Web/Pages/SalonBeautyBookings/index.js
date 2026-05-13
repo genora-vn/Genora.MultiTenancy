@@ -1,5 +1,14 @@
 (function () {
-    var baseUrl = '/api/app/salon-beauty/bookings';
+
+    function resolveSalonService(name) {
+        var root = genora.multiTenancy.appServices && genora.multiTenancy.appServices.salonBeauties;
+        if (!root || !root[name]) {
+            throw new Error('Salon Beauty application service proxy not found: genora.multiTenancy.appServices.salonBeauties.' + name);
+        }
+        return root[name];
+    }
+
+    var service = resolveSalonService('salonBeautyBooking');
     var createModal = new abp.ModalManager('/SalonBeautyBookings/CreateModal');
     var editModal = new abp.ModalManager('/SalonBeautyBookings/EditModal');
     var dataTable;
@@ -35,7 +44,7 @@
             }
         }
         return '<div class="booking-datetime">' + dateStr + '</div>' +
-               (timeStr ? '<div class="booking-time">' + timeStr + '</div>' : '');
+            (timeStr ? '<div class="booking-time">' + timeStr + '</div>' : '');
     }
 
     function buildCustomerCell(row) {
@@ -90,7 +99,7 @@
         var params = {};
         if (f.fromDate) params.fromDate = f.fromDate;
         if (f.toDate) params.toDate = f.toDate;
-        $.get(baseUrl + '/statistics', params).done(function (data) {
+        service.getStatistics(params.fromDate || null, params.toDate || null).done(function (data) {
             $('#StatTotalBookings').text(data.totalBookings);
             $('#StatTotalValue').text(formatCurrency(data.totalValue));
             $('#StatCompletionRate').text(data.completionRate + '%');
@@ -106,7 +115,7 @@
     }
 
     function loadStylistFilter() {
-        $.get(baseUrl + '/stylist-lookup').done(function (data) {
+        service.getStylistLookup().done(function (data) {
             var $sel = $('#BookingStylistFilter');
             $sel.find('option:not(:first)').remove();
             $.each(data, function (i, s) {
@@ -130,11 +139,7 @@
                     input.toDate = f.toDate;
                     if (f.status !== null) input.status = f.status;
                     if (f.stylistId) input.stylistId = f.stylistId;
-                    return $.ajax({
-                        url: baseUrl,
-                        type: 'GET',
-                        data: input
-                    });
+                    return service.getList(input);
                 }),
                 columnDefs: [
                     {
@@ -178,7 +183,7 @@
                             var et = row.endTime ? row.endTime.substring(0, 5) : '';
                             var d = new Date(row.bookingDate);
                             return '<div class="booking-datetime">' + d.toLocaleDateString('vi-VN') + '</div>' +
-                                   '<div class="booking-time">' + st + (et ? ' - ' + et : '') + '</div>';
+                                '<div class="booking-time">' + st + (et ? ' - ' + et : '') + '</div>';
                         }
                     },
                     {
@@ -213,7 +218,7 @@
     function deleteBooking(id) {
         abp.message.confirm('Bạn có chắc muốn xóa lịch đặt này?', 'Xác nhận xóa', function (confirmed) {
             if (!confirmed) return;
-            $.ajax({ url: baseUrl + '/' + id, type: 'DELETE' })
+            service.delete(id)
                 .done(function () {
                     abp.notify.success('Đã xóa lịch đặt.');
                     dataTable.ajax.reload();
@@ -226,12 +231,7 @@
     function cancelBooking(id) {
         abp.message.confirm('Bạn có chắc muốn hủy lịch đặt này?', 'Xác nhận hủy', function (confirmed) {
             if (!confirmed) return;
-            $.ajax({
-                url: baseUrl + '/' + id + '/cancel',
-                type: 'POST',
-                contentType: 'application/json',
-                data: JSON.stringify({ cancelReason: 2, cancelNote: 'Hủy từ danh sách' })
-            })
+            service.cancel(id, { cancelReason: 2, cancelNote: 'Hủy từ danh sách' })
                 .done(function () {
                     abp.notify.success('Đã hủy lịch đặt.');
                     dataTable.ajax.reload();
