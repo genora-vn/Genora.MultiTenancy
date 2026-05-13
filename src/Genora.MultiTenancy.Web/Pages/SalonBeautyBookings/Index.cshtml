@@ -1,0 +1,188 @@
+@page
+@using Genora.MultiTenancy.Enums
+@using Genora.MultiTenancy.Localization
+@using Genora.MultiTenancy.Permissions
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.Extensions.Localization
+@using Genora.MultiTenancy.Web.Pages.SalonBeautyBookings
+@inject IStringLocalizer<MultiTenancyResource> L
+@inject IAuthorizationService AuthorizationService
+@inject Volo.Abp.MultiTenancy.ICurrentTenant CurrentTenant
+@model IndexModel
+
+@section styles {
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
+    <style>
+        .booking-page { padding: 24px; }
+        .booking-header-row { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 20px; flex-wrap: wrap; gap: 12px; }
+        .booking-page-header h1 { font-size: 22px; font-weight: 700; margin: 0 0 4px; color: #1e293b; }
+        .booking-page-header p { font-size: 13px; color: #64748b; margin: 0; }
+        .booking-header-actions { display: flex; gap: 10px; align-items: center; }
+        .booking-stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 20px; }
+        @@media (max-width: 992px) { .booking-stats-row { grid-template-columns: repeat(2, 1fr); } }
+        @@media (max-width: 576px) { .booking-stats-row { grid-template-columns: 1fr; } }
+        .booking-stat-card { background: #fff; border-radius: 12px; padding: 18px 20px; border: 1px solid #e2e8f0; position: relative; overflow: hidden; }
+        .booking-stat-card.is-highlight { background: #1e40af; color: #fff; border-color: #1e40af; }
+        .booking-stat-card.is-highlight .stat-label, .booking-stat-card.is-highlight .stat-change { color: rgba(255,255,255,0.8); }
+        .booking-stat-card.is-highlight .stat-value { color: #fff; }
+        .stat-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+        .stat-icon { width: 36px; height: 36px; border-radius: 8px; background: #eff6ff; display: flex; align-items: center; justify-content: center; color: #3b82f6; font-size: 16px; }
+        .booking-stat-card.is-highlight .stat-icon { background: rgba(255,255,255,0.2); color: #fff; }
+        .stat-change { font-size: 12px; font-weight: 600; color: #16a34a; }
+        .stat-change.is-neutral { color: #64748b; }
+        .stat-change.is-warn { color: #f59e0b; }
+        .stat-label { font-size: 12px; color: #64748b; margin-bottom: 4px; }
+        .stat-value { font-size: 26px; font-weight: 700; color: #1e293b; line-height: 1; }
+        .stat-badge { position: absolute; top: 12px; right: 12px; background: #f59e0b; color: #fff; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 20px; }
+        .booking-filter-card { background: #fff; border-radius: 12px; border: 1px solid #e2e8f0; padding: 16px 20px; margin-bottom: 16px; }
+        .booking-filter-label { font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 4px; display: block; }
+        .booking-table-card { background: #fff; border-radius: 12px; border: 1px solid #e2e8f0; overflow: hidden; }
+        .booking-code-link { color: #2563eb; font-weight: 600; text-decoration: none; }
+        .booking-code-link:hover { text-decoration: underline; }
+        .customer-cell { display: flex; align-items: center; gap: 10px; }
+        .customer-avatar { width: 34px; height: 34px; border-radius: 50%; object-fit: cover; background: #e2e8f0; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; color: #64748b; flex-shrink: 0; }
+        .customer-name { font-weight: 600; font-size: 13px; color: #1e293b; }
+        .customer-phone { font-size: 12px; color: #64748b; }
+        .service-summary { font-size: 13px; color: #334155; }
+        .service-count-badge { display: inline-block; background: #eff6ff; color: #2563eb; font-size: 11px; font-weight: 600; padding: 1px 6px; border-radius: 10px; margin-left: 4px; }
+        .stylist-name { font-size: 13px; color: #2563eb; font-weight: 500; }
+        .booking-datetime { font-size: 13px; color: #334155; }
+        .booking-time { font-size: 12px; color: #64748b; }
+        .booking-amount { font-size: 14px; font-weight: 700; color: #1e293b; }
+        .status-badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; white-space: nowrap; }
+        .status-new { background: #fef3c7; color: #92400e; }
+        .status-confirmed { background: #dbeafe; color: #1e40af; }
+        .status-completed { background: #d1fae5; color: #065f46; }
+        .status-cancelled { background: #fee2e2; color: #991b1b; }
+        .status-processing { background: #e0e7ff; color: #3730a3; }
+        .btn-booking-primary { background: #2563eb; color: #fff; border: none; border-radius: 8px; padding: 9px 18px; font-size: 13px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
+        .btn-booking-primary:hover { background: #1d4ed8; color: #fff; }
+        .btn-booking-outline { background: #fff; color: #2563eb; border: 1.5px solid #2563eb; border-radius: 8px; padding: 8px 16px; font-size: 13px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; text-decoration: none; }
+        .btn-booking-outline:hover { background: #eff6ff; color: #1d4ed8; }
+        .dataTables_wrapper .dataTables_paginate .paginate_button.current { background: #2563eb !important; color: #fff !important; border-radius: 6px; border: none !important; }
+        .dataTables_wrapper .dataTables_paginate .paginate_button:hover { background: #eff6ff !important; color: #2563eb !important; border-radius: 6px; border: none !important; }
+    </style>
+}
+
+@section scripts {
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <abp-script src="/Pages/SalonBeautyBookings/index.js" />
+}
+
+@{
+    var canCreate = CurrentTenant.IsAvailable
+        ? await AuthorizationService.IsGrantedAsync(MultiTenancyPermissions.SalonBeautyBookings.Create)
+        : false;
+    var canEdit = CurrentTenant.IsAvailable
+        ? await AuthorizationService.IsGrantedAsync(MultiTenancyPermissions.SalonBeautyBookings.Edit)
+        : false;
+    var canDelete = CurrentTenant.IsAvailable
+        ? await AuthorizationService.IsGrantedAsync(MultiTenancyPermissions.SalonBeautyBookings.Delete)
+        : false;
+    var canCancel = CurrentTenant.IsAvailable
+        ? await AuthorizationService.IsGrantedAsync(MultiTenancyPermissions.SalonBeautyBookings.Cancel)
+        : false;
+}
+
+<div class="booking-page">
+    <div class="booking-header-row">
+        <div class="booking-page-header">
+            <h1>Quản lý đặt lịch</h1>
+            <p>Theo dõi và điều phối lịch hẹn của stylist</p>
+        </div>
+        <div class="booking-header-actions">
+            @if (canCreate)
+            {
+                <button type="button" id="NewBookingButton" class="btn-booking-primary">
+                    <i class="fa fa-plus"></i> Đặt lịch mới
+                </button>
+            }
+            <a href="/SalonBeautyBookings/Calendar" class="btn-booking-outline">
+                <i class="fa fa-calendar"></i> Xem lịch biểu
+            </a>
+        </div>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="booking-stats-row" id="BookingStatsRow">
+        <div class="booking-stat-card">
+            <div class="stat-top">
+                <div class="stat-icon"><i class="fa fa-calendar-check-o"></i></div>
+                <span class="stat-change" id="StatTotalChange">+0%</span>
+            </div>
+            <div class="stat-label">Tổng số booking</div>
+            <div class="stat-value" id="StatTotalBookings">--</div>
+        </div>
+        <div class="booking-stat-card">
+            <div class="stat-top">
+                <div class="stat-icon"><i class="fa fa-money"></i></div>
+                <span class="stat-change" id="StatValueChange">+0%</span>
+            </div>
+            <div class="stat-label">Tổng giá trị</div>
+            <div class="stat-value" id="StatTotalValue">--</div>
+        </div>
+        <div class="booking-stat-card">
+            <div class="stat-top">
+                <div class="stat-icon"><i class="fa fa-check-circle"></i></div>
+                <span class="stat-change is-neutral" id="StatCompletionTrend">Ổn định</span>
+            </div>
+            <div class="stat-label">Tỷ lệ hoàn thành</div>
+            <div class="stat-value" id="StatCompletionRate">--</div>
+        </div>
+        <div class="booking-stat-card is-highlight">
+            <span class="stat-badge">Cần xử lý</span>
+            <div class="stat-top">
+                <div class="stat-icon"><i class="fa fa-clock-o"></i></div>
+            </div>
+            <div class="stat-label">Booking mới chưa xử lý</div>
+            <div class="stat-value" id="StatNewUnprocessed">--</div>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="booking-filter-card">
+        <div class="row g-3 align-items-end">
+            <div class="col-lg-2 col-md-4">
+                <label class="booking-filter-label">Ngày đặt</label>
+                <input type="text" id="BookingFromDateFilter" class="form-control form-control-sm" placeholder="mm/dd/yyyy" />
+            </div>
+            <div class="col-lg-2 col-md-4">
+                <label class="booking-filter-label">Đến ngày</label>
+                <input type="text" id="BookingToDateFilter" class="form-control form-control-sm" placeholder="mm/dd/yyyy" />
+            </div>
+            <div class="col-lg-2 col-md-4">
+                <label class="booking-filter-label">Trạng thái</label>
+                <select id="BookingStatusFilter" class="form-select form-select-sm">
+                    <option value="">Tất cả</option>
+                    <option value="0">Chờ xác nhận</option>
+                    <option value="1">Đã xác nhận</option>
+                    <option value="2">Hoàn thành</option>
+                    <option value="3">Đã hủy</option>
+                </select>
+            </div>
+            <div class="col-lg-3 col-md-4">
+                <label class="booking-filter-label">Stylist</label>
+                <select id="BookingStylistFilter" class="form-select form-select-sm">
+                    <option value="">Tất cả Stylist</option>
+                </select>
+            </div>
+            <div class="col-lg-2 col-md-4">
+                <label class="booking-filter-label">Tìm kiếm</label>
+                <input type="text" id="BookingFilterText" class="form-control form-control-sm" placeholder="Mã booking, tên KH..." />
+            </div>
+            <div class="col-lg-1 col-md-4">
+                <button id="SearchBookingButton" class="btn btn-outline-primary btn-sm w-100" style="height:31px;">
+                    <i class="fa fa-search"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Table -->
+    <div class="booking-table-card">
+        <input type="hidden" id="CanEditBooking" value="@(canEdit ? "true" : "false")" />
+        <input type="hidden" id="CanDeleteBooking" value="@(canDelete ? "true" : "false")" />
+        <input type="hidden" id="CanCancelBooking" value="@(canCancel ? "true" : "false")" />
+        <table id="SalonBeautyBookingsTable" class="table w-100"></table>
+    </div>
+</div>

@@ -244,11 +244,48 @@ public class SalonBeautyController : AbpController
         return await _bookingService.CancelAsync(id, input);
     }
 
+    [HttpPost("bookings/{id}/status")]
+    [Authorize(MultiTenancyPermissions.SalonBeautyBookings.Edit)]
+    public async Task<SalonBeautyBookingDetailDto> UpdateBookingStatusAsync(Guid id, [FromBody] UpdateBookingStatusDto input)
+    {
+        return await _bookingService.UpdateStatusAsync(id, input);
+    }
+
     [HttpDelete("bookings/{id}")]
     [Authorize(MultiTenancyPermissions.SalonBeautyBookings.Delete)]
     public async Task DeleteBookingAsync(Guid id)
     {
         await _bookingService.DeleteAsync(id);
+    }
+
+    [HttpGet("bookings/calendar-events")]
+    public async Task<List<SalonBeautyBookingCalendarDto>> GetCalendarEventsAsync([FromQuery] DateTime from, [FromQuery] DateTime to, [FromQuery] Guid? stylistId = null, [FromQuery] Guid? serviceId = null)
+    {
+        return await _bookingService.GetCalendarEventsAsync(from, to, stylistId, serviceId);
+    }
+
+    [HttpGet("bookings/statistics")]
+    public async Task<BookingStatisticsDto> GetBookingStatisticsAsync([FromQuery] DateTime? fromDate, [FromQuery] DateTime? toDate)
+    {
+        return await _bookingService.GetStatisticsAsync(fromDate, toDate);
+    }
+
+    [HttpGet("bookings/customer-lookup")]
+    public async Task<List<SalonBeautyCustomerLookupDto>> GetCustomerLookupAsync([FromQuery] string? filter)
+    {
+        return await _bookingService.GetCustomerLookupAsync(filter);
+    }
+
+    [HttpGet("bookings/service-lookup")]
+    public async Task<List<SalonBeautyServiceLookupDto>> GetServiceLookupAsync()
+    {
+        return await _bookingService.GetServiceLookupAsync();
+    }
+
+    [HttpGet("bookings/stylist-lookup")]
+    public async Task<List<SalonBeautyStylistLookupDto>> GetStylistLookupAsync()
+    {
+        return await _bookingService.GetStylistLookupAsync();
     }
     #endregion
 

@@ -1,0 +1,303 @@
+@page
+@using Genora.MultiTenancy.Localization
+@using Microsoft.Extensions.Localization
+@using Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.TagHelpers.Modal
+@using Genora.MultiTenancy.Web.Pages.SalonBeautyBookings
+@model CreateModalModel
+@inject IStringLocalizer<MultiTenancyResource> L
+@{
+    Layout = null;
+}
+
+<form asp-page="/SalonBeautyBookings/CreateModal" id="CreateBookingForm" method="post" autocomplete="off" novalidate>
+    <abp-modal size="Large">
+        <abp-modal-body class="p-0">
+            <div class="booking-modal">
+                <div class="booking-modal-header">
+                    <div>
+                        <h3 class="booking-modal-title">Thêm mới đặt lịch</h3>
+                        <p class="booking-modal-subtitle">Tạo lịch hẹn mới cho khách hàng</p>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+
+                <div class="booking-modal-body">
+                    <!-- Customer Search -->
+                    <div class="mb-3">
+                        <label class="booking-form-label">Chọn khách hàng <span class="text-danger">*</span></label>
+                        <div class="d-flex gap-2">
+                            <div class="flex-grow-1 position-relative">
+                                <input type="text" id="CustomerSearchInput" class="form-control" placeholder="Tìm kiếm tên hoặc số điện thoại..." autocomplete="off" />
+                                <div id="CustomerSearchDropdown" class="customer-search-dropdown" style="display:none;"></div>
+                            </div>
+                            <button type="button" class="btn btn-primary btn-sm" id="AddNewCustomerBtn" style="white-space:nowrap;">
+                                <i class="fa fa-user-plus"></i> Thêm mới
+                            </button>
+                        </div>
+                        <input type="hidden" asp-for="Booking.CustomerId" id="SelectedCustomerId" />
+                        <div id="SelectedCustomerInfo" class="selected-customer-info" style="display:none;"></div>
+                        <span asp-validation-for="Booking.CustomerId" class="text-danger"></span>
+                    </div>
+
+                    <!-- Booking Info Row -->
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-4">
+                            <label class="booking-form-label">Stylist chính</label>
+                            <select asp-for="Booking.StylistId" id="BookingStylistSelect" class="form-select">
+                                <option value="">-- Chọn Stylist --</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="booking-form-label">Ngày hẹn <span class="text-danger">*</span></label>
+                            <input type="text" id="BookingDatePicker" class="form-control" placeholder="dd/mm/yyyy" />
+                            <input type="hidden" asp-for="Booking.BookingDate" id="BookingDateHidden" />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="booking-form-label">Khung giờ sử dụng dịch vụ</label>
+                            <input type="time" asp-for="Booking.StartTime" id="BookingStartTime" class="form-control" value="09:00" />
+                        </div>
+                    </div>
+
+                    <!-- Services List -->
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <label class="booking-form-label mb-0">Danh sách dịch vụ <span class="text-danger">*</span></label>
+                            <button type="button" id="AddServiceBtn" class="btn btn-link btn-sm p-0">
+                                <i class="fa fa-plus-circle"></i> Thêm dịch vụ
+                            </button>
+                        </div>
+                        <div class="booking-services-table">
+                            <div class="booking-services-header row g-0">
+                                <div class="col-5">Dịch vụ</div>
+                                <div class="col-4">Thực hiện bởi</div>
+                                <div class="col-2 text-end">Giá</div>
+                                <div class="col-1"></div>
+                            </div>
+                            <div id="ServiceItemsContainer"></div>
+                        </div>
+                        <span id="ServiceItemsError" class="text-danger" style="display:none;">Vui lòng chọn ít nhất một dịch vụ.</span>
+                    </div>
+
+                    <!-- Notes -->
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="booking-form-label">Ghi chú của khách hàng</label>
+                            <textarea asp-for="Booking.CustomerNote" class="form-control" rows="3" placeholder="VD: Khách thích nước lạnh, hay đi muộn 5p..."></textarea>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="booking-form-label">Ghi chú nội bộ</label>
+                            <textarea asp-for="Booking.InternalNote" class="form-control" rows="3" placeholder="VD: Sắp xếp bàn số 4, ưu tiên gói trước..."></textarea>
+                        </div>
+                    </div>
+
+                    <!-- Total -->
+                    <div class="booking-total-row">
+                        <span class="booking-total-label">Tạm tính (<span id="ServiceCountText">0</span> dịch vụ)</span>
+                        <span class="booking-total-value" id="BookingSubTotal">0đ</span>
+                    </div>
+                </div>
+
+                <div class="booking-modal-footer">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Hủy</button>
+                    <button type="button" id="ConfirmBookingBtn" class="btn btn-primary">
+                        <i class="fa fa-check"></i> Xác nhận đặt lịch
+                    </button>
+                </div>
+            </div>
+        </abp-modal-body>
+    </abp-modal>
+</form>
+
+<style>
+    .booking-modal { font-family: inherit; }
+    .booking-modal-header { display: flex; justify-content: space-between; align-items: flex-start; padding: 20px 24px 0; }
+    .booking-modal-title { font-size: 18px; font-weight: 700; color: #1e293b; margin: 0 0 4px; }
+    .booking-modal-subtitle { font-size: 13px; color: #64748b; margin: 0; }
+    .booking-modal-body { padding: 20px 24px; }
+    .booking-modal-footer { padding: 16px 24px; border-top: 1px solid #e2e8f0; display: flex; justify-content: flex-end; gap: 10px; }
+    .booking-form-label { font-size: 13px; font-weight: 600; color: #374151; margin-bottom: 5px; display: block; }
+    .customer-search-dropdown { position: absolute; top: 100%; left: 0; right: 0; background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; box-shadow: 0 4px 16px rgba(0,0,0,0.1); z-index: 1000; max-height: 220px; overflow-y: auto; }
+    .customer-search-item { padding: 10px 14px; cursor: pointer; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid #f1f5f9; }
+    .customer-search-item:hover { background: #f8fafc; }
+    .customer-search-item:last-child { border-bottom: none; }
+    .customer-search-avatar { width: 32px; height: 32px; border-radius: 50%; background: #dbeafe; color: #2563eb; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 13px; flex-shrink: 0; }
+    .customer-search-name { font-weight: 600; font-size: 13px; color: #1e293b; }
+    .customer-search-phone { font-size: 12px; color: #64748b; }
+    .selected-customer-info { margin-top: 8px; padding: 10px 14px; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; display: flex; align-items: center; gap: 10px; }
+    .booking-services-table { border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden; }
+    .booking-services-header { background: #f8fafc; padding: 8px 12px; font-size: 12px; font-weight: 600; color: #64748b; text-transform: uppercase; }
+    .booking-service-row { padding: 10px 12px; border-top: 1px solid #f1f5f9; }
+    .booking-total-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; background: #f8fafc; border-radius: 8px; margin-top: 8px; }
+    .booking-total-label { font-size: 14px; color: #64748b; }
+    .booking-total-value { font-size: 18px; font-weight: 700; color: #1e293b; }
+</style>
+
+<script>
+    (function () {
+        var services = [];
+        var stylists = [];
+        var serviceItems = [];
+
+        function formatCurrency(val) {
+            return Number(val || 0).toLocaleString('vi-VN') + 'đ';
+        }
+
+        function loadLookups() {
+            $.get('/api/app/salon-beauty/bookings/service-lookup').done(function (data) {
+                services = data;
+            });
+            $.get('/api/app/salon-beauty/bookings/stylist-lookup').done(function (data) {
+                stylists = data;
+                var $sel = $('#BookingStylistSelect');
+                $.each(data, function (i, s) {
+                    $sel.append('<option value="' + s.id + '">' + s.displayName + (s.roleText ? ' (' + s.roleText + ')' : '') + '</option>');
+                });
+            });
+        }
+
+        function renderServiceRow(idx, item) {
+            var serviceOptions = services.map(function (s) {
+                return '<option value="' + s.id + '" data-price="' + s.price + '" data-duration="' + s.duration + '"' +
+                    (item.serviceId === s.id ? ' selected' : '') + '>' + s.name + (s.categoryName ? ' - ' + s.categoryName : '') + '</option>';
+            }).join('');
+            var stylistOptions = '<option value="">-- Stylist --</option>' + stylists.map(function (s) {
+                return '<option value="' + s.id + '"' + (item.stylistId === s.id ? ' selected' : '') + '>' + s.displayName + '</option>';
+            }).join('');
+
+            return '<div class="booking-service-row row g-2 align-items-center" data-idx="' + idx + '">' +
+                '<div class="col-5"><select class="form-select form-select-sm svc-select" data-idx="' + idx + '"><option value="">-- Chọn dịch vụ --</option>' + serviceOptions + '</select></div>' +
+                '<div class="col-4"><select class="form-select form-select-sm svc-stylist" data-idx="' + idx + '">' + stylistOptions + '</select></div>' +
+                '<div class="col-2 text-end"><span class="svc-price fw-bold" data-idx="' + idx + '">' + formatCurrency(item.price) + '</span></div>' +
+                '<div class="col-1 text-center"><button type="button" class="btn btn-sm btn-link text-danger p-0 svc-remove" data-idx="' + idx + '"><i class="fa fa-trash"></i></button></div>' +
+                '</div>';
+        }
+
+        function renderServiceItems() {
+            var $c = $('#ServiceItemsContainer');
+            $c.empty();
+            if (serviceItems.length === 0) {
+                $c.html('<div class="text-center text-muted py-3" style="font-size:13px;">Chưa có dịch vụ nào. Nhấn "+ Thêm dịch vụ" để thêm.</div>');
+            } else {
+                serviceItems.forEach(function (item, idx) {
+                    $c.append(renderServiceRow(idx, item));
+                });
+            }
+            updateTotal();
+        }
+
+        function updateTotal() {
+            var total = serviceItems.reduce(function (s, i) { return s + (i.price || 0); }, 0);
+            $('#BookingSubTotal').text(formatCurrency(total));
+            $('#ServiceCountText').text(serviceItems.length);
+        }
+
+        function buildHiddenInputs() {
+            $('[name^="Booking.Items"]').remove();
+            serviceItems.forEach(function (item, idx) {
+                $('<input>').attr({ type: 'hidden', name: 'Booking.Items[' + idx + '].ServiceId', value: item.serviceId }).appendTo('#CreateBookingForm');
+                $('<input>').attr({ type: 'hidden', name: 'Booking.Items[' + idx + '].StylistId', value: item.stylistId || '' }).appendTo('#CreateBookingForm');
+                $('<input>').attr({ type: 'hidden', name: 'Booking.Items[' + idx + '].Price', value: item.price || 0 }).appendTo('#CreateBookingForm');
+                $('<input>').attr({ type: 'hidden', name: 'Booking.Items[' + idx + '].Duration', value: item.duration || 0 }).appendTo('#CreateBookingForm');
+            });
+        }
+
+        var searchTimer;
+        $('#CustomerSearchInput').on('input', function () {
+            clearTimeout(searchTimer);
+            var q = $(this).val().trim();
+            if (q.length < 2) { $('#CustomerSearchDropdown').hide(); return; }
+            searchTimer = setTimeout(function () {
+                $.get('/api/app/salon-beauty/bookings/customer-lookup', { filter: q }).done(function (data) {
+                    var $dd = $('#CustomerSearchDropdown').empty().show();
+                    if (!data.length) {
+                        $dd.html('<div class="customer-search-item text-muted">Không tìm thấy khách hàng</div>');
+                        return;
+                    }
+                    data.forEach(function (c) {
+                        var initials = (c.name || 'K').charAt(0).toUpperCase();
+                        var $item = $('<div class="customer-search-item">' +
+                            '<div class="customer-search-avatar">' + initials + '</div>' +
+                            '<div><div class="customer-search-name">' + c.name + '</div>' +
+                            '<div class="customer-search-phone">' + (c.phone || '--') + '</div></div></div>');
+                        $item.on('click', function () {
+                            $('#SelectedCustomerId').val(c.id);
+                            $('#CustomerSearchInput').val(c.name);
+                            $('#CustomerSearchDropdown').hide();
+                            $('#SelectedCustomerInfo').html(
+                                '<div class="customer-search-avatar">' + initials + '</div>' +
+                                '<div><strong>' + c.name + '</strong> &nbsp; ' + (c.phone || '') + (c.code ? ' &nbsp; <span class="badge bg-light text-secondary">' + c.code + '</span>' : '') + '</div>'
+                            ).show();
+                        });
+                        $dd.append($item);
+                    });
+                });
+            }, 300);
+        });
+
+        $(document).on('click', function (e) {
+            if (!$(e.target).closest('#CustomerSearchInput, #CustomerSearchDropdown').length) {
+                $('#CustomerSearchDropdown').hide();
+            }
+        });
+
+        $('#AddServiceBtn').on('click', function () {
+            serviceItems.push({ serviceId: '', stylistId: '', price: 0, duration: 0 });
+            renderServiceItems();
+        });
+
+        $(document).on('change', '.svc-select', function () {
+            var idx = parseInt($(this).data('idx'));
+            var $opt = $(this).find(':selected');
+            serviceItems[idx].serviceId = $(this).val();
+            serviceItems[idx].price = parseFloat($opt.data('price')) || 0;
+            serviceItems[idx].duration = parseInt($opt.data('duration')) || 0;
+            $(this).closest('.booking-service-row').find('.svc-price').text(formatCurrency(serviceItems[idx].price));
+            updateTotal();
+        });
+
+        $(document).on('change', '.svc-stylist', function () {
+            var idx = parseInt($(this).data('idx'));
+            serviceItems[idx].stylistId = $(this).val();
+        });
+
+        $(document).on('click', '.svc-remove', function () {
+            var idx = parseInt($(this).data('idx'));
+            serviceItems.splice(idx, 1);
+            renderServiceItems();
+        });
+
+        flatpickr('#BookingDatePicker', {
+            dateFormat: 'd/m/Y',
+            defaultDate: new Date(),
+            onChange: function (selectedDates, dateStr) {
+                if (selectedDates.length) {
+                    var d = selectedDates[0];
+                    var iso = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+                    $('#BookingDateHidden').val(iso);
+                }
+            }
+        });
+        $('#BookingDateHidden').val(new Date().toISOString().split('T')[0]);
+
+        $('#ConfirmBookingBtn').on('click', function () {
+            var valid = true;
+            if (!$('#SelectedCustomerId').val()) {
+                abp.notify.warn('Vui lòng chọn khách hàng.');
+                valid = false;
+            }
+            if (serviceItems.length === 0 || serviceItems.some(function (i) { return !i.serviceId; })) {
+                $('#ServiceItemsError').show();
+                valid = false;
+            } else {
+                $('#ServiceItemsError').hide();
+            }
+            if (!valid) return;
+
+            buildHiddenInputs();
+            $('#CreateBookingForm').submit();
+        });
+
+        loadLookups();
+        renderServiceItems();
+    })();
+</script>
