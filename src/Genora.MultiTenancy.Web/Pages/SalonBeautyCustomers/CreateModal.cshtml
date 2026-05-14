@@ -12,7 +12,7 @@
         : string.Empty;
 }
 
-<form asp-page="/SalonBeautyCustomers/CreateModal" id="CreateSalonCustomerForm" class="salon-customer-form" method="post" autocomplete="off" novalidate>
+<form asp-page="/SalonBeautyCustomers/CreateModal" id="CreateSalonCustomerForm" class="salon-customer-form" method="post" enctype="multipart/form-data" autocomplete="off" novalidate>
     <abp-modal size="Large">
         <abp-modal-body class="p-0">
             <div class="salon-customer-modal">
@@ -28,6 +28,30 @@
                 </div>
 
                 <div class="salon-modal-body">
+                    <div class="salon-customer-avatar-uploader">
+                        <input type="hidden" class="salon-avatar-is-upload" asp-for="Customer.IsUploadImage" value="false" />
+                        <input asp-for="Customer.Avatar" type="hidden" class="salon-avatar-url-input" />
+
+                        <div class="salon-avatar-preview-circle">
+                            <img class="salon-avatar-preview-img" src="@(string.IsNullOrWhiteSpace(Model.Customer.Avatar) ? "/images/getting-started/no-photo-square.png" : Model.Customer.Avatar)" alt="Avatar" />
+                        </div>
+
+                        <div class="salon-avatar-mode-row">
+                            <label><input type="radio" name="CustomerAvatarMode" value="url" checked /> Dán link ảnh</label>
+                            <label><input type="radio" name="CustomerAvatarMode" value="upload" /> Tải ảnh lên</label>
+                        </div>
+
+                        <div class="salon-avatar-url-panel">
+                            <input type="url" class="form-control salon-avatar-url-text" placeholder="https://..." value="@Model.Customer.Avatar" />
+                            <small class="text-muted">Dán link ảnh đại diện nếu khách hàng đã có ảnh từ Zalo/Mini App.</small>
+                        </div>
+
+                        <div class="salon-avatar-upload-panel d-none">
+                            <button type="button" class="btn btn-sm btn-outline-primary salon-avatar-select-btn"><i class="fa fa-image"></i> Chọn ảnh</button>
+                            <input asp-for="Customer.Images" type="file" class="salon-avatar-file-input" accept="image/jpeg,image/png,image/webp" style="display:none;" />
+                            <small class="text-muted salon-avatar-file-hint">JPG/PNG/WebP, tối đa 2MB. Khuyến nghị ảnh vuông 400x400px.</small>
+                        </div>
+                    </div>
                     <div class="row g-3">
                         <div class="col-md-6">
                             <label class="salon-form-label" asp-for="Customer.Name">@L["SalonBeautyCustomer:Name"] <span class="text-danger">*</span></label>

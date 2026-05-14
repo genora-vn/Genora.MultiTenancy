@@ -1,5 +1,9 @@
-﻿.booking-page {
-    padding: 24px;
+﻿/* Salon Beauty Booking shared styles */
+.lpx-content-container .lpx-content {
+    padding-top: 0 !important;
+}
+.booking-page {
+    padding: 0;
 }
 
 .booking-header-row {
@@ -64,7 +68,8 @@
         border-color: #1e40af;
     }
 
-        .booking-stat-card.is-highlight .stat-label, .booking-stat-card.is-highlight .stat-change {
+        .booking-stat-card.is-highlight .stat-label,
+        .booking-stat-card.is-highlight .stat-change {
             color: rgba(255,255,255,0.8);
         }
 
@@ -240,9 +245,9 @@
 
 .status-badge {
     display: inline-block;
-    padding: 3px 10px;
+    padding: 4px 12px;
     border-radius: 20px;
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 700;
     white-space: nowrap;
 }
@@ -324,3 +329,1625 @@
     border-radius: 6px;
     border: none !important;
 }
+
+/* Create/Edit modal */
+.booking-modal {
+    font-family: inherit;
+}
+
+.booking-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding: 20px 24px 0;
+}
+
+.booking-modal-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 0 0 4px;
+}
+
+.booking-modal-subtitle {
+    font-size: 13px;
+    color: #64748b;
+    margin: 0;
+}
+
+.booking-modal-body {
+    padding: 20px 24px;
+}
+
+.booking-modal-footer {
+    padding: 16px 24px;
+    border-top: 1px solid #e2e8f0;
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+.booking-form-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: #374151;
+    margin-bottom: 5px;
+    display: block;
+}
+
+.customer-search-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+    z-index: 1000;
+    max-height: 220px;
+    overflow-y: auto;
+}
+
+.customer-search-item {
+    padding: 10px 14px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+    .customer-search-item:hover {
+        background: #f8fafc;
+    }
+
+    .customer-search-item:last-child {
+        border-bottom: none;
+    }
+
+.customer-search-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: #dbeafe;
+    color: #2563eb;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 13px;
+    flex-shrink: 0;
+}
+
+.customer-search-name {
+    font-weight: 600;
+    font-size: 13px;
+    color: #1e293b;
+}
+
+.customer-search-phone {
+    font-size: 12px;
+    color: #64748b;
+}
+
+.selected-customer-info {
+    margin-top: 8px;
+    padding: 10px 14px;
+    background: #f0fdf4;
+    border: 1px solid #bbf7d0;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.booking-services-table {
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.booking-services-header {
+    background: #f8fafc;
+    padding: 8px 12px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #64748b;
+    text-transform: uppercase;
+}
+
+.booking-service-row {
+    padding: 10px 12px;
+    border-top: 1px solid #f1f5f9;
+}
+
+.booking-total-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px;
+    background: #f8fafc;
+    border-radius: 8px;
+    margin-top: 8px;
+}
+
+.booking-total-label {
+    font-size: 14px;
+    color: #64748b;
+}
+
+.booking-total-value {
+    font-size: 18px;
+    font-weight: 700;
+    color: #1e293b;
+}
+
+/* Calendar - scoped */
+.salon-calendar-page {
+    padding: 0;
+    display: flex;
+    height: calc(100vh - 70px);
+    overflow: hidden;
+    background: #f7f5ff;
+}
+
+.salon-calendar-main {
+    flex: 1;
+    padding: 20px;
+    overflow: hidden;
+}
+
+.salon-calendar-sidebar {
+    width: 270px;
+    border-left: 1px solid #e2e8f0;
+    padding: 24px 20px;
+    background: #fff;
+    overflow-y: auto;
+}
+
+.salon-calendar-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.salon-calendar-title {
+    font-size: 22px;
+    font-weight: 800;
+    color: #1e293b;
+}
+
+.salon-calendar-subtitle {
+    font-size: 13px;
+    color: #64748b;
+    margin-top: 2px;
+}
+
+.salon-calendar-actions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.salon-calendar-container {
+    height: calc(100% - 58px);
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    padding: 12px;
+}
+
+.salon-calendar-page .sidebar-section {
+    margin-bottom: 24px;
+}
+
+.salon-calendar-page .sidebar-section-title {
+    font-size: 11px;
+    font-weight: 700;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 10px;
+}
+
+.salon-calendar-page .sidebar-filter-select {
+    width: 100%;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-size: 13px;
+}
+
+.salon-calendar-page .sidebar-select-all {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 10px;
+    background: #eff6ff;
+    border-radius: 8px;
+    color: #1d4ed8;
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 8px;
+}
+
+.salon-calendar-page .stylist-checkbox-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+    .salon-calendar-page .stylist-checkbox-list li label {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 6px 0;
+        font-size: 13px;
+        color: #334155;
+        cursor: pointer;
+    }
+
+    .salon-calendar-page .stylist-checkbox-list input[type="checkbox"], .salon-calendar-page .sidebar-select-all input[type="checkbox"] {
+        accent-color: #2563eb;
+    }
+
+.salon-calendar-page .legend-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+    .salon-calendar-page .legend-list li {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 4px 0;
+        font-size: 13px;
+        color: #334155;
+    }
+
+.salon-calendar-page .legend-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+    .salon-calendar-page .legend-dot.is-confirmed {
+        background: #2563EB;
+    }
+
+    .salon-calendar-page .legend-dot.is-pending {
+        background: #F59E0B;
+    }
+
+    .salon-calendar-page .legend-dot.is-completed {
+        background: #10B981;
+    }
+
+    .salon-calendar-page .legend-dot.is-cancelled {
+        background: #EF4444;
+    }
+
+.salon-calendar-page .fc .fc-event {
+    border-radius: 7px;
+    border: none;
+    padding: 2px 6px;
+    font-size: 11px;
+    cursor: pointer;
+}
+
+.salon-calendar-page .fc .fc-timegrid-slot {
+    height: 48px;
+}
+
+.salon-calendar-page .fc .fc-col-header-cell {
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: #64748b;
+}
+
+.salon-calendar-page .fc .fc-toolbar-title {
+    font-size: 18px;
+    font-weight: 800;
+}
+
+.salon-calendar-event {
+    padding: 2px 4px;
+    line-height: 1.25;
+    overflow: hidden;
+}
+
+.salon-calendar-event-time {
+    font-weight: 800;
+    font-size: 11px;
+}
+
+.salon-calendar-event-service, .salon-calendar-event-stylist {
+    font-size: 10px;
+    opacity: .92;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+@media (max-width: 992px) {
+    .salon-calendar-page {
+        flex-direction: column;
+        height: auto;
+    }
+
+    .salon-calendar-sidebar {
+        width: 100%;
+        border-left: none;
+        border-top: 1px solid #e2e8f0;
+    }
+
+    .salon-calendar-container {
+        height: 650px;
+    }
+}
+
+/* Detail page - full width Salon Beauty booking design.
+   Scoped by .sb-booking-detail-page to avoid affecting Calendar/List/Modal UI. */
+.sb-booking-detail-page,
+.sb-booking-detail-page * {
+    box-sizing: border-box;
+}
+
+.sb-booking-detail-page {
+    width: 100%;
+    max-width: none;
+    min-height: calc(100vh - 1px);
+    margin: 0;
+    padding: 28px 28px 44px;
+    background: #f3f4f6;
+    color: #101827;
+}
+
+.sb-booking-detail-toolbar {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 22px;
+}
+
+.sb-booking-detail-meta-line {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 6px;
+    color: #64748b;
+    font-size: 14px;
+}
+
+.sb-booking-status-pill {
+    display: inline-flex;
+    align-items: center;
+    border-radius: 999px;
+    padding: 5px 12px;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+}
+
+    .sb-booking-status-pill.sb-status-new {
+        background: #fff7ed;
+        color: #f97316;
+    }
+
+    .sb-booking-status-pill.sb-status-confirmed {
+        background: #eff6ff;
+        color: #2563eb;
+    }
+
+    .sb-booking-status-pill.sb-status-completed {
+        background: #ecfdf5;
+        color: #059669;
+    }
+
+    .sb-booking-status-pill.sb-status-cancelled {
+        background: #fef2f2;
+        color: #dc2626;
+    }
+
+.sb-booking-date {
+    color: #64748b;
+    font-weight: 600;
+}
+
+.sb-booking-detail-title {
+    margin: 0;
+    color: #111827;
+    font-size: 32px;
+    line-height: 1.15;
+    font-weight: 900;
+    letter-spacing: -0.04em;
+}
+
+.sb-booking-detail-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.sb-btn {
+    border: 1px solid transparent;
+    border-radius: 10px;
+    padding: 11px 19px;
+    font-size: 14px;
+    font-weight: 800;
+    line-height: 1;
+    cursor: pointer;
+    transition: all .15s ease;
+}
+
+.sb-btn-outline {
+    background: #fff;
+    color: #111827;
+    border-color: #cbd5e1;
+}
+
+    .sb-btn-outline:hover {
+        background: #f8fafc;
+    }
+
+.sb-btn-orange {
+    background: #f45113;
+    color: #fff;
+    border-color: #f45113;
+    box-shadow: 0 12px 22px rgba(244,81,19,.18);
+}
+
+    .sb-btn-orange:hover {
+        background: #e5480f;
+    }
+
+.sb-card {
+    background: #fff;
+    border: 1px solid #dbe4ef;
+    border-radius: 14px;
+    box-shadow: 0 8px 24px rgba(15,23,42,.04);
+}
+
+.sb-progress-card {
+    padding: 26px 30px 24px;
+    margin-bottom: 20px;
+}
+
+.sb-progress-card-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 14px;
+    margin-bottom: 30px;
+}
+
+.sb-progress-label {
+    color: #64748b;
+    font-size: 14px;
+}
+
+.sb-progress-date {
+    color: #111827;
+    font-size: 14px;
+    font-weight: 800;
+}
+
+    .sb-progress-date i {
+        color: #f45113;
+        margin-right: 7px;
+    }
+
+.sb-progress-track {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    position: relative;
+    padding: 0 8px;
+}
+
+.sb-progress-line, .sb-progress-line-active {
+    position: absolute;
+    left: 38px;
+    right: 38px;
+    top: 23px;
+    height: 4px;
+    border-radius: 99px;
+}
+
+.sb-progress-line {
+    background: #eef2f7;
+}
+
+.sb-progress-line-active {
+    width: calc((100% - 76px) * .34);
+    right: auto;
+    background: #f45113;
+}
+
+    .sb-progress-line-active.step-1 {
+        width: 0;
+    }
+
+    .sb-progress-line-active.step-2 {
+        width: calc((100% - 76px) * .34);
+    }
+
+    .sb-progress-line-active.step-3 {
+        width: calc((100% - 76px) * .67);
+    }
+
+    .sb-progress-line-active.step-4 {
+        width: calc(100% - 76px);
+    }
+
+.sb-progress-step {
+    position: relative;
+    z-index: 1;
+    min-height: 84px;
+    text-align: center;
+    color: #64748b;
+}
+
+.sb-progress-icon {
+    width: 48px;
+    height: 48px;
+    margin: 0 auto 12px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #f1f5f9;
+    border: 2px solid #dbe4ef;
+    color: #94a3b8;
+    font-size: 18px;
+}
+
+.sb-progress-step.is-done .sb-progress-icon, .sb-progress-step.is-active .sb-progress-icon {
+    background: #f45113;
+    border-color: #f45113;
+    color: #fff;
+    box-shadow: 0 8px 18px rgba(244,81,19,.22);
+}
+
+.sb-progress-step.is-muted .sb-progress-icon {
+    background: #f1f5f9;
+    border-color: #e2e8f0;
+    color: #94a3b8;
+}
+
+.sb-progress-title {
+    font-size: 13px;
+    font-weight: 800;
+    color: #64748b;
+}
+
+.sb-progress-step.is-done .sb-progress-title, .sb-progress-step.is-active .sb-progress-title {
+    color: #111827;
+}
+
+.sb-progress-time {
+    margin-top: 5px;
+    font-size: 11px;
+    color: #94a3b8;
+}
+
+.sb-detail-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 420px;
+    gap: 20px;
+    align-items: start;
+}
+
+.sb-detail-main {
+    min-width: 0;
+}
+
+.sb-services-card {
+    overflow: hidden;
+    margin-bottom: 18px;
+}
+
+.sb-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 24px 24px 20px;
+}
+
+    .sb-card-header h2, .sb-side-card h3, .sb-note-card h3 {
+        margin: 0;
+        color: #111827;
+        font-size: 22px;
+        font-weight: 900;
+        letter-spacing: -0.02em;
+    }
+
+    .sb-card-header span {
+        color: #64748b;
+        font-size: 14px;
+        font-weight: 700;
+    }
+
+.sb-service-table-head {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 110px 130px 130px;
+    gap: 16px;
+    padding: 15px 24px;
+    background: #f8fafc;
+    border-top: 1px solid #e2e8f0;
+    border-bottom: 1px solid #e2e8f0;
+    color: #475569;
+    font-size: 12px;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+}
+
+.sb-service-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 110px 130px 130px;
+    gap: 16px;
+    align-items: center;
+    min-height: 96px;
+    padding: 18px 24px;
+    border-bottom: 1px solid #eef2f7;
+}
+
+    .sb-service-row:last-child {
+        border-bottom: 0;
+    }
+
+.sb-service-info {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    min-width: 0;
+}
+
+.sb-service-icon {
+    width: 64px;
+    height: 64px;
+    flex: 0 0 64px;
+    border-radius: 14px;
+    background: #e9c9bb;
+    color: #fb4d14;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 23px;
+}
+
+.sb-service-name {
+    color: #111827;
+    font-size: 17px;
+    line-height: 1.25;
+    font-weight: 900;
+}
+
+.sb-service-note {
+    margin-top: 5px;
+    color: #64748b;
+    font-size: 13px;
+    font-style: italic;
+    line-height: 1.35;
+}
+
+.sb-service-duration, .sb-service-price, .sb-service-total {
+    color: #111827;
+    font-size: 16px;
+    font-weight: 800;
+}
+
+.sb-service-price {
+    font-weight: 600;
+}
+
+.sb-service-total {
+    font-weight: 900;
+}
+
+.sb-notes-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 18px;
+}
+
+.sb-note-card {
+    padding: 22px 24px;
+    min-height: 170px;
+}
+
+    .sb-note-card h3 {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        color: #475569;
+        font-size: 16px;
+        letter-spacing: .08em;
+        text-transform: uppercase;
+        margin-bottom: 20px;
+    }
+
+.sb-note-content {
+    background: #f7f4f2;
+    border-radius: 14px;
+    padding: 20px 18px;
+    min-height: 90px;
+    color: #111827;
+    font-size: 15px;
+    line-height: 1.45;
+}
+
+.sb-internal-note {
+    width: 100%;
+    min-height: 90px;
+    resize: vertical;
+    border: 1px solid #dbe4ef;
+    background: #f8fafc;
+    border-radius: 14px;
+    padding: 16px 18px;
+    color: #475569;
+    font-size: 14px;
+}
+
+.sb-detail-side {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.sb-side-card {
+    padding: 24px 26px;
+}
+
+    .sb-side-card h3 {
+        margin-bottom: 20px;
+    }
+
+.sb-customer-mini, .sb-stylist-mini {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.sb-customer-avatar, .sb-stylist-avatar {
+    width: 58px;
+    height: 58px;
+    border-radius: 50%;
+    background: #ffeadf;
+    color: #f45113;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    font-weight: 900;
+    flex-shrink: 0;
+    overflow: hidden;
+}
+
+    .sb-customer-avatar img, .sb-stylist-avatar img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+.sb-stylist-avatar {
+    border-radius: 14px;
+    background: #e9eef5;
+    color: #94a3b8;
+}
+
+.sb-customer-name, .sb-stylist-name {
+    color: #111827;
+    font-size: 17px;
+    font-weight: 900;
+}
+
+.sb-customer-type {
+    color: #64748b;
+    font-size: 13px;
+    margin-top: 2px;
+}
+
+.sb-info-list {
+    display: flex;
+    flex-direction: column;
+    gap: 13px;
+}
+
+    .sb-info-list > div, .sb-payment-row, .sb-payment-method {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 18px;
+    }
+
+        .sb-info-list span, .sb-payment-row span, .sb-payment-method span {
+            color: #64748b;
+            font-size: 14px;
+        }
+
+        .sb-info-list strong, .sb-payment-row strong, .sb-payment-method strong {
+            color: #111827;
+            font-size: 14px;
+            font-weight: 800;
+            text-align: right;
+        }
+
+    .sb-info-list.is-booking strong {
+        line-height: 1.35;
+    }
+
+.sb-tag {
+    background: #f1f5f9;
+    color: #475569 !important;
+    padding: 5px 10px;
+    border-radius: 7px;
+    font-size: 12px !important;
+    letter-spacing: .03em;
+}
+
+.sb-orange-text {
+    color: #f45113 !important;
+}
+
+.sb-green-text {
+    color: #16a34a !important;
+}
+
+.sb-side-divider {
+    height: 1px;
+    background: #eef2f7;
+    margin: 20px 0;
+}
+
+.sb-stylist-block-title {
+    color: #64748b;
+    font-size: 13px;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    margin-bottom: 13px;
+}
+
+.sb-stylist-role {
+    display: inline-flex;
+    margin-top: 6px;
+    background: #dbeafe;
+    color: #2563eb;
+    padding: 4px 9px;
+    border-radius: 7px;
+    font-size: 11px;
+    font-weight: 900;
+    text-transform: uppercase;
+}
+
+.sb-checkin-badge {
+    display: inline-flex;
+    align-items: center;
+    border-radius: 7px;
+    padding: 6px 10px;
+    font-size: 12px !important;
+    font-weight: 900 !important;
+    text-transform: uppercase;
+}
+
+.sb-checkin-done {
+    background: #dcfce7;
+    color: #16a34a !important;
+}
+
+.sb-checkin-not {
+    background: #f1f5f9;
+    color: #64748b !important;
+}
+
+.sb-checkin-noshow {
+    background: #fee2e2;
+    color: #dc2626 !important;
+}
+
+.sb-side-action {
+    width: 100%;
+    margin-top: 18px;
+    border: 0;
+    border-radius: 10px;
+    background: #eef2f7;
+    color: #111827;
+    padding: 13px 16px;
+    font-size: 14px;
+    font-weight: 900;
+    cursor: pointer;
+}
+
+    .sb-side-action:disabled {
+        opacity: .8;
+        cursor: default;
+    }
+
+.sb-payment-card h3 {
+    margin-bottom: 22px;
+}
+
+.sb-payment-row {
+    margin-bottom: 17px;
+}
+
+.sb-payment-total {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 18px;
+    border-top: 1px solid #eef2f7;
+    margin-top: 19px;
+    padding-top: 22px;
+}
+
+    .sb-payment-total span {
+        color: #111827;
+        font-size: 17px;
+        font-weight: 900;
+    }
+
+    .sb-payment-total strong {
+        color: #f45113;
+        font-size: 30px;
+        font-weight: 1000;
+        letter-spacing: -0.04em;
+    }
+
+.sb-payment-paid {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin: 22px 0 17px;
+    border-radius: 13px;
+    padding: 13px 16px;
+    font-size: 13px;
+    font-weight: 900;
+}
+
+    .sb-payment-paid.sb-payment-paid, .sb-payment-paid.sb-payment-paid strong {
+        color: #16a34a;
+    }
+
+    .sb-payment-paid.sb-payment-paid, .sb-payment-paid.sb-payment-refunded, .sb-payment-paid.sb-payment-unpaid {
+        background: #ecfdf5;
+    }
+
+    .sb-payment-paid.sb-payment-unpaid {
+        background: #fff7ed;
+        color: #f97316;
+    }
+
+    .sb-payment-paid.sb-payment-refunded {
+        background: #eef2ff;
+        color: #4f46e5;
+    }
+
+.sb-payment-method {
+    margin-top: 12px;
+}
+
+.sb-activity-card {
+    padding: 22px 26px;
+}
+
+.sb-activity-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 18px;
+}
+
+    .sb-activity-head h3 {
+        margin: 0;
+        color: #475569;
+        font-size: 16px;
+        font-weight: 900;
+        text-transform: uppercase;
+        letter-spacing: .08em;
+    }
+
+    .sb-activity-head a {
+        color: #f45113;
+        font-size: 13px;
+        font-weight: 800;
+        text-decoration: none;
+    }
+
+.sb-activity-list {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.sb-activity-item {
+    display: grid;
+    grid-template-columns: 12px 1fr;
+    gap: 12px;
+}
+
+.sb-activity-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #f97316;
+    margin-top: 5px;
+}
+
+    .sb-activity-dot.is-danger {
+        background: #ef4444;
+    }
+
+.sb-activity-title {
+    color: #111827;
+    font-size: 14px;
+    font-weight: 900;
+}
+
+.sb-activity-desc, .sb-activity-time {
+    color: #64748b;
+    font-size: 12px;
+    margin-top: 2px;
+}
+
+.sb-cancel-box {
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    border-radius: 14px;
+    padding: 16px 18px;
+    margin-bottom: 18px;
+}
+
+.sb-cancel-title {
+    color: #991b1b;
+    font-size: 14px;
+    font-weight: 900;
+}
+
+.sb-cancel-text {
+    margin-top: 4px;
+    color: #7f1d1d;
+    font-size: 13px;
+}
+
+@media (min-width: 1600px) {
+    .sb-detail-layout {
+        grid-template-columns: minmax(0, 1fr) 470px;
+    }
+}
+
+@media (max-width: 1180px) {
+    .sb-detail-layout {
+        grid-template-columns: 1fr;
+    }
+
+    .sb-detail-side {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 768px) {
+    .sb-booking-detail-page {
+        padding: 18px 12px 28px;
+    }
+
+    .sb-booking-detail-toolbar, .sb-progress-card-top {
+        flex-direction: column;
+    }
+
+    .sb-booking-detail-title {
+        font-size: 25px;
+    }
+
+    .sb-progress-track {
+        grid-template-columns: 1fr;
+        gap: 18px;
+        padding-left: 4px;
+    }
+
+    .sb-progress-line, .sb-progress-line-active {
+        display: none;
+    }
+
+    .sb-progress-step {
+        min-height: auto;
+        display: grid;
+        grid-template-columns: 48px 1fr;
+        text-align: left;
+        column-gap: 14px;
+    }
+
+    .sb-progress-icon {
+        margin: 0;
+        grid-row: 1 / span 2;
+    }
+
+    .sb-service-table-head {
+        display: none;
+    }
+
+    .sb-service-row {
+        grid-template-columns: 1fr;
+        gap: 8px;
+    }
+
+    .sb-service-duration, .sb-service-price, .sb-service-total {
+        font-size: 15px;
+    }
+
+    .sb-notes-grid, .sb-detail-side {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Detail page command bar + booking status update/cancel modals
+   Scoped by .sb-booking-detail-page / .sb-booking-action-modal. */
+.sb-booking-detail-page {
+    max-width: none !important;
+    width: 100%;
+    min-height: calc(100vh - 64px);
+    margin: 0 !important;
+    padding: 0;
+/*    padding: 22px 24px 42px !important;*/
+    background: #f4f5f7 !important;
+}
+
+.sb-detail-commandbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    min-height: 58px;
+    padding: 0 0 18px;
+    margin-bottom: 6px;
+    border-bottom: 1px solid rgba(226, 232, 240, .75);
+}
+
+.sb-detail-command-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+}
+
+.sb-detail-back-icon {
+    width: 32px;
+    height: 32px;
+    flex: 0 0 32px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 999px;
+    background: #fff;
+    color: #475569;
+    border: 1px solid #e2e8f0;
+    text-decoration: none;
+    box-shadow: 0 4px 12px rgba(15,23,42,.04);
+}
+
+    .sb-detail-back-icon:hover {
+        color: #f45113;
+        border-color: #fed7aa;
+        background: #fff7ed;
+    }
+
+.sb-detail-breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+    color: #0f172a;
+    font-size: 15px;
+    font-weight: 900;
+}
+
+    .sb-detail-breadcrumb i {
+        color: #0f172a;
+    }
+
+    .sb-detail-breadcrumb strong {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+.sb-detail-command-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.sb-booking-detail-toolbar {
+    margin-bottom: 18px !important;
+}
+
+.sb-booking-detail-actions {
+    display: none !important;
+}
+
+.sb-booking-detail-title {
+    font-size: 30px !important;
+}
+
+.sb-detail-layout {
+    grid-template-columns: minmax(0, 1fr) 380px !important;
+    gap: 20px !important;
+}
+
+@media (min-width: 1500px) {
+    .sb-detail-layout {
+        grid-template-columns: minmax(0, 1fr) 420px !important;
+    }
+}
+
+.sb-progress-step.is-cancelled .sb-progress-icon {
+    background: #ef4444;
+    border-color: #ef4444;
+    color: #fff;
+    box-shadow: 0 8px 18px rgba(239,68,68,.22);
+}
+
+.sb-progress-step.is-cancelled .sb-progress-title {
+    color: #dc2626;
+}
+
+.sb-progress-line-active.is-cancelled {
+    background: #ef4444;
+}
+
+    .sb-progress-line-active.is-cancelled.step-3 {
+        width: calc((100% - 76px) * .67);
+    }
+
+.sb-booking-action-modal .modal-content {
+    border: 0;
+    border-radius: 16px;
+    box-shadow: 0 24px 80px rgba(15,23,42,.22);
+    overflow: hidden;
+}
+
+.sb-booking-action-modal .modal-header {
+    padding: 18px 22px;
+    border-bottom: 1px solid #eef2f7;
+}
+
+.sb-booking-action-modal .modal-title {
+    font-size: 17px;
+    font-weight: 900;
+    color: #111827;
+    display: flex;
+    align-items: center;
+}
+
+.sb-booking-action-modal .modal-body {
+    padding: 20px 22px;
+}
+
+.sb-booking-action-modal .modal-footer {
+    padding: 16px 22px;
+    border-top: 1px solid #eef2f7;
+    background: #f8fafc;
+}
+
+.sb-booking-action-modal .form-label {
+    color: #334155;
+    font-weight: 800 !important;
+}
+
+.sb-booking-action-modal .form-select,
+.sb-booking-action-modal .form-control {
+    border-radius: 10px;
+    border-color: #dbe4ef;
+    min-height: 42px;
+}
+
+.sb-booking-action-modal .btn {
+    border-radius: 10px;
+    font-weight: 800;
+    padding: 9px 16px;
+}
+
+.sb-booking-action-modal .btn-primary {
+    background: #2563eb;
+    border-color: #2563eb;
+}
+
+.sb-booking-action-modal .btn-danger {
+    background: #ef4444;
+    border-color: #ef4444;
+}
+
+@media (max-width: 1180px) {
+    .sb-detail-layout {
+        grid-template-columns: 1fr !important;
+    }
+
+    .sb-detail-side {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 768px) {
+    .sb-booking-detail-page {
+        padding: 16px 12px 28px !important;
+    }
+
+    .sb-detail-commandbar {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .sb-detail-command-actions {
+        width: 100%;
+        justify-content: flex-start;
+    }
+
+        .sb-detail-command-actions .sb-btn {
+            flex: 1 1 auto;
+            justify-content: center;
+        }
+
+    .sb-booking-detail-title {
+        font-size: 25px !important;
+    }
+}
+
+/* Detail action modals: status/cancel */
+.sb-booking-detail-page .sb-progress-track-3 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+    .sb-booking-detail-page .sb-progress-track-3 .sb-progress-line-active.step-1 {
+        width: 0;
+    }
+
+    .sb-booking-detail-page .sb-progress-track-3 .sb-progress-line-active.step-2 {
+        width: calc((100% - 76px) * .5);
+    }
+
+    .sb-booking-detail-page .sb-progress-track-3 .sb-progress-line-active.step-3 {
+        width: calc(100% - 76px);
+    }
+
+.sb-booking-detail-page .sb-progress-track.is-cancelled .sb-progress-line-active {
+    background: #ef4444;
+}
+
+.sb-booking-detail-page .sb-progress-step.is-cancelled .sb-progress-icon {
+    background: #ef4444;
+    border-color: #ef4444;
+    color: #fff;
+    box-shadow: 0 8px 18px rgba(239,68,68,.22);
+}
+
+.sb-booking-detail-page .sb-progress-step.is-cancelled .sb-progress-title {
+    color: #991b1b;
+}
+
+.sb-action-modal-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+}
+
+.sb-action-modal-icon {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background: #eff6ff;
+    color: #2563eb;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+    .sb-action-modal-icon.is-danger {
+        background: #fef2f2;
+        color: #dc2626;
+    }
+
+.sb-radio-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.sb-radio-card {
+    min-height: 48px;
+    border: 1px solid #dbe4ef;
+    border-radius: 12px;
+    padding: 12px 14px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: #334155;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    background: #fff;
+    transition: all .15s ease;
+}
+
+    .sb-radio-card:hover {
+        border-color: #93c5fd;
+        background: #f8fbff;
+    }
+
+    .sb-radio-card input[type="radio"] {
+        width: 14px;
+        height: 14px;
+        margin: 0;
+        accent-color: #2563eb;
+    }
+
+    .sb-radio-card.is-selected {
+        border-color: #2563eb;
+        background: #eff6ff;
+        color: #1d4ed8;
+    }
+
+    .sb-radio-card.is-current {
+        border-color: #cbd5e1;
+        background: #f8fafc;
+        color: #94a3b8;
+    }
+
+    .sb-radio-card.is-disabled,
+    .sb-radio-card:has(input:disabled) {
+        opacity: .55;
+        cursor: not-allowed;
+        background: #f8fafc;
+    }
+
+.sb-current-status-pill {
+    display: inline-flex;
+    align-items: center;
+    border-radius: 999px;
+    padding: 6px 12px;
+    font-size: 12px;
+    font-weight: 800;
+}
+
+    .sb-current-status-pill.sb-status-new {
+        background: #fff7ed;
+        color: #f97316;
+    }
+
+    .sb-current-status-pill.sb-status-confirmed {
+        background: #eff6ff;
+        color: #2563eb;
+    }
+
+    .sb-current-status-pill.sb-status-completed {
+        background: #ecfdf5;
+        color: #059669;
+    }
+
+    .sb-current-status-pill.sb-status-cancelled {
+        background: #fef2f2;
+        color: #dc2626;
+    }
+
+@media (max-width: 768px) {
+    .sb-radio-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Salon Beauty booking list: cancel/payment inline actions */
+.booking-payment-cell {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    white-space: nowrap;
+}
+
+.booking-payment-edit-btn {
+    width: 26px;
+    height: 26px;
+    border: 1px solid #c7d2fe;
+    background: #eef2ff;
+    color: #4f46e5;
+    border-radius: 7px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    cursor: pointer;
+}
+
+    .booking-payment-edit-btn:hover {
+        background: #e0e7ff;
+        color: #3730a3;
+    }
+
+.payment-badge.payment-partial,
+.payment-partial {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.sb-booking-action-modal .btn:disabled {
+    opacity: .55;
+    cursor: not-allowed;
+}
+
+/* Booking list toolbar refinements */
+.booking-auto-refresh-select {
+    width: 150px;
+    height: 36px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #334155;
+}
+
+.booking-header-actions .btn-booking-outline {
+    min-height: 36px;
+}
+
+
+/* Customer code badge in booking create/edit modal */
+.booking-customer-code-badge {
+    display: inline-flex;
+    align-items: center;
+    border-radius: 999px;
+    padding: 3px 9px;
+    background: #e0f2fe;
+    color: #0369a1;
+    border: 1px solid #bae6fd;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: .02em;
+    vertical-align: middle;
+}
+
+.selected-customer-info .booking-customer-code-badge {
+    margin-left: 4px;
+}
+
+/* Booking list status/payment inline edit actions */
+.booking-status-cell {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    white-space: nowrap;
+}
+
+.booking-status-edit-btn {
+    width: 26px;
+    height: 26px;
+    border: 1px solid #fed7aa;
+    background: #fff7ed;
+    color: #f97316;
+    border-radius: 7px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    cursor: pointer;
+}
+
+    .booking-status-edit-btn:hover {
+        background: #ffedd5;
+        color: #ea580c;
+    }

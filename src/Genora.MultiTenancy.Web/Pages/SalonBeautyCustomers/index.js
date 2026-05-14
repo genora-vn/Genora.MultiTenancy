@@ -413,6 +413,31 @@ $(function () {
         return isNaN(parsed.getTime()) ? null : parsed;
     }
 
+
+    function previewCustomerAvatar($form, src) {
+        var safeSrc = src || '/images/getting-started/no-photo-square.png';
+        $form.find('.salon-avatar-preview-img').attr('src', safeSrc);
+    }
+
+    function setCustomerAvatarMode($form, mode) {
+        var upload = mode === 'upload';
+        $form.find('.salon-avatar-is-upload').val(upload ? 'true' : 'false');
+        $form.find('.salon-avatar-url-panel').toggleClass('d-none', upload);
+        $form.find('.salon-avatar-upload-panel').toggleClass('d-none', !upload);
+        if (!upload) {
+            var url = $.trim($form.find('.salon-avatar-url-text').val() || '');
+            $form.find('.salon-avatar-url-input').val(url);
+            previewCustomerAvatar($form, url);
+        }
+    }
+
+    function initializeCustomerAvatarUpload($form) {
+        if (!$form || !$form.length) return;
+        var currentUrl = $.trim($form.find('.salon-avatar-url-input').val() || $form.find('.salon-avatar-url-text').val() || '');
+        previewCustomerAvatar($form, currentUrl);
+        setCustomerAvatarMode($form, 'url');
+    }
+
     function isCustomerFormValid($form) {
         var name = getFieldValue($form, 'Customer.Name', 'Customer_Name');
         var phone = getFieldValue($form, 'Customer.Phone', 'Customer_Phone');
@@ -460,6 +485,8 @@ $(function () {
     function submitSalonCustomerForm($form) {
         $form.find('.salon-phone-input').each(function () { normalizePhoneInput($(this)); });
         $form.find('.salon-status-toggle').each(function () { updateStatusSwitch($(this)); });
+        var avatarMode = $form.find('input[name="CustomerAvatarMode"]:checked').val() || 'url';
+        setCustomerAvatarMode($form, avatarMode);
 
         if (!isCustomerFormValid($form)) {
             abp.notify.warn(l('SalonBeautyCustomers:RequiredFormWarning'));
@@ -472,11 +499,13 @@ $(function () {
 
         $submitButton.prop('disabled', true).addClass('disabled');
 
+        var formData = new FormData($form[0]);
         abp.ajax({
             type: 'POST',
             url: $form.attr('action'),
-            data: $form.serialize(),
-            contentType: 'application/x-www-form-urlencoded; charset=UTF-8'
+            data: formData,
+            processData: false,
+            contentType: false
         }).done(function () {
             closeSalonModal($form);
             abp.notify.success(l('SavedSuccessfully'));
@@ -502,9 +531,58 @@ $(function () {
         return submitSalonCustomerForm($(this));
     });
 
+
+    $(document).on('change', 'input[name="CustomerAvatarMode"]', function () {
+        setCustomerAvatarMode($(this).closest('form'), $(this).val());
+        updateSubmitState($(this).closest('form'));
+    });
+
+    $(document).on('input keyup paste change', '.salon-avatar-url-text', function () {
+        var $form = $(this).closest('form');
+        var url = $.trim($(this).val() || '');
+        $form.find('.salon-avatar-url-input').val(url);
+        previewCustomerAvatar($form, url);
+    });
+
+    $(document).on('click', '.salon-avatar-select-btn, .salon-avatar-preview-circle', function (e) {
+        e.preventDefault();
+        var $form = $(this).closest('form');
+        setCustomerAvatarMode($form, 'upload');
+        $form.find('input[name="CustomerAvatarMode"][value="upload"]').prop('checked', true);
+        var input = $form.find('.salon-avatar-file-input')[0];
+        if (input) input.click();
+    });
+
+    $(document).on('click', '.salon-avatar-file-input', function (e) { e.stopPropagation(); });
+
+    $(document).on('change', '.salon-avatar-file-input', function () {
+        var input = this;
+        var $form = $(input).closest('form');
+        var file = input.files && input.files[0];
+        $form.find('.salon-avatar-is-upload').val('true');
+        if (!file) {
+            previewCustomerAvatar($form, '/images/getting-started/no-photo-square.png');
+            return;
+        }
+        if (file.size > 2 * 1024 * 1024) {
+            abp.notify.warn('Ảnh đại diện tối đa 2MB.');
+            input.value = '';
+            return;
+        }
+        if (!/^image\/(jpeg|png|webp)$/.test(file.type || '')) {
+            abp.notify.warn('Chỉ hỗ trợ ảnh JPG, PNG hoặc WebP.');
+            input.value = '';
+            return;
+        }
+        var reader = new FileReader();
+        reader.onload = function (e) { previewCustomerAvatar($form, e.target.result); };
+        reader.readAsDataURL(file);
+    });
+
     function initializeSalonCustomerForm($form) {
         if (!$form || !$form.length) return;
         initSalonDatePicker($form);
+        initializeCustomerAvatarUpload($form);
         $form.find('.salon-phone-input').each(function () { normalizePhoneInput($(this)); });
         $form.find('.salon-status-toggle').each(function () { updateStatusSwitch($(this)); });
         updateSubmitState($form);

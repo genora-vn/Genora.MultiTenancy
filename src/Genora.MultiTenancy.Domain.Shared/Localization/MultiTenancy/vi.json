@@ -850,7 +850,7 @@
     "CheckinStatus:NotCheckedIn": "Chưa check-in",
     "CheckinStatus:CheckedIn": "Đã check-in",
     "CheckinStatus:NoShow": "Vắng mặt",
-    "SalonBeautyCustomers:PageTitle": "Customer Portfolio",
+    "SalonBeautyCustomers:PageTitle": "Quản lý khách hàng",
     "SalonBeautyCustomers:PageSubTitle": "Quản lý và chăm sóc danh mục khách hàng giá trị của salon.",
     "SalonBeautyCustomers:ExportList": "Xuất danh sách",
     "SalonBeautyCustomers:AddCustomer": "Thêm khách hàng",

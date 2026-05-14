@@ -7,222 +7,307 @@
 @model DetailModel
 
 @section styles {
-    <style>
-        .detail-page { padding: 24px; max-width: 1100px; margin: 0 auto; }
-        .detail-back { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: #64748b; text-decoration: none; margin-bottom: 16px; }
-        .detail-back:hover { color: #2563eb; }
-        .detail-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px; flex-wrap: wrap; gap: 12px; }
-        .detail-title-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
-        .detail-title { font-size: 22px; font-weight: 700; color: #1e293b; margin: 0; }
-        .detail-code { font-size: 13px; color: #64748b; background: #f1f5f9; padding: 3px 10px; border-radius: 6px; font-weight: 600; }
-        .detail-actions { display: flex; gap: 8px; flex-wrap: wrap; }
-        .detail-actions .btn { font-size: 13px; font-weight: 600; border-radius: 8px; padding: 8px 14px; display: inline-flex; align-items: center; gap: 6px; }
-
-        .detail-grid { display: grid; grid-template-columns: 1fr 360px; gap: 20px; }
-        @@media (max-width: 992px) { .detail-grid { grid-template-columns: 1fr; } }
-
-        .detail-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 20px; margin-bottom: 16px; }
-        .detail-card-title { font-size: 14px; font-weight: 700; color: #1e293b; margin: 0 0 16px; display: flex; align-items: center; gap: 8px; }
-        .detail-card-title i { color: #3b82f6; }
-
-        .status-badge { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 700; }
-        .status-new { background: #fef3c7; color: #92400e; }
-        .status-confirmed { background: #dbeafe; color: #1e40af; }
-        .status-completed { background: #d1fae5; color: #065f46; }
-        .status-cancelled { background: #fee2e2; color: #991b1b; }
-
-        .customer-section { display: flex; align-items: center; gap: 14px; padding: 14px; background: #f8fafc; border-radius: 10px; }
-        .customer-avatar-lg { width: 48px; height: 48px; border-radius: 50%; background: #dbeafe; color: #2563eb; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 700; flex-shrink: 0; }
-        .customer-avatar-lg img { width: 48px; height: 48px; border-radius: 50%; object-fit: cover; }
-        .customer-detail-name { font-size: 15px; font-weight: 700; color: #1e293b; }
-        .customer-detail-phone { font-size: 13px; color: #64748b; }
-        .customer-detail-meta { font-size: 12px; color: #94a3b8; margin-top: 2px; }
-
-        .info-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #f1f5f9; }
-        .info-row:last-child { border-bottom: none; }
-        .info-label { font-size: 13px; color: #64748b; }
-        .info-value { font-size: 13px; font-weight: 600; color: #1e293b; }
-
-        .service-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 14px; background: #f8fafc; border-radius: 8px; margin-bottom: 8px; }
-        .service-item:last-child { margin-bottom: 0; }
-        .service-item-name { font-size: 13px; font-weight: 600; color: #1e293b; }
-        .service-item-cat { font-size: 12px; color: #64748b; }
-        .service-item-price { font-size: 14px; font-weight: 700; color: #1e293b; }
-        .service-item-duration { font-size: 12px; color: #64748b; }
-
-        .total-section { border-top: 2px solid #e2e8f0; margin-top: 12px; padding-top: 12px; }
-        .total-row { display: flex; justify-content: space-between; align-items: center; padding: 4px 0; }
-        .total-row.is-main { padding-top: 8px; }
-        .total-row.is-main .total-label { font-size: 15px; font-weight: 700; color: #1e293b; }
-        .total-row.is-main .total-value { font-size: 18px; font-weight: 700; color: #2563eb; }
-        .total-label { font-size: 13px; color: #64748b; }
-        .total-value { font-size: 13px; font-weight: 600; color: #1e293b; }
-
-        .timeline { position: relative; padding-left: 20px; }
-        .timeline::before { content: ''; position: absolute; left: 6px; top: 8px; bottom: 8px; width: 2px; background: #e2e8f0; }
-        .timeline-item { position: relative; padding-bottom: 16px; }
-        .timeline-item:last-child { padding-bottom: 0; }
-        .timeline-dot { position: absolute; left: -20px; top: 4px; width: 12px; height: 12px; border-radius: 50%; background: #3b82f6; border: 2px solid #fff; box-shadow: 0 0 0 2px #dbeafe; }
-        .timeline-dot.is-danger { background: #ef4444; box-shadow: 0 0 0 2px #fee2e2; }
-        .timeline-title { font-size: 13px; font-weight: 600; color: #1e293b; }
-        .timeline-desc { font-size: 12px; color: #64748b; margin-top: 2px; }
-        .timeline-time { font-size: 11px; color: #94a3b8; margin-top: 2px; }
-
-        .note-box { background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px; padding: 12px 14px; font-size: 13px; color: #92400e; margin-bottom: 10px; }
-        .note-box.is-internal { background: #f0f9ff; border-color: #bae6fd; color: #0c4a6e; }
-
-        .cancel-box { background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 14px; margin-bottom: 16px; }
-        .cancel-box-title { font-size: 13px; font-weight: 700; color: #991b1b; margin-bottom: 4px; }
-        .cancel-box-text { font-size: 13px; color: #7f1d1d; }
-
-        .payment-badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; }
-        .payment-unpaid { background: #fef3c7; color: #92400e; }
-        .payment-paid { background: #d1fae5; color: #065f46; }
-        .payment-refunded { background: #e0e7ff; color: #3730a3; }
-
-        .checkin-badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; }
-        .checkin-not { background: #f1f5f9; color: #64748b; }
-        .checkin-done { background: #d1fae5; color: #065f46; }
-        .checkin-noshow { background: #fee2e2; color: #991b1b; }
-    </style>
+    <link rel="stylesheet" href="~/pages/salon/booking-shared.css" asp-append-version="true" />
 }
 
 @section scripts {
     <script>
         (function () {
-            var baseUrl = '/api/app/salon-beauty/bookings';
+            var bookingService = genora.multiTenancy.appServices.salonBeauties.salonBeautyBooking;
             var bookingId = '@Model.Booking.Id';
-            var currentStatus = '@((byte)Model.Booking.Status)';
+            var currentStatus = @((byte)Model.Booking.Status);
+
+            var statusNew = @((byte)SalonBeautyBookingStatus.New);
+            var statusConfirmed = @((byte)SalonBeautyBookingStatus.Confirmed);
+            var statusCompleted = @((byte)SalonBeautyBookingStatus.Completed);
+            var statusCancelled = @((byte)SalonBeautyBookingStatus.Cancelled);
+
+            function showModal(selector) {
+                var el = document.querySelector(selector);
+                if (!el) return;
+                if (window.bootstrap && bootstrap.Modal) {
+                    bootstrap.Modal.getOrCreateInstance(el).show();
+                    return;
+                }
+                if ($.fn.modal) {
+                    $(selector).modal('show');
+                }
+            }
+
+            function hideModal(selector) {
+                var el = document.querySelector(selector);
+                if (!el) return;
+                if (window.bootstrap && bootstrap.Modal) {
+                    bootstrap.Modal.getOrCreateInstance(el).hide();
+                    return;
+                }
+                if ($.fn.modal) {
+                    $(selector).modal('hide');
+                }
+            }
+
+            function getNextStatus() {
+                if (currentStatus === statusNew) return statusConfirmed;
+                if (currentStatus === statusConfirmed) return statusCompleted;
+                return null;
+            }
+
+            function initStatusModal() {
+                var nextStatus = getNextStatus();
+
+                $('input[name="NextBookingStatus"]').prop('checked', false).prop('disabled', true);
+                $('.sb-radio-card[data-status]').removeClass('is-selected is-current is-disabled');
+
+                $('.sb-radio-card[data-status="' + currentStatus + '"]').addClass('is-current').find('input').prop('disabled', true);
+
+                if (nextStatus !== null) {
+                    $('.sb-radio-card[data-status="' + nextStatus + '"]').removeClass('is-disabled').find('input').prop('disabled', false);
+                }
+
+                $('.sb-radio-card[data-status]').each(function () {
+                    var $card = $(this);
+                    var status = parseInt($card.attr('data-status'));
+                    var $input = $card.find('input');
+
+                    if (status !== nextStatus || status === currentStatus) {
+                        $card.addClass('is-disabled');
+                        $input.prop('disabled', true);
+                    }
+                });
+
+                $('#StatusInternalNoteInput').val('');
+                $('#ConfirmStatusBtn').prop('disabled', true);
+            }
+
+            function initCancelModal() {
+                $('input[name="CancelReason"]').prop('checked', false);
+                $('.sb-radio-card[data-cancel-reason]').removeClass('is-selected');
+                $('#CancelNoteInput').val('');
+                $('#CancelNoteValidation').addClass('d-none');
+                $('#ConfirmCancelBtn').prop('disabled', true);
+            }
+
+            function validateCancelModal() {
+                var hasReason = $('input[name="CancelReason"]:checked').length > 0;
+                var hasNote = $.trim($('#CancelNoteInput').val()).length > 0;
+                $('#ConfirmCancelBtn').prop('disabled', !(hasReason && hasNote));
+
+                if (hasNote) {
+                    $('#CancelNoteValidation').addClass('d-none');
+                }
+            }
+
+            $('body').on('change', 'input[name="NextBookingStatus"]', function () {
+                $('.sb-radio-card[data-status]').removeClass('is-selected');
+                $(this).closest('.sb-radio-card').addClass('is-selected');
+                $('#ConfirmStatusBtn').prop('disabled', false);
+            });
+
+            $('body').on('change', 'input[name="CancelReason"]', function () {
+                $('.sb-radio-card[data-cancel-reason]').removeClass('is-selected');
+                $(this).closest('.sb-radio-card').addClass('is-selected');
+                validateCancelModal();
+            });
+
+            $('body').on('input keyup change', '#CancelNoteInput', validateCancelModal);
 
             $('#StatusSelect').val(currentStatus);
+            $('#PaymentStatusSelect').val('@((byte)Model.Booking.PaymentStatus)');
+            @if (Model.Booking.PaymentMethod.HasValue)
+            {
+                <text>$('#PaymentMethodSelect').val('@((byte)Model.Booking.PaymentMethod.Value)');</text>
+            }
 
             $('#BtnCheckin').on('click', function () {
                 abp.message.confirm('Xác nhận khách hàng đã check-in?', 'Check-in', function (ok) {
                     if (!ok) return;
-                    $.ajax({ url: baseUrl + '/' + bookingId + '/checkin', type: 'POST' })
-                        .done(function () { abp.notify.success('Đã check-in thành công.'); location.reload(); })
-                        .fail(function () { abp.notify.error('Check-in thất bại.'); });
+                    bookingService.checkin(bookingId)
+                        .then(function () { abp.notify.success('Đã check-in thành công.'); location.reload(); })
+                        .catch(function () { abp.notify.error('Check-in thất bại.'); });
                 });
             });
 
             $('#BtnUpdatePayment').on('click', function () {
-                $('#PaymentModal').modal('show');
+                showModal('#PaymentModal');
             });
 
             $('#ConfirmPaymentBtn').on('click', function () {
                 var status = parseInt($('#PaymentStatusSelect').val());
                 var method = $('#PaymentMethodSelect').val() ? parseInt($('#PaymentMethodSelect').val()) : null;
-                $.ajax({
-                    url: baseUrl + '/' + bookingId + '/payment',
-                    type: 'POST',
-                    contentType: 'application/json',
-                    data: JSON.stringify({ paymentStatus: status, paymentMethod: method })
-                })
-                    .done(function () { abp.notify.success('Cập nhật thanh toán thành công.'); location.reload(); })
-                    .fail(function () { abp.notify.error('Cập nhật thất bại.'); });
+
+                $('#ConfirmPaymentBtn').prop('disabled', true);
+                bookingService.updatePayment(bookingId, { paymentStatus: status, paymentMethod: method })
+                    .then(function () { abp.notify.success('Cập nhật thanh toán thành công.'); location.reload(); })
+                    .catch(function () {
+                        abp.notify.error('Cập nhật thất bại.');
+                        $('#ConfirmPaymentBtn').prop('disabled', false);
+                    });
             });
 
-            $('#BtnCancel').on('click', function () {
-                $('#CancelModal').modal('show');
+            $(document).on('click', '#BtnCancel, #BtnCancelBooking', function () {
+                if (currentStatus === statusCompleted) {
+                    abp.notify.error('Không được hủy booking đã hoàn thành');
+                    return;
+                }
+
+                initCancelModal();
+                showModal('#CancelModal');
             });
 
             $('#ConfirmCancelBtn').on('click', function () {
-                var reason = parseInt($('#CancelReasonSelect').val());
-                var note = $('#CancelNoteInput').val();
-                $.ajax({
-                    url: baseUrl + '/' + bookingId + '/cancel',
-                    type: 'POST',
-                    contentType: 'application/json',
-                    data: JSON.stringify({ cancelReason: reason, cancelNote: note })
-                })
-                    .done(function () { abp.notify.success('Đã hủy lịch đặt.'); location.reload(); })
-                    .fail(function () { abp.notify.error('Hủy thất bại.'); });
+                var hasReason = $('input[name="CancelReason"]:checked').length > 0;
+                var note = $.trim($('#CancelNoteInput').val());
+
+                if (!hasReason || !note) {
+                    $('#CancelNoteValidation').removeClass('d-none');
+                    $('#ConfirmCancelBtn').prop('disabled', true);
+                    return;
+                }
+
+                var reason = parseInt($('input[name="CancelReason"]:checked').val());
+
+                $('#ConfirmCancelBtn').prop('disabled', true);
+                bookingService.cancel(bookingId, { cancelReason: reason, cancelNote: note })
+                    .then(function () { abp.notify.success('Đã hủy lịch đặt.'); location.reload(); })
+                    .catch(function (error) {
+                        var message = error?.message || error?.responseJSON?.error?.message || 'Hủy thất bại.';
+                        if (currentStatus === statusCompleted) {
+                            message = 'Không được hủy booking đã hoàn thành';
+                        }
+                        abp.notify.error(message);
+                        $('#ConfirmCancelBtn').prop('disabled', false);
+                    });
             });
 
             $('#BtnUpdateStatus').on('click', function () {
-                $('#StatusModal').modal('show');
+                var nextStatus = getNextStatus();
+                if (nextStatus === null) {
+                    abp.notify.warn('Booking hiện tại không còn trạng thái tiếp theo để cập nhật.');
+                    return;
+                }
+
+                initStatusModal();
+                showModal('#StatusModal');
             });
 
             $('#ConfirmStatusBtn').on('click', function () {
-                var status = parseInt($('#StatusSelect').val());
-                $.ajax({
-                    url: baseUrl + '/' + bookingId + '/status',
-                    type: 'POST',
-                    contentType: 'application/json',
-                    data: JSON.stringify({ status: status })
+                var $selected = $('input[name="NextBookingStatus"]:checked');
+                if ($selected.length === 0) {
+                    $('#ConfirmStatusBtn').prop('disabled', true);
+                    return;
+                }
+
+                var status = parseInt($selected.val());
+                var note = $.trim($('#StatusInternalNoteInput').val());
+
+                $('#ConfirmStatusBtn').prop('disabled', true);
+                bookingService.updateStatus(bookingId, {
+                    status: status,
+                    note: note,
+                    internalNote: note,
+                    reason: note
                 })
-                    .done(function () { abp.notify.success('Cập nhật trạng thái thành công.'); location.reload(); })
-                    .fail(function () { abp.notify.error('Cập nhật thất bại.'); });
+                    .then(function () { abp.notify.success('Cập nhật trạng thái thành công.'); location.reload(); })
+                    .catch(function (error) {
+                        var message = error?.message || error?.responseJSON?.error?.message || 'Cập nhật thất bại.';
+                        abp.notify.error(message);
+                        $('#ConfirmStatusBtn').prop('disabled', false);
+                    });
             });
         })();
     </script>
 }
 
 @{
+    var currentStep = Model.GetCurrentStep();
+    var isCancelled = Model.IsCancelled();
+    var isCompleted = Model.Booking.Status == SalonBeautyBookingStatus.Completed;
+    var canShowCancelButton = !isCancelled && !isCompleted;
+    var canShowUpdateStatusButton = !isCancelled && !isCompleted;
+
     var statusClass = Model.Booking.Status switch
     {
-        SalonBeautyBookingStatus.New => "status-new",
-        SalonBeautyBookingStatus.Confirmed => "status-confirmed",
-        SalonBeautyBookingStatus.Completed => "status-completed",
-        SalonBeautyBookingStatus.Cancelled => "status-cancelled",
-        _ => "status-new"
+        SalonBeautyBookingStatus.New => "sb-status-new",
+        SalonBeautyBookingStatus.Confirmed => "sb-status-confirmed",
+        SalonBeautyBookingStatus.Completed => "sb-status-completed",
+        SalonBeautyBookingStatus.Cancelled => "sb-status-cancelled",
+        _ => "sb-status-new"
     };
     var paymentClass = Model.Booking.PaymentStatus switch
     {
-        SalonBeautyPaymentStatus.Paid => "payment-paid",
-        SalonBeautyPaymentStatus.Refunded => "payment-refunded",
-        _ => "payment-unpaid"
+        SalonBeautyPaymentStatus.Paid => "sb-payment-paid",
+        SalonBeautyPaymentStatus.Refunded => "sb-payment-refunded",
+        _ => "sb-payment-unpaid"
     };
     var checkinClass = Model.Booking.CheckinStatus switch
     {
-        SalonBeautyCheckinStatus.CheckedIn => "checkin-done",
-        SalonBeautyCheckinStatus.NoShow => "checkin-noshow",
-        _ => "checkin-not"
+        SalonBeautyCheckinStatus.CheckedIn => "sb-checkin-done",
+        SalonBeautyCheckinStatus.NoShow => "sb-checkin-noshow",
+        _ => "sb-checkin-not"
+    };
+
+    int progressStep = Model.Booking.Status switch
+    {
+        SalonBeautyBookingStatus.New => 1,
+        SalonBeautyBookingStatus.Confirmed => 2,
+        SalonBeautyBookingStatus.Completed => 3,
+        SalonBeautyBookingStatus.Cancelled => 2,
+        _ => 1
+    };
+
+    string StepClass(int step) => isCancelled ? (step == 2 ? "is-cancelled" : "is-muted") : (progressStep > step ? "is-done" : (progressStep == step ? "is-active" : ""));
+    var dateTimeText = $"{Model.Booking.BookingDate:dd/MM/yyyy} {Model.Booking.StartTime:hh\\:mm}";
+    var initials = Model.GetCustomerInitials();
+
+    string BookingStatusText(SalonBeautyBookingStatus status) => status switch
+    {
+        SalonBeautyBookingStatus.New => "Chờ xác nhận",
+        SalonBeautyBookingStatus.Confirmed => "Đang thực hiện",
+        SalonBeautyBookingStatus.Completed => "Hoàn thành",
+        SalonBeautyBookingStatus.Cancelled => "Đã hủy",
+        _ => status.ToString()
     };
 }
 
-<div class="detail-page">
-    <a href="/SalonBeautyBookings" class="detail-back"><i class="fa fa-arrow-left"></i> Quay lại danh sách</a>
-
-    <div class="detail-header">
-        <div class="detail-title-row">
-            <h1 class="detail-title">Chi tiết đặt lịch</h1>
-            <span class="detail-code">@Model.Booking.BookingCode</span>
-            <span class="status-badge @statusClass">@Model.Booking.StatusText</span>
+<div class="sb-booking-detail-page">
+    <div class="sb-detail-commandbar">
+    <div class="sb-detail-command-left">
+        <a href="/SalonBeautyBookings" class="sb-detail-back-icon" title="Quay lại danh sách đặt lịch">
+            <i class="fa fa-arrow-left"></i>
+        </a>
+        <div class="sb-detail-breadcrumb">
+            <i class="fa fa-calendar-check-o"></i>
+            <span>Chi tiết đặt lịch</span>
+            <strong>#@Model.Booking.BookingCode</strong>
         </div>
-        <div class="detail-actions">
-            @if (Model.CanEdit && !Model.IsCancelled())
-            {
-                <button type="button" id="BtnUpdateStatus" class="btn btn-outline-primary">
-                    <i class="fa fa-refresh"></i> Cập nhật trạng thái
-                </button>
-            }
-            @if (Model.CanCheckin && !Model.IsCancelled() && Model.Booking.CheckinStatus != SalonBeautyCheckinStatus.CheckedIn)
-            {
-                <button type="button" id="BtnCheckin" class="btn btn-success">
-                    <i class="fa fa-sign-in"></i> Check-in
-                </button>
-            }
-            @if (Model.CanUpdatePayment && !Model.IsCancelled())
-            {
-                <button type="button" id="BtnUpdatePayment" class="btn btn-outline-secondary">
-                    <i class="fa fa-credit-card"></i> Thanh toán
-                </button>
-            }
-            @if (Model.CanCancel && !Model.IsCancelled())
-            {
-                <button type="button" id="BtnCancel" class="btn btn-outline-danger">
-                    <i class="fa fa-ban"></i> Hủy lịch
-                </button>
-            }
+    </div>
+    <div class="sb-detail-command-actions">
+        @if (!isCancelled)
+        {
+            <button type="button" id="BtnCancelBooking" class="sb-btn sb-btn-outline">Hủy lịch</button>
+        }
+        @if (!isCancelled)
+        {
+            <button type="button" id="BtnUpdateStatus" class="sb-btn sb-btn-orange">Cập nhật trạng thái</button>
+        }
+    </div>
+</div>
+
+    <div class="sb-booking-detail-toolbar">
+        <div>
+            <div class="sb-booking-detail-meta-line">
+                <span class="sb-booking-status-pill @statusClass">@Model.Booking.StatusText</span>
+                <span class="sb-booking-date"><i class="fa fa-calendar-o"></i> @dateTimeText</span>
+            </div>
+            <h1 class="sb-booking-detail-title">Lịch đặt #@Model.Booking.BookingCode</h1>
         </div>
     </div>
 
-    @if (Model.IsCancelled() && Model.Booking.CancelReason.HasValue)
+    @if (isCancelled && Model.Booking.CancelReason.HasValue)
     {
-        <div class="cancel-box">
-            <div class="cancel-box-title"><i class="fa fa-exclamation-circle"></i> Lịch đặt đã bị hủy</div>
-            <div class="cancel-box-text">
+        <div class="sb-cancel-box">
+            <div class="sb-cancel-title"><i class="fa fa-exclamation-circle"></i> Lịch đặt đã bị hủy</div>
+            <div class="sb-cancel-text">
                 Lý do: @(Model.Booking.CancelReason switch {
                     SalonBeautyCancelReason.CustomerCancel => "Khách hàng hủy",
                     SalonBeautyCancelReason.SalonCancel => "Salon hủy",
@@ -238,185 +323,208 @@
         </div>
     }
 
-    <div class="detail-grid">
-        <!-- Left Column -->
-        <div>
-            <!-- Customer -->
-            <div class="detail-card">
-                <h3 class="detail-card-title"><i class="fa fa-user"></i> Thông tin khách hàng</h3>
-                <div class="customer-section">
-                    <div class="customer-avatar-lg">
+    <div class="sb-card sb-progress-card">
+        <div class="sb-progress-card-top">
+            <div>
+                <div class="sb-progress-label">Ngày giờ sử dụng</div>
+            </div>
+            <div class="sb-progress-date"><i class="fa fa-calendar-o"></i> @dateTimeText</div>
+        </div>
+
+        <div class="sb-progress-track sb-progress-track-3 @(isCancelled ? "is-cancelled" : "")">
+            <div class="sb-progress-line"></div>
+            <div class="sb-progress-line-active step-@(isCancelled ? 2 : progressStep)"></div>
+
+            <div class="sb-progress-step @StepClass(1)">
+                <div class="sb-progress-icon"><i class="fa fa-check"></i></div>
+                <div class="sb-progress-title">Đã đặt</div>
+                <div class="sb-progress-time">@Model.Booking.CreationTime.ToString("HH:mm dd/MM")</div>
+            </div>
+
+            <div class="sb-progress-step @StepClass(2)">
+                <div class="sb-progress-icon"><i class="fa @(isCancelled ? "fa-times" : "fa-calendar-check-o")"></i></div>
+                <div class="sb-progress-title">@(isCancelled ? "Đã hủy" : "Đang thực hiện")</div>
+                <div class="sb-progress-time">@(Model.Booking.LastModificationTime?.ToString("HH:mm dd/MM") ?? "--")</div>
+            </div>
+
+            <div class="sb-progress-step @StepClass(3)">
+                <div class="sb-progress-icon"><i class="fa fa-check-circle-o"></i></div>
+                <div class="sb-progress-title">Hoàn thành</div>
+                <div class="sb-progress-time">@(Model.Booking.Status == SalonBeautyBookingStatus.Completed ? (Model.Booking.LastModificationTime?.ToString("HH:mm dd/MM") ?? "--") : "--")</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="sb-detail-layout">
+        <main class="sb-detail-main">
+            <section class="sb-card sb-services-card">
+                <div class="sb-card-header">
+                    <h2>Danh sách dịch vụ</h2>
+                    <span>@Model.Booking.Items.Count dịch vụ</span>
+                </div>
+
+                <div class="sb-service-table-head">
+                    <div>Dịch vụ</div>
+                    <div>Thời gian</div>
+                    <div>Đơn giá</div>
+                    <div>Thành tiền</div>
+                </div>
+
+                @foreach (var item in Model.Booking.Items)
+                {
+                    <div class="sb-service-row">
+                        <div class="sb-service-info">
+                            <div class="sb-service-icon"><i class="fa fa-scissors"></i></div>
+                            <div>
+                                <div class="sb-service-name">@(item.ServiceName ?? "--")</div>
+                                <div class="sb-service-note">
+                                    @if (!string.IsNullOrWhiteSpace(item.ServiceCategoryName))
+                                    {
+                                        <span>@item.ServiceCategoryName</span>
+                                    }
+                                    @if (!string.IsNullOrWhiteSpace(item.StylistName))
+                                    {
+                                        <span> • @item.StylistName</span>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                        <div class="sb-service-duration">@item.Duration phút</div>
+                        <div class="sb-service-price">@item.Price.ToString("N0")đ</div>
+                        <div class="sb-service-total">@item.Price.ToString("N0")đ</div>
+                    </div>
+                }
+            </section>
+
+            <div class="sb-notes-grid">
+                <section class="sb-card sb-note-card">
+                    <h3><i class="fa fa-sticky-note-o"></i> Ghi chú khách hàng</h3>
+                    <div class="sb-note-content">
+                        @(string.IsNullOrWhiteSpace(Model.Booking.CustomerNote) ? "Không có ghi chú từ khách hàng." : Model.Booking.CustomerNote)
+                    </div>
+                </section>
+
+                <section class="sb-card sb-note-card">
+                    <h3><i class="fa fa-clipboard"></i> Ghi chú nội bộ</h3>
+                    <textarea class="sb-internal-note" rows="4" readonly>@(Model.Booking.InternalNote ?? "")</textarea>
+                </section>
+            </div>
+        </main>
+
+        <aside class="sb-detail-side">
+            <section class="sb-card sb-side-card">
+                <h3>Thông tin khách hàng</h3>
+                <div class="sb-customer-mini">
+                    <div class="sb-customer-avatar">
                         @if (!string.IsNullOrWhiteSpace(Model.Booking.CustomerAvatar))
                         {
                             <img src="@Model.Booking.CustomerAvatar" alt="" />
                         }
                         else
                         {
-                            @Model.GetCustomerInitials()
+                            @initials
                         }
                     </div>
                     <div>
-                        <div class="customer-detail-name">@(Model.Booking.CustomerName ?? "--")</div>
-                        <div class="customer-detail-phone">@(Model.Booking.CustomerPhoneMasked ?? Model.Booking.CustomerPhone ?? "--")</div>
-                        <div class="customer-detail-meta">
-                            @if (!string.IsNullOrWhiteSpace(Model.Booking.CustomerCode))
-                            {
-                                <span>Mã KH: @Model.Booking.CustomerCode</span>
-                                <span> &bull; </span>
-                            }
-                            <span>Điểm tích lũy: @Model.Booking.CustomerLoyaltyPoint</span>
-                        </div>
+                        <div class="sb-customer-name">@(Model.Booking.CustomerName ?? "--")</div>
+                        <div class="sb-customer-type">Khách hàng thân thiết</div>
                     </div>
                 </div>
-            </div>
+                <div class="sb-info-list">
+                    <div><span>Số điện thoại</span><strong>@(Model.Booking.CustomerPhoneMasked ?? Model.Booking.CustomerPhone ?? "--")</strong></div>
+                    <div><span>Mã thành viên</span><strong class="sb-tag">@(Model.Booking.CustomerCode ?? "--")</strong></div>
+                    <div><span>Điểm tích lũy</span><strong class="sb-orange-text">@Model.Booking.CustomerLoyaltyPoint điểm</strong></div>
+                </div>
+            </section>
 
-            <!-- Services -->
-            <div class="detail-card">
-                <h3 class="detail-card-title"><i class="fa fa-scissors"></i> Dịch vụ đã đặt</h3>
-                @foreach (var item in Model.Booking.Items)
+            <section class="sb-card sb-side-card">
+                <h3>Thông tin đặt lịch</h3>
+                <div class="sb-info-list is-booking">
+                    <div><span>Ngày giờ sử dụng</span><strong><i class="fa fa-calendar-o"></i> @Model.Booking.BookingDate.ToString("dd/MM/yyyy")<br />@Model.Booking.StartTime.ToString(@"hh\:mm")</strong></div>
+                </div>
+                <div class="sb-side-divider"></div>
+                <div class="sb-stylist-block-title">Stylist đã chọn</div>
+                <div class="sb-stylist-mini">
+                    <div class="sb-stylist-avatar">
+                        @if (!string.IsNullOrWhiteSpace(Model.Booking.StylistAvatar))
+                        {
+                            <img src="@Model.Booking.StylistAvatar" alt="" />
+                        }
+                        else
+                        {
+                            <i class="fa fa-user-o"></i>
+                        }
+                    </div>
+                    <div>
+                        <div class="sb-stylist-name">@(Model.Booking.StylistName ?? "--")</div>
+                        @if (!string.IsNullOrWhiteSpace(Model.Booking.StylistRoleText))
+                        {
+                            <span class="sb-stylist-role">@Model.Booking.StylistRoleText</span>
+                        }
+                    </div>
+                </div>
+                <div class="sb-info-list">
+                    <div><span>Trạng thái check-in</span><strong class="sb-checkin-badge @checkinClass">@Model.Booking.CheckinStatusText</strong></div>
+                    <div><span>Giờ check-in</span><strong>@(Model.Booking.CheckinTime?.ToString("HH:mm, dd/MM/yyyy") ?? "--")</strong></div>
+                </div>
+                @if (Model.CanCheckin && !isCancelled && Model.Booking.CheckinStatus != SalonBeautyCheckinStatus.CheckedIn)
                 {
-                    <div class="service-item">
-                        <div>
-                            <div class="service-item-name">@(item.ServiceName ?? "--")</div>
-                            <div class="service-item-cat">
-                                @(item.ServiceCategoryName ?? "")
-                                @if (!string.IsNullOrWhiteSpace(item.StylistName))
+                    <button type="button" id="BtnCheckin" class="sb-side-action"><i class="fa fa-sign-in"></i> Check-in</button>
+                }
+                else
+                {
+                    <button type="button" class="sb-side-action" disabled><i class="fa fa-refresh"></i> Thay đổi Stylist</button>
+                }
+            </section>
+
+            <section class="sb-card sb-side-card sb-payment-card">
+                <h3>Chi tiết thanh toán</h3>
+                <div class="sb-payment-row"><span>Tạm tính</span><strong>@Model.Booking.SubTotal.ToString("N0")đ</strong></div>
+                <div class="sb-payment-row"><span>Phụ phí</span><strong>@Model.Booking.Surcharge.ToString("N0")đ</strong></div>
+                <div class="sb-payment-row"><span>Khuyến mãi</span><strong class="sb-green-text">-@Model.Booking.Discount.ToString("N0")đ</strong></div>
+                <div class="sb-payment-total"><span>Tổng cộng</span><strong>@Model.Booking.TotalAmount.ToString("N0")đ</strong></div>
+
+                <div class="sb-payment-paid @paymentClass">
+                    <span><i class="fa fa-check-circle-o"></i> @Model.Booking.PaymentStatusText</span>
+                    <strong>@(Model.Booking.PaidTime?.ToString("HH:mm dd/MM") ?? "--")</strong>
+                </div>
+                <div class="sb-payment-method"><span>Phương thức</span><strong><i class="fa fa-credit-card"></i> @(Model.Booking.PaymentMethodText ?? "--")</strong></div>
+
+                @if (Model.CanUpdatePayment && !isCancelled)
+                {
+                    <button type="button" id="BtnUpdatePayment" class="sb-side-action mt-2"><i class="fa fa-credit-card"></i> Cập nhật thanh toán</button>
+                }
+            </section>
+
+            <section class="sb-card sb-side-card sb-activity-card">
+                <div class="sb-activity-head">
+                    <h3>Lịch sử thao tác</h3>
+                    <a href="javascript:void(0);">Xem thêm</a>
+                </div>
+                <div class="sb-activity-list">
+                    @foreach (var activity in Model.Booking.Activities.Take(4))
+                    {
+                        <div class="sb-activity-item">
+                            <span class="sb-activity-dot @(activity.IsDanger ? "is-danger" : "")"></span>
+                            <div>
+                                <div class="sb-activity-title">@activity.Title</div>
+                                @if (!string.IsNullOrWhiteSpace(activity.Description))
                                 {
-                                    <span> &bull; @item.StylistName</span>
+                                    <div class="sb-activity-desc">@activity.Description</div>
                                 }
+                                <div class="sb-activity-time">@activity.Time.ToString("HH:mm, dd/MM/yyyy")</div>
                             </div>
                         </div>
-                        <div class="text-end">
-                            <div class="service-item-price">@item.Price.ToString("N0")đ</div>
-                            <div class="service-item-duration">@item.Duration phút</div>
-                        </div>
-                    </div>
-                }
-
-                <div class="total-section">
-                    <div class="total-row">
-                        <span class="total-label">Tạm tính (@Model.Booking.Items.Count dịch vụ)</span>
-                        <span class="total-value">@Model.Booking.SubTotal.ToString("N0")đ</span>
-                    </div>
-                    @if (Model.Booking.Surcharge > 0)
-                    {
-                        <div class="total-row">
-                            <span class="total-label">Phụ thu</span>
-                            <span class="total-value">+@Model.Booking.Surcharge.ToString("N0")đ</span>
-                        </div>
-                    }
-                    @if (Model.Booking.Discount > 0)
-                    {
-                        <div class="total-row">
-                            <span class="total-label">Giảm giá</span>
-                            <span class="total-value" style="color:#16a34a;">-@Model.Booking.Discount.ToString("N0")đ</span>
-                        </div>
-                    }
-                    <div class="total-row is-main">
-                        <span class="total-label">Tổng cộng</span>
-                        <span class="total-value">@Model.Booking.TotalAmount.ToString("N0")đ</span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Notes -->
-            @if (!string.IsNullOrWhiteSpace(Model.Booking.CustomerNote) || !string.IsNullOrWhiteSpace(Model.Booking.InternalNote))
-            {
-                <div class="detail-card">
-                    <h3 class="detail-card-title"><i class="fa fa-sticky-note-o"></i> Ghi chú</h3>
-                    @if (!string.IsNullOrWhiteSpace(Model.Booking.CustomerNote))
-                    {
-                        <div class="note-box">
-                            <strong>Khách hàng:</strong> @Model.Booking.CustomerNote
-                        </div>
-                    }
-                    @if (!string.IsNullOrWhiteSpace(Model.Booking.InternalNote))
-                    {
-                        <div class="note-box is-internal">
-                            <strong>Nội bộ:</strong> @Model.Booking.InternalNote
-                        </div>
                     }
                 </div>
-            }
-        </div>
-
-        <!-- Right Column -->
-        <div>
-            <!-- Booking Info -->
-            <div class="detail-card">
-                <h3 class="detail-card-title"><i class="fa fa-info-circle"></i> Thông tin lịch hẹn</h3>
-                <div class="info-row">
-                    <span class="info-label">Stylist</span>
-                    <span class="info-value" style="color:#2563eb;">@(Model.Booking.StylistName ?? "--")</span>
-                </div>
-                @if (!string.IsNullOrWhiteSpace(Model.Booking.StylistRoleText))
-                {
-                    <div class="info-row">
-                        <span class="info-label">Vai trò</span>
-                        <span class="info-value">@Model.Booking.StylistRoleText</span>
-                    </div>
-                }
-                <div class="info-row">
-                    <span class="info-label">Ngày hẹn</span>
-                    <span class="info-value">@Model.Booking.BookingDate.ToString("dd/MM/yyyy")</span>
-                </div>
-                <div class="info-row">
-                    <span class="info-label">Giờ</span>
-                    <span class="info-value">@Model.Booking.StartTime.ToString(@"hh\:mm") - @Model.Booking.EndTime.ToString(@"hh\:mm")</span>
-                </div>
-                <div class="info-row">
-                    <span class="info-label">Thanh toán</span>
-                    <span class="payment-badge @paymentClass">@Model.Booking.PaymentStatusText</span>
-                </div>
-                @if (Model.Booking.PaymentMethod.HasValue)
-                {
-                    <div class="info-row">
-                        <span class="info-label">Phương thức</span>
-                        <span class="info-value">@Model.Booking.PaymentMethodText</span>
-                    </div>
-                }
-                <div class="info-row">
-                    <span class="info-label">Check-in</span>
-                    <span class="checkin-badge @checkinClass">@Model.Booking.CheckinStatusText</span>
-                </div>
-                @if (Model.Booking.CheckinTime.HasValue)
-                {
-                    <div class="info-row">
-                        <span class="info-label">Giờ check-in</span>
-                        <span class="info-value">@Model.Booking.CheckinTime.Value.ToString("HH:mm dd/MM/yyyy")</span>
-                    </div>
-                }
-                <div class="info-row">
-                    <span class="info-label">Ngày tạo</span>
-                    <span class="info-value">@Model.Booking.CreationTime.ToString("HH:mm dd/MM/yyyy")</span>
-                </div>
-            </div>
-
-            <!-- Timeline -->
-            <div class="detail-card">
-                <h3 class="detail-card-title"><i class="fa fa-clock-o"></i> Lịch sử hoạt động</h3>
-                <div class="timeline">
-                    @foreach (var activity in Model.Booking.Activities)
-                    {
-                        <div class="timeline-item">
-                            <div class="timeline-dot @(activity.IsDanger ? "is-danger" : "")"></div>
-                            <div class="timeline-title">@activity.Title</div>
-                            @if (!string.IsNullOrWhiteSpace(activity.Description))
-                            {
-                                <div class="timeline-desc">@activity.Description</div>
-                            }
-                            <div class="timeline-time">@activity.Time.ToString("HH:mm dd/MM/yyyy")</div>
-                        </div>
-                    }
-                </div>
-            </div>
-        </div>
+            </section>
+        </aside>
     </div>
 </div>
 
 <!-- Payment Modal -->
-<div class="modal fade" id="PaymentModal" tabindex="-1">
-    <div class="modal-dialog modal-sm">
+<div class="modal fade sb-booking-action-modal" id="PaymentModal" tabindex="-1">
+    <div class="modal-dialog modal-sm modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title">Cập nhật thanh toán</h5>
@@ -450,57 +558,106 @@
 </div>
 
 <!-- Cancel Modal -->
-<div class="modal fade" id="CancelModal" tabindex="-1">
-    <div class="modal-dialog modal-sm">
+<div class="modal fade sb-booking-action-modal" id="CancelModal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
         <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Hủy lịch đặt</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            <div class="modal-header sb-action-modal-header">
+                <div class="sb-action-modal-icon is-danger">
+                    <i class="fa fa-times"></i>
+                </div>
+                <div>
+                    <h5 class="modal-title">Hủy lịch đặt</h5>
+                    <div class="text-muted small">Vui lòng chọn lý do hủy và nhập lý do chi tiết.</div>
+                </div>
+                <button type="button" class="btn-close ms-auto" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
-                <div class="mb-3">
-                    <label class="form-label fw-semibold" style="font-size:13px;">Lý do hủy</label>
-                    <select id="CancelReasonSelect" class="form-select">
-                        <option value="0">Khách hàng yêu cầu</option>
-                        <option value="1">Stylist không khả dụng</option>
-                        <option value="2">Khách không đến</option>
-                        <option value="3">Lý do khác</option>
-                    </select>
+                <div class="sb-radio-grid">
+                    <label class="sb-radio-card" data-cancel-reason="@((byte)SalonBeautyCancelReason.CustomerCancel)">
+                        <input type="radio" name="CancelReason" value="@((byte)SalonBeautyCancelReason.CustomerCancel)" />
+                        <span>Khách hàng yêu cầu</span>
+                    </label>
+                    <label class="sb-radio-card" data-cancel-reason="@((byte)SalonBeautyCancelReason.SalonCancel)">
+                        <input type="radio" name="CancelReason" value="@((byte)SalonBeautyCancelReason.SalonCancel)" />
+                        <span>Salon hủy</span>
+                    </label>
+                    <label class="sb-radio-card" data-cancel-reason="@((byte)SalonBeautyCancelReason.NoShow)">
+                        <input type="radio" name="CancelReason" value="@((byte)SalonBeautyCancelReason.NoShow)" />
+                        <span>Khách không đến</span>
+                    </label>
+                    <label class="sb-radio-card" data-cancel-reason="@((byte)SalonBeautyCancelReason.Duplicate)">
+                        <input type="radio" name="CancelReason" value="@((byte)SalonBeautyCancelReason.Duplicate)" />
+                        <span>Trùng lịch</span>
+                    </label>
+                    <label class="sb-radio-card" data-cancel-reason="@((byte)SalonBeautyCancelReason.Other)">
+                        <input type="radio" name="CancelReason" value="@((byte)SalonBeautyCancelReason.Other)" />
+                        <span>Khác</span>
+                    </label>
                 </div>
-                <div class="mb-3">
-                    <label class="form-label fw-semibold" style="font-size:13px;">Ghi chú</label>
-                    <textarea id="CancelNoteInput" class="form-control" rows="3" placeholder="Ghi chú thêm..."></textarea>
+
+                <div class="mt-3">
+                    <label class="form-label fw-semibold" style="font-size:13px;">
+                        Lý do hủy <span class="text-danger">*</span>
+                    </label>
+                    <textarea id="CancelNoteInput" class="form-control" rows="4" placeholder="Nhập lý do hủy booking..."></textarea>
+                    <div id="CancelNoteValidation" class="text-danger small mt-1 d-none">Vui lòng nhập lý do</div>
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-light" data-bs-dismiss="modal">Đóng</button>
-                <button type="button" id="ConfirmCancelBtn" class="btn btn-danger">Xác nhận hủy</button>
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal">Hủy bỏ</button>
+                <button type="button" id="ConfirmCancelBtn" class="btn btn-danger" disabled>Xác nhận hủy</button>
             </div>
         </div>
     </div>
 </div>
 
 <!-- Status Modal -->
-<div class="modal fade" id="StatusModal" tabindex="-1">
-    <div class="modal-dialog modal-sm">
+<div class="modal fade sb-booking-action-modal" id="StatusModal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
         <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Cập nhật trạng thái</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            <div class="modal-header sb-action-modal-header">
+                <div class="sb-action-modal-icon">
+                    <i class="fa fa-refresh"></i>
+                </div>
+                <div>
+                    <h5 class="modal-title">Cập nhật trạng thái lịch đặt</h5>
+                    <div class="text-muted small">Chỉ được cập nhật sang trạng thái kế tiếp theo luồng: Chờ xác nhận → Đang thực hiện → Hoàn thành.</div>
+                </div>
+                <button type="button" class="btn-close ms-auto" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
                 <div class="mb-3">
-                    <label class="form-label fw-semibold" style="font-size:13px;">Trạng thái mới</label>
-                    <select id="StatusSelect" class="form-select">
-                        <option value="0">Chờ xác nhận</option>
-                        <option value="1">Đã xác nhận</option>
-                        <option value="2">Hoàn thành</option>
-                    </select>
+                    <div class="text-muted small mb-2">Trạng thái hiện tại</div>
+                    <span class="sb-current-status-pill @statusClass">@Model.Booking.StatusText</span>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-semibold" style="font-size:13px;">Chọn trạng thái mới <span class="text-danger">*</span></label>
+                    <div class="sb-radio-grid">
+                        <label class="sb-radio-card" data-status="@((byte)SalonBeautyBookingStatus.New)">
+                            <input type="radio" name="NextBookingStatus" value="@((byte)SalonBeautyBookingStatus.New)" />
+                            <span>Chờ xác nhận</span>
+                        </label>
+                        <label class="sb-radio-card" data-status="@((byte)SalonBeautyBookingStatus.Confirmed)">
+                            <input type="radio" name="NextBookingStatus" value="@((byte)SalonBeautyBookingStatus.Confirmed)" />
+                            <span>Đang thực hiện</span>
+                        </label>
+                        <label class="sb-radio-card" data-status="@((byte)SalonBeautyBookingStatus.Completed)">
+                            <input type="radio" name="NextBookingStatus" value="@((byte)SalonBeautyBookingStatus.Completed)" />
+                            <span>Hoàn thành</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="mt-3">
+                    <label class="form-label fw-semibold" style="font-size:13px;">Ghi chú nội bộ</label>
+                    <textarea id="StatusInternalNoteInput" class="form-control" rows="4" placeholder="Nhập ghi chú nội bộ cho lần cập nhật này..."></textarea>
+                    <div class="text-muted small mt-1">Không bắt buộc nhập.</div>
                 </div>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-light" data-bs-dismiss="modal">Hủy</button>
-                <button type="button" id="ConfirmStatusBtn" class="btn btn-primary">Cập nhật</button>
+                <button type="button" id="ConfirmStatusBtn" class="btn btn-primary" disabled>Cập nhật</button>
             </div>
         </div>
     </div>

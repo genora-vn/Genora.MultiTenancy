@@ -51,7 +51,7 @@
                         <div class="col-md-6">
                             <label class="service-form-label" asp-for="Service.Price">@L["SalonBeautyService:Price"] <span class="text-danger">*</span></label>
                             <div class="service-input-addon">
-                                <input asp-for="Service.Price" type="text" inputmode="numeric" class="form-control service-form-control service-required service-price-input" required placeholder="500,000" />
+                                <input asp-for="Service.Price" type="text" inputmode="numeric" class="form-control service-form-control service-required service-price-input" required data-val="false" placeholder="500,000" />
                                 <span>VND</span>
                             </div>
                             <span asp-validation-for="Service.Price" class="text-danger"></span>
@@ -121,7 +121,7 @@
                                     <strong class="service-showonapp-toggle-text"
                                             data-active="@L["SalonBeautyServices:ShowOnAppActive"]"
                                             data-inactive="@L["SalonBeautyServices:ShowOnAppInactive"]">
-                                        @(Model.Service.IsShowOnApp ? L["SalonBeautyServices:ShowOnAppActive"] : L["SalonBeautyServices:ShowOnAppInactive"])
+                                        @(Model.Service.IsShowOnApp? L["SalonBeautyServices:ShowOnAppActive"] : L["SalonBeautyServices:ShowOnAppInactive"])
                                     </strong>
                                 </div>
                             </div>

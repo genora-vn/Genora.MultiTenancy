@@ -35,36 +35,43 @@
                             <span class="stylist-avatar-limit">@L["SalonBeautyStylists:AvatarLimit"]</span>
                         </div>
 
-                        <div class="stylist-avatar-mode-row">
-                            <label class="stylist-avatar-mode active">
-                                <input type="radio" name="AvatarMode" value="url" checked />
-                                <span>@L["SalonBeautyStylists:AvatarModeUrl"]</span>
-                            </label>
-                            <label class="stylist-avatar-mode">
-                                <input type="radio" name="AvatarMode" value="upload" />
-                                <span>@L["SalonBeautyStylists:AvatarModeUpload"]</span>
-                            </label>
-                        </div>
-
-                        <div class="stylist-avatar-url-panel">
-                            <label class="stylist-form-label">@L["SalonBeautyStylists:AvatarUrlLabel"]</label>
-                            <input type="url" class="form-control stylist-form-control stylist-avatar-url-text" placeholder="https://..." value="@Model.Stylist.Avatar" />
-                            <small class="text-muted d-block mt-1">@L["SalonBeautyStylists:AvatarUrlHint"]</small>
-                        </div>
-
-                        <div class="stylist-avatar-upload-panel" style="display:none;">
-                            <div class="stylist-avatar-drop-zone" tabindex="0">
-                                <div class="stylist-avatar-drop-preview">
-                                    <img class="stylist-avatar-preview-img" src="@(string.IsNullOrWhiteSpace(Model.Stylist.Avatar) ? "/images/getting-started/no-photo-square.png" : Model.Stylist.Avatar)" alt="Avatar" />
-                                </div>
-                                <div class="stylist-avatar-drop-content">
-                                    <strong>@L["SalonBeautyStylists:AvatarUploadTitle"]</strong>
-                                    <span>@L["SalonBeautyStylists:AvatarUploadDescription"]</span>
-                                    <small>@L["SalonBeautyStylists:AvatarUploadSpec"]</small>
-                                </div>
-                                <input asp-for="Stylist.Images" type="file" class="stylist-avatar-file-input" accept="image/jpeg,image/png,image/webp" style="display:none;" />
+                        <div class="stylist-avatar-live-preview">
+                            <img class="stylist-avatar-preview-img" src="@(string.IsNullOrWhiteSpace(Model.Stylist.Avatar) ? "/images/getting-started/no-photo-square.png" : Model.Stylist.Avatar)" alt="Avatar preview" />
+                            @* <div>
+                                <strong>@L["SalonBeautyStylist:Avatar"]</strong>
+                                <span class="stylist-avatar-file-hint">@(string.IsNullOrWhiteSpace(Model.Stylist.Avatar) ? L["SalonBeautyStylists:AvatarNoFile"] : L["SalonBeautyStylists:AvatarPreviewFromUrl"])</span>
+                            </div> *@
+                            <div class="stylist-avatar-mode-row">
+                                <label class="stylist-avatar-mode active">
+                                    <input type="radio" name="AvatarMode" value="url" checked />
+                                    <span>@L["SalonBeautyStylists:AvatarModeUrl"]</span>
+                                </label>
+                                <label class="stylist-avatar-mode">
+                                    <input type="radio" name="AvatarMode" value="upload" />
+                                    <span>@L["SalonBeautyStylists:AvatarModeUpload"]</span>
+                                </label>
                             </div>
-                            <small class="text-muted d-block mt-2 stylist-avatar-file-hint">@L["SalonBeautyStylists:AvatarNoFile"]</small>
+
+                            <div class="stylist-avatar-url-panel">
+                                <label class="stylist-form-label">@L["SalonBeautyStylists:AvatarUrlLabel"]</label>
+                                <input type="url" class="form-control stylist-form-control stylist-avatar-url-text" placeholder="https://..." value="@Model.Stylist.Avatar" />
+                                <small class="text-muted d-block mt-1">@L["SalonBeautyStylists:AvatarUrlHint"]</small>
+                            </div>
+
+                            <div class="stylist-avatar-upload-panel" style="display:none;">
+                                <div class="stylist-avatar-drop-zone" tabindex="0">
+                                    @* <div class="stylist-avatar-drop-preview">
+                                        <img class="stylist-avatar-preview-img" src="@(string.IsNullOrWhiteSpace(Model.Stylist.Avatar) ? "/images/getting-started/no-photo-square.png" : Model.Stylist.Avatar)" alt="Avatar" />
+                                    </div> *@
+                                    <div class="stylist-avatar-drop-content">
+                                        <strong>@L["SalonBeautyStylists:AvatarUploadTitle"]</strong>
+                                        <span>@L["SalonBeautyStylists:AvatarUploadDescription"]</span>
+                                        <small>@L["SalonBeautyStylists:AvatarUploadSpec"]</small>
+                                    </div>
+                                    <input asp-for="Stylist.Images" type="file" class="stylist-avatar-file-input" accept="image/jpeg,image/png,image/webp" style="display:none;" />
+                                </div>
+                                <small class="text-muted d-block mt-2 stylist-avatar-file-hint">@L["SalonBeautyStylists:AvatarNoFile"]</small>
+                            </div>
                         </div>
 
                         <span asp-validation-for="Stylist.Avatar" class="text-danger"></span>

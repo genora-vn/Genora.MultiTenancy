@@ -170,16 +170,22 @@ public class SalonBeautyBookingAppService :
         await CheckBookingPolicyAsync(
             MultiTenancyPermissions.SalonBeautyBookings.Edit,
             MultiTenancyPermissions.HostSalonBeautyBookings.Edit);
+
         ValidateBookingItems(input.Items);
 
         var booking = await _bookingRepository.GetAsync(id);
+        EnsureBookingCanBeEdited(booking);
 
         var resolved = await ResolveItemsAsync(input.Items);
         var totalDuration = resolved.Sum(x => x.Duration);
         var endTime = input.EndTime ?? input.StartTime.Add(TimeSpan.FromMinutes(totalDuration));
         var subTotal = resolved.Sum(x => x.Price);
         var totalAmount = subTotal + (input.Surcharge ?? 0m) - (input.Discount ?? 0m);
-        if (totalAmount < 0) totalAmount = 0;
+
+        if (totalAmount < 0)
+        {
+            totalAmount = 0;
+        }
 
         booking.CustomerId = input.CustomerId;
         booking.StylistId = input.StylistId;
@@ -194,7 +200,9 @@ public class SalonBeautyBookingAppService :
         await _bookingRepository.UpdateAsync(booking, autoSave: true);
 
         var existing = await AsyncExecuter.ToListAsync(
-            (await _bookingServiceRepository.GetQueryableAsync()).Where(x => x.BookingId == id));
+            (await _bookingServiceRepository.GetQueryableAsync())
+                .Where(x => x.BookingId == id)
+        );
 
         foreach (var old in existing)
         {
@@ -222,7 +230,32 @@ public class SalonBeautyBookingAppService :
             MultiTenancyPermissions.HostSalonBeautyBookings.Edit);
 
         var booking = await _bookingRepository.GetAsync(id);
+
+        if (booking.Status == SalonBeautyBookingStatus.Cancelled)
+        {
+            throw new UserFriendlyException("Booking đã hủy không thể cập nhật trạng thái.");
+        }
+
+        if (booking.Status == SalonBeautyBookingStatus.Completed)
+        {
+            throw new UserFriendlyException("Booking đã hoàn thành không thể cập nhật trạng thái.");
+        }
+
+        if (!IsValidNextStatus(booking.Status, input.Status))
+        {
+            throw new UserFriendlyException("Không được nhảy trạng thái. Vui lòng cập nhật theo đúng luồng trạng thái.");
+        }
+
         booking.Status = input.Status;
+
+        var internalNote = GetOptionalStringProperty(input, "Note")
+            ?? GetOptionalStringProperty(input, "InternalNote")
+            ?? GetOptionalStringProperty(input, "Reason");
+
+        if (!internalNote.IsNullOrWhiteSpace())
+        {
+            booking.Note = AppendInternalNote(booking.Note, internalNote);
+        }
 
         if (input.Status == SalonBeautyBookingStatus.Completed
             && booking.CheckinStatus != SalonBeautyCheckinStatus.CheckedIn)
@@ -281,9 +314,30 @@ public class SalonBeautyBookingAppService :
             MultiTenancyPermissions.HostSalonBeautyBookings.Cancel);
 
         var booking = await _bookingRepository.GetAsync(id);
+
+        if (booking.Status == SalonBeautyBookingStatus.Completed)
+        {
+            throw new UserFriendlyException("Booking đã hoàn thành không thể hủy");
+        }
+
+        if (booking.Status == SalonBeautyBookingStatus.Cancelled)
+        {
+            throw new UserFriendlyException("Booking đã được hủy trước đó.");
+        }
+
+        if (booking.Status != SalonBeautyBookingStatus.New && booking.Status != SalonBeautyBookingStatus.Confirmed)
+        {
+            throw new UserFriendlyException("Chỉ được hủy booking ở trạng thái mới tạo hoặc đang thực hiện.");
+        }
+
+        if (input.CancelNote.IsNullOrWhiteSpace())
+        {
+            throw new UserFriendlyException("Vui lòng nhập lý do");
+        }
+
         booking.Status = SalonBeautyBookingStatus.Cancelled;
         booking.CancelReason = input.CancelReason;
-        booking.CancelNote = input.CancelNote;
+        booking.CancelNote = input.CancelNote!.Trim();
 
         if (booking.PaymentStatus == SalonBeautyPaymentStatus.Paid)
         {
@@ -300,15 +354,19 @@ public class SalonBeautyBookingAppService :
             MultiTenancyPermissions.SalonBeautyBookings.Delete,
             MultiTenancyPermissions.HostSalonBeautyBookings.Delete);
 
-        var existing = await AsyncExecuter.ToListAsync(
-            (await _bookingServiceRepository.GetQueryableAsync()).Where(x => x.BookingId == id));
+        var booking = await _bookingRepository.GetAsync(id);
 
-        foreach (var item in existing)
+        if (booking.Status == SalonBeautyBookingStatus.Completed)
         {
-            await _bookingServiceRepository.DeleteAsync(item.Id, autoSave: true);
+            throw new UserFriendlyException("Booking đã hoàn thành không thể xóa.");
         }
 
-        await _bookingRepository.DeleteAsync(id, autoSave: true);
+        if (booking.Status == SalonBeautyBookingStatus.Cancelled)
+        {
+            throw new UserFriendlyException("Booking đã hủy không thể xóa.");
+        }
+
+        await base.DeleteAsync(id);
     }
 
     public async Task<List<SalonBeautyBookingCalendarDto>> GetCalendarEventsAsync(DateTime from, DateTime to, Guid? stylistId = null, Guid? serviceId = null)
@@ -678,6 +736,8 @@ public class SalonBeautyBookingAppService :
             StatusText = GetBookingStatusText(booking.Status),
             PaymentStatus = booking.PaymentStatus,
             PaymentStatusText = GetPaymentStatusText(booking.PaymentStatus),
+            PaymentMethod = booking.PaymentMethod,
+            PaymentMethodText = GetPaymentMethodText(booking.PaymentMethod),
             CheckinStatus = booking.CheckinStatus,
             CheckinStatusText = GetCheckinStatusText(booking.CheckinStatus),
             ServicesSummary = servicesSummary,
@@ -866,6 +926,50 @@ public class SalonBeautyBookingAppService :
         var customer = idx == 0 ? null : note.Substring(0, idx);
         var internalText = note.Substring(idx + InternalNoteSeparator.Length);
         return (customer, internalText);
+    }
+
+
+    private static void EnsureBookingCanBeEdited(SalonBeautyBooking booking)
+    {
+        if (booking.Status == SalonBeautyBookingStatus.Completed)
+        {
+            throw new UserFriendlyException("Booking đã hoàn thành không thể sửa.");
+        }
+
+        if (booking.Status == SalonBeautyBookingStatus.Cancelled)
+        {
+            throw new UserFriendlyException("Booking đã hủy không thể sửa.");
+        }
+    }
+
+    private static bool IsValidNextStatus(SalonBeautyBookingStatus current, SalonBeautyBookingStatus next)
+    {
+        return current switch
+        {
+            SalonBeautyBookingStatus.New => next == SalonBeautyBookingStatus.Confirmed,
+            SalonBeautyBookingStatus.Confirmed => next == SalonBeautyBookingStatus.Completed,
+            _ => false
+        };
+    }
+
+    private static string? GetOptionalStringProperty(object input, string propertyName)
+    {
+        var property = input.GetType().GetProperty(propertyName);
+        if (property == null) return null;
+        return property.GetValue(input)?.ToString();
+    }
+
+    private static string? AppendInternalNote(string? existingNote, string? newInternalNote)
+    {
+        if (newInternalNote.IsNullOrWhiteSpace()) return existingNote;
+
+        var (customerNote, internalNote) = UnpackNote(existingNote);
+        var line = $"[{DateTime.Now:dd/MM/yyyy HH:mm}] {newInternalNote!.Trim()}";
+        var newInternal = internalNote.IsNullOrWhiteSpace()
+            ? line
+            : internalNote!.Trim() + Environment.NewLine + line;
+
+        return PackNote(customerNote, newInternal);
     }
 
     private async Task CheckBookingPolicyAsync(string tenantPermission, string hostPermission)

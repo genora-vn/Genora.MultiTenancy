@@ -1,221 +1,66 @@
 @page
 @using Genora.MultiTenancy.Localization
-@using Genora.MultiTenancy.Permissions
-@using Microsoft.AspNetCore.Authorization
 @using Microsoft.Extensions.Localization
 @using Genora.MultiTenancy.Web.Pages.SalonBeautyBookings
 @inject IStringLocalizer<MultiTenancyResource> L
-@inject IAuthorizationService AuthorizationService
 @model CalendarModel
 
 @section styles {
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/main.min.css" />
-    <style>
-        .salon-calendar-page { padding: 0; display: flex; height: calc(100vh - 70px); overflow: hidden; }
-        .salon-calendar-main { flex: 1; padding: 20px; overflow: hidden; }
-        .salon-calendar-sidebar { width: 260px; border-left: 1px solid #e2e8f0; padding: 24px 20px; background: #fff; overflow-y: auto; }
-        .salon-calendar-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
-        .salon-calendar-title { font-size: 20px; font-weight: 700; color: #1e293b; }
-        .salon-calendar-container { height: calc(100% - 50px); }
-
-        .sidebar-section { margin-bottom: 24px; }
-        .sidebar-section-title { font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; }
-        .sidebar-filter-select { width: 100%; border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px 12px; font-size: 13px; }
-        .stylist-checkbox-list { list-style: none; padding: 0; margin: 0; }
-        .stylist-checkbox-list li { display: flex; align-items: center; gap: 8px; padding: 6px 0; font-size: 13px; color: #334155; }
-        .stylist-checkbox-list li input[type="checkbox"] { accent-color: #2563eb; }
-
-        .legend-list { list-style: none; padding: 0; margin: 0; }
-        .legend-list li { display: flex; align-items: center; gap: 8px; padding: 4px 0; font-size: 13px; color: #334155; }
-        .legend-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
-        .legend-dot.is-confirmed { background: #3b82f6; }
-        .legend-dot.is-pending { background: #f59e0b; }
-        .legend-dot.is-completed { background: #10b981; }
-        .legend-dot.is-cancelled { background: #ef4444; }
-
-        .fc .fc-event { border-radius: 6px; border: none; padding: 2px 6px; font-size: 11px; cursor: pointer; }
-        .fc .fc-timegrid-slot { height: 48px; }
-        .fc .fc-col-header-cell { font-size: 12px; font-weight: 600; text-transform: uppercase; }
-        .fc .fc-toolbar-title { font-size: 18px; font-weight: 700; }
-
-        @@media (max-width: 992px) {
-            .salon-calendar-page { flex-direction: column; height: auto; }
-            .salon-calendar-sidebar { width: 100%; border-left: none; border-top: 1px solid #e2e8f0; }
-            .salon-calendar-container { height: 600px; }
-        }
-    </style>
+    <link rel="stylesheet" href="/pages/salon/booking-shared.css" />
 }
 
 @section scripts {
     <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"></script>
-    <script>
-        (function () {
-            var baseUrl = '/api/app/salon-beauty/bookings';
-            var calendarEl = document.getElementById('SalonCalendar');
-            var selectedStylists = [];
-            var selectedServiceId = '';
-
-            function getStatusColor(status) {
-                switch (status) {
-                    case 'New': return '#F59E0B';
-                    case 'Confirmed': return '#3B82F6';
-                    case 'Completed': return '#10B981';
-                    case 'Cancelled': return '#EF4444';
-                    default: return '#9CA3AF';
-                }
-            }
-
-            function loadFilters() {
-                $.get(baseUrl + '/stylist-lookup').done(function (data) {
-                    var $list = $('#StylistCheckboxList');
-                    $list.empty();
-                    data.forEach(function (s) {
-                        $list.append(
-                            '<li><input type="checkbox" class="stylist-filter-cb" value="' + s.id + '" checked /> ' + s.displayName + '</li>'
-                        );
-                        selectedStylists.push(s.id);
-                    });
-                });
-
-                $.get(baseUrl + '/service-lookup').done(function (data) {
-                    var $sel = $('#ServiceFilterSelect');
-                    $sel.find('option:not(:first)').remove();
-                    data.forEach(function (s) {
-                        $sel.append('<option value="' + s.id + '">' + s.name + '</option>');
-                    });
-                });
-            }
-
-            var calendar = new FullCalendar.Calendar(calendarEl, {
-                initialView: 'timeGridWeek',
-                locale: 'vi',
-                height: '100%',
-                firstDay: 1,
-                slotMinTime: '07:00:00',
-                slotMaxTime: '22:00:00',
-                allDaySlot: false,
-                nowIndicator: true,
-                headerToolbar: {
-                    left: 'prev,next today',
-                    center: 'title',
-                    right: 'dayGridMonth,timeGridWeek,timeGridDay'
-                },
-                events: function (fetchInfo, successCallback, failureCallback) {
-                    var params = {
-                        from: fetchInfo.startStr.substring(0, 10),
-                        to: fetchInfo.endStr.substring(0, 10)
-                    };
-                    if (selectedServiceId) params.serviceId = selectedServiceId;
-
-                    $.get(baseUrl + '/calendar-events', params).done(function (data) {
-                        var filtered = data;
-                        if (selectedStylists.length > 0) {
-                            filtered = data.filter(function (e) {
-                                return selectedStylists.indexOf(e.stylistId) >= 0;
-                            });
-                        }
-
-                        var events = filtered.map(function (e) {
-                            return {
-                                id: e.id,
-                                title: e.start.substring(11, 16) + ' - ' + e.customerName + '\n' + (e.serviceName || ''),
-                                start: e.start,
-                                end: e.end,
-                                backgroundColor: getStatusColor(e.status),
-                                borderColor: getStatusColor(e.status),
-                                extendedProps: {
-                                    bookingCode: e.bookingCode,
-                                    customerName: e.customerName,
-                                    stylistName: e.stylistName,
-                                    serviceName: e.serviceName,
-                                    status: e.status,
-                                    statusText: e.statusText
-                                }
-                            };
-                        });
-                        successCallback(events);
-                    }).fail(failureCallback);
-                },
-                eventClick: function (info) {
-                    window.open('/SalonBeautyBookings/Detail?id=' + info.event.id, '_blank');
-                },
-                eventContent: function (arg) {
-                    var props = arg.event.extendedProps;
-                    var timeStr = arg.event.start ? arg.event.start.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) : '';
-                    return {
-                        html: '<div style="padding:2px 4px;line-height:1.3;overflow:hidden;">' +
-                            '<div style="font-weight:700;font-size:11px;">' + timeStr + ' - ' + (props.customerName || '') + '</div>' +
-                            '<div style="font-size:10px;opacity:0.9;">' + (props.serviceName || '') + '</div>' +
-                            '</div>'
-                    };
-                }
-            });
-
-            $(function () {
-                loadFilters();
-                calendar.render();
-
-                $(document).on('change', '.stylist-filter-cb', function () {
-                    selectedStylists = [];
-                    $('.stylist-filter-cb:checked').each(function () {
-                        selectedStylists.push($(this).val());
-                    });
-                    calendar.refetchEvents();
-                });
-
-                $('#ServiceFilterSelect').on('change', function () {
-                    selectedServiceId = $(this).val();
-                    calendar.refetchEvents();
-                });
-
-                $('#SelectAllStylists').on('change', function () {
-                    var checked = $(this).is(':checked');
-                    $('.stylist-filter-cb').prop('checked', checked).trigger('change');
-                });
-            });
-        })();
-    </script>
+    <abp-script src="/Pages/SalonBeautyBookings/calendar.js" />
 }
 
 <div class="salon-calendar-page">
     <div class="salon-calendar-main">
         <div class="salon-calendar-header">
-            <span class="salon-calendar-title">Lịch biểu đặt lịch</span>
-            <a href="/SalonBeautyBookings" class="btn btn-outline-secondary btn-sm">
-                <i class="fa fa-list"></i> Danh sách
-            </a>
+            <div>
+                <div class="salon-calendar-title">Lịch biểu đặt lịch Salon</div>
+                <div class="salon-calendar-subtitle">Theo dõi lịch hẹn theo ngày, tuần, tháng và stylist</div>
+            </div>
+            <div class="salon-calendar-actions">
+                <a href="/SalonBeautyBookings" class="btn btn-light btn-sm">
+                    <i class="fa fa-arrow-left"></i> Quay lại danh sách
+                </a>
+                <button type="button" id="CalendarRefreshButton" class="btn btn-primary btn-sm">
+                    <i class="fa fa-refresh"></i> Làm mới
+                </button>
+            </div>
         </div>
         <div class="salon-calendar-container">
-            <div id="SalonCalendar" style="height:100%;"></div>
+            <div id="SalonCalendar"></div>
         </div>
     </div>
 
-    <div class="salon-calendar-sidebar">
+    <aside class="salon-calendar-sidebar">
         <div class="sidebar-section">
             <div class="sidebar-section-title">Stylist</div>
-            <div class="mb-2">
-                <label style="font-size:13px;font-weight:600;cursor:pointer;">
-                    <input type="checkbox" id="SelectAllStylists" checked style="accent-color:#2563eb;" /> All Stylists
-                </label>
-            </div>
-            <ul class="stylist-checkbox-list" id="StylistCheckboxList"></ul>
+            <label class="sidebar-select-all">
+                <input type="checkbox" id="SelectAllStylists" checked />
+                <span>Tất cả stylist</span>
+            </label>
+            <ul id="StylistCheckboxList" class="stylist-checkbox-list"></ul>
         </div>
 
         <div class="sidebar-section">
-            <div class="sidebar-section-title">Service Type</div>
+            <div class="sidebar-section-title">Dịch vụ</div>
             <select id="ServiceFilterSelect" class="sidebar-filter-select">
-                <option value="">All Services</option>
+                <option value="">Tất cả dịch vụ</option>
             </select>
         </div>
 
         <div class="sidebar-section">
-            <div class="sidebar-section-title">Status Legend</div>
+            <div class="sidebar-section-title">Chú thích trạng thái</div>
             <ul class="legend-list">
-                <li><span class="legend-dot is-confirmed"></span> Đã xác nhận</li>
                 <li><span class="legend-dot is-pending"></span> Chờ xác nhận</li>
+                <li><span class="legend-dot is-confirmed"></span> Đã xác nhận</li>
                 <li><span class="legend-dot is-completed"></span> Hoàn thành</li>
                 <li><span class="legend-dot is-cancelled"></span> Đã hủy</li>
             </ul>
         </div>
-    </div>
+    </aside>
 </div>

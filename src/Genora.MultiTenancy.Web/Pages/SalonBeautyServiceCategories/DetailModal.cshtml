@@ -1,4 +1,4 @@
-@page
+﻿@page
 @using Genora.MultiTenancy.Localization
 @using Microsoft.Extensions.Localization
 @using Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.TagHelpers.Modal
@@ -33,14 +33,6 @@
                 </div>
 
                 <div class="service-detail-grid">
-                    <div class="service-detail-item">
-                        <span>@L["SalonBeautyServiceCategory:Status"]</span>
-                        <strong>@Model.Category.StatusText</strong>
-                    </div>
-                    <div class="service-detail-item">
-                        <span>@L["SalonBeautyServiceCategory:SortOrder"]</span>
-                        <strong>@Model.Category.SortOrder</strong>
-                    </div>
                     <div class="service-detail-item service-detail-item-full">
                         <span>@L["SalonBeautyServiceCategory:Description"]</span>
                         <strong>@(string.IsNullOrWhiteSpace(Model.Category.Description) ? "--" : Model.Category.Description)</strong>
@@ -48,6 +40,18 @@
                     <div class="service-detail-item service-detail-item-full">
                         <span>@L["SalonBeautyServiceCategory:Note"]</span>
                         <strong>@(string.IsNullOrWhiteSpace(Model.Category.Note) ? "--" : Model.Category.Note)</strong>
+                    </div>
+                    <div class="service-detail-item">
+                        <span>@L["SalonBeautyServiceCategory:SortOrder"]</span>
+                        <strong>@Model.Category.SortOrder</strong>
+                    </div>
+                    <div class="service-detail-item">
+                        <span>@L["SalonBeautyServiceCategory:Status"]</span>
+                        <strong>
+                            <span class="service-category-status-badge @(Model.Category.Status == 1 ? "is-active" : "is-inactive")">
+                                @(Model.Category.Status == 1 ? "Đang hoạt động" : "Dừng hoạt động")
+                            </span>
+                        </strong>
                     </div>
                 </div>
             </div>

@@ -12,8 +12,7 @@
 
 @section styles {
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
-    <abp-style src="/pages/salon/booking-shared.css" />
-
+    <link rel="stylesheet" href="~/pages/salon/booking-shared.css" asp-append-version="true" />
 }
 
 @section scripts {
@@ -24,16 +23,19 @@
 @{
     var canCreate = CurrentTenant.IsAvailable
         ? await AuthorizationService.IsGrantedAsync(MultiTenancyPermissions.SalonBeautyBookings.Create)
-        : false;
+        : await AuthorizationService.IsGrantedAsync(MultiTenancyPermissions.HostSalonBeautyBookings.Edit); ;
     var canEdit = CurrentTenant.IsAvailable
         ? await AuthorizationService.IsGrantedAsync(MultiTenancyPermissions.SalonBeautyBookings.Edit)
-        : false;
+        : await AuthorizationService.IsGrantedAsync(MultiTenancyPermissions.HostSalonBeautyBookings.Edit); ;
     var canDelete = CurrentTenant.IsAvailable
         ? await AuthorizationService.IsGrantedAsync(MultiTenancyPermissions.SalonBeautyBookings.Delete)
-        : false;
+        : await AuthorizationService.IsGrantedAsync(MultiTenancyPermissions.HostSalonBeautyBookings.Edit); ;
     var canCancel = CurrentTenant.IsAvailable
         ? await AuthorizationService.IsGrantedAsync(MultiTenancyPermissions.SalonBeautyBookings.Cancel)
-        : false;
+        : await AuthorizationService.IsGrantedAsync(MultiTenancyPermissions.HostSalonBeautyBookings.Edit); ;
+    var canUpdatePayment = CurrentTenant.IsAvailable
+        ? await AuthorizationService.IsGrantedAsync(MultiTenancyPermissions.SalonBeautyBookings.UpdatePayment)
+        : await AuthorizationService.IsGrantedAsync(MultiTenancyPermissions.HostSalonBeautyBookings.Edit); ;
 }
 
 <div class="booking-page">
@@ -43,15 +45,22 @@
             <p>Theo dõi và điều phối lịch hẹn của stylist</p>
         </div>
         <div class="booking-header-actions">
+            <select id="BookingAutoRefreshSelect" class="form-select form-select-sm booking-auto-refresh-select" title="Tự làm mới danh sách">
+                <option value="0">Tự làm mới: Tắt</option>
+                <option value="30">Tự làm mới: 30s</option>
+            </select>
+            <button type="button" id="RefreshBookingButton" class="btn-booking-outline" title="Làm mới danh sách">
+                <i class="fa fa-refresh"></i> Làm mới
+            </button>
+            <a href="/SalonBeautyBookings/Calendar" target="_blank" class="btn-booking-outline">
+                <i class="fa fa-calendar"></i> Xem lịch biểu
+            </a>
             @if (canCreate)
             {
                 <button type="button" id="NewBookingButton" class="btn-booking-primary">
                     <i class="fa fa-plus"></i> Đặt lịch mới
                 </button>
             }
-            <a href="/SalonBeautyBookings/Calendar" class="btn-booking-outline">
-                <i class="fa fa-calendar"></i> Xem lịch biểu
-            </a>
         </div>
     </div>
 
@@ -94,13 +103,17 @@
     <!-- Filters -->
     <div class="booking-filter-card">
         <div class="row g-3 align-items-end">
-            <div class="col-lg-2 col-md-4">
-                <label class="booking-filter-label">Ngày đặt</label>
-                <input type="text" id="BookingFromDateFilter" class="form-control form-control-sm" placeholder="mm/dd/yyyy" />
+            <div class="col-lg-3 col-md-6">
+                <label class="booking-filter-label">Tìm kiếm</label>
+                <input type="text" id="BookingFilterText" class="form-control form-control-sm" placeholder="Mã booking, tên KH..." />
             </div>
-            <div class="col-lg-2 col-md-4">
+            <div class="col-lg-2 col-md-3">
+                <label class="booking-filter-label">Ngày đặt</label>
+                <input type="text" id="BookingFromDateFilter" class="form-control form-control-sm" placeholder="dd/mm/yyyy" />
+            </div>
+            <div class="col-lg-2 col-md-3">
                 <label class="booking-filter-label">Đến ngày</label>
-                <input type="text" id="BookingToDateFilter" class="form-control form-control-sm" placeholder="mm/dd/yyyy" />
+                <input type="text" id="BookingToDateFilter" class="form-control form-control-sm" placeholder="dd/mm/yyyy" />
             </div>
             <div class="col-lg-2 col-md-4">
                 <label class="booking-filter-label">Trạng thái</label>
@@ -112,15 +125,11 @@
                     <option value="3">Đã hủy</option>
                 </select>
             </div>
-            <div class="col-lg-3 col-md-4">
+            <div class="col-lg-2 col-md-4">
                 <label class="booking-filter-label">Stylist</label>
                 <select id="BookingStylistFilter" class="form-select form-select-sm">
                     <option value="">Tất cả Stylist</option>
                 </select>
-            </div>
-            <div class="col-lg-2 col-md-4">
-                <label class="booking-filter-label">Tìm kiếm</label>
-                <input type="text" id="BookingFilterText" class="form-control form-control-sm" placeholder="Mã booking, tên KH..." />
             </div>
             <div class="col-lg-1 col-md-4">
                 <button id="SearchBookingButton" class="btn btn-outline-primary btn-sm w-100" style="height:31px;">
@@ -135,6 +144,176 @@
         <input type="hidden" id="CanEditBooking" value="@(canEdit ? "true" : "false")" />
         <input type="hidden" id="CanDeleteBooking" value="@(canDelete ? "true" : "false")" />
         <input type="hidden" id="CanCancelBooking" value="@(canCancel ? "true" : "false")" />
+        <input type="hidden" id="CanUpdatePaymentBooking" value="@(canUpdatePayment ? "true" : "false")" />
         <table id="SalonBeautyBookingsTable" class="table w-100"></table>
+    </div>
+</div>
+
+<!-- List Cancel Modal -->
+<div class="modal fade sb-booking-action-modal" id="ListCancelModal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header sb-action-modal-header">
+                <div class="sb-action-modal-icon is-danger"><i class="fa fa-times"></i></div>
+                <div>
+                    <h5 class="modal-title">Hủy lịch đặt</h5>
+                    <div class="text-muted small">Vui lòng chọn lý do hủy và nhập lý do chi tiết.</div>
+                </div>
+                <button type="button" class="btn-close ms-auto" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="ListCancelBookingId" />
+                <div class="sb-radio-grid">
+                    <label class="sb-radio-card" data-list-cancel-reason="@((byte)SalonBeautyCancelReason.CustomerCancel)">
+                        <input type="radio" name="ListCancelReason" value="@((byte)SalonBeautyCancelReason.CustomerCancel)" />
+                        <span>Khách hàng yêu cầu</span>
+                    </label>
+                    <label class="sb-radio-card" data-list-cancel-reason="@((byte)SalonBeautyCancelReason.SalonCancel)">
+                        <input type="radio" name="ListCancelReason" value="@((byte)SalonBeautyCancelReason.SalonCancel)" />
+                        <span>Salon hủy</span>
+                    </label>
+                    <label class="sb-radio-card" data-list-cancel-reason="@((byte)SalonBeautyCancelReason.NoShow)">
+                        <input type="radio" name="ListCancelReason" value="@((byte)SalonBeautyCancelReason.NoShow)" />
+                        <span>Khách không đến</span>
+                    </label>
+                    <label class="sb-radio-card" data-list-cancel-reason="@((byte)SalonBeautyCancelReason.Duplicate)">
+                        <input type="radio" name="ListCancelReason" value="@((byte)SalonBeautyCancelReason.Duplicate)" />
+                        <span>Trùng lịch</span>
+                    </label>
+                    <label class="sb-radio-card" data-list-cancel-reason="@((byte)SalonBeautyCancelReason.Other)">
+                        <input type="radio" name="ListCancelReason" value="@((byte)SalonBeautyCancelReason.Other)" />
+                        <span>Khác</span>
+                    </label>
+                </div>
+                <div class="mt-3">
+                    <label class="form-label fw-semibold" style="font-size:13px;">Lý do hủy <span class="text-danger">*</span></label>
+                    <textarea id="ListCancelNoteInput" class="form-control" rows="4" placeholder="Nhập lý do hủy booking..."></textarea>
+                    <div id="ListCancelNoteValidation" class="text-danger small mt-1 d-none">Vui lòng nhập lý do</div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal">Hủy bỏ</button>
+                <button type="button" id="ListConfirmCancelBtn" class="btn btn-danger" disabled>Xác nhận hủy</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- List Payment Modal -->
+<div class="modal fade sb-booking-action-modal" id="ListPaymentModal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header sb-action-modal-header">
+                <div class="sb-action-modal-icon"><i class="fa fa-credit-card"></i></div>
+                <div>
+                    <h5 class="modal-title">Cập nhật thanh toán</h5>
+                    <div class="text-muted small">Cập nhật trạng thái và phương thức thanh toán của lịch đặt.</div>
+                </div>
+                <button type="button" class="btn-close ms-auto" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="ListPaymentBookingId" />
+
+                <div class="mb-3">
+                    <label class="form-label fw-semibold" style="font-size:13px;">Trạng thái thanh toán <span class="text-danger">*</span></label>
+                    <div class="sb-radio-grid">
+                        <label class="sb-radio-card" data-payment-status="0">
+                            <input type="radio" name="ListPaymentStatus" value="0" />
+                            <span>Chưa thanh toán</span>
+                        </label>
+                        <label class="sb-radio-card" data-payment-status="1">
+                            <input type="radio" name="ListPaymentStatus" value="1" />
+                            <span>Thanh toán một phần</span>
+                        </label>
+                        <label class="sb-radio-card" data-payment-status="2">
+                            <input type="radio" name="ListPaymentStatus" value="2" />
+                            <span>Đã thanh toán</span>
+                        </label>
+                        <label class="sb-radio-card" data-payment-status="3">
+                            <input type="radio" name="ListPaymentStatus" value="3" />
+                            <span>Đã hoàn tiền</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="mb-0">
+                    <label class="form-label fw-semibold" style="font-size:13px;">Phương thức</label>
+                    <div class="sb-radio-grid">
+                        <label class="sb-radio-card" data-payment-method="">
+                            <input type="radio" name="ListPaymentMethod" value="" />
+                            <span>Chưa chọn</span>
+                        </label>
+                        <label class="sb-radio-card" data-payment-method="0">
+                            <input type="radio" name="ListPaymentMethod" value="0" />
+                            <span>Tiền mặt</span>
+                        </label>
+                        <label class="sb-radio-card" data-payment-method="1">
+                            <input type="radio" name="ListPaymentMethod" value="1" />
+                            <span>Chuyển khoản</span>
+                        </label>
+                        <label class="sb-radio-card" data-payment-method="2">
+                            <input type="radio" name="ListPaymentMethod" value="2" />
+                            <span>Thẻ</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal">Hủy</button>
+                <button type="button" id="ListConfirmPaymentBtn" class="btn btn-primary" disabled>Xác nhận</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- List Status Modal -->
+<div class="modal fade sb-booking-action-modal" id="ListStatusModal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header sb-action-modal-header">
+                <div class="sb-action-modal-icon"><i class="fa fa-refresh"></i></div>
+                <div>
+                    <h5 class="modal-title">Cập nhật trạng thái lịch đặt</h5>
+                    <div class="text-muted small">Chỉ được cập nhật sang trạng thái kế tiếp theo luồng: Chờ xác nhận → Đang thực hiện → Hoàn thành.</div>
+                </div>
+                <button type="button" class="btn-close ms-auto" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="ListStatusBookingId" />
+                <input type="hidden" id="ListStatusCurrentValue" />
+                <div class="mb-3">
+                    <div class="text-muted small mb-2">Trạng thái hiện tại</div>
+                    <span id="ListCurrentStatusPill" class="sb-current-status-pill">--</span>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label fw-semibold" style="font-size:13px;">Chọn trạng thái mới <span class="text-danger">*</span></label>
+                    <div class="sb-radio-grid">
+                        <label class="sb-radio-card" data-list-status="0">
+                            <input type="radio" name="ListNextBookingStatus" value="0" />
+                            <span>Chờ xác nhận</span>
+                        </label>
+                        <label class="sb-radio-card" data-list-status="1">
+                            <input type="radio" name="ListNextBookingStatus" value="1" />
+                            <span>Đang thực hiện</span>
+                        </label>
+                        <label class="sb-radio-card" data-list-status="2">
+                            <input type="radio" name="ListNextBookingStatus" value="2" />
+                            <span>Hoàn thành</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="mt-3">
+                    <label class="form-label fw-semibold" style="font-size:13px;">Ghi chú nội bộ</label>
+                    <textarea id="ListStatusInternalNoteInput" class="form-control" rows="4" placeholder="Nhập ghi chú nội bộ cho lần cập nhật này..."></textarea>
+                    <div class="text-muted small mt-1">Không bắt buộc nhập.</div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal">Hủy</button>
+                <button type="button" id="ListConfirmStatusBtn" class="btn btn-primary" disabled>Cập nhật</button>
+            </div>
+        </div>
     </div>
 </div>

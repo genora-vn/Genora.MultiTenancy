@@ -32,14 +32,25 @@
                             <input asp-for="Category.Name" class="form-control service-form-control service-category-required" required maxlength="255" placeholder="@L["SalonBeautyServiceCategories:NamePlaceholder"]" />
                             <span asp-validation-for="Category.Name" class="text-danger"></span>
                         </div>
+                        <div class="col-12">
+                            <label class="service-form-label" asp-for="Category.Description">@L["SalonBeautyServiceCategory:Description"]</label>
+                            <textarea asp-for="Category.Description" rows="3" maxlength="500" class="form-control service-form-textarea" placeholder="@L["SalonBeautyServiceCategories:DescriptionPlaceholder"]"></textarea>
+                            <span asp-validation-for="Category.Description" class="text-danger"></span>
+                        </div>
 
-                        <div class="col-md-6">
+                        <div class="col-12">
+                            <label class="service-form-label" asp-for="Category.Note">@L["SalonBeautyServiceCategory:Note"]</label>
+                            <textarea asp-for="Category.Note" rows="3" maxlength="500" class="form-control service-form-textarea" placeholder="@L["SalonBeautyServiceCategories:NotePlaceholder"]"></textarea>
+                            <span asp-validation-for="Category.Note" class="text-danger"></span>
+                        </div>
+
+                        <div class="col-md-2">
                             <label class="service-form-label" asp-for="Category.SortOrder">@L["SalonBeautyServiceCategory:SortOrder"]</label>
                             <input asp-for="Category.SortOrder" type="number" min="0" class="form-control service-form-control service-category-number-input" placeholder="1" />
                             <span asp-validation-for="Category.SortOrder" class="text-danger"></span>
                         </div>
 
-                        <div class="col-md-6">
+                        <div class="col-md-10">
                             <label class="service-form-label">@L["SalonBeautyServiceCategory:Status"]</label>
                             <div class="service-status-box service-category-status-inline">
                                 <div class="service-status-icon"><i class="fa fa-shield"></i></div>
@@ -62,17 +73,6 @@
                             </div>
                         </div>
 
-                        <div class="col-12">
-                            <label class="service-form-label" asp-for="Category.Description">@L["SalonBeautyServiceCategory:Description"]</label>
-                            <textarea asp-for="Category.Description" rows="3" maxlength="500" class="form-control service-form-textarea" placeholder="@L["SalonBeautyServiceCategories:DescriptionPlaceholder"]"></textarea>
-                            <span asp-validation-for="Category.Description" class="text-danger"></span>
-                        </div>
-
-                        <div class="col-12">
-                            <label class="service-form-label" asp-for="Category.Note">@L["SalonBeautyServiceCategory:Note"]</label>
-                            <textarea asp-for="Category.Note" rows="3" maxlength="500" class="form-control service-form-textarea" placeholder="@L["SalonBeautyServiceCategories:NotePlaceholder"]"></textarea>
-                            <span asp-validation-for="Category.Note" class="text-danger"></span>
-                        </div>
                     </div>
                 </div>
 

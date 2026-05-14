@@ -1,6 +1,7 @@
 using System;
 using System.ComponentModel.DataAnnotations;
 using Genora.MultiTenancy.Enums;
+using Volo.Abp.Content;
 
 namespace Genora.MultiTenancy.AppDtos.SalonBeauties.SalonBeautyCustomers;
 
@@ -27,6 +28,10 @@ public class CreateSalonBeautyCustomerDto
 
     [StringLength(500)]
     public string? Avatar { get; set; }
+
+    public IRemoteStreamContent? Images { get; set; }
+
+    public bool IsUploadImage { get; set; }
 
     [StringLength(100)]
     public string? ZaloUserId { get; set; }

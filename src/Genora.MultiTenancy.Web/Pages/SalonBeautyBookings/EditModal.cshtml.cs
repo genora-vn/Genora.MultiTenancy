@@ -15,6 +15,9 @@ public class EditModalModel : MultiTenancyPageModel
 
     public Guid BookingId { get; set; }
     public string? BookingCode { get; set; }
+    public string? CurrentCustomerName { get; set; }
+    public string? CurrentCustomerPhone { get; set; }
+    public string? CurrentCustomerCode { get; set; }
     public List<SelectListItem> StatusItems { get; set; } = new();
 
     private readonly ISalonBeautyBookingAppService _bookingService;
@@ -29,6 +32,9 @@ public class EditModalModel : MultiTenancyPageModel
         BookingId = id;
         var detail = await _bookingService.GetAsync(id);
         BookingCode = detail.BookingCode;
+        CurrentCustomerName = detail.CustomerName;
+        CurrentCustomerPhone = detail.CustomerPhone;
+        CurrentCustomerCode = detail.CustomerCode;
 
         Booking = new UpdateSalonBeautyBookingDto
         {

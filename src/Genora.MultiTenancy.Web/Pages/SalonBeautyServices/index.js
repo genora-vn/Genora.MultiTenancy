@@ -159,8 +159,16 @@ $(function () {
         return '<span class="service-badge ' + badgeClass(text, 'junior') + '">' + htmlEncode(text) + '</span>';
     }
 
+    function formatMoneyDisplay(value) {
+        if (value === null || value === undefined || value === '') return '0';
+        var normalized = normalizePriceValue(value);
+        if (!normalized) return '0';
+        return normalized.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+    }
+
     function renderPrice(data, type, row) {
-        return '<strong class="service-price">' + htmlEncode(row.priceText || data || '0') + 'đ</strong>';
+        var text = row.priceText || formatMoneyDisplay(data || 0);
+        return '<strong class="service-price">' + htmlEncode(text) + 'đ</strong>';
     }
 
     function renderDuration(data, type, row) {
@@ -169,8 +177,15 @@ $(function () {
 
     function renderStatus(data, type, row) {
         var active = row.status === 1;
-        var text = row.statusText || (active ? l('SalonBeautyCustomer:StatusActive') : l('SalonBeautyCustomer:StatusInactive'));
-        return '<span class="service-status-dot ' + (active ? 'active' : 'inactive') + '">' + htmlEncode(text) + '</span>';
+        if (!canEdit) {
+            var text = row.statusText || (active ? l('SalonBeautyCustomer:StatusActive') : l('SalonBeautyCustomer:StatusInactive'));
+            return '<span class="service-status-dot ' + (active ? 'active' : 'inactive') + '">' + htmlEncode(text) + '</span>';
+        }
+        var checked = active ? 'checked' : '';
+        return '<label class="service-inline-switch" data-service-id="' + row.id + '">'
+            + '<input type="checkbox" class="service-inline-status-toggle" ' + checked + ' />'
+            + '<span class="service-switch-slider"></span>'
+            + '</label>';
     }
 
     function renderShowOnApp(data, type, row) {
@@ -264,7 +279,13 @@ $(function () {
     }
 
     function normalizePriceValue(value) {
-        return (value || '').toString().replace(/[^0-9]/g, '');
+        var text = (value || '').toString().trim();
+        // ASP.NET model binding can render decimal values like 400000.00.
+        // Strip only decimal suffixes, not thousands separators like 400,000.
+        if (/^\d+[\.,]\d{1,2}$/.test(text)) {
+            text = text.replace(/[\.,]\d{1,2}$/, '');
+        }
+        return text.replace(/[^0-9]/g, '');
     }
 
     function formatPriceValue(value) {
@@ -281,6 +302,20 @@ $(function () {
 
     function normalizePriceInput($input) {
         $input.val(formatPriceValue($input.val()));
+        $input.removeClass('input-validation-error is-invalid');
+        $input.closest('.service-input-addon').siblings('[data-valmsg-for]').empty().removeClass('field-validation-error').addClass('field-validation-valid');
+    }
+
+    function disablePriceUnobtrusiveValidation($form) {
+        $form.find('.service-price-input').each(function () {
+            var name = $(this).attr('name');
+            $(this).removeAttr('data-val data-val-number data-val-range data-val-regex');
+            var validator = $form.data('validator');
+            if (validator && validator.settings && validator.settings.rules && name) {
+                delete validator.settings.rules[name];
+                delete validator.settings.messages[name];
+            }
+        });
     }
 
     function isServiceFormValid($form, showWarning) {
@@ -362,6 +397,7 @@ $(function () {
 
     function initializeSalonServiceForm($form) {
         if (!$form || !$form.length) return;
+        disablePriceUnobtrusiveValidation($form);
         $form.find('.service-price-input').each(function () { normalizePriceInput($(this)); });
         $form.find('.service-number-input').each(function () { normalizeNumberInput($(this), 4); });
         $form.find('.service-status-toggle').each(function () { updateStatusSwitch($(this)); });
@@ -372,6 +408,39 @@ $(function () {
 
     $(document).on('shown.bs.modal', '.modal', function () { initializeSalonServiceForm(findSalonFormFromModal($(this))); });
     $(document).on('hidden.bs.modal', '.modal', function () { updateSubmitState(findSalonFormFromModal($(this))); });
+
+    $(document).on('change', '.service-inline-status-toggle', function () {
+        var $toggle = $(this);
+        var $label = $toggle.closest('.service-inline-switch');
+        var serviceId = $label.data('service-id');
+        var newStatus = $toggle.is(':checked') ? 1 : 0;
+
+        service.get(serviceId).then(function (item) {
+            var updateDto = {
+                name: item.name,
+                categoryId: item.categoryId,
+                price: item.price,
+                duration: item.duration,
+                applicableRole: item.applicableRole,
+                applicableLevel: item.applicableLevel,
+                status: newStatus,
+                isShowOnApp: newStatus === 1 ? item.isShowOnApp : false,
+                note: item.note,
+                sortOrder: item.sortOrder
+            };
+            service.update(serviceId, updateDto).then(function () {
+                abp.notify.success(l('SavedSuccessfully'));
+                dataTable.ajax.reload(null, false);
+            }).catch(function (error) {
+                $toggle.prop('checked', !$toggle.is(':checked'));
+                var message = error?.message || error?.responseJSON?.error?.message || l('SalonBeautyServices:UpdateShowOnAppFailed');
+                abp.notify.error(message);
+            });
+        }).catch(function () {
+            $toggle.prop('checked', !$toggle.is(':checked'));
+            abp.notify.error(l('SalonBeautyServices:UpdateShowOnAppFailed'));
+        });
+    });
 
     $(document).on('change', '.service-inline-showonapp-toggle', function () {
         var $toggle = $(this);

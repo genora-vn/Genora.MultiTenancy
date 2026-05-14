@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using Genora.MultiTenancy.AppDtos.AppImages;
 using Genora.MultiTenancy.AppDtos.SalonBeauties;
 using Genora.MultiTenancy.AppDtos.SalonBeauties.SalonBeautyCustomers;
 using Genora.MultiTenancy.DomainModels.AppSalonBeauty;
@@ -17,6 +18,7 @@ using Volo.Abp;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Application.Services;
 using Volo.Abp.Authorization;
+using Volo.Abp.Content;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Features;
 using Volo.Abp.MultiTenancy;
@@ -41,7 +43,11 @@ public class SalonBeautyCustomerAppService :
     private readonly IRepository<SalonBeautyBooking, Guid> _bookingRepository;
     private readonly IRepository<SalonBeautyCustomerLoyaltyBalance, Guid> _loyaltyBalanceRepository;
     private readonly IRepository<SalonBeautyCustomerLoyaltyTransaction, Guid> _loyaltyTransactionRepository;
+    private const long MaxAvatarBytes = 2 * 1024 * 1024;
+    private static readonly string[] AvatarAllowedExtensions = { ".jpg", ".jpeg", ".png", ".webp" };
+
     private readonly IStringLocalizer<MultiTenancyResource> _l;
+    private readonly IManageImageService _manageImageService;
 
     public SalonBeautyCustomerAppService(
         IRepository<SalonBeautyCustomer, Guid> customerRepository,
@@ -49,6 +55,7 @@ public class SalonBeautyCustomerAppService :
         IRepository<SalonBeautyCustomerLoyaltyBalance, Guid> loyaltyBalanceRepository,
         IRepository<SalonBeautyCustomerLoyaltyTransaction, Guid> loyaltyTransactionRepository,
         IStringLocalizer<MultiTenancyResource> l,
+        IManageImageService manageImageService,
         ICurrentTenant currentTenant,
         IFeatureChecker featureChecker)
         : base(customerRepository, currentTenant, featureChecker)
@@ -58,6 +65,7 @@ public class SalonBeautyCustomerAppService :
         _loyaltyBalanceRepository = loyaltyBalanceRepository;
         _loyaltyTransactionRepository = loyaltyTransactionRepository;
         _l = l;
+        _manageImageService = manageImageService;
     }
 
     public override async Task<PagedResultDto<SalonBeautyCustomerDto>> GetListAsync(GetSalonBeautyListInput input)
@@ -202,6 +210,8 @@ public class SalonBeautyCustomerAppService :
 
         await ValidateCustomerInputAsync(input.Name, input.Phone, input.Email, input.Birthday, null);
 
+        var avatarUrl = await ResolveAvatarAsync(input.Avatar, input.Images, input.IsUploadImage);
+
         var customer = new SalonBeautyCustomer
         {
             CustomerCode = input.CustomerCode.IsNullOrWhiteSpace()
@@ -212,7 +222,7 @@ public class SalonBeautyCustomerAppService :
             Email = NormalizeNullable(input.Email),
             Gender = input.Gender.HasValue ? (byte)input.Gender.Value : null,
             Birthday = input.Birthday?.Date,
-            Avatar = NormalizeNullable(input.Avatar),
+            Avatar = NormalizeNullable(avatarUrl),
             ZaloUserId = NormalizeNullable(input.ZaloUserId),
             IsFollowOa = input.IsFollowOa,
             Source = input.Source.HasValue ? (byte)input.Source.Value : (byte)SalonBeautyCustomerSource.Zalo,
@@ -233,12 +243,17 @@ public class SalonBeautyCustomerAppService :
         await ValidateCustomerInputAsync(input.Name, input.Phone, input.Email, input.Birthday, id);
 
         var customer = await _customerRepository.GetAsync(id);
+        var avatarUrl = await ResolveAvatarAsync(input.Avatar, input.Images, input.IsUploadImage, customer.Avatar);
+        if (input.IsUploadImage && input.Images != null && (input.Images.ContentLength ?? 0) > 0)
+        {
+            await DeleteOldAvatarIfLocalAsync(customer.Avatar);
+        }
         customer.Name = input.Name.Trim();
         customer.Phone = NormalizePhone(input.Phone);
         customer.Email = NormalizeNullable(input.Email);
         customer.Gender = input.Gender.HasValue ? (byte)input.Gender.Value : null;
         customer.Birthday = input.Birthday?.Date;
-        customer.Avatar = NormalizeNullable(input.Avatar);
+        customer.Avatar = NormalizeNullable(avatarUrl);
         customer.ZaloUserId = NormalizeNullable(input.ZaloUserId);
         customer.IsFollowOa = input.IsFollowOa;
         customer.Source = input.Source.HasValue ? (byte)input.Source.Value : null;
@@ -277,6 +292,52 @@ public class SalonBeautyCustomerAppService :
 
         if (input.SkipCount < 0)
             input.SkipCount = 0;
+    }
+
+
+    private async Task<string?> ResolveAvatarAsync(
+        string? avatarUrl,
+        IRemoteStreamContent? imageFile,
+        bool isUploadImage,
+        string? currentAvatar = null)
+    {
+        if (!isUploadImage)
+        {
+            return NormalizeNullable(avatarUrl) ?? NormalizeNullable(currentAvatar);
+        }
+
+        if (imageFile == null || (imageFile.ContentLength ?? 0) <= 0)
+        {
+            return NormalizeNullable(avatarUrl) ?? NormalizeNullable(currentAvatar);
+        }
+
+        ValidateAvatarFile(imageFile);
+
+        return await _manageImageService.UploadImageAsync(
+            imageFile,
+            "salon-customers",
+            allowedExtensions: AvatarAllowedExtensions);
+    }
+
+    private void ValidateAvatarFile(IRemoteStreamContent file)
+    {
+        if ((file.ContentLength ?? 0) > MaxAvatarBytes)
+            throw new UserFriendlyException("Ảnh đại diện tối đa 2MB.");
+
+        var extension = System.IO.Path.GetExtension(file.FileName ?? string.Empty).ToLowerInvariant();
+        if (string.IsNullOrWhiteSpace(extension) || !AvatarAllowedExtensions.Contains(extension))
+            throw new UserFriendlyException("Chỉ hỗ trợ ảnh JPG, PNG hoặc WebP.");
+
+        if (!string.IsNullOrWhiteSpace(file.ContentType) && !file.ContentType.StartsWith("image/", StringComparison.OrdinalIgnoreCase))
+            throw new UserFriendlyException("File tải lên không phải định dạng ảnh hợp lệ.");
+    }
+
+    private async Task DeleteOldAvatarIfLocalAsync(string? oldAvatar)
+    {
+        if (!oldAvatar.IsNullOrWhiteSpace() && oldAvatar!.StartsWith("/uploads/", StringComparison.OrdinalIgnoreCase))
+        {
+            try { await _manageImageService.DeleteFileAsync(oldAvatar); } catch { }
+        }
     }
 
     private async Task ValidateCustomerInputAsync(string? name, string? phone, string? email, DateTime? birthday, Guid? editingId)

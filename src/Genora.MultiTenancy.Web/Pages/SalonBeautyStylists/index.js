@@ -198,8 +198,16 @@ $(function () {
 
     function renderStatus(data, type, row) {
         var active = row.status === 1;
-        var text = row.statusText || (active ? l('SalonBeautyCustomer:StatusActive') : l('SalonBeautyCustomer:StatusInactive'));
-        return '<span class="stylist-status-dot ' + (active ? 'active' : 'inactive') + '">' + htmlEncode(text) + '</span>';
+        if (!canEdit) {
+            var text = row.statusText || (active ? l('SalonBeautyCustomer:StatusActive') : l('SalonBeautyCustomer:StatusInactive'));
+            return '<span class="stylist-status-dot ' + (active ? 'active' : 'inactive') + '">' + htmlEncode(text) + '</span>';
+        }
+
+        var checked = active ? 'checked' : '';
+        return '<label class="stylist-inline-switch" data-stylist-id="' + row.id + '">'
+            + '<input type="checkbox" class="stylist-inline-status-toggle" ' + checked + ' />'
+            + '<span class="stylist-switch-slider"></span>'
+            + '</label>';
     }
 
     function renderShowOnApp(data, type, row) {
@@ -575,6 +583,41 @@ $(function () {
             updateSubmitState($form);
         };
         reader.readAsDataURL(file);
+    });
+
+    $(document).on('change', '.stylist-inline-status-toggle', function () {
+        var $toggle = $(this);
+        var $label = $toggle.closest('.stylist-inline-switch');
+        var stylistId = $label.data('stylist-id');
+        var newStatus = $toggle.is(':checked') ? 1 : 0;
+
+        service.get(stylistId).then(function (stylist) {
+            var updateDto = {
+                displayName: stylist.displayName,
+                avatar: stylist.avatar,
+                phone: stylist.phone,
+                gender: stylist.gender,
+                role: stylist.role,
+                level: stylist.level,
+                experienceYear: stylist.experienceYear,
+                status: newStatus,
+                isShowOnApp: newStatus === 1 ? stylist.isShowOnApp : false,
+                note: stylist.note,
+                sortOrder: stylist.sortOrder
+            };
+
+            service.update(stylistId, updateDto).then(function () {
+                abp.notify.success(l('SavedSuccessfully'));
+                dataTable.ajax.reload(null, false);
+            }).catch(function (error) {
+                $toggle.prop('checked', !$toggle.is(':checked'));
+                var message = error?.message || error?.responseJSON?.error?.message || l('SalonBeautyStylists:UpdateShowOnAppFailed');
+                abp.notify.error(message);
+            });
+        }).catch(function () {
+            $toggle.prop('checked', !$toggle.is(':checked'));
+            abp.notify.error(l('SalonBeautyStylists:UpdateShowOnAppFailed'));
+        });
     });
 
     $(document).on('change', '.stylist-inline-showonapp-toggle', function () {
