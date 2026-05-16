@@ -1,11 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Genora.MultiTenancy.AppDtos.SalonBeauties.SalonBeautyBookings;
+﻿using Genora.MultiTenancy.AppDtos.SalonBeauties.SalonBeautyBookings;
 using Genora.MultiTenancy.DomainModels.AppSalonBeauty;
 using Genora.MultiTenancy.Enums;
 using Genora.MultiTenancy.Helpers;
+using Microsoft.Extensions.Logging;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 using Volo.Abp;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Application.Services;
@@ -87,14 +88,35 @@ public class MiniAppSalonBeautyBookingAppService : ApplicationService, IMiniAppS
         var stylist = await _stylistRepository.GetAsync(input.StylistId);
         if (stylist.Status != 1) throw new UserFriendlyException("Stylist is inactive.");
 
-        var serviceIds = input.Items.Select(x => x.ServiceId).Where(x => x != Guid.Empty).Distinct().ToList();
+        var serviceIds = input.Items
+            .Select(x => x.ServiceId)
+            .Where(x => x != Guid.Empty)
+            .Distinct()
+            .ToList();
+
         var services = await _serviceRepository.GetListAsync(x => serviceIds.Contains(x.Id) && x.Status == 1);
         if (services.Count != serviceIds.Count) throw new UserFriendlyException("Invalid service list.");
 
+        var serviceMap = services.ToDictionary(x => x.Id);
+        var resolvedItems = input.Items
+            .Where(x => x.ServiceId != Guid.Empty)
+            .Select(x =>
+            {
+                var service = serviceMap[x.ServiceId];
+
+                return new
+                {
+                    ServiceId = service.Id,
+                    Price = x.Price > 0 ? x.Price : service.Price,
+                    Duration = x.Duration > 0 ? x.Duration : service.Duration
+                };
+            })
+            .ToList();
+
         var firstService = services.First();
-        var totalDuration = services.Sum(x => x.Duration);
+        var totalDuration = resolvedItems.Sum(x => x.Duration);
         var endTime = input.EndTime ?? input.StartTime.Add(TimeSpan.FromMinutes(totalDuration));
-        var subTotal = services.Sum(x => x.Price);
+        var subTotal = resolvedItems.Sum(x => x.Price);
         var totalAmount = subTotal + (input.Surcharge ?? 0m) - (input.Discount ?? 0m);
         if (totalAmount < 0) totalAmount = 0;
 
@@ -111,33 +133,49 @@ public class MiniAppSalonBeautyBookingAppService : ApplicationService, IMiniAppS
             Status = SalonBeautyBookingStatus.New,
             PaymentStatus = SalonBeautyPaymentStatus.Unpaid,
             CheckinStatus = SalonBeautyCheckinStatus.NotCheckedIn,
-            Note = PackNote(input.CustomerNote, input.InternalNote)
+            Note = PackNote(input.CustomerNote, input.InternalNote),
+
+            // API Mini App là AllowAnonymous, nên ưu tiên tenant hiện tại nếu đã resolve được từ domain;
+            // nếu không có thì dùng TenantId của customer để tránh tạo booking lệch tenant.
+            TenantId = CurrentTenant.Id ?? customer.TenantId
         };
 
-        // Mini App chạy AllowAnonymous nên trên staging có thể không có CurrentTenant.
-        // Gán TenantId theo Customer để booking được tạo đúng tenant và flush parent trước khi insert detail.
-        booking.TenantId = customer.TenantId;
+        var bookingServices = new List<SalonBeautyBookingService>();
 
-        var created = await _bookingRepository.InsertAsync(booking, autoSave: false);
-
-        // Bắt buộc SaveChanges parent trước để FK BookingId tồn tại thật trong DB
-        // trước khi insert AppSalonBeautyBookingServices.
-        await CurrentUnitOfWork.SaveChangesAsync();
-
-        foreach (var svc in services)
+        try
         {
-            await _bookingServiceRepository.InsertAsync(new SalonBeautyBookingService
+            // Theo cách đã fix được ở FNB: lưu cha autoSave=true trước.
+            var created = await _bookingRepository.InsertAsync(booking, autoSave: true);
+
+            foreach (var item in resolvedItems)
             {
-                BookingId = created.Id,
-                ServiceId = svc.Id,
-                Price = svc.Price,
-                Duration = svc.Duration
-            }, autoSave: false);
+                bookingServices.Add(new SalonBeautyBookingService
+                {
+                    BookingId = created.Id,
+                    ServiceId = item.ServiceId,
+                    Price = item.Price,
+                    Duration = item.Duration
+                });
+            }
+
+            // Không gọi CurrentUnitOfWork.SaveChangesAsync thủ công ở giữa.
+            // Lưu detail bằng InsertManyAsync autoSave=true để EF xử lý flush đồng bộ.
+            await _bookingServiceRepository.InsertManyAsync(bookingServices, autoSave: true);
+
+            return await MapToDtoAsync(created);
         }
+        catch (Exception ex)
+        {
+            Logger.LogError(
+                ex,
+                "SALON_BOOKING_SAVE_FAILED | CurrentTenantId={CurrentTenantId} | CustomerTenantId={CustomerTenantId} | BookingId={BookingId}",
+                CurrentTenant.Id,
+                customer.TenantId,
+                booking.Id
+            );
 
-        await CurrentUnitOfWork.SaveChangesAsync();
-
-        return await MapToDtoAsync(created);
+            throw;
+        }
     }
 
     public async Task<SalonBeautyBookingDetailDto> CancelMiniAppAsync(Guid id, CancelBookingDto input)
