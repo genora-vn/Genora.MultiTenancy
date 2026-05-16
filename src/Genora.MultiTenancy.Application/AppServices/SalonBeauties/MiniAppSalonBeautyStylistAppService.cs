@@ -1,16 +1,18 @@
-﻿using System;
-using System.Linq;
-using System.Threading.Tasks;
-using Genora.MultiTenancy.AppDtos.SalonBeauties;
+﻿using Genora.MultiTenancy.AppDtos.SalonBeauties;
 using Genora.MultiTenancy.AppDtos.SalonBeauties.MiniApps;
 using Genora.MultiTenancy.AppDtos.SalonBeauties.SalonBeautyStylists;
 using Genora.MultiTenancy.DomainModels.AppSalonBeauty;
 using Genora.MultiTenancy.Enums;
 using Genora.MultiTenancy.Helpers;
 using Genora.MultiTenancy.Localization;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Localization;
+using System;
+using System.Linq;
+using System.Threading.Tasks;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Application.Services;
+using Volo.Abp.Domain.Entities;
 using Volo.Abp.Domain.Repositories;
 
 namespace Genora.MultiTenancy.AppServices.SalonBeauties.MiniApps;
@@ -19,11 +21,13 @@ public class MiniAppSalonBeautyStylistAppService : ApplicationService, IMiniAppS
 {
     private readonly IRepository<SalonBeautyStylist, Guid> _repository;
     private readonly IStringLocalizer<MultiTenancyResource> _l;
+    private readonly IConfiguration _configuration;
 
-    public MiniAppSalonBeautyStylistAppService(IRepository<SalonBeautyStylist, Guid> repository, IStringLocalizer<MultiTenancyResource> l)
+    public MiniAppSalonBeautyStylistAppService(IRepository<SalonBeautyStylist, Guid> repository, IStringLocalizer<MultiTenancyResource> l, IConfiguration configuration)
     {
         _repository = repository;
         _l = l;
+        _configuration = configuration;
     }
 
     public async Task<PagedResultDto<SalonBeautyStylistDto>> GetListMiniAppAsync(GetSalonBeautyListInput input)
@@ -45,7 +49,7 @@ public class MiniAppSalonBeautyStylistAppService : ApplicationService, IMiniAppS
     {
         Id = x.Id,
         DisplayName = x.DisplayName,
-        Avatar = x.Avatar,
+        Avatar = ImageHelper.NormalizeThumb(_configuration, x.Avatar),
         Phone = x.Phone,
         PhoneMasked = PhoneHelper.MaskPhone(x.Phone),
         Gender = x.Gender,

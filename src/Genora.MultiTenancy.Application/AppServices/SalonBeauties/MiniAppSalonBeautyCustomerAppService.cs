@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Genora.MultiTenancy.AppDtos.SalonBeauties;
+﻿using Genora.MultiTenancy.AppDtos.SalonBeauties;
 using Genora.MultiTenancy.AppDtos.SalonBeauties.MiniApps;
 using Genora.MultiTenancy.AppDtos.SalonBeauties.SalonBeautyCustomers;
 using Genora.MultiTenancy.DomainModels.AppSalonBeauty;
@@ -10,6 +6,13 @@ using Genora.MultiTenancy.Enums;
 using Genora.MultiTenancy.Helpers;
 using Genora.MultiTenancy.Localization;
 using Microsoft.Extensions.Localization;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text.RegularExpressions;
+using System.Threading;
+using System.Threading.Tasks;
+using Volo.Abp;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Application.Services;
 using Volo.Abp.Domain.Repositories;
@@ -75,6 +78,106 @@ public class MiniAppSalonBeautyCustomerAppService : ApplicationService, IMiniApp
 
         return Map(customer, bookingStats, loyalty);
     }
+
+    public async Task<SalonBeautyCustomerDto?> GetByPhoneAsync(string phoneNumber, CancellationToken ct = default)
+    {
+        var normalized = NormalizePhone(phoneNumber);
+        if (normalized.IsNullOrWhiteSpace())
+        {
+            throw new UserFriendlyException("Vui lòng nhập số điện thoại.");
+        }
+
+        var query = await _customerRepository.GetQueryableAsync();
+
+        var customer = await AsyncExecuter.FirstOrDefaultAsync(
+            query.Where(x => x.Phone == normalized),
+            ct
+        );
+
+        if (customer == null)
+        {
+            return null;
+        }
+
+        var bookingStats = await BuildBookingStatsAsync(new List<Guid> { customer.Id });
+        var loyalty = await BuildLoyaltyStatsAsync(new List<Guid> { customer.Id });
+
+        return Map(customer, bookingStats, loyalty);
+    }
+
+    /// <summary>
+    /// Tạo mới/cập nhật khách hàng Salon Beauty từ Zalo Mini App.
+    /// Idempotent theo số điện thoại. Nếu đã tồn tại Phone thì update mapping, chưa có thì tạo mới.
+    /// </summary>
+    public async Task<SalonBeautyCustomerDto> UpsertFromMiniAppAsync(MiniAppSalonBeautyUpsertCustomerRequest input, CancellationToken ct = default)
+    {
+        var phone = NormalizePhone(input.PhoneNumber ?? input.Phone);
+        if (phone.IsNullOrWhiteSpace())
+        {
+            throw new UserFriendlyException("Vui lòng nhập số điện thoại.");
+        }
+
+        var name = NormalizeNullable(input.FullName ?? input.Name);
+        if (name.IsNullOrWhiteSpace())
+        {
+            name = "Zalo User";
+        }
+
+        var query = await _customerRepository.GetQueryableAsync();
+
+        var customer = await AsyncExecuter.FirstOrDefaultAsync(
+            query.Where(x => x.Phone == phone)
+        );
+
+        var isFollowOa = input.IsFollowOa ?? input.IsFollower ?? false;
+        var birthday = input.Birthday ?? input.DateOfBirth;
+        var avatar = NormalizeNullable(input.Avatar ?? input.AvatarUrl);
+        var source = input.Source ?? SalonBeautyCustomerSource.Zalo;
+
+        if (customer == null)
+        {
+            customer = new SalonBeautyCustomer
+            {
+                CustomerCode = await GenerateCustomerCodeMiniAppAsync(),
+                Name = name!,
+                Phone = phone,
+                Email = NormalizeNullable(input.Email),
+                Gender = ToDefinedEnumByte<SalonBeautyGender>(input.Gender),
+                Birthday = birthday?.Date,
+                Avatar = avatar,
+                ZaloUserId = NormalizeNullable(input.ZaloUserId ?? input.ZaloFollowerId),
+                IsFollowOa = isFollowOa,
+                Source = (byte)source,
+                Status = 1,
+                Note = NormalizeNullable(input.Note)
+            };
+
+            customer = await _customerRepository.InsertAsync(customer, autoSave: true);
+        }
+        else
+        {
+            customer.Name = name.IsNullOrWhiteSpace() ? customer.Name : name!;
+            customer.Email = NormalizeNullable(input.Email) ?? customer.Email;
+            customer.Gender = ToDefinedEnumByte<SalonBeautyGender>(input.Gender) ?? customer.Gender;
+            customer.Birthday = birthday?.Date ?? customer.Birthday;
+            customer.Avatar = avatar ?? customer.Avatar;
+            customer.ZaloUserId = NormalizeNullable(input.ZaloUserId ?? input.ZaloFollowerId) ?? customer.ZaloUserId;
+            customer.IsFollowOa = input.IsFollowOa ?? input.IsFollower ?? customer.IsFollowOa;
+            customer.Source = (byte)source;
+            customer.Status = 1;
+
+            var note = NormalizeNullable(input.Note);
+            if (!note.IsNullOrWhiteSpace())
+            {
+                customer.Note = note;
+            }
+
+            customer = await _customerRepository.UpdateAsync(customer, autoSave: true);
+        }
+
+        return await GetMiniAppAsync(customer.Id);
+    }
+
 
     private async Task<Dictionary<Guid, (int Count, decimal Total, DateTime? LastDate)>> BuildBookingStatsAsync(List<Guid> ids)
     {
@@ -160,6 +263,47 @@ public class MiniAppSalonBeautyCustomerAppService : ApplicationService, IMiniApp
             LastModificationTime = x.LastModificationTime,
             LastModifierId = x.LastModifierId
         };
+    }
+
+    private static string? NormalizeNullable(string? value)
+        => value.IsNullOrWhiteSpace() ? null : value!.Trim();
+
+    private static string? NormalizePhone(string? phone)
+        => phone.IsNullOrWhiteSpace() ? null : Regex.Replace(phone!.Trim(), @"\s+|-|\.", "");
+
+    private async Task<string> GenerateCustomerCodeMiniAppAsync()
+    {
+        var prefix = "SB" + Clock.Now.ToString("yyMMdd");
+        var query = await _customerRepository.GetQueryableAsync();
+        var countToday = await AsyncExecuter.CountAsync(query.Where(x => x.CustomerCode.StartsWith(prefix)));
+        return $"{prefix}{countToday + 1:D4}";
+    }
+
+
+    private static byte? ToDefinedEnumByte<TEnum>(TEnum? value)
+        where TEnum : struct, Enum
+    {
+        if (!value.HasValue)
+        {
+            return null;
+        }
+
+        return Enum.IsDefined(typeof(TEnum), value.Value)
+            ? Convert.ToByte(value.Value)
+            : null;
+    }
+
+    private static byte? ToDefinedEnumByte<TEnum>(byte? value)
+        where TEnum : struct, Enum
+    {
+        if (!value.HasValue)
+        {
+            return null;
+        }
+
+        return Enum.IsDefined(typeof(TEnum), value.Value)
+            ? value.Value
+            : null;
     }
 
     private static TEnum? ToNullableEnum<TEnum>(byte? value)
