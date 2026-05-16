@@ -114,7 +114,16 @@ public class MiniAppSalonBeautyBookingAppService : ApplicationService, IMiniAppS
             Note = PackNote(input.CustomerNote, input.InternalNote)
         };
 
-        var created = await _bookingRepository.InsertAsync(booking, autoSave: true);
+        // Mini App chạy AllowAnonymous nên trên staging có thể không có CurrentTenant.
+        // Gán TenantId theo Customer để booking được tạo đúng tenant và flush parent trước khi insert detail.
+        booking.TenantId = customer.TenantId;
+
+        var created = await _bookingRepository.InsertAsync(booking, autoSave: false);
+
+        // Bắt buộc SaveChanges parent trước để FK BookingId tồn tại thật trong DB
+        // trước khi insert AppSalonBeautyBookingServices.
+        await CurrentUnitOfWork.SaveChangesAsync();
+
         foreach (var svc in services)
         {
             await _bookingServiceRepository.InsertAsync(new SalonBeautyBookingService
@@ -123,8 +132,10 @@ public class MiniAppSalonBeautyBookingAppService : ApplicationService, IMiniAppS
                 ServiceId = svc.Id,
                 Price = svc.Price,
                 Duration = svc.Duration
-            }, autoSave: true);
+            }, autoSave: false);
         }
+
+        await CurrentUnitOfWork.SaveChangesAsync();
 
         return await MapToDtoAsync(created);
     }
