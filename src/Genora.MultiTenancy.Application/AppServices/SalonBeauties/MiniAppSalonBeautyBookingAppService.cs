@@ -120,8 +120,8 @@ public class MiniAppSalonBeautyBookingAppService : ApplicationService, IMiniAppS
         var totalAmount = subTotal + (input.Surcharge ?? 0m) - (input.Discount ?? 0m);
         if (totalAmount < 0) totalAmount = 0;
 
-        var tenantId = CurrentTenant.Id ?? customer.TenantId;
         var bookingId = GuidGenerator.Create();
+        var tenantId = CurrentTenant.Id ?? customer.TenantId;
 
         var booking = new SalonBeautyBooking(
             bookingId,
@@ -140,24 +140,20 @@ public class MiniAppSalonBeautyBookingAppService : ApplicationService, IMiniAppS
             tenantId
         );
 
-        var bookingServices = resolvedItems
-            .Select(x => new SalonBeautyBookingService
+        foreach (var item in resolvedItems)
+        {
+            booking.BookingServices.Add(new SalonBeautyBookingService
             {
                 BookingId = bookingId,
-                ServiceId = x.ServiceId,
-                Price = x.Price,
-                Duration = x.Duration
-            })
-            .ToList();
+                ServiceId = item.ServiceId,
+                Price = item.Price,
+                Duration = item.Duration
+            });
+        }
 
         try
         {
-            // Pattern giống MiniAppFnbOrderService: lưu booking cha autoSave=true rồi lưu detail autoSave=true.
-            // Không set Id bằng object initializer vì Entity<Guid>.Id setter inaccessible.
-            // Không gọi CurrentUnitOfWork.SaveChangesAsync thủ công ở giữa.
             await _bookingRepository.InsertAsync(booking, autoSave: true);
-            await _bookingServiceRepository.InsertManyAsync(bookingServices, autoSave: true);
-
             return await MapToDtoAsync(booking);
         }
         catch (Exception ex)

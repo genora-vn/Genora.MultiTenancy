@@ -8,7 +8,7 @@ using System.Collections.Generic;
 
 namespace Genora.MultiTenancy.DomainModels.AppSalonBeauty;
 
-[Table("AppSalonBeautyBookings")]
+[Table("AppSalonBeautyBookings", Schema = "Salon")]
 public class SalonBeautyBooking : FullAuditedAggregateRoot<Guid>, IMultiTenant
 {
     public Guid? TenantId { get; set; }

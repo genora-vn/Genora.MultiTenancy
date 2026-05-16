@@ -153,21 +153,23 @@ public class SalonBeautyBookingAppService :
             CurrentTenant.Id
         );
 
-        var bookingServices = resolved
-            .Select(item => new SalonBeautyBookingService
+        foreach (var item in resolved)
+        {
+            booking.BookingServices.Add(new SalonBeautyBookingService
             {
                 BookingId = bookingId,
                 ServiceId = item.ServiceId,
                 Price = item.Price,
                 Duration = item.Duration
-            })
-            .ToList();
+            });
+        }
 
         await _bookingRepository.InsertAsync(booking, autoSave: true);
-        await _bookingServiceRepository.InsertManyAsync(bookingServices, autoSave: true);
 
         return await MapToBookingDetailDto(booking);
     }
+
+
 
     public override async Task<SalonBeautyBookingDetailDto> UpdateAsync(Guid id, UpdateSalonBeautyBookingDto input)
     {
