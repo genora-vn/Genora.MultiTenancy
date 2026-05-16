@@ -53,4 +53,39 @@ public class SalonBeautyBooking : FullAuditedAggregateRoot<Guid>, IMultiTenant
     public virtual SalonBeautyService? Service { get; set; }
     public virtual SalonBeautyStylist? Stylist { get; set; }
     public virtual ICollection<SalonBeautyBookingService> BookingServices { get; set; } = new List<SalonBeautyBookingService>();
+
+    protected SalonBeautyBooking()
+    {
+    }
+
+    public SalonBeautyBooking(
+        Guid id,
+        string bookingCode,
+        Guid customerId,
+        Guid serviceId,
+        Guid stylistId,
+        DateTime bookingDate,
+        TimeSpan startTime,
+        TimeSpan endTime,
+        decimal totalAmount,
+        SalonBeautyBookingStatus status,
+        SalonBeautyPaymentStatus paymentStatus,
+        SalonBeautyCheckinStatus checkinStatus,
+        string? note,
+        Guid? tenantId = null) : base(id)
+    {
+        BookingCode = bookingCode;
+        CustomerId = customerId;
+        ServiceId = serviceId;
+        StylistId = stylistId;
+        BookingDate = bookingDate.Date;
+        StartTime = startTime;
+        EndTime = endTime;
+        TotalAmount = totalAmount;
+        Status = status;
+        PaymentStatus = paymentStatus;
+        CheckinStatus = checkinStatus;
+        Note = note;
+        TenantId = tenantId;
+    }
 }

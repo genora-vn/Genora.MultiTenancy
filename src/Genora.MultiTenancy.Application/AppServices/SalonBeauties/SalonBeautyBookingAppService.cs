@@ -124,6 +124,7 @@ public class SalonBeautyBookingAppService :
         await CheckBookingPolicyAsync(
             MultiTenancyPermissions.SalonBeautyBookings.Create,
             MultiTenancyPermissions.HostSalonBeautyBookings.Create);
+
         ValidateBookingItems(input.Items);
 
         var resolved = await ResolveItemsAsync(input.Items);
@@ -133,36 +134,39 @@ public class SalonBeautyBookingAppService :
         var totalAmount = subTotal + (input.Surcharge ?? 0m) - (input.Discount ?? 0m);
         if (totalAmount < 0) totalAmount = 0;
 
-        var booking = new SalonBeautyBooking
-        {
-            BookingCode = GenerateBookingCode(),
-            CustomerId = input.CustomerId,
-            ServiceId = resolved.First().ServiceId,
-            StylistId = input.StylistId,
-            BookingDate = input.BookingDate.Date,
-            StartTime = input.StartTime,
-            EndTime = endTime,
-            TotalAmount = totalAmount,
-            Status = SalonBeautyBookingStatus.New,
-            PaymentStatus = SalonBeautyPaymentStatus.Unpaid,
-            CheckinStatus = SalonBeautyCheckinStatus.NotCheckedIn,
-            Note = PackNote(input.CustomerNote, input.InternalNote)
-        };
+        var bookingId = GuidGenerator.Create();
 
-        var created = await _bookingRepository.InsertAsync(booking, autoSave: true);
+        var booking = new SalonBeautyBooking(
+            bookingId,
+            GenerateBookingCode(),
+            input.CustomerId,
+            resolved.First().ServiceId,
+            input.StylistId,
+            input.BookingDate.Date,
+            input.StartTime,
+            endTime,
+            totalAmount,
+            SalonBeautyBookingStatus.New,
+            SalonBeautyPaymentStatus.Unpaid,
+            SalonBeautyCheckinStatus.NotCheckedIn,
+            PackNote(input.CustomerNote, input.InternalNote),
+            CurrentTenant.Id
+        );
 
-        foreach (var item in resolved)
-        {
-            await _bookingServiceRepository.InsertAsync(new SalonBeautyBookingService
+        var bookingServices = resolved
+            .Select(item => new SalonBeautyBookingService
             {
-                BookingId = created.Id,
+                BookingId = bookingId,
                 ServiceId = item.ServiceId,
                 Price = item.Price,
                 Duration = item.Duration
-            }, autoSave: true);
-        }
+            })
+            .ToList();
 
-        return await MapToBookingDetailDto(created);
+        await _bookingRepository.InsertAsync(booking, autoSave: true);
+        await _bookingServiceRepository.InsertManyAsync(bookingServices, autoSave: true);
+
+        return await MapToBookingDetailDto(booking);
     }
 
     public override async Task<SalonBeautyBookingDetailDto> UpdateAsync(Guid id, UpdateSalonBeautyBookingDto input)

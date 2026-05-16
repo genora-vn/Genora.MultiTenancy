@@ -120,49 +120,45 @@ public class MiniAppSalonBeautyBookingAppService : ApplicationService, IMiniAppS
         var totalAmount = subTotal + (input.Surcharge ?? 0m) - (input.Discount ?? 0m);
         if (totalAmount < 0) totalAmount = 0;
 
-        var booking = new SalonBeautyBooking
-        {
-            BookingCode = GenerateBookingCode(),
-            CustomerId = input.CustomerId,
-            StylistId = input.StylistId,
-            ServiceId = firstService.Id,
-            BookingDate = input.BookingDate.Date,
-            StartTime = input.StartTime,
-            EndTime = endTime,
-            TotalAmount = totalAmount,
-            Status = SalonBeautyBookingStatus.New,
-            PaymentStatus = SalonBeautyPaymentStatus.Unpaid,
-            CheckinStatus = SalonBeautyCheckinStatus.NotCheckedIn,
-            Note = PackNote(input.CustomerNote, input.InternalNote),
+        var tenantId = CurrentTenant.Id ?? customer.TenantId;
+        var bookingId = GuidGenerator.Create();
 
-            // API Mini App là AllowAnonymous, nên ưu tiên tenant hiện tại nếu đã resolve được từ domain;
-            // nếu không có thì dùng TenantId của customer để tránh tạo booking lệch tenant.
-            TenantId = CurrentTenant.Id ?? customer.TenantId
-        };
+        var booking = new SalonBeautyBooking(
+            bookingId,
+            GenerateBookingCode(),
+            input.CustomerId,
+            firstService.Id,
+            input.StylistId,
+            input.BookingDate.Date,
+            input.StartTime,
+            endTime,
+            totalAmount,
+            SalonBeautyBookingStatus.New,
+            SalonBeautyPaymentStatus.Unpaid,
+            SalonBeautyCheckinStatus.NotCheckedIn,
+            PackNote(input.CustomerNote, input.InternalNote),
+            tenantId
+        );
 
-        var bookingServices = new List<SalonBeautyBookingService>();
+        var bookingServices = resolvedItems
+            .Select(x => new SalonBeautyBookingService
+            {
+                BookingId = bookingId,
+                ServiceId = x.ServiceId,
+                Price = x.Price,
+                Duration = x.Duration
+            })
+            .ToList();
 
         try
         {
-            // Theo cách đã fix được ở FNB: lưu cha autoSave=true trước.
-            var created = await _bookingRepository.InsertAsync(booking, autoSave: true);
-
-            foreach (var item in resolvedItems)
-            {
-                bookingServices.Add(new SalonBeautyBookingService
-                {
-                    BookingId = created.Id,
-                    ServiceId = item.ServiceId,
-                    Price = item.Price,
-                    Duration = item.Duration
-                });
-            }
-
+            // Pattern giống MiniAppFnbOrderService: lưu booking cha autoSave=true rồi lưu detail autoSave=true.
+            // Không set Id bằng object initializer vì Entity<Guid>.Id setter inaccessible.
             // Không gọi CurrentUnitOfWork.SaveChangesAsync thủ công ở giữa.
-            // Lưu detail bằng InsertManyAsync autoSave=true để EF xử lý flush đồng bộ.
+            await _bookingRepository.InsertAsync(booking, autoSave: true);
             await _bookingServiceRepository.InsertManyAsync(bookingServices, autoSave: true);
 
-            return await MapToDtoAsync(created);
+            return await MapToDtoAsync(booking);
         }
         catch (Exception ex)
         {
@@ -171,7 +167,7 @@ public class MiniAppSalonBeautyBookingAppService : ApplicationService, IMiniAppS
                 "SALON_BOOKING_SAVE_FAILED | CurrentTenantId={CurrentTenantId} | CustomerTenantId={CustomerTenantId} | BookingId={BookingId}",
                 CurrentTenant.Id,
                 customer.TenantId,
-                booking.Id
+                bookingId
             );
 
             throw;
