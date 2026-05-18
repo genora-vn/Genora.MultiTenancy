@@ -329,18 +329,18 @@ public class MultiTenancyMenuContributor : IMenuContributor
                     order: 47
                 );
 
-                if (await perms.IsGrantedAsync(MultiTenancyPermissions.SalonBeautyCustomers.Default))
-                {
-                    groupSalonBeauty.AddItem(
-                        new ApplicationMenuItem(
-                            name: "SalonBeautyCustomers",
-                            displayName: l["Menu:SalonBeautyCustomers"],
-                            url: "/SalonBeautyCustomers",
-                            icon: "fa fa-user",
-                            order: 1
-                        ).RequirePermissions(MultiTenancyPermissions.SalonBeautyCustomers.Default)
-                    );
-                }
+                //if (await perms.IsGrantedAsync(MultiTenancyPermissions.SalonBeautyCustomers.Default))
+                //{
+                //    groupSalonBeauty.AddItem(
+                //        new ApplicationMenuItem(
+                //            name: "SalonBeautyCustomers",
+                //            displayName: l["Menu:SalonBeautyCustomers"],
+                //            url: "/SalonBeautyCustomers",
+                //            icon: "fa fa-user",
+                //            order: 1
+                //        ).RequirePermissions(MultiTenancyPermissions.SalonBeautyCustomers.Default)
+                //    );
+                //}
 
                 if (await perms.IsGrantedAsync(MultiTenancyPermissions.SalonBeautyServiceCategories.Default))
                 {
@@ -382,18 +382,18 @@ public class MultiTenancyMenuContributor : IMenuContributor
                     );
                 }
 
-                if (await perms.IsGrantedAsync(MultiTenancyPermissions.SalonBeautyBookings.Default))
-                {
-                    groupSalonBeauty.AddItem(
-                        new ApplicationMenuItem(
-                            name: "SalonBeautyBookings",
-                            displayName: l["Menu:SalonBeautyBookings"],
-                            url: "/SalonBeautyBookings",
-                            icon: "fa fa-calendar-check",
-                            order: 4
-                        ).RequirePermissions(MultiTenancyPermissions.SalonBeautyBookings.Default)
-                    );
-                }
+                //if (await perms.IsGrantedAsync(MultiTenancyPermissions.SalonBeautyBookings.Default))
+                //{
+                //    groupSalonBeauty.AddItem(
+                //        new ApplicationMenuItem(
+                //            name: "SalonBeautyBookings",
+                //            displayName: l["Menu:SalonBeautyBookings"],
+                //            url: "/SalonBeautyBookings",
+                //            icon: "fa fa-calendar-check",
+                //            order: 4
+                //        ).RequirePermissions(MultiTenancyPermissions.SalonBeautyBookings.Default)
+                //    );
+                //}
 
                 context.Menu.AddItem(groupSalonBeauty);
             }
@@ -519,8 +519,8 @@ public class MultiTenancyMenuContributor : IMenuContributor
             // 2) Sân golf & Giờ chơi
             // =========================================================
             var groupGolfAndTeeTimes = new ApplicationMenuItem(
-                name: "MenuGroup.GolfAndTeeTimes",
-                displayName: l["MenuGroup:GolfAndTeeTimes"],
+                name: canSeeSalonBeauty == false ? "MenuGroup.GolfAndTeeTimes" : l["MenuGroup:SalonBeautyAndTeeTimes"],
+                displayName: canSeeSalonBeauty == false ? l["MenuGroup:GolfAndTeeTimes"] : l["MenuGroup:SalonBeautyAndTeeTimes"],
                 icon: "fa fa-flag",
                 order: 20
             );
@@ -615,6 +615,19 @@ public class MultiTenancyMenuContributor : IMenuContributor
                 );
             }
 
+            if(canSeeSalonBeauty)
+            {
+                groupCustomerBooking.AddItem(
+                    new ApplicationMenuItem(
+                        name: "SalonBeautyCustomers",
+                        displayName: l["Menu:SalonBeautyCustomers"],
+                        url: "/SalonBeautyCustomers",
+                        icon: "fa fa-user",
+                        order: 2
+                    ).RequirePermissions(MultiTenancyPermissions.SalonBeautyCustomers.Default)
+                );
+            }
+
             // Mã giảm giá (Coming soon)
             groupCustomerBooking.AddItem(
                 ComingSoon(
@@ -635,6 +648,19 @@ public class MultiTenancyMenuContributor : IMenuContributor
                         icon: "fa fa-calendar-check",
                         order: 3
                     ).RequirePermissions(MultiTenancyPermissions.AppBookings.Default)
+                );
+            }
+
+            if(canSeeSalonBeauty) 
+            {
+                groupCustomerBooking.AddItem(
+                    new ApplicationMenuItem(
+                        name: "SalonBeautyBookings",
+                        displayName: l["Menu:SalonBeautyBookings"],
+                        url: "/SalonBeautyBookings",
+                        icon: "fa fa-calendar-check",
+                        order: 4
+                    ).RequirePermissions(MultiTenancyPermissions.SalonBeautyBookings.Default)
                 );
             }
 
@@ -1016,18 +1042,18 @@ public class MultiTenancyMenuContributor : IMenuContributor
                     order: 47
                 );
 
-                if (await perms.IsGrantedAsync(MultiTenancyPermissions.HostSalonBeautyCustomers.Default))
-                {
-                    groupSalonBeauty.AddItem(
-                        new ApplicationMenuItem(
-                            name: "SalonBeautyCustomersHost",
-                            displayName: l["Menu:SalonBeautyCustomers"],
-                            url: "/SalonBeautyCustomers",
-                            icon: "fa fa-user",
-                            order: 1
-                        ).RequirePermissions(MultiTenancyPermissions.HostSalonBeautyCustomers.Default)
-                    );
-                }
+                //if (await perms.IsGrantedAsync(MultiTenancyPermissions.HostSalonBeautyCustomers.Default))
+                //{
+                //    groupSalonBeauty.AddItem(
+                //        new ApplicationMenuItem(
+                //            name: "SalonBeautyCustomersHost",
+                //            displayName: l["Menu:SalonBeautyCustomers"],
+                //            url: "/SalonBeautyCustomers",
+                //            icon: "fa fa-user",
+                //            order: 1
+                //        ).RequirePermissions(MultiTenancyPermissions.HostSalonBeautyCustomers.Default)
+                //    );
+                //}
 
                 if (await perms.IsGrantedAsync(MultiTenancyPermissions.HostSalonBeautyServiceCategories.Default))
                 {
@@ -1069,18 +1095,18 @@ public class MultiTenancyMenuContributor : IMenuContributor
                     );
                 }
 
-                if (await perms.IsGrantedAsync(MultiTenancyPermissions.HostSalonBeautyBookings.Default))
-                {
-                    groupSalonBeauty.AddItem(
-                        new ApplicationMenuItem(
-                            name: "SalonBeautyBookingsHost",
-                            displayName: l["Menu:SalonBeautyBookings"],
-                            url: "/SalonBeautyBookings",
-                            icon: "fa fa-calendar-check",
-                            order: 4
-                        ).RequirePermissions(MultiTenancyPermissions.HostSalonBeautyBookings.Default)
-                    );
-                }
+                //if (await perms.IsGrantedAsync(MultiTenancyPermissions.HostSalonBeautyBookings.Default))
+                //{
+                //    groupSalonBeauty.AddItem(
+                //        new ApplicationMenuItem(
+                //            name: "SalonBeautyBookingsHost",
+                //            displayName: l["Menu:SalonBeautyBookings"],
+                //            url: "/SalonBeautyBookings",
+                //            icon: "fa fa-calendar-check",
+                //            order: 4
+                //        ).RequirePermissions(MultiTenancyPermissions.HostSalonBeautyBookings.Default)
+                //    );
+                //}
 
                 context.Menu.AddItem(groupSalonBeauty);
             }
@@ -1199,12 +1225,18 @@ public class MultiTenancyMenuContributor : IMenuContributor
             context.Menu.AddItem(groupMiniAppSetup);
 
             // 2) Sân golf & Giờ chơi
+            //var groupGolfAndTeeTimes = new ApplicationMenuItem(
+            //    name: "MenuGroup.GolfAndTeeTimes",
+            //    displayName: l["MenuGroup:GolfAndTeeTimes"],
+            //    icon: "fa fa-flag",
+            //    order: 20
+            //);
             var groupGolfAndTeeTimes = new ApplicationMenuItem(
-                name: "MenuGroup.GolfAndTeeTimes",
-                displayName: l["MenuGroup:GolfAndTeeTimes"],
-                icon: "fa fa-flag",
-                order: 20
-            );
+               name: hostCanSeeSalonBeauty == false ? "MenuGroup.GolfAndTeeTimes" : l["MenuGroup:SalonBeautyAndTeeTimes"],
+               displayName: hostCanSeeSalonBeauty == false ? l["MenuGroup:GolfAndTeeTimes"] : l["MenuGroup:SalonBeautyAndTeeTimes"],
+               icon: "fa fa-flag",
+               order: 20
+           );
 
             if (hostCanGolfCourses)
             {
@@ -1293,6 +1325,22 @@ public class MultiTenancyMenuContributor : IMenuContributor
                     ).RequirePermissions(MultiTenancyPermissions.HostAppCustomers.Default)
                 );
             }
+            if(hostCanSeeSalonBeauty)
+            {
+                if (await perms.IsGrantedAsync(MultiTenancyPermissions.HostSalonBeautyCustomers.Default))
+                {
+                    groupCustomerBooking.AddItem(
+                        new ApplicationMenuItem(
+                            name: "SalonBeautyCustomersHost",
+                            displayName: l["Menu:SalonBeautyCustomers"],
+                            url: "/SalonBeautyCustomers",
+                            icon: "fa fa-user",
+                            order: 1
+                        ).RequirePermissions(MultiTenancyPermissions.HostSalonBeautyCustomers.Default)
+                    );
+                }
+            }    
+            
 
             groupCustomerBooking.AddItem(
                 ComingSoon(
@@ -1314,6 +1362,22 @@ public class MultiTenancyMenuContributor : IMenuContributor
                         order: 3
                     ).RequirePermissions(MultiTenancyPermissions.HostAppBookings.Default)
                 );
+            }
+
+            if (hostCanSeeSalonBeauty)
+            {
+                if (await perms.IsGrantedAsync(MultiTenancyPermissions.HostSalonBeautyBookings.Default))
+                {
+                    groupCustomerBooking.AddItem(
+                        new ApplicationMenuItem(
+                            name: "SalonBeautyBookingsHost",
+                            displayName: l["Menu:SalonBeautyBookings"],
+                            url: "/SalonBeautyBookings",
+                            icon: "fa fa-calendar-check",
+                            order: 4
+                        ).RequirePermissions(MultiTenancyPermissions.HostSalonBeautyBookings.Default)
+                    );
+                }
             }
 
             context.Menu.AddItem(groupCustomerBooking);
