@@ -140,20 +140,21 @@ public class MiniAppSalonBeautyBookingAppService : ApplicationService, IMiniAppS
             tenantId
         );
 
-        foreach (var item in resolvedItems)
-        {
-            booking.BookingServices.Add(new SalonBeautyBookingService
-            {
-                BookingId = bookingId,
-                ServiceId = item.ServiceId,
-                Price = item.Price,
-                Duration = item.Duration
-            });
-        }
-
         try
         {
             await _bookingRepository.InsertAsync(booking, autoSave: true);
+
+            foreach (var item in resolvedItems)
+            {
+                await _bookingServiceRepository.InsertAsync(new SalonBeautyBookingService
+                {
+                    BookingId = bookingId,
+                    ServiceId = item.ServiceId,
+                    Price = item.Price,
+                    Duration = item.Duration
+                }, autoSave: true);
+            }
+
             return await MapToDtoAsync(booking);
         }
         catch (Exception ex)
