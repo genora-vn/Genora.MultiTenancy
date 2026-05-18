@@ -17,6 +17,7 @@ using Genora.MultiTenancy.AppDtos.AppMembershipTiers;
 using Genora.MultiTenancy.AppDtos.AppNews;
 using Genora.MultiTenancy.AppDtos.AppOptionExtend;
 using Genora.MultiTenancy.AppDtos.AppPromotionTypes;
+using Genora.MultiTenancy.AppDtos.AppPromotionPolicies;
 using Genora.MultiTenancy.AppDtos.AppSettings;
 using Genora.MultiTenancy.AppDtos.AppSpecialDates;
 using Genora.MultiTenancy.AppDtos.ZaloAuths;
@@ -41,6 +42,7 @@ using Genora.MultiTenancy.DomainModels.AppNews;
 using Genora.MultiTenancy.DomainModels.AppOptionExtend;
 using Genora.MultiTenancy.DomainModels.AppPaymentConfigurations;
 using Genora.MultiTenancy.DomainModels.AppPromotionTypes;
+using Genora.MultiTenancy.DomainModels.AppPromotionPolicies;
 using Genora.MultiTenancy.DomainModels.AppSpecialDates;
 using Genora.MultiTenancy.DomainModels.AppZaloAuth;
 using Genora.MultiTenancy.Enums;
@@ -138,6 +140,26 @@ public class MultiTenancyApplicationAutoMapperProfile : Profile
         CreateMap<AppPromotionTypeDto, Genora.MultiTenancy.DomainModels.AppPromotionTypes.PromotionType>();
         CreateMap<AppPromotionTypeDto, CreateUpdatePromotionTypeDto>();
         CreateMap<CreateUpdatePromotionTypeDto, Genora.MultiTenancy.DomainModels.AppPromotionTypes.PromotionType>();
+
+        // PromotionPolicy
+        CreateMap<PromotionPolicy, AppPromotionPolicyDto>()
+            .ForMember(d => d.GolfCourseName, opt => opt.MapFrom(s => s.GolfCourse != null ? s.GolfCourse.Name : null))
+            .ForMember(d => d.PromotionTypeName, opt => opt.MapFrom(s => s.PromotionType != null ? s.PromotionType.Name : null))
+            .ForMember(d => d.PromotionTypeColor, opt => opt.MapFrom(s => s.PromotionType != null ? s.PromotionType.ColorCode : null));
+        CreateMap<CreateUpdateAppPromotionPolicyDto, PromotionPolicy>()
+            .ForMember(x => x.Id, opt => opt.Ignore())
+            .ForMember(x => x.TenantId, opt => opt.Ignore())
+            .ForMember(x => x.ExtraProperties, opt => opt.Ignore())
+            .ForMember(x => x.ConcurrencyStamp, opt => opt.Ignore())
+            .ForMember(x => x.CreationTime, opt => opt.Ignore())
+            .ForMember(x => x.CreatorId, opt => opt.Ignore())
+            .ForMember(x => x.LastModificationTime, opt => opt.Ignore())
+            .ForMember(x => x.LastModifierId, opt => opt.Ignore())
+            .ForMember(x => x.IsDeleted, opt => opt.Ignore())
+            .ForMember(x => x.DeleterId, opt => opt.Ignore())
+            .ForMember(x => x.DeletionTime, opt => opt.Ignore())
+            .ForMember(x => x.GolfCourse, opt => opt.Ignore())
+            .ForMember(x => x.PromotionType, opt => opt.Ignore());
 
         #region SpecialDate auto mapper profile
         CreateMap<SpecialDate, SpecialDateDto>()

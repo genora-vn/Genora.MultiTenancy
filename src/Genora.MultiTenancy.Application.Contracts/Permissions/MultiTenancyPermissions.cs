@@ -194,6 +194,24 @@ public static class MultiTenancyPermissions
     }
     #endregion
 
+    #region Thêm permission cho tính năng quản trị PromotionPolicy
+    public static class AppPromotionPolicies
+    {
+        public const string Default = GroupName + ".AppPromotionPolicies";
+        public const string Create = Default + ".Create";
+        public const string Edit = Default + ".Edit";
+        public const string Delete = Default + ".Delete";
+    }
+
+    public static class HostAppPromotionPolicies
+    {
+        public const string Default = GroupName + ".HostAppPromotionPolicies";
+        public const string Create = Default + ".Create";
+        public const string Edit = Default + ".Edit";
+        public const string Delete = Default + ".Delete";
+    }
+    #endregion
+
     #region Thêm permission cho tính năng quản trị AppSpecialDates
     public static class AppSpecialDates
     {

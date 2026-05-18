@@ -10,6 +10,7 @@ using Genora.MultiTenancy.DomainModels.AppCustomers;
 using Genora.MultiTenancy.DomainModels.AppCustomerTypes;
 using Genora.MultiTenancy.DomainModels.AppGolfCourses;
 using Genora.MultiTenancy.DomainModels.AppOptionExtend;
+using Genora.MultiTenancy.DomainModels.AppPromotionPolicies;
 using Genora.MultiTenancy.Enums;
 using Genora.MultiTenancy.Features.AppEmails;
 using Genora.MultiTenancy.Helpers;
@@ -45,6 +46,7 @@ public class MiniAppBookingAppService : ApplicationService, IMiniAppBookingAppSe
     private readonly IBackgroundJobManager _jobManager;
     private readonly IRepository<GolfCourse, Guid> _golfCourseRepo;
     private readonly IRepository<Genora.MultiTenancy.DomainModels.AppPromotionTypes.PromotionType, Guid> _promotionTypeRepository;
+    private readonly IRepository<PromotionPolicy, Guid> _promotionPolicyRepo;
 
     public MiniAppBookingAppService(
         IRepository<Booking, Guid> bookingRepo,
@@ -59,7 +61,8 @@ public class MiniAppBookingAppService : ApplicationService, IMiniAppBookingAppSe
         ISettingProvider settingProvider,
         IBackgroundJobManager jobManager,
         IRepository<GolfCourse, Guid> golfCourseRepo,
-        IRepository<DomainModels.AppPromotionTypes.PromotionType, Guid> promotionTypeRepository)
+        IRepository<DomainModels.AppPromotionTypes.PromotionType, Guid> promotionTypeRepository,
+        IRepository<PromotionPolicy, Guid> promotionPolicyRepo)
     {
         _bookingRepo = bookingRepo;
         _playerRepo = playerRepo;
@@ -73,6 +76,7 @@ public class MiniAppBookingAppService : ApplicationService, IMiniAppBookingAppSe
         _jobManager = jobManager;
         _golfCourseRepo = golfCourseRepo;
         _promotionTypeRepository = promotionTypeRepository;
+        _promotionPolicyRepo = promotionPolicyRepo;
     }
 
     public async Task<MiniAppBookingDetailDto> CreateFromMiniAppAsync(MiniAppCreateBookingDto input)
@@ -780,6 +784,23 @@ public class MiniAppBookingAppService : ApplicationService, IMiniAppBookingAppSe
             var golfCourses = await _golfCourseRepo.GetListAsync(x => golfCourseIds.Contains(x.Id));
             var golfCourseDict = golfCourses.ToDictionary(x => x.Id, x => x);
 
+            // Lookup AppPromotionPolicies cho các (GolfCourseId, PromotionTypeId) xuất hiện trên list
+            var promotionTypeIdSet = calendars
+                .Select(x => x.PromotionTypeId)
+                .Where(x => x != Guid.Empty)
+                .Distinct()
+                .ToList();
+
+            var policyList = (golfCourseIds.Count > 0 && promotionTypeIdSet.Count > 0)
+                ? await _promotionPolicyRepo.GetListAsync(p =>
+                    golfCourseIds.Contains(p.GolfCourseId) &&
+                    promotionTypeIdSet.Contains(p.PromotionTypeId))
+                : new List<PromotionPolicy>();
+
+            var policyDict = policyList
+                .GroupBy(p => (p.GolfCourseId, p.PromotionTypeId))
+                .ToDictionary(g => g.Key, g => g.First());
+
             foreach (var item in dto)
             {
                 item.VNDayOfWeek = FormatDateTimeHelper.GetVietnameseDayOfWeek(item.PlayDate);
@@ -795,15 +816,14 @@ public class MiniAppBookingAppService : ApplicationService, IMiniAppBookingAppSe
                     }
                 }
 
-                if (golfCourseDict.TryGetValue(item.GolfCourseId, out var golfCourse))
+                PromotionPolicy? policy = null;
+                if (calendar != null && calendar.PromotionTypeId != Guid.Empty)
                 {
-                    item.IsCancellationPolicy = EvaluateCancellationPolicy(
-                        item.CreationTime,
-                        golfCourse.CancellationPolicyHours,
-                        golfCourse.PromotionTypeIds,
-                        calendar?.PromotionTypeId
-                    );
+                    policyDict.TryGetValue((item.GolfCourseId, calendar.PromotionTypeId), out policy);
                 }
+
+                var playDateTime = item.PlayDate.Date + (calendar?.TimeFrom ?? TimeSpan.Zero);
+                item.IsCancellationPolicy = EvaluateCancellationPolicy(playDateTime, policy);
             }
 
             var result = new PagedResultDto<BookingListData>(total, dto);
@@ -1020,11 +1040,31 @@ public class MiniAppBookingAppService : ApplicationService, IMiniAppBookingAppSe
     }
 
     private bool EvaluateCancellationPolicy(
+        DateTime playDateTime,
+        PromotionPolicy? policy)
+    {
+        // Không có policy cấu hình → cho phép hoãn hủy thoải mái
+        if (policy == null) return false;
+
+        var hours = policy.CancellationPolicyHours;
+
+        // Hours null hoặc <= 0 → unlimited window → luôn được hoãn hủy
+        if (!hours.HasValue || hours.Value <= 0) return false;
+
+        // Hours > 0: so sánh khoảng cách từ NOW đến giờ chơi (PlayDate + slot.TimeFrom).
+        //   - remaining >= hours  → còn đủ thời gian theo policy → cho phép hủy (false)
+        //   - remaining <  hours  → không còn đủ → không được hủy (true)
+        var remaining = playDateTime - Clock.Now;
+        return remaining < TimeSpan.FromHours(hours.Value);
+    }
+
+    private bool EvaluateCancellationPolicy(
         DateTime creationTime,
         int? cancellationPolicyHours,
         string? promotionTypeIdsCsv,
         Guid? slotPromotionTypeId)
     {
+        // Legacy fallback (giữ tạm để các caller cũ không break) — không còn dùng cho list mini app.
         var isExpiredByHours =
             cancellationPolicyHours.HasValue &&
             cancellationPolicyHours.Value > 0 &&

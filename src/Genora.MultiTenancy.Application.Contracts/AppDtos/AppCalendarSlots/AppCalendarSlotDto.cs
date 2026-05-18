@@ -55,4 +55,13 @@ public class AppCalendarSlotDto : FullAuditedEntityDto<Guid>
 
     /// <summary>Tổng tiền được chiết khấu = OriginalBillTotalPrice - CustomerBillTotalPrice</summary>
     public decimal DiscountTotalPrice { get; set; }
+
+    /// <summary>Tiêu đề chính sách hoãn hủy theo loại ưu đãi (AppPromotionPolicies)</summary>
+    public string? PolicyTitle { get; set; }
+
+    /// <summary>Số giờ hoãn hủy theo loại ưu đãi (AppPromotionPolicies)</summary>
+    public int? CancellationPolicyHours { get; set; }
+
+    /// <summary>Nội dung chính sách hoãn hủy theo loại ưu đãi (AppPromotionPolicies)</summary>
+    public string? CancellationPolicyContent { get; set; }
 }

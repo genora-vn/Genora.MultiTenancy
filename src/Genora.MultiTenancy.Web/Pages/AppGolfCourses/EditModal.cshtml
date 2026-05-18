@@ -222,38 +222,10 @@
             </div>
 
             <div class="gc-section">
-                <div class="gc-section-title">Chính sách & điều khoản</div>
+                <div class="gc-section-title">Cấu hình Member</div>
 
                 <div class="row g-3">
-                    <div class="col-md-3">
-                        <label class="form-label">Loại ưu đãi áp dụng</label>
-                        <input asp-for="GolfCourse.PromotionTypeIds" type="hidden" id="GolfCourse_PromotionTypeIds" />
-
-                        <select id="PromotionTypeIdsSelect" class="form-select gc-multi-select" multiple size="4">
-                            @for (int i = 0; i < Model.GolfCourse.AvailablePromotionTypes.Count; i++)
-                            {
-                                var p = Model.GolfCourse.AvailablePromotionTypes[i];
-                                <option value="@p.Id"
-                                        selected="@(p.IsCheck ? "selected" : null)"
-                                        data-code="@p.Code"
-                                        data-color="@p.ColorCode">
-                                    @p.Name (@p.Code)
-                                </option>
-                            }
-                        </select>
-                    </div>
-                    <div class="col-md-3">
-                        <small class="text-muted d-block mt-1">Giữ Ctrl / Command để chọn nhiều loại ưu đãi.</small>
-                        <div id="PromotionTypePreview" class="gc-selected-tags mt-2"></div>
-                    </div>
-                    <div class="col-md-2">
-                        <abp-input asp-for="GolfCourse.CancellationPolicyHours"
-                                   type="number"
-                                   min="0"
-                                   placeholder="Ví dụ: 24"
-                                   label="Số giờ hoãn / hủy" />
-                    </div>
-                    <div class="col-md-2 d-flex flex-column justify-content-start">
+                    <div class="col-md-3 d-flex flex-column justify-content-start">
                         <label class="form-label mb-1">Có hỗ trợ Member</label>
                         <div class="form-check form-switch mt-1">
                             <input asp-for="GolfCourse.IsMemberSupported"
@@ -266,7 +238,7 @@
                             </label>
                         </div>
                     </div>
-                    <div class="col-md-2" id="max-member-guest-col" style="@(Model.GolfCourse.IsMemberSupported ? "" : "display:none")">
+                    <div class="col-md-3" id="max-member-guest-col" style="@(Model.GolfCourse.IsMemberSupported ? "" : "display:none")">
                         <label class="form-label">Số khách Member Guest tối đa đi cùng 1 Member</label>
                         <input asp-for="GolfCourse.MaxMemberGuest"
                                type="number"
@@ -274,11 +246,6 @@
                                max="100"
                                placeholder="VD: 3"
                                class="form-control" />
-                    </div>
-
-                    <div class="col-12">
-                        <label asp-for="GolfCourse.CancellationPolicy" class="form-label">@L["CancellationPolicy"]</label>
-                        <textarea asp-for="GolfCourse.CancellationPolicy" class="form-control news-content-editor" placeholder="Nhập chính sách hoãn hủy." rows="5"></textarea>
                     </div>
 
                     <div class="col-12">
@@ -438,7 +405,6 @@
 <script>
     $(document).ready(function () {
         initTimePicker();
-        initPromotionTypeSelect();
         initMemberSupportToggle();
 
         let objUtility = @Json.Serialize(Model.GolfCourse.AvailableUtilities);
@@ -527,41 +493,7 @@
         }
 
         function initPromotionTypeSelect() {
-            const select = document.getElementById('PromotionTypeIdsSelect');
-            const hidden = document.getElementById('GolfCourse_PromotionTypeIds');
-            const preview = document.getElementById('PromotionTypePreview');
-            if (!select || !hidden || !preview) return;
-
-            function syncPromotionTypes() {
-                const selected = Array.from(select.selectedOptions).map(x => x.value);
-                hidden.value = selected.join(',');
-
-                preview.innerHTML = '';
-
-                Array.from(select.selectedOptions).forEach(function (opt) {
-                    const tag = document.createElement('span');
-                    tag.className = 'gc-selected-tag';
-
-                    const dot = document.createElement('span');
-                    dot.className = 'gc-selected-tag-dot';
-                    dot.style.background = opt.getAttribute('data-color') || '#9ca3af';
-
-                    const text = document.createElement('span');
-                    text.textContent = opt.text;
-
-                    tag.appendChild(dot);
-                    tag.appendChild(text);
-                    preview.appendChild(tag);
-                });
-            }
-
-            select.addEventListener('change', syncPromotionTypes);
-            syncPromotionTypes();
-
-            const form = document.querySelector('form[asp-page="/AppGolfCourses/EditModal"]') || document.querySelector('form');
-            if (form) {
-                form.addEventListener('submit', syncPromotionTypes);
-            }
+            // Removed: PromotionTypeIds đã được tách sang AppPromotionPolicies
         }
     });
 

@@ -137,6 +137,10 @@ public class MultiTenancyMenuContributor : IMenuContributor
                 await feature.IsEnabledAsync(AppPromotionTypeFeature.Management) &&
                 await perms.IsGrantedAsync(MultiTenancyPermissions.AppPromotionType.Default);
 
+            var canSeePromotionPolicy =
+                await feature.IsEnabledAsync(Genora.MultiTenancy.Features.AppPromotionPolicies.AppPromotionPolicyFeatures.Management) &&
+                await perms.IsGrantedAsync(MultiTenancyPermissions.AppPromotionPolicies.Default);
+
             var canSeeZaloAuths =
                 await feature.IsEnabledAsync(AppZaloAuthFeatures.Management) &&
                 await perms.IsGrantedAsync(MultiTenancyPermissions.AppZaloAuths.Default);
@@ -538,6 +542,19 @@ public class MultiTenancyMenuContributor : IMenuContributor
                 );
             }
 
+            if (canSeePromotionPolicy)
+            {
+                groupGolfAndTeeTimes.AddItem(
+                    new ApplicationMenuItem(
+                        name: "AppPromotionPolicies",
+                        displayName: l["Menu:AppPromotionPolicies"],
+                        url: "/AppPromotionPolicies",
+                        icon: "fa fa-shield-halved",
+                        order: 2
+                    ).RequirePermissions(MultiTenancyPermissions.AppPromotionPolicies.Default)
+                );
+            }
+
             if (canSeeCustomerTypes)
             {
                 groupGolfAndTeeTimes.AddItem(
@@ -878,6 +895,7 @@ public class MultiTenancyMenuContributor : IMenuContributor
             var hostCanNews = await perms.IsGrantedAsync(MultiTenancyPermissions.HostAppNews.Default);
             var hostCanBookings = await perms.IsGrantedAsync(MultiTenancyPermissions.HostAppBookings.Default);
             var hostCanPromotionType = await perms.IsGrantedAsync(MultiTenancyPermissions.HostAppPromotionType.Default);
+            var hostCanPromotionPolicy = await perms.IsGrantedAsync(MultiTenancyPermissions.HostAppPromotionPolicies.Default);
             var hostCanZaloAuths = await perms.IsGrantedAsync(MultiTenancyPermissions.HostAppZaloAuths.Default);
             var hostCanZaloLogs = await perms.IsGrantedAsync(MultiTenancyPermissions.HostAppZaloLogs.Default);
             var hostCanEmails = await perms.IsGrantedAsync(MultiTenancyPermissions.HostAppEmails.Default);
@@ -1248,6 +1266,19 @@ public class MultiTenancyMenuContributor : IMenuContributor
                         icon: "fa fa-flag",
                         order: 1
                     ).RequirePermissions(MultiTenancyPermissions.HostAppGolfCourses.Default)
+                );
+            }
+
+            if (hostCanPromotionPolicy)
+            {
+                groupGolfAndTeeTimes.AddItem(
+                    new ApplicationMenuItem(
+                        name: "AppPromotionPoliciesHost",
+                        displayName: l["Menu:AppPromotionPolicies"],
+                        url: "/AppPromotionPolicies",
+                        icon: "fa fa-shield-halved",
+                        order: 2
+                    ).RequirePermissions(MultiTenancyPermissions.HostAppPromotionPolicies.Default)
                 );
             }
 

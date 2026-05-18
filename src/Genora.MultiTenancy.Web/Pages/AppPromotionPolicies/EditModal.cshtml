@@ -1,0 +1,88 @@
+@page
+@using Genora.MultiTenancy.Localization
+@using Genora.MultiTenancy.Web.Pages.AppPromotionPolicies
+@using Microsoft.Extensions.Localization
+@using Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.TagHelpers.Modal
+@model EditModalModel
+@inject IStringLocalizer<MultiTenancyResource> L
+@{
+    Layout = null;
+}
+
+<form abp-model="PromotionPolicy" asp-page="/AppPromotionPolicies/EditModal">
+    <abp-modal size="Large">
+        <abp-modal-header title="@L["EditPromotionPolicy"].Value"></abp-modal-header>
+        <abp-modal-body>
+            <input asp-for="Id" type="hidden" />
+
+            <div class="row g-3">
+                <div class="col-md-6 gc-required">
+                    <label asp-for="PromotionPolicy.GolfCourseId" class="form-label">@L["PromotionPolicy:GolfCourse"]</label>
+                    <select asp-for="PromotionPolicy.GolfCourseId" class="form-select">
+                        @foreach (var g in Model.PromotionPolicy.AvailableGolfCourses)
+                        {
+                            <option value="@g.Id" selected="@(Model.PromotionPolicy.GolfCourseId == g.Id ? "selected" : null)">@g.Name</option>
+                        }
+                    </select>
+                    <span asp-validation-for="PromotionPolicy.GolfCourseId" class="text-danger"></span>
+                </div>
+
+                <div class="col-md-6 gc-required">
+                    <label asp-for="PromotionPolicy.PromotionTypeId" class="form-label">@L["PromotionPolicy:PromotionType"]</label>
+                    <select asp-for="PromotionPolicy.PromotionTypeId" class="form-select" id="PromotionTypeIdSelect">
+                        <option value="">-- Chọn loại ưu đãi --</option>
+                        @foreach (var p in Model.PromotionPolicy.AvailablePromotionTypes)
+                        {
+                            <option value="@p.Id"
+                                    data-color="@p.ColorCode"
+                                    selected="@(Model.PromotionPolicy.PromotionTypeId == p.Id ? "selected" : null)">@p.Name</option>
+                        }
+                    </select>
+                    <span asp-validation-for="PromotionPolicy.PromotionTypeId" class="text-danger"></span>
+                </div>
+
+                <div class="col-md-8">
+                    <label asp-for="PromotionPolicy.PolicyTitle" class="form-label">@L["PromotionPolicy:PolicyTitle"]</label>
+                    <input asp-for="PromotionPolicy.PolicyTitle"
+                           type="text"
+                           class="form-control"
+                           placeholder="Tiêu đề hiển thị trên Mini App" />
+                    <span asp-validation-for="PromotionPolicy.PolicyTitle" class="text-danger"></span>
+                </div>
+
+                <div class="col-md-4">
+                    <label asp-for="PromotionPolicy.CancellationPolicyHours" class="form-label">@L["PromotionPolicy:CancellationPolicyHours"]</label>
+                    <input asp-for="PromotionPolicy.CancellationPolicyHours"
+                           type="number"
+                           min="0"
+                           class="form-control"
+                           placeholder="Ví dụ: 24" />
+                    <span asp-validation-for="PromotionPolicy.CancellationPolicyHours" class="text-danger"></span>
+                </div>
+
+                <div class="col-12">
+                    <label asp-for="PromotionPolicy.CancellationPolicyContent" class="form-label">@L["PromotionPolicy:CancellationPolicyContent"]</label>
+                    <textarea asp-for="PromotionPolicy.CancellationPolicyContent"
+                              class="form-control news-content-editor"
+                              rows="6"
+                              placeholder="Nhập chính sách hoãn hủy."></textarea>
+                    <span asp-validation-for="PromotionPolicy.CancellationPolicyContent" class="text-danger"></span>
+                </div>
+            </div>
+        </abp-modal-body>
+        <abp-modal-footer buttons="@(AbpModalButtons.Cancel | AbpModalButtons.Save)"></abp-modal-footer>
+    </abp-modal>
+</form>
+
+<style type="text/css">
+    .modal-dialog {
+        max-width: 900px;
+    }
+
+    .gc-required label::after,
+    .gc-required .form-label::after {
+        content: " *";
+        color: #dc3545;
+        font-weight: 700;
+    }
+</style>

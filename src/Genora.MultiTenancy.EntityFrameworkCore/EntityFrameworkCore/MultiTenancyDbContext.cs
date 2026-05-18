@@ -23,6 +23,7 @@ using Genora.MultiTenancy.DomainModels.AppMembershipTiers;
 using Genora.MultiTenancy.DomainModels.AppNews;
 using Genora.MultiTenancy.DomainModels.AppOptionExtend;
 using Genora.MultiTenancy.DomainModels.AppPaymentConfigurations;
+using Genora.MultiTenancy.DomainModels.AppPromotionPolicies;
 using Genora.MultiTenancy.DomainModels.AppPromotionTypes;
 using Genora.MultiTenancy.DomainModels.AppSpecialDates;
 using Genora.MultiTenancy.DomainModels.AppZaloAuth;
@@ -119,6 +120,7 @@ public class MultiTenancyDbContext :
     public DbSet<IdentitySession> Sessions { get; set; }
     public DbSet<OptionExtend> OptionExtends { get; set; }
     public DbSet<PromotionType> PromotionTypes { get; set; }
+    public DbSet<PromotionPolicy> PromotionPolicies { get; set; }
     // Tenant Management
     public DbSet<Tenant> Tenants { get; set; }
     public DbSet<TenantConnectionString> TenantConnectionStrings { get; set; }
@@ -261,6 +263,31 @@ public class MultiTenancyDbContext :
 
             b.Property(x => x.MaxMemberGuest)
                 .IsRequired(false);
+        });
+
+        // ===== AppPromotionPolicies =====
+        builder.Entity<PromotionPolicy>(b =>
+        {
+            b.ToTable("AppPromotionPolicies");
+            b.ConfigureByConvention();
+
+            b.Property(x => x.PolicyTitle).HasMaxLength(255);
+            b.Property(x => x.CancellationPolicyHours).IsRequired(false);
+            b.Property(x => x.CancellationPolicyContent).HasColumnType("nvarchar(max)");
+
+            b.HasOne(x => x.GolfCourse)
+             .WithMany()
+             .HasForeignKey(x => x.GolfCourseId)
+             .OnDelete(DeleteBehavior.Cascade);
+
+            b.HasOne(x => x.PromotionType)
+             .WithMany()
+             .HasForeignKey(x => x.PromotionTypeId)
+             .OnDelete(DeleteBehavior.Restrict);
+
+            b.HasIndex(x => new { x.TenantId, x.GolfCourseId, x.PromotionTypeId })
+             .IsUnique()
+             .HasDatabaseName("IX_AppPromotionPolicies_Tenant_GolfCourse_Promotion");
         });
 
         // ===== AppBookingPlayers =====
