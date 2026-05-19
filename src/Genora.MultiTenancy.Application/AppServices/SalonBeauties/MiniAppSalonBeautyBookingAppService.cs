@@ -151,7 +151,8 @@ public class MiniAppSalonBeautyBookingAppService : ApplicationService, IMiniAppS
                     BookingId = bookingId,
                     ServiceId = item.ServiceId,
                     Price = item.Price,
-                    Duration = item.Duration
+                    Duration = item.Duration,
+                    TenantId = tenantId
                 }, autoSave: true);
             }
 

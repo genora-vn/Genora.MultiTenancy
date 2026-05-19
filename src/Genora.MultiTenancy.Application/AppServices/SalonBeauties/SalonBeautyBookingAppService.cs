@@ -153,18 +153,19 @@ public class SalonBeautyBookingAppService :
             CurrentTenant.Id
         );
 
+        await _bookingRepository.InsertAsync(booking, autoSave: true);
+
         foreach (var item in resolved)
         {
-            booking.BookingServices.Add(new SalonBeautyBookingService
+            await _bookingServiceRepository.InsertAsync(new SalonBeautyBookingService
             {
                 BookingId = bookingId,
                 ServiceId = item.ServiceId,
                 Price = item.Price,
-                Duration = item.Duration
-            });
+                Duration = item.Duration,
+                TenantId = CurrentTenant.Id
+            }, autoSave: true);
         }
-
-        await _bookingRepository.InsertAsync(booking, autoSave: true);
 
         return await MapToBookingDetailDto(booking);
     }
@@ -222,7 +223,8 @@ public class SalonBeautyBookingAppService :
                 BookingId = id,
                 ServiceId = item.ServiceId,
                 Price = item.Price,
-                Duration = item.Duration
+                Duration = item.Duration,
+                TenantId = CurrentTenant.Id
             }, autoSave: true);
         }
 

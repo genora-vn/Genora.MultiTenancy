@@ -2,12 +2,15 @@ using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Volo.Abp.Domain.Entities.Auditing;
+using Volo.Abp.MultiTenancy;
 
 namespace Genora.MultiTenancy.DomainModels.AppSalonBeauty;
 
 [Table("AppSalonBeautyBookingServices")]
-public class SalonBeautyBookingService : CreationAuditedEntity<Guid>
+public class SalonBeautyBookingService : CreationAuditedEntity<Guid>, IMultiTenant
 {
+    public Guid? TenantId { get; set; }
+
     public Guid BookingId { get; set; }
 
     public Guid ServiceId { get; set; }
