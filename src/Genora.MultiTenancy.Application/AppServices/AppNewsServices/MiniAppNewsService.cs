@@ -29,18 +29,22 @@ namespace Genora.MultiTenancy.AppServices.AppNewsServices
 
         public async Task<MiniAppNewsDetailDto> GetAsync(Guid id)
         {
-            // Eager-load RelatedNewsLinks tránh N+1 queries
-            var newsQ = await _newsRepository.WithDetailsAsync(x => x.RelatedNewsLinks);
-            var news = await AsyncExecuter.FirstOrDefaultAsync(newsQ.Where(x => x.Id == id));
+            var news = await _newsRepository.FirstOrDefaultAsync(x =>
+                x.Id == id &&
+                x.Status == (byte)NewsStatus.Published
+            );
 
             if (news == null)
+            {
                 throw new Exception($"News with id {id} not found");
+            }
 
             var result = ObjectMapper.Map<News, MiniAppNewsData>(news);
             result.ThumbnailUrl = ImageHelper.NormalizeThumb(_configuration, result.ThumbnailUrl);
 
-            // Get RelatedNews IDs từ eager-loaded RelatedNewsLinks (không query lại)
-            var relIds = news.RelatedNewsLinks
+            var relRows = await _newsRelatedRepository.GetListAsync(x => x.NewsId == id);
+
+            var relIds = relRows
                 .Select(x => x.RelatedNewsId)
                 .Where(x => x != Guid.Empty && x != id)
                 .Distinct()
@@ -48,14 +52,25 @@ namespace Genora.MultiTenancy.AppServices.AppNewsServices
 
             if (relIds.Count > 0)
             {
-                // Batch query: lấy tất cả Related News cùng một lần
-                var relatedQ = await _newsRepository.GetQueryableAsync();
-                var relatedEntities = await AsyncExecuter.ToListAsync(
-                    relatedQ.Where(x => relIds.Contains(x.Id) && x.Status == (byte)NewsStatus.Published)
-                            .OrderBy(nameof(News.DisplayOrder) + " asc, " + nameof(News.PublishedAt) + " desc")
+                var relatedQuery = await _newsRepository.GetQueryableAsync();
+
+                var relatedDtos = await AsyncExecuter.ToListAsync(
+                    relatedQuery
+                        .Where(x => relIds.Contains(x.Id) && x.Status == (byte)NewsStatus.Published)
+                        .OrderBy(nameof(News.DisplayOrder) + " asc, " + nameof(News.PublishedAt) + " desc")
+                        .Select(x => new MiniAppRelatedNewsData
+                        {
+                            Id = x.Id,
+
+                            Title = x.Title,
+                            ShortDescription = x.ShortDescription,
+                            ThumbnailUrl = x.ThumbnailUrl,
+
+                            PublishedAt = x.PublishedAt,
+                            DisplayOrder = x.DisplayOrder
+                        })
                 );
 
-                var relatedDtos = ObjectMapper.Map<List<News>, List<MiniAppRelatedNewsData>>(relatedEntities);
                 foreach (var r in relatedDtos)
                 {
                     r.ThumbnailUrl = ImageHelper.NormalizeThumb(_configuration, r.ThumbnailUrl);
@@ -68,87 +83,72 @@ namespace Genora.MultiTenancy.AppServices.AppNewsServices
                 result.RelatedNews = new List<MiniAppRelatedNewsData>();
             }
 
-            return new MiniAppNewsDetailDto { Data = result, Error = 0, Message = "Success" };
+            return new MiniAppNewsDetailDto
+            {
+                Data = result,
+                Error = 0,
+                Message = "Success"
+            };
         }
 
         public async Task<MiniAppNewsListDto> GetListAsync(GetMiniAppNewsDto input)
         {
-            var queries = await _newsRepository.GetQueryableAsync();
+            var queryable = await _newsRepository.GetQueryableAsync();
 
-            var query = queries.Where(x => x.Status == (byte)NewsStatus.Published);
+            var query = queryable.Where(x => x.Status == (byte)NewsStatus.Published);
 
             if (!input.FilterText.IsNullOrWhiteSpace())
             {
                 var filter = input.FilterText.Trim();
-                query = query.Where(x => x.Title.Contains(filter) || x.ShortDescription.Contains(filter));
+                query = query.Where(x =>
+                    x.Title.Contains(filter) ||
+                    x.ShortDescription.Contains(filter)
+                );
             }
-
-            var sorting = string.IsNullOrWhiteSpace(input.Sorting)
-                ? nameof(News.DisplayOrder) + " asc, " + nameof(News.PublishedAt) + " desc"
-                : input.Sorting;
-
-            query = query.OrderBy(sorting);
 
             var total = await AsyncExecuter.CountAsync(query);
 
-            var pageEntities = await AsyncExecuter
-                .ToListAsync(query.Skip(input.SkipCount).Take(input.MaxResultCount));
+            var sorting = string.IsNullOrWhiteSpace(input.Sorting)
+                ? nameof(News.DisplayOrder) + " asc, " + nameof(News.PublishedAt) + " desc, " + nameof(News.CreationTime) + " desc"
+                : input.Sorting;
 
-            var dtoList = ObjectMapper.Map<List<News>, List<MiniAppNewsData>>(pageEntities);
+            var dtoList = await AsyncExecuter.ToListAsync(
+                query
+                    .OrderBy(sorting)
+                    .Skip(input.SkipCount)
+                    .Take(input.MaxResultCount)
+                    .Select(x => new MiniAppNewsData
+                    {
+                        Id = x.Id,
+
+                        Title = x.Title,
+                        ShortDescription = x.ShortDescription,
+                        ThumbnailUrl = x.ThumbnailUrl,
+
+                        // Quan trọng: list không trả HTML nặng
+                        ContentHtml = string.Empty,
+
+                        PublishedAt = x.PublishedAt,
+                        Status = x.Status,
+                        DisplayOrder = x.DisplayOrder,
+
+                        RelatedNews = new List<MiniAppRelatedNewsData>()
+                    })
+            );
 
             foreach (var item in dtoList)
             {
                 item.ThumbnailUrl = ImageHelper.NormalizeThumb(_configuration, item.ThumbnailUrl);
             }
 
-            var newsIds = dtoList.Select(x => x.Id).Distinct().ToList();
-            if (newsIds.Count > 0)
-            {
-                // Batch query: lấy tất cả NewsRelated + RelatedNews entity trong 2 queries
-                var relQ = await _newsRelatedRepository.GetQueryableAsync();
-                var relRows = await AsyncExecuter.ToListAsync(
-                    relQ.Where(r => newsIds.Contains(r.NewsId)));
-
-                if (relRows.Count > 0)
-                {
-                    var relatedIds = relRows.Select(r => r.RelatedNewsId).Distinct().ToList();
-
-                    // Batch query tất cả Related News cùng một lần
-                    var relatedNewsQ = await _newsRepository.GetQueryableAsync();
-                    var relatedEntities = await AsyncExecuter.ToListAsync(
-                        relatedNewsQ.Where(n => relatedIds.Contains(n.Id) && n.Status == (byte)NewsStatus.Published)
-                    );
-
-                    var relatedDtos = ObjectMapper.Map<List<News>, List<MiniAppRelatedNewsData>>(relatedEntities);
-
-                    foreach (var r in relatedDtos)
-                    {
-                        r.ThumbnailUrl = ImageHelper.NormalizeThumb(_configuration, r.ThumbnailUrl);
-                    }
-
-                    var relatedDict = relatedDtos.ToDictionary(x => x.Id, x => x);
-
-                    var relByNews = relRows
-                        .GroupBy(r => r.NewsId)
-                        .ToDictionary(g => g.Key, g => g.Select(x => x.RelatedNewsId).Distinct().ToList());
-
-                    foreach (var item in dtoList)
-                    {
-                        if (relByNews.TryGetValue(item.Id, out var rids))
-                        {
-                            item.RelatedNews = rids
-                                .Where(id => relatedDict.ContainsKey(id))
-                                .Select(id => relatedDict[id])
-                                .OrderBy(x => x.DisplayOrder)
-                                .ThenByDescending(x => x.PublishedAt)
-                                .ToList();
-                        }
-                    }
-                }
-            }
-
             var result = new PagedResultDto<MiniAppNewsData>(total, dtoList);
-            return new MiniAppNewsListDto { Data = result, Error = 0, Message = "Success" };
+
+            return new MiniAppNewsListDto
+            {
+                Data = result,
+                Error = 0,
+                Message = "Success"
+            };
         }
     }
 }

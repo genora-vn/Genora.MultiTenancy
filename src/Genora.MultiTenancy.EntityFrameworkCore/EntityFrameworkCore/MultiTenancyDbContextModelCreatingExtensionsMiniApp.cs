@@ -173,19 +173,72 @@ public static class MultiTenancyDbContextModelCreatingExtensionsMiniApp
         // ==== News ====
         builder.Entity<News>(b =>
         {
-            b.ToTable(MultiTenancyConsts.DbTablePrefix + "News", MultiTenancyConsts.DbSchema);
+            b.ToTable("AppNews");
             b.ConfigureByConvention();
 
-            b.Property(x => x.Title).IsRequired().HasMaxLength(255);
-            b.Property(x => x.ContentHtml).IsRequired();
-            b.Property(x => x.ThumbnailUrl).HasMaxLength(500);
-            b.Property(x => x.Status).HasDefaultValue((byte)0);
-            b.Property(x => x.DisplayOrder).HasDefaultValue(0);
+            b.Property(x => x.Title)
+                .IsRequired()
+                .HasMaxLength(255);
+
+            b.Property(x => x.ShortDescription)
+                .IsRequired()
+                .HasMaxLength(1000);
+
+            b.Property(x => x.ContentHtml)
+                .IsRequired();
+
+            b.Property(x => x.ThumbnailUrl)
+                .HasMaxLength(500);
+
+            b.Property(x => x.Status)
+                .HasDefaultValue((byte)0);
+
+            b.Property(x => x.DisplayOrder)
+                .HasDefaultValue(0);
 
             b.HasOne(x => x.GolfCourse)
                 .WithMany(x => x.News)
                 .HasForeignKey(x => x.GolfCourseId)
                 .OnDelete(DeleteBehavior.NoAction);
+
+            // List quản trị /AppNews:
+            // filter theo TenantId, Status; sort theo DisplayOrder, PublishedAt, CreationTime
+            b.HasIndex(x => new
+            {
+                x.TenantId,
+                x.Status,
+                x.DisplayOrder,
+                x.PublishedAt,
+                x.CreationTime
+            })
+            .HasDatabaseName("IX_AppNews_Tenant_Status_Display_Published_Creation");
+
+            // Mini App list tin đã publish:
+            // dùng cho query Status = Published + sort DisplayOrder/PublishedAt
+            b.HasIndex(x => new
+            {
+                x.Status,
+                x.DisplayOrder,
+                x.PublishedAt,
+                x.CreationTime
+            })
+            .HasDatabaseName("IX_AppNews_Status_Display_Published_Creation");
+
+            // Filter/list theo sân golf nếu sau này có lọc theo GolfCourseId
+            b.HasIndex(x => new
+            {
+                x.TenantId,
+                x.GolfCourseId
+            })
+            .HasDatabaseName("IX_AppNews_Tenant_GolfCourse");
+
+            // Search/filter cơ bản theo Title trong quản trị/mini app
+            b.HasIndex(x => new
+            {
+                x.TenantId,
+                x.Title
+            })
+            .HasDatabaseName("IX_AppNews_Tenant_Title");
         });
 
         // ==== CustomerMembership ====

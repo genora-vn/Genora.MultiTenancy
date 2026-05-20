@@ -64,7 +64,10 @@ public class AppNewsService :
         if (!input.FilterText.IsNullOrWhiteSpace())
         {
             var filter = input.FilterText.Trim();
-            query = query.Where(x => x.Title.Contains(filter));
+            query = query.Where(x =>
+                x.Title.Contains(filter) ||
+                x.ShortDescription.Contains(filter)
+            );
         }
 
         if (input.Status.HasValue)
@@ -82,40 +85,77 @@ public class AppNewsService :
             query = query.Where(x => x.PublishedAt <= input.PublishedAtTo.Value);
         }
 
+        var totalCount = await AsyncExecuter.CountAsync(query);
+
         var sorting = string.IsNullOrWhiteSpace(input.Sorting)
-            ? nameof(News.DisplayOrder) + " asc, " + nameof(News.PublishedAt) + " desc"
+            ? nameof(News.DisplayOrder) + " asc, " + nameof(News.PublishedAt) + " desc, " + nameof(News.CreationTime) + " desc"
             : input.Sorting;
 
-        query = query.OrderBy(sorting);
+        var items = await AsyncExecuter.ToListAsync(
+            query
+                .OrderBy(sorting)
+                .Skip(input.SkipCount)
+                .Take(input.MaxResultCount)
+                .Select(x => new AppNewsDto
+                {
+                    Id = x.Id,
+                    TenantId = x.TenantId,
 
-        var totalCount = await AsyncExecuter.CountAsync(query);
-        var items = await AsyncExecuter.ToListAsync(query.Skip(input.SkipCount).Take(input.MaxResultCount));
-        var dtoList = ObjectMapper.Map<List<News>, List<AppNewsDto>>(items);
+                    Title = x.Title,
+                    ShortDescription = x.ShortDescription,
+                    ThumbnailUrl = x.ThumbnailUrl,
 
-        return new PagedResultDto<AppNewsDto>(totalCount, dtoList);
+                    // Quan trọng: màn danh sách không trả HTML nặng
+                    ContentHtml = string.Empty,
+
+                    PublishedAt = x.PublishedAt,
+                    Status = x.Status,
+                    DisplayOrder = x.DisplayOrder,
+
+                    CreationTime = x.CreationTime,
+                    CreatorId = x.CreatorId,
+                    LastModificationTime = x.LastModificationTime,
+                    LastModifierId = x.LastModifierId
+                })
+        );
+
+        return new PagedResultDto<AppNewsDto>(totalCount, items);
     }
 
     public override async Task<AppNewsDto> GetAsync(Guid id)
     {
         await CheckGetPolicyAsync();
 
-        // Eager-load RelatedNewsLinks để tránh lazy-load khi map
-        var query = await Repository.WithDetailsAsync(x => x.RelatedNewsLinks);
-        var entity = await AsyncExecuter.FirstOrDefaultAsync(query.Where(x => x.Id == id))
-            ?? throw new Volo.Abp.Domain.Entities.EntityNotFoundException(typeof(News), id);
-
+        var entity = await Repository.GetAsync(id);
         var dto = ObjectMapper.Map<News, AppNewsDto>(entity);
 
-        // Lấy RelatedNewsIds từ eager-loaded RelatedNewsLinks
-        dto.RelatedNewsIds = entity.RelatedNewsLinks
+        var relatedRows = await _newsRelatedRepo.GetListAsync(x => x.NewsId == id);
+
+        dto.RelatedNewsIds = relatedRows
             .Select(x => x.RelatedNewsId)
+            .Where(x => x != Guid.Empty)
+            .Distinct()
             .ToList();
 
-        // Batch query title của related news
         if (dto.RelatedNewsIds.Count > 0)
         {
-            var relatedNews = await Repository.GetListAsync(x => dto.RelatedNewsIds.Contains(x.Id));
+            var relatedQuery = await Repository.GetQueryableAsync();
+
+            var relatedNews = await AsyncExecuter.ToListAsync(
+                relatedQuery
+                    .Where(x => dto.RelatedNewsIds.Contains(x.Id))
+                    .Select(x => new
+                    {
+                        x.Id,
+                        x.Title
+                    })
+            );
+
             dto.RelatedNewsTitles = relatedNews.ToDictionary(x => x.Id, x => x.Title);
+        }
+        else
+        {
+            dto.RelatedNewsTitles = new Dictionary<Guid, string>();
         }
 
         return dto;

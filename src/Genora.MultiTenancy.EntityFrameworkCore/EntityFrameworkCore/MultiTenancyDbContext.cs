@@ -419,13 +419,14 @@ public class MultiTenancyDbContext :
             b.ToTable("AppNewsRelateds");
             b.ConfigureByConvention();
 
-            b.Property(x => x.NewsId).IsRequired();
-            b.Property(x => x.RelatedNewsId).IsRequired();
+            b.Property(x => x.NewsId)
+                .IsRequired();
 
-            b.HasIndex(x => new { x.TenantId, x.NewsId, x.RelatedNewsId }).IsUnique();
+            b.Property(x => x.RelatedNewsId)
+                .IsRequired();
 
             b.HasOne<News>()
-                .WithMany()
+                .WithMany(x => x.RelatedNewsLinks)
                 .HasForeignKey(x => x.NewsId)
                 .OnDelete(DeleteBehavior.Cascade);
 
@@ -433,6 +434,32 @@ public class MultiTenancyDbContext :
                 .WithMany()
                 .HasForeignKey(x => x.RelatedNewsId)
                 .OnDelete(DeleteBehavior.Restrict);
+
+            // Dùng cho GetAsync detail: lấy danh sách related theo NewsId
+            b.HasIndex(x => new
+            {
+                x.TenantId,
+                x.NewsId
+            })
+            .HasDatabaseName("IX_AppNewsRelateds_Tenant_NewsId");
+
+            // Dùng khi cần reverse lookup hoặc kiểm tra related
+            b.HasIndex(x => new
+            {
+                x.TenantId,
+                x.RelatedNewsId
+            })
+            .HasDatabaseName("IX_AppNewsRelateds_Tenant_RelatedNewsId");
+
+            // Chống chọn trùng tin liên quan trong cùng bài
+            b.HasIndex(x => new
+            {
+                x.TenantId,
+                x.NewsId,
+                x.RelatedNewsId
+            })
+            .IsUnique()
+            .HasDatabaseName("IX_AppNewsRelateds_Tenant_News_Related");
         });
 
         builder.Entity<AppHomePageConfig>(b =>

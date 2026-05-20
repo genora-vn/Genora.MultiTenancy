@@ -19,7 +19,7 @@ namespace Genora.MultiTenancy.AppDtos.AppNews
         public string? ContentHtml { get; set; }
         public string? ThumbnailUrl { get; set; }
         public DateTime? PublishedAt { get; set; }
-        public NewsStatus Status { get; set; }
+        public byte Status { get; set; }
         public int DisplayOrder { get; set; }
 
         public List<MiniAppRelatedNewsData> RelatedNews { get; set; } = new();

@@ -15,7 +15,7 @@ public class AppNewsDto : FullAuditedEntityDto<Guid>
 
     public DateTime? PublishedAt { get; set; }
 
-    public NewsStatus Status { get; set; }
+    public byte? Status { get; set; }
 
     public int DisplayOrder { get; set; }
 
