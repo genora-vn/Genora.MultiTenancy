@@ -13,6 +13,8 @@ public class SalonBeautyBooking : FullAuditedAggregateRoot<Guid>, IMultiTenant
 {
     public Guid? TenantId { get; set; }
 
+    public Guid? LocationId { get; set; }
+
     [Required]
     [StringLength(50)]
     public string BookingCode { get; set; } = null!;
@@ -52,6 +54,7 @@ public class SalonBeautyBooking : FullAuditedAggregateRoot<Guid>, IMultiTenant
     public virtual SalonBeautyCustomer? Customer { get; set; }
     public virtual SalonBeautyService? Service { get; set; }
     public virtual SalonBeautyStylist? Stylist { get; set; }
+    public virtual SalonBeautyLocation? Location { get; set; }
     public virtual ICollection<SalonBeautyBookingService> BookingServices { get; set; } = new List<SalonBeautyBookingService>();
 
     protected SalonBeautyBooking()

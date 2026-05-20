@@ -38,6 +38,17 @@
 
     <aside class="salon-calendar-sidebar">
         <div class="sidebar-section">
+            <div class="sidebar-section-title">@L["SalonBeautyLocation:PageTitle"]</div>
+            <select id="LocationFilterSelect" class="sidebar-filter-select">
+                <option value="">Tất cả cơ sở</option>
+                @foreach (var loc in Model.LocationItems)
+                {
+                    <option value="@loc.Value">@loc.Text</option>
+                }
+            </select>
+        </div>
+
+        <div class="sidebar-section">
             <div class="sidebar-section-title">Stylist</div>
             <label class="sidebar-select-all">
                 <input type="checkbox" id="SelectAllStylists" checked />

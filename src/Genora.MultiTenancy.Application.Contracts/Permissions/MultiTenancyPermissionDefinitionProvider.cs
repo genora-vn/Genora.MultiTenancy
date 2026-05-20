@@ -1207,6 +1207,48 @@ public class MultiTenancyPermissionDefinitionProvider : PermissionDefinitionProv
         salonBookingHostRoot.AddChild(MultiTenancyPermissions.HostSalonBeautyBookings.Cancel, L("Permission:Cancel")).MultiTenancySide = MultiTenancySides.Host;
         salonBookingHostRoot.AddChild(MultiTenancyPermissions.HostSalonBeautyBookings.Delete, L("Permission:Delete")).MultiTenancySide = MultiTenancySides.Host;
 
+        // TENANT Locations
+        var salonLocationTenantRoot = salonBeautyGroup.AddPermission(MultiTenancyPermissions.SalonBeautyLocations.Default, L("Permission:SalonBeautyLocations"));
+        salonLocationTenantRoot.MultiTenancySide = MultiTenancySides.Tenant;
+        salonLocationTenantRoot.RequireFeatures(Features.SalonBeauty.SalonBeautyFeatures.Management);
+        var salonLocationTenantCreate = salonLocationTenantRoot.AddChild(MultiTenancyPermissions.SalonBeautyLocations.Create, L("Permission:Create"));
+        salonLocationTenantCreate.MultiTenancySide = MultiTenancySides.Tenant;
+        salonLocationTenantCreate.RequireFeatures(Features.SalonBeauty.SalonBeautyFeatures.Management);
+        var salonLocationTenantEdit = salonLocationTenantRoot.AddChild(MultiTenancyPermissions.SalonBeautyLocations.Edit, L("Permission:Edit"));
+        salonLocationTenantEdit.MultiTenancySide = MultiTenancySides.Tenant;
+        salonLocationTenantEdit.RequireFeatures(Features.SalonBeauty.SalonBeautyFeatures.Management);
+        var salonLocationTenantDelete = salonLocationTenantRoot.AddChild(MultiTenancyPermissions.SalonBeautyLocations.Delete, L("Permission:Delete"));
+        salonLocationTenantDelete.MultiTenancySide = MultiTenancySides.Tenant;
+        salonLocationTenantDelete.RequireFeatures(Features.SalonBeauty.SalonBeautyFeatures.Management);
+
+        // TENANT TimeSlots
+        var salonTimeSlotTenantRoot = salonBeautyGroup.AddPermission(MultiTenancyPermissions.SalonBeautyTimeSlots.Default, L("Permission:SalonBeautyTimeSlots"));
+        salonTimeSlotTenantRoot.MultiTenancySide = MultiTenancySides.Tenant;
+        salonTimeSlotTenantRoot.RequireFeatures(Features.SalonBeauty.SalonBeautyFeatures.Management);
+        var salonTimeSlotTenantCreate = salonTimeSlotTenantRoot.AddChild(MultiTenancyPermissions.SalonBeautyTimeSlots.Create, L("Permission:Create"));
+        salonTimeSlotTenantCreate.MultiTenancySide = MultiTenancySides.Tenant;
+        salonTimeSlotTenantCreate.RequireFeatures(Features.SalonBeauty.SalonBeautyFeatures.Management);
+        var salonTimeSlotTenantEdit = salonTimeSlotTenantRoot.AddChild(MultiTenancyPermissions.SalonBeautyTimeSlots.Edit, L("Permission:Edit"));
+        salonTimeSlotTenantEdit.MultiTenancySide = MultiTenancySides.Tenant;
+        salonTimeSlotTenantEdit.RequireFeatures(Features.SalonBeauty.SalonBeautyFeatures.Management);
+        var salonTimeSlotTenantDelete = salonTimeSlotTenantRoot.AddChild(MultiTenancyPermissions.SalonBeautyTimeSlots.Delete, L("Permission:Delete"));
+        salonTimeSlotTenantDelete.MultiTenancySide = MultiTenancySides.Tenant;
+        salonTimeSlotTenantDelete.RequireFeatures(Features.SalonBeauty.SalonBeautyFeatures.Management);
+
+        // HOST Locations
+        var salonLocationHostRoot = salonBeautyGroupHost.AddPermission(MultiTenancyPermissions.HostSalonBeautyLocations.Default, L("Permission:SalonBeautyLocations"));
+        salonLocationHostRoot.MultiTenancySide = MultiTenancySides.Host;
+        salonLocationHostRoot.AddChild(MultiTenancyPermissions.HostSalonBeautyLocations.Create, L("Permission:Create")).MultiTenancySide = MultiTenancySides.Host;
+        salonLocationHostRoot.AddChild(MultiTenancyPermissions.HostSalonBeautyLocations.Edit, L("Permission:Edit")).MultiTenancySide = MultiTenancySides.Host;
+        salonLocationHostRoot.AddChild(MultiTenancyPermissions.HostSalonBeautyLocations.Delete, L("Permission:Delete")).MultiTenancySide = MultiTenancySides.Host;
+
+        // HOST TimeSlots
+        var salonTimeSlotHostRoot = salonBeautyGroupHost.AddPermission(MultiTenancyPermissions.HostSalonBeautyTimeSlots.Default, L("Permission:SalonBeautyTimeSlots"));
+        salonTimeSlotHostRoot.MultiTenancySide = MultiTenancySides.Host;
+        salonTimeSlotHostRoot.AddChild(MultiTenancyPermissions.HostSalonBeautyTimeSlots.Create, L("Permission:Create")).MultiTenancySide = MultiTenancySides.Host;
+        salonTimeSlotHostRoot.AddChild(MultiTenancyPermissions.HostSalonBeautyTimeSlots.Edit, L("Permission:Edit")).MultiTenancySide = MultiTenancySides.Host;
+        salonTimeSlotHostRoot.AddChild(MultiTenancyPermissions.HostSalonBeautyTimeSlots.Delete, L("Permission:Delete")).MultiTenancySide = MultiTenancySides.Host;
+
         #endregion
     }
 

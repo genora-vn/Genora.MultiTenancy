@@ -1,0 +1,490 @@
+/* TimeSlot Page Styles - Salon Beauty */
+.lpx-content-container .lpx-content {
+    padding-top: 0 !important;
+}
+
+.timeslot-page {
+    padding: 0;
+    background: #f8f9fa;
+    min-height: calc(100vh - 140px);
+}
+
+.timeslot-page-header {
+    margin-bottom: 20px;
+}
+
+    .timeslot-page-header h1 {
+        font-size: 22px;
+        font-weight: 700;
+        margin: 0 0 4px;
+        color: #1e293b;
+    }
+
+    .timeslot-page-header p {
+        font-size: 14px;
+        color: #6c757d;
+        margin: 0;
+    }
+
+.timeslot-header-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.timeslot-header-actions {
+    display: flex;
+    gap: 8px;
+}
+
+/* Filter Card */
+.timeslot-filter-card {
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.timeslot-filter-label {
+    font-size: 13px;
+    font-weight: 500;
+    color: #495057;
+    margin-bottom: 8px;
+    display: block;
+}
+
+.timeslot-form-control,
+.timeslot-form-select {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    font-size: 14px;
+    color: #495057;
+    transition: border-color 0.2s;
+}
+
+    .timeslot-form-control:focus,
+    .timeslot-form-select:focus {
+        outline: none;
+        border-color: #0d6efd;
+        box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.1);
+    }
+
+.timeslot-form-select {
+    padding: 10px 36px 10px 12px;
+    background: white url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23343a40' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M2 5l6 6 6-6'/%3e%3c/svg%3e") no-repeat right 12px center/12px 12px;
+    appearance: none;
+    cursor: pointer;
+}
+
+/* Table */
+.timeslot-table-card {
+    background: white;
+    border-radius: 12px;
+    padding: 0;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+    .timeslot-table-card thead th {
+        background: #f8f9fa;
+        color: #6c757d;
+        font-size: 12px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        padding: 16px;
+        border-bottom: 1px solid #e9ecef;
+        border-top: none;
+    }
+
+    .timeslot-table-card tbody td {
+        padding: 16px;
+        vertical-align: middle;
+        border-bottom: 1px solid #f1f3f5;
+        font-size: 14px;
+        color: #495057;
+    }
+
+    .timeslot-table-card tbody tr:hover {
+        background: #f8f9fa;
+    }
+
+/* Stylist Cell */
+.timeslot-stylist-cell {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+    .timeslot-stylist-cell img {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 2px solid #e9ecef;
+    }
+
+.timeslot-stylist-text strong {
+    font-size: 14px;
+    font-weight: 600;
+    color: #1a1a1a;
+    display: block;
+    margin-bottom: 2px;
+}
+
+.timeslot-stylist-text span {
+    font-size: 12px;
+    color: #6c757d;
+}
+
+/* Range chips */
+.timeslot-range-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 10px;
+    border-radius: 999px;
+    background: #eff6ff;
+    color: #1d4ed8;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.timeslot-range-chip + .timeslot-range-chip {
+    margin-left: 6px;
+}
+
+.timeslot-range-chip i {
+    font-size: 11px;
+}
+
+/* Toggle */
+.timeslot-inline-switch {
+    position: relative;
+    display: inline-block;
+    width: 44px;
+    height: 24px;
+    margin: 0;
+}
+
+    .timeslot-inline-switch input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+    }
+
+    .timeslot-inline-switch .timeslot-switch-slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background-color: #ccc;
+        transition: 0.3s;
+        border-radius: 24px;
+    }
+
+        .timeslot-inline-switch .timeslot-switch-slider:before {
+            position: absolute;
+            content: "";
+            height: 18px; width: 18px;
+            left: 3px; bottom: 3px;
+            background-color: white;
+            transition: 0.3s;
+            border-radius: 50%;
+        }
+
+    .timeslot-inline-switch input:checked + .timeslot-switch-slider {
+        background-color: #0d6efd;
+    }
+
+        .timeslot-inline-switch input:checked + .timeslot-switch-slider:before {
+            transform: translateX(20px);
+        }
+
+/* Status Badges */
+.timeslot-status-badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.timeslot-status-badge.on { background: #d4edda; color: #155724; }
+.timeslot-status-badge.off { background: #e9ecef; color: #6c757d; }
+.timeslot-status-badge.full { background: #f8d7da; color: #721c24; }
+
+/* Modal */
+.timeslot-modal { padding: 0; }
+
+.timeslot-modal-header {
+    padding: 24px;
+    border-bottom: 1px solid #e9ecef;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+}
+
+.timeslot-modal-title-wrap h3 {
+    font-size: 20px;
+    font-weight: 600;
+    color: #1a1a1a;
+    margin: 0 0 4px 0;
+}
+
+.timeslot-modal-title-wrap p {
+    font-size: 13px;
+    color: #6c757d;
+    margin: 0;
+}
+
+.timeslot-modal-body {
+    padding: 24px;
+    max-height: 70vh;
+    overflow-y: auto;
+}
+
+.timeslot-modal-footer {
+    padding: 16px 24px;
+    border-top: 1px solid #e9ecef;
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+}
+
+.timeslot-form-label {
+    font-size: 13px;
+    font-weight: 500;
+    color: #495057;
+    margin-bottom: 8px;
+    display: block;
+}
+
+.timeslot-btn-primary {
+    background: #0d6efd; color: white; border: none;
+    padding: 10px 20px; border-radius: 8px;
+    font-size: 14px; font-weight: 500;
+    display: inline-flex; align-items: center; gap: 8px;
+    cursor: pointer; transition: background 0.2s;
+}
+.timeslot-btn-primary:hover { background: #0b5ed7; }
+.timeslot-btn-primary:disabled { opacity: .6; cursor: not-allowed; }
+
+.timeslot-btn-secondary {
+    background: #6c757d; color: white; border: none;
+    padding: 10px 20px; border-radius: 8px;
+    font-size: 14px; font-weight: 500;
+    cursor: pointer; transition: background 0.2s;
+}
+.timeslot-btn-secondary:hover { background: #5c636a; }
+
+.timeslot-btn-danger {
+    background: #dc3545; color: white; border: none;
+    padding: 10px 16px; border-radius: 8px;
+    font-size: 13px; font-weight: 500;
+    cursor: pointer; transition: background 0.2s;
+}
+.timeslot-btn-danger:hover { background: #bb2d3b; }
+
+/* Range editor */
+.timeslot-ranges-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.timeslot-range-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr auto;
+    gap: 10px;
+    align-items: center;
+}
+
+.timeslot-add-range-btn {
+    margin-top: 10px;
+    background: white;
+    border: 1px dashed #0d6efd;
+    color: #0d6efd;
+    padding: 8px 14px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all .2s ease;
+}
+
+.timeslot-add-range-btn:hover {
+    background: #f0f7ff;
+}
+
+.timeslot-remove-range-btn {
+    background: #fff;
+    border: 1px solid #f1d2d4;
+    color: #b42318;
+    padding: 8px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+/* Weekday Toggle */
+.timeslot-weekday-row {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.timeslot-weekday-chip {
+    border: 1px solid #d7e0ee;
+    background: #fff;
+    color: #475467;
+    border-radius: 999px;
+    padding: 6px 14px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all .2s ease;
+    user-select: none;
+}
+
+.timeslot-weekday-chip.active {
+    background: #eff6ff;
+    border-color: #0d6efd;
+    color: #0d6efd;
+}
+
+/* Status Box */
+.timeslot-status-box {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 16px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border: 1px solid #e9ecef;
+}
+
+.timeslot-status-icon {
+    width: 40px; height: 40px; border-radius: 50%;
+    background: white; display: flex;
+    align-items: center; justify-content: center;
+    color: #0d6efd; font-size: 18px;
+}
+
+.timeslot-status-box .flex-grow-1 { flex: 1; }
+.timeslot-status-box strong { display: block; font-size: 14px; color: #1a1a1a; margin-bottom: 2px; }
+.timeslot-status-box span { font-size: 12px; color: #6c757d; }
+
+.timeslot-switch-wrap { display: flex; align-items: center; gap: 12px; }
+.timeslot-switch { position: relative; display: inline-block; width: 44px; height: 24px; }
+.timeslot-switch input { opacity: 0; width: 0; height: 0; }
+.timeslot-switch-slider {
+    position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
+    background-color: #ccc; transition: 0.3s; border-radius: 24px;
+}
+.timeslot-switch-slider:before {
+    position: absolute; content: ""; height: 18px; width: 18px;
+    left: 3px; bottom: 3px; background-color: white;
+    transition: 0.3s; border-radius: 50%;
+}
+.timeslot-switch input:checked + .timeslot-switch-slider { background-color: #0d6efd; }
+.timeslot-switch input:checked + .timeslot-switch-slider:before { transform: translateX(20px); }
+
+.timeslot-status-toggle-text,
+.timeslot-showonapp-toggle-text {
+    font-size: 13px; font-weight: 500; color: #495057;
+}
+
+/* Calendar Page */
+.timeslot-calendar-page {
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    gap: 16px;
+    padding: 0;
+    min-height: calc(100vh - 140px);
+    background: #f8f9fa;
+}
+
+.timeslot-calendar-sidebar {
+    background: #fff;
+    border-radius: 12px;
+    padding: 18px;
+    box-shadow: 0 1px 3px rgba(0,0,0,.06);
+    align-self: start;
+}
+
+.timeslot-calendar-sidebar .sidebar-section { margin-bottom: 20px; }
+.timeslot-calendar-sidebar .sidebar-section-title {
+    font-size: 12px; font-weight: 700; text-transform: uppercase;
+    color: #475467; letter-spacing: .04em; margin-bottom: 10px;
+}
+
+.timeslot-calendar-main {
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 1px 3px rgba(0,0,0,.06);
+    overflow: hidden;
+}
+
+.timeslot-calendar-header {
+    padding: 18px 22px;
+    border-bottom: 1px solid #e9ecef;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.timeslot-calendar-title { font-size: 18px; font-weight: 700; color: #111827; }
+.timeslot-calendar-subtitle { font-size: 13px; color: #6c757d; margin-top: 2px; }
+
+.timeslot-calendar-actions { display: flex; gap: 8px; }
+
+.timeslot-calendar-container {
+    padding: 16px;
+    min-height: 600px;
+}
+
+#TimeSlotCalendar .fc-event {
+    border: none;
+    padding: 2px 6px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.timeslot-event.on { background: #d4edda !important; color: #155724 !important; }
+.timeslot-event.off { background: #e9ecef !important; color: #6c757d !important; }
+.timeslot-event.full { background: #f8d7da !important; color: #721c24 !important; }
+
+.timeslot-legend-list {
+    list-style: none; padding: 0; margin: 0;
+    display: flex; flex-direction: column; gap: 8px;
+}
+
+.timeslot-legend-list li {
+    display: inline-flex; align-items: center; gap: 8px;
+    font-size: 13px; color: #475467;
+}
+
+.timeslot-legend-dot {
+    width: 12px; height: 12px; border-radius: 50%;
+}
+
+.timeslot-legend-dot.on { background: #38a169; }
+.timeslot-legend-dot.off { background: #94a3b8; }
+.timeslot-legend-dot.full { background: #e53e3e; }
+
+@media (max-width: 992px) {
+    .timeslot-calendar-page { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 768px) {
+    .timeslot-page { padding: 16px; }
+    .timeslot-table-card { overflow-x: auto; }
+    .timeslot-range-row { grid-template-columns: 1fr; }
+}

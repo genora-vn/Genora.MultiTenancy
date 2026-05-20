@@ -1,0 +1,108 @@
+@page
+@using Genora.MultiTenancy.Localization
+@using Genora.MultiTenancy.Permissions
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.Extensions.Localization
+@using Genora.MultiTenancy.Web.Pages.SalonBeautyTimeSlots
+@inject IStringLocalizer<MultiTenancyResource> L
+@inject IAuthorizationService AuthorizationService
+@inject Volo.Abp.MultiTenancy.ICurrentTenant CurrentTenant
+@model CalendarModel
+
+@section styles {
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/main.min.css" />
+    <abp-style src="/pages/salon/timeslot-shared.css" />
+}
+
+@section scripts {
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/locales/vi.global.min.js"></script>
+    <abp-script src="/Pages/SalonBeautyTimeSlots/calendar.js" />
+}
+
+@{
+    var canEdit = CurrentTenant.IsAvailable
+        ? await AuthorizationService.IsGrantedAsync(MultiTenancyPermissions.SalonBeautyTimeSlots.Edit)
+        : await AuthorizationService.IsGrantedAsync(MultiTenancyPermissions.HostSalonBeautyTimeSlots.Edit);
+}
+
+<div class="timeslot-calendar-page">
+    <aside class="timeslot-calendar-sidebar">
+        <div class="sidebar-section">
+            <div class="sidebar-section-title">@L["SalonBeautyTimeSlots:CalendarFilter"]</div>
+            <label class="timeslot-form-label">@L["SalonBeautyTimeSlots:Location"]</label>
+            <select id="CalendarLocationFilter" class="form-select timeslot-form-select mb-3">
+                <option value="">@L["SalonBeautyTimeSlots:AllLocations"]</option>
+            </select>
+
+            <label class="timeslot-form-label">@L["SalonBeautyTimeSlots:Stylist"]</label>
+            <select id="CalendarStylistFilter" class="form-select timeslot-form-select mb-3">
+                <option value="">@L["SalonBeautyTimeSlots:AllStylists"]</option>
+            </select>
+
+            <label class="timeslot-form-label">@L["SalonBeautyTimeSlots:Status"]</label>
+            <select id="CalendarStatusFilter" class="form-select timeslot-form-select">
+                <option value="">@L["SalonBeautyTimeSlots:AllStatus"]</option>
+                <option value="0">@L["Enum:SalonBeautyTimeSlotStatus.Off"]</option>
+                <option value="1">@L["Enum:SalonBeautyTimeSlotStatus.On"]</option>
+                <option value="2">@L["Enum:SalonBeautyTimeSlotStatus.Full"]</option>
+            </select>
+        </div>
+
+        <div class="sidebar-section">
+            <div class="sidebar-section-title">@L["SalonBeautyTimeSlots:LegendTitle"]</div>
+            <ul class="timeslot-legend-list">
+                <li><span class="timeslot-legend-dot on"></span> @L["Enum:SalonBeautyTimeSlotStatus.On"]</li>
+                <li><span class="timeslot-legend-dot off"></span> @L["Enum:SalonBeautyTimeSlotStatus.Off"]</li>
+                <li><span class="timeslot-legend-dot full"></span> @L["Enum:SalonBeautyTimeSlotStatus.Full"]</li>
+            </ul>
+        </div>
+    </aside>
+
+    <div class="timeslot-calendar-main">
+        <div class="timeslot-calendar-header">
+            <div>
+                <div class="timeslot-calendar-title">@L["SalonBeautyTimeSlots:CalendarTitle"]</div>
+                <div class="timeslot-calendar-subtitle">@L["SalonBeautyTimeSlots:CalendarSubtitle"]</div>
+            </div>
+            <div class="timeslot-calendar-actions">
+                <a href="/SalonBeautyTimeSlots" class="btn btn-light btn-sm">
+                    <i class="fa fa-arrow-left"></i> @L["SalonBeautyTimeSlots:BackToList"]
+                </a>
+                <button type="button" id="CalendarRefreshButton" class="btn btn-primary btn-sm">
+                    <i class="fa fa-refresh"></i> @L["SalonBeautyTimeSlots:Refresh"]
+                </button>
+            </div>
+        </div>
+        <div class="timeslot-calendar-container">
+            <input type="hidden" id="CanEditTimeSlotCalendar" value="@(canEdit ? "true" : "false")" />
+            <input type="hidden" id="CalendarPresetStylistId" value="@(Model.StylistId?.ToString() ?? string.Empty)" />
+            <div id="TimeSlotCalendar"></div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="UpdateSlotStatusModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">@L["SalonBeautyTimeSlots:UpdateStatusTitle"]</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="@L["Close"]"></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-muted mb-3" id="UpdateSlotStatusInfo"></p>
+                <div class="d-grid gap-2">
+                    <button type="button" class="btn btn-success" data-status="1">
+                        <i class="fa fa-check"></i> @L["Enum:SalonBeautyTimeSlotStatus.On"]
+                    </button>
+                    <button type="button" class="btn btn-danger" data-status="2">
+                        <i class="fa fa-times-circle"></i> @L["Enum:SalonBeautyTimeSlotStatus.Full"]
+                    </button>
+                    <button type="button" class="btn btn-secondary" data-status="0">
+                        <i class="fa fa-ban"></i> @L["Enum:SalonBeautyTimeSlotStatus.Off"]
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

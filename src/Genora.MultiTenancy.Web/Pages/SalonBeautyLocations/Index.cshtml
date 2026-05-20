@@ -1,0 +1,85 @@
+@page
+@using Genora.MultiTenancy.Localization
+@using Genora.MultiTenancy.Permissions
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.Extensions.Localization
+@using Genora.MultiTenancy.Web.Pages.SalonBeautyLocations
+@inject IStringLocalizer<MultiTenancyResource> L
+@inject IAuthorizationService AuthorizationService
+@inject Volo.Abp.MultiTenancy.ICurrentTenant CurrentTenant
+@model IndexModel
+
+@section styles {
+    <abp-style src="/pages/salon/location-shared.css" />
+}
+
+@section scripts {
+    <abp-script src="/Pages/SalonBeautyLocations/index.js" />
+}
+
+@{
+    var canCreate = CurrentTenant.IsAvailable
+        ? await AuthorizationService.IsGrantedAsync(MultiTenancyPermissions.SalonBeautyLocations.Create)
+        : await AuthorizationService.IsGrantedAsync(MultiTenancyPermissions.HostSalonBeautyLocations.Create);
+
+    var canEdit = CurrentTenant.IsAvailable
+        ? await AuthorizationService.IsGrantedAsync(MultiTenancyPermissions.SalonBeautyLocations.Edit)
+        : await AuthorizationService.IsGrantedAsync(MultiTenancyPermissions.HostSalonBeautyLocations.Edit);
+
+    var canDelete = CurrentTenant.IsAvailable
+        ? await AuthorizationService.IsGrantedAsync(MultiTenancyPermissions.SalonBeautyLocations.Delete)
+        : await AuthorizationService.IsGrantedAsync(MultiTenancyPermissions.HostSalonBeautyLocations.Delete);
+}
+
+<div class="location-page">
+    <div class="location-header-row">
+        <div class="location-page-header">
+            <h1>@L["SalonBeautyLocations:PageTitle"]</h1>
+            <p>@L["SalonBeautyLocations:PageSubTitle"]</p>
+        </div>
+        @if (canCreate)
+        {
+            <button type="button" id="NewSalonLocationButton" class="btn btn-outline-primary">
+                <i class="fa fa-plus"></i> @L["SalonBeautyLocations:AddLocation"]
+            </button>
+        }
+    </div>
+
+    <div class="location-filter-card">
+        <div class="row g-3 align-items-end">
+            <div class="col-lg-4 col-md-6">
+                <label class="location-filter-label" for="SalonLocationKeywordFilter">@L["Search"]</label>
+                <input id="SalonLocationKeywordFilter" class="form-control location-form-control" placeholder="@L["SalonBeautyLocations:KeywordPlaceholder"]" />
+            </div>
+            <div class="col-lg-3 col-md-6">
+                <label class="location-filter-label" for="SalonLocationStatusFilter">@L["SalonBeautyLocations:Status"]</label>
+                <select id="SalonLocationStatusFilter" class="form-select location-form-select">
+                    <option value="">@L["SalonBeautyLocations:AllStatus"]</option>
+                    <option value="true">@L["SalonBeautyLocations:StatusActive"]</option>
+                    <option value="false">@L["SalonBeautyLocations:StatusInactive"]</option>
+                </select>
+            </div>
+            <div class="col-lg-3 col-md-6">
+                <label class="location-filter-label" for="SalonLocationShowOnAppFilter">@L["SalonBeautyLocations:IsShowOnApp"]</label>
+                <select id="SalonLocationShowOnAppFilter" class="form-select location-form-select">
+                    <option value="">@L["SalonBeautyLocations:AllShowOnApp"]</option>
+                    <option value="true">@L["Yes"]</option>
+                    <option value="false">@L["No"]</option>
+                </select>
+            </div>
+            <div class="col-lg-2 col-md-6 d-grid">
+                <abp-button id="SearchSalonLocationButton"
+                            text="@L["Search"]"
+                            button-type="Outline_Primary"
+                            style="height: 45px"
+                            icon="search" />
+            </div>
+        </div>
+    </div>
+
+    <div class="location-table-card">
+        <input type="hidden" id="CanEditSalonLocation" value="@(canEdit ? "true" : "false")" />
+        <input type="hidden" id="CanDeleteSalonLocation" value="@(canDelete ? "true" : "false")" />
+        <table id="SalonLocationsTable" class="table w-100"></table>
+    </div>
+</div>

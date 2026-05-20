@@ -45,6 +45,7 @@ public class SalonBeautyBookingAppService :
     private readonly IRepository<SalonBeautyService, Guid> _serviceRepository;
     private readonly IRepository<SalonBeautyServiceCategory, Guid> _categoryRepository;
     private readonly IRepository<SalonBeautyStylist, Guid> _stylistRepository;
+    private readonly IRepository<SalonBeautyLocation, Guid> _locationRepository;
     private readonly IRepository<SalonBeautyCustomerLoyaltyBalance, Guid> _loyaltyRepository;
     private readonly IStringLocalizer<MultiTenancyResource> _l;
 
@@ -55,6 +56,7 @@ public class SalonBeautyBookingAppService :
         IRepository<SalonBeautyService, Guid> serviceRepository,
         IRepository<SalonBeautyServiceCategory, Guid> categoryRepository,
         IRepository<SalonBeautyStylist, Guid> stylistRepository,
+        IRepository<SalonBeautyLocation, Guid> locationRepository,
         IRepository<SalonBeautyCustomerLoyaltyBalance, Guid> loyaltyRepository,
         IStringLocalizer<MultiTenancyResource> l,
         ICurrentTenant currentTenant,
@@ -67,6 +69,7 @@ public class SalonBeautyBookingAppService :
         _serviceRepository = serviceRepository;
         _categoryRepository = categoryRepository;
         _stylistRepository = stylistRepository;
+        _locationRepository = locationRepository;
         _loyaltyRepository = loyaltyRepository;
         _l = l;
     }
@@ -80,6 +83,7 @@ public class SalonBeautyBookingAppService :
         var query = await _bookingRepository.GetQueryableAsync();
         query = query.WhereIf(!input.FilterText.IsNullOrWhiteSpace(),
             x => (x.BookingCode != null && x.BookingCode.Contains(input.FilterText!)));
+        query = query.WhereIf(input.LocationId.HasValue, x => x.LocationId == input.LocationId);
         query = query.WhereIf(input.CustomerId.HasValue, x => x.CustomerId == input.CustomerId);
         query = query.WhereIf(input.StylistId.HasValue, x => x.StylistId == input.StylistId);
         query = query.WhereIf(input.Status.HasValue, x => (byte)x.Status == input.Status);
@@ -152,6 +156,7 @@ public class SalonBeautyBookingAppService :
             PackNote(input.CustomerNote, input.InternalNote),
             CurrentTenant.Id
         );
+        booking.LocationId = input.LocationId;
 
         await _bookingRepository.InsertAsync(booking, autoSave: true);
 
@@ -194,6 +199,7 @@ public class SalonBeautyBookingAppService :
             totalAmount = 0;
         }
 
+        booking.LocationId = input.LocationId;
         booking.CustomerId = input.CustomerId;
         booking.StylistId = input.StylistId;
         booking.ServiceId = resolved.First().ServiceId;
@@ -377,7 +383,7 @@ public class SalonBeautyBookingAppService :
         await base.DeleteAsync(id);
     }
 
-    public async Task<List<SalonBeautyBookingCalendarDto>> GetCalendarEventsAsync(DateTime from, DateTime to, Guid? stylistId = null, Guid? serviceId = null)
+    public async Task<List<SalonBeautyBookingCalendarDto>> GetCalendarEventsAsync(DateTime from, DateTime to, Guid? stylistId = null, Guid? serviceId = null, Guid? locationId = null)
     {
         await CheckBookingPolicyAsync(
             MultiTenancyPermissions.SalonBeautyBookings.Default,
@@ -396,9 +402,16 @@ public class SalonBeautyBookingAppService :
             query = query.Where(x => x.ServiceId == serviceId.Value);
         }
 
+        if (locationId.HasValue)
+        {
+            query = query.Where(x => x.LocationId == locationId.Value);
+        }
+
         var bookings = await AsyncExecuter.ToListAsync(query);
         var ids = bookings.Select(x => x.Id).ToList();
         var itemsMap = await BuildBookingItemsMapAsync(ids);
+        var locationIds = bookings.Where(x => x.LocationId.HasValue).Select(x => x.LocationId!.Value).Distinct().ToList();
+        var locationMap = await BuildLocationMapAsync(locationIds);
 
         var result = new List<SalonBeautyBookingCalendarDto>();
         foreach (var booking in bookings)
@@ -416,6 +429,8 @@ public class SalonBeautyBookingAppService :
             {
                 Id = booking.Id,
                 BookingCode = booking.BookingCode,
+                LocationId = booking.LocationId,
+                LocationName = booking.LocationId.HasValue && locationMap.TryGetValue(booking.LocationId.Value, out var locName) ? locName : null,
                 CustomerId = booking.CustomerId,
                 CustomerName = customer?.Name ?? "--",
                 CustomerPhone = customer?.Phone,
@@ -541,21 +556,25 @@ public class SalonBeautyBookingAppService :
         }).ToList();
     }
 
-    public async Task<List<SalonBeautyStylistLookupDto>> GetStylistLookupAsync()
+    public async Task<List<SalonBeautyStylistLookupDto>> GetStylistLookupAsync(Guid? locationId = null)
     {
         await CheckBookingPolicyAsync(
             MultiTenancyPermissions.SalonBeautyBookings.Default,
             MultiTenancyPermissions.HostSalonBeautyBookings.Default);
 
         var query = await _stylistRepository.GetQueryableAsync();
+        query = query.Where(x => x.Status == 1);
+        if (locationId.HasValue)
+            query = query.Where(x => x.LocationId == locationId.Value);
+
         var stylists = await AsyncExecuter.ToListAsync(query
-            .Where(x => x.Status == 1)
             .OrderBy(x => x.SortOrder)
             .ThenBy(x => x.DisplayName));
 
         return stylists.Select(x => new SalonBeautyStylistLookupDto
         {
             Id = x.Id,
+            LocationId = x.LocationId,
             DisplayName = x.DisplayName,
             Avatar = x.Avatar,
             Role = x.Role,
@@ -610,6 +629,18 @@ public class SalonBeautyBookingAppService :
         var query = await _bookingServiceRepository.GetQueryableAsync();
         var list = await AsyncExecuter.ToListAsync(query.Where(x => bookingIds.Contains(x.BookingId)));
         return list.GroupBy(x => x.BookingId).ToDictionary(g => g.Key, g => g.ToList());
+    }
+
+    private async Task<Dictionary<Guid, string>> BuildLocationMapAsync(List<Guid> locationIds)
+    {
+        if (locationIds == null || locationIds.Count == 0)
+        {
+            return new Dictionary<Guid, string>();
+        }
+
+        var query = await _locationRepository.GetQueryableAsync();
+        var list = await AsyncExecuter.ToListAsync(query.Where(x => locationIds.Contains(x.Id)));
+        return list.ToDictionary(x => x.Id, x => x.Name);
     }
 
     private async Task<string> BuildServiceSummaryAsync(List<SalonBeautyBookingService> items, Guid fallbackServiceId)
@@ -682,9 +713,11 @@ public class SalonBeautyBookingAppService :
 
     private static string GetStylistRoleText(SalonBeautyStylistRole role) => role switch
     {
-        SalonBeautyStylistRole.Junior => "Junior",
-        SalonBeautyStylistRole.Senior => "Senior",
-        SalonBeautyStylistRole.Manager => "Manager",
+        SalonBeautyStylistRole.HairStylist => "Hair Stylist",
+        SalonBeautyStylistRole.Shampoo => "Gội đầu",
+        SalonBeautyStylistRole.NailLashes => "Nail / Mi",
+        SalonBeautyStylistRole.SkincareSpa => "Skincare / Spa",
+        SalonBeautyStylistRole.Other => "Khác",
         _ => role.ToString()
     };
 
@@ -723,12 +756,15 @@ public class SalonBeautyBookingAppService :
     {
         var customer = await _customerRepository.FindAsync(booking.CustomerId);
         var stylist = await _stylistRepository.FindAsync(booking.StylistId);
+        var location = booking.LocationId.HasValue ? await _locationRepository.FindAsync(booking.LocationId.Value) : null;
         var servicesSummary = await BuildServiceSummaryAsync(items, booking.ServiceId);
 
         return new SalonBeautyBookingDetailDto
         {
             Id = booking.Id,
             BookingCode = booking.BookingCode,
+            LocationId = booking.LocationId,
+            LocationName = location?.Name,
             CustomerId = booking.CustomerId,
             CustomerName = customer?.Name,
             CustomerPhone = customer?.Phone,
@@ -761,6 +797,7 @@ public class SalonBeautyBookingAppService :
     {
         var customer = await _customerRepository.FindAsync(booking.CustomerId);
         var stylist = await _stylistRepository.FindAsync(booking.StylistId);
+        var location = booking.LocationId.HasValue ? await _locationRepository.FindAsync(booking.LocationId.Value) : null;
 
         var itemsQuery = await _bookingServiceRepository.GetQueryableAsync();
         var items = await AsyncExecuter.ToListAsync(itemsQuery.Where(x => x.BookingId == booking.Id));
@@ -819,6 +856,8 @@ public class SalonBeautyBookingAppService :
         {
             Id = booking.Id,
             BookingCode = booking.BookingCode,
+            LocationId = booking.LocationId,
+            LocationName = location?.Name,
             CustomerId = booking.CustomerId,
             CustomerName = customer?.Name,
             CustomerPhone = customer?.Phone,

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Genora.MultiTenancy.AppDtos.SalonBeauties.SalonBeautyLocations;
 using Genora.MultiTenancy.AppDtos.SalonBeauties.SalonBeautyStylists;
 using Genora.MultiTenancy.Enums;
 using Genora.MultiTenancy.Localization;
@@ -20,15 +21,19 @@ public class EditModalModel : MultiTenancyPageModel
     public List<SelectListItem> GenderItems { get; set; } = new();
     public List<SelectListItem> RoleItems { get; set; } = new();
     public List<SelectListItem> LevelItems { get; set; } = new();
+    public List<SelectListItem> LocationItems { get; set; } = new();
 
     private readonly ISalonBeautyStylistAppService _stylistAppService;
+    private readonly ISalonBeautyLocationAppService _locationAppService;
     private readonly IStringLocalizer<MultiTenancyResource> _l;
 
     public EditModalModel(
         ISalonBeautyStylistAppService stylistAppService,
+        ISalonBeautyLocationAppService locationAppService,
         IStringLocalizer<MultiTenancyResource> l)
     {
         _stylistAppService = stylistAppService;
+        _locationAppService = locationAppService;
         _l = l;
     }
 
@@ -38,6 +43,7 @@ public class EditModalModel : MultiTenancyPageModel
         Stylist = new EditStylistViewModel
         {
             Id = dto.Id,
+            LocationId = dto.LocationId,
             DisplayName = dto.DisplayName,
             Avatar = dto.Avatar,
             IsUploadImage = false,
@@ -52,11 +58,13 @@ public class EditModalModel : MultiTenancyPageModel
             SortOrder = dto.SortOrder
         };
 
+        await BuildLocationItemsAsync();
         BuildSelectLists();
     }
 
     public async Task<IActionResult> OnPostAsync()
     {
+        await BuildLocationItemsAsync();
         BuildSelectLists();
 
         ValidateStylistInput(Stylist.DisplayName, Stylist.Phone, Stylist.Role, Stylist.Level, Stylist.ExperienceYear, Stylist.IsShowOnApp, Stylist.Avatar, Stylist.Images);
@@ -66,6 +74,7 @@ public class EditModalModel : MultiTenancyPageModel
 
         var updateDto = new UpdateSalonBeautyStylistDto
         {
+            LocationId = Stylist.LocationId,
             DisplayName = Stylist.DisplayName,
             Avatar = Stylist.Avatar,
             Images = Stylist.Images,
@@ -83,6 +92,15 @@ public class EditModalModel : MultiTenancyPageModel
 
         await _stylistAppService.UpdateAsync(Stylist.Id, updateDto);
         return NoContent();
+    }
+
+    private async Task BuildLocationItemsAsync()
+    {
+        var locations = await _locationAppService.GetLookupAsync();
+        LocationItems = locations
+            .Where(x => x.IsActive)
+            .Select(x => new SelectListItem(x.Name, x.Id.ToString(), Stylist.LocationId == x.Id))
+            .ToList();
     }
 
     private void ValidateStylistInput(string? displayName, string? phone, byte? role, byte? level, int experienceYear, bool isShowOnApp, string? avatar, IRemoteStreamContent? imageFile)
@@ -137,6 +155,7 @@ public class EditModalModel : MultiTenancyPageModel
 public class EditStylistViewModel
 {
     public Guid Id { get; set; }
+    public Guid? LocationId { get; set; }
     public string DisplayName { get; set; } = null!;
     public string? Avatar { get; set; }
     public IRemoteStreamContent? Images { get; set; }

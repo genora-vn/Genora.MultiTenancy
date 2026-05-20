@@ -108,6 +108,8 @@ public class MultiTenancyDbContext :
     public DbSet<SalonBeautyBookingService> SalonBeautyBookingService { get; set; }
     public DbSet<SalonBeautyCustomerLoyaltyBalance> SalonBeautyCustomerLoyaltyBalance { get; set; }
     public DbSet<SalonBeautyCustomerLoyaltyTransaction> SalonBeautyCustomerLoyaltyTransaction { get; set; }
+    public DbSet<SalonBeautyLocation> SalonBeautyLocation { get; set; }
+    public DbSet<SalonBeautyTimeSlot> SalonBeautyTimeSlot { get; set; }
 
     // Identity
     public DbSet<IdentityUser> Users { get; set; }

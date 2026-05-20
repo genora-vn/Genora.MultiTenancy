@@ -1,10 +1,13 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using System;
+using System.ComponentModel.DataAnnotations;
 using Volo.Abp.Content;
 
 namespace Genora.MultiTenancy.AppDtos.SalonBeauties.SalonBeautyStylists;
 
 public class CreateSalonBeautyStylistDto
 {
+    public Guid? LocationId { get; set; }
+
     [Required]
     [StringLength(255)]
     public string DisplayName { get; set; } = null!;

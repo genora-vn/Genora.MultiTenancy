@@ -202,7 +202,8 @@
             fromDate: toIsoDate($('#BookingFromDateFilter').val()),
             toDate: toIsoDate($('#BookingToDateFilter').val()),
             status: $('#BookingStatusFilter').val() !== '' ? $('#BookingStatusFilter').val() : null,
-            stylistId: $('#BookingStylistFilter').val() || null
+            stylistId: $('#BookingStylistFilter').val() || null,
+            locationId: $('#BookingLocationFilter').val() || null
         };
     }
 
@@ -226,13 +227,19 @@
         });
     }
 
-    function loadStylistFilter() {
-        bookingService.getStylistLookup().then(function (data) {
+    function loadStylistFilter(locationId) {
+        bookingService.getStylistLookup(locationId || null).then(function (data) {
             var $sel = $('#BookingStylistFilter');
+            var prevVal = $sel.val();
             $sel.find('option:not(:first)').remove();
             $.each(data || [], function (i, s) {
                 $sel.append('<option value="' + s.id + '">' + s.displayName + '</option>');
             });
+            if (prevVal && $sel.find('option[value="' + prevVal + '"]').length) {
+                $sel.val(prevVal);
+            } else {
+                $sel.val('');
+            }
         });
     }
 
@@ -251,6 +258,7 @@
                     input.toDate = f.toDate;
                     if (f.status !== null) input.status = f.status;
                     if (f.stylistId) input.stylistId = f.stylistId;
+                    if (f.locationId) input.locationId = f.locationId;
                     return bookingService.getList(input);
                 }),
                 columnDefs: [
@@ -380,7 +388,6 @@
         loadStylistFilter();
         loadStats();
         initDataTable();
-
         $('#NewBookingButton').on('click', function () {
             createModal.open();
         });
@@ -399,6 +406,11 @@
         });
 
         $('#BookingStatusFilter,#BookingStylistFilter').on('change', function () {
+            reloadAll(true);
+        });
+
+        $('#BookingLocationFilter').on('change', function () {
+            loadStylistFilter($(this).val());
             reloadAll(true);
         });
 

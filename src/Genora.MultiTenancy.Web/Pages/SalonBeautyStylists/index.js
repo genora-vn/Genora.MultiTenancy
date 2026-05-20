@@ -141,8 +141,10 @@ $(function () {
     function buildListInput(request) {
         request = request || {};
         var length = request.length || 10;
+        var locationId = ($('#SalonStylistLocationFilter').val() || '').trim() || null;
         return {
             filterText: ($('#SalonStylistKeywordFilter').val() || '').trim() || null,
+            locationId: locationId,
             level: parseNullableByte($('#SalonStylistLevelFilter').val()),
             role: parseNullableByte($('#SalonStylistRoleFilter').val()),
             status: parseNullableByte($('#SalonStylistStatusFilter').val()),
@@ -267,6 +269,7 @@ $(function () {
                     width: '120px'
                 },
                 { title: l('SalonBeautyStylists:ColumnStylistInfo'), data: 'displayName', render: renderStylist, width: '260px' },
+                { title: l('SalonBeautyLocation:PageTitle'), data: 'locationName', render: function (data, type, row) { return htmlEncode(row.locationName || '--'); }, width: '160px' },
                 { title: l('SalonBeautyStylist:Level'), data: 'level', render: renderLevel, width: '120px' },
                 { title: l('SalonBeautyStylist:Gender'), data: 'gender', render: renderGender, width: '100px' },
                 { title: l('SalonBeautyStylist:ExperienceYear'), data: 'experienceYear', render: function (data) { return htmlEncode((data || 0) + ' ' + l('SalonBeautyStylists:YearsUnit')); }, width: '130px' },
@@ -289,7 +292,7 @@ $(function () {
         }
     });
 
-    $('#SalonStylistLevelFilter,#SalonStylistRoleFilter,#SalonStylistStatusFilter,#SalonStylistShowOnAppFilter').on('change', function () {
+    $('#SalonStylistLocationFilter,#SalonStylistLevelFilter,#SalonStylistRoleFilter,#SalonStylistStatusFilter,#SalonStylistShowOnAppFilter').on('change', function () {
         dataTable.ajax.reload(null, true);
     });
 
@@ -593,6 +596,7 @@ $(function () {
 
         service.get(stylistId).then(function (stylist) {
             var updateDto = {
+                locationId: stylist.locationId,
                 displayName: stylist.displayName,
                 avatar: stylist.avatar,
                 phone: stylist.phone,
@@ -634,6 +638,7 @@ $(function () {
             }
 
             var updateDto = {
+                locationId: stylist.locationId,
                 displayName: stylist.displayName,
                 avatar: stylist.avatar,
                 phone: stylist.phone,

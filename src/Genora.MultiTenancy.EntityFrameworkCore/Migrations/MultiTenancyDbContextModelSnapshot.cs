@@ -2858,6 +2858,9 @@ namespace Genora.MultiTenancy.Migrations
                         .HasColumnType("uniqueidentifier")
                         .HasColumnName("LastModifierId");
 
+                    b.Property<Guid?>("LocationId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<string>("Note")
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
@@ -2896,6 +2899,8 @@ namespace Genora.MultiTenancy.Migrations
 
                     b.HasIndex("CustomerId");
 
+                    b.HasIndex("LocationId");
+
                     b.HasIndex("ServiceId");
 
                     b.HasIndex("StylistId");
@@ -2910,6 +2915,9 @@ namespace Genora.MultiTenancy.Migrations
 
                     b.HasIndex("TenantId", "CustomerId")
                         .HasDatabaseName("IX_AppSalonBeautyBookings_TenantId_CustomerId");
+
+                    b.HasIndex("TenantId", "LocationId")
+                        .HasDatabaseName("IX_AppSalonBeautyBookings_TenantId_LocationId");
 
                     b.ToTable("AppSalonBeautyBookings", "Salon");
                 });
@@ -3213,6 +3221,104 @@ namespace Genora.MultiTenancy.Migrations
                     b.ToTable("AppSalonBeautyCustomerLoyaltyTransactions", "Salon");
                 });
 
+            modelBuilder.Entity("Genora.MultiTenancy.DomainModels.AppSalonBeauty.SalonBeautyLocation", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Address")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<TimeSpan>("CloseTime")
+                        .HasColumnType("time");
+
+                    b.Property<string>("ConcurrencyStamp")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("nvarchar(40)")
+                        .HasColumnName("ConcurrencyStamp");
+
+                    b.Property<DateTime>("CreationTime")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("CreationTime");
+
+                    b.Property<Guid?>("CreatorId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("CreatorId");
+
+                    b.Property<Guid?>("DeleterId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("DeleterId");
+
+                    b.Property<DateTime?>("DeletionTime")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("DeletionTime");
+
+                    b.Property<string>("ExtraProperties")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("ExtraProperties");
+
+                    b.Property<string>("ImageUrl")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(true);
+
+                    b.Property<bool>("IsDeleted")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false)
+                        .HasColumnName("IsDeleted");
+
+                    b.Property<bool>("IsShowOnApp")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime?>("LastModificationTime")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("LastModificationTime");
+
+                    b.Property<Guid?>("LastModifierId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("LastModifierId");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
+                    b.Property<string>("Note")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<TimeSpan>("OpenTime")
+                        .HasColumnType("time");
+
+                    b.Property<string>("Phone")
+                        .HasMaxLength(15)
+                        .HasColumnType("nvarchar(15)");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("int");
+
+                    b.Property<Guid?>("TenantId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("TenantId");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TenantId", "Name")
+                        .HasDatabaseName("IX_AppSalonBeautyLocations_TenantId_Name");
+
+                    b.ToTable("AppSalonBeautyLocations", "Salon");
+                });
+
             modelBuilder.Entity("Genora.MultiTenancy.DomainModels.AppSalonBeauty.SalonBeautyService", b =>
                 {
                     b.Property<Guid>("Id")
@@ -3460,6 +3566,9 @@ namespace Genora.MultiTenancy.Migrations
                     b.Property<byte?>("Level")
                         .HasColumnType("tinyint");
 
+                    b.Property<Guid?>("LocationId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<string>("Note")
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
@@ -3492,10 +3601,110 @@ namespace Genora.MultiTenancy.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("LocationId");
+
                     b.HasIndex("TenantId", "DisplayName")
                         .HasDatabaseName("IX_AppSalonBeautyStylists_TenantId_DisplayName");
 
+                    b.HasIndex("TenantId", "LocationId")
+                        .HasDatabaseName("IX_AppSalonBeautyStylists_TenantId_LocationId");
+
                     b.ToTable("AppSalonBeautyStylists", "Salon");
+                });
+
+            modelBuilder.Entity("Genora.MultiTenancy.DomainModels.AppSalonBeauty.SalonBeautyTimeSlot", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("ConcurrencyStamp")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("nvarchar(40)")
+                        .HasColumnName("ConcurrencyStamp");
+
+                    b.Property<DateTime>("CreationTime")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("CreationTime");
+
+                    b.Property<Guid?>("CreatorId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("CreatorId");
+
+                    b.Property<Guid?>("DeleterId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("DeleterId");
+
+                    b.Property<DateTime?>("DeletionTime")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("DeletionTime");
+
+                    b.Property<TimeSpan>("EndTime")
+                        .HasColumnType("time");
+
+                    b.Property<string>("ExtraProperties")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("ExtraProperties");
+
+                    b.Property<bool>("IsDeleted")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false)
+                        .HasColumnName("IsDeleted");
+
+                    b.Property<bool>("IsShowOnApp")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(true);
+
+                    b.Property<DateTime?>("LastModificationTime")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("LastModificationTime");
+
+                    b.Property<Guid?>("LastModifierId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("LastModifierId");
+
+                    b.Property<Guid>("LocationId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Note")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<TimeSpan>("StartTime")
+                        .HasColumnType("time");
+
+                    b.Property<byte>("Status")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("tinyint")
+                        .HasDefaultValue((byte)1);
+
+                    b.Property<Guid>("StylistId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("TenantId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("TenantId");
+
+                    b.Property<DateTime>("WorkDate")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LocationId");
+
+                    b.HasIndex("StylistId");
+
+                    b.HasIndex("TenantId", "LocationId", "WorkDate")
+                        .HasDatabaseName("IX_AppSalonBeautyTimeSlots_TenantId_LocationId_WorkDate");
+
+                    b.HasIndex("TenantId", "StylistId", "WorkDate")
+                        .HasDatabaseName("IX_AppSalonBeautyTimeSlots_TenantId_StylistId_WorkDate");
+
+                    b.ToTable("AppSalonBeautyTimeSlots", "Salon");
                 });
 
             modelBuilder.Entity("Genora.MultiTenancy.DomainModels.AppSpecialDates.SpecialDate", b =>
@@ -5898,6 +6107,11 @@ namespace Genora.MultiTenancy.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("Genora.MultiTenancy.DomainModels.AppSalonBeauty.SalonBeautyLocation", "Location")
+                        .WithMany()
+                        .HasForeignKey("LocationId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("Genora.MultiTenancy.DomainModels.AppSalonBeauty.SalonBeautyService", "Service")
                         .WithMany("Bookings")
                         .HasForeignKey("ServiceId")
@@ -5911,6 +6125,8 @@ namespace Genora.MultiTenancy.Migrations
                         .IsRequired();
 
                     b.Navigation("Customer");
+
+                    b.Navigation("Location");
 
                     b.Navigation("Service");
 
@@ -5967,6 +6183,35 @@ namespace Genora.MultiTenancy.Migrations
                         .IsRequired();
 
                     b.Navigation("Category");
+                });
+
+            modelBuilder.Entity("Genora.MultiTenancy.DomainModels.AppSalonBeauty.SalonBeautyStylist", b =>
+                {
+                    b.HasOne("Genora.MultiTenancy.DomainModels.AppSalonBeauty.SalonBeautyLocation", "Location")
+                        .WithMany()
+                        .HasForeignKey("LocationId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("Location");
+                });
+
+            modelBuilder.Entity("Genora.MultiTenancy.DomainModels.AppSalonBeauty.SalonBeautyTimeSlot", b =>
+                {
+                    b.HasOne("Genora.MultiTenancy.DomainModels.AppSalonBeauty.SalonBeautyLocation", "Location")
+                        .WithMany("TimeSlots")
+                        .HasForeignKey("LocationId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Genora.MultiTenancy.DomainModels.AppSalonBeauty.SalonBeautyStylist", "Stylist")
+                        .WithMany()
+                        .HasForeignKey("StylistId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Location");
+
+                    b.Navigation("Stylist");
                 });
 
             modelBuilder.Entity("Volo.Abp.AuditLogging.AuditLogAction", b =>
@@ -6211,6 +6456,11 @@ namespace Genora.MultiTenancy.Migrations
                     b.Navigation("LoyaltyBalances");
 
                     b.Navigation("LoyaltyTransactions");
+                });
+
+            modelBuilder.Entity("Genora.MultiTenancy.DomainModels.AppSalonBeauty.SalonBeautyLocation", b =>
+                {
+                    b.Navigation("TimeSlots");
                 });
 
             modelBuilder.Entity("Genora.MultiTenancy.DomainModels.AppSalonBeauty.SalonBeautyService", b =>

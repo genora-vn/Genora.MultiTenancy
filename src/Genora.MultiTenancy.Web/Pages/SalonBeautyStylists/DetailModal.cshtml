@@ -41,12 +41,24 @@
 
                 <div class="stylist-detail-grid">
                     <div class="stylist-detail-item">
+                        <span>@L["SalonBeautyLocation:PageTitle"]</span>
+                        <strong>@(string.IsNullOrWhiteSpace(Model.Stylist.LocationName) ? "--" : Model.Stylist.LocationName)</strong>
+                    </div>
+                    <div class="stylist-detail-item">
                         <span>@L["SalonBeautyStylist:Phone"]</span>
                         <strong>@(Model.Stylist.Phone ?? "--")</strong>
                     </div>
                     <div class="stylist-detail-item">
                         <span>@L["SalonBeautyStylist:Gender"]</span>
                         <strong>@(Model.Stylist.GenderText ?? "--")</strong>
+                    </div>
+                    <div class="stylist-detail-item">
+                        <span>@L["SalonBeautyStylist:Role"]</span>
+                        <strong>@(Model.Stylist.RoleText ?? "--")</strong>
+                    </div>
+                    <div class="stylist-detail-item">
+                        <span>@L["SalonBeautyStylist:Level"]</span>
+                        <strong>@(Model.Stylist.LevelText ?? "--")</strong>
                     </div>
                     <div class="stylist-detail-item">
                         <span>@L["SalonBeautyStylist:ExperienceYear"]</span>

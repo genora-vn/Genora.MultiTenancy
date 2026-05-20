@@ -2,7 +2,9 @@ namespace Genora.MultiTenancy.Enums;
 
 public enum SalonBeautyStylistRole : byte
 {
-    Junior = 1,
-    Senior = 2,
-    Manager = 3
+    HairStylist = 1,
+    Shampoo = 2,
+    NailLashes = 3,
+    SkincareSpa = 4,
+    Other = 5
 }

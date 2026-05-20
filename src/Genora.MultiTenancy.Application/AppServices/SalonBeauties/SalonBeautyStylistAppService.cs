@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 using Volo.Abp.Content;
@@ -43,11 +44,13 @@ public class SalonBeautyStylistAppService :
     private static readonly string[] AvatarAllowedExtensions = { ".jpg", ".jpeg", ".png", ".webp" };
 
     private readonly IRepository<SalonBeautyStylist, Guid> _repository;
+    private readonly IRepository<SalonBeautyLocation, Guid> _locationRepository;
     private readonly IStringLocalizer<MultiTenancyResource> _l;
     private readonly IManageImageService _manageImageService;
 
     public SalonBeautyStylistAppService(
         IRepository<SalonBeautyStylist, Guid> repository,
+        IRepository<SalonBeautyLocation, Guid> locationRepository,
         IStringLocalizer<MultiTenancyResource> l,
         IManageImageService manageImageService,
         ICurrentTenant currentTenant,
@@ -55,6 +58,7 @@ public class SalonBeautyStylistAppService :
         : base(repository, currentTenant, featureChecker)
     {
         _repository = repository;
+        _locationRepository = locationRepository;
         _l = l;
         _manageImageService = manageImageService;
         LocalizationResource = typeof(MultiTenancyResource);
@@ -94,6 +98,9 @@ public class SalonBeautyStylistAppService :
         if (input.IsShowOnApp.HasValue)
             query = query.Where(x => x.IsShowOnApp == input.IsShowOnApp.Value);
 
+        if (input.LocationId.HasValue)
+            query = query.Where(x => x.LocationId == input.LocationId.Value);
+
         var totalCount = await AsyncExecuter.CountAsync(query);
 
         var items = await AsyncExecuter.ToListAsync(
@@ -103,9 +110,12 @@ public class SalonBeautyStylistAppService :
                 .Skip(input.SkipCount)
                 .Take(input.MaxResultCount));
 
+        var locationIds = items.Where(x => x.LocationId.HasValue).Select(x => x.LocationId!.Value).Distinct().ToList();
+        var locationMap = await BuildLocationMapAsync(locationIds);
+
         return new PagedResultDto<SalonBeautyStylistDto>(
             totalCount,
-            items.Select(MapToDto).ToList());
+            items.Select(x => MapToDto(x, locationMap)).ToList());
     }
 
     public override async Task<SalonBeautyStylistDto> GetAsync(Guid id)
@@ -115,7 +125,10 @@ public class SalonBeautyStylistAppService :
             MultiTenancyPermissions.HostSalonBeautyStylists.Default);
 
         var entity = await _repository.GetAsync(id);
-        return MapToDto(entity);
+        var locationMap = entity.LocationId.HasValue
+            ? await BuildLocationMapAsync(new List<Guid> { entity.LocationId.Value })
+            : new Dictionary<Guid, string>();
+        return MapToDto(entity, locationMap);
     }
 
     public override async Task<SalonBeautyStylistDto> CreateAsync(CreateSalonBeautyStylistDto input)
@@ -130,6 +143,7 @@ public class SalonBeautyStylistAppService :
 
         var entity = new SalonBeautyStylist
         {
+            LocationId = input.LocationId,
             DisplayName = input.DisplayName.Trim(),
             Avatar = NullIfWhiteSpace(avatarUrl),
             Phone = NormalizePhone(input.Phone),
@@ -144,7 +158,10 @@ public class SalonBeautyStylistAppService :
         };
 
         var created = await _repository.InsertAsync(entity, autoSave: true);
-        return MapToDto(created);
+        var locationMap = created.LocationId.HasValue
+            ? await BuildLocationMapAsync(new List<Guid> { created.LocationId.Value })
+            : new Dictionary<Guid, string>();
+        return MapToDto(created, locationMap);
     }
 
     public override async Task<SalonBeautyStylistDto> UpdateAsync(Guid id, UpdateSalonBeautyStylistDto input)
@@ -163,6 +180,7 @@ public class SalonBeautyStylistAppService :
             await DeleteOldAvatarIfLocalAsync(entity.Avatar);
         }
 
+        entity.LocationId = input.LocationId;
         entity.DisplayName = input.DisplayName.Trim();
         entity.Avatar = NullIfWhiteSpace(avatarUrl);
         entity.Phone = NormalizePhone(input.Phone);
@@ -176,7 +194,10 @@ public class SalonBeautyStylistAppService :
         entity.SortOrder = input.SortOrder;
 
         var updated = await _repository.UpdateAsync(entity, autoSave: true);
-        return MapToDto(updated);
+        var locationMap = updated.LocationId.HasValue
+            ? await BuildLocationMapAsync(new List<Guid> { updated.LocationId.Value })
+            : new Dictionary<Guid, string>();
+        return MapToDto(updated, locationMap);
     }
 
     public async Task UpdateShowOnAppAsync(Guid id, bool isShowOnApp)
@@ -338,12 +359,16 @@ public class SalonBeautyStylistAppService :
         await AuthorizationService.CheckAsync(permission);
     }
 
-    private SalonBeautyStylistDto MapToDto(SalonBeautyStylist entity)
+    private SalonBeautyStylistDto MapToDto(SalonBeautyStylist entity, Dictionary<Guid, string> locationMap)
     {
         var active = entity.Status == 1;
         return new SalonBeautyStylistDto
         {
             Id = entity.Id,
+            LocationId = entity.LocationId,
+            LocationName = entity.LocationId.HasValue && locationMap.TryGetValue(entity.LocationId.Value, out var locationName)
+                ? locationName
+                : null,
             DisplayName = entity.DisplayName,
             Avatar = entity.Avatar,
             Phone = entity.Phone,
@@ -364,5 +389,15 @@ public class SalonBeautyStylistAppService :
             Note = entity.Note,
             SortOrder = entity.SortOrder
         };
+    }
+
+    private async Task<Dictionary<Guid, string>> BuildLocationMapAsync(List<Guid> locationIds)
+    {
+        if (locationIds == null || locationIds.Count == 0)
+            return new Dictionary<Guid, string>();
+
+        var locationQuery = await _locationRepository.GetQueryableAsync();
+        var locations = await AsyncExecuter.ToListAsync(locationQuery.Where(x => locationIds.Contains(x.Id)));
+        return locations.ToDictionary(x => x.Id, x => x.Name);
     }
 }

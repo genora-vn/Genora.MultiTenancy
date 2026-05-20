@@ -39,6 +39,12 @@
                     <!-- Booking Info -->
                     <div class="row g-3 mb-3">
                         <div class="col-md-3">
+                            <label class="booking-form-label">@L["SalonBeautyLocation:PageTitle"] <span class="text-danger">*</span></label>
+                            <select asp-for="Booking.LocationId" asp-items="Model.LocationItems" id="EditBookingLocationSelect" class="form-select">
+                                <option value="">-- Chọn cơ sở --</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
                             <label class="booking-form-label">Trạng thái</label>
                             <select asp-for="Booking.Status" asp-items="Model.StatusItems" class="form-select"></select>
                         </div>
@@ -133,16 +139,31 @@
 
         function loadLookups(cb) {
             var p1 = bookingService.getServiceLookup().then(function (data) { services = data || []; });
-            var p2 = bookingService.getStylistLookup().then(function (data) {
-                stylists = data || [];
-                var $sel = $('#EditBookingStylistSelect');
-                $.each(stylists, function (i, s) {
-                    var selected = s.id === '@Model.Booking.StylistId.ToString()' ? ' selected' : '';
-                    $sel.append('<option value="' + s.id + '"' + selected + '>' + s.displayName + '</option>');
-                });
-            });
+            var p2 = loadStylistsByLocation($('#EditBookingLocationSelect').val(), '@Model.Booking.StylistId');
             $.when(p1, p2).done(function () { if (cb) cb(); });
         }
+
+        function loadStylistsByLocation(locationId, preselectStylistId) {
+            return bookingService.getStylistLookup(locationId || null).then(function (data) {
+                stylists = data || [];
+                var $sel = $('#EditBookingStylistSelect');
+                var prevVal = preselectStylistId || $sel.val();
+                $sel.find('option:not(:first)').remove();
+                $.each(stylists, function (i, s) {
+                    $sel.append('<option value="' + s.id + '">' + s.displayName + '</option>');
+                });
+                if (prevVal && $sel.find('option[value="' + prevVal + '"]').length) {
+                    $sel.val(prevVal);
+                } else {
+                    $sel.val('');
+                }
+                renderServiceItems();
+            });
+        }
+
+        $('#EditBookingLocationSelect').on('change', function () {
+            loadStylistsByLocation($(this).val(), null);
+        });
 
         function renderServiceRow(idx, item) {
             var serviceOptions = services.map(function (s) {

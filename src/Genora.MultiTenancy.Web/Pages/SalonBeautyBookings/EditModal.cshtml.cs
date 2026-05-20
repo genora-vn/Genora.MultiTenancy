@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Genora.MultiTenancy.AppDtos.SalonBeauties.SalonBeautyBookings;
+using Genora.MultiTenancy.AppDtos.SalonBeauties.SalonBeautyLocations;
 using Genora.MultiTenancy.Enums;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
@@ -19,12 +21,17 @@ public class EditModalModel : MultiTenancyPageModel
     public string? CurrentCustomerPhone { get; set; }
     public string? CurrentCustomerCode { get; set; }
     public List<SelectListItem> StatusItems { get; set; } = new();
+    public List<SelectListItem> LocationItems { get; set; } = new();
 
     private readonly ISalonBeautyBookingAppService _bookingService;
+    private readonly ISalonBeautyLocationAppService _locationAppService;
 
-    public EditModalModel(ISalonBeautyBookingAppService bookingService)
+    public EditModalModel(
+        ISalonBeautyBookingAppService bookingService,
+        ISalonBeautyLocationAppService locationAppService)
     {
         _bookingService = bookingService;
+        _locationAppService = locationAppService;
     }
 
     public async Task OnGetAsync(Guid id)
@@ -38,6 +45,7 @@ public class EditModalModel : MultiTenancyPageModel
 
         Booking = new UpdateSalonBeautyBookingDto
         {
+            LocationId = detail.LocationId,
             CustomerId = detail.CustomerId,
             StylistId = detail.StylistId,
             BookingDate = detail.BookingDate,
@@ -60,11 +68,13 @@ public class EditModalModel : MultiTenancyPageModel
             });
         }
 
+        await BuildLocationItemsAsync();
         BuildStatusItems();
     }
 
     public async Task<IActionResult> OnPostAsync(Guid id)
     {
+        await BuildLocationItemsAsync();
         BuildStatusItems();
 
         if (Booking.CustomerId == Guid.Empty)
@@ -76,6 +86,15 @@ public class EditModalModel : MultiTenancyPageModel
 
         await _bookingService.UpdateAsync(id, Booking);
         return NoContent();
+    }
+
+    private async Task BuildLocationItemsAsync()
+    {
+        var locations = await _locationAppService.GetLookupAsync();
+        LocationItems = locations
+            .Where(x => x.IsActive)
+            .Select(x => new SelectListItem(x.Name, x.Id.ToString(), Booking.LocationId == x.Id))
+            .ToList();
     }
 
     private void BuildStatusItems()

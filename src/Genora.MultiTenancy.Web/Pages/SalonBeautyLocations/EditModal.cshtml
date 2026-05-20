@@ -1,0 +1,165 @@
+@page
+@using Genora.MultiTenancy.Localization
+@using Microsoft.Extensions.Localization
+@using Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.TagHelpers.Modal
+@using Genora.MultiTenancy.Web.Pages.SalonBeautyLocations
+@model EditModalModel
+@inject IStringLocalizer<MultiTenancyResource> L
+@{
+    Layout = null;
+
+    string ToHHmm(TimeSpan ts) => $"{ts.Hours:D2}:{ts.Minutes:D2}";
+}
+
+<form asp-page="/SalonBeautyLocations/EditModal" id="EditSalonLocationForm" class="location-form" method="post" enctype="multipart/form-data" autocomplete="off" novalidate>
+    <input type="hidden" asp-for="Location.Id" />
+    <abp-modal size="Large">
+        <abp-modal-body class="p-0">
+            <div class="location-modal">
+                <div class="location-modal-header">
+                    <div class="location-modal-title-wrap">
+                        <h3>@L["SalonBeautyLocations:EditTitle"]</h3>
+                        <p>@L["SalonBeautyLocations:EditSubTitle"]</p>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="@L["Close"]"></button>
+                </div>
+
+                <div class="location-modal-body">
+                    <input type="hidden" class="location-is-upload-image" asp-for="Location.IsUploadImage" value="false" />
+                    <input asp-for="Location.ImageUrl" type="hidden" class="location-image-url-input" />
+
+                    <div class="location-image-card">
+                        <div class="location-image-card-header">
+                            <div>
+                                <strong>@L["SalonBeautyLocations:ImageUrl"]</strong>
+                                <span>@L["SalonBeautyLocations:ImageHelp"]</span>
+                            </div>
+                            <span class="location-image-limit">@L["SalonBeautyLocations:ImageLimit"]</span>
+                        </div>
+
+                        <div class="location-image-live-preview">
+                            <img class="location-image-preview-img" src="@(string.IsNullOrWhiteSpace(Model.Location.ImageUrl) ? "/images/getting-started/no-photo-square.png" : Model.Location.ImageUrl)" alt="Preview" />
+
+                            <div class="location-image-mode-row">
+                                <label class="location-image-mode active">
+                                    <input type="radio" name="ImageMode" value="url" checked />
+                                    <span>@L["SalonBeautyLocations:ImageModeUrl"]</span>
+                                </label>
+                                <label class="location-image-mode">
+                                    <input type="radio" name="ImageMode" value="upload" />
+                                    <span>@L["SalonBeautyLocations:ImageModeUpload"]</span>
+                                </label>
+                            </div>
+
+                            <div class="location-image-url-panel">
+                                <label class="location-form-label">@L["SalonBeautyLocations:ImageUrlLabel"]</label>
+                                <input type="url" class="form-control location-form-control location-image-url-text" placeholder="https://..." value="@Model.Location.ImageUrl" />
+                                <small class="text-muted d-block mt-1">@L["SalonBeautyLocations:ImageUrlHint"]</small>
+                            </div>
+
+                            <div class="location-image-upload-panel" style="display:none;">
+                                <div class="location-image-drop-zone" tabindex="0">
+                                    <div class="location-image-drop-content">
+                                        <strong>@L["SalonBeautyLocations:ImageUploadTitle"]</strong>
+                                        <span>@L["SalonBeautyLocations:ImageUploadDescription"]</span>
+                                        <small>@L["SalonBeautyLocations:ImageUploadSpec"]</small>
+                                    </div>
+                                    <input asp-for="Location.Images" type="file" class="location-image-file-input" accept="image/jpeg,image/png,image/webp" style="display:none;" />
+                                </div>
+                                <small class="text-muted d-block mt-2 location-image-file-hint">@L["SalonBeautyLocations:ImageNoFile"]</small>
+                            </div>
+                        </div>
+
+                        <span asp-validation-for="Location.ImageUrl" class="text-danger"></span>
+                        <span asp-validation-for="Location.Images" class="text-danger"></span>
+                    </div>
+
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="location-form-label" asp-for="Location.Name">@L["SalonBeautyLocations:Name"] <span class="text-danger">*</span></label>
+                            <input asp-for="Location.Name" class="form-control location-form-control location-required" required maxlength="255" placeholder="@L["SalonBeautyLocations:NamePlaceholder"]" />
+                            <span asp-validation-for="Location.Name" class="text-danger"></span>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="location-form-label" asp-for="Location.Phone">@L["SalonBeautyLocations:Phone"]</label>
+                            <input asp-for="Location.Phone" class="form-control location-form-control location-phone-input" inputmode="numeric" pattern="^0\d{9,10}$" maxlength="11" placeholder="@L["SalonBeautyLocations:PhonePlaceholder"]" />
+                            <span asp-validation-for="Location.Phone" class="text-danger"></span>
+                        </div>
+                        <div class="col-12">
+                            <label class="location-form-label" asp-for="Location.Address">@L["SalonBeautyLocations:Address"] <span class="text-danger">*</span></label>
+                            <input asp-for="Location.Address" class="form-control location-form-control location-required" required maxlength="500" placeholder="@L["SalonBeautyLocations:AddressPlaceholder"]" />
+                            <span asp-validation-for="Location.Address" class="text-danger"></span>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="location-form-label" for="Location_OpenTimeText">@L["SalonBeautyLocations:OpenTime"]</label>
+                            <input id="Location_OpenTimeText" type="time" class="form-control location-form-control location-open-time" value="@ToHHmm(Model.Location.OpenTime)" />
+                            <input asp-for="Location.OpenTime" type="hidden" class="location-open-time-value" value="@ToHHmm(Model.Location.OpenTime)" />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="location-form-label" for="Location_CloseTimeText">@L["SalonBeautyLocations:CloseTime"]</label>
+                            <input id="Location_CloseTimeText" type="time" class="form-control location-form-control location-close-time" value="@ToHHmm(Model.Location.CloseTime)" />
+                            <input asp-for="Location.CloseTime" type="hidden" class="location-close-time-value" value="@ToHHmm(Model.Location.CloseTime)" />
+                        </div>
+                        <div class="col-md-4">
+                            <label class="location-form-label" asp-for="Location.SortOrder">@L["SalonBeautyLocations:SortOrder"]</label>
+                            <input asp-for="Location.SortOrder" type="number" min="0" class="form-control location-form-control" placeholder="0" />
+                            <span asp-validation-for="Location.SortOrder" class="text-danger"></span>
+                        </div>
+                        <div class="col-12">
+                            <label class="location-form-label" asp-for="Location.Note">@L["SalonBeautyLocations:Note"]</label>
+                            <textarea asp-for="Location.Note" rows="3" maxlength="500" class="form-control location-form-textarea" placeholder="@L["SalonBeautyLocations:NotePlaceholder"]"></textarea>
+                            <span asp-validation-for="Location.Note" class="text-danger"></span>
+                        </div>
+                        <div class="col-12">
+                            <div class="location-status-box">
+                                <div class="location-status-icon"><i class="fa fa-shield"></i></div>
+                                <div class="flex-grow-1">
+                                    <strong>@L["SalonBeautyLocations:StatusBoxTitle"]</strong>
+                                    <span>@L["SalonBeautyLocations:StatusBoxDescription"]</span>
+                                </div>
+                                <input asp-for="Location.IsActive" type="hidden" class="location-status-value" value="@(Model.Location.IsActive ? "true" : "false")" />
+                                <div class="location-switch-wrap">
+                                    <label class="location-switch">
+                                        <input type="checkbox" class="location-status-toggle" @(Model.Location.IsActive ? "checked" : "") />
+                                        <span class="location-switch-slider"></span>
+                                    </label>
+                                    <strong class="location-status-toggle-text"
+                                            data-active="@L["SalonBeautyLocations:StatusActive"]"
+                                            data-inactive="@L["SalonBeautyLocations:StatusInactive"]">
+                                        @(Model.Location.IsActive ? L["SalonBeautyLocations:StatusActive"] : L["SalonBeautyLocations:StatusInactive"])
+                                    </strong>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <div class="location-status-box">
+                                <div class="location-status-icon"><i class="fa fa-mobile"></i></div>
+                                <div class="flex-grow-1">
+                                    <strong>@L["SalonBeautyLocations:ShowOnAppBoxTitle"]</strong>
+                                    <span>@L["SalonBeautyLocations:ShowOnAppBoxDescription"]</span>
+                                </div>
+                                <input asp-for="Location.IsShowOnApp" type="hidden" class="location-showonapp-value" value="@(Model.Location.IsShowOnApp ? "true" : "false")" />
+                                <div class="location-switch-wrap">
+                                    <label class="location-switch">
+                                        <input type="checkbox" class="location-showonapp-toggle" @(Model.Location.IsShowOnApp ? "checked" : "") />
+                                        <span class="location-switch-slider"></span>
+                                    </label>
+                                    <strong class="location-showonapp-toggle-text"
+                                            data-active="@L["Yes"]"
+                                            data-inactive="@L["No"]">
+                                        @(Model.Location.IsShowOnApp ? L["Yes"] : L["No"])
+                                    </strong>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="location-modal-footer">
+                    <button type="button" class="btn location-btn-secondary" data-bs-dismiss="modal">@L["Cancel"]</button>
+                    <button type="button" class="btn location-btn-primary location-submit-button" disabled><i class="fa fa-save"></i> @L["Save"]</button>
+                </div>
+            </div>
+        </abp-modal-body>
+    </abp-modal>
+</form>

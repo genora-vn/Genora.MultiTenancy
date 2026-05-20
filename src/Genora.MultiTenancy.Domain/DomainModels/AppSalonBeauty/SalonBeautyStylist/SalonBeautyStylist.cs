@@ -12,6 +12,8 @@ public class SalonBeautyStylist : FullAuditedAggregateRoot<Guid>, IMultiTenant
 {
     public Guid? TenantId { get; set; }
 
+    public Guid? LocationId { get; set; }
+
     [Required]
     [StringLength(255)]
     public string DisplayName { get; set; } = null!;
@@ -43,5 +45,6 @@ public class SalonBeautyStylist : FullAuditedAggregateRoot<Guid>, IMultiTenant
 
     public int SortOrder { get; set; }
 
+    public virtual SalonBeautyLocation? Location { get; set; }
     public virtual ICollection<SalonBeautyBooking> Bookings { get; set; } = new List<SalonBeautyBooking>();
 }

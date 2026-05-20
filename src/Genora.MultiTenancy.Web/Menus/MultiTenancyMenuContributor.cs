@@ -168,7 +168,9 @@ public class MultiTenancyMenuContributor : IMenuContributor
                     await perms.IsGrantedAsync(MultiTenancyPermissions.SalonBeautyServiceCategories.Default) ||
                     await perms.IsGrantedAsync(MultiTenancyPermissions.SalonBeautyServices.Default) ||
                     await perms.IsGrantedAsync(MultiTenancyPermissions.SalonBeautyStylists.Default) ||
-                    await perms.IsGrantedAsync(MultiTenancyPermissions.SalonBeautyBookings.Default)
+                    await perms.IsGrantedAsync(MultiTenancyPermissions.SalonBeautyBookings.Default) ||
+                    await perms.IsGrantedAsync(MultiTenancyPermissions.SalonBeautyLocations.Default) ||
+                    await perms.IsGrantedAsync(MultiTenancyPermissions.SalonBeautyTimeSlots.Default)
                 );
 
             // ===== Home Page Config (Theme + Widgets) =====
@@ -542,6 +544,32 @@ public class MultiTenancyMenuContributor : IMenuContributor
                 );
             }
 
+            if (canSeeSalonBeauty && await perms.IsGrantedAsync(MultiTenancyPermissions.SalonBeautyLocations.Default))
+            {
+                groupGolfAndTeeTimes.AddItem(
+                    new ApplicationMenuItem(
+                        name: "SalonBeautyLocations",
+                        displayName: l["Menu:SalonBeautyLocations"],
+                        url: "/SalonBeautyLocations",
+                        icon: "fa fa-store",
+                        order: 1
+                    ).RequirePermissions(MultiTenancyPermissions.SalonBeautyLocations.Default)
+                );
+            }
+
+            if (canSeeSalonBeauty && await perms.IsGrantedAsync(MultiTenancyPermissions.SalonBeautyTimeSlots.Default))
+            {
+                groupGolfAndTeeTimes.AddItem(
+                    new ApplicationMenuItem(
+                        name: "SalonBeautyTimeSlots",
+                        displayName: l["Menu:SalonBeautyTimeSlots"],
+                        url: "/SalonBeautyTimeSlots",
+                        icon: "fa fa-clock-o",
+                        order: 6
+                    ).RequirePermissions(MultiTenancyPermissions.SalonBeautyTimeSlots.Default)
+                );
+            }
+
             if (canSeePromotionPolicy)
             {
                 groupGolfAndTeeTimes.AddItem(
@@ -907,7 +935,9 @@ public class MultiTenancyMenuContributor : IMenuContributor
                 await perms.IsGrantedAsync(MultiTenancyPermissions.HostSalonBeautyServiceCategories.Default) ||
                 await perms.IsGrantedAsync(MultiTenancyPermissions.HostSalonBeautyServices.Default) ||
                 await perms.IsGrantedAsync(MultiTenancyPermissions.HostSalonBeautyStylists.Default) ||
-                await perms.IsGrantedAsync(MultiTenancyPermissions.HostSalonBeautyBookings.Default);
+                await perms.IsGrantedAsync(MultiTenancyPermissions.HostSalonBeautyBookings.Default) ||
+                await perms.IsGrantedAsync(MultiTenancyPermissions.HostSalonBeautyLocations.Default) ||
+                await perms.IsGrantedAsync(MultiTenancyPermissions.HostSalonBeautyTimeSlots.Default);
 
             var hostCanSeeFnb =
                 await perms.IsGrantedAsync(MultiTenancyPermissions.HostAppFnbCategories.Default) ||
@@ -1266,6 +1296,32 @@ public class MultiTenancyMenuContributor : IMenuContributor
                         icon: "fa fa-flag",
                         order: 1
                     ).RequirePermissions(MultiTenancyPermissions.HostAppGolfCourses.Default)
+                );
+            }
+
+            if (hostCanSeeSalonBeauty && await perms.IsGrantedAsync(MultiTenancyPermissions.HostSalonBeautyLocations.Default))
+            {
+                groupGolfAndTeeTimes.AddItem(
+                    new ApplicationMenuItem(
+                        name: "SalonBeautyLocationsHost",
+                        displayName: l["Menu:SalonBeautyLocations"],
+                        url: "/SalonBeautyLocations",
+                        icon: "fa fa-store",
+                        order: 1
+                    ).RequirePermissions(MultiTenancyPermissions.HostSalonBeautyLocations.Default)
+                );
+            }
+
+            if (hostCanSeeSalonBeauty && await perms.IsGrantedAsync(MultiTenancyPermissions.HostSalonBeautyTimeSlots.Default))
+            {
+                groupGolfAndTeeTimes.AddItem(
+                    new ApplicationMenuItem(
+                        name: "SalonBeautyTimeSlotsHost",
+                        displayName: l["Menu:SalonBeautyTimeSlots"],
+                        url: "/SalonBeautyTimeSlots",
+                        icon: "fa fa-clock-o",
+                        order: 6
+                    ).RequirePermissions(MultiTenancyPermissions.HostSalonBeautyTimeSlots.Default)
                 );
             }
 

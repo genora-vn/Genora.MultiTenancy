@@ -440,6 +440,7 @@
             <section class="sb-card sb-side-card">
                 <h3>Thông tin đặt lịch</h3>
                 <div class="sb-info-list is-booking">
+                    <div><span>Cơ sở</span><strong><i class="fa fa-building-o"></i> @(string.IsNullOrWhiteSpace(Model.Booking.LocationName) ? "--" : Model.Booking.LocationName)</strong></div>
                     <div><span>Ngày giờ sử dụng</span><strong><i class="fa fa-calendar-o"></i> @Model.Booking.BookingDate.ToString("dd/MM/yyyy")<br />@Model.Booking.StartTime.ToString(@"hh\:mm")</strong></div>
                 </div>
                 <div class="sb-side-divider"></div>

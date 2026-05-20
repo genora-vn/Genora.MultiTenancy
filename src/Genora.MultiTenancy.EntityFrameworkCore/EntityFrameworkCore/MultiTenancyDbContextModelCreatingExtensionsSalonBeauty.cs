@@ -82,8 +82,16 @@ public static class MultiTenancyDbContextModelCreatingExtensionsSalonBeauty
             b.Property(x => x.Note).HasMaxLength(500);
             b.Property(x => x.Status).HasDefaultValue((byte)1);
 
+            b.HasOne(x => x.Location)
+                .WithMany()
+                .HasForeignKey(x => x.LocationId)
+                .OnDelete(DeleteBehavior.Restrict);
+
             b.HasIndex(x => new { x.TenantId, x.DisplayName })
                 .HasDatabaseName("IX_AppSalonBeautyStylists_TenantId_DisplayName");
+
+            b.HasIndex(x => new { x.TenantId, x.LocationId })
+                .HasDatabaseName("IX_AppSalonBeautyStylists_TenantId_LocationId");
         });
 
         builder.Entity<SalonBeautyBooking>(b =>
@@ -114,6 +122,11 @@ public static class MultiTenancyDbContextModelCreatingExtensionsSalonBeauty
                 .HasForeignKey(x => x.StylistId)
                 .IsRequired();
 
+            b.HasOne(x => x.Location)
+                .WithMany()
+                .HasForeignKey(x => x.LocationId)
+                .OnDelete(DeleteBehavior.Restrict);
+
             b.HasIndex(x => new { x.TenantId, x.BookingCode })
                 .IsUnique()
                 .HasDatabaseName("IX_AppSalonBeautyBookings_TenantId_Code");
@@ -123,6 +136,9 @@ public static class MultiTenancyDbContextModelCreatingExtensionsSalonBeauty
 
             b.HasIndex(x => new { x.TenantId, x.BookingDate })
                 .HasDatabaseName("IX_AppSalonBeautyBookings_TenantId_BookingDate");
+
+            b.HasIndex(x => new { x.TenantId, x.LocationId })
+                .HasDatabaseName("IX_AppSalonBeautyBookings_TenantId_LocationId");
         });
 
         builder.Entity<SalonBeautyBookingService>(b =>
@@ -177,6 +193,52 @@ public static class MultiTenancyDbContextModelCreatingExtensionsSalonBeauty
 
             b.HasIndex(x => new { x.TenantId, x.CustomerId })
                 .HasDatabaseName("IX_AppSalonBeautyCustomerLoyaltyTransactions_TenantId_CustomerId");
+        });
+
+        builder.Entity<SalonBeautyLocation>(b =>
+        {
+            b.ToTable(MultiTenancyConsts.DbTablePrefix + "SalonBeautyLocations", schema);
+            b.ConfigureByConvention();
+
+            b.Property(x => x.Name).IsRequired().HasMaxLength(255);
+            b.Property(x => x.Address).IsRequired().HasMaxLength(500);
+            b.Property(x => x.Phone).HasMaxLength(15);
+            b.Property(x => x.ImageUrl).HasMaxLength(500);
+            b.Property(x => x.Note).HasMaxLength(500);
+            b.Property(x => x.IsActive).HasDefaultValue(true);
+
+            b.HasIndex(x => new { x.TenantId, x.Name })
+                .HasDatabaseName("IX_AppSalonBeautyLocations_TenantId_Name");
+        });
+
+        builder.Entity<SalonBeautyTimeSlot>(b =>
+        {
+            b.ToTable(MultiTenancyConsts.DbTablePrefix + "SalonBeautyTimeSlots", schema);
+            b.ConfigureByConvention();
+
+            b.Property(x => x.Status)
+                .HasDefaultValue(SalonBeautyTimeSlotStatus.On)
+                .HasConversion<byte>();
+            b.Property(x => x.IsShowOnApp).HasDefaultValue(true);
+            b.Property(x => x.Note).HasMaxLength(500);
+
+            b.HasOne(x => x.Location)
+                .WithMany(x => x.TimeSlots)
+                .HasForeignKey(x => x.LocationId)
+                .OnDelete(DeleteBehavior.Restrict)
+                .IsRequired();
+
+            b.HasOne(x => x.Stylist)
+                .WithMany()
+                .HasForeignKey(x => x.StylistId)
+                .OnDelete(DeleteBehavior.Restrict)
+                .IsRequired();
+
+            b.HasIndex(x => new { x.TenantId, x.StylistId, x.WorkDate })
+                .HasDatabaseName("IX_AppSalonBeautyTimeSlots_TenantId_StylistId_WorkDate");
+
+            b.HasIndex(x => new { x.TenantId, x.LocationId, x.WorkDate })
+                .HasDatabaseName("IX_AppSalonBeautyTimeSlots_TenantId_LocationId_WorkDate");
         });
     }
 }

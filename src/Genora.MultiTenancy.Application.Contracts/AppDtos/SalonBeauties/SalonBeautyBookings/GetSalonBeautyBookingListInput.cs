@@ -5,6 +5,7 @@ namespace Genora.MultiTenancy.AppDtos.SalonBeauties.SalonBeautyBookings;
 public class GetSalonBeautyBookingListInput : PagedAndSortedResultRequestDto
 {
     public string? FilterText { get; set; }
+    public Guid? LocationId { get; set; }
     public Guid? CustomerId { get; set; }
     public Guid? StylistId { get; set; }
     public byte? Status { get; set; }

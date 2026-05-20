@@ -4,6 +4,7 @@
     var calendarEl = document.getElementById('SalonCalendar');
     var selectedStylists = [];
     var selectedServiceId = '';
+    var selectedLocationId = '';
 
     if (!calendarEl) {
         return;
@@ -26,17 +27,23 @@
         return year + '-' + month + '-' + day;
     }
 
+    function loadStylistList(calendar) {
+        return bookingService.getStylistLookup(selectedLocationId || null).then(function (data) {
+            var $list = $('#StylistCheckboxList');
+            $list.empty();
+            selectedStylists = [];
+            (data || []).forEach(function (s) {
+                $list.append('<li><label><input type="checkbox" class="stylist-filter-cb" value="' + s.id + '" checked /> <span>' + s.displayName + '</span></label></li>');
+                selectedStylists.push(s.id);
+            });
+            $('#SelectAllStylists').prop('checked', true);
+            if (calendar) calendar.refetchEvents();
+        });
+    }
+
     function loadFilters(calendar) {
         return $.when(
-            bookingService.getStylistLookup().then(function (data) {
-                var $list = $('#StylistCheckboxList');
-                $list.empty();
-                selectedStylists = [];
-                (data || []).forEach(function (s) {
-                    $list.append('<li><label><input type="checkbox" class="stylist-filter-cb" value="' + s.id + '" checked /> <span>' + s.displayName + '</span></label></li>');
-                    selectedStylists.push(s.id);
-                });
-            }),
+            loadStylistList(null),
             bookingService.getServiceLookup().then(function (data) {
                 var $sel = $('#ServiceFilterSelect');
                 $sel.find('option:not(:first)').remove();
@@ -73,7 +80,7 @@
         events: function (fetchInfo, successCallback, failureCallback) {
             var from = toIsoDateOnly(fetchInfo.start);
             var to = toIsoDateOnly(fetchInfo.end);
-            bookingService.getCalendarEvents(from, to, null, selectedServiceId || null)
+            bookingService.getCalendarEvents(from, to, null, selectedServiceId || null, selectedLocationId || null)
                 .then(function (data) {
                     var filtered = data || [];
                     if (selectedStylists.length > 0) {
@@ -126,6 +133,11 @@
     $('#ServiceFilterSelect').on('change', function () {
         selectedServiceId = $(this).val();
         calendar.refetchEvents();
+    });
+
+    $('#LocationFilterSelect').on('change', function () {
+        selectedLocationId = $(this).val();
+        loadStylistList(calendar);
     });
 
     $('#SelectAllStylists').on('change', function () {

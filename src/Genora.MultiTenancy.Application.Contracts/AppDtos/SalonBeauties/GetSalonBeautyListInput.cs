@@ -20,6 +20,7 @@ public class GetSalonBeautyListInput : PagedAndSortedResultRequestDto
     public byte? Role { get; set; }
     public byte? Level { get; set; }
     public bool? IsShowOnApp { get; set; }
+    public Guid? LocationId { get; set; }
 
     // Service filters
     public Guid? CategoryId { get; set; }

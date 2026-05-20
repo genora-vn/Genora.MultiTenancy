@@ -1,0 +1,88 @@
+@page
+@using Genora.MultiTenancy.Localization
+@using Genora.MultiTenancy.Permissions
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.Extensions.Localization
+@using Genora.MultiTenancy.Web.Pages.SalonBeautyTimeSlots
+@inject IStringLocalizer<MultiTenancyResource> L
+@inject IAuthorizationService AuthorizationService
+@inject Volo.Abp.MultiTenancy.ICurrentTenant CurrentTenant
+@model IndexModel
+
+@section styles {
+    <abp-style src="/pages/salon/timeslot-shared.css" />
+}
+
+@section scripts {
+    <abp-script src="/Pages/SalonBeautyTimeSlots/index.js" />
+}
+
+@{
+    var canCreate = CurrentTenant.IsAvailable
+        ? await AuthorizationService.IsGrantedAsync(MultiTenancyPermissions.SalonBeautyTimeSlots.Create)
+        : await AuthorizationService.IsGrantedAsync(MultiTenancyPermissions.HostSalonBeautyTimeSlots.Create);
+
+    var canEdit = CurrentTenant.IsAvailable
+        ? await AuthorizationService.IsGrantedAsync(MultiTenancyPermissions.SalonBeautyTimeSlots.Edit)
+        : await AuthorizationService.IsGrantedAsync(MultiTenancyPermissions.HostSalonBeautyTimeSlots.Edit);
+
+    var canDelete = CurrentTenant.IsAvailable
+        ? await AuthorizationService.IsGrantedAsync(MultiTenancyPermissions.SalonBeautyTimeSlots.Delete)
+        : await AuthorizationService.IsGrantedAsync(MultiTenancyPermissions.HostSalonBeautyTimeSlots.Delete);
+}
+
+<div class="timeslot-page">
+    <div class="timeslot-header-row">
+        <div class="timeslot-page-header">
+            <h1>@L["SalonBeautyTimeSlots:PageTitle"]</h1>
+            <p>@L["SalonBeautyTimeSlots:PageSubTitle"]</p>
+        </div>
+        <div class="timeslot-header-actions">
+            <a href="/SalonBeautyTimeSlots/Calendar" class="btn btn-outline-secondary">
+                <i class="fa fa-calendar"></i> @L["SalonBeautyTimeSlots:OpenCalendar"]
+            </a>
+            @if (canCreate)
+            {
+                <button type="button" id="NewTimeSlotButton" class="btn btn-outline-primary">
+                    <i class="fa fa-plus"></i> @L["SalonBeautyTimeSlots:AddTimeSlot"]
+                </button>
+            }
+        </div>
+    </div>
+
+    <div class="timeslot-filter-card">
+        <div class="row g-3 align-items-end">
+            <div class="col-lg-3 col-md-6">
+                <label class="timeslot-filter-label" for="TimeSlotKeywordFilter">@L["Search"]</label>
+                <input id="TimeSlotKeywordFilter" class="form-control timeslot-form-control" placeholder="@L["SalonBeautyTimeSlots:KeywordPlaceholder"]" />
+            </div>
+            <div class="col-lg-3 col-md-6">
+                <label class="timeslot-filter-label" for="TimeSlotLocationFilter">@L["SalonBeautyTimeSlots:Location"]</label>
+                <select id="TimeSlotLocationFilter" class="form-select timeslot-form-select">
+                    <option value="">@L["SalonBeautyTimeSlots:AllLocations"]</option>
+                </select>
+            </div>
+            <div class="col-lg-2 col-md-6">
+                <label class="timeslot-filter-label" for="TimeSlotFromDateFilter">@L["SalonBeautyTimeSlots:FromDate"]</label>
+                <input id="TimeSlotFromDateFilter" type="date" class="form-control timeslot-form-control" />
+            </div>
+            <div class="col-lg-2 col-md-6">
+                <label class="timeslot-filter-label" for="TimeSlotToDateFilter">@L["SalonBeautyTimeSlots:ToDate"]</label>
+                <input id="TimeSlotToDateFilter" type="date" class="form-control timeslot-form-control" />
+            </div>
+            <div class="col-lg-2 col-md-6 d-grid">
+                <abp-button id="SearchTimeSlotButton"
+                            text="@L["Search"]"
+                            button-type="Outline_Primary"
+                            style="height: 45px"
+                            icon="search" />
+            </div>
+        </div>
+    </div>
+
+    <div class="timeslot-table-card">
+        <input type="hidden" id="CanEditTimeSlot" value="@(canEdit ? "true" : "false")" />
+        <input type="hidden" id="CanDeleteTimeSlot" value="@(canDelete ? "true" : "false")" />
+        <table id="TimeSlotsTable" class="table w-100"></table>
+    </div>
+</div>

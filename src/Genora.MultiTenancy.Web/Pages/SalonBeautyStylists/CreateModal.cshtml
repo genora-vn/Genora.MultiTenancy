@@ -80,6 +80,13 @@
 
                     <div class="row g-3">
                         <div class="col-md-6">
+                            <label class="stylist-form-label" asp-for="Stylist.LocationId">@L["SalonBeautyLocation:PageTitle"] <span class="text-danger">*</span></label>
+                            <select asp-for="Stylist.LocationId" asp-items="Model.LocationItems" class="form-select stylist-form-select stylist-required" required>
+                                <option value="">@L["SalonBeautyStylists:LocationPlaceholder"]</option>
+                            </select>
+                            <span asp-validation-for="Stylist.LocationId" class="text-danger"></span>
+                        </div>
+                        <div class="col-md-6">
                             <label class="stylist-form-label" asp-for="Stylist.DisplayName">@L["SalonBeautyStylist:DisplayName"] <span class="text-danger">*</span></label>
                             <input asp-for="Stylist.DisplayName" class="form-control stylist-form-control stylist-required" required maxlength="255" placeholder="@L["SalonBeautyStylists:DisplayNamePlaceholder"]" />
                             <span asp-validation-for="Stylist.DisplayName" class="text-danger"></span>

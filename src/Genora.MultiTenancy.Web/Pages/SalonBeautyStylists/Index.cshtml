@@ -53,6 +53,16 @@
                 <input id="SalonStylistKeywordFilter" class="form-control stylist-form-control" placeholder="@L["SalonBeautyStylists:KeywordPlaceholder"]" />
             </div>
             <div class="col-lg-2 col-md-6">
+                <label class="stylist-filter-label" for="SalonStylistLocationFilter">@L["SalonBeautyLocation:PageTitle"]</label>
+                <select id="SalonStylistLocationFilter" class="form-select stylist-form-select">
+                    <option value="">@L["SalonBeautyStylists:AllLocations"]</option>
+                    @foreach (var loc in Model.LocationItems)
+                    {
+                        <option value="@loc.Value">@loc.Text</option>
+                    }
+                </select>
+            </div>
+            <div class="col-lg-2 col-md-6">
                 <label class="stylist-filter-label" for="SalonStylistLevelFilter">@L["SalonBeautyStylist:Level"]</label>
                 <select id="SalonStylistLevelFilter" class="form-select stylist-form-select">
                     <option value="">@L["SalonBeautyStylists:AllLevels"]</option>
@@ -88,7 +98,7 @@
                     <option value="false">@L["No"]</option>
                 </select>
             </div>
-            
+
             <div class="col-lg-1 col-md-6 d-grid">
                 <abp-button id="SearchSalonStylistButton"
                             text="@L["Search"]"

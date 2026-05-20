@@ -5,6 +5,8 @@ namespace Genora.MultiTenancy.AppDtos.SalonBeauties.SalonBeautyStylists;
 
 public class SalonBeautyStylistDto : EntityDto<Guid>
 {
+    public Guid? LocationId { get; set; }
+    public string? LocationName { get; set; }
     public string DisplayName { get; set; } = null!;
     public string? Avatar { get; set; }
     public string? Phone { get; set; }

@@ -41,18 +41,24 @@
 
                     <!-- Booking Info Row -->
                     <div class="row g-3 mb-3">
-                        <div class="col-md-4">
+                        <div class="col-md-3">
+                            <label class="booking-form-label">@L["SalonBeautyLocation:PageTitle"] <span class="text-danger">*</span></label>
+                            <select asp-for="Booking.LocationId" asp-items="Model.LocationItems" id="BookingLocationSelect" class="form-select">
+                                <option value="">-- Chọn cơ sở --</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
                             <label class="booking-form-label">Stylist chính</label>
                             <select asp-for="Booking.StylistId" id="BookingStylistSelect" class="form-select">
                                 <option value="">-- Chọn Stylist --</option>
                             </select>
                         </div>
-                        <div class="col-md-4">
+                        <div class="col-md-3">
                             <label class="booking-form-label">Ngày hẹn <span class="text-danger">*</span></label>
                             <input type="text" id="BookingDatePicker" class="form-control" placeholder="dd/mm/yyyy" />
                             <input type="hidden" asp-for="Booking.BookingDate" id="BookingDateHidden" />
                         </div>
-                        <div class="col-md-4">
+                        <div class="col-md-3">
                             <label class="booking-form-label">Khung giờ sử dụng dịch vụ</label>
                             <input type="time" asp-for="Booking.StartTime" id="BookingStartTime" class="form-control" value="09:00" />
                         </div>
@@ -125,14 +131,31 @@
                 services = data || [];
                 renderServiceItems();
             });
-            bookingService.getStylistLookup().then(function (data) {
-                stylists = data;
+            loadStylistsByLocation($('#BookingLocationSelect').val());
+        }
+
+        function loadStylistsByLocation(locationId) {
+            bookingService.getStylistLookup(locationId || null).then(function (data) {
+                stylists = data || [];
                 var $sel = $('#BookingStylistSelect');
-                $.each(data, function (i, s) {
+                var prevVal = $sel.val();
+                $sel.find('option:not(:first)').remove();
+                $.each(stylists, function (i, s) {
                     $sel.append('<option value="' + s.id + '">' + s.displayName + (s.roleText ? ' (' + s.roleText + ')' : '') + '</option>');
                 });
+                if (prevVal && $sel.find('option[value="' + prevVal + '"]').length) {
+                    $sel.val(prevVal);
+                } else {
+                    $sel.val('');
+                }
+                // Re-render service rows so per-row stylist options are refreshed
+                renderServiceItems();
             });
         }
+
+        $('#BookingLocationSelect').on('change', function () {
+            loadStylistsByLocation($(this).val());
+        });
 
         function renderServiceRow(idx, item) {
             var serviceOptions = services.map(function (s) {

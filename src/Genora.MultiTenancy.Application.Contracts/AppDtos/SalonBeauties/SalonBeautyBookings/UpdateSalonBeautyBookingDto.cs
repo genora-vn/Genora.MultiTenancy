@@ -5,6 +5,7 @@ using System.Collections.Generic;
 namespace Genora.MultiTenancy.AppDtos.SalonBeauties.SalonBeautyBookings;
 public class UpdateSalonBeautyBookingDto
 {
+    public Guid? LocationId { get; set; }
     public Guid CustomerId { get; set; }
     public Guid StylistId { get; set; }
     public DateTime BookingDate { get; set; }

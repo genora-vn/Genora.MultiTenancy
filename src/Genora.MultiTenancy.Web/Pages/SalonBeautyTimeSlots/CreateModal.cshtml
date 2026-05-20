@@ -1,0 +1,142 @@
+@page
+@using Genora.MultiTenancy.Localization
+@using Microsoft.Extensions.Localization
+@using Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.TagHelpers.Modal
+@using Genora.MultiTenancy.Web.Pages.SalonBeautyTimeSlots
+@model CreateModalModel
+@inject IStringLocalizer<MultiTenancyResource> L
+@{
+    Layout = null;
+
+    string ToHHmm(TimeSpan ts) => $"{ts.Hours:D2}:{ts.Minutes:D2}";
+    var today = DateTime.Today;
+}
+
+<form asp-page="/SalonBeautyTimeSlots/CreateModal" id="CreateTimeSlotForm" class="timeslot-form" method="post" autocomplete="off" novalidate>
+    <abp-modal size="Large">
+        <abp-modal-body class="p-0">
+            <div class="timeslot-modal">
+                <div class="timeslot-modal-header">
+                    <div class="timeslot-modal-title-wrap">
+                        <h3>@L["SalonBeautyTimeSlots:CreateTitle"]</h3>
+                        <p>@L["SalonBeautyTimeSlots:CreateSubTitle"]</p>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="@L["Close"]"></button>
+                </div>
+
+                <div class="timeslot-modal-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="timeslot-form-label">@L["SalonBeautyTimeSlots:Location"] <span class="text-danger">*</span></label>
+                            <select name="Input.LocationId" class="form-select timeslot-form-select timeslot-location-select" required>
+                                <option value="">@L["SalonBeautyTimeSlots:LocationPlaceholder"]</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="timeslot-form-label">@L["SalonBeautyTimeSlots:Stylist"] <span class="text-danger">*</span></label>
+                            <select name="Input.StylistId" class="form-select timeslot-form-select timeslot-stylist-select" required>
+                                <option value="">@L["SalonBeautyTimeSlots:StylistPlaceholder"]</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="timeslot-form-label">@L["SalonBeautyTimeSlots:FromDate"] <span class="text-danger">*</span></label>
+                            <input name="Input.FromDate" type="date" class="form-control timeslot-form-control timeslot-from-date" required value="@today.ToString("yyyy-MM-dd")" />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="timeslot-form-label">@L["SalonBeautyTimeSlots:ToDate"] <span class="text-danger">*</span></label>
+                            <input name="Input.ToDate" type="date" class="form-control timeslot-form-control timeslot-to-date" required value="@today.AddDays(6).ToString("yyyy-MM-dd")" />
+                        </div>
+
+                        <div class="col-12">
+                            <label class="timeslot-form-label">@L["SalonBeautyTimeSlots:WeekdayMask"]</label>
+                            <div class="timeslot-weekday-row">
+                                <span class="timeslot-weekday-chip active" data-day="1">@L["Day:Mon"]</span>
+                                <span class="timeslot-weekday-chip active" data-day="2">@L["Day:Tue"]</span>
+                                <span class="timeslot-weekday-chip active" data-day="3">@L["Day:Wed"]</span>
+                                <span class="timeslot-weekday-chip active" data-day="4">@L["Day:Thu"]</span>
+                                <span class="timeslot-weekday-chip active" data-day="5">@L["Day:Fri"]</span>
+                                <span class="timeslot-weekday-chip active" data-day="6">@L["Day:Sat"]</span>
+                                <span class="timeslot-weekday-chip active" data-day="0">@L["Day:Sun"]</span>
+                            </div>
+                            <input type="hidden" name="Input.WeekdayMask" class="timeslot-weekday-mask" value="127" />
+                            <small class="text-muted d-block mt-1">@L["SalonBeautyTimeSlots:WeekdayHint"]</small>
+                        </div>
+
+                        <div class="col-12">
+                            <label class="timeslot-form-label">@L["SalonBeautyTimeSlots:TimeRanges"] <span class="text-danger">*</span></label>
+                            <div class="timeslot-ranges-list" data-ranges-list>
+                                <div class="timeslot-range-row" data-range-row>
+                                    <input type="time" class="form-control timeslot-form-control timeslot-range-start" value="08:00" />
+                                    <input type="time" class="form-control timeslot-form-control timeslot-range-end" value="12:00" />
+                                    <button type="button" class="timeslot-remove-range-btn"><i class="fa fa-trash"></i></button>
+                                </div>
+                                <div class="timeslot-range-row" data-range-row>
+                                    <input type="time" class="form-control timeslot-form-control timeslot-range-start" value="13:00" />
+                                    <input type="time" class="form-control timeslot-form-control timeslot-range-end" value="19:00" />
+                                    <button type="button" class="timeslot-remove-range-btn"><i class="fa fa-trash"></i></button>
+                                </div>
+                            </div>
+                            <button type="button" class="timeslot-add-range-btn" data-add-range>
+                                <i class="fa fa-plus"></i> @L["SalonBeautyTimeSlots:AddRange"]
+                            </button>
+                        </div>
+
+                        <div class="col-12">
+                            <label class="timeslot-form-label">@L["SalonBeautyTimeSlots:Note"]</label>
+                            <textarea name="Input.Note" rows="2" maxlength="500" class="form-control timeslot-form-control" placeholder="@L["SalonBeautyTimeSlots:NotePlaceholder"]"></textarea>
+                        </div>
+
+                        <div class="col-12">
+                            <div class="timeslot-status-box">
+                                <div class="timeslot-status-icon"><i class="fa fa-shield"></i></div>
+                                <div class="flex-grow-1">
+                                    <strong>@L["SalonBeautyTimeSlots:StatusBoxTitle"]</strong>
+                                    <span>@L["SalonBeautyTimeSlots:StatusBoxDescription"]</span>
+                                </div>
+                                <input type="hidden" name="Input.Status" class="timeslot-status-value" value="1" />
+                                <div class="timeslot-switch-wrap">
+                                    <label class="timeslot-switch">
+                                        <input type="checkbox" class="timeslot-status-toggle" checked />
+                                        <span class="timeslot-switch-slider"></span>
+                                    </label>
+                                    <strong class="timeslot-status-toggle-text"
+                                            data-active="@L["Enum:SalonBeautyTimeSlotStatus.On"]"
+                                            data-inactive="@L["Enum:SalonBeautyTimeSlotStatus.Off"]">
+                                        @L["Enum:SalonBeautyTimeSlotStatus.On"]
+                                    </strong>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-12">
+                            <div class="timeslot-status-box">
+                                <div class="timeslot-status-icon"><i class="fa fa-mobile"></i></div>
+                                <div class="flex-grow-1">
+                                    <strong>@L["SalonBeautyTimeSlots:ShowOnAppBoxTitle"]</strong>
+                                    <span>@L["SalonBeautyTimeSlots:ShowOnAppBoxDescription"]</span>
+                                </div>
+                                <input type="hidden" name="Input.IsShowOnApp" class="timeslot-showonapp-value" value="true" />
+                                <div class="timeslot-switch-wrap">
+                                    <label class="timeslot-switch">
+                                        <input type="checkbox" class="timeslot-showonapp-toggle" checked />
+                                        <span class="timeslot-switch-slider"></span>
+                                    </label>
+                                    <strong class="timeslot-showonapp-toggle-text"
+                                            data-active="@L["Yes"]"
+                                            data-inactive="@L["No"]">
+                                        @L["Yes"]
+                                    </strong>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="timeslot-modal-footer">
+                    <button type="button" class="btn timeslot-btn-secondary" data-bs-dismiss="modal">@L["Cancel"]</button>
+                    <button type="button" class="btn timeslot-btn-primary timeslot-submit-button"><i class="fa fa-save"></i> @L["Save"]</button>
+                </div>
+            </div>
+        </abp-modal-body>
+    </abp-modal>
+</form>

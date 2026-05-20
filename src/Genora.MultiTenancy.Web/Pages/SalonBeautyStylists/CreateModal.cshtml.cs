@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Genora.MultiTenancy.AppDtos.SalonBeauties.SalonBeautyLocations;
 using Genora.MultiTenancy.AppDtos.SalonBeauties.SalonBeautyStylists;
 using Genora.MultiTenancy.Enums;
 using Genora.MultiTenancy.Localization;
@@ -20,19 +21,23 @@ public class CreateModalModel : MultiTenancyPageModel
     public List<SelectListItem> GenderItems { get; set; } = new();
     public List<SelectListItem> RoleItems { get; set; } = new();
     public List<SelectListItem> LevelItems { get; set; } = new();
+    public List<SelectListItem> LocationItems { get; set; } = new();
 
     private readonly ISalonBeautyStylistAppService _stylistAppService;
+    private readonly ISalonBeautyLocationAppService _locationAppService;
     private readonly IStringLocalizer<MultiTenancyResource> _l;
 
     public CreateModalModel(
         ISalonBeautyStylistAppService stylistAppService,
+        ISalonBeautyLocationAppService locationAppService,
         IStringLocalizer<MultiTenancyResource> l)
     {
         _stylistAppService = stylistAppService;
+        _locationAppService = locationAppService;
         _l = l;
     }
 
-    public void OnGet()
+    public async Task OnGetAsync()
     {
         Stylist = new CreateSalonBeautyStylistDto
         {
@@ -43,11 +48,18 @@ public class CreateModalModel : MultiTenancyPageModel
             SortOrder = 0
         };
 
+        await BuildLocationItemsAsync();
+        if (LocationItems.Count > 0 && !Stylist.LocationId.HasValue
+            && Guid.TryParse(LocationItems[0].Value, out var firstId))
+        {
+            Stylist.LocationId = firstId;
+        }
         BuildSelectLists();
     }
 
     public async Task<IActionResult> OnPostAsync()
     {
+        await BuildLocationItemsAsync();
         BuildSelectLists();
 
         ValidateStylistInput(Stylist.DisplayName, Stylist.Phone, Stylist.Role, Stylist.Level, Stylist.ExperienceYear, Stylist.IsShowOnApp, Stylist.Avatar, Stylist.Images);
@@ -57,6 +69,15 @@ public class CreateModalModel : MultiTenancyPageModel
 
         await _stylistAppService.CreateAsync(Stylist);
         return NoContent();
+    }
+
+    private async Task BuildLocationItemsAsync()
+    {
+        var locations = await _locationAppService.GetLookupAsync();
+        LocationItems = locations
+            .Where(x => x.IsActive)
+            .Select(x => new SelectListItem(x.Name, x.Id.ToString(), Stylist.LocationId == x.Id))
+            .ToList();
     }
 
     private void ValidateStylistInput(string? displayName, string? phone, byte? role, byte? level, int experienceYear, bool isShowOnApp, string? avatar, IRemoteStreamContent? imageFile)

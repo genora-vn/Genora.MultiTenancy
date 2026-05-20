@@ -1,0 +1,75 @@
+@page
+@using Genora.MultiTenancy.Localization
+@using Microsoft.Extensions.Localization
+@using Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.TagHelpers.Modal
+@using Genora.MultiTenancy.Web.Pages.SalonBeautyLocations
+@model DetailModalModel
+@inject IStringLocalizer<MultiTenancyResource> L
+@{
+    Layout = null;
+
+    string ToHHmm(TimeSpan ts) => $"{ts.Hours:D2}:{ts.Minutes:D2}";
+}
+
+<abp-modal size="Large">
+    <abp-modal-body class="p-0">
+        <div class="location-modal location-detail-modal">
+            <div class="location-modal-header">
+                <div class="location-modal-title-wrap">
+                    <h3>@L["SalonBeautyLocations:DetailTitle"]</h3>
+                    <p>@L["SalonBeautyLocations:DetailSubTitle"]</p>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="@L["Close"]"></button>
+            </div>
+
+            <div class="location-modal-body">
+                <div class="location-detail-profile">
+                    <img src="@(string.IsNullOrWhiteSpace(Model.Location.ImageUrl) ? "/images/getting-started/no-photo-square.png" : Model.Location.ImageUrl)" alt="" />
+                    <div>
+                        <h4>@Model.Location.Name</h4>
+                        <div class="location-detail-badges">
+                            <span class="location-status-dot @(Model.Location.IsActive ? "active" : "inactive")">@Model.Location.IsActiveText</span>
+                            <span class="location-badge @(Model.Location.IsShowOnApp ? "active" : "inactive")">@(Model.Location.IsShowOnApp ? L["Yes"] : L["No"])</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="location-detail-grid">
+                    <div class="location-detail-item">
+                        <span>@L["SalonBeautyLocations:Address"]</span>
+                        <strong>@(string.IsNullOrWhiteSpace(Model.Location.Address) ? "--" : Model.Location.Address)</strong>
+                    </div>
+                    <div class="location-detail-item">
+                        <span>@L["SalonBeautyLocations:Phone"]</span>
+                        <strong>@(string.IsNullOrWhiteSpace(Model.Location.Phone) ? "--" : Model.Location.Phone)</strong>
+                    </div>
+                    <div class="location-detail-item">
+                        <span>@L["SalonBeautyLocations:OpenTime"]</span>
+                        <strong>@ToHHmm(Model.Location.OpenTime)</strong>
+                    </div>
+                    <div class="location-detail-item">
+                        <span>@L["SalonBeautyLocations:CloseTime"]</span>
+                        <strong>@ToHHmm(Model.Location.CloseTime)</strong>
+                    </div>
+                    <div class="location-detail-item">
+                        <span>@L["SalonBeautyLocations:SortOrder"]</span>
+                        <strong>@Model.Location.SortOrder</strong>
+                    </div>
+                    <div class="location-detail-item">
+                        <span>@L["SalonBeautyLocations:IsShowOnApp"]</span>
+                        <strong>@(Model.Location.IsShowOnApp ? L["Yes"] : L["No"])</strong>
+                    </div>
+                </div>
+
+                <div class="location-detail-note">
+                    <span>@L["SalonBeautyLocations:Note"]</span>
+                    <p>@(string.IsNullOrWhiteSpace(Model.Location.Note) ? "--" : Model.Location.Note)</p>
+                </div>
+            </div>
+
+            <div class="location-modal-footer">
+                <button type="button" class="btn location-btn-secondary" data-bs-dismiss="modal">@L["Close"]</button>
+            </div>
+        </div>
+    </abp-modal-body>
+</abp-modal>

@@ -139,6 +139,7 @@ public class MiniAppSalonBeautyBookingAppService : ApplicationService, IMiniAppS
             PackNote(input.CustomerNote, input.InternalNote),
             tenantId
         );
+        booking.LocationId = input.LocationId ?? stylist.LocationId;
 
         try
         {
