@@ -102,12 +102,12 @@
 
     <!-- Filters -->
     <div class="booking-filter-card">
-        <div class="row g-3 align-items-end">
-            <div class="col-lg-3 col-md-6">
+        <div class="row g-2 align-items-end">
+            <div class="col-xl-3 col-lg-3 col-md-6 col-12">
                 <label class="booking-filter-label">Tìm kiếm</label>
                 <input type="text" id="BookingFilterText" class="form-control form-control-sm" placeholder="Mã booking, tên KH..." />
             </div>
-            <div class="col-lg-2 col-md-4">
+            <div class="col-xl-2 col-lg-2 col-md-6 col-6">
                 <label class="booking-filter-label">@L["SalonBeautyLocation:PageTitle"]</label>
                 <select id="BookingLocationFilter" class="form-select form-select-sm">
                     <option value="">Tất cả cơ sở</option>
@@ -117,31 +117,32 @@
                     }
                 </select>
             </div>
-            <div class="col-lg-2 col-md-3">
-                <label class="booking-filter-label">Ngày đặt</label>
+            <div class="col-xl-2 col-lg-2 col-md-3 col-6">
+                <label class="booking-filter-label">Từ ngày</label>
                 <input type="text" id="BookingFromDateFilter" class="form-control form-control-sm" placeholder="dd/mm/yyyy" />
             </div>
-            <div class="col-lg-2 col-md-3">
+            <div class="col-xl-2 col-lg-2 col-md-3 col-6">
                 <label class="booking-filter-label">Đến ngày</label>
                 <input type="text" id="BookingToDateFilter" class="form-control form-control-sm" placeholder="dd/mm/yyyy" />
             </div>
-            <div class="col-lg-2 col-md-4">
+            <div class="col-xl-1 col-lg-2 col-md-4 col-6">
                 <label class="booking-filter-label">Trạng thái</label>
                 <select id="BookingStatusFilter" class="form-select form-select-sm">
                     <option value="">Tất cả</option>
                     <option value="0">Chờ xác nhận</option>
                     <option value="1">Đã xác nhận</option>
-                    <option value="2">Hoàn thành</option>
-                    <option value="3">Đã hủy</option>
+                    <option value="2">Đang thực hiện</option>
+                    <option value="3">Hoàn thành</option>
+                    <option value="4">Đã hủy</option>
                 </select>
             </div>
-            <div class="col-lg-2 col-md-4">
+            <div class="col-xl-1 col-lg-2 col-md-4 col-6">
                 <label class="booking-filter-label">Stylist</label>
                 <select id="BookingStylistFilter" class="form-select form-select-sm">
-                    <option value="">Tất cả Stylist</option>
+                    <option value="">Tất cả</option>
                 </select>
             </div>
-            <div class="col-lg-1 col-md-4">
+            <div class="col-xl-1 col-lg-1 col-md-4 col-12">
                 <button id="SearchBookingButton" class="btn btn-outline-primary btn-sm w-100" style="height:31px;">
                     <i class="fa fa-search"></i>
                 </button>
@@ -247,22 +248,22 @@
                 </div>
 
                 <div class="mb-0">
-                    <label class="form-label fw-semibold" style="font-size:13px;">Phương thức</label>
+                    <label class="form-label fw-semibold" style="font-size:13px;">Phương thức <span class="text-danger payment-method-required" style="display:none;">*</span></label>
                     <div class="sb-radio-grid">
                         <label class="sb-radio-card" data-payment-method="">
                             <input type="radio" name="ListPaymentMethod" value="" />
                             <span>Chưa chọn</span>
                         </label>
-                        <label class="sb-radio-card" data-payment-method="0">
-                            <input type="radio" name="ListPaymentMethod" value="0" />
-                            <span>Tiền mặt</span>
-                        </label>
                         <label class="sb-radio-card" data-payment-method="1">
                             <input type="radio" name="ListPaymentMethod" value="1" />
-                            <span>Chuyển khoản</span>
+                            <span>Tiền mặt</span>
                         </label>
                         <label class="sb-radio-card" data-payment-method="2">
                             <input type="radio" name="ListPaymentMethod" value="2" />
+                            <span>Chuyển khoản</span>
+                        </label>
+                        <label class="sb-radio-card" data-payment-method="3">
+                            <input type="radio" name="ListPaymentMethod" value="3" />
                             <span>Thẻ</span>
                         </label>
                     </div>
@@ -284,7 +285,7 @@
                 <div class="sb-action-modal-icon"><i class="fa fa-refresh"></i></div>
                 <div>
                     <h5 class="modal-title">Cập nhật trạng thái lịch đặt</h5>
-                    <div class="text-muted small">Chỉ được cập nhật sang trạng thái kế tiếp theo luồng: Chờ xác nhận → Đang thực hiện → Hoàn thành.</div>
+                    <div class="text-muted small">Chỉ được cập nhật sang trạng thái kế tiếp theo luồng: Chờ xác nhận → Đã xác nhận → Đang thực hiện → Hoàn thành.</div>
                 </div>
                 <button type="button" class="btn-close ms-auto" data-bs-dismiss="modal"></button>
             </div>
@@ -305,10 +306,14 @@
                         </label>
                         <label class="sb-radio-card" data-list-status="1">
                             <input type="radio" name="ListNextBookingStatus" value="1" />
-                            <span>Đang thực hiện</span>
+                            <span>Đã xác nhận</span>
                         </label>
                         <label class="sb-radio-card" data-list-status="2">
                             <input type="radio" name="ListNextBookingStatus" value="2" />
+                            <span>Đang thực hiện</span>
+                        </label>
+                        <label class="sb-radio-card" data-list-status="3">
+                            <input type="radio" name="ListNextBookingStatus" value="3" />
                             <span>Hoàn thành</span>
                         </label>
                     </div>

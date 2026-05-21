@@ -19,6 +19,7 @@
 
             var statusNew = @((byte)SalonBeautyBookingStatus.New);
             var statusConfirmed = @((byte)SalonBeautyBookingStatus.Confirmed);
+            var statusProcessing = @((byte)SalonBeautyBookingStatus.Processing);
             var statusCompleted = @((byte)SalonBeautyBookingStatus.Completed);
             var statusCancelled = @((byte)SalonBeautyBookingStatus.Cancelled);
 
@@ -48,7 +49,8 @@
 
             function getNextStatus() {
                 if (currentStatus === statusNew) return statusConfirmed;
-                if (currentStatus === statusConfirmed) return statusCompleted;
+                if (currentStatus === statusConfirmed) return statusProcessing;
+                if (currentStatus === statusProcessing) return statusCompleted;
                 return null;
             }
 
@@ -229,6 +231,7 @@
     {
         SalonBeautyBookingStatus.New => "sb-status-new",
         SalonBeautyBookingStatus.Confirmed => "sb-status-confirmed",
+        SalonBeautyBookingStatus.Processing => "sb-status-processing",
         SalonBeautyBookingStatus.Completed => "sb-status-completed",
         SalonBeautyBookingStatus.Cancelled => "sb-status-cancelled",
         _ => "sb-status-new"
@@ -250,7 +253,8 @@
     {
         SalonBeautyBookingStatus.New => 1,
         SalonBeautyBookingStatus.Confirmed => 2,
-        SalonBeautyBookingStatus.Completed => 3,
+        SalonBeautyBookingStatus.Processing => 3,
+        SalonBeautyBookingStatus.Completed => 4,
         SalonBeautyBookingStatus.Cancelled => 2,
         _ => 1
     };
@@ -262,7 +266,8 @@
     string BookingStatusText(SalonBeautyBookingStatus status) => status switch
     {
         SalonBeautyBookingStatus.New => "Chờ xác nhận",
-        SalonBeautyBookingStatus.Confirmed => "Đang thực hiện",
+        SalonBeautyBookingStatus.Confirmed => "Đã xác nhận",
+        SalonBeautyBookingStatus.Processing => "Đang thực hiện",
         SalonBeautyBookingStatus.Completed => "Hoàn thành",
         SalonBeautyBookingStatus.Cancelled => "Đã hủy",
         _ => status.ToString()
@@ -331,7 +336,7 @@
             <div class="sb-progress-date"><i class="fa fa-calendar-o"></i> @dateTimeText</div>
         </div>
 
-        <div class="sb-progress-track sb-progress-track-3 @(isCancelled ? "is-cancelled" : "")">
+        <div class="sb-progress-track sb-progress-track-4 @(isCancelled ? "is-cancelled" : "")">
             <div class="sb-progress-line"></div>
             <div class="sb-progress-line-active step-@(isCancelled ? 2 : progressStep)"></div>
 
@@ -343,11 +348,17 @@
 
             <div class="sb-progress-step @StepClass(2)">
                 <div class="sb-progress-icon"><i class="fa @(isCancelled ? "fa-times" : "fa-calendar-check-o")"></i></div>
-                <div class="sb-progress-title">@(isCancelled ? "Đã hủy" : "Đang thực hiện")</div>
+                <div class="sb-progress-title">@(isCancelled ? "Đã hủy" : "Đã xác nhận")</div>
                 <div class="sb-progress-time">@(Model.Booking.LastModificationTime?.ToString("HH:mm dd/MM") ?? "--")</div>
             </div>
 
             <div class="sb-progress-step @StepClass(3)">
+                <div class="sb-progress-icon"><i class="fa fa-scissors"></i></div>
+                <div class="sb-progress-title">Đang thực hiện</div>
+                <div class="sb-progress-time">@(Model.Booking.Status == SalonBeautyBookingStatus.Processing || Model.Booking.Status == SalonBeautyBookingStatus.Completed ? (Model.Booking.LastModificationTime?.ToString("HH:mm dd/MM") ?? "--") : "--")</div>
+            </div>
+
+            <div class="sb-progress-step @StepClass(4)">
                 <div class="sb-progress-icon"><i class="fa fa-check-circle-o"></i></div>
                 <div class="sb-progress-title">Hoàn thành</div>
                 <div class="sb-progress-time">@(Model.Booking.Status == SalonBeautyBookingStatus.Completed ? (Model.Booking.LastModificationTime?.ToString("HH:mm dd/MM") ?? "--") : "--")</div>
@@ -622,7 +633,7 @@
                 </div>
                 <div>
                     <h5 class="modal-title">Cập nhật trạng thái lịch đặt</h5>
-                    <div class="text-muted small">Chỉ được cập nhật sang trạng thái kế tiếp theo luồng: Chờ xác nhận → Đang thực hiện → Hoàn thành.</div>
+                    <div class="text-muted small">Chỉ được cập nhật sang trạng thái kế tiếp theo luồng: Chờ xác nhận → Đã xác nhận → Đang thực hiện → Hoàn thành.</div>
                 </div>
                 <button type="button" class="btn-close ms-auto" data-bs-dismiss="modal"></button>
             </div>
@@ -641,6 +652,10 @@
                         </label>
                         <label class="sb-radio-card" data-status="@((byte)SalonBeautyBookingStatus.Confirmed)">
                             <input type="radio" name="NextBookingStatus" value="@((byte)SalonBeautyBookingStatus.Confirmed)" />
+                            <span>Đã xác nhận</span>
+                        </label>
+                        <label class="sb-radio-card" data-status="@((byte)SalonBeautyBookingStatus.Processing)">
+                            <input type="radio" name="NextBookingStatus" value="@((byte)SalonBeautyBookingStatus.Processing)" />
                             <span>Đang thực hiện</span>
                         </label>
                         <label class="sb-radio-card" data-status="@((byte)SalonBeautyBookingStatus.Completed)">

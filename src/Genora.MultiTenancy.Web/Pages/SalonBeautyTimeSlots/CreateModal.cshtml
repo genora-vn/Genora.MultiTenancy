@@ -200,11 +200,12 @@
             });
         }
 
-        function buildRangeRow(start, end, capacity, bookedCount, maxCap) {
+        function buildRangeRow(start, end, capacity, bookedCount, maxCap, isPeak) {
             var max = Math.max(1, maxCap || 1);
             var cap = capacity > 0 ? capacity : 1;
             if (cap > max) cap = max;
             var disableBtn = max <= 1 ? ' disabled' : '';
+            var peakChecked = isPeak ? ' checked' : '';
             return '<div class="timeslot-range-row" data-range-row>'
                 + '<input type="time" class="form-control timeslot-form-control timeslot-range-start" value="' + htmlEncode(start) + '" />'
                 + '<input type="time" class="form-control timeslot-form-control timeslot-range-end" value="' + htmlEncode(end) + '" />'
@@ -214,6 +215,13 @@
                 + '<button type="button" class="timeslot-cap-btn timeslot-cap-inc" tabindex="-1"' + disableBtn + '><i class="fa fa-plus"></i></button>'
                 + '<span class="timeslot-capacity-hint"><span class="timeslot-capacity-current">' + cap + '</span>/<span class="timeslot-capacity-max">' + max + '</span></span>'
                 + '</div>'
+                + '<label class="timeslot-peak-wrap" title="' + l('SalonBeautyTimeSlots:PeakHourHint') + '">'
+                + '<span class="timeslot-peak-label">' + l('SalonBeautyTimeSlots:PeakHourLabel') + '</span>'
+                + '<span class="timeslot-switch timeslot-peak-switch">'
+                + '<input type="checkbox" class="timeslot-range-peak"' + peakChecked + ' />'
+                + '<span class="timeslot-switch-slider"></span>'
+                + '</span>'
+                + '</label>'
                 + '<button type="button" class="timeslot-remove-range-btn"><i class="fa fa-trash"></i></button>'
                 + '</div>';
         }
@@ -223,13 +231,13 @@
             var $list = $form.find('[data-ranges-list]');
             $list.empty();
             if (!cfg) {
-                $list.append(buildRangeRow('08:00', '09:00', 1, 0, 1));
+                $list.append(buildRangeRow('08:00', '09:00', 1, 0, 1, false));
                 return;
             }
             var openMin = timeToMin(cfg.openTime);
             var closeMin = timeToMin(cfg.closeTime);
             var endMin = Math.min(openMin + (cfg.slotDuration || 60), closeMin);
-            $list.append(buildRangeRow(minToTime(openMin), minToTime(endMin), 1, 0, cfg.maxCapacityPerSlot));
+            $list.append(buildRangeRow(minToTime(openMin), minToTime(endMin), 1, 0, cfg.maxCapacityPerSlot, false));
         }
 
         function getRanges() {
@@ -238,10 +246,12 @@
                 var s = $(this).find('.timeslot-range-start').val();
                 var e = $(this).find('.timeslot-range-end').val();
                 var cap = parseInt($(this).find('.timeslot-range-capacity').val(), 10);
+                var isPeak = $(this).find('.timeslot-range-peak').is(':checked');
                 if (s && e) ranges.push({
                     startTime: s + ':00',
                     endTime: e + ':00',
-                    capacity: isNaN(cap) || cap < 1 ? null : cap
+                    capacity: isNaN(cap) || cap < 1 ? null : cap,
+                    isPeakHour: isPeak
                 });
             });
             return ranges;
@@ -306,7 +316,7 @@
             var endMin = Math.min(startMin + slotDur, closeMin);
             if (endMin - startMin < 5) { abp.notify.warn(l('SalonBeautyTimeSlots:RangeOutsideLocation')); return; }
             $form.find('[data-ranges-list]').append(
-                buildRangeRow(minToTime(startMin), minToTime(endMin), 1, 0, cfg.maxCapacityPerSlot));
+                buildRangeRow(minToTime(startMin), minToTime(endMin), 1, 0, cfg.maxCapacityPerSlot, false));
         });
 
         $form.on('click', '[data-auto-generate]', function () {
@@ -320,7 +330,7 @@
                 (items || []).forEach(function (r) {
                     var s = r.startTime ? r.startTime.substring(0, 5) : '08:00';
                     var e = r.endTime ? r.endTime.substring(0, 5) : '09:00';
-                    $list.append(buildRangeRow(s, e, r.capacity || 1, r.bookedCount || 0, maxCap));
+                    $list.append(buildRangeRow(s, e, r.capacity || 1, r.bookedCount || 0, maxCap, !!r.isPeakHour));
                 });
             }).always(function () { $btn.prop('disabled', false); });
         });

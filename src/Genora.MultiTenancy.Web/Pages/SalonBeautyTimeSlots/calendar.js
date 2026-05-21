@@ -23,12 +23,14 @@ $(function () {
     function statusKey(status) {
         if (status === 0) return 'off';
         if (status === 2) return 'full';
+        if (status === 3) return 'peak';
         return 'on';
     }
 
     function statusText(status) {
         if (status === 0) return l('Enum:SalonBeautyTimeSlotStatus.Off');
         if (status === 2) return l('Enum:SalonBeautyTimeSlotStatus.Full');
+        if (status === 3) return l('Enum:SalonBeautyTimeSlotStatus.PeakHour');
         return l('Enum:SalonBeautyTimeSlotStatus.On');
     }
 

@@ -127,6 +127,11 @@ public static class MultiTenancyDbContextModelCreatingExtensionsSalonBeauty
                 .HasForeignKey(x => x.LocationId)
                 .OnDelete(DeleteBehavior.Restrict);
 
+            b.HasOne(x => x.TimeSlot)
+                .WithMany()
+                .HasForeignKey(x => x.TimeSlotId)
+                .OnDelete(DeleteBehavior.Restrict);
+
             b.HasIndex(x => new { x.TenantId, x.BookingCode })
                 .IsUnique()
                 .HasDatabaseName("IX_AppSalonBeautyBookings_TenantId_Code");
@@ -139,6 +144,9 @@ public static class MultiTenancyDbContextModelCreatingExtensionsSalonBeauty
 
             b.HasIndex(x => new { x.TenantId, x.LocationId })
                 .HasDatabaseName("IX_AppSalonBeautyBookings_TenantId_LocationId");
+
+            b.HasIndex(x => new { x.TenantId, x.TimeSlotId })
+                .HasDatabaseName("IX_AppSalonBeautyBookings_TenantId_TimeSlotId");
         });
 
         builder.Entity<SalonBeautyBookingService>(b =>

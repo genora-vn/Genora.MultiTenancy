@@ -38,11 +38,11 @@ public class UpdateSalonBeautyTimeSlotDto
 }
 
 /// <summary>
-/// Cập nhật trạng thái 1 time slot khi click trên Calendar (OFF/ON/FULL).
+/// Cập nhật trạng thái 1 time slot khi click trên Calendar (OFF/ON/FULL/PEAK).
 /// </summary>
 public class UpdateSalonBeautyTimeSlotStatusDto
 {
     [Required]
-    [Range(0, 2)]
+    [Range(0, 3)]
     public byte Status { get; set; }
 }

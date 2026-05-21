@@ -48,6 +48,7 @@ public class EditModalModel : MultiTenancyPageModel
             LocationId = detail.LocationId,
             CustomerId = detail.CustomerId,
             StylistId = detail.StylistId,
+            TimeSlotId = detail.TimeSlotId,
             BookingDate = detail.BookingDate,
             StartTime = detail.StartTime,
             EndTime = detail.EndTime,
@@ -103,8 +104,8 @@ public class EditModalModel : MultiTenancyPageModel
         {
             new("Chờ xác nhận", ((byte)SalonBeautyBookingStatus.New).ToString(), Booking.Status == SalonBeautyBookingStatus.New),
             new("Đã xác nhận", ((byte)SalonBeautyBookingStatus.Confirmed).ToString(), Booking.Status == SalonBeautyBookingStatus.Confirmed),
+            new("Đang thực hiện", ((byte)SalonBeautyBookingStatus.Processing).ToString(), Booking.Status == SalonBeautyBookingStatus.Processing),
             new("Hoàn thành", ((byte)SalonBeautyBookingStatus.Completed).ToString(), Booking.Status == SalonBeautyBookingStatus.Completed),
-            new("Đã hủy", ((byte)SalonBeautyBookingStatus.Cancelled).ToString(), Booking.Status == SalonBeautyBookingStatus.Cancelled),
         };
     }
 }

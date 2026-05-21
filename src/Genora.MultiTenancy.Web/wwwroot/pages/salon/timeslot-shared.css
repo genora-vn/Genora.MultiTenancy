@@ -299,9 +299,69 @@
 
 .timeslot-range-row {
     display: grid;
-    grid-template-columns: 1fr 1fr auto auto;
+    grid-template-columns: 1fr 1fr auto auto auto;
     gap: 10px;
     align-items: center;
+}
+
+.timeslot-peak-wrap {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 10px;
+    background: #fff7ed;
+    border: 1px solid #fdba74;
+    border-radius: 8px;
+    cursor: pointer;
+    user-select: none;
+    margin: 0;
+}
+
+.timeslot-peak-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: #c2410c;
+    white-space: nowrap;
+}
+
+.timeslot-peak-switch {
+    position: relative;
+    width: 36px;
+    height: 20px;
+    display: inline-block;
+}
+
+.timeslot-peak-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.timeslot-peak-switch .timeslot-switch-slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background-color: #cbd5e1;
+    transition: .25s;
+    border-radius: 20px;
+}
+
+.timeslot-peak-switch .timeslot-switch-slider:before {
+    position: absolute;
+    content: "";
+    height: 14px; width: 14px;
+    left: 3px; bottom: 3px;
+    background: #fff;
+    transition: .25s;
+    border-radius: 50%;
+}
+
+.timeslot-peak-switch input:checked + .timeslot-switch-slider {
+    background-color: #ea580c;
+}
+
+.timeslot-peak-switch input:checked + .timeslot-switch-slider:before {
+    transform: translateX(16px);
 }
 
 .timeslot-capacity-wrap {
@@ -552,6 +612,7 @@
 .timeslot-event.on { background: #d4edda !important; color: #155724 !important; }
 .timeslot-event.off { background: #e9ecef !important; color: #6c757d !important; }
 .timeslot-event.full { background: #f8d7da !important; color: #721c24 !important; }
+.timeslot-event.peak { background: #ffe4e6 !important; color: #b91c1c !important; }
 
 /* Bảo đảm text trong week/day view không bị mờ — FullCalendar dùng nested .fc-event-main/.fc-event-title/.fc-event-time */
 .timeslot-event .fc-event-main,
@@ -574,6 +635,10 @@
 .timeslot-event.full .fc-event-main,
 .timeslot-event.full .fc-event-title,
 .timeslot-event.full .fc-event-time { color: #721c24 !important; }
+
+.timeslot-event.peak .fc-event-main,
+.timeslot-event.peak .fc-event-title,
+.timeslot-event.peak .fc-event-time { color: #b91c1c !important; }
 
 #TimeSlotCalendar .fc-timegrid-event,
 #TimeSlotCalendar .fc-timegrid-event .fc-event-main {
@@ -601,6 +666,7 @@
 .timeslot-legend-dot.on { background: #38a169; }
 .timeslot-legend-dot.off { background: #94a3b8; }
 .timeslot-legend-dot.full { background: #e53e3e; }
+.timeslot-legend-dot.peak { background: #ea580c; }
 
 @media (max-width: 992px) {
     .timeslot-calendar-page { grid-template-columns: 1fr; }

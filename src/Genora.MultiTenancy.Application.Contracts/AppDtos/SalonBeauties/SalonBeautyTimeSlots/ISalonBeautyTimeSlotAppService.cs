@@ -36,6 +36,23 @@ public interface ISalonBeautyTimeSlotAppService : IApplicationService
     /// </summary>
     Task<List<SalonBeautyStylistLookupDto>> GetStylistLookupAsync(Guid? locationId = null);
 
+    /// <summary>
+    /// Lấy danh sách ngày có cấu hình lịch (Status != Off, IsShowOnApp=true) cho 1 stylist
+    /// trong khoảng [fromDate..toDate]. Dùng cho datepicker enable/disable ngày trên Booking modal.
+    /// </summary>
+    Task<List<DateTime>> GetAvailableDatesAsync(Guid stylistId, DateTime fromDate, DateTime toDate, Guid? locationId = null);
+
+    /// <summary>
+    /// Lấy danh sách time slot khả dụng (Status != Off + Full + còn capacity) cho 1 stylist
+    /// trong 1 ngày cụ thể. Dùng cho dropdown khung giờ trên Booking modal.
+    /// </summary>
+    Task<List<SalonBeautyTimeSlotDto>> GetAvailableSlotsAsync(Guid stylistId, DateTime workDate, Guid? locationId = null);
+
+    /// <summary>
+    /// Lấy chi tiết 1 time slot theo Id. Dùng cho EditModal Booking khi slot hiện tại đang Full/Off.
+    /// </summary>
+    Task<SalonBeautyTimeSlotDto> GetAsync(Guid id);
+
     Task<List<SalonBeautyTimeSlotDto>> CreateAsync(CreateSalonBeautyTimeSlotDto input);
 
     Task<List<SalonBeautyTimeSlotDto>> UpdateByStylistAsync(Guid stylistId, UpdateSalonBeautyTimeSlotDto input);

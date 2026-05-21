@@ -58,4 +58,11 @@ public class TimeRangeDto
     /// </summary>
     [Range(1, int.MaxValue)]
     public int? Capacity { get; set; }
+
+    /// <summary>
+    /// Đánh dấu khung giờ là giờ cao điểm. Khi true, các slot sinh từ range này
+    /// sẽ có Status = PeakHour (3) thay vì On (1). Mini App vẫn cho khách book
+    /// nhưng hiển thị màu đỏ.
+    /// </summary>
+    public bool IsPeakHour { get; set; }
 }

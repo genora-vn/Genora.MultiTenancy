@@ -9,6 +9,7 @@ public class SalonBeautyBookingDetailDto : EntityDto<Guid>
     public string BookingCode { get; set; } = null!;
     public Guid? LocationId { get; set; }
     public string? LocationName { get; set; }
+    public Guid? TimeSlotId { get; set; }
     public Guid CustomerId { get; set; }
     public string? CustomerName { get; set; }
     public string? CustomerPhone { get; set; }

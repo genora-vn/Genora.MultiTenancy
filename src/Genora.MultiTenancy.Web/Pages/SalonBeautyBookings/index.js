@@ -15,8 +15,9 @@
 
     var STATUS_NEW = 0;
     var STATUS_CONFIRMED = 1;
-    var STATUS_COMPLETED = 2;
-    var STATUS_CANCELLED = 3;
+    var STATUS_PROCESSING = 2;
+    var STATUS_COMPLETED = 3;
+    var STATUS_CANCELLED = 4;
 
     function normalizeStatus(status) {
         if (typeof status === 'number') return status;
@@ -24,8 +25,9 @@
         var s = String(status).toLowerCase();
         if (s === 'new' || s === '0') return STATUS_NEW;
         if (s === 'confirmed' || s === '1') return STATUS_CONFIRMED;
-        if (s === 'completed' || s === '2') return STATUS_COMPLETED;
-        if (s === 'cancelled' || s === 'canceled' || s === '3') return STATUS_CANCELLED;
+        if (s === 'processing' || s === '2') return STATUS_PROCESSING;
+        if (s === 'completed' || s === '3') return STATUS_COMPLETED;
+        if (s === 'cancelled' || s === 'canceled' || s === '4') return STATUS_CANCELLED;
         return null;
     }
 
@@ -39,7 +41,7 @@
 
     function canCancelRow(row) {
         var s = normalizeStatus(row.status);
-        return s === STATUS_NEW || s === STATUS_CONFIRMED;
+        return s === STATUS_NEW || s === STATUS_CONFIRMED || s === STATUS_PROCESSING;
     }
 
     function showModal(selector) {
@@ -84,6 +86,7 @@
         var normalized = normalizeStatus(status);
         var cls = 'status-new';
         if (normalized === STATUS_CONFIRMED) cls = 'status-confirmed';
+        else if (normalized === STATUS_PROCESSING) cls = 'status-processing';
         else if (normalized === STATUS_COMPLETED) cls = 'status-completed';
         else if (normalized === STATUS_CANCELLED) cls = 'status-cancelled';
         return cls;
@@ -93,7 +96,8 @@
         if (statusText) return statusText;
         var normalized = normalizeStatus(status);
         if (normalized === STATUS_NEW) return 'Chờ xác nhận';
-        if (normalized === STATUS_CONFIRMED) return 'Đang thực hiện';
+        if (normalized === STATUS_CONFIRMED) return 'Đã xác nhận';
+        if (normalized === STATUS_PROCESSING) return 'Đang thực hiện';
         if (normalized === STATUS_COMPLETED) return 'Hoàn thành';
         if (normalized === STATUS_CANCELLED) return 'Đã hủy';
         return status || '--';
@@ -109,6 +113,18 @@
             editIcon = '<button type="button" class="booking-status-edit-btn" title="Cập nhật trạng thái" data-id="' + row.id + '" data-status="' + (row.status ?? '') + '" data-status-text="' + (row.statusText || '') + '"><i class="fa fa-pencil"></i></button>';
         }
         return '<div class="booking-status-cell">' + getStatusBadge(row.status, row.statusText) + editIcon + '</div>';
+    }
+
+    function getPaymentMethodBadge(row) {
+        var method = row.paymentMethod;
+        if (method === null || method === undefined || method === '') return '<span class="payment-badge payment-method-none">--</span>';
+        var m = typeof method === 'string' ? method.toLowerCase() : method;
+        var text = '--';
+        var cls = 'payment-method-none';
+        if (m === 1 || m === 'cash') { text = 'Tiền mặt'; cls = 'payment-method-cash'; }
+        else if (m === 2 || m === 'banktransfer') { text = 'Chuyển khoản'; cls = 'payment-method-bank'; }
+        else if (m === 3 || m === 'card') { text = 'Thẻ'; cls = 'payment-method-card'; }
+        return '<span class="payment-badge ' + cls + '">' + text + '</span>';
     }
 
     function getPaymentBadge(row) {
@@ -266,7 +282,7 @@
                         title: 'Mã Booking',
                         data: 'bookingCode',
                         render: function (data, type, row) {
-                            return '<a class="booking-code-link" href="/SalonBeautyBookings/Detail?id=' + row.id + data + '</a>';
+                            return '<a class="booking-code-link" href="/SalonBeautyBookings/Detail?id=' + row.id + '">' + (data || '--') + '</a>';
                         }
                     },
                     { title: 'Khách hàng', data: null, render: function (data, type, row) { return buildCustomerCell(row); } },
@@ -286,6 +302,7 @@
                     },
                     { title: 'Trạng thái', data: null, orderable: false, render: function (data, type, row) { return getStatusCell(row); } },
                     { title: 'Thanh toán', data: null, orderable: false, render: function (data, type, row) { return getPaymentBadge(row); } },
+                    { title: 'Phương thức', data: null, orderable: false, render: function (data, type, row) { return getPaymentMethodBadge(row); } },
                     { title: 'Tổng tiền', data: 'totalAmount', className: 'text-end', render: function (data) { return '<span class="booking-amount">' + formatCurrency(data) + '</span>'; } },
                     { title: '', data: null, orderable: false, className: 'text-center', render: function (data, type, row) { return buildActions(row); } }
                 ]
@@ -335,7 +352,24 @@
 
         $('input[name="ListPaymentMethod"]').prop('checked', false);
         $('.sb-radio-card[data-payment-method]').removeClass('is-selected');
-        $('input[name="ListPaymentMethod"][value="' + method + '"]').prop('checked', true).closest('.sb-radio-card').addClass('is-selected');
+        if (method !== '' && method !== 'null') {
+            $('input[name="ListPaymentMethod"][value="' + method + '"]').prop('checked', true).closest('.sb-radio-card').addClass('is-selected');
+        }
+
+        // Disable/enable payment method based on payment status
+        var paymentStatus = parseInt(status);
+        var $methodCards = $('.sb-radio-card[data-payment-method]');
+        var $methodInputs = $('input[name="ListPaymentMethod"]');
+
+        if (paymentStatus === 0) {
+            // Chưa thanh toán: disable payment method
+            $methodCards.addClass('is-disabled');
+            $methodInputs.prop('disabled', true);
+        } else {
+            // Thanh toán một phần/Đã thanh toán/Đã hoàn tiền: enable và require
+            $methodCards.removeClass('is-disabled');
+            $methodInputs.prop('disabled', false);
+        }
 
         $('#ListConfirmPaymentBtn').prop('disabled', $('input[name="ListPaymentStatus"]:checked').length === 0);
         showModal('#ListPaymentModal');
@@ -344,7 +378,8 @@
     function getNextStatus(current) {
         current = normalizeStatus(current);
         if (current === STATUS_NEW) return STATUS_CONFIRMED;
-        if (current === STATUS_CONFIRMED) return STATUS_COMPLETED;
+        if (current === STATUS_CONFIRMED) return STATUS_PROCESSING;
+        if (current === STATUS_PROCESSING) return STATUS_COMPLETED;
         return null;
     }
 
@@ -382,8 +417,8 @@
     }
 
     $(function () {
-        flatpickr('#BookingFromDateFilter', { dateFormat: 'd/m/Y', allowInput: true });
-        flatpickr('#BookingToDateFilter', { dateFormat: 'd/m/Y', allowInput: true });
+        flatpickr('#BookingFromDateFilter', { dateFormat: 'd/m/Y', allowInput: true, onReady: function(_, __, fp) { window._fromDatePicker = fp; } });
+        flatpickr('#BookingToDateFilter', { dateFormat: 'd/m/Y', allowInput: true, onReady: function(_, __, fp) { window._toDatePicker = fp; } });
 
         loadStylistFilter();
         loadStats();
@@ -398,7 +433,17 @@
 
         $('#RefreshBookingButton').on('click', function (e) {
             e.preventDefault();
-            refreshBookingList(false);
+            // Reset tất cả filter
+            $('#BookingFilterText').val('');
+            $('#BookingFromDateFilter').val('');
+            $('#BookingToDateFilter').val('');
+            $('#BookingStatusFilter').val('');
+            $('#BookingLocationFilter').val('');
+            $('#BookingStylistFilter').val('');
+            if (window._fromDatePicker) window._fromDatePicker.clear();
+            if (window._toDatePicker) window._toDatePicker.clear();
+            loadStylistFilter();
+            reloadAll(true);
         });
 
         $('#BookingAutoRefreshSelect').on('change', function () {
@@ -455,6 +500,18 @@
             $('.sb-radio-card[data-payment-status]').removeClass('is-selected');
             $(this).closest('.sb-radio-card').addClass('is-selected');
             $('#ListConfirmPaymentBtn').prop('disabled', false);
+
+            var paymentStatus = parseInt($(this).val());
+            var $methodCards = $('.sb-radio-card[data-payment-method]');
+            var $methodInputs = $('input[name="ListPaymentMethod"]');
+            if (paymentStatus === 0) {
+                $methodCards.addClass('is-disabled');
+                $methodInputs.prop('disabled', true).prop('checked', false);
+                $methodCards.removeClass('is-selected');
+            } else {
+                $methodCards.removeClass('is-disabled');
+                $methodInputs.prop('disabled', false);
+            }
         });
 
         $(document).on('change', 'input[name="ListPaymentMethod"]', function () {

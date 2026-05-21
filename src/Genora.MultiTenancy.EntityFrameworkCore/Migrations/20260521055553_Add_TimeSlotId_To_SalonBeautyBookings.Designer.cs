@@ -4,6 +4,7 @@ using Genora.MultiTenancy.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Volo.Abp.EntityFrameworkCore;
 
@@ -12,9 +13,11 @@ using Volo.Abp.EntityFrameworkCore;
 namespace Genora.MultiTenancy.Migrations
 {
     [DbContext(typeof(MultiTenancyDbContext))]
-    partial class MultiTenancyDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260521055553_Add_TimeSlotId_To_SalonBeautyBookings")]
+    partial class Add_TimeSlotId_To_SalonBeautyBookings
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -2103,7 +2106,7 @@ namespace Genora.MultiTenancy.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("OptionExtends", (string)null);
+                    b.ToTable("OptionExtends");
                 });
 
             modelBuilder.Entity("Genora.MultiTenancy.DomainModels.AppPaymentConfigurations.PaymentConfiguration", b =>
@@ -2793,7 +2796,7 @@ namespace Genora.MultiTenancy.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("PromotionTypes", (string)null);
+                    b.ToTable("PromotionTypes");
                 });
 
             modelBuilder.Entity("Genora.MultiTenancy.DomainModels.AppSalonBeauty.SalonBeautyBooking", b =>

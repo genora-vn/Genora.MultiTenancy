@@ -40,6 +40,11 @@ public class SalonBeautyTimeSlotDto : EntityDto<Guid>
     public byte Status { get; set; }
     public string? StatusText { get; set; }
 
+    /// <summary>
+    /// True nếu Status = PeakHour. Convenience flag cho FE.
+    /// </summary>
+    public bool IsPeakHour { get; set; }
+
     public bool IsShowOnApp { get; set; }
     public string? Note { get; set; }
 }

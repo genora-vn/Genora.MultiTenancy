@@ -46,6 +46,7 @@
                 <option value="0">@L["Enum:SalonBeautyTimeSlotStatus.Off"]</option>
                 <option value="1">@L["Enum:SalonBeautyTimeSlotStatus.On"]</option>
                 <option value="2">@L["Enum:SalonBeautyTimeSlotStatus.Full"]</option>
+                <option value="3">@L["Enum:SalonBeautyTimeSlotStatus.PeakHour"]</option>
             </select>
         </div>
 
@@ -55,6 +56,7 @@
                 <li><span class="timeslot-legend-dot on"></span> @L["Enum:SalonBeautyTimeSlotStatus.On"]</li>
                 <li><span class="timeslot-legend-dot off"></span> @L["Enum:SalonBeautyTimeSlotStatus.Off"]</li>
                 <li><span class="timeslot-legend-dot full"></span> @L["Enum:SalonBeautyTimeSlotStatus.Full"]</li>
+                <li><span class="timeslot-legend-dot peak"></span> @L["Enum:SalonBeautyTimeSlotStatus.PeakHour"]</li>
             </ul>
         </div>
     </aside>
@@ -91,9 +93,12 @@
             </div>
             <div class="modal-body">
                 <p class="text-muted mb-3" id="UpdateSlotStatusInfo"></p>
-                <div class="d-grid gap-2">
+                <div class="d-grid gap-2 mb-3">
                     <button type="button" class="btn btn-success" data-status="1">
                         <i class="fa fa-check"></i> @L["Enum:SalonBeautyTimeSlotStatus.On"]
+                    </button>
+                    <button type="button" class="btn btn-warning" data-status="3">
+                        <i class="fa fa-fire"></i> @L["Enum:SalonBeautyTimeSlotStatus.PeakHour"]
                     </button>
                     <button type="button" class="btn btn-danger" data-status="2">
                         <i class="fa fa-times-circle"></i> @L["Enum:SalonBeautyTimeSlotStatus.Full"]

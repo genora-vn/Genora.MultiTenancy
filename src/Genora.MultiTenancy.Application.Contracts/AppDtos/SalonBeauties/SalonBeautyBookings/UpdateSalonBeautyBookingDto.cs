@@ -8,6 +8,7 @@ public class UpdateSalonBeautyBookingDto
     public Guid? LocationId { get; set; }
     public Guid CustomerId { get; set; }
     public Guid StylistId { get; set; }
+    public Guid? TimeSlotId { get; set; }
     public DateTime BookingDate { get; set; }
     public TimeSpan StartTime { get; set; }
     public TimeSpan? EndTime { get; set; }

@@ -179,7 +179,13 @@ public class SalonBeautyTimeSlotAppService : ApplicationService, ISalonBeautyTim
 
         var ranges = slots
             .GroupBy(x => new { x.StartTime, x.EndTime })
-            .Select(g => new TimeRangeDto { StartTime = g.Key.StartTime, EndTime = g.Key.EndTime })
+            .Select(g => new TimeRangeDto
+            {
+                StartTime = g.Key.StartTime,
+                EndTime = g.Key.EndTime,
+                Capacity = g.Max(x => x.Capacity),
+                IsPeakHour = g.Any(x => x.Status == SalonBeautyTimeSlotStatus.PeakHour)
+            })
             .OrderBy(x => x.StartTime)
             .ToList();
 
@@ -264,6 +270,83 @@ public class SalonBeautyTimeSlotAppService : ApplicationService, ISalonBeautyTim
             Role = x.Role,
             RoleText = x.Role.HasValue ? $"Enum:SalonBeautyStylistRole.{(SalonBeautyStylistRole)x.Role.Value}" : null
         }).ToList();
+    }
+
+    public async Task<List<DateTime>> GetAvailableDatesAsync(Guid stylistId, DateTime fromDate, DateTime toDate, Guid? locationId = null)
+    {
+        await CheckPolicyAsync(MultiTenancyPermissions.SalonBeautyTimeSlots.Default, MultiTenancyPermissions.HostSalonBeautyTimeSlots.Default);
+
+        var from = fromDate.Date;
+        var to = toDate.Date;
+        if (to < from) (from, to) = (to, from);
+
+        var query = await _slotRepo.GetQueryableAsync();
+        query = query.Where(x => x.StylistId == stylistId
+                                 && x.WorkDate >= from
+                                 && x.WorkDate <= to
+                                 && x.Status != SalonBeautyTimeSlotStatus.Off
+                                 && x.IsShowOnApp);
+
+        if (locationId.HasValue)
+            query = query.Where(x => x.LocationId == locationId.Value);
+
+        var dates = await AsyncExecuter.ToListAsync(
+            query.Select(x => x.WorkDate).Distinct());
+
+        return dates.OrderBy(x => x).ToList();
+    }
+
+    public async Task<List<SalonBeautyTimeSlotDto>> GetAvailableSlotsAsync(Guid stylistId, DateTime workDate, Guid? locationId = null)
+    {
+        await CheckPolicyAsync(MultiTenancyPermissions.SalonBeautyTimeSlots.Default, MultiTenancyPermissions.HostSalonBeautyTimeSlots.Default);
+
+        var date = workDate.Date;
+
+        var query = await _slotRepo.GetQueryableAsync();
+        query = query.Where(x => x.StylistId == stylistId
+                                 && x.WorkDate == date
+                                 && x.Status != SalonBeautyTimeSlotStatus.Off
+                                 && x.Status != SalonBeautyTimeSlotStatus.Full
+                                 && x.IsShowOnApp
+                                 && x.BookedCount < x.Capacity);
+
+        if (locationId.HasValue)
+            query = query.Where(x => x.LocationId == locationId.Value);
+
+        var slots = await AsyncExecuter.ToListAsync(query.OrderBy(x => x.StartTime));
+        if (slots.Count == 0) return new List<SalonBeautyTimeSlotDto>();
+
+        var stylistIds = slots.Select(x => x.StylistId).Distinct().ToList();
+        var locationIds = slots.Select(x => x.LocationId).Distinct().ToList();
+        var stylists = await AsyncExecuter.ToListAsync((await _stylistRepo.GetQueryableAsync()).Where(x => stylistIds.Contains(x.Id)));
+        var locations = await AsyncExecuter.ToListAsync((await _locationRepo.GetQueryableAsync()).Where(x => locationIds.Contains(x.Id)));
+        var stylistMap = stylists.ToDictionary(x => x.Id, x => x);
+        var locationMap = locations.ToDictionary(x => x.Id, x => x);
+
+        return slots.Select(s => MapToDto(s, stylistMap, locationMap)).ToList();
+    }
+
+    public async Task<SalonBeautyTimeSlotDto> GetAsync(Guid id)
+    {
+        await CheckPolicyAsync(MultiTenancyPermissions.SalonBeautyTimeSlots.Default, MultiTenancyPermissions.HostSalonBeautyTimeSlots.Default);
+
+        var slot = await _slotRepo.GetAsync(id);
+
+        var stylistMap = new Dictionary<Guid, SalonBeautyStylist>();
+        var locationMap = new Dictionary<Guid, SalonBeautyLocation>();
+
+        if (slot.StylistId != Guid.Empty)
+        {
+            var stylist = await _stylistRepo.FindAsync(slot.StylistId);
+            if (stylist != null) stylistMap[stylist.Id] = stylist;
+        }
+        if (slot.LocationId != Guid.Empty)
+        {
+            var location = await _locationRepo.FindAsync(slot.LocationId);
+            if (location != null) locationMap[location.Id] = location;
+        }
+
+        return MapToDto(slot, stylistMap, locationMap);
     }
 
     public async Task<List<SalonBeautyTimeSlotDto>> CreateAsync(CreateSalonBeautyTimeSlotDto input)
@@ -377,10 +460,11 @@ public class SalonBeautyTimeSlotAppService : ApplicationService, ISalonBeautyTim
         string? note,
         int locationMaxCapacity)
     {
-        var statusEnum = Enum.IsDefined(typeof(SalonBeautyTimeSlotStatus), status)
+        var defaultStatus = Enum.IsDefined(typeof(SalonBeautyTimeSlotStatus), status)
             ? (SalonBeautyTimeSlotStatus)status
             : SalonBeautyTimeSlotStatus.On;
 
+        // Off (admin tắt cả lịch) thì giữ nguyên Off cho mọi slot — không cho peak override.
         var mask = weekdayMask == 0 ? 127 : weekdayMask;
         var result = new List<SalonBeautyTimeSlot>();
 
@@ -395,6 +479,12 @@ public class SalonBeautyTimeSlotAppService : ApplicationService, ISalonBeautyTim
                 if (capacity > locationMaxCapacity) capacity = locationMaxCapacity;
                 if (capacity < 1) capacity = 1;
 
+                var rangeStatus = defaultStatus;
+                if (defaultStatus != SalonBeautyTimeSlotStatus.Off && r.IsPeakHour)
+                {
+                    rangeStatus = SalonBeautyTimeSlotStatus.PeakHour;
+                }
+
                 result.Add(new SalonBeautyTimeSlot
                 {
                     LocationId = locationId,
@@ -405,7 +495,7 @@ public class SalonBeautyTimeSlotAppService : ApplicationService, ISalonBeautyTim
                     Capacity = capacity,
                     BookedCount = 0,
                     IsManualOverride = false,
-                    Status = statusEnum,
+                    Status = rangeStatus,
                     IsShowOnApp = isShowOnApp,
                     Note = string.IsNullOrWhiteSpace(note) ? null : note.Trim()
                 });
@@ -532,6 +622,7 @@ public class SalonBeautyTimeSlotAppService : ApplicationService, ISalonBeautyTim
             IsManualOverride = entity.IsManualOverride,
             Status = (byte)entity.Status,
             StatusText = LocalizeStatus(entity.Status),
+            IsPeakHour = entity.Status == SalonBeautyTimeSlotStatus.PeakHour,
             IsShowOnApp = entity.IsShowOnApp,
             Note = entity.Note
         };

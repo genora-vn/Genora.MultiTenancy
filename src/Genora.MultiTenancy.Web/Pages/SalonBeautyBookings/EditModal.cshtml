@@ -36,35 +36,42 @@
                         <span asp-validation-for="Booking.CustomerId" class="text-danger"></span>
                     </div>
 
-                    <!-- Booking Info -->
+                    <!-- Location + Stylist (6/6) -->
                     <div class="row g-3 mb-3">
-                        <div class="col-md-3">
+                        <div class="col-md-6">
                             <label class="booking-form-label">@L["SalonBeautyLocation:PageTitle"] <span class="text-danger">*</span></label>
                             <select asp-for="Booking.LocationId" asp-items="Model.LocationItems" id="EditBookingLocationSelect" class="form-select">
                                 <option value="">-- Chọn cơ sở --</option>
                             </select>
                         </div>
-                        <div class="col-md-3">
-                            <label class="booking-form-label">Trạng thái</label>
-                            <select asp-for="Booking.Status" asp-items="Model.StatusItems" class="form-select"></select>
-                        </div>
-                        <div class="col-md-3">
-                            <label class="booking-form-label">Stylist chính</label>
+                        <div class="col-md-6">
+                            <label class="booking-form-label">Stylist chính <span class="text-danger">*</span></label>
                             <select asp-for="Booking.StylistId" id="EditBookingStylistSelect" class="form-select">
                                 <option value="">-- Chọn Stylist --</option>
                             </select>
                         </div>
-                        <div class="col-md-3">
+                    </div>
+
+                    <!-- Ngày hẹn + Khung giờ (6/6) -->
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
                             <label class="booking-form-label">Ngày hẹn <span class="text-danger">*</span></label>
-                            <input type="text" id="EditBookingDatePicker" class="form-control"
+                            <input type="text" id="EditBookingDatePicker" class="form-control" autocomplete="off"
                                    value="@Model.Booking.BookingDate.ToString("dd/MM/yyyy")" />
                             <input type="hidden" asp-for="Booking.BookingDate" id="EditBookingDateHidden"
                                    value="@Model.Booking.BookingDate.ToString("yyyy-MM-dd")" />
+                            <small class="text-muted d-block mt-1" id="EditBookingDateHint"></small>
                         </div>
-                        <div class="col-md-3">
-                            <label class="booking-form-label">Giờ bắt đầu</label>
-                            <input type="time" asp-for="Booking.StartTime" class="form-control"
-                                   value="@Model.Booking.StartTime.ToString(@"hh\:mm")" />
+                        <div class="col-md-6">
+                            <label class="booking-form-label">@L["SalonBeautyBookings:TimeSlot"] <span class="text-danger">*</span></label>
+                            <select id="EditBookingTimeSlotSelect" class="form-select">
+                                <option value="">@L["SalonBeautyBookings:TimeSlotPlaceholder"]</option>
+                            </select>
+                            <input type="hidden" asp-for="Booking.TimeSlotId" id="EditBookingTimeSlotIdHidden" />
+                            <input type="hidden" asp-for="Booking.StartTime" id="EditBookingStartTimeHidden"
+                                   value="@Model.Booking.StartTime.ToString(@"hh\:mm\:ss")" />
+                            <input type="hidden" name="Booking.EndTime" id="EditBookingEndTimeHidden"
+                                   value="@(Model.Booking.EndTime?.ToString(@"hh\:mm\:ss") ?? "")" />
                         </div>
                     </div>
 
@@ -101,9 +108,23 @@
                     </div>
 
                     <!-- Total -->
-                    <div class="booking-total-row">
+                    <div class="booking-total-row mb-3">
                         <span class="booking-total-label">Tạm tính (<span id="EditServiceCountText">0</span> dịch vụ)</span>
                         <span class="booking-total-value" id="EditBookingSubTotal">0đ</span>
+                    </div>
+
+                    <!-- Status radio buttons (dưới cùng) -->
+                    <div class="mb-0">
+                        <label class="booking-form-label">Trạng thái</label>
+                        <div class="sb-radio-grid">
+                            @foreach (var item in Model.StatusItems)
+                            {
+                                <label class="sb-radio-card @(item.Selected ? "is-selected" : "")">
+                                    <input type="radio" name="Booking.Status" value="@item.Value" @(item.Selected ? "checked" : "") />
+                                    <span>@item.Text</span>
+                                </label>
+                            }
+                        </div>
                     </div>
                 </div>
 
@@ -132,6 +153,12 @@
             })
         ));
         var bookingService = genora.multiTenancy.appServices.salonBeauties.salonBeautyBooking;
+        var slotService = genora.multiTenancy.appServices.salonBeauties.salonBeautyTimeSlot;
+        var availableDateSet = {};
+        var datePickerInstance = null;
+        var initialBookingIso = '@Model.Booking.BookingDate.ToString("yyyy-MM-dd")';
+        var initialStartTime = '@Model.Booking.StartTime.ToString(@"hh\:mm\:ss")';
+        var initialTimeSlotId = '@(Model.Booking.TimeSlotId?.ToString() ?? "")';
 
         function formatCurrency(val) {
             return Number(val || 0).toLocaleString('vi-VN') + 'đ';
@@ -158,11 +185,110 @@
                     $sel.val('');
                 }
                 renderServiceItems();
+                if ($sel.val()) {
+                    return loadAvailableDates();
+                }
+            });
+        }
+
+        function pad2(n) { return String(n).padStart(2, '0'); }
+        function toIsoDate(d) { return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate()); }
+
+        function resetSlot() {
+            var $sel = $('#EditBookingTimeSlotSelect');
+            $sel.find('option:not(:first)').remove();
+            $('#EditBookingTimeSlotIdHidden').val('');
+        }
+
+        function loadAvailableDates() {
+            var locId = $('#EditBookingLocationSelect').val();
+            var stylistId = $('#EditBookingStylistSelect').val();
+            if (!stylistId) return;
+
+            var today = new Date();
+            var to = new Date(); to.setDate(to.getDate() + 60);
+            var fromIso = toIsoDate(today);
+            var toIso = toIsoDate(to);
+            // Mở rộng range để bao gồm initial date (booking cũ có thể trong quá khứ)
+            if (initialBookingIso && initialBookingIso < fromIso) fromIso = initialBookingIso;
+            if (initialBookingIso && initialBookingIso > toIso) toIso = initialBookingIso;
+
+            $('#EditBookingDateHint').text('Đang tải ngày khả dụng...');
+            return slotService.getAvailableDates(stylistId, fromIso, toIso, locId || null).then(function (dates) {
+                availableDateSet = {};
+                (dates || []).forEach(function (d) {
+                    var dt = new Date(d);
+                    availableDateSet[toIsoDate(dt)] = true;
+                });
+                if (datePickerInstance) {
+                    datePickerInstance.set('disable', [function (date) {
+                        return !availableDateSet[toIsoDate(date)];
+                    }]);
+                }
+                $('#EditBookingDateHint').text(Object.keys(availableDateSet).length
+                    ? 'Chỉ ngày sáng có cấu hình lịch mới chọn được.'
+                    : 'Stylist chưa có lịch làm việc trong khoảng ngày này.');
+            });
+        }
+
+        function appendSlotOption($sel, s, suffix) {
+            var st = (s.startTime || '00:00:00').substring(0, 5);
+            var et = (s.endTime || '00:00:00').substring(0, 5);
+            var label = st + ' - ' + et + (s.isPeakHour ? ' 🔥' : '') + (suffix ? ' ' + suffix : '');
+            $sel.append('<option value="' + s.id + '" data-start="' + s.startTime + '" data-end="' + s.endTime + '">' + label + '</option>');
+        }
+
+        function loadAvailableSlots(isoDate, preselectSlotId, preselectStartTime) {
+            var locId = $('#EditBookingLocationSelect').val();
+            var stylistId = $('#EditBookingStylistSelect').val();
+            resetSlot();
+            if (!stylistId || !isoDate) return;
+            return slotService.getAvailableSlots(stylistId, isoDate, locId || null).then(function (slots) {
+                var $sel = $('#EditBookingTimeSlotSelect');
+                $sel.find('option:not(:first)').remove();
+                slots = slots || [];
+                slots.forEach(function (s) { appendSlotOption($sel, s, ''); });
+
+                function tryPreselect() {
+                    if (preselectSlotId) {
+                        var $byId = $sel.find('option[value="' + preselectSlotId + '"]');
+                        if ($byId.length) { $sel.val(preselectSlotId).trigger('change'); return true; }
+                    }
+                    if (preselectStartTime) {
+                        var match = slots.find(function (s) { return s.startTime === preselectStartTime; });
+                        if (match) { $sel.val(match.id).trigger('change'); return true; }
+                    }
+                    return false;
+                }
+
+                if (tryPreselect()) return;
+
+                // Slot hiện tại không có trong list (có thể đang Full/Off) → fetch riêng để hiển thị
+                if (preselectSlotId) {
+                    slotService.get(preselectSlotId).then(function (s) {
+                        if (!s) return;
+                        appendSlotOption($sel, s, '(hiện tại)');
+                        $sel.val(s.id).trigger('change');
+                    }).catch(function () {});
+                } else if (!slots.length) {
+                    $sel.append('<option value="" disabled>' + abp.localization.localize('SalonBeautyBookings:NoSlotForDate', 'MultiTenancy') + '</option>');
+                }
             });
         }
 
         $('#EditBookingLocationSelect').on('change', function () {
             loadStylistsByLocation($(this).val(), null);
+        });
+
+        $('#EditBookingStylistSelect').on('change', function () {
+            loadAvailableDates();
+        });
+
+        $('#EditBookingTimeSlotSelect').on('change', function () {
+            var $opt = $(this).find(':selected');
+            $('#EditBookingTimeSlotIdHidden').val($(this).val() || '');
+            $('#EditBookingStartTimeHidden').val($opt.data('start') || '');
+            $('#EditBookingEndTimeHidden').val($opt.data('end') || '');
         });
 
         function renderServiceRow(idx, item) {
@@ -279,18 +405,36 @@
             renderServiceItems();
         });
 
-        flatpickr('#EditBookingDatePicker', {
+        datePickerInstance = flatpickr('#EditBookingDatePicker', {
             dateFormat: 'd/m/Y',
+            disable: [function () { return true; }],
             onChange: function (selectedDates) {
                 if (selectedDates.length) {
                     var d = selectedDates[0];
-                    $('#EditBookingDateHidden').val(d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'));
+                    var iso = toIsoDate(d);
+                    $('#EditBookingDateHidden').val(iso);
+                    loadAvailableSlots(iso, null, null);
+                } else {
+                    $('#EditBookingDateHidden').val('');
+                    resetSlot();
                 }
             }
         });
 
+        function parseIsoToLocal(isoStr) {
+            var parts = isoStr.split('-');
+            return new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+        }
+
         $('#SaveBookingBtn').on('click', function () {
             if (!$('#EditSelectedCustomerId').val()) { abp.notify.warn('Vui lòng chọn khách hàng.'); return; }
+            if (!$('#EditBookingLocationSelect').val()) { abp.notify.warn('Vui lòng chọn cơ sở.'); return; }
+            if (!$('#EditBookingStylistSelect').val()) { abp.notify.warn('Vui lòng chọn stylist.'); return; }
+            if (!$('#EditBookingDateHidden').val()) { abp.notify.warn('Vui lòng chọn ngày hẹn.'); return; }
+            if (!$('#EditBookingTimeSlotIdHidden').val()) {
+                abp.notify.warn(abp.localization.localize('SalonBeautyBookings:TimeSlotRequired', 'MultiTenancy'));
+                return;
+            }
             if (!serviceItems.length || serviceItems.some(function (i) { return !i.serviceId; })) {
                 $('#EditServiceItemsError').show(); return;
             }
@@ -300,6 +444,22 @@
             $('#EditBookingForm').submit();
         });
 
-        loadLookups(function () { renderServiceItems(); });
+        loadLookups(function () {
+            renderServiceItems();
+            if (initialBookingIso) {
+                var datesPromise = loadAvailableDates();
+                $.when(datesPromise).always(function () {
+                    availableDateSet[initialBookingIso] = true;
+                    if (datePickerInstance) {
+                        datePickerInstance.set('disable', [function (date) {
+                            return !availableDateSet[toIsoDate(date)];
+                        }]);
+                        datePickerInstance.setDate(parseIsoToLocal(initialBookingIso), false);
+                    }
+                    $('#EditBookingDateHidden').val(initialBookingIso);
+                    loadAvailableSlots(initialBookingIso, initialTimeSlotId, initialStartTime);
+                });
+            }
+        });
     })();
 </script>

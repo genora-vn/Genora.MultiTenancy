@@ -46,6 +46,7 @@ public class SalonBeautyBookingAppService :
     private readonly IRepository<SalonBeautyServiceCategory, Guid> _categoryRepository;
     private readonly IRepository<SalonBeautyStylist, Guid> _stylistRepository;
     private readonly IRepository<SalonBeautyLocation, Guid> _locationRepository;
+    private readonly IRepository<SalonBeautyTimeSlot, Guid> _timeSlotRepository;
     private readonly IRepository<SalonBeautyCustomerLoyaltyBalance, Guid> _loyaltyRepository;
     private readonly IStringLocalizer<MultiTenancyResource> _l;
 
@@ -57,6 +58,7 @@ public class SalonBeautyBookingAppService :
         IRepository<SalonBeautyServiceCategory, Guid> categoryRepository,
         IRepository<SalonBeautyStylist, Guid> stylistRepository,
         IRepository<SalonBeautyLocation, Guid> locationRepository,
+        IRepository<SalonBeautyTimeSlot, Guid> timeSlotRepository,
         IRepository<SalonBeautyCustomerLoyaltyBalance, Guid> loyaltyRepository,
         IStringLocalizer<MultiTenancyResource> l,
         ICurrentTenant currentTenant,
@@ -70,6 +72,7 @@ public class SalonBeautyBookingAppService :
         _categoryRepository = categoryRepository;
         _stylistRepository = stylistRepository;
         _locationRepository = locationRepository;
+        _timeSlotRepository = timeSlotRepository;
         _loyaltyRepository = loyaltyRepository;
         _l = l;
     }
@@ -131,9 +134,29 @@ public class SalonBeautyBookingAppService :
 
         ValidateBookingItems(input.Items);
 
+        // Nếu có TimeSlotId → lấy WorkDate / StartTime / EndTime từ slot, override input
+        var bookingDate = input.BookingDate.Date;
+        var startTime = input.StartTime;
+        TimeSpan? endTime = input.EndTime;
+        Guid? locationId = input.LocationId;
+        SalonBeautyTimeSlot? timeSlot = null;
+        if (input.TimeSlotId.HasValue && input.TimeSlotId.Value != Guid.Empty)
+        {
+            timeSlot = await _timeSlotRepository.GetAsync(input.TimeSlotId.Value);
+            if (timeSlot.Status == SalonBeautyTimeSlotStatus.Off || timeSlot.Status == SalonBeautyTimeSlotStatus.Full)
+                throw new UserFriendlyException("Khung giờ đã bị tắt hoặc đã đầy.");
+            if (timeSlot.BookedCount >= timeSlot.Capacity)
+                throw new UserFriendlyException("Khung giờ đã đầy.");
+
+            bookingDate = timeSlot.WorkDate.Date;
+            startTime = timeSlot.StartTime;
+            endTime = timeSlot.EndTime;
+            locationId = timeSlot.LocationId;
+        }
+
         var resolved = await ResolveItemsAsync(input.Items);
         var totalDuration = resolved.Sum(x => x.Duration);
-        var endTime = input.EndTime ?? input.StartTime.Add(TimeSpan.FromMinutes(totalDuration));
+        endTime = endTime ?? startTime.Add(TimeSpan.FromMinutes(totalDuration));
         var subTotal = resolved.Sum(x => x.Price);
         var totalAmount = subTotal + (input.Surcharge ?? 0m) - (input.Discount ?? 0m);
         if (totalAmount < 0) totalAmount = 0;
@@ -146,9 +169,9 @@ public class SalonBeautyBookingAppService :
             input.CustomerId,
             resolved.First().ServiceId,
             input.StylistId,
-            input.BookingDate.Date,
-            input.StartTime,
-            endTime,
+            bookingDate,
+            startTime,
+            endTime.Value,
             totalAmount,
             SalonBeautyBookingStatus.New,
             SalonBeautyPaymentStatus.Unpaid,
@@ -156,7 +179,8 @@ public class SalonBeautyBookingAppService :
             PackNote(input.CustomerNote, input.InternalNote),
             CurrentTenant.Id
         );
-        booking.LocationId = input.LocationId;
+        booking.LocationId = locationId;
+        booking.TimeSlotId = input.TimeSlotId;
 
         await _bookingRepository.InsertAsync(booking, autoSave: true);
 
@@ -170,6 +194,17 @@ public class SalonBeautyBookingAppService :
                 Duration = item.Duration,
                 TenantId = CurrentTenant.Id
             }, autoSave: true);
+        }
+
+        // Tăng BookedCount của time slot nếu có
+        if (timeSlot != null)
+        {
+            timeSlot.BookedCount += 1;
+            if (timeSlot.BookedCount >= timeSlot.Capacity && !timeSlot.IsManualOverride)
+            {
+                timeSlot.Status = SalonBeautyTimeSlotStatus.Full;
+            }
+            await _timeSlotRepository.UpdateAsync(timeSlot, autoSave: true);
         }
 
         return await MapToBookingDetailDto(booking);
@@ -188,9 +223,32 @@ public class SalonBeautyBookingAppService :
         var booking = await _bookingRepository.GetAsync(id);
         EnsureBookingCanBeEdited(booking);
 
+        var oldTimeSlotId = booking.TimeSlotId;
+
+        // Nếu TimeSlotId thay đổi → lấy WorkDate / StartTime / EndTime / LocationId từ slot mới, override input
+        var bookingDate = input.BookingDate.Date;
+        var startTime = input.StartTime;
+        TimeSpan? endTime = input.EndTime;
+        var locationId = input.LocationId;
+        SalonBeautyTimeSlot? newSlot = null;
+        if (input.TimeSlotId.HasValue && input.TimeSlotId.Value != Guid.Empty
+            && input.TimeSlotId.Value != oldTimeSlotId)
+        {
+            newSlot = await _timeSlotRepository.GetAsync(input.TimeSlotId.Value);
+            if (newSlot.Status == SalonBeautyTimeSlotStatus.Off || newSlot.Status == SalonBeautyTimeSlotStatus.Full)
+                throw new UserFriendlyException("Khung giờ đã bị tắt hoặc đã đầy.");
+            if (newSlot.BookedCount >= newSlot.Capacity)
+                throw new UserFriendlyException("Khung giờ đã đầy.");
+
+            bookingDate = newSlot.WorkDate.Date;
+            startTime = newSlot.StartTime;
+            endTime = newSlot.EndTime;
+            locationId = newSlot.LocationId;
+        }
+
         var resolved = await ResolveItemsAsync(input.Items);
         var totalDuration = resolved.Sum(x => x.Duration);
-        var endTime = input.EndTime ?? input.StartTime.Add(TimeSpan.FromMinutes(totalDuration));
+        endTime = endTime ?? startTime.Add(TimeSpan.FromMinutes(totalDuration));
         var subTotal = resolved.Sum(x => x.Price);
         var totalAmount = subTotal + (input.Surcharge ?? 0m) - (input.Discount ?? 0m);
 
@@ -199,18 +257,49 @@ public class SalonBeautyBookingAppService :
             totalAmount = 0;
         }
 
-        booking.LocationId = input.LocationId;
+        booking.LocationId = locationId;
         booking.CustomerId = input.CustomerId;
         booking.StylistId = input.StylistId;
         booking.ServiceId = resolved.First().ServiceId;
-        booking.BookingDate = input.BookingDate.Date;
-        booking.StartTime = input.StartTime;
-        booking.EndTime = endTime;
+        booking.BookingDate = bookingDate;
+        booking.StartTime = startTime;
+        booking.EndTime = endTime.Value;
         booking.TotalAmount = totalAmount;
         booking.Status = input.Status;
+        booking.TimeSlotId = input.TimeSlotId;
         booking.Note = PackNote(input.CustomerNote, input.InternalNote);
 
         await _bookingRepository.UpdateAsync(booking, autoSave: true);
+
+        // Đồng bộ BookedCount nếu TimeSlotId đổi
+        if (oldTimeSlotId != input.TimeSlotId)
+        {
+            if (oldTimeSlotId.HasValue && oldTimeSlotId.Value != Guid.Empty)
+            {
+                var oldSlot = await _timeSlotRepository.FindAsync(oldTimeSlotId.Value);
+                if (oldSlot != null)
+                {
+                    oldSlot.BookedCount = Math.Max(0, oldSlot.BookedCount - 1);
+                    if (oldSlot.Status == SalonBeautyTimeSlotStatus.Full
+                        && oldSlot.BookedCount < oldSlot.Capacity
+                        && !oldSlot.IsManualOverride)
+                    {
+                        oldSlot.Status = SalonBeautyTimeSlotStatus.On;
+                    }
+                    await _timeSlotRepository.UpdateAsync(oldSlot, autoSave: true);
+                }
+            }
+
+            if (newSlot != null)
+            {
+                newSlot.BookedCount += 1;
+                if (newSlot.BookedCount >= newSlot.Capacity && !newSlot.IsManualOverride)
+                {
+                    newSlot.Status = SalonBeautyTimeSlotStatus.Full;
+                }
+                await _timeSlotRepository.UpdateAsync(newSlot, autoSave: true);
+            }
+        }
 
         var existing = await AsyncExecuter.ToListAsync(
             (await _bookingServiceRepository.GetQueryableAsync())
@@ -296,6 +385,10 @@ public class SalonBeautyBookingAppService :
         {
             booking.Status = SalonBeautyBookingStatus.Confirmed;
         }
+        else if (booking.Status == SalonBeautyBookingStatus.Confirmed)
+        {
+            booking.Status = SalonBeautyBookingStatus.Processing;
+        }
 
         var updated = await _bookingRepository.UpdateAsync(booking, autoSave: true);
         return await MapToBookingDetailDto(updated);
@@ -339,9 +432,11 @@ public class SalonBeautyBookingAppService :
             throw new UserFriendlyException("Booking đã được hủy trước đó.");
         }
 
-        if (booking.Status != SalonBeautyBookingStatus.New && booking.Status != SalonBeautyBookingStatus.Confirmed)
+        if (booking.Status != SalonBeautyBookingStatus.New
+            && booking.Status != SalonBeautyBookingStatus.Confirmed
+            && booking.Status != SalonBeautyBookingStatus.Processing)
         {
-            throw new UserFriendlyException("Chỉ được hủy booking ở trạng thái mới tạo hoặc đang thực hiện.");
+            throw new UserFriendlyException("Chỉ được hủy booking ở trạng thái Chờ xác nhận, Đã xác nhận hoặc Đang thực hiện.");
         }
 
         if (input.CancelNote.IsNullOrWhiteSpace())
@@ -468,6 +563,7 @@ public class SalonBeautyBookingAppService :
         var totalBookings = bookings.Count;
         var newCount = bookings.Count(x => x.Status == SalonBeautyBookingStatus.New);
         var confirmedCount = bookings.Count(x => x.Status == SalonBeautyBookingStatus.Confirmed);
+        var processingCount = bookings.Count(x => x.Status == SalonBeautyBookingStatus.Processing);
         var completedCount = bookings.Count(x => x.Status == SalonBeautyBookingStatus.Completed);
         var cancelledCount = bookings.Count(x => x.Status == SalonBeautyBookingStatus.Cancelled);
         var totalValue = bookings
@@ -492,7 +588,7 @@ public class SalonBeautyBookingAppService :
             CompletionTrendText = "Ổn định",
             PendingCount = newCount,
             ConfirmedCount = confirmedCount,
-            ProcessingCount = confirmedCount,
+            ProcessingCount = processingCount,
             CompletedCount = completedCount,
             CancelledCount = cancelledCount,
             NewUnprocessedCount = newUnprocessed
@@ -672,6 +768,7 @@ public class SalonBeautyBookingAppService :
     {
         SalonBeautyBookingStatus.New => "#F59E0B",
         SalonBeautyBookingStatus.Confirmed => "#3B82F6",
+        SalonBeautyBookingStatus.Processing => "#8B5CF6",
         SalonBeautyBookingStatus.Completed => "#10B981",
         SalonBeautyBookingStatus.Cancelled => "#EF4444",
         _ => "#9CA3AF"
@@ -681,6 +778,7 @@ public class SalonBeautyBookingAppService :
     {
         SalonBeautyBookingStatus.New => "Chờ xác nhận",
         SalonBeautyBookingStatus.Confirmed => "Đã xác nhận",
+        SalonBeautyBookingStatus.Processing => "Đang thực hiện",
         SalonBeautyBookingStatus.Completed => "Hoàn thành",
         SalonBeautyBookingStatus.Cancelled => "Đã hủy",
         _ => status.ToString()
@@ -772,6 +870,7 @@ public class SalonBeautyBookingAppService :
             CustomerAvatar = customer?.Avatar,
             StylistId = booking.StylistId,
             StylistName = stylist?.DisplayName,
+            TimeSlotId = booking.TimeSlotId,
             BookingDate = booking.BookingDate,
             StartTime = booking.StartTime,
             EndTime = booking.EndTime,
@@ -869,6 +968,7 @@ public class SalonBeautyBookingAppService :
             StylistName = stylist?.DisplayName,
             StylistAvatar = stylist?.Avatar,
             StylistRoleText = stylist?.Role.HasValue == true ? GetStylistRoleText((SalonBeautyStylistRole)stylist.Role.Value) : null,
+            TimeSlotId = booking.TimeSlotId,
             ServicesSummary = itemDtos.Count == 0 ? null : string.Join(", ", itemDtos.Select(x => x.ServiceName).Where(x => !string.IsNullOrWhiteSpace(x))),
             ServiceCount = itemDtos.Count,
             BookingDate = booking.BookingDate,
@@ -994,7 +1094,8 @@ public class SalonBeautyBookingAppService :
         return current switch
         {
             SalonBeautyBookingStatus.New => next == SalonBeautyBookingStatus.Confirmed,
-            SalonBeautyBookingStatus.Confirmed => next == SalonBeautyBookingStatus.Completed,
+            SalonBeautyBookingStatus.Confirmed => next == SalonBeautyBookingStatus.Processing,
+            SalonBeautyBookingStatus.Processing => next == SalonBeautyBookingStatus.Completed,
             _ => false
         };
     }

@@ -24,6 +24,8 @@ public class MiniAppSalonBeautyBookingAppService : ApplicationService, IMiniAppS
     private readonly IRepository<SalonBeautyService, Guid> _serviceRepository;
     private readonly IRepository<SalonBeautyServiceCategory, Guid> _categoryRepository;
     private readonly IRepository<SalonBeautyStylist, Guid> _stylistRepository;
+    private readonly IRepository<SalonBeautyTimeSlot, Guid> _timeSlotRepository;
+    private readonly IRepository<SalonBeautyLocation, Guid> _locationRepository;
     private readonly IRepository<SalonBeautyCustomerLoyaltyBalance, Guid> _loyaltyRepository;
 
     public MiniAppSalonBeautyBookingAppService(
@@ -33,6 +35,8 @@ public class MiniAppSalonBeautyBookingAppService : ApplicationService, IMiniAppS
         IRepository<SalonBeautyService, Guid> serviceRepository,
         IRepository<SalonBeautyServiceCategory, Guid> categoryRepository,
         IRepository<SalonBeautyStylist, Guid> stylistRepository,
+        IRepository<SalonBeautyTimeSlot, Guid> timeSlotRepository,
+        IRepository<SalonBeautyLocation, Guid> locationRepository,
         IRepository<SalonBeautyCustomerLoyaltyBalance, Guid> loyaltyRepository)
     {
         _bookingRepository = bookingRepository;
@@ -41,6 +45,8 @@ public class MiniAppSalonBeautyBookingAppService : ApplicationService, IMiniAppS
         _serviceRepository = serviceRepository;
         _categoryRepository = categoryRepository;
         _stylistRepository = stylistRepository;
+        _timeSlotRepository = timeSlotRepository;
+        _locationRepository = locationRepository;
         _loyaltyRepository = loyaltyRepository;
     }
 
@@ -113,9 +119,29 @@ public class MiniAppSalonBeautyBookingAppService : ApplicationService, IMiniAppS
             })
             .ToList();
 
+        // Nếu có TimeSlotId → lấy WorkDate / StartTime / EndTime / LocationId từ slot
+        var bookingDate = input.BookingDate.Date;
+        var startTime = input.StartTime;
+        TimeSpan? endTime = input.EndTime;
+        var locationId = input.LocationId ?? stylist.LocationId;
+        SalonBeautyTimeSlot? timeSlot = null;
+        if (input.TimeSlotId.HasValue && input.TimeSlotId.Value != Guid.Empty)
+        {
+            timeSlot = await _timeSlotRepository.GetAsync(input.TimeSlotId.Value);
+            if (timeSlot.Status == SalonBeautyTimeSlotStatus.Off || timeSlot.Status == SalonBeautyTimeSlotStatus.Full)
+                throw new UserFriendlyException("Time slot is unavailable or full.");
+            if (timeSlot.BookedCount >= timeSlot.Capacity)
+                throw new UserFriendlyException("Time slot is full.");
+
+            bookingDate = timeSlot.WorkDate.Date;
+            startTime = timeSlot.StartTime;
+            endTime = timeSlot.EndTime;
+            locationId = timeSlot.LocationId;
+        }
+
         var firstService = services.First();
         var totalDuration = resolvedItems.Sum(x => x.Duration);
-        var endTime = input.EndTime ?? input.StartTime.Add(TimeSpan.FromMinutes(totalDuration));
+        endTime = endTime ?? startTime.Add(TimeSpan.FromMinutes(totalDuration));
         var subTotal = resolvedItems.Sum(x => x.Price);
         var totalAmount = subTotal + (input.Surcharge ?? 0m) - (input.Discount ?? 0m);
         if (totalAmount < 0) totalAmount = 0;
@@ -129,9 +155,9 @@ public class MiniAppSalonBeautyBookingAppService : ApplicationService, IMiniAppS
             input.CustomerId,
             firstService.Id,
             input.StylistId,
-            input.BookingDate.Date,
-            input.StartTime,
-            endTime,
+            bookingDate,
+            startTime,
+            endTime.Value,
             totalAmount,
             SalonBeautyBookingStatus.New,
             SalonBeautyPaymentStatus.Unpaid,
@@ -139,7 +165,8 @@ public class MiniAppSalonBeautyBookingAppService : ApplicationService, IMiniAppS
             PackNote(input.CustomerNote, input.InternalNote),
             tenantId
         );
-        booking.LocationId = input.LocationId ?? stylist.LocationId;
+        booking.LocationId = locationId;
+        booking.TimeSlotId = input.TimeSlotId;
 
         try
         {
@@ -155,6 +182,17 @@ public class MiniAppSalonBeautyBookingAppService : ApplicationService, IMiniAppS
                     Duration = item.Duration,
                     TenantId = tenantId
                 }, autoSave: true);
+            }
+
+            // Tăng BookedCount của time slot nếu có
+            if (timeSlot != null)
+            {
+                timeSlot.BookedCount += 1;
+                if (timeSlot.BookedCount >= timeSlot.Capacity && !timeSlot.IsManualOverride)
+                {
+                    timeSlot.Status = SalonBeautyTimeSlotStatus.Full;
+                }
+                await _timeSlotRepository.UpdateAsync(timeSlot, autoSave: true);
             }
 
             return await MapToDtoAsync(booking);
@@ -238,10 +276,18 @@ public class MiniAppSalonBeautyBookingAppService : ApplicationService, IMiniAppS
         var (customerNote, internalNote) = UnpackNote(booking.Note);
         var servicesSummary = itemDtos.Count == 0 ? null : string.Join(", ", itemDtos.Select(x => x.ServiceName).Where(x => !string.IsNullOrWhiteSpace(x)));
 
+        SalonBeautyLocation? location = null;
+        if (booking.LocationId.HasValue && booking.LocationId.Value != Guid.Empty)
+        {
+            location = await _locationRepository.FindAsync(booking.LocationId.Value);
+        }
+
         return new SalonBeautyBookingDetailDto
         {
             Id = booking.Id,
             BookingCode = booking.BookingCode,
+            LocationId = booking.LocationId,
+            LocationName = location?.Name,
             CustomerId = booking.CustomerId,
             CustomerName = customer?.Name,
             CustomerPhone = customer?.Phone,

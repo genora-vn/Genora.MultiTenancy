@@ -15,6 +15,13 @@ public class SalonBeautyBooking : FullAuditedAggregateRoot<Guid>, IMultiTenant
 
     public Guid? LocationId { get; set; }
 
+    /// <summary>
+    /// Tham chiếu đến time slot đã cấu hình cho stylist (SalonBeautyTimeSlots).
+    /// Khi đặt lịch từ Mini App / CMS, BookingDate / StartTime / EndTime sẽ lấy từ slot này.
+    /// Null cho các booking cũ chưa migrate hoặc luồng đặt lịch không qua time slot.
+    /// </summary>
+    public Guid? TimeSlotId { get; set; }
+
     [Required]
     [StringLength(50)]
     public string BookingCode { get; set; } = null!;
@@ -55,6 +62,7 @@ public class SalonBeautyBooking : FullAuditedAggregateRoot<Guid>, IMultiTenant
     public virtual SalonBeautyService? Service { get; set; }
     public virtual SalonBeautyStylist? Stylist { get; set; }
     public virtual SalonBeautyLocation? Location { get; set; }
+    public virtual SalonBeautyTimeSlot? TimeSlot { get; set; }
     public virtual ICollection<SalonBeautyBookingService> BookingServices { get; set; } = new List<SalonBeautyBookingService>();
 
     protected SalonBeautyBooking()

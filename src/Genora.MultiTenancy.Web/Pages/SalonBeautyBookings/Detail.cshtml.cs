@@ -40,6 +40,7 @@ public class DetailModel : MultiTenancyPageModel
         {
             Genora.MultiTenancy.Enums.SalonBeautyBookingStatus.New => 1,
             Genora.MultiTenancy.Enums.SalonBeautyBookingStatus.Confirmed => 2,
+            Genora.MultiTenancy.Enums.SalonBeautyBookingStatus.Processing => 3,
             Genora.MultiTenancy.Enums.SalonBeautyBookingStatus.Completed => 4,
             Genora.MultiTenancy.Enums.SalonBeautyBookingStatus.Cancelled => -1,
             _ => 1

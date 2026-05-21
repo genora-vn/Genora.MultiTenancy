@@ -35,6 +35,7 @@ public class MiniAppSalonBeautyStylistAppService : ApplicationService, IMiniAppS
         input.MaxResultCount = input.MaxResultCount <= 0 ? 20 : Math.Min(input.MaxResultCount, 100);
         var query = await _repository.GetQueryableAsync();
         query = query.Where(x => x.Status == 1 && x.IsShowOnApp && x.Avatar != null && x.Avatar != "");
+        query = query.WhereIf(input.LocationId.HasValue, x => x.LocationId == input.LocationId!.Value);
         query = query.WhereIf(input.Role.HasValue, x => x.Role == input.Role.Value);
         query = query.WhereIf(input.Level.HasValue, x => x.Level == input.Level.Value);
         query = query.WhereIf(!input.FilterText.IsNullOrWhiteSpace(), x => x.DisplayName.Contains(input.FilterText!));
