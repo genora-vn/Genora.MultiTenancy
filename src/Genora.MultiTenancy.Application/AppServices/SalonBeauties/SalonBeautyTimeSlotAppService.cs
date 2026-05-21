@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Genora.MultiTenancy.AppDtos.SalonBeauties.SalonBeautyBookings;
 using Genora.MultiTenancy.AppDtos.SalonBeauties.SalonBeautyTimeSlots;
 using Genora.MultiTenancy.DomainModels.AppSalonBeauty;
 using Genora.MultiTenancy.Enums;
@@ -234,6 +235,37 @@ public class SalonBeautyTimeSlotAppService : ApplicationService, ISalonBeautyTim
         return slots.Select(s => MapToDto(s, stylistMap, locationMap)).ToList();
     }
 
+    public async Task<List<TimeRangeDto>> GenerateRangesByLocationAsync(Guid locationId)
+    {
+        await CheckPolicyAsync(MultiTenancyPermissions.SalonBeautyTimeSlots.Default, MultiTenancyPermissions.HostSalonBeautyTimeSlots.Default);
+
+        var location = await _locationRepo.GetAsync(locationId);
+        return GenerateRanges(location);
+    }
+
+    public async Task<List<SalonBeautyStylistLookupDto>> GetStylistLookupAsync(Guid? locationId = null)
+    {
+        await CheckPolicyAsync(MultiTenancyPermissions.SalonBeautyTimeSlots.Default, MultiTenancyPermissions.HostSalonBeautyTimeSlots.Default);
+
+        var query = await _stylistRepo.GetQueryableAsync();
+        query = query.Where(x => x.Status == 1);
+        if (locationId.HasValue)
+            query = query.Where(x => x.LocationId == locationId.Value);
+
+        var stylists = await AsyncExecuter.ToListAsync(
+            query.OrderBy(x => x.SortOrder).ThenBy(x => x.DisplayName));
+
+        return stylists.Select(x => new SalonBeautyStylistLookupDto
+        {
+            Id = x.Id,
+            LocationId = x.LocationId,
+            DisplayName = x.DisplayName,
+            Avatar = x.Avatar,
+            Role = x.Role,
+            RoleText = x.Role.HasValue ? $"Enum:SalonBeautyStylistRole.{(SalonBeautyStylistRole)x.Role.Value}" : null
+        }).ToList();
+    }
+
     public async Task<List<SalonBeautyTimeSlotDto>> CreateAsync(CreateSalonBeautyTimeSlotDto input)
     {
         await CheckPolicyAsync(MultiTenancyPermissions.SalonBeautyTimeSlots.Create, MultiTenancyPermissions.HostSalonBeautyTimeSlots.Create);
@@ -241,7 +273,9 @@ public class SalonBeautyTimeSlotAppService : ApplicationService, ISalonBeautyTim
         ValidateCreateUpdate(input.FromDate, input.ToDate, input.Ranges);
 
         await _stylistRepo.GetAsync(input.StylistId);
-        await _locationRepo.GetAsync(input.LocationId);
+        var location = await _locationRepo.GetAsync(input.LocationId);
+
+        ValidateRangesAgainstLocation(input.Ranges, location);
 
         var existing = (await _slotRepo.GetQueryableAsync())
             .Where(x => x.StylistId == input.StylistId
@@ -250,7 +284,7 @@ public class SalonBeautyTimeSlotAppService : ApplicationService, ISalonBeautyTim
         if (await AsyncExecuter.AnyAsync(existing))
             throw new UserFriendlyException(L("SalonBeautyTimeSlots:OverlappingSchedule"));
 
-        var slots = BuildSlots(input.LocationId, input.StylistId, input.FromDate, input.ToDate, input.Ranges, input.WeekdayMask, input.IsShowOnApp, input.Status, input.Note);
+        var slots = BuildSlots(input.LocationId, input.StylistId, input.FromDate, input.ToDate, input.Ranges, input.WeekdayMask, input.IsShowOnApp, input.Status, input.Note, location.MaxCapacityPerSlot);
 
         var created = new List<SalonBeautyTimeSlot>();
         foreach (var s in slots)
@@ -269,7 +303,9 @@ public class SalonBeautyTimeSlotAppService : ApplicationService, ISalonBeautyTim
         ValidateCreateUpdate(input.FromDate, input.ToDate, input.Ranges);
 
         await _stylistRepo.GetAsync(stylistId);
-        await _locationRepo.GetAsync(input.LocationId);
+        var location = await _locationRepo.GetAsync(input.LocationId);
+
+        ValidateRangesAgainstLocation(input.Ranges, location);
 
         // Replace toàn bộ slot của stylist
         var existing = (await _slotRepo.GetQueryableAsync())
@@ -280,7 +316,7 @@ public class SalonBeautyTimeSlotAppService : ApplicationService, ISalonBeautyTim
             await _slotRepo.DeleteAsync(s.Id, autoSave: true);
         }
 
-        var slots = BuildSlots(input.LocationId, stylistId, input.FromDate, input.ToDate, input.Ranges, input.WeekdayMask, input.IsShowOnApp, input.Status, input.Note);
+        var slots = BuildSlots(input.LocationId, stylistId, input.FromDate, input.ToDate, input.Ranges, input.WeekdayMask, input.IsShowOnApp, input.Status, input.Note, location.MaxCapacityPerSlot);
 
         var created = new List<SalonBeautyTimeSlot>();
         foreach (var s in slots)
@@ -300,7 +336,11 @@ public class SalonBeautyTimeSlotAppService : ApplicationService, ISalonBeautyTim
             throw new UserFriendlyException(L("SalonBeautyTimeSlots:StatusInvalid"));
 
         var entity = await _slotRepo.GetAsync(id);
-        entity.Status = (SalonBeautyTimeSlotStatus)input.Status;
+        var newStatus = (SalonBeautyTimeSlotStatus)input.Status;
+
+        // Admin tự can thiệp → bật manual override để recalculate không đè
+        entity.IsManualOverride = true;
+        entity.Status = newStatus;
         await _slotRepo.UpdateAsync(entity, autoSave: true);
 
         var stylist = await _stylistRepo.GetAsync(entity.StylistId);
@@ -334,7 +374,8 @@ public class SalonBeautyTimeSlotAppService : ApplicationService, ISalonBeautyTim
         int weekdayMask,
         bool isShowOnApp,
         byte status,
-        string? note)
+        string? note,
+        int locationMaxCapacity)
     {
         var statusEnum = Enum.IsDefined(typeof(SalonBeautyTimeSlotStatus), status)
             ? (SalonBeautyTimeSlotStatus)status
@@ -350,6 +391,10 @@ public class SalonBeautyTimeSlotAppService : ApplicationService, ISalonBeautyTim
 
             foreach (var r in ranges)
             {
+                var capacity = r.Capacity is > 0 ? r.Capacity!.Value : locationMaxCapacity;
+                if (capacity > locationMaxCapacity) capacity = locationMaxCapacity;
+                if (capacity < 1) capacity = 1;
+
                 result.Add(new SalonBeautyTimeSlot
                 {
                     LocationId = locationId,
@@ -357,11 +402,67 @@ public class SalonBeautyTimeSlotAppService : ApplicationService, ISalonBeautyTim
                     WorkDate = day,
                     StartTime = r.StartTime,
                     EndTime = r.EndTime,
+                    Capacity = capacity,
+                    BookedCount = 0,
+                    IsManualOverride = false,
                     Status = statusEnum,
                     IsShowOnApp = isShowOnApp,
                     Note = string.IsNullOrWhiteSpace(note) ? null : note.Trim()
                 });
             }
+        }
+
+        return result;
+    }
+
+    /// <summary>
+    /// Validate capacity per range không vượt Location.MaxCapacityPerSlot (BR-Slot).
+    /// </summary>
+    private void ValidateRangesAgainstLocation(List<TimeRangeDto> ranges, SalonBeautyLocation location)
+    {
+        foreach (var r in ranges)
+        {
+            // Slot không được vượt qua close_time (BR-06)
+            if (r.EndTime > location.CloseTime)
+                throw new UserFriendlyException(L("SalonBeautyTimeSlots:RangeOutsideLocation"));
+
+            if (r.StartTime < location.OpenTime)
+                throw new UserFriendlyException(L("SalonBeautyTimeSlots:RangeOutsideLocation"));
+
+            if (r.Capacity.HasValue && r.Capacity.Value > location.MaxCapacityPerSlot)
+                throw new UserFriendlyException(L("SalonBeautyTimeSlots:CapacityExceedsLocation"));
+        }
+    }
+
+    /// <summary>
+    /// Auto-generate khung giờ trong 1 ngày dựa vào (open_time, close_time, slot_duration, buffer_time).
+    /// VD: open=09:00, close=18:00, slot=60, buffer=10 → [09:00-10:00, 10:10-11:10, ..., 17:50-18:00].
+    /// </summary>
+    private static List<TimeRangeDto> GenerateRanges(SalonBeautyLocation location)
+    {
+        var result = new List<TimeRangeDto>();
+        if (location.SlotDuration <= 0) return result;
+
+        var current = location.OpenTime;
+        var slotDuration = TimeSpan.FromMinutes(location.SlotDuration);
+        var buffer = TimeSpan.FromMinutes(Math.Max(0, location.BufferTime));
+
+        while (current < location.CloseTime)
+        {
+            var end = current + slotDuration;
+            if (end > location.CloseTime) end = location.CloseTime;
+
+            // Slot quá ngắn (< 5 phút) thì bỏ qua
+            if ((end - current).TotalMinutes < 5) break;
+
+            result.Add(new TimeRangeDto
+            {
+                StartTime = current,
+                EndTime = end,
+                Capacity = location.MaxCapacityPerSlot
+            });
+
+            current = end + buffer;
         }
 
         return result;
@@ -425,6 +526,10 @@ public class SalonBeautyTimeSlotAppService : ApplicationService, ISalonBeautyTim
             WorkDate = entity.WorkDate,
             StartTime = entity.StartTime,
             EndTime = entity.EndTime,
+            Capacity = entity.Capacity,
+            BookedCount = entity.BookedCount,
+            CapacityText = $"{entity.BookedCount}/{entity.Capacity}",
+            IsManualOverride = entity.IsManualOverride,
             Status = (byte)entity.Status,
             StatusText = LocalizeStatus(entity.Status),
             IsShowOnApp = entity.IsShowOnApp,

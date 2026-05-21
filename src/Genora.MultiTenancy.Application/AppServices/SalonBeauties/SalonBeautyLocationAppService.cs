@@ -120,7 +120,12 @@ public class SalonBeautyLocationAppService :
             {
                 Id = x.Id,
                 Name = x.Name,
-                IsActive = x.IsActive
+                IsActive = x.IsActive,
+                OpenTime = x.OpenTime,
+                CloseTime = x.CloseTime,
+                SlotDuration = x.SlotDuration,
+                BufferTime = x.BufferTime,
+                MaxCapacityPerSlot = x.MaxCapacityPerSlot
             })
             .ToList();
     }
@@ -133,7 +138,7 @@ public class SalonBeautyLocationAppService :
 
         var imageUrl = await ResolveImageAsync(input.ImageUrl, input.Images, input.IsUploadImage);
 
-        NormalizeAndValidate(input.Name, input.Address, input.Phone, input.OpenTime, input.CloseTime, input.SortOrder);
+        NormalizeAndValidate(input.Name, input.Address, input.Phone, input.OpenTime, input.CloseTime, input.SortOrder, input.SlotDuration, input.BufferTime, input.MaxCapacityPerSlot);
 
         var entity = new SalonBeautyLocation
         {
@@ -142,6 +147,9 @@ public class SalonBeautyLocationAppService :
             Phone = NormalizePhone(input.Phone),
             OpenTime = input.OpenTime,
             CloseTime = input.CloseTime,
+            SlotDuration = input.SlotDuration,
+            BufferTime = input.BufferTime,
+            MaxCapacityPerSlot = input.MaxCapacityPerSlot,
             ImageUrl = NullIfWhiteSpace(imageUrl),
             IsActive = input.IsActive,
             IsShowOnApp = input.IsShowOnApp,
@@ -162,7 +170,7 @@ public class SalonBeautyLocationAppService :
         var entity = await _repository.GetAsync(id);
         var imageUrl = await ResolveImageAsync(input.ImageUrl, input.Images, input.IsUploadImage, entity.ImageUrl);
 
-        NormalizeAndValidate(input.Name, input.Address, input.Phone, input.OpenTime, input.CloseTime, input.SortOrder);
+        NormalizeAndValidate(input.Name, input.Address, input.Phone, input.OpenTime, input.CloseTime, input.SortOrder, input.SlotDuration, input.BufferTime, input.MaxCapacityPerSlot);
 
         if (input.IsUploadImage && input.Images != null && (input.Images.ContentLength ?? 0) > 0)
         {
@@ -174,6 +182,9 @@ public class SalonBeautyLocationAppService :
         entity.Phone = NormalizePhone(input.Phone);
         entity.OpenTime = input.OpenTime;
         entity.CloseTime = input.CloseTime;
+        entity.SlotDuration = input.SlotDuration;
+        entity.BufferTime = input.BufferTime;
+        entity.MaxCapacityPerSlot = input.MaxCapacityPerSlot;
         entity.ImageUrl = NullIfWhiteSpace(imageUrl);
         entity.IsActive = input.IsActive;
         entity.IsShowOnApp = input.IsShowOnApp;
@@ -285,7 +296,10 @@ public class SalonBeautyLocationAppService :
         string? phone,
         TimeSpan openTime,
         TimeSpan closeTime,
-        int sortOrder)
+        int sortOrder,
+        int slotDuration,
+        int bufferTime,
+        int maxCapacityPerSlot)
     {
         if (name.IsNullOrWhiteSpace())
             throw new UserFriendlyException(L("SalonBeautyLocations:NameRequired"));
@@ -299,11 +313,29 @@ public class SalonBeautyLocationAppService :
         if (!phone.IsNullOrWhiteSpace() && !Regex.IsMatch(phone.Trim(), @"^0\d{9,10}$"))
             throw new UserFriendlyException(L("SalonBeautyLocations:PhoneInvalid"));
 
+        // BR-01: open_time < close_time
         if (openTime >= closeTime)
             throw new UserFriendlyException(L("SalonBeautyLocations:OpenCloseInvalid"));
 
         if (sortOrder < 0)
             throw new UserFriendlyException(L("SalonBeautyLocations:SortOrderInvalid"));
+
+        // BR-03: slot_duration > 0
+        if (slotDuration <= 0)
+            throw new UserFriendlyException(L("SalonBeautyLocations:SlotDurationInvalid"));
+
+        // BR-04: buffer_time >= 0
+        if (bufferTime < 0)
+            throw new UserFriendlyException(L("SalonBeautyLocations:BufferTimeInvalid"));
+
+        // BR-05: max_capacity_per_slot >= 1
+        if (maxCapacityPerSlot < 1)
+            throw new UserFriendlyException(L("SalonBeautyLocations:MaxCapacityInvalid"));
+
+        // BR-06: ít nhất phải đủ chỗ cho 1 slot
+        var totalMinutes = (int)(closeTime - openTime).TotalMinutes;
+        if (slotDuration > totalMinutes)
+            throw new UserFriendlyException(L("SalonBeautyLocations:SlotDurationTooLarge"));
     }
 
     private string L(string key)
@@ -339,6 +371,9 @@ public class SalonBeautyLocationAppService :
             CloseTime = entity.CloseTime,
             OpenTimeText = FormatTime(entity.OpenTime),
             CloseTimeText = FormatTime(entity.CloseTime),
+            SlotDuration = entity.SlotDuration,
+            BufferTime = entity.BufferTime,
+            MaxCapacityPerSlot = entity.MaxCapacityPerSlot,
             ImageUrl = entity.ImageUrl,
             IsActive = entity.IsActive,
             IsActiveText = entity.IsActive

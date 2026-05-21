@@ -35,6 +35,9 @@ public class EditModalModel : MultiTenancyPageModel
             Phone = dto.Phone,
             OpenTime = dto.OpenTime,
             CloseTime = dto.CloseTime,
+            SlotDuration = dto.SlotDuration,
+            BufferTime = dto.BufferTime,
+            MaxCapacityPerSlot = dto.MaxCapacityPerSlot,
             ImageUrl = dto.ImageUrl,
             IsUploadImage = false,
             IsActive = dto.IsActive,
@@ -46,7 +49,7 @@ public class EditModalModel : MultiTenancyPageModel
 
     public async Task<IActionResult> OnPostAsync()
     {
-        ValidateLocationInput(Location.Name, Location.Address, Location.Phone, Location.OpenTime, Location.CloseTime, Location.SortOrder, Location.IsActive, Location.IsShowOnApp, Location.ImageUrl, Location.Images);
+        ValidateLocationInput(Location.Name, Location.Address, Location.Phone, Location.OpenTime, Location.CloseTime, Location.SortOrder, Location.SlotDuration, Location.BufferTime, Location.MaxCapacityPerSlot, Location.IsActive, Location.IsShowOnApp, Location.ImageUrl, Location.Images);
 
         if (!ModelState.IsValid)
             return Page();
@@ -58,6 +61,9 @@ public class EditModalModel : MultiTenancyPageModel
             Phone = Location.Phone,
             OpenTime = Location.OpenTime,
             CloseTime = Location.CloseTime,
+            SlotDuration = Location.SlotDuration,
+            BufferTime = Location.BufferTime,
+            MaxCapacityPerSlot = Location.MaxCapacityPerSlot,
             ImageUrl = Location.ImageUrl,
             Images = Location.Images,
             IsUploadImage = Location.IsUploadImage,
@@ -71,7 +77,7 @@ public class EditModalModel : MultiTenancyPageModel
         return NoContent();
     }
 
-    private void ValidateLocationInput(string? name, string? address, string? phone, TimeSpan openTime, TimeSpan closeTime, int sortOrder, bool isActive, bool isShowOnApp, string? imageUrl, IRemoteStreamContent? imageFile)
+    private void ValidateLocationInput(string? name, string? address, string? phone, TimeSpan openTime, TimeSpan closeTime, int sortOrder, int slotDuration, int bufferTime, int maxCapacityPerSlot, bool isActive, bool isShowOnApp, string? imageUrl, IRemoteStreamContent? imageFile)
     {
         if (string.IsNullOrWhiteSpace(name))
             ModelState.AddModelError("Location.Name", _l["SalonBeautyLocations:NameRequired"]);
@@ -88,6 +94,18 @@ public class EditModalModel : MultiTenancyPageModel
         if (sortOrder < 0)
             ModelState.AddModelError("Location.SortOrder", _l["SalonBeautyLocations:SortOrderInvalid"]);
 
+        if (slotDuration <= 0)
+            ModelState.AddModelError("Location.SlotDuration", _l["SalonBeautyLocations:SlotDurationInvalid"]);
+
+        if (bufferTime < 0)
+            ModelState.AddModelError("Location.BufferTime", _l["SalonBeautyLocations:BufferTimeInvalid"]);
+
+        if (maxCapacityPerSlot < 1)
+            ModelState.AddModelError("Location.MaxCapacityPerSlot", _l["SalonBeautyLocations:MaxCapacityInvalid"]);
+
+        if (slotDuration > 0 && (closeTime - openTime).TotalMinutes < slotDuration)
+            ModelState.AddModelError("Location.SlotDuration", _l["SalonBeautyLocations:SlotDurationTooLarge"]);
+
         if (isShowOnApp && !isActive)
             ModelState.AddModelError("Location.IsShowOnApp", _l["SalonBeautyLocations:ShowOnAppRequiresActive"]);
     }
@@ -101,6 +119,9 @@ public class EditLocationViewModel
     public string? Phone { get; set; }
     public TimeSpan OpenTime { get; set; }
     public TimeSpan CloseTime { get; set; }
+    public int SlotDuration { get; set; } = 60;
+    public int BufferTime { get; set; } = 0;
+    public int MaxCapacityPerSlot { get; set; } = 1;
     public string? ImageUrl { get; set; }
     public IRemoteStreamContent? Images { get; set; }
     public bool IsUploadImage { get; set; }

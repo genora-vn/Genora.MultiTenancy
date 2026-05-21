@@ -1,4 +1,5 @@
 @page
+@using System.Text.Json
 @using Genora.MultiTenancy.Localization
 @using Microsoft.Extensions.Localization
 @using Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.TagHelpers.Modal
@@ -7,15 +8,21 @@
 @inject IStringLocalizer<MultiTenancyResource> L
 @{
     Layout = null;
-
-    string ToHHmm(TimeSpan ts) => $"{ts.Hours:D2}:{ts.Minutes:D2}";
-    var today = DateTime.Today;
+    var locationsJson = JsonSerializer.Serialize(Model.Locations.Select(x => new {
+        id = x.Id,
+        name = x.Name,
+        openTime = $"{x.OpenTime.Hours:D2}:{x.OpenTime.Minutes:D2}",
+        closeTime = $"{x.CloseTime.Hours:D2}:{x.CloseTime.Minutes:D2}",
+        slotDuration = x.SlotDuration,
+        bufferTime = x.BufferTime,
+        maxCapacityPerSlot = x.MaxCapacityPerSlot
+    }));
 }
 
-<form asp-page="/SalonBeautyTimeSlots/CreateModal" id="CreateTimeSlotForm" class="timeslot-form" method="post" autocomplete="off" novalidate>
+<form id="CreateTimeSlotForm" class="timeslot-form" method="post" autocomplete="off" novalidate>
     <abp-modal size="Large">
         <abp-modal-body class="p-0">
-            <div class="timeslot-modal">
+            <div class="timeslot-modal" data-locations='@Html.Raw(locationsJson)'>
                 <div class="timeslot-modal-header">
                     <div class="timeslot-modal-title-wrap">
                         <h3>@L["SalonBeautyTimeSlots:CreateTitle"]</h3>
@@ -28,23 +35,24 @@
                     <div class="row g-3">
                         <div class="col-md-6">
                             <label class="timeslot-form-label">@L["SalonBeautyTimeSlots:Location"] <span class="text-danger">*</span></label>
-                            <select name="Input.LocationId" class="form-select timeslot-form-select timeslot-location-select" required>
+                            <select id="CreateTimeSlotLocationSelect" asp-items="Model.LocationItems" class="form-select timeslot-form-select timeslot-location-select" required>
                                 <option value="">@L["SalonBeautyTimeSlots:LocationPlaceholder"]</option>
                             </select>
+                            <small class="text-muted d-block mt-1 timeslot-location-hint"></small>
                         </div>
                         <div class="col-md-6">
                             <label class="timeslot-form-label">@L["SalonBeautyTimeSlots:Stylist"] <span class="text-danger">*</span></label>
-                            <select name="Input.StylistId" class="form-select timeslot-form-select timeslot-stylist-select" required>
+                            <select id="CreateTimeSlotStylistSelect" class="form-select timeslot-form-select timeslot-stylist-select" required>
                                 <option value="">@L["SalonBeautyTimeSlots:StylistPlaceholder"]</option>
                             </select>
                         </div>
                         <div class="col-md-6">
                             <label class="timeslot-form-label">@L["SalonBeautyTimeSlots:FromDate"] <span class="text-danger">*</span></label>
-                            <input name="Input.FromDate" type="date" class="form-control timeslot-form-control timeslot-from-date" required value="@today.ToString("yyyy-MM-dd")" />
+                            <input id="CreateTimeSlotFromDate" type="text" class="form-control timeslot-form-control timeslot-from-date" placeholder="dd/mm/yyyy" autocomplete="off" required value="@Model.DefaultFromDate.ToString("dd/MM/yyyy")" />
                         </div>
                         <div class="col-md-6">
                             <label class="timeslot-form-label">@L["SalonBeautyTimeSlots:ToDate"] <span class="text-danger">*</span></label>
-                            <input name="Input.ToDate" type="date" class="form-control timeslot-form-control timeslot-to-date" required value="@today.AddDays(6).ToString("yyyy-MM-dd")" />
+                            <input id="CreateTimeSlotToDate" type="text" class="form-control timeslot-form-control timeslot-to-date" placeholder="dd/mm/yyyy" autocomplete="off" required value="@Model.DefaultToDate.ToString("dd/MM/yyyy")" />
                         </div>
 
                         <div class="col-12">
@@ -58,24 +66,19 @@
                                 <span class="timeslot-weekday-chip active" data-day="6">@L["Day:Sat"]</span>
                                 <span class="timeslot-weekday-chip active" data-day="0">@L["Day:Sun"]</span>
                             </div>
-                            <input type="hidden" name="Input.WeekdayMask" class="timeslot-weekday-mask" value="127" />
+                            <input type="hidden" class="timeslot-weekday-mask" value="127" />
                             <small class="text-muted d-block mt-1">@L["SalonBeautyTimeSlots:WeekdayHint"]</small>
                         </div>
 
                         <div class="col-12">
-                            <label class="timeslot-form-label">@L["SalonBeautyTimeSlots:TimeRanges"] <span class="text-danger">*</span></label>
-                            <div class="timeslot-ranges-list" data-ranges-list>
-                                <div class="timeslot-range-row" data-range-row>
-                                    <input type="time" class="form-control timeslot-form-control timeslot-range-start" value="08:00" />
-                                    <input type="time" class="form-control timeslot-form-control timeslot-range-end" value="12:00" />
-                                    <button type="button" class="timeslot-remove-range-btn"><i class="fa fa-trash"></i></button>
-                                </div>
-                                <div class="timeslot-range-row" data-range-row>
-                                    <input type="time" class="form-control timeslot-form-control timeslot-range-start" value="13:00" />
-                                    <input type="time" class="form-control timeslot-form-control timeslot-range-end" value="19:00" />
-                                    <button type="button" class="timeslot-remove-range-btn"><i class="fa fa-trash"></i></button>
-                                </div>
+                            <div class="d-flex align-items-center justify-content-between">
+                                <label class="timeslot-form-label mb-0">@L["SalonBeautyTimeSlots:TimeRanges"] <span class="text-danger">*</span></label>
+                                <button type="button" class="timeslot-auto-generate-btn" data-auto-generate>
+                                    <i class="fa fa-magic"></i> @L["SalonBeautyTimeSlots:AutoGenerate"]
+                                </button>
                             </div>
+                            <small class="text-muted d-block mt-1 mb-2">@L["SalonBeautyTimeSlots:AutoGenerateHint"]</small>
+                            <div class="timeslot-ranges-list" data-ranges-list></div>
                             <button type="button" class="timeslot-add-range-btn" data-add-range>
                                 <i class="fa fa-plus"></i> @L["SalonBeautyTimeSlots:AddRange"]
                             </button>
@@ -83,7 +86,7 @@
 
                         <div class="col-12">
                             <label class="timeslot-form-label">@L["SalonBeautyTimeSlots:Note"]</label>
-                            <textarea name="Input.Note" rows="2" maxlength="500" class="form-control timeslot-form-control" placeholder="@L["SalonBeautyTimeSlots:NotePlaceholder"]"></textarea>
+                            <textarea rows="2" maxlength="500" class="form-control timeslot-form-control timeslot-note" placeholder="@L["SalonBeautyTimeSlots:NotePlaceholder"]"></textarea>
                         </div>
 
                         <div class="col-12">
@@ -93,7 +96,7 @@
                                     <strong>@L["SalonBeautyTimeSlots:StatusBoxTitle"]</strong>
                                     <span>@L["SalonBeautyTimeSlots:StatusBoxDescription"]</span>
                                 </div>
-                                <input type="hidden" name="Input.Status" class="timeslot-status-value" value="1" />
+                                <input type="hidden" class="timeslot-status-value" value="1" />
                                 <div class="timeslot-switch-wrap">
                                     <label class="timeslot-switch">
                                         <input type="checkbox" class="timeslot-status-toggle" checked />
@@ -115,7 +118,7 @@
                                     <strong>@L["SalonBeautyTimeSlots:ShowOnAppBoxTitle"]</strong>
                                     <span>@L["SalonBeautyTimeSlots:ShowOnAppBoxDescription"]</span>
                                 </div>
-                                <input type="hidden" name="Input.IsShowOnApp" class="timeslot-showonapp-value" value="true" />
+                                <input type="hidden" class="timeslot-showonapp-value" value="true" />
                                 <div class="timeslot-switch-wrap">
                                     <label class="timeslot-switch">
                                         <input type="checkbox" class="timeslot-showonapp-toggle" checked />
@@ -134,9 +137,273 @@
 
                 <div class="timeslot-modal-footer">
                     <button type="button" class="btn timeslot-btn-secondary" data-bs-dismiss="modal">@L["Cancel"]</button>
-                    <button type="button" class="btn timeslot-btn-primary timeslot-submit-button"><i class="fa fa-save"></i> @L["Save"]</button>
+                    <button type="button" class="btn timeslot-btn-primary timeslot-submit-button" id="CreateTimeSlotSubmit"><i class="fa fa-save"></i> @L["Save"]</button>
                 </div>
             </div>
         </abp-modal-body>
     </abp-modal>
 </form>
+
+<script>
+    (function () {
+        var l = abp.localization.getResource('MultiTenancy');
+        var slotService = genora.multiTenancy.appServices.salonBeauties.salonBeautyTimeSlot;
+
+        var $form = $('#CreateTimeSlotForm');
+        var $modalRoot = $form.find('.timeslot-modal');
+        var locations = $modalRoot.data('locations') || [];
+
+        function pad2(n) { return String(n).padStart(2, '0'); }
+        function htmlEncode(v) { return $('<div/>').text(v || '').html(); }
+
+        function getCfg(id) {
+            for (var i = 0; i < locations.length; i++) if (locations[i].id === id) return locations[i];
+            return null;
+        }
+
+        function timeToMin(t) {
+            if (!t) return 0;
+            var p = String(t).split(':');
+            return (parseInt(p[0], 10) || 0) * 60 + (parseInt(p[1], 10) || 0);
+        }
+        function minToTime(m) {
+            m = Math.max(0, Math.min(24 * 60, parseInt(m, 10) || 0));
+            return pad2(Math.floor(m / 60)) + ':' + pad2(m % 60);
+        }
+        function toIsoDate(v) {
+            if (!v) return null;
+            var s = (v || '').trim();
+            if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+            var m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+            if (m) return m[3] + '-' + pad2(m[2]) + '-' + pad2(m[1]);
+            return s;
+        }
+
+        function updateLocationHint() {
+            var cfg = getCfg($('#CreateTimeSlotLocationSelect').val());
+            var $hint = $form.find('.timeslot-location-hint');
+            if (!cfg) { $hint.text(''); return; }
+            $hint.text(cfg.openTime + ' - ' + cfg.closeTime
+                + ' · ' + l('SalonBeautyLocations:SlotDuration') + ': ' + cfg.slotDuration + 'p'
+                + ' · ' + l('SalonBeautyLocations:BufferTime') + ': ' + cfg.bufferTime + 'p'
+                + ' · ' + l('SalonBeautyLocations:MaxCapacityPerSlot') + ': ' + cfg.maxCapacityPerSlot);
+        }
+
+        function loadStylists(locationId) {
+            slotService.getStylistLookup(locationId || null).then(function (data) {
+                var $sel = $('#CreateTimeSlotStylistSelect');
+                $sel.find('option:not(:first)').remove();
+                $.each(data || [], function (i, s) {
+                    $sel.append('<option value="' + s.id + '">' + htmlEncode(s.displayName) + '</option>');
+                });
+                $sel.val('');
+            });
+        }
+
+        function buildRangeRow(start, end, capacity, bookedCount, maxCap) {
+            var max = Math.max(1, maxCap || 1);
+            var cap = capacity > 0 ? capacity : 1;
+            if (cap > max) cap = max;
+            var disableBtn = max <= 1 ? ' disabled' : '';
+            return '<div class="timeslot-range-row" data-range-row>'
+                + '<input type="time" class="form-control timeslot-form-control timeslot-range-start" value="' + htmlEncode(start) + '" />'
+                + '<input type="time" class="form-control timeslot-form-control timeslot-range-end" value="' + htmlEncode(end) + '" />'
+                + '<div class="timeslot-capacity-wrap">'
+                + '<button type="button" class="timeslot-cap-btn timeslot-cap-dec" tabindex="-1"' + disableBtn + '><i class="fa fa-minus"></i></button>'
+                + '<input type="number" min="1" max="' + max + '" class="form-control timeslot-form-control timeslot-range-capacity" value="' + cap + '"' + (max <= 1 ? ' readonly' : '') + ' />'
+                + '<button type="button" class="timeslot-cap-btn timeslot-cap-inc" tabindex="-1"' + disableBtn + '><i class="fa fa-plus"></i></button>'
+                + '<span class="timeslot-capacity-hint"><span class="timeslot-capacity-current">' + cap + '</span>/<span class="timeslot-capacity-max">' + max + '</span></span>'
+                + '</div>'
+                + '<button type="button" class="timeslot-remove-range-btn"><i class="fa fa-trash"></i></button>'
+                + '</div>';
+        }
+
+        function setDefaultRange() {
+            var cfg = getCfg($('#CreateTimeSlotLocationSelect').val());
+            var $list = $form.find('[data-ranges-list]');
+            $list.empty();
+            if (!cfg) {
+                $list.append(buildRangeRow('08:00', '09:00', 1, 0, 1));
+                return;
+            }
+            var openMin = timeToMin(cfg.openTime);
+            var closeMin = timeToMin(cfg.closeTime);
+            var endMin = Math.min(openMin + (cfg.slotDuration || 60), closeMin);
+            $list.append(buildRangeRow(minToTime(openMin), minToTime(endMin), 1, 0, cfg.maxCapacityPerSlot));
+        }
+
+        function getRanges() {
+            var ranges = [];
+            $form.find('[data-range-row]').each(function () {
+                var s = $(this).find('.timeslot-range-start').val();
+                var e = $(this).find('.timeslot-range-end').val();
+                var cap = parseInt($(this).find('.timeslot-range-capacity').val(), 10);
+                if (s && e) ranges.push({
+                    startTime: s + ':00',
+                    endTime: e + ':00',
+                    capacity: isNaN(cap) || cap < 1 ? null : cap
+                });
+            });
+            return ranges;
+        }
+
+        function recalcWeekdayMask() {
+            var mask = 0;
+            $form.find('.timeslot-weekday-chip.active').each(function () {
+                mask |= (1 << parseInt($(this).data('day'), 10));
+            });
+            $form.find('.timeslot-weekday-mask').val(mask || 127);
+        }
+
+        function syncToggles() {
+            var on = $form.find('.timeslot-status-toggle').is(':checked');
+            $form.find('.timeslot-status-value').val(on ? '1' : '0');
+            var $t1 = $form.find('.timeslot-status-toggle-text');
+            $t1.text(on ? $t1.data('active') : $t1.data('inactive'));
+            var on2 = $form.find('.timeslot-showonapp-toggle').is(':checked');
+            $form.find('.timeslot-showonapp-value').val(on2 ? 'true' : 'false');
+            var $t2 = $form.find('.timeslot-showonapp-toggle-text');
+            $t2.text(on2 ? $t2.data('active') : $t2.data('inactive'));
+        }
+
+        // Init flatpickr
+        if (window.flatpickr) {
+            flatpickr('#CreateTimeSlotFromDate', { dateFormat: 'd/m/Y', allowInput: true });
+            flatpickr('#CreateTimeSlotToDate', { dateFormat: 'd/m/Y', allowInput: true });
+        }
+
+        // Init dropdowns + ranges (Location đã được server-render, đã có default selected = first)
+        var initialLocId = $('#CreateTimeSlotLocationSelect').val();
+        loadStylists(initialLocId);
+        updateLocationHint();
+        setDefaultRange();
+        syncToggles();
+
+        // Cascade Location → Stylist + reset ranges
+        $('#CreateTimeSlotLocationSelect').on('change', function () {
+            updateLocationHint();
+            loadStylists($(this).val());
+            setDefaultRange();
+        });
+
+        $form.on('click', '.timeslot-weekday-chip', function () {
+            $(this).toggleClass('active');
+            recalcWeekdayMask();
+        });
+
+        $form.on('change', '.timeslot-status-toggle, .timeslot-showonapp-toggle', syncToggles);
+
+        $form.on('click', '[data-add-range]', function () {
+            var cfg = getCfg($('#CreateTimeSlotLocationSelect').val());
+            if (!cfg) { abp.notify.warn(l('SalonBeautyTimeSlots:LocationRequired')); return; }
+            var closeMin = timeToMin(cfg.closeTime);
+            var slotDur = parseInt(cfg.slotDuration, 10) || 60;
+            var buffer = parseInt(cfg.bufferTime, 10) || 0;
+            var $rows = $form.find('[data-range-row]');
+            var lastEndMin = $rows.length ? timeToMin($rows.last().find('.timeslot-range-end').val()) : timeToMin(cfg.openTime);
+            var startMin = lastEndMin + buffer;
+            if (startMin >= closeMin) { abp.notify.warn(l('SalonBeautyTimeSlots:RangeOutsideLocation')); return; }
+            var endMin = Math.min(startMin + slotDur, closeMin);
+            if (endMin - startMin < 5) { abp.notify.warn(l('SalonBeautyTimeSlots:RangeOutsideLocation')); return; }
+            $form.find('[data-ranges-list]').append(
+                buildRangeRow(minToTime(startMin), minToTime(endMin), 1, 0, cfg.maxCapacityPerSlot));
+        });
+
+        $form.on('click', '[data-auto-generate]', function () {
+            var locId = $('#CreateTimeSlotLocationSelect').val();
+            if (!locId) { abp.notify.warn(l('SalonBeautyTimeSlots:LocationRequired')); return; }
+            var $btn = $(this).prop('disabled', true);
+            slotService.generateRangesByLocation(locId).then(function (items) {
+                var cfg = getCfg(locId);
+                var maxCap = cfg ? cfg.maxCapacityPerSlot : 1;
+                var $list = $form.find('[data-ranges-list]').empty();
+                (items || []).forEach(function (r) {
+                    var s = r.startTime ? r.startTime.substring(0, 5) : '08:00';
+                    var e = r.endTime ? r.endTime.substring(0, 5) : '09:00';
+                    $list.append(buildRangeRow(s, e, r.capacity || 1, r.bookedCount || 0, maxCap));
+                });
+            }).always(function () { $btn.prop('disabled', false); });
+        });
+
+        $form.on('click', '.timeslot-cap-inc', function () {
+            if ($(this).is(':disabled')) return;
+            var $row = $(this).closest('[data-range-row]');
+            var $cap = $row.find('.timeslot-range-capacity');
+            var max = parseInt($cap.attr('max'), 10) || 1;
+            var v = Math.min(max, (parseInt($cap.val(), 10) || 0) + 1);
+            $cap.val(v); $row.find('.timeslot-capacity-current').text(v);
+        });
+        $form.on('click', '.timeslot-cap-dec', function () {
+            if ($(this).is(':disabled')) return;
+            var $row = $(this).closest('[data-range-row]');
+            var $cap = $row.find('.timeslot-range-capacity');
+            var v = Math.max(1, (parseInt($cap.val(), 10) || 1) - 1);
+            $cap.val(v); $row.find('.timeslot-capacity-current').text(v);
+        });
+        $form.on('input change', '.timeslot-range-capacity', function () {
+            var v = parseInt($(this).val(), 10);
+            var max = parseInt($(this).attr('max'), 10) || 1;
+            if (isNaN(v) || v < 1) v = 1;
+            if (v > max) v = max;
+            $(this).val(v).closest('[data-range-row]').find('.timeslot-capacity-current').text(v);
+        });
+
+        $form.on('click', '.timeslot-remove-range-btn', function () {
+            var $row = $(this).closest('[data-range-row]');
+            if ($form.find('[data-range-row]').length <= 1) {
+                abp.notify.warn(l('SalonBeautyTimeSlots:TimeRangeRequired')); return;
+            }
+            $row.remove();
+        });
+
+        $('#CreateTimeSlotSubmit').on('click', function () {
+            var locId = $('#CreateTimeSlotLocationSelect').val();
+            var stylistId = $('#CreateTimeSlotStylistSelect').val();
+            var fromDate = toIsoDate($('#CreateTimeSlotFromDate').val());
+            var toDate = toIsoDate($('#CreateTimeSlotToDate').val());
+            var ranges = getRanges();
+            var weekdayMask = parseInt($form.find('.timeslot-weekday-mask').val(), 10) || 127;
+            var status = parseInt($form.find('.timeslot-status-value').val(), 10);
+            if (isNaN(status)) status = 1;
+            var isShowOnApp = $form.find('.timeslot-showonapp-value').val() === 'true';
+            var note = $form.find('.timeslot-note').val() || null;
+
+            if (!locId) { abp.notify.warn(l('SalonBeautyTimeSlots:LocationRequired')); return; }
+            if (!stylistId) { abp.notify.warn(l('SalonBeautyTimeSlots:StylistRequired')); return; }
+            if (!fromDate || !toDate) { abp.notify.warn(l('SalonBeautyTimeSlots:DateRangeRequired')); return; }
+            if (new Date(fromDate) > new Date(toDate)) { abp.notify.warn(l('SalonBeautyTimeSlots:DateRangeInvalid')); return; }
+            if (!ranges.length) { abp.notify.warn(l('SalonBeautyTimeSlots:TimeRangeRequired')); return; }
+            for (var i = 0; i < ranges.length; i++) {
+                if (ranges[i].startTime >= ranges[i].endTime) {
+                    abp.notify.warn(l('SalonBeautyTimeSlots:TimeRangeInvalid')); return;
+                }
+            }
+
+            var $btn = $(this).prop('disabled', true).addClass('disabled');
+            slotService.create({
+                locationId: locId,
+                stylistId: stylistId,
+                fromDate: fromDate,
+                toDate: toDate,
+                ranges: ranges,
+                weekdayMask: weekdayMask,
+                isShowOnApp: isShowOnApp,
+                status: status,
+                note: note
+            }).then(function () {
+                abp.notify.success(l('SavedSuccessfully'));
+                var modalEl = $form.find('.modal')[0] || $form.closest('.modal')[0];
+                if (modalEl && window.bootstrap && bootstrap.Modal) {
+                    bootstrap.Modal.getOrCreateInstance(modalEl).hide();
+                } else if (modalEl && $.fn.modal) {
+                    $(modalEl).modal('hide');
+                } else {
+                    $form.find('[data-bs-dismiss="modal"]').first().trigger('click');
+                }
+                if (window.salonTimeSlotReload) window.salonTimeSlotReload();
+            }).always(function () {
+                $btn.prop('disabled', false).removeClass('disabled');
+            });
+        });
+    })();
+</script>

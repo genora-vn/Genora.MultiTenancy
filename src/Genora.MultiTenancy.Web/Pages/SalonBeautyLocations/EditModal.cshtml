@@ -105,6 +105,24 @@
                             <input asp-for="Location.SortOrder" type="number" min="0" class="form-control location-form-control" placeholder="0" />
                             <span asp-validation-for="Location.SortOrder" class="text-danger"></span>
                         </div>
+                        <div class="col-md-4">
+                            <label class="location-form-label" asp-for="Location.SlotDuration">@L["SalonBeautyLocations:SlotDuration"] <span class="text-danger">*</span></label>
+                            <input asp-for="Location.SlotDuration" type="number" min="1" max="1440" class="form-control location-form-control" placeholder="60" required />
+                            <small class="text-muted d-block mt-1">@L["SalonBeautyLocations:SlotDurationHelp"]</small>
+                            <span asp-validation-for="Location.SlotDuration" class="text-danger"></span>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="location-form-label" asp-for="Location.BufferTime">@L["SalonBeautyLocations:BufferTime"]</label>
+                            <input asp-for="Location.BufferTime" type="number" min="0" max="1440" class="form-control location-form-control" placeholder="0" />
+                            <small class="text-muted d-block mt-1">@L["SalonBeautyLocations:BufferTimeHelp"]</small>
+                            <span asp-validation-for="Location.BufferTime" class="text-danger"></span>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="location-form-label" asp-for="Location.MaxCapacityPerSlot">@L["SalonBeautyLocations:MaxCapacityPerSlot"] <span class="text-danger">*</span></label>
+                            <input asp-for="Location.MaxCapacityPerSlot" type="number" min="1" class="form-control location-form-control" placeholder="1" required />
+                            <small class="text-muted d-block mt-1">@L["SalonBeautyLocations:MaxCapacityPerSlotHelp"]</small>
+                            <span asp-validation-for="Location.MaxCapacityPerSlot" class="text-danger"></span>
+                        </div>
                         <div class="col-12">
                             <label class="location-form-label" asp-for="Location.Note">@L["SalonBeautyLocations:Note"]</label>
                             <textarea asp-for="Location.Note" rows="3" maxlength="500" class="form-control location-form-textarea" placeholder="@L["SalonBeautyLocations:NotePlaceholder"]"></textarea>

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Genora.MultiTenancy.AppDtos.SalonBeauties.SalonBeautyBookings;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Application.Services;
 
@@ -22,6 +23,18 @@ public interface ISalonBeautyTimeSlotAppService : IApplicationService
     /// Lấy danh sách events cho calendar view.
     /// </summary>
     Task<List<SalonBeautyTimeSlotDto>> GetCalendarEventsAsync(GetSalonBeautyTimeSlotCalendarInput input);
+
+    /// <summary>
+    /// Auto-generate danh sách khung giờ trong ngày dựa vào config Location
+    /// (open_time, close_time, slot_duration, buffer_time).
+    /// Dùng để preview/auto-fill UI khi tạo time slot.
+    /// </summary>
+    Task<List<TimeRangeDto>> GenerateRangesByLocationAsync(Guid locationId);
+
+    /// <summary>
+    /// Lookup stylist - filter theo location, dùng cho cascade dropdown trên modal.
+    /// </summary>
+    Task<List<SalonBeautyStylistLookupDto>> GetStylistLookupAsync(Guid? locationId = null);
 
     Task<List<SalonBeautyTimeSlotDto>> CreateAsync(CreateSalonBeautyTimeSlotDto input);
 

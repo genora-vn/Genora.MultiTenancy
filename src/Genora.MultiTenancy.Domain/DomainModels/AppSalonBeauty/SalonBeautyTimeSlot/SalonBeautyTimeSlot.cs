@@ -25,6 +25,21 @@ public class SalonBeautyTimeSlot : FullAuditedAggregateRoot<Guid>, IMultiTenant
 
     public TimeSpan EndTime { get; set; }
 
+    /// <summary>
+    /// Số khách tối đa được phép book trong slot (không vượt quá Location.MaxCapacityPerSlot).
+    /// </summary>
+    public int Capacity { get; set; } = 1;
+
+    /// <summary>
+    /// Số khách đã book hiện tại. Khi BookedCount &gt;= Capacity → status sẽ tự chuyển Full.
+    /// </summary>
+    public int BookedCount { get; set; } = 0;
+
+    /// <summary>
+    /// Manual override flag - admin tự can thiệp trạng thái slot, không cho recalculate đè.
+    /// </summary>
+    public bool IsManualOverride { get; set; } = false;
+
     public SalonBeautyTimeSlotStatus Status { get; set; } = SalonBeautyTimeSlotStatus.On;
 
     public bool IsShowOnApp { get; set; } = true;

@@ -54,11 +54,12 @@ $(function () {
     }
 
     function loadStylistFilter() {
-        return stylistService.getList({ skipCount: 0, maxResultCount: 200, sorting: 'displayName asc' }).then(function (res) {
+        var locationId = $('#CalendarLocationFilter').val() || null;
+        return slotService.getStylistLookup(locationId).then(function (items) {
             var $sel = $('#CalendarStylistFilter');
             $sel.empty();
             $sel.append('<option value="">' + l('SalonBeautyTimeSlots:AllStylists') + '</option>');
-            (res.items || []).forEach(function (it) {
+            (items || []).forEach(function (it) {
                 $sel.append('<option value="' + it.id + '">' + htmlEncode(it.displayName) + '</option>');
             });
             if (presetStylistId) $sel.val(presetStylistId);

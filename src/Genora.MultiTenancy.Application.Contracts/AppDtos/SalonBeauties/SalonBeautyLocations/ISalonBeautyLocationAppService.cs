@@ -24,6 +24,11 @@ public class SalonBeautyLocationLookupDto
     public Guid Id { get; set; }
     public string Name { get; set; } = null!;
     public bool IsActive { get; set; }
+    public TimeSpan OpenTime { get; set; }
+    public TimeSpan CloseTime { get; set; }
+    public int SlotDuration { get; set; }
+    public int BufferTime { get; set; }
+    public int MaxCapacityPerSlot { get; set; }
 }
 
 public class GetSalonBeautyLocationListInput : PagedAndSortedResultRequestDto

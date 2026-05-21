@@ -12,6 +12,9 @@ public class SalonBeautyLocationDto : EntityDto<Guid>
     public TimeSpan CloseTime { get; set; }
     public string? OpenTimeText { get; set; }
     public string? CloseTimeText { get; set; }
+    public int SlotDuration { get; set; }
+    public int BufferTime { get; set; }
+    public int MaxCapacityPerSlot { get; set; }
     public string? ImageUrl { get; set; }
     public bool IsActive { get; set; }
     public string? IsActiveText { get; set; }

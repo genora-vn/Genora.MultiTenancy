@@ -206,6 +206,9 @@ public static class MultiTenancyDbContextModelCreatingExtensionsSalonBeauty
             b.Property(x => x.ImageUrl).HasMaxLength(500);
             b.Property(x => x.Note).HasMaxLength(500);
             b.Property(x => x.IsActive).HasDefaultValue(true);
+            b.Property(x => x.SlotDuration).HasDefaultValue(60);
+            b.Property(x => x.BufferTime).HasDefaultValue(0);
+            b.Property(x => x.MaxCapacityPerSlot).HasDefaultValue(1);
 
             b.HasIndex(x => new { x.TenantId, x.Name })
                 .HasDatabaseName("IX_AppSalonBeautyLocations_TenantId_Name");
@@ -221,6 +224,9 @@ public static class MultiTenancyDbContextModelCreatingExtensionsSalonBeauty
                 .HasConversion<byte>();
             b.Property(x => x.IsShowOnApp).HasDefaultValue(true);
             b.Property(x => x.Note).HasMaxLength(500);
+            b.Property(x => x.Capacity).HasDefaultValue(1);
+            b.Property(x => x.BookedCount).HasDefaultValue(0);
+            b.Property(x => x.IsManualOverride).HasDefaultValue(false);
 
             b.HasOne(x => x.Location)
                 .WithMany(x => x.TimeSlots)

@@ -51,4 +51,11 @@ public class TimeRangeDto
 
     [Required]
     public TimeSpan EndTime { get; set; }
+
+    /// <summary>
+    /// Số khách tối đa được book trong slot. Phải &lt;= Location.MaxCapacityPerSlot.
+    /// Nếu không truyền, default = Location.MaxCapacityPerSlot.
+    /// </summary>
+    [Range(1, int.MaxValue)]
+    public int? Capacity { get; set; }
 }

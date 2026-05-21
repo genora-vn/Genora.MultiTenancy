@@ -156,7 +156,7 @@
         var html = '<div class="dropdown">' +
             '<button class="btn btn-sm btn-light" data-bs-toggle="dropdown"><i class="fa fa-ellipsis-v"></i></button>' +
             '<ul class="dropdown-menu dropdown-menu-end">' +
-            '<li><a class="dropdown-item" href="/SalonBeautyBookings/Detail?id=' + row.id + '" target="_blank"><i class="fa fa-eye me-2"></i>Xem chi tiết</a></li>';
+            '<li><a class="dropdown-item" href="/SalonBeautyBookings/Detail?id=' + row.id + '"><i class="fa fa-eye me-2"></i>Xem chi tiết</a></li>';
 
         if (canEdit) {
             if (completed || cancelled) html += disabledItem('fa-edit', 'Chỉnh sửa');
@@ -266,7 +266,7 @@
                         title: 'Mã Booking',
                         data: 'bookingCode',
                         render: function (data, type, row) {
-                            return '<a class="booking-code-link" href="/SalonBeautyBookings/Detail?id=' + row.id + '" target="_blank">' + data + '</a>';
+                            return '<a class="booking-code-link" href="/SalonBeautyBookings/Detail?id=' + row.id + data + '</a>';
                         }
                     },
                     { title: 'Khách hàng', data: null, render: function (data, type, row) { return buildCustomerCell(row); } },

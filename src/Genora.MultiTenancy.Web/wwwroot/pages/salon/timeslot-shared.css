@@ -299,9 +299,101 @@
 
 .timeslot-range-row {
     display: grid;
-    grid-template-columns: 1fr 1fr auto;
+    grid-template-columns: 1fr 1fr auto auto;
     gap: 10px;
     align-items: center;
+}
+
+.timeslot-capacity-wrap {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: #f6f9ff;
+    border: 1px solid #d7e0ee;
+    border-radius: 8px;
+    padding: 4px 8px;
+}
+
+.timeslot-capacity-wrap .timeslot-range-capacity {
+    width: 70px;
+    border: none;
+    background: transparent;
+    padding: 4px;
+    text-align: center;
+    font-weight: 600;
+    color: #1d4ed8;
+}
+
+.timeslot-capacity-wrap .timeslot-range-capacity:focus {
+    outline: 1px solid #93c5fd;
+    border-radius: 4px;
+}
+
+.timeslot-capacity-wrap .timeslot-range-capacity::-webkit-outer-spin-button,
+.timeslot-capacity-wrap .timeslot-range-capacity::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+.timeslot-capacity-wrap .timeslot-range-capacity[type=number] {
+    -moz-appearance: textfield;
+}
+
+.timeslot-cap-btn {
+    width: 26px;
+    height: 26px;
+    border-radius: 6px;
+    border: 1px solid #c7d2fe;
+    background: #fff;
+    color: #1d4ed8;
+    font-size: 11px;
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all .15s ease;
+}
+
+.timeslot-cap-btn:hover {
+    background: #1d4ed8;
+    color: #fff;
+    border-color: #1d4ed8;
+}
+
+.timeslot-capacity-hint {
+    font-size: 12px;
+    font-weight: 600;
+    color: #475467;
+    background: #fff;
+    border-radius: 999px;
+    padding: 2px 8px;
+    border: 1px solid #e2e8f0;
+}
+
+.timeslot-auto-generate-btn {
+    background: #eff6ff;
+    border: 1px dashed #1d4ed8;
+    color: #1d4ed8;
+    padding: 6px 12px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all .2s ease;
+}
+
+.timeslot-auto-generate-btn:hover {
+    background: #dbeafe;
+}
+
+.timeslot-auto-generate-btn:disabled {
+    opacity: .6;
+    cursor: not-allowed;
+}
+
+.timeslot-location-hint {
+    font-size: 12px;
+    color: #6b7280;
 }
 
 .timeslot-add-range-btn {
@@ -460,6 +552,37 @@
 .timeslot-event.on { background: #d4edda !important; color: #155724 !important; }
 .timeslot-event.off { background: #e9ecef !important; color: #6c757d !important; }
 .timeslot-event.full { background: #f8d7da !important; color: #721c24 !important; }
+
+/* Bảo đảm text trong week/day view không bị mờ — FullCalendar dùng nested .fc-event-main/.fc-event-title/.fc-event-time */
+.timeslot-event .fc-event-main,
+.timeslot-event .fc-event-main-frame,
+.timeslot-event .fc-event-title,
+.timeslot-event .fc-event-title-container,
+.timeslot-event .fc-event-time {
+    color: inherit !important;
+    font-weight: 600 !important;
+}
+
+.timeslot-event.on .fc-event-main,
+.timeslot-event.on .fc-event-title,
+.timeslot-event.on .fc-event-time { color: #155724 !important; }
+
+.timeslot-event.off .fc-event-main,
+.timeslot-event.off .fc-event-title,
+.timeslot-event.off .fc-event-time { color: #6c757d !important; }
+
+.timeslot-event.full .fc-event-main,
+.timeslot-event.full .fc-event-title,
+.timeslot-event.full .fc-event-time { color: #721c24 !important; }
+
+#TimeSlotCalendar .fc-timegrid-event,
+#TimeSlotCalendar .fc-timegrid-event .fc-event-main {
+    box-shadow: none !important;
+}
+
+#TimeSlotCalendar .fc-timegrid-event .fc-event-main {
+    padding: 2px 4px;
+}
 
 .timeslot-legend-list {
     list-style: none; padding: 0; margin: 0;

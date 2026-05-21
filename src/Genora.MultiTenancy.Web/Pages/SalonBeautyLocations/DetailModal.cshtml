@@ -52,6 +52,18 @@
                         <strong>@ToHHmm(Model.Location.CloseTime)</strong>
                     </div>
                     <div class="location-detail-item">
+                        <span>@L["SalonBeautyLocations:SlotDuration"]</span>
+                        <strong>@Model.Location.SlotDuration @L["Minutes"]</strong>
+                    </div>
+                    <div class="location-detail-item">
+                        <span>@L["SalonBeautyLocations:BufferTime"]</span>
+                        <strong>@Model.Location.BufferTime @L["Minutes"]</strong>
+                    </div>
+                    <div class="location-detail-item">
+                        <span>@L["SalonBeautyLocations:MaxCapacityPerSlot"]</span>
+                        <strong>@Model.Location.MaxCapacityPerSlot</strong>
+                    </div>
+                    <div class="location-detail-item">
                         <span>@L["SalonBeautyLocations:SortOrder"]</span>
                         <strong>@Model.Location.SortOrder</strong>
                     </div>

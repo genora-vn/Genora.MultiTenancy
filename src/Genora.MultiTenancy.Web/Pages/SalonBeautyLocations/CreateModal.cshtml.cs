@@ -33,13 +33,16 @@ public class CreateModalModel : MultiTenancyPageModel
             IsUploadImage = false,
             OpenTime = new TimeSpan(8, 0, 0),
             CloseTime = new TimeSpan(21, 0, 0),
+            SlotDuration = 60,
+            BufferTime = 0,
+            MaxCapacityPerSlot = 1,
             SortOrder = 0
         };
     }
 
     public async Task<IActionResult> OnPostAsync()
     {
-        ValidateLocationInput(Location.Name, Location.Address, Location.Phone, Location.OpenTime, Location.CloseTime, Location.SortOrder, Location.IsActive, Location.IsShowOnApp, Location.ImageUrl, Location.Images);
+        ValidateLocationInput(Location.Name, Location.Address, Location.Phone, Location.OpenTime, Location.CloseTime, Location.SortOrder, Location.SlotDuration, Location.BufferTime, Location.MaxCapacityPerSlot, Location.IsActive, Location.IsShowOnApp, Location.ImageUrl, Location.Images);
 
         if (!ModelState.IsValid)
             return Page();
@@ -48,7 +51,7 @@ public class CreateModalModel : MultiTenancyPageModel
         return NoContent();
     }
 
-    private void ValidateLocationInput(string? name, string? address, string? phone, TimeSpan openTime, TimeSpan closeTime, int sortOrder, bool isActive, bool isShowOnApp, string? imageUrl, IRemoteStreamContent? imageFile)
+    private void ValidateLocationInput(string? name, string? address, string? phone, TimeSpan openTime, TimeSpan closeTime, int sortOrder, int slotDuration, int bufferTime, int maxCapacityPerSlot, bool isActive, bool isShowOnApp, string? imageUrl, IRemoteStreamContent? imageFile)
     {
         if (string.IsNullOrWhiteSpace(name))
             ModelState.AddModelError("Location.Name", _l["SalonBeautyLocations:NameRequired"]);
@@ -64,6 +67,18 @@ public class CreateModalModel : MultiTenancyPageModel
 
         if (sortOrder < 0)
             ModelState.AddModelError("Location.SortOrder", _l["SalonBeautyLocations:SortOrderInvalid"]);
+
+        if (slotDuration <= 0)
+            ModelState.AddModelError("Location.SlotDuration", _l["SalonBeautyLocations:SlotDurationInvalid"]);
+
+        if (bufferTime < 0)
+            ModelState.AddModelError("Location.BufferTime", _l["SalonBeautyLocations:BufferTimeInvalid"]);
+
+        if (maxCapacityPerSlot < 1)
+            ModelState.AddModelError("Location.MaxCapacityPerSlot", _l["SalonBeautyLocations:MaxCapacityInvalid"]);
+
+        if (slotDuration > 0 && (closeTime - openTime).TotalMinutes < slotDuration)
+            ModelState.AddModelError("Location.SlotDuration", _l["SalonBeautyLocations:SlotDurationTooLarge"]);
 
         if (isShowOnApp && !isActive)
             ModelState.AddModelError("Location.IsShowOnApp", _l["SalonBeautyLocations:ShowOnAppRequiresActive"]);
