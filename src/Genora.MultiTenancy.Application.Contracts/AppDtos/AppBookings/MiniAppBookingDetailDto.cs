@@ -61,5 +61,25 @@ namespace Genora.MultiTenancy.AppDtos.AppBookings
         /// Tổng tiền được chiết khấu = OriginalBillTotalPrice - CustomerBillTotalPrice.
         /// </summary>
         public decimal DiscountTotalPrice { get; set; }
+
+        /// <summary>
+        /// Tiêu đề chính sách hoãn hủy (lấy từ AppPromotionPolicies theo (GolfCourseId, PromotionTypeId của slot)).
+        /// </summary>
+        public string? PolicyTitle { get; set; }
+
+        /// <summary>
+        /// Số giờ tối thiểu trước giờ chơi cho phép hoãn hủy (T2-T6).
+        /// </summary>
+        public int? CancellationPolicyHours { get; set; }
+
+        /// <summary>
+        /// Số giờ tối thiểu trước giờ chơi cho phép hoãn hủy (T7+CN).
+        /// </summary>
+        public int? CancellationPolicyHoursWeekend { get; set; }
+
+        /// <summary>
+        /// Nội dung chi tiết chính sách hoãn hủy theo loại ưu đãi của tee time.
+        /// </summary>
+        public string? CancellationPolicyContent { get; set; }
     }
 }

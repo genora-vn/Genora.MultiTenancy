@@ -456,7 +456,9 @@ public class AppBookingService :
                             booking_id = entity.BookingCode,
                             tee_off_date = entity.PlayDate.ToString(ZaloDateFormat, CultureInfo.InvariantCulture),
                             tee_off_time = $"{calendarSlot.TimeFrom:hh\\:mm}",
-                            number_of_player = entity.NumberOfGolfers
+                            number_of_player = entity.NumberOfGolfers,
+                            total_price = entity.TotalAmount,
+                            bank_transfer_note = "Thanh toán booking. Mã booking " + entity.BookingCode
                         }
                     },
                     priority: BackgroundJobPriority.Normal
@@ -808,7 +810,10 @@ public class AppBookingService :
             }
             else
             {
-                if (!string.IsNullOrWhiteSpace(newCustomer.PhoneNumber))
+                if (!string.IsNullOrWhiteSpace(newCustomer.PhoneNumber) && oldNumberOfGolfers != newNumberOfGolfers
+                    || oldPlayDateText != newPlayDateText
+                    || oldTeeFromText != newTeeFromText
+                    || oldTeeToText != newTeeToText)
                 {
                     await _jobManager.EnqueueAsync(
                         new ZbsSendJobArgs

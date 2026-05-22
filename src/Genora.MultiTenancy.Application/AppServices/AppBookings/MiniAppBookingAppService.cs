@@ -1,4 +1,5 @@
 ﻿using DocumentFormat.OpenXml.ExtendedProperties;
+using DocumentFormat.OpenXml.Vml.Office;
 using Genora.MultiTenancy.AppDtos.AppEmails;
 using Genora.MultiTenancy.AppServices.AppEmails;
 using Genora.MultiTenancy.AppServices.AppZaloAuths;
@@ -228,7 +229,9 @@ public class MiniAppBookingAppService : ApplicationService, IMiniAppBookingAppSe
                             booking_id = booking.BookingCode,
                             tee_off_date = booking.PlayDate.ToString("dd/MM/yyyy", CultureInfo.InvariantCulture),
                             tee_off_time = $"{calendarSlot.TimeFrom:hh\\:mm}",
-                            number_of_player = booking.NumberOfGolfers
+                            number_of_player = booking.NumberOfGolfers,
+                            total_price = booking.TotalAmount,
+                            bank_transfer_note = "Thanh toán booking. Mã booking " + booking.BookingCode
                         }
                     },
                     priority: BackgroundJobPriority.Normal
@@ -893,6 +896,23 @@ public class MiniAppBookingAppService : ApplicationService, IMiniAppBookingAppSe
                 if (calendar != null)
                 {
                     dto.FrameTimes = $"{calendar.TimeFrom} - {calendar.TimeTo}";
+                }
+
+                // ===== Lookup PromotionPolicy theo (GolfCourseId, PromotionTypeId của slot) =====
+                // Cùng pattern với /api/mini-app/get-calendar-slots/{id}
+                if (calendar != null)
+                {
+                    var policy = await _promotionPolicyRepo.FirstOrDefaultAsync(x =>
+                        x.GolfCourseId == booking.GolfCourseId &&
+                        x.PromotionTypeId == calendar.PromotionTypeId);
+
+                    if (policy != null)
+                    {
+                        dto.PolicyTitle = policy.PolicyTitle;
+                        dto.CancellationPolicyHours = policy.CancellationPolicyHours;
+                        dto.CancellationPolicyHoursWeekend = policy.CancellationPolicyHoursWeekend;
+                        dto.CancellationPolicyContent = policy.CancellationPolicyContent;
+                    }
                 }
 
                 // Load tất cả customer types cần dùng trong 1 lần

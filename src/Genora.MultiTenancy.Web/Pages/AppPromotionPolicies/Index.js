@@ -113,12 +113,11 @@ $(function () {
                     }
                 },
                 {
-                    title: l('PromotionPolicy:CancellationPolicyContent'),
-                    data: "cancellationPolicyContent",
+                    title: l('PromotionPolicy:CancellationPolicyHoursWeekend'),
+                    data: "cancellationPolicyHoursWeekend",
                     render: function (value) {
-                        var text = stripHtml(value);
-                        if (!text) return '';
-                        return '<div class="promotion-policy-content-cell" title="' + escapeHtml(text) + '">' + escapeHtml(text) + '</div>';
+                        if (value === null || value === undefined || value === '') return '';
+                        return value + ' ' + (l('Hours') || 'giờ');
                     }
                 }
             ]
