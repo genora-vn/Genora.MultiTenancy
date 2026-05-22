@@ -18,6 +18,9 @@ public class CreateUpdateAppPromotionPolicyDto
     [Range(0, int.MaxValue)]
     public int? CancellationPolicyHours { get; set; }
 
+    [Range(0, int.MaxValue)]
+    public int? CancellationPolicyHoursWeekend { get; set; }
+
     public string? CancellationPolicyContent { get; set; }
 
     public List<PromotionPolicyGolfCourseDto> AvailableGolfCourses { get; set; } = new();

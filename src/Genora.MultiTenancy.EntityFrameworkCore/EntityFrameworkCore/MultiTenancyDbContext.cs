@@ -275,6 +275,7 @@ public class MultiTenancyDbContext :
 
             b.Property(x => x.PolicyTitle).HasMaxLength(255);
             b.Property(x => x.CancellationPolicyHours).IsRequired(false);
+            b.Property(x => x.CancellationPolicyHoursWeekend).IsRequired(false);
             b.Property(x => x.CancellationPolicyContent).HasColumnType("nvarchar(max)");
 
             b.HasOne(x => x.GolfCourse)

@@ -10,6 +10,7 @@ public class AppPromotionPolicyDto : FullAuditedEntityDto<Guid>
     public Guid PromotionTypeId { get; set; }
     public string? PolicyTitle { get; set; }
     public int? CancellationPolicyHours { get; set; }
+    public int? CancellationPolicyHoursWeekend { get; set; }
     public string? CancellationPolicyContent { get; set; }
 
     public string? GolfCourseName { get; set; }

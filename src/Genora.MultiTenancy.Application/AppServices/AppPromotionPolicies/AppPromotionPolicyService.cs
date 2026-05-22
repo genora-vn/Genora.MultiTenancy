@@ -80,6 +80,7 @@ public class AppPromotionPolicyService :
                         PromotionTypeId = p.PromotionTypeId,
                         PolicyTitle = p.PolicyTitle,
                         CancellationPolicyHours = p.CancellationPolicyHours,
+                        CancellationPolicyHoursWeekend = p.CancellationPolicyHoursWeekend,
                         CancellationPolicyContent = p.CancellationPolicyContent,
                         CreationTime = p.CreationTime,
                         CreatorId = p.CreatorId,
@@ -125,6 +126,7 @@ public class AppPromotionPolicyService :
         {
             PolicyTitle = input.PolicyTitle?.Trim(),
             CancellationPolicyHours = input.CancellationPolicyHours,
+            CancellationPolicyHoursWeekend = input.CancellationPolicyHoursWeekend,
             CancellationPolicyContent = input.CancellationPolicyContent
         };
 
@@ -144,6 +146,7 @@ public class AppPromotionPolicyService :
         entity.PromotionTypeId = input.PromotionTypeId;
         entity.PolicyTitle = input.PolicyTitle?.Trim();
         entity.CancellationPolicyHours = input.CancellationPolicyHours;
+        entity.CancellationPolicyHoursWeekend = input.CancellationPolicyHoursWeekend;
         entity.CancellationPolicyContent = input.CancellationPolicyContent;
 
         await Repository.UpdateAsync(entity, autoSave: true);
@@ -189,6 +192,7 @@ public class AppPromotionPolicyService :
             dto.PromotionTypeId = entity.PromotionTypeId;
             dto.PolicyTitle = entity.PolicyTitle;
             dto.CancellationPolicyHours = entity.CancellationPolicyHours;
+            dto.CancellationPolicyHoursWeekend = entity.CancellationPolicyHoursWeekend;
             dto.CancellationPolicyContent = entity.CancellationPolicyContent;
         }
         else

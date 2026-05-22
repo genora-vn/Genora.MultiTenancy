@@ -37,7 +37,7 @@
                     <span asp-validation-for="PromotionPolicy.PromotionTypeId" class="text-danger"></span>
                 </div>
 
-                <div class="col-md-8">
+                <div class="col-md-4">
                     <label asp-for="PromotionPolicy.PolicyTitle" class="form-label">@L["PromotionPolicy:PolicyTitle"]</label>
                     <input asp-for="PromotionPolicy.PolicyTitle"
                            type="text"
@@ -54,6 +54,16 @@
                            class="form-control"
                            placeholder="Ví dụ: 24" />
                     <span asp-validation-for="PromotionPolicy.CancellationPolicyHours" class="text-danger"></span>
+                </div>
+
+                <div class="col-md-4">
+                    <label asp-for="PromotionPolicy.CancellationPolicyHoursWeekend" class="form-label">@L["PromotionPolicy:CancellationPolicyHoursWeekend"]</label>
+                    <input asp-for="PromotionPolicy.CancellationPolicyHoursWeekend"
+                           type="number"
+                           min="0"
+                           class="form-control"
+                           placeholder="Ví dụ: 48" />
+                    <span asp-validation-for="PromotionPolicy.CancellationPolicyHoursWeekend" class="text-danger"></span>
                 </div>
 
                 <div class="col-12">

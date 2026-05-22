@@ -22,6 +22,8 @@ public class PromotionPolicy : FullAuditedAggregateRoot<Guid>, IMultiTenant
 
     public int? CancellationPolicyHours { get; set; }
 
+    public int? CancellationPolicyHoursWeekend { get; set; }
+
     public string? CancellationPolicyContent { get; set; }
 
     public virtual GolfCourse? GolfCourse { get; set; }

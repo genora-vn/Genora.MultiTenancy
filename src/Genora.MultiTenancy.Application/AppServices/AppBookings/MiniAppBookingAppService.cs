@@ -1046,7 +1046,13 @@ public class MiniAppBookingAppService : ApplicationService, IMiniAppBookingAppSe
         // Không có policy cấu hình → cho phép hoãn hủy thoải mái
         if (policy == null) return false;
 
-        var hours = policy.CancellationPolicyHours;
+        // Chọn giờ theo ngày chơi: T7/CN dùng cấu hình cuối tuần, T2-T6 dùng cấu hình trong tuần
+        var dow = playDateTime.DayOfWeek;
+        var isWeekend = dow == DayOfWeek.Saturday || dow == DayOfWeek.Sunday;
+
+        var hours = isWeekend
+            ? policy.CancellationPolicyHoursWeekend
+            : policy.CancellationPolicyHours;
 
         // Hours null hoặc <= 0 → unlimited window → luôn được hoãn hủy
         if (!hours.HasValue || hours.Value <= 0) return false;
