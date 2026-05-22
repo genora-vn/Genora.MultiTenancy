@@ -40,6 +40,20 @@ public class EditModalModel : MultiTenancyPageModel
 
         News.IsUploadImage = false;
         News.Images = null;
+
+        // ContentHtml có thể rất nặng (ảnh base64 nhúng) → bỏ ra khỏi response render Razor để modal mở nhanh,
+        // sau đó JS lazy load qua handler OnGetContentAsync sau khi modal đã shown.
+        News.ContentHtml = string.Empty;
+    }
+
+    /// <summary>
+    /// Handler trả ContentHtml riêng để JS lazy load sau khi modal đã hiển thị.
+    /// Endpoint: GET /AppNews/EditModal?id={id}&handler=Content
+    /// </summary>
+    public async Task<IActionResult> OnGetContentAsync()
+    {
+        var dto = await _newsService.GetAsync(Id);
+        return new JsonResult(new { contentHtml = dto?.ContentHtml ?? string.Empty });
     }
 
     public async Task<IActionResult> OnPostAsync()
@@ -71,3 +85,4 @@ public class EditModalModel : MultiTenancyPageModel
         return NoContent();
     }
 }
+

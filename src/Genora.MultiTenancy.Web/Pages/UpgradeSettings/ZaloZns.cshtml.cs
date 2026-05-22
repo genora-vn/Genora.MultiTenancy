@@ -89,6 +89,12 @@ public class ZaloZnsModel : AbpPageModel
 
         [Display(Name = "Chi nhánh")]
         public string? BankBranch { get; set; }
+
+        [Display(Name = "Thanh toán tại quầy")]
+        public bool IsPayAtCounterEnabled { get; set; } = true;
+
+        [Display(Name = "Thanh toán chuyển khoản")]
+        public bool IsPayBankTransferEnabled { get; set; } = true;
     }
 
     public async Task OnGetAsync()
@@ -118,6 +124,16 @@ public class ZaloZnsModel : AbpPageModel
         Input.BankAccountNumber  = await _settingProvider.GetOrNullAsync(ZaloPaymentSettingNames.BankAccountNumber);
         Input.BankAccountOwner   = await _settingProvider.GetOrNullAsync(ZaloPaymentSettingNames.BankAccountOwner);
         Input.BankBranch         = await _settingProvider.GetOrNullAsync(ZaloPaymentSettingNames.BankBranch);
+
+        var payAtCounterRaw = await _settingProvider.GetOrNullAsync(ZaloPaymentSettingNames.IsPayAtCounterEnabled);
+        Input.IsPayAtCounterEnabled = string.IsNullOrWhiteSpace(payAtCounterRaw)
+            ? true
+            : bool.TryParse(payAtCounterRaw, out var pc) ? pc : true;
+
+        var payBankRaw = await _settingProvider.GetOrNullAsync(ZaloPaymentSettingNames.IsPayBankTransferEnabled);
+        Input.IsPayBankTransferEnabled = string.IsNullOrWhiteSpace(payBankRaw)
+            ? true
+            : bool.TryParse(payBankRaw, out var pb) ? pb : true;
     }
 
     public async Task<IActionResult> OnPostAsync()
@@ -155,6 +171,9 @@ public class ZaloZnsModel : AbpPageModel
         await SetAsync(ZaloPaymentSettingNames.BankAccountNumber,  Input.BankAccountNumber);
         await SetAsync(ZaloPaymentSettingNames.BankAccountOwner,   Input.BankAccountOwner);
         await SetAsync(ZaloPaymentSettingNames.BankBranch,         Input.BankBranch);
+
+        await SetAsync(ZaloPaymentSettingNames.IsPayAtCounterEnabled,    Input.IsPayAtCounterEnabled.ToString());
+        await SetAsync(ZaloPaymentSettingNames.IsPayBankTransferEnabled, Input.IsPayBankTransferEnabled.ToString());
 
         Alerts.Success("Đã lưu cấu hình Zalo/ZNS.");
         return RedirectToPage();

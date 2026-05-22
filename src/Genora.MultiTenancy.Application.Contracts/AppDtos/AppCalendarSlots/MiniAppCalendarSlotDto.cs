@@ -12,6 +12,18 @@ namespace Genora.MultiTenancy.AppDtos.AppCalendarSlots
     {
         public PagedResultDto<CalendarSlotData> Data { get; set; }
         public List<FrameTimeOfDay> FrameTimeOfDays { get; set; }
+
+        /// <summary>
+        /// Cho phép hiển thị hình thức Thanh toán tại quầy trên Mini App.
+        /// Đọc từ ABP Setting Genora.Payment.IsPayAtCounterEnabled (default = true).
+        /// </summary>
+        public bool IsPayAtCounterEnabled { get; set; } = true;
+
+        /// <summary>
+        /// Cho phép hiển thị hình thức Thanh toán chuyển khoản trên Mini App.
+        /// Đọc từ ABP Setting Genora.Payment.IsPayBankTransferEnabled (default = true).
+        /// </summary>
+        public bool IsPayBankTransferEnabled { get; set; } = true;
     }
     public class CalendarSlotData
     {

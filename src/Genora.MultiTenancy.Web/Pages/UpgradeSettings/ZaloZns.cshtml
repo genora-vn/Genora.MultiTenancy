@@ -89,6 +89,35 @@
                                     <abp-input asp-for="Input.BankBranch" label="Chi nhánh" />
                                 </abp-column>
                             </abp-row>
+
+                            <hr />
+                            <p class="text-muted small mb-2">Hình thức thanh toán hiển thị trên Mini App</p>
+                            <abp-row>
+                                <abp-column size-md="_6">
+                                    <div class="form-check form-switch mb-2">
+                                        <input class="form-check-input"
+                                               type="checkbox"
+                                               role="switch"
+                                               id="IsPayAtCounterEnabled"
+                                               asp-for="Input.IsPayAtCounterEnabled" />
+                                        <label class="form-check-label" for="IsPayAtCounterEnabled">
+                                            Thanh toán tại quầy
+                                        </label>
+                                    </div>
+                                </abp-column>
+                                <abp-column size-md="_6">
+                                    <div class="form-check form-switch mb-2">
+                                        <input class="form-check-input"
+                                               type="checkbox"
+                                               role="switch"
+                                               id="IsPayBankTransferEnabled"
+                                               asp-for="Input.IsPayBankTransferEnabled" />
+                                        <label class="form-check-label" for="IsPayBankTransferEnabled">
+                                            Thanh toán chuyển khoản
+                                        </label>
+                                    </div>
+                                </abp-column>
+                            </abp-row>
                         </div>
                     </abp-column>
                 </abp-row>

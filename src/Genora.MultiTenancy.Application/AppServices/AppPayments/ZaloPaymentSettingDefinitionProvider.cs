@@ -58,6 +58,24 @@ public class ZaloPaymentSettingDefinitionProvider : SettingDefinitionProvider
             ).WithProviders(
                 GlobalSettingValueProvider.ProviderName,
                 TenantSettingValueProvider.ProviderName
+            ),
+
+            new SettingDefinition(
+                ZaloPaymentSettingNames.IsPayAtCounterEnabled,
+                defaultValue: "",
+                isVisibleToClients: false
+            ).WithProviders(
+                GlobalSettingValueProvider.ProviderName,
+                TenantSettingValueProvider.ProviderName
+            ),
+
+            new SettingDefinition(
+                ZaloPaymentSettingNames.IsPayBankTransferEnabled,
+                defaultValue: "",
+                isVisibleToClients: false
+            ).WithProviders(
+                GlobalSettingValueProvider.ProviderName,
+                TenantSettingValueProvider.ProviderName
             )
         );
     }

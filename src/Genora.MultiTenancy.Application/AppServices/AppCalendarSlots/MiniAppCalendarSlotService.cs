@@ -1,4 +1,5 @@
 ﻿using Genora.MultiTenancy.AppDtos.AppCalendarSlots;
+using Genora.MultiTenancy.AppServices.AppPayments;
 using Genora.MultiTenancy.DomainModels.AppCalendarSlotPrices;
 using Genora.MultiTenancy.DomainModels.AppCalendarSlots;
 using Genora.MultiTenancy.DomainModels.AppCustomers;
@@ -19,6 +20,7 @@ using Volo.Abp.Application.Dtos;
 using Volo.Abp.Application.Services;
 using Volo.Abp.Domain.Entities;
 using Volo.Abp.Domain.Repositories;
+using Volo.Abp.Settings;
 
 namespace Genora.MultiTenancy.AppServices.AppCalendarSlots
 {
@@ -32,6 +34,7 @@ namespace Genora.MultiTenancy.AppServices.AppCalendarSlots
         private readonly IRepository<DomainModels.AppPromotionTypes.PromotionType, Guid> _promotionTypeRepository;
         private readonly IRepository<PromotionPolicy, Guid> _promotionPolicyRepository;
         private readonly IRepository<SpecialDate, Guid> _specialDateRepository;
+        private readonly ISettingProvider _settingProvider;
 
         public MiniAppCalendarSlotService(
             IRepository<CalendarSlot, Guid> calendarSlotRepository,
@@ -41,7 +44,8 @@ namespace Genora.MultiTenancy.AppServices.AppCalendarSlots
             IRepository<Customer, Guid> customerRepo,
             IRepository<DomainModels.AppPromotionTypes.PromotionType, Guid> promotionTypeRepository,
             IRepository<PromotionPolicy, Guid> promotionPolicyRepository,
-            IRepository<SpecialDate, Guid> specialDateRepository)
+            IRepository<SpecialDate, Guid> specialDateRepository,
+            ISettingProvider settingProvider)
         {
             _customerRepo = customerRepo;
             _calendarSlotRepository = calendarSlotRepository;
@@ -51,15 +55,36 @@ namespace Genora.MultiTenancy.AppServices.AppCalendarSlots
             _promotionTypeRepository = promotionTypeRepository;
             _promotionPolicyRepository = promotionPolicyRepository;
             _specialDateRepository = specialDateRepository;
+            _settingProvider = settingProvider;
+        }
+
+        private async Task<(bool payAtCounter, bool payBankTransfer)> GetPaymentToggleAsync()
+        {
+            var pcRaw = await _settingProvider.GetOrNullAsync(ZaloPaymentSettingNames.IsPayAtCounterEnabled);
+            var pbRaw = await _settingProvider.GetOrNullAsync(ZaloPaymentSettingNames.IsPayBankTransferEnabled);
+
+            var payAtCounter = string.IsNullOrWhiteSpace(pcRaw)
+                ? true
+                : bool.TryParse(pcRaw, out var pc) ? pc : true;
+
+            var payBankTransfer = string.IsNullOrWhiteSpace(pbRaw)
+                ? true
+                : bool.TryParse(pbRaw, out var pb) ? pb : true;
+
+            return (payAtCounter, payBankTransfer);
         }
 
         public async Task<MiniAppCalendarSlotDto> GetListMiniAppAsync(GetMiniAppCalendarListInput input)
         {
+            var (payAtCounter, payBankTransfer) = await GetPaymentToggleAsync();
+
             var result = new MiniAppCalendarSlotDto
             {
                 FrameTimeOfDays = SessionOfDayEnum.List()
                     .Select(x => new FrameTimeOfDay { Id = x.Value, Name = x.Name })
-                    .ToList()
+                    .ToList(),
+                IsPayAtCounterEnabled = payAtCounter,
+                IsPayBankTransferEnabled = payBankTransfer
             };
 
             if (string.IsNullOrEmpty(input.GolfCourseCode))
@@ -67,7 +92,9 @@ namespace Genora.MultiTenancy.AppServices.AppCalendarSlots
                 return new MiniAppCalendarSlotDto
                 {
                     Error = (int)HttpStatusCode.BadRequest,
-                    Message = "Vui lòng nhập mã sân để lấy giờ chơi"
+                    Message = "Vui lòng nhập mã sân để lấy giờ chơi",
+                    IsPayAtCounterEnabled = payAtCounter,
+                    IsPayBankTransferEnabled = payBankTransfer
                 };
             }
 
@@ -667,6 +694,11 @@ namespace Genora.MultiTenancy.AppServices.AppCalendarSlots
                 dto.CancellationPolicyHours = policy.CancellationPolicyHours;
                 dto.CancellationPolicyContent = policy.CancellationPolicyContent;
             }
+
+            // Payment toggles từ ABP Setting (per-tenant)
+            var (payAtCounter, payBankTransfer) = await GetPaymentToggleAsync();
+            dto.IsPayAtCounterEnabled = payAtCounter;
+            dto.IsPayBankTransferEnabled = payBankTransfer;
 
             return dto;
         }

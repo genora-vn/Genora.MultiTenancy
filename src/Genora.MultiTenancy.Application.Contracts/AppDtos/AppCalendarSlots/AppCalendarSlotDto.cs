@@ -64,4 +64,16 @@ public class AppCalendarSlotDto : FullAuditedEntityDto<Guid>
 
     /// <summary>Nội dung chính sách hoãn hủy theo loại ưu đãi (AppPromotionPolicies)</summary>
     public string? CancellationPolicyContent { get; set; }
+
+    /// <summary>
+    /// Cho phép hiển thị hình thức Thanh toán tại quầy trên Mini App.
+    /// Đọc từ ABP Setting Genora.Payment.IsPayAtCounterEnabled (default = true).
+    /// </summary>
+    public bool IsPayAtCounterEnabled { get; set; } = true;
+
+    /// <summary>
+    /// Cho phép hiển thị hình thức Thanh toán chuyển khoản trên Mini App.
+    /// Đọc từ ABP Setting Genora.Payment.IsPayBankTransferEnabled (default = true).
+    /// </summary>
+    public bool IsPayBankTransferEnabled { get; set; } = true;
 }

@@ -22,4 +22,17 @@ public static class ZaloPaymentSettingNames
     public const string BankAccountNumber = "Genora.Payment.Bank.AccountNumber";
     public const string BankAccountOwner  = "Genora.Payment.Bank.AccountOwner";
     public const string BankBranch        = "Genora.Payment.Bank.Branch";
+
+    // ── Payment Method Toggles ──────────────────────────────────────────────
+    /// <summary>
+    /// Bật/tắt hình thức Thanh toán tại quầy. Default = true (bật).
+    /// Mini App đọc cờ này để ẩn/hiện option "Thanh toán tại quầy".
+    /// </summary>
+    public const string IsPayAtCounterEnabled = "Genora.Payment.IsPayAtCounterEnabled";
+
+    /// <summary>
+    /// Bật/tắt hình thức Thanh toán chuyển khoản. Default = true (bật).
+    /// Mini App đọc cờ này để ẩn/hiện option "Thanh toán chuyển khoản".
+    /// </summary>
+    public const string IsPayBankTransferEnabled = "Genora.Payment.IsPayBankTransferEnabled";
 }
