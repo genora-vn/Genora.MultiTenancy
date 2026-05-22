@@ -23,4 +23,13 @@ public class CreateUpdateAppCustomerTypeDto
 
     [Range(typeof(decimal), "0", "99999999")]
     public decimal? OriginalPrice { get; set; }
+
+    [Range(typeof(decimal), "0", "99999999")]
+    public decimal? OriginalPriceWeekend { get; set; }
+
+    [Range(typeof(decimal), "0", "99999999")]
+    public decimal? OriginalPriceHoliday { get; set; }
+
+    [Range(typeof(decimal), "0", "99999999")]
+    public decimal? OriginalPriceMemberDay { get; set; }
 }

@@ -6,6 +6,7 @@ using Genora.MultiTenancy.DomainModels.AppCustomerTypes;
 using Genora.MultiTenancy.DomainModels.AppGolfCourses;
 using Genora.MultiTenancy.DomainModels.AppPromotionPolicies;
 using Genora.MultiTenancy.DomainModels.AppPromotionTypes;
+using Genora.MultiTenancy.DomainModels.AppSpecialDates;
 using Genora.MultiTenancy.Enums;
 using Genora.MultiTenancy.Helpers;
 using System;
@@ -30,6 +31,7 @@ namespace Genora.MultiTenancy.AppServices.AppCalendarSlots
         private readonly IRepository<Customer, Guid> _customerRepo;
         private readonly IRepository<DomainModels.AppPromotionTypes.PromotionType, Guid> _promotionTypeRepository;
         private readonly IRepository<PromotionPolicy, Guid> _promotionPolicyRepository;
+        private readonly IRepository<SpecialDate, Guid> _specialDateRepository;
 
         public MiniAppCalendarSlotService(
             IRepository<CalendarSlot, Guid> calendarSlotRepository,
@@ -38,7 +40,8 @@ namespace Genora.MultiTenancy.AppServices.AppCalendarSlots
             IRepository<CustomerType, Guid> customerTypeRepository,
             IRepository<Customer, Guid> customerRepo,
             IRepository<DomainModels.AppPromotionTypes.PromotionType, Guid> promotionTypeRepository,
-            IRepository<PromotionPolicy, Guid> promotionPolicyRepository)
+            IRepository<PromotionPolicy, Guid> promotionPolicyRepository,
+            IRepository<SpecialDate, Guid> specialDateRepository)
         {
             _customerRepo = customerRepo;
             _calendarSlotRepository = calendarSlotRepository;
@@ -47,6 +50,7 @@ namespace Genora.MultiTenancy.AppServices.AppCalendarSlots
             _customerTypeRepository = customerTypeRepository;
             _promotionTypeRepository = promotionTypeRepository;
             _promotionPolicyRepository = promotionPolicyRepository;
+            _specialDateRepository = specialDateRepository;
         }
 
         public async Task<MiniAppCalendarSlotDto> GetListMiniAppAsync(GetMiniAppCalendarListInput input)
@@ -205,6 +209,7 @@ namespace Genora.MultiTenancy.AppServices.AppCalendarSlots
             var calendarIds = dtoList.Select(c => c.Id).ToList();
             var prices = await _priceRepository.GetListAsync(p => calendarIds.Contains(p.CalendarSlotId));
             var customerTypes = await _customerTypeRepository.GetListAsync();
+            var specialDates = await _specialDateRepository.GetListAsync(x => x.IsActive);
 
             var customerTypeDict = customerTypes.ToDictionary(x => x.Id, x => x);
 
@@ -235,19 +240,28 @@ namespace Genora.MultiTenancy.AppServices.AppCalendarSlots
 
                 var slotPrices = prices.Where(p => p.CalendarSlotId == item.Id).ToList();
 
-                // ===== Giá gốc theo loại khách hàng đã cấu hình trong AppCustomerTypes =====
+                // Resolve loại ngày của slot dựa trên cấu hình AppSpecialDates và PlayDate (giờ chơi)
+                var playDateForKind = item.PlayDate ?? DateTime.Today;
+                var slotKind = CustomerTypeOriginalPriceResolver.ResolveKind(playDateForKind, specialDates);
+
+                // ===== Giá gốc theo loại khách hàng + loại ngày (Weekday/Weekend/Holiday/MemberDay) =====
                 decimal visitorPrice = 0m;
                 string originalPriceSource = "None";
 
-                if (currentCustomerType != null && currentCustomerType.OriginalPrice.HasValue && currentCustomerType.OriginalPrice.Value > 0)
+                var ctOriginal = CustomerTypeOriginalPriceResolver.GetOriginalPriceByKind(currentCustomerType, slotKind);
+                if (ctOriginal.HasValue && ctOriginal.Value > 0)
                 {
-                    visitorPrice = currentCustomerType.OriginalPrice.Value;
-                    originalPriceSource = $"CustomerType:{currentCustomerType.Code}";
+                    visitorPrice = ctOriginal.Value;
+                    originalPriceSource = $"CustomerType:{currentCustomerType!.Code}:{slotKind}";
                 }
-                else if (user == null && visCustomerType != null && visCustomerType.OriginalPrice.HasValue && visCustomerType.OriginalPrice.Value > 0)
+                else if (user == null)
                 {
-                    visitorPrice = visCustomerType.OriginalPrice.Value;
-                    originalPriceSource = $"CustomerType:{visCustomerType.Code}";
+                    var visOriginal = CustomerTypeOriginalPriceResolver.GetOriginalPriceByKind(visCustomerType, slotKind);
+                    if (visOriginal.HasValue && visOriginal.Value > 0)
+                    {
+                        visitorPrice = visOriginal.Value;
+                        originalPriceSource = $"CustomerType:{visCustomerType!.Code}:{slotKind}";
+                    }
                 }
 
                 // Fallback về logic cũ nếu chưa cấu hình OriginalPrice
@@ -343,10 +357,10 @@ namespace Genora.MultiTenancy.AppServices.AppCalendarSlots
                         + (mbgSlotPrice * maxMbg)
                         + (remaining * item.VisitorPrice);
 
-                    // Giá gốc theo AppCustomerTypes.OriginalPrice
-                    decimal mbOriginal  = mbCustomerType?.OriginalPrice  ?? 0m;
-                    decimal mbgOriginal = mbgCustomerType?.OriginalPrice ?? 0m;
-                    decimal visOriginal = visCustomerType?.OriginalPrice ?? 0m;
+                    // Giá gốc theo AppCustomerTypes.OriginalPrice* (chọn theo slotKind)
+                    decimal mbOriginal  = CustomerTypeOriginalPriceResolver.GetOriginalPriceByKind(mbCustomerType, slotKind)  ?? 0m;
+                    decimal mbgOriginal = CustomerTypeOriginalPriceResolver.GetOriginalPriceByKind(mbgCustomerType, slotKind) ?? 0m;
+                    decimal visOriginal = CustomerTypeOriginalPriceResolver.GetOriginalPriceByKind(visCustomerType, slotKind) ?? 0m;
 
                     item.OriginalBillTotalPrice = mbOriginal
                         + (mbgOriginal * maxMbg)
@@ -357,10 +371,12 @@ namespace Genora.MultiTenancy.AppServices.AppCalendarSlots
                     // Visitor hoặc sân không hỗ trợ Member - dùng giá CustomerTypePrice (của loại khách hàng hiện tại)
                     item.CustomerBillTotalPrice = item.CustomerTypePrice * slotCount;
 
-                    // Tính OriginalBillTotalPrice dựa vào OriginalPrice của loại khách hàng hiện tại
-                    decimal currentOriginalPrice = (currentCustomerType?.OriginalPrice ?? 0m) > 0
-                        ? currentCustomerType.OriginalPrice.Value
-                        : (visCustomerType?.OriginalPrice ?? 0m);
+                    // Tính OriginalBillTotalPrice dựa vào OriginalPrice của loại khách hàng hiện tại theo slotKind
+                    decimal currentOriginalPrice = CustomerTypeOriginalPriceResolver.GetOriginalPriceByKind(currentCustomerType, slotKind) ?? 0m;
+                    if (currentOriginalPrice <= 0)
+                    {
+                        currentOriginalPrice = CustomerTypeOriginalPriceResolver.GetOriginalPriceByKind(visCustomerType, slotKind) ?? 0m;
+                    }
                     item.OriginalBillTotalPrice = currentOriginalPrice * slotCount;
                 }
 
@@ -501,19 +517,28 @@ namespace Genora.MultiTenancy.AppServices.AppCalendarSlots
 
             var isCurrentMember = golf?.IsMemberSupported == true && currentCustomerType?.Code == "MB";
 
-            // Tính giá gốc theo loại khách hàng
+            // Resolve loại ngày của slot dựa trên cấu hình AppSpecialDates và PlayDate (giờ chơi)
+            var specialDatesDetail = await _specialDateRepository.GetListAsync(x => x.IsActive);
+            var slotKind = CustomerTypeOriginalPriceResolver.ResolveKind(slot.ApplyDate, specialDatesDetail);
+
+            // Tính giá gốc theo loại khách hàng + loại ngày
             decimal visitorPrice = 0m;
             string originalPriceSource = "None";
 
-            if (currentCustomerType != null && currentCustomerType.OriginalPrice.HasValue && currentCustomerType.OriginalPrice.Value > 0)
+            var ctOriginalDetail = CustomerTypeOriginalPriceResolver.GetOriginalPriceByKind(currentCustomerType, slotKind);
+            if (ctOriginalDetail.HasValue && ctOriginalDetail.Value > 0)
             {
-                visitorPrice = currentCustomerType.OriginalPrice.Value;
-                originalPriceSource = $"CustomerType:{currentCustomerType.Code}";
+                visitorPrice = ctOriginalDetail.Value;
+                originalPriceSource = $"CustomerType:{currentCustomerType!.Code}:{slotKind}";
             }
-            else if (user == null && visCustomerType != null && visCustomerType.OriginalPrice.HasValue && visCustomerType.OriginalPrice.Value > 0)
+            else if (user == null)
             {
-                visitorPrice = visCustomerType.OriginalPrice.Value;
-                originalPriceSource = $"CustomerType:{visCustomerType.Code}";
+                var visOriginalDetail = CustomerTypeOriginalPriceResolver.GetOriginalPriceByKind(visCustomerType, slotKind);
+                if (visOriginalDetail.HasValue && visOriginalDetail.Value > 0)
+                {
+                    visitorPrice = visOriginalDetail.Value;
+                    originalPriceSource = $"CustomerType:{visCustomerType!.Code}:{slotKind}";
+                }
             }
 
             // Fallback về logic cũ nếu chưa cấu hình OriginalPrice
@@ -607,10 +632,10 @@ namespace Genora.MultiTenancy.AppServices.AppCalendarSlots
                     + (mbgSlotPrice * Math.Min(maxMbg, playerNumber - 1))
                     + (visitorSlots * dto.VisitorPrice);
 
-                // Giá gốc theo AppCustomerTypes.OriginalPrice
-                decimal mbOriginal = mbCustomerType?.OriginalPrice ?? 0m;
-                decimal mbgOriginal = mbgCustomerType?.OriginalPrice ?? 0m;
-                decimal visOriginal = visCustomerType?.OriginalPrice ?? 0m;
+                // Giá gốc theo AppCustomerTypes.OriginalPrice* (theo slotKind)
+                decimal mbOriginal = CustomerTypeOriginalPriceResolver.GetOriginalPriceByKind(mbCustomerType, slotKind) ?? 0m;
+                decimal mbgOriginal = CustomerTypeOriginalPriceResolver.GetOriginalPriceByKind(mbgCustomerType, slotKind) ?? 0m;
+                decimal visOriginal = CustomerTypeOriginalPriceResolver.GetOriginalPriceByKind(visCustomerType, slotKind) ?? 0m;
 
                 dto.OriginalBillTotalPrice = mbOriginal
                     + (mbgOriginal * Math.Min(maxMbg, playerNumber - 1))
@@ -621,10 +646,12 @@ namespace Genora.MultiTenancy.AppServices.AppCalendarSlots
                 // Visitor hoặc sân không hỗ trợ Member - dùng giá CustomerTypePrice (của loại khách hàng hiện tại)
                 dto.CustomerBillTotalPrice = dto.CustomerTypePrice * playerNumber;
 
-                // Tính OriginalBillTotalPrice dựa vào OriginalPrice của loại khách hàng hiện tại
-                decimal currentOriginalPrice = (currentCustomerType?.OriginalPrice ?? 0m) > 0
-                    ? currentCustomerType.OriginalPrice.Value
-                    : (visCustomerType?.OriginalPrice ?? 0m);
+                // Tính OriginalBillTotalPrice dựa vào OriginalPrice của loại khách hàng hiện tại theo slotKind
+                decimal currentOriginalPrice = CustomerTypeOriginalPriceResolver.GetOriginalPriceByKind(currentCustomerType, slotKind) ?? 0m;
+                if (currentOriginalPrice <= 0)
+                {
+                    currentOriginalPrice = CustomerTypeOriginalPriceResolver.GetOriginalPriceByKind(visCustomerType, slotKind) ?? 0m;
+                }
                 dto.OriginalBillTotalPrice = currentOriginalPrice * playerNumber;
             }
 

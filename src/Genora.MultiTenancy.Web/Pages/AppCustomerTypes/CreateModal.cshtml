@@ -1,4 +1,5 @@
-﻿@page
+@page
+@using Genora.MultiTenancy.AppDtos.AppCustomerTypes
 @using Genora.MultiTenancy.Localization
 @using Genora.MultiTenancy.Web.Pages.AppCustomerTypes
 @using Microsoft.Extensions.Localization
@@ -7,10 +8,6 @@
 @inject IStringLocalizer<MultiTenancyResource> L
 @{
     Layout = null;
-
-    var originalPriceRaw = Model.CustomerType?.OriginalPrice.HasValue == true
-        ? decimal.Truncate(Model.CustomerType.OriginalPrice.Value).ToString("0")
-        : "";
 }
 <form abp-model="CustomerType" asp-page="/AppCustomerTypes/CreateModal">
     <abp-modal>
@@ -25,24 +22,57 @@
                 <span asp-validation-for="CustomerType.Description" class="text-danger"></span>
             </div>
 
-            <div class="mb-3">
-                <label asp-for="CustomerType.OriginalPrice" class="form-label">Giá gốc</label>
+            @if (Model.PriceFields != null && Model.PriceFields.Count > 0)
+            {
+                <div class="row mb-3">
+                    @foreach (var f in Model.PriceFields)
+                    {
+                        var rawVal = f.Value.HasValue ? decimal.Truncate(f.Value.Value).ToString("0") : "";
+                        var hiddenName = "CustomerType." + f.FieldName;
+                        var displayId = "ct-price-display-" + f.FieldName;
+                        var hiddenId = "ct-price-hidden-" + f.FieldName;
 
-                <input asp-for="CustomerType.OriginalPrice"
-                       type="hidden"
-                       id="original-price-hidden"
-                       value="@originalPriceRaw" />
-
-                <input type="text"
-                       id="original-price-display"
-                       class="form-control text-end"
-                       placeholder="0"
-                       inputmode="numeric"
-                       autocomplete="off"
-                       value="@originalPriceRaw" />
-
-                <span asp-validation-for="CustomerType.OriginalPrice" class="text-danger"></span>
-            </div>
+                        <div class="col-md-6 mb-3 ct-price-row" data-field="@f.FieldName">
+                            <label class="form-label" for="@displayId">@f.Label</label>
+                            <input type="hidden"
+                                   name="@hiddenName"
+                                   id="@hiddenId"
+                                   class="ct-price-hidden"
+                                   value="@rawVal" />
+                            <input type="text"
+                                   id="@displayId"
+                                   class="form-control text-end ct-price-display"
+                                   data-target="#@hiddenId"
+                                   placeholder="0"
+                                   inputmode="numeric"
+                                   autocomplete="off"
+                                   value="@rawVal" />
+                        </div>
+                    }
+                </div>
+            }
+            else
+            {
+                var rawVal = Model.CustomerType?.OriginalPrice.HasValue == true
+                ? decimal.Truncate(Model.CustomerType.OriginalPrice.Value).ToString("0")
+                : "";
+                <div class="mb-3 ct-price-row" data-field="OriginalPrice">
+                    <label class="form-label" for="ct-price-display-OriginalPrice">Giá gốc</label>
+                    <input type="hidden"
+                           name="CustomerType.OriginalPrice"
+                           id="ct-price-hidden-OriginalPrice"
+                           class="ct-price-hidden"
+                           value="@rawVal" />
+                    <input type="text"
+                           id="ct-price-display-OriginalPrice"
+                           class="form-control text-end ct-price-display"
+                           data-target="#ct-price-hidden-OriginalPrice"
+                           placeholder="0"
+                           inputmode="numeric"
+                           autocomplete="off"
+                           value="@rawVal" />
+                </div>
+            }
 
             <div style="display: inline-flex; width: 100%">
                 <label asp-for="CustomerType.ColorCode" class="form-label" style="width: 18%">@L["ColorCode"]</label>
@@ -89,8 +119,6 @@
         var $desc = $form.find('[name="CustomerType.Description"]');
         var $colorCode = $form.find('[name="CustomerType.ColorCode"]');
         var $picker = $('#color-picker');
-        var $originalPriceHidden = $('#original-price-hidden');
-        var $originalPriceDisplay = $('#original-price-display');
 
         function refreshValidation() {
             $form.removeData('validator');
@@ -100,18 +128,14 @@
             }
         }
 
-        $desc.removeAttr('required')
-             .removeAttr('data-val-required');
-
+        $desc.removeAttr('required').removeAttr('data-val-required');
         refreshValidation();
 
-        if ($.validator) {
-            if (!$.validator.methods.regex) {
-                $.validator.addMethod("regex", function (value, element, pattern) {
-                    if (this.optional(element)) return true;
-                    return pattern.test(value);
-                });
-            }
+        if ($.validator && !$.validator.methods.regex) {
+            $.validator.addMethod("regex", function (value, element, pattern) {
+                if (this.optional(element)) return true;
+                return pattern.test(value);
+            });
         }
 
         function normalizeMoney(raw) {
@@ -125,44 +149,40 @@
             return n.toLocaleString('vi-VN');
         }
 
-        function syncOriginalPriceHidden() {
-            $originalPriceHidden.val(normalizeMoney($originalPriceDisplay.val()));
+        function syncHidden($display) {
+            var $hidden = $($display.data('target'));
+            $hidden.val(normalizeMoney($display.val()));
         }
 
-        function initMoney() {
-            $originalPriceDisplay.val(formatMoneyVN($originalPriceDisplay.val()));
-            syncOriginalPriceHidden();
+        $form.find('.ct-price-display').each(function () {
+            var $d = $(this);
+            $d.val(formatMoneyVN($d.val()));
+            syncHidden($d);
+        });
 
-            $originalPriceDisplay.on('focus', function () {
-                $(this).val(normalizeMoney($(this).val()));
-            });
-
-            $originalPriceDisplay.on('input', function () {
-                $(this).val(normalizeMoney($(this).val()));
-                syncOriginalPriceHidden();
-            });
-
-            $originalPriceDisplay.on('blur', function () {
-                syncOriginalPriceHidden();
-                $(this).val(formatMoneyVN($(this).val()));
-            });
-        }
+        $form.on('focus', '.ct-price-display', function () {
+            $(this).val(normalizeMoney($(this).val()));
+        });
+        $form.on('input', '.ct-price-display', function () {
+            $(this).val(normalizeMoney($(this).val()));
+            syncHidden($(this));
+        });
+        $form.on('blur', '.ct-price-display', function () {
+            syncHidden($(this));
+            $(this).val(formatMoneyVN($(this).val()));
+        });
 
         function normalizeHex(val) {
             val = (val || "").trim();
             if (!val) return "";
             if (!val.startsWith("#")) val = "#" + val;
-
             if (/^#([0-9a-fA-F]{3})$/.test(val)) {
                 var r = val[1], g = val[2], b = val[3];
                 val = "#" + r + r + g + g + b + b;
             }
             return val;
         }
-
-        function isValidHex6(val) {
-            return /^#([0-9a-fA-F]{6})$/.test(val);
-        }
+        function isValidHex6(val) { return /^#([0-9a-fA-F]{6})$/.test(val); }
 
         if ($colorCode.length && $colorCode.rules) {
             $colorCode.rules('remove');
@@ -184,28 +204,21 @@
         $colorCode.on('input', function () {
             var val = normalizeHex($(this).val());
             $(this).val(val);
-
-            if (isValidHex6(val)) {
-                $picker.val(val);
-            }
+            if (isValidHex6(val)) $picker.val(val);
         });
 
         $form.on('submit', function () {
-            syncOriginalPriceHidden();
+            $form.find('.ct-price-display').each(function () { syncHidden($(this)); });
 
             var val = normalizeHex($colorCode.val());
             $colorCode.val(val);
 
-            if ($form.valid && !$form.valid()) {
-                return false;
-            }
+            if ($form.valid && !$form.valid()) return false;
             return true;
         });
 
         var initVal = normalizeHex($colorCode.val());
         $colorCode.val(initVal);
         if (isValidHex6(initVal)) $picker.val(initVal);
-
-        initMoney();
     });
 </script>

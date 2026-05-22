@@ -30,8 +30,29 @@ public class CustomerType : FullAuditedAggregateRoot<Guid>, IMultiTenant
 
     public bool IsActive { get; set; } = true;
 
+    /// <summary>
+    /// Giá gốc Ngày trong tuần (Weekday) - default
+    /// </summary>
     [Column(TypeName = "decimal(18,2)")]
     public decimal? OriginalPrice { get; set; }
+
+    /// <summary>
+    /// Giá gốc Ngày cuối tuần (Weekend)
+    /// </summary>
+    [Column(TypeName = "decimal(18,2)")]
+    public decimal? OriginalPriceWeekend { get; set; }
+
+    /// <summary>
+    /// Giá gốc Ngày lễ (Holiday)
+    /// </summary>
+    [Column(TypeName = "decimal(18,2)")]
+    public decimal? OriginalPriceHoliday { get; set; }
+
+    /// <summary>
+    /// Giá gốc Member day
+    /// </summary>
+    [Column(TypeName = "decimal(18,2)")]
+    public decimal? OriginalPriceMemberDay { get; set; }
 
     // Navigation
     public virtual ICollection<Customer> Customers { get; set; } = new List<Customer>();

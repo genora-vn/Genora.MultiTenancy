@@ -35,6 +35,18 @@ public static class MultiTenancyDbContextModelCreatingExtensionsMiniApp
                 .HasColumnType("decimal(18,2)")
                 .IsRequired(false);
 
+            b.Property(x => x.OriginalPriceWeekend)
+                .HasColumnType("decimal(18,2)")
+                .IsRequired(false);
+
+            b.Property(x => x.OriginalPriceHoliday)
+                .HasColumnType("decimal(18,2)")
+                .IsRequired(false);
+
+            b.Property(x => x.OriginalPriceMemberDay)
+                .HasColumnType("decimal(18,2)")
+                .IsRequired(false);
+
             // ColorCode dạng #RRGGBB
             b.Property(x => x.ColorCode).HasColumnType("char(7)");
 
