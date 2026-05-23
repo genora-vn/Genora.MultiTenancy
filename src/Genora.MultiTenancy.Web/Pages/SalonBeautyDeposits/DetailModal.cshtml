@@ -1,0 +1,115 @@
+@page
+@using Genora.MultiTenancy.Localization
+@using Microsoft.Extensions.Localization
+@using Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.TagHelpers.Modal
+@using Genora.MultiTenancy.Web.Pages.SalonBeautyDeposits
+@model DetailModalModel
+@inject IStringLocalizer<MultiTenancyResource> L
+@{
+    Layout = null;
+    var d = Model.Deposit;
+    var statusClass = d.Status == 1 ? "bg-warning" : (d.Status == 2 ? "bg-success" : "bg-danger");
+    var pointUnit = L["SalonBeautyDeposits:PointUnit"].Value;
+}
+
+<abp-modal size="Large">
+    <abp-modal-body class="p-0">
+        <div class="service-modal service-category-modal">
+            <div class="service-modal-header">
+                <div class="service-modal-title-wrap">
+                    <div class="service-modal-icon"><i class="fa fa-receipt"></i></div>
+                    <div>
+                        <h3>@L["SalonBeautyDeposits:DetailTitle"] @(string.IsNullOrEmpty(d.TransactionCode) ? "" : "- " + d.TransactionCode)</h3>
+                        <p>@L["SalonBeautyDeposits:DetailSubTitle"]</p>
+                    </div>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="@L["Close"]"></button>
+            </div>
+
+            <div class="service-modal-body">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <small class="text-muted">@L["SalonBeautyDeposits:Code"]</small>
+                        <div><strong>@d.TransactionCode</strong></div>
+                    </div>
+                    <div class="col-md-6 text-md-end">
+                        <small class="text-muted">@L["SalonBeautyDeposits:Status"]</small>
+                        <div><span class="badge @statusClass">@d.StatusText</span></div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <small class="text-muted">@L["SalonBeautyDeposits:Customer"]</small>
+                        <div>@d.CustomerName <small class="text-muted">@d.CustomerPhone</small></div>
+                    </div>
+                    <div class="col-md-6">
+                        <small class="text-muted">@L["SalonBeautyDeposits:CreationTime"]</small>
+                        <div>@d.CreationTime.ToString("dd/MM/yyyy HH:mm")</div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <small class="text-muted">@L["SalonBeautyDeposits:Amount"]</small>
+                        <div><strong>@(d.Amount.ToString("N0")) đ</strong></div>
+                    </div>
+                    <div class="col-md-6">
+                        <small class="text-muted">@L["SalonBeautyDeposits:ExchangeRate"]</small>
+                        <div>@(d.ExchangeRate.ToString("N0")) đ / 1 @pointUnit</div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <small class="text-muted">@L["SalonBeautyDeposits:BasePoint"]</small>
+                        <div>@d.BasePoint.ToString("N0") @pointUnit</div>
+                    </div>
+                    <div class="col-md-6">
+                        <small class="text-muted">@L["SalonBeautyDeposits:BonusPoint"]</small>
+                        <div class="text-success">+@d.BonusPoint.ToString("N0") @pointUnit @(d.BonusTierName != null ? $"({d.BonusTierName})" : "")</div>
+                    </div>
+
+                    <div class="col-12">
+                        <div class="alert alert-primary mb-0">
+                            <strong>@L["SalonBeautyDeposits:TotalPoint"]:</strong>
+                            <span class="fs-4 fw-bold">@d.TotalPoint.ToString("N0") @pointUnit</span>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <small class="text-muted">@L["SalonBeautyDeposits:PaymentMethod"]</small>
+                        <div>@d.PaymentMethodText</div>
+                    </div>
+                    <div class="col-md-6">
+                        <small class="text-muted">@L["SalonBeautyDeposits:ReferenceCode"]</small>
+                        <div>@(d.ReferenceCode ?? "--")</div>
+                    </div>
+
+                    <div class="col-12">
+                        <small class="text-muted">@L["SalonBeautyDeposits:Note"]</small>
+                        <div>@(d.Note ?? "--")</div>
+                    </div>
+
+                    @if (d.Status == 2)
+                    {
+                        <div class="col-12">
+                            <div class="alert alert-success mb-0">
+                                <i class="fa fa-check-circle"></i>
+                                @L["SalonBeautyDeposits:ApprovedAt"]: @d.ApprovedAt?.ToString("dd/MM/yyyy HH:mm")
+                            </div>
+                        </div>
+                    }
+                    @if (d.Status == 3)
+                    {
+                        <div class="col-12">
+                            <div class="alert alert-danger mb-0">
+                                <i class="fa fa-times-circle"></i>
+                                @L["SalonBeautyDeposits:CancelledAt"]: @d.CancelledAt?.ToString("dd/MM/yyyy HH:mm") <br />
+                                <strong>@L["SalonBeautyDeposits:CancelReason"]:</strong> @d.CancelReason
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <div class="service-modal-footer justify-content-end">
+                <button type="button" class="service-btn-secondary" data-bs-dismiss="modal">@L["Close"]</button>
+            </div>
+        </div>
+    </abp-modal-body>
+</abp-modal>

@@ -193,6 +193,9 @@ public static class MultiTenancyDbContextModelCreatingExtensionsSalonBeauty
             b.ConfigureByConvention();
 
             b.Property(x => x.Description).HasMaxLength(255);
+            b.Property(x => x.BalanceBefore).HasDefaultValue(0);
+            b.Property(x => x.BalanceAfter).HasDefaultValue(0);
+            b.Property(x => x.ReferenceType).HasDefaultValue((byte)99);
 
             b.HasOne(x => x.Customer)
                 .WithMany(x => x.LoyaltyTransactions)
@@ -201,6 +204,53 @@ public static class MultiTenancyDbContextModelCreatingExtensionsSalonBeauty
 
             b.HasIndex(x => new { x.TenantId, x.CustomerId })
                 .HasDatabaseName("IX_AppSalonBeautyCustomerLoyaltyTransactions_TenantId_CustomerId");
+
+            b.HasIndex(x => new { x.TenantId, x.ReferenceType, x.ReferenceId })
+                .HasDatabaseName("IX_AppSalonBeautyCustomerLoyaltyTransactions_TenantId_Ref");
+        });
+
+        builder.Entity<SalonBeautyDepositTransaction>(b =>
+        {
+            b.ToTable(MultiTenancyConsts.DbTablePrefix + "SalonBeautyDepositTransactions", schema);
+            b.ConfigureByConvention();
+
+            b.Property(x => x.TransactionCode).IsRequired().HasMaxLength(30);
+            b.Property(x => x.Amount).HasPrecision(18, 2);
+            b.Property(x => x.ExchangeRate).HasPrecision(18, 4);
+            b.Property(x => x.ReferenceCode).HasMaxLength(100);
+            b.Property(x => x.Note).HasMaxLength(500);
+            b.Property(x => x.CancelReason).HasMaxLength(500);
+            b.Property(x => x.Status).HasDefaultValue((byte)1);
+
+            b.HasOne(x => x.Customer)
+                .WithMany()
+                .HasForeignKey(x => x.CustomerId)
+                .OnDelete(DeleteBehavior.Restrict)
+                .IsRequired();
+
+            b.HasIndex(x => new { x.TenantId, x.TransactionCode })
+                .IsUnique()
+                .HasDatabaseName("IX_AppSalonBeautyDepositTransactions_TenantId_Code");
+
+            b.HasIndex(x => new { x.TenantId, x.CustomerId })
+                .HasDatabaseName("IX_AppSalonBeautyDepositTransactions_TenantId_CustomerId");
+
+            b.HasIndex(x => new { x.TenantId, x.Status })
+                .HasDatabaseName("IX_AppSalonBeautyDepositTransactions_TenantId_Status");
+        });
+
+        builder.Entity<SalonBeautyLoyaltyBonusTier>(b =>
+        {
+            b.ToTable(MultiTenancyConsts.DbTablePrefix + "SalonBeautyLoyaltyBonusTiers", schema);
+            b.ConfigureByConvention();
+
+            b.Property(x => x.Name).IsRequired().HasMaxLength(100);
+            b.Property(x => x.MinAmount).HasPrecision(18, 2);
+            b.Property(x => x.Description).HasMaxLength(255);
+            b.Property(x => x.IsActive).HasDefaultValue(true);
+
+            b.HasIndex(x => new { x.TenantId, x.MinAmount })
+                .HasDatabaseName("IX_AppSalonBeautyLoyaltyBonusTiers_TenantId_MinAmount");
         });
 
         builder.Entity<SalonBeautyLocation>(b =>

@@ -1249,6 +1249,48 @@ public class MultiTenancyPermissionDefinitionProvider : PermissionDefinitionProv
         salonTimeSlotHostRoot.AddChild(MultiTenancyPermissions.HostSalonBeautyTimeSlots.Edit, L("Permission:Edit")).MultiTenancySide = MultiTenancySides.Host;
         salonTimeSlotHostRoot.AddChild(MultiTenancyPermissions.HostSalonBeautyTimeSlots.Delete, L("Permission:Delete")).MultiTenancySide = MultiTenancySides.Host;
 
+        // TENANT Deposits
+        var salonDepositTenantRoot = salonBeautyGroup.AddPermission(MultiTenancyPermissions.SalonBeautyDeposits.Default, L("Permission:SalonBeautyDeposits"));
+        salonDepositTenantRoot.MultiTenancySide = MultiTenancySides.Tenant;
+        salonDepositTenantRoot.RequireFeatures(Features.SalonBeauty.SalonBeautyFeatures.Management);
+        var salonDepositTenantCreate = salonDepositTenantRoot.AddChild(MultiTenancyPermissions.SalonBeautyDeposits.Create, L("Permission:Create"));
+        salonDepositTenantCreate.MultiTenancySide = MultiTenancySides.Tenant;
+        salonDepositTenantCreate.RequireFeatures(Features.SalonBeauty.SalonBeautyFeatures.Management);
+        var salonDepositTenantEdit = salonDepositTenantRoot.AddChild(MultiTenancyPermissions.SalonBeautyDeposits.Edit, L("Permission:Edit"));
+        salonDepositTenantEdit.MultiTenancySide = MultiTenancySides.Tenant;
+        salonDepositTenantEdit.RequireFeatures(Features.SalonBeauty.SalonBeautyFeatures.Management);
+        var salonDepositTenantApprove = salonDepositTenantRoot.AddChild(MultiTenancyPermissions.SalonBeautyDeposits.Approve, L("Permission:Approve"));
+        salonDepositTenantApprove.MultiTenancySide = MultiTenancySides.Tenant;
+        salonDepositTenantApprove.RequireFeatures(Features.SalonBeauty.SalonBeautyFeatures.Management);
+        var salonDepositTenantCancel = salonDepositTenantRoot.AddChild(MultiTenancyPermissions.SalonBeautyDeposits.Cancel, L("Permission:Cancel"));
+        salonDepositTenantCancel.MultiTenancySide = MultiTenancySides.Tenant;
+        salonDepositTenantCancel.RequireFeatures(Features.SalonBeauty.SalonBeautyFeatures.Management);
+        var salonDepositTenantDelete = salonDepositTenantRoot.AddChild(MultiTenancyPermissions.SalonBeautyDeposits.Delete, L("Permission:Delete"));
+        salonDepositTenantDelete.MultiTenancySide = MultiTenancySides.Tenant;
+        salonDepositTenantDelete.RequireFeatures(Features.SalonBeauty.SalonBeautyFeatures.Management);
+
+        // TENANT LoyaltyConfig
+        var salonLoyaltyConfigTenantRoot = salonBeautyGroup.AddPermission(MultiTenancyPermissions.SalonBeautyLoyaltyConfig.Default, L("Permission:SalonBeautyLoyaltyConfig"));
+        salonLoyaltyConfigTenantRoot.MultiTenancySide = MultiTenancySides.Tenant;
+        salonLoyaltyConfigTenantRoot.RequireFeatures(Features.SalonBeauty.SalonBeautyFeatures.Management);
+        var salonLoyaltyConfigTenantEdit = salonLoyaltyConfigTenantRoot.AddChild(MultiTenancyPermissions.SalonBeautyLoyaltyConfig.Edit, L("Permission:Edit"));
+        salonLoyaltyConfigTenantEdit.MultiTenancySide = MultiTenancySides.Tenant;
+        salonLoyaltyConfigTenantEdit.RequireFeatures(Features.SalonBeauty.SalonBeautyFeatures.Management);
+
+        // HOST Deposits
+        var salonDepositHostRoot = salonBeautyGroupHost.AddPermission(MultiTenancyPermissions.HostSalonBeautyDeposits.Default, L("Permission:SalonBeautyDeposits"));
+        salonDepositHostRoot.MultiTenancySide = MultiTenancySides.Host;
+        salonDepositHostRoot.AddChild(MultiTenancyPermissions.HostSalonBeautyDeposits.Create, L("Permission:Create")).MultiTenancySide = MultiTenancySides.Host;
+        salonDepositHostRoot.AddChild(MultiTenancyPermissions.HostSalonBeautyDeposits.Edit, L("Permission:Edit")).MultiTenancySide = MultiTenancySides.Host;
+        salonDepositHostRoot.AddChild(MultiTenancyPermissions.HostSalonBeautyDeposits.Approve, L("Permission:Approve")).MultiTenancySide = MultiTenancySides.Host;
+        salonDepositHostRoot.AddChild(MultiTenancyPermissions.HostSalonBeautyDeposits.Cancel, L("Permission:Cancel")).MultiTenancySide = MultiTenancySides.Host;
+        salonDepositHostRoot.AddChild(MultiTenancyPermissions.HostSalonBeautyDeposits.Delete, L("Permission:Delete")).MultiTenancySide = MultiTenancySides.Host;
+
+        // HOST LoyaltyConfig
+        var salonLoyaltyConfigHostRoot = salonBeautyGroupHost.AddPermission(MultiTenancyPermissions.HostSalonBeautyLoyaltyConfig.Default, L("Permission:SalonBeautyLoyaltyConfig"));
+        salonLoyaltyConfigHostRoot.MultiTenancySide = MultiTenancySides.Host;
+        salonLoyaltyConfigHostRoot.AddChild(MultiTenancyPermissions.HostSalonBeautyLoyaltyConfig.Edit, L("Permission:Edit")).MultiTenancySide = MultiTenancySides.Host;
+
         #endregion
     }
 

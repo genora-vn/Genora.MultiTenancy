@@ -1,0 +1,93 @@
+@page
+@using Genora.MultiTenancy.Localization
+@using Microsoft.Extensions.Localization
+@using Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.TagHelpers.Modal
+@using Genora.MultiTenancy.Web.Pages.SalonBeautyDeposits
+@model CreateModalModel
+@inject IStringLocalizer<MultiTenancyResource> L
+@{
+    Layout = null;
+}
+
+<form asp-page="/SalonBeautyDeposits/CreateModal" id="CreateSalonDepositForm" class="deposit-form" method="post" autocomplete="off" novalidate>
+    <abp-modal size="Large">
+        <abp-modal-body class="p-0">
+            <div class="service-modal service-category-modal">
+                <div class="service-modal-header">
+                    <div class="service-modal-title-wrap">
+                        <div class="service-modal-icon"><i class="fa fa-wallet"></i></div>
+                        <div>
+                            <h3>@L["SalonBeautyDeposits:CreateTitle"]</h3>
+                            <p>@L["SalonBeautyDeposits:CreateSubTitle"]</p>
+                        </div>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="@L["Close"]"></button>
+                </div>
+
+                <div class="service-modal-body">
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label class="service-form-label" asp-for="Deposit.CustomerId">@L["SalonBeautyDeposits:Customer"] <span class="text-danger">*</span></label>
+                            <select asp-for="Deposit.CustomerId" class="form-select service-form-control deposit-customer-select" required>
+                                <option value="">@L["SalonBeautyDeposits:SelectCustomer"]</option>
+                                @foreach (var c in Model.CustomerItems)
+                                {
+                                    <option value="@c.Value">@c.Text</option>
+                                }
+                            </select>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="service-form-label" asp-for="Deposit.Amount">@L["SalonBeautyDeposits:Amount"] <span class="text-danger">*</span></label>
+                            <div class="service-input-addon">
+                                <input asp-for="Deposit.Amount" type="text" inputmode="numeric" class="form-control service-form-control deposit-amount-input" required data-val="false" placeholder="500,000" />
+                                <span>VND</span>
+                            </div>
+                            <small class="form-text text-muted">@L["SalonBeautyDeposits:AmountHint"]</small>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="service-form-label" asp-for="Deposit.PaymentMethod">@L["SalonBeautyDeposits:PaymentMethod"] <span class="text-danger">*</span></label>
+                            <select asp-for="Deposit.PaymentMethod" class="form-select service-form-control">
+                                <option value="1">@L["SalonBeautyDeposits:PaymentCash"]</option>
+                                <option value="2">@L["SalonBeautyDeposits:PaymentBank"]</option>
+                                <option value="3">@L["SalonBeautyDeposits:PaymentEWallet"]</option>
+                            </select>
+                        </div>
+
+                        <div class="col-12">
+                            <label class="service-form-label" asp-for="Deposit.ReferenceCode">@L["SalonBeautyDeposits:ReferenceCode"]</label>
+                            <input asp-for="Deposit.ReferenceCode" maxlength="100" class="form-control service-form-control" />
+                        </div>
+
+                        <div class="col-12">
+                            <label class="service-form-label" asp-for="Deposit.Note">@L["SalonBeautyDeposits:Note"]</label>
+                            <textarea asp-for="Deposit.Note" rows="2" maxlength="500" class="form-control service-form-textarea"></textarea>
+                        </div>
+
+                        <div class="col-12">
+                            <div class="card bg-light border-0 deposit-preview-card">
+                                <div class="card-body">
+                                    <div class="fw-bold mb-2">@L["SalonBeautyDeposits:PreviewTitle"]</div>
+                                    <div class="row g-2">
+                                        <div class="col-md-6"><span class="text-muted">@L["SalonBeautyDeposits:ExchangeRate"]:</span> <strong class="deposit-preview-rate">--</strong></div>
+                                        <div class="col-md-6"><span class="text-muted">@L["SalonBeautyDeposits:BasePoint"]:</span> <strong class="deposit-preview-base">0</strong> @L["SalonBeautyDeposits:PointUnit"]</div>
+                                        <div class="col-md-6"><span class="text-muted">@L["SalonBeautyDeposits:BonusPoint"]:</span> <strong class="deposit-preview-bonus text-success">+0</strong> @L["SalonBeautyDeposits:PointUnit"] <small class="deposit-preview-tier text-muted"></small></div>
+                                        <div class="col-md-6"><span class="text-muted">@L["SalonBeautyDeposits:TotalPoint"]:</span> <strong class="deposit-preview-total text-primary fs-5">0</strong> @L["SalonBeautyDeposits:PointUnit"]</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="service-modal-footer">
+                    <button type="button" class="service-btn-secondary" data-bs-dismiss="modal">@L["Cancel"]</button>
+                    <button type="submit" class="service-btn-primary">
+                        <i class="fa fa-save"></i> @L["Save"]
+                    </button>
+                </div>
+            </div>
+        </abp-modal-body>
+    </abp-modal>
+</form>

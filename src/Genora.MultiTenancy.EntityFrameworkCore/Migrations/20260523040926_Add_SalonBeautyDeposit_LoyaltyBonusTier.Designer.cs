@@ -4,6 +4,7 @@ using Genora.MultiTenancy.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Volo.Abp.EntityFrameworkCore;
 
@@ -12,9 +13,11 @@ using Volo.Abp.EntityFrameworkCore;
 namespace Genora.MultiTenancy.Migrations
 {
     [DbContext(typeof(MultiTenancyDbContext))]
-    partial class MultiTenancyDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260523040926_Add_SalonBeautyDeposit_LoyaltyBonusTier")]
+    partial class Add_SalonBeautyDeposit_LoyaltyBonusTier
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

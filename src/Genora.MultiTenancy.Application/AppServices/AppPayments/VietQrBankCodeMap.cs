@@ -21,7 +21,7 @@ public static class VietQrBankCodeMap
         // ── Ngân hàng thương mại nhà nước ──────────────────────────────────
         ["vietcombank"]           = ("970436", "VCB"),
         ["vcb"]                   = ("970436", "VCB"),
-        ["vietinbank"]            = ("970415", "CTG"),
+        ["vietinbank"]            = ("970415", "VIETINBANK"),
         ["ctg"]                   = ("970415", "CTG"),
         ["bidv"]                  = ("970418", "BIDV"),
         ["agribank"]              = ("970405", "AGR"),

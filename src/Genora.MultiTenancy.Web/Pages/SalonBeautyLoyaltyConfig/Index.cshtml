@@ -1,0 +1,70 @@
+@page
+@using Genora.MultiTenancy.Localization
+@using Genora.MultiTenancy.Permissions
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.Extensions.Localization
+@using Genora.MultiTenancy.Web.Pages.SalonBeautyLoyaltyConfig
+@inject IStringLocalizer<MultiTenancyResource> L
+@inject IAuthorizationService AuthorizationService
+@inject Volo.Abp.MultiTenancy.ICurrentTenant CurrentTenant
+@model IndexModel
+
+@section scripts {
+    <abp-script src="/Pages/SalonBeautyLoyaltyConfig/index.js" />
+    <abp-style src="/pages/salon/service-shared.css" />
+}
+
+@{
+    var canEdit = CurrentTenant.IsAvailable
+        ? await AuthorizationService.IsGrantedAsync(MultiTenancyPermissions.SalonBeautyLoyaltyConfig.Edit)
+        : await AuthorizationService.IsGrantedAsync(MultiTenancyPermissions.HostSalonBeautyLoyaltyConfig.Edit);
+}
+
+<div class="fnb-page">
+    <div class="d-flex align-items-center justify-content-between mb-3">
+        <div>
+            <h1 class="mb-1">@L["SalonBeautyLoyaltyConfig:PageTitle"]</h1>
+            <p class="text-muted mb-0">@L["SalonBeautyLoyaltyConfig:PageSubTitle"]</p>
+        </div>
+    </div>
+
+    <div class="row g-3">
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-header"><strong>@L["SalonBeautyLoyaltyConfig:ExchangeRateTitle"]</strong></div>
+                <div class="card-body">
+                    <form id="LoyaltyConfigForm">
+                        <div class="mb-3">
+                            <label class="form-label">@L["SalonBeautyLoyaltyConfig:ExchangeRate"]</label>
+                            <div class="input-group">
+                                <input type="number" min="1" max="9999" step="1" class="form-control" id="ExchangeRateInput" value="@Model.ExchangeRate" @(canEdit ? "" : "readonly") />
+                                <span class="input-group-text">đ / 1 @L["SalonBeautyDeposits:PointUnit"]</span>
+                            </div>
+                            <small class="form-text text-muted">@L["SalonBeautyLoyaltyConfig:ExchangeRateHint"]</small>
+                        </div>
+                        @if (canEdit)
+                        {
+                            <button type="submit" class="btn btn-primary"><i class="fa fa-save"></i> @L["Save"]</button>
+                        }
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-9">
+            <div class="card">
+                <div class="card-header d-flex align-items-center justify-content-between">
+                    <strong>@L["SalonBeautyLoyaltyConfig:BonusTiersTitle"]</strong>
+                    @if (canEdit)
+                    {
+                        <button type="button" id="NewBonusTierButton" class="btn btn-sm btn-outline-primary"><i class="fa fa-plus"></i> @L["SalonBeautyLoyaltyConfig:AddBonusTier"]</button>
+                    }
+                </div>
+                <div class="card-body">
+                    <input type="hidden" id="CanEditBonusTier" value="@(canEdit ? "true" : "false")" />
+                    <table id="BonusTiersTable" class="table table-striped w-100"></table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

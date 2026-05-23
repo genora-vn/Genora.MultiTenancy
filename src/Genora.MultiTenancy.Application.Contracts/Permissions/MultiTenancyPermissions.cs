@@ -525,6 +525,38 @@ public static class MultiTenancyPermissions
         public const string Edit = Default + ".Edit";
         public const string Delete = Default + ".Delete";
     }
+
+    public static class SalonBeautyDeposits
+    {
+        public const string Default = GroupName + ".SalonBeautyDeposits";
+        public const string Create = Default + ".Create";
+        public const string Edit = Default + ".Edit";
+        public const string Delete = Default + ".Delete";
+        public const string Approve = Default + ".Approve";
+        public const string Cancel = Default + ".Cancel";
+    }
+
+    public static class HostSalonBeautyDeposits
+    {
+        public const string Default = GroupName + ".HostSalonBeautyDeposits";
+        public const string Create = Default + ".Create";
+        public const string Edit = Default + ".Edit";
+        public const string Delete = Default + ".Delete";
+        public const string Approve = Default + ".Approve";
+        public const string Cancel = Default + ".Cancel";
+    }
+
+    public static class SalonBeautyLoyaltyConfig
+    {
+        public const string Default = GroupName + ".SalonBeautyLoyaltyConfig";
+        public const string Edit = Default + ".Edit";
+    }
+
+    public static class HostSalonBeautyLoyaltyConfig
+    {
+        public const string Default = GroupName + ".HostSalonBeautyLoyaltyConfig";
+        public const string Edit = Default + ".Edit";
+    }
     #endregion
 
     //Add your own permission names. Example:

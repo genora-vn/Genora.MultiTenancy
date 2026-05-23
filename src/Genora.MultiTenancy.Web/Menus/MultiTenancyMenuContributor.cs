@@ -170,7 +170,9 @@ public class MultiTenancyMenuContributor : IMenuContributor
                     await perms.IsGrantedAsync(MultiTenancyPermissions.SalonBeautyStylists.Default) ||
                     await perms.IsGrantedAsync(MultiTenancyPermissions.SalonBeautyBookings.Default) ||
                     await perms.IsGrantedAsync(MultiTenancyPermissions.SalonBeautyLocations.Default) ||
-                    await perms.IsGrantedAsync(MultiTenancyPermissions.SalonBeautyTimeSlots.Default)
+                    await perms.IsGrantedAsync(MultiTenancyPermissions.SalonBeautyTimeSlots.Default) ||
+                    await perms.IsGrantedAsync(MultiTenancyPermissions.SalonBeautyDeposits.Default) ||
+                    await perms.IsGrantedAsync(MultiTenancyPermissions.SalonBeautyLoyaltyConfig.Default)
                 );
 
             // ===== Home Page Config (Theme + Widgets) =====
@@ -385,6 +387,32 @@ public class MultiTenancyMenuContributor : IMenuContributor
                             icon: "fa fa-id-card",
                             order: 3
                         ).RequirePermissions(MultiTenancyPermissions.SalonBeautyStylists.Default)
+                    );
+                }
+
+                if (await perms.IsGrantedAsync(MultiTenancyPermissions.SalonBeautyDeposits.Default))
+                {
+                    groupSalonBeauty.AddItem(
+                        new ApplicationMenuItem(
+                            name: "SalonBeautyDeposits",
+                            displayName: l["Menu:SalonBeautyDeposits"],
+                            url: "/SalonBeautyDeposits",
+                            icon: "fa fa-wallet",
+                            order: 5
+                        ).RequirePermissions(MultiTenancyPermissions.SalonBeautyDeposits.Default)
+                    );
+                }
+
+                if (await perms.IsGrantedAsync(MultiTenancyPermissions.SalonBeautyLoyaltyConfig.Default))
+                {
+                    groupSalonBeauty.AddItem(
+                        new ApplicationMenuItem(
+                            name: "SalonBeautyLoyaltyConfig",
+                            displayName: l["Menu:SalonBeautyLoyaltyConfig"],
+                            url: "/SalonBeautyLoyaltyConfig",
+                            icon: "fa fa-cog",
+                            order: 6
+                        ).RequirePermissions(MultiTenancyPermissions.SalonBeautyLoyaltyConfig.Default)
                     );
                 }
 
@@ -937,7 +965,9 @@ public class MultiTenancyMenuContributor : IMenuContributor
                 await perms.IsGrantedAsync(MultiTenancyPermissions.HostSalonBeautyStylists.Default) ||
                 await perms.IsGrantedAsync(MultiTenancyPermissions.HostSalonBeautyBookings.Default) ||
                 await perms.IsGrantedAsync(MultiTenancyPermissions.HostSalonBeautyLocations.Default) ||
-                await perms.IsGrantedAsync(MultiTenancyPermissions.HostSalonBeautyTimeSlots.Default);
+                await perms.IsGrantedAsync(MultiTenancyPermissions.HostSalonBeautyTimeSlots.Default) ||
+                await perms.IsGrantedAsync(MultiTenancyPermissions.HostSalonBeautyDeposits.Default) ||
+                await perms.IsGrantedAsync(MultiTenancyPermissions.HostSalonBeautyLoyaltyConfig.Default);
 
             var hostCanSeeFnb =
                 await perms.IsGrantedAsync(MultiTenancyPermissions.HostAppFnbCategories.Default) ||
@@ -1140,6 +1170,32 @@ public class MultiTenancyMenuContributor : IMenuContributor
                             icon: "fa fa-id-card",
                             order: 3
                         ).RequirePermissions(MultiTenancyPermissions.HostSalonBeautyStylists.Default)
+                    );
+                }
+
+                if (await perms.IsGrantedAsync(MultiTenancyPermissions.HostSalonBeautyDeposits.Default))
+                {
+                    groupSalonBeauty.AddItem(
+                        new ApplicationMenuItem(
+                            name: "SalonBeautyDeposits",
+                            displayName: l["Menu:SalonBeautyDeposits"],
+                            url: "/SalonBeautyDeposits",
+                            icon: "fa fa-wallet",
+                            order: 5
+                        ).RequirePermissions(MultiTenancyPermissions.HostSalonBeautyDeposits.Default)
+                    );
+                }
+
+                if (await perms.IsGrantedAsync(MultiTenancyPermissions.HostSalonBeautyLoyaltyConfig.Default))
+                {
+                    groupSalonBeauty.AddItem(
+                        new ApplicationMenuItem(
+                            name: "SalonBeautyLoyaltyConfig",
+                            displayName: l["Menu:SalonBeautyLoyaltyConfig"],
+                            url: "/SalonBeautyLoyaltyConfig",
+                            icon: "fa fa-cog",
+                            order: 6
+                        ).RequirePermissions(MultiTenancyPermissions.HostSalonBeautyLoyaltyConfig.Default)
                     );
                 }
 

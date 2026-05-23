@@ -111,6 +111,11 @@ public class SalonBeautyMiniAppController : MultiTenancyController
     public Task<CustomerLoyaltyBalanceDto> GetCustomerLoyaltyAsync(Guid customerId)
         => _loyaltyService.GetBalanceMiniAppAsync(customerId);
 
+    [HttpGet("customers/{customerId}/loyalty-detail")]
+    [AllowAnonymous]
+    public Task<MiniAppCustomerLoyaltyDetailDto> GetCustomerLoyaltyDetailAsync(Guid customerId, [FromQuery] int maxResultCount = 10)
+        => _loyaltyService.GetDetailMiniAppAsync(customerId, maxResultCount);
+
     [HttpGet("service-categories")]
     [AllowAnonymous]
     public Task<PagedResultDto<SalonBeautyServiceCategoryDto>> GetServiceCategoriesAsync([FromQuery] GetSalonBeautyListInput input)

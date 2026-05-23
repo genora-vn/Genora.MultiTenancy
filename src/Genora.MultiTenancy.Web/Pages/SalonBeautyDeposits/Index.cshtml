@@ -1,0 +1,185 @@
+@page
+@using Genora.MultiTenancy.Localization
+@using Genora.MultiTenancy.Permissions
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.Extensions.Localization
+@using Genora.MultiTenancy.Web.Pages.SalonBeautyDeposits
+@inject IStringLocalizer<MultiTenancyResource> L
+@inject IAuthorizationService AuthorizationService
+@inject Volo.Abp.MultiTenancy.ICurrentTenant CurrentTenant
+@model IndexModel
+
+@section scripts {
+    <abp-script src="/libs/select2/js/select2.full.min.js" />
+    <abp-style src="/pages/salon/service-shared.css" />
+    <abp-script src="/Pages/SalonBeautyDeposits/index.js" />
+}
+
+@section styles {
+    <abp-style src="/libs/select2/css/select2.min.css" />
+    <style>
+        /* Đồng bộ chiều cao tất cả filter inputs với button Search (45px) */
+        .deposit-filter-row .form-control,
+        .deposit-filter-row .form-select {
+            height: 45px;
+        }
+        .deposit-filter-row .select2-container--default .select2-selection--single {
+            height: 45px;
+            padding: 0.375rem 0.75rem;
+            border: 1px solid #dee2e6;
+            border-radius: 0.375rem;
+            background-color: #fff;
+            display: flex;
+            align-items: center;
+        }
+        .deposit-filter-row .select2-container--default .select2-selection--single .select2-selection__rendered {
+            padding-left: 0;
+            line-height: 1.5;
+            color: #212529;
+            flex: 1;
+        }
+        .deposit-filter-row .select2-container--default .select2-selection--single .select2-selection__arrow {
+            height: 100%;
+        }
+        .deposit-filter-row .select2-container--default .select2-selection--single .select2-selection__clear {
+            margin-right: 18px;
+        }
+
+        /* Modal: select2 trong CreateModal cao bằng form-control */
+        .modal .select2-container--default .select2-selection--single {
+            height: 45px;
+            padding: 0.375rem 0.75rem;
+            border: 1px solid #dee2e6;
+            border-radius: 0.5rem;
+            background-color: #fff;
+            display: flex;
+            align-items: center;
+        }
+        .modal .select2-container--default .select2-selection--single .select2-selection__rendered {
+            padding-left: 0;
+            line-height: 1.5;
+            color: #212529;
+            flex: 1;
+        }
+        .modal .select2-container--default .select2-selection--single .select2-selection__arrow {
+            height: 100%;
+        }
+    </style>
+}
+
+@{
+    var canCreate = CurrentTenant.IsAvailable
+        ? await AuthorizationService.IsGrantedAsync(MultiTenancyPermissions.SalonBeautyDeposits.Create)
+        : await AuthorizationService.IsGrantedAsync(MultiTenancyPermissions.HostSalonBeautyDeposits.Create);
+    var canApprove = CurrentTenant.IsAvailable
+        ? await AuthorizationService.IsGrantedAsync(MultiTenancyPermissions.SalonBeautyDeposits.Approve)
+        : await AuthorizationService.IsGrantedAsync(MultiTenancyPermissions.HostSalonBeautyDeposits.Approve);
+    var canCancel = CurrentTenant.IsAvailable
+        ? await AuthorizationService.IsGrantedAsync(MultiTenancyPermissions.SalonBeautyDeposits.Cancel)
+        : await AuthorizationService.IsGrantedAsync(MultiTenancyPermissions.HostSalonBeautyDeposits.Cancel);
+    var canEdit = CurrentTenant.IsAvailable
+        ? await AuthorizationService.IsGrantedAsync(MultiTenancyPermissions.SalonBeautyDeposits.Edit)
+        : await AuthorizationService.IsGrantedAsync(MultiTenancyPermissions.HostSalonBeautyDeposits.Edit);
+    var canDelete = CurrentTenant.IsAvailable
+        ? await AuthorizationService.IsGrantedAsync(MultiTenancyPermissions.SalonBeautyDeposits.Delete)
+        : await AuthorizationService.IsGrantedAsync(MultiTenancyPermissions.HostSalonBeautyDeposits.Delete);
+}
+
+<div class="fnb-page">
+    <div class="d-flex align-items-center justify-content-between mb-3">
+        <div>
+            <h1 class="mb-1">@L["SalonBeautyDeposits:PageTitle"]</h1>
+            <p class="text-muted mb-0">@L["SalonBeautyDeposits:PageSubTitle"]</p>
+        </div>
+        @if (canCreate)
+        {
+            <button type="button" id="NewSalonDepositButton" class="btn btn-outline-primary">
+                <i class="fa fa-plus"></i> @L["SalonBeautyDeposits:AddDeposit"]
+            </button>
+        }
+    </div>
+
+    <div class="card mb-3">
+        <div class="card-body">
+            <div class="row g-3 align-items-end deposit-filter-row">
+                <div class="col-md-3">
+                    <label class="form-label" for="SalonDepositKeywordFilter">@L["Search"]</label>
+                    <input id="SalonDepositKeywordFilter" class="form-control" placeholder="@L["SalonBeautyDeposits:KeywordPlaceholder"]" />
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label" for="SalonDepositCustomerFilter">@L["SalonBeautyDeposits:Customer"]</label>
+                    <select id="SalonDepositCustomerFilter" class="form-select">
+                        <option value="">@L["All"]</option>
+                        @foreach (var c in Model.CustomerItems)
+                        {
+                            <option value="@c.Value">@c.Text</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label" for="SalonDepositStatusFilter">@L["SalonBeautyDeposits:Status"]</label>
+                    <select id="SalonDepositStatusFilter" class="form-select">
+                        <option value="">@L["All"]</option>
+                        <option value="1">@L["SalonBeautyDeposits:StatusPending"]</option>
+                        <option value="2">@L["SalonBeautyDeposits:StatusSuccess"]</option>
+                        <option value="3">@L["SalonBeautyDeposits:StatusCancelled"]</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label" for="SalonDepositPaymentMethodFilter">@L["SalonBeautyDeposits:PaymentMethod"]</label>
+                    <select id="SalonDepositPaymentMethodFilter" class="form-select">
+                        <option value="">@L["All"]</option>
+                        <option value="1">@L["SalonBeautyDeposits:PaymentCash"]</option>
+                        <option value="2">@L["SalonBeautyDeposits:PaymentBank"]</option>
+                        <option value="3">@L["SalonBeautyDeposits:PaymentEWallet"]</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <abp-button id="SearchSalonDepositButton" text="@L["Search"]" button-type="Outline_Primary" icon="search" style="height:45px" />
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            <input type="hidden" id="CanApproveSalonDeposit" value="@(canApprove ? "true" : "false")" />
+            <input type="hidden" id="CanCancelSalonDeposit" value="@(canCancel ? "true" : "false")" />
+            <input type="hidden" id="CanEditSalonDeposit" value="@(canEdit ? "true" : "false")" />
+            <input type="hidden" id="CanDeleteSalonDeposit" value="@(canDelete ? "true" : "false")" />
+            <table id="SalonDepositsTable" class="table w-100"></table>
+        </div>
+    </div>
+</div>
+
+<!-- Cancel Deposit Modal -->
+<div class="modal fade" id="DepositCancelModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div>
+                    <h5 class="modal-title" id="DepositCancelTitle">@L["SalonBeautyDeposits:CancelModalTitle"]</h5>
+                    <div class="text-muted small">@L["SalonBeautyDeposits:CancelModalSubTitle"]</div>
+                </div>
+                <button type="button" class="btn-close ms-auto" data-bs-dismiss="modal" aria-label="@L["Close"]"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="DepositCancelId" />
+                <label class="form-label fw-semibold" for="DepositCancelReason">
+                    @L["SalonBeautyDeposits:CancelReason"] <span class="text-danger">*</span>
+                </label>
+                <textarea id="DepositCancelReason" class="form-control" rows="4" maxlength="500"
+                          placeholder="@L["SalonBeautyDeposits:CancelReasonPlaceholder"]"></textarea>
+                <div id="DepositCancelValidation" class="text-danger small mt-1 d-none">
+                    @L["SalonBeautyDeposits:CancelReasonRequired"]
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal">@L["Cancel"]</button>
+                <button type="button" id="DepositCancelConfirmBtn" class="btn btn-danger" disabled>
+                    @L["SalonBeautyDeposits:CancelConfirm"]
+                </button>
+            </div>
+        </div>
+    </div>
+</div>

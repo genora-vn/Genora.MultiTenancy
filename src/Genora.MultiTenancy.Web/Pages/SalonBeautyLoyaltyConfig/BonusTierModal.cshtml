@@ -1,0 +1,133 @@
+@page
+@using Genora.MultiTenancy.Localization
+@using Microsoft.Extensions.Localization
+@using Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.TagHelpers.Modal
+@using Genora.MultiTenancy.Web.Pages.SalonBeautyLoyaltyConfig
+@model BonusTierModalModel
+@inject IStringLocalizer<MultiTenancyResource> L
+@{
+    Layout = null;
+    var headerTitle = Model.IsEdit
+        ? L["SalonBeautyLoyaltyConfig:EditTierTitle"].Value
+        : L["SalonBeautyLoyaltyConfig:AddTierTitle"].Value;
+    var headerSubTitle = Model.IsEdit
+        ? L["SalonBeautyLoyaltyConfig:EditTierSubTitle"].Value
+        : L["SalonBeautyLoyaltyConfig:AddTierSubTitle"].Value;
+}
+
+<form asp-page="/SalonBeautyLoyaltyConfig/BonusTierModal" class="service-category-form" method="post" autocomplete="off" novalidate>
+    <input type="hidden" asp-for="Tier.Id" />
+    <abp-modal size="Large">
+        <abp-modal-body class="p-0">
+            <div class="service-modal service-category-modal">
+                <div class="service-modal-header">
+                    <div class="service-modal-title-wrap">
+                        <div class="service-modal-icon"><i class="fa fa-coins"></i></div>
+                        <div>
+                            <h3>@headerTitle</h3>
+                            <p>@headerSubTitle</p>
+                        </div>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="@L["Close"]"></button>
+                </div>
+
+                <div class="service-modal-body">
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label class="service-form-label" asp-for="Tier.Name">@L["SalonBeautyLoyaltyConfig:TierName"] <span class="text-danger">*</span></label>
+                            <input asp-for="Tier.Name" class="form-control service-form-control" required maxlength="100" placeholder="@L["SalonBeautyLoyaltyConfig:TierNamePlaceholder"]" />
+                            <span asp-validation-for="Tier.Name" class="text-danger"></span>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="service-form-label" asp-for="Tier.MinAmount">@L["SalonBeautyLoyaltyConfig:TierMinAmount"] <span class="text-danger">*</span></label>
+                            <div class="service-input-addon">
+                                <input asp-for="Tier.MinAmount" type="text" inputmode="numeric" class="form-control service-form-control tier-amount-input" required data-val="false" placeholder="500,000" />
+                                <span>VND</span>
+                            </div>
+                            <span asp-validation-for="Tier.MinAmount" class="text-danger"></span>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="service-form-label" asp-for="Tier.BonusPoint">@L["SalonBeautyLoyaltyConfig:TierBonus"] <span class="text-danger">*</span></label>
+                            <input asp-for="Tier.BonusPoint" type="number" min="0" step="1" class="form-control service-form-control" required />
+                            <span asp-validation-for="Tier.BonusPoint" class="text-danger"></span>
+                        </div>
+
+                        <div class="col-12">
+                            <label class="service-form-label" asp-for="Tier.Description">@L["SalonBeautyLoyaltyConfig:TierDescription"]</label>
+                            <textarea asp-for="Tier.Description" rows="3" maxlength="255" class="form-control service-form-textarea" placeholder="@L["SalonBeautyLoyaltyConfig:TierDescriptionPlaceholder"]"></textarea>
+                            <span asp-validation-for="Tier.Description" class="text-danger"></span>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="service-form-label" asp-for="Tier.DisplayOrder">@L["SalonBeautyLoyaltyConfig:DisplayOrder"]</label>
+                            <input asp-for="Tier.DisplayOrder" type="number" min="0" step="1" class="form-control service-form-control" />
+                            <span asp-validation-for="Tier.DisplayOrder" class="text-danger"></span>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="service-form-label">@L["SalonBeautyLoyaltyConfig:TierActive"]</label>
+                            <div class="service-status-box service-category-status-inline">
+                                <div class="service-status-icon"><i class="fa fa-toggle-on"></i></div>
+                                <div class="flex-grow-1">
+                                    <strong>@L["SalonBeautyLoyaltyConfig:TierActive"]</strong>
+                                </div>
+                                <div class="service-switch-wrap">
+                                    <label class="service-switch">
+                                        <input asp-for="Tier.IsActive" type="checkbox" />
+                                        <span class="service-switch-slider"></span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="service-modal-footer">
+                    <button type="button" class="service-btn-secondary" data-bs-dismiss="modal">@L["Cancel"]</button>
+                    <button type="submit" class="service-btn-primary">
+                        <i class="fa fa-save"></i> @L["Save"]
+                    </button>
+                </div>
+            </div>
+        </abp-modal-body>
+    </abp-modal>
+</form>
+
+<script>
+    (function () {
+        function stripNonDigits(value) {
+            if (value == null) return '';
+            var s = String(value).trim();
+            if (!s) return '';
+            // Pure decimal like "5000000.00" or "5000000,00" → keep integer part only
+            var m = s.match(/^(\d+)[.,]\d{1,2}$/);
+            if (m) return m[1];
+            // Already-formatted "5,000,000" → strip non-digits
+            return s.replace(/\D/g, '');
+        }
+        function formatThousand(value) {
+            var raw = stripNonDigits(value);
+            if (!raw) return '';
+            return raw.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+        }
+        function normalizeInput($input) {
+            $input.val(formatThousand($input.val()));
+        }
+
+        var $form = $('.tier-amount-input').closest('form');
+        $form.find('.tier-amount-input').each(function () { normalizeInput($(this)); });
+
+        $(document).on('input keyup paste', '.tier-amount-input', function () {
+            var $i = $(this);
+            setTimeout(function () { normalizeInput($i); }, 0);
+        });
+
+        $form.on('submit', function () {
+            $form.find('.tier-amount-input').each(function () {
+                $(this).val(stripNonDigits($(this).val()) || '0');
+            });
+        });
+    })();
+</script>

@@ -32,12 +32,50 @@
         });
     }
 
+    // Lazy load ContentHtml sau khi modal Edit đã mở để tránh chậm khi nội dung lớn (ảnh base64)
+    function lazyLoadEditContent(modal) {
+        var $editor = modal.find('.news-content-editor');
+        if (!$editor.length) return;
+
+        var $form = modal.find('form');
+        var newsId = $form.find('input[name="Id"]').val();
+        if (!newsId) return;
+
+        // Hiển thị placeholder loading nhỏ trong summernote
+        if ($editor.summernote) {
+            try { $editor.summernote('code', '<p class="text-muted"><em>Đang tải nội dung…</em></p>'); } catch (e) { }
+        }
+
+        $.ajax({
+            url: abp.appPath + 'AppNews/EditModal',
+            type: 'GET',
+            data: { id: newsId, handler: 'Content' },
+            cache: false
+        }).done(function (res) {
+            var html = (res && typeof res.contentHtml === 'string') ? res.contentHtml : '';
+            try {
+                if ($editor.next('.note-editor').length) {
+                    $editor.summernote('code', html);
+                } else {
+                    $editor.val(html);
+                }
+            } catch (e) {
+                $editor.val(html);
+            }
+        }).fail(function () {
+            try { $editor.summernote('code', ''); } catch (e) { $editor.val(''); }
+            abp.notify.warn(l('NewsContentLoadFailed') || 'Không tải được nội dung tin tức.');
+        });
+    }
+
     createModal.onOpen(function () {
         initNewsEditor(createModal.getModal());
     });
 
     editModal.onOpen(function () {
-        initNewsEditor(editModal.getModal());
+        var $modal = editModal.getModal();
+        initNewsEditor($modal);
+        lazyLoadEditContent($modal);
     });
 
     function initPublicDatePicker(modalManager) {
