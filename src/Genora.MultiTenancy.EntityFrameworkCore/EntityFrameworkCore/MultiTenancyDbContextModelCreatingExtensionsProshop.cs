@@ -73,10 +73,10 @@ public static class MultiTenancyDbContextModelCreatingExtensionsProshop
             b.Property(x => x.CancelReason).HasConversion<byte?>();
             b.Property(x => x.CancelNote).HasMaxLength(500);
 
-            b.HasOne(x => x.Customer)
-                .WithMany()
-                .HasForeignKey(x => x.CustomerId)
-                .OnDelete(DeleteBehavior.NoAction);
+            // CustomerId là soft reference (golf: AppCustomers, salon: AppSalonBeautyCustomers)
+            // Không khai báo HasOne để tránh FK cứng — service tự lookup theo domain.
+            b.HasIndex(x => x.CustomerId)
+                .HasDatabaseName("IX_AppProOrders_CustomerId");
 
             b.HasIndex(x => new { x.TenantId, x.OrderCode })
                 .IsUnique()

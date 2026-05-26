@@ -1,3 +1,4 @@
+using Genora.MultiTenancy.AppDtos.AppPayments;
 using Genora.MultiTenancy.AppDtos.AppZaloAuths;
 using Genora.MultiTenancy.AppDtos.SalonBeauties;
 using Genora.MultiTenancy.AppDtos.SalonBeauties.MiniApps;
@@ -34,6 +35,7 @@ public class SalonBeautyMiniAppController : MultiTenancyController
     private readonly IMiniAppSalonBeautyBookingAppService _bookingService;
     private readonly IMiniAppSalonBeautyLocationAppService _locationService;
     private readonly IMiniAppSalonBeautyTimeSlotAppService _timeSlotService;
+    private readonly IMiniAppSalonBeautyPaymentAppService _paymentService;
     private readonly IZaloApiClient _zaloApiClient;
 
     public SalonBeautyMiniAppController(
@@ -45,6 +47,7 @@ public class SalonBeautyMiniAppController : MultiTenancyController
         IMiniAppSalonBeautyBookingAppService bookingService,
         IMiniAppSalonBeautyLocationAppService locationService,
         IMiniAppSalonBeautyTimeSlotAppService timeSlotService,
+        IMiniAppSalonBeautyPaymentAppService paymentService,
         IZaloApiClient zaloApiClient)
     {
         _customerService = customerService;
@@ -55,6 +58,7 @@ public class SalonBeautyMiniAppController : MultiTenancyController
         _bookingService = bookingService;
         _locationService = locationService;
         _timeSlotService = timeSlotService;
+        _paymentService = paymentService;
         _zaloApiClient = zaloApiClient;
     }
 
@@ -175,4 +179,25 @@ public class SalonBeautyMiniAppController : MultiTenancyController
     [AllowAnonymous]
     public Task<List<MiniAppSalonBeautyTimeSlotDto>> GetTeeTimes([FromQuery] GetMiniAppTimeSlotListInput input)
         => _timeSlotService.GetListAsyncTimeSlots(input);
+
+    // ── Payment — Đặt lịch hẹn Salon Beauty ─────────────────────────────────
+
+    /// <summary>
+    /// Tạo dữ liệu order đã ký MAC để Mini App gọi Zalo Checkout SDK createOrder() cho lịch hẹn Salon.
+    /// orderId format: {BookingCode}_{timestamp}
+    /// POST /api/mini-app/salon-beauty/payment/prepare-order
+    /// </summary>
+    [HttpPost("payment/prepare-order")]
+    [AllowAnonymous]
+    public Task<PrepareOrderResult> PrepareOrderAsync([FromBody] PrepareSalonBeautyBookingInput input)
+        => _paymentService.PrepareOrderAsync(input);
+
+    /// <summary>
+    /// Kiểm tra trạng thái giao dịch lịch hẹn Salon sau khi Mini App gọi createOrder() xong.
+    /// GET /api/mini-app/salon-beauty/payment/check-transaction/{orderId}
+    /// </summary>
+    [HttpGet("payment/check-transaction/{orderId}")]
+    [AllowAnonymous]
+    public Task<CheckTransactionResult> CheckTransactionAsync(string orderId)
+        => _paymentService.CheckTransactionAsync(orderId);
 }

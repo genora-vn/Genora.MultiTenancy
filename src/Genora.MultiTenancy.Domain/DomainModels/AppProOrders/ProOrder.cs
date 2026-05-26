@@ -1,4 +1,3 @@
-using Genora.MultiTenancy.DomainModels.AppCustomers;
 using Genora.MultiTenancy.Enums;
 using System;
 using System.Collections.Generic;
@@ -23,8 +22,12 @@ public class ProOrder : FullAuditedAggregateRoot<Guid>, IMultiTenant
     [StringLength(50)]
     public string BagTag { get; set; } = null!;
 
+    /// <summary>
+    /// Soft reference: có thể trỏ về AppCustomers (golf) hoặc AppSalonBeautyCustomers (salon).
+    /// Không khai báo navigation/FK để Proshop dùng chung được nhiều domain khách hàng.
+    /// Lookup customer trong service tùy theo entry point.
+    /// </summary>
     public Guid? CustomerId { get; set; }
-    public virtual Customer? Customer { get; set; }
 
     [StringLength(150)]
     public string? CustomerName { get; set; }

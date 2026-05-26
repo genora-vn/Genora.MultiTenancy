@@ -102,12 +102,12 @@
 
     <!-- Filters -->
     <div class="booking-filter-card">
-        <div class="row g-2 align-items-end">
-            <div class="col-xl-3 col-lg-3 col-md-6 col-12">
+        <div class="row align-items-end">
+            <div class="col-xl-2 col-lg-2 col-md-4 col-12">
                 <label class="booking-filter-label">Tìm kiếm</label>
                 <input type="text" id="BookingFilterText" class="form-control form-control-sm" placeholder="Mã booking, tên KH..." />
             </div>
-            <div class="col-xl-2 col-lg-2 col-md-6 col-6">
+            <div class="col-xl-2 col-lg-2 col-md-4 col-6">
                 <label class="booking-filter-label">@L["SalonBeautyLocation:PageTitle"]</label>
                 <select id="BookingLocationFilter" class="form-select form-select-sm">
                     <option value="">Tất cả cơ sở</option>
@@ -125,7 +125,7 @@
                 <label class="booking-filter-label">Đến ngày</label>
                 <input type="text" id="BookingToDateFilter" class="form-control form-control-sm" placeholder="dd/mm/yyyy" />
             </div>
-            <div class="col-xl-1 col-lg-2 col-md-4 col-6">
+            <div class="col-xl-1 col-lg-1 col-md-4 col-6">
                 <label class="booking-filter-label">Trạng thái</label>
                 <select id="BookingStatusFilter" class="form-select form-select-sm">
                     <option value="">Tất cả</option>
@@ -136,16 +136,18 @@
                     <option value="4">Đã hủy</option>
                 </select>
             </div>
-            <div class="col-xl-1 col-lg-2 col-md-4 col-6">
+            <div class="col-xl-1 col-lg-1 col-md-4 col-6">
                 <label class="booking-filter-label">Stylist</label>
                 <select id="BookingStylistFilter" class="form-select form-select-sm">
                     <option value="">Tất cả</option>
                 </select>
             </div>
-            <div class="col-xl-1 col-lg-1 col-md-4 col-12">
-                <button id="SearchBookingButton" class="btn btn-outline-primary btn-sm w-100" style="height:31px;">
-                    <i class="fa fa-search"></i>
-                </button>
+            <div class="col-xl-2 col-lg-2 col-md-4 col-12">
+                <abp-button id="SearchBookingButton"
+                            text="@L["Search"]"
+                            button-type="Outline_Primary"
+                            style="height: 31px; padding: inherit;"
+                            icon="search" />
             </div>
         </div>
     </div>

@@ -55,6 +55,23 @@ public interface IMiniAppProPaymentAppService
 }
 
 /// <summary>
+/// Interface cho MiniApp gọi payment flow — Đặt lịch hẹn Salon Beauty (SalonBeautyBooking)
+/// </summary>
+public interface IMiniAppSalonBeautyPaymentAppService
+{
+    /// <summary>
+    /// Tạo payload đã ký MAC để Mini App gọi Zalo Checkout SDK createOrder() cho lịch hẹn Salon.
+    /// SalonBooking: orderId = {BookingCode}_{unixTimestamp}
+    /// </summary>
+    Task<PrepareOrderResult> PrepareOrderAsync(PrepareSalonBeautyBookingInput input);
+
+    /// <summary>
+    /// Mini App poll kiểm tra trạng thái giao dịch SalonBooking sau khi createOrder().
+    /// </summary>
+    Task<CheckTransactionResult> CheckTransactionAsync(string orderId);
+}
+
+/// <summary>
 /// Xử lý Callback từ Zalo Checkout SDK Server (sau khi giao dịch hoàn tất).
 /// Áp dụng cho cả Booking và FnbOrder — phân biệt qua orderId prefix (KH/FNB).
 /// </summary>

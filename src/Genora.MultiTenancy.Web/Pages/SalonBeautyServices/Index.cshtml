@@ -50,11 +50,11 @@
 
     <div class="service-filter-card">
         <div class="row g-3 align-items-end">
-            <div class="col-lg-4 col-md-6">
+            <div class="col-lg-3 col-md-3">
                 <label class="service-filter-label" for="SalonServiceKeywordFilter">@L["SalonBeautyServices:KeywordLabel"]</label>
                 <input id="SalonServiceKeywordFilter" class="form-control service-form-control" placeholder="@L["SalonBeautyServices:KeywordPlaceholder"]" />
             </div>
-            <div class="col-lg-3 col-md-6">
+            <div class="col-lg-2 col-md-3">
                 <label class="service-filter-label" for="SalonServiceCategoryFilter">@L["SalonBeautyService:Category"]</label>
                 <select id="SalonServiceCategoryFilter" class="form-select service-form-select">
                     <option value="">@L["SalonBeautyServices:AllCategories"]</option>
@@ -64,7 +64,7 @@
                     }
                 </select>
             </div>
-            <div class="col-lg-2 col-md-6">
+            <div class="col-lg-3 col-md-2">
                 <label class="service-filter-label" for="SalonServiceStatusFilter">@L["SalonBeautyService:Status"]</label>
                 <select id="SalonServiceStatusFilter" class="form-select service-form-select">
                     <option value="">@L["SalonBeautyServices:AllStatus"]</option>
@@ -72,7 +72,7 @@
                     <option value="0">@L["SalonBeautyCustomer:StatusInactive"]</option>
                 </select>
             </div>
-            <div class="col-lg-2 col-md-6">
+            <div class="col-lg-2 col-md-2">
                 <label class="service-filter-label" for="SalonServiceShowOnAppFilter">@L["SalonBeautyService:IsShowOnApp"]</label>
                 <select id="SalonServiceShowOnAppFilter" class="form-select service-form-select">
                     <option value="">@L["SalonBeautyServices:AllShowOnApp"]</option>
@@ -80,14 +80,14 @@
                     <option value="false">@L["No"]</option>
                 </select>
             </div>
-            <div class="col-lg-1 col-md-6 d-grid">
+            <div class="col-lg-2 col-md-2 d-grid">
                 @* <button type="button" id="SearchSalonServiceButton" class="btn service-btn-primary">
                     <i class="fa fa-search"></i>
                 </button> *@
                 <abp-button id="SearchSalonServiceButton"
                             text="@L["Search"]"
                             button-type="Outline_Primary"
-                            style="height: 45px"
+                            style="width: fit-content; height: 45px"
                             icon="search" />
             </div>
         </div>
