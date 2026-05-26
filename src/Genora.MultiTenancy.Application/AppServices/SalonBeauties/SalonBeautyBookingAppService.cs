@@ -457,6 +457,156 @@ public class SalonBeautyBookingAppService :
         return await MapToBookingDetailDto(updated);
     }
 
+    public async Task<SalonBeautyBookingDetailDto> ChangeStylistAsync(Guid id, ChangeBookingStylistDto input)
+    {
+        await CheckBookingPolicyAsync(
+            MultiTenancyPermissions.SalonBeautyBookings.Edit,
+            MultiTenancyPermissions.HostSalonBeautyBookings.Edit);
+
+        if (input == null || input.StylistId == Guid.Empty)
+            throw new UserFriendlyException("Vui lòng chọn nhân viên (stylist).");
+
+        var booking = await _bookingRepository.GetAsync(id);
+
+        if (booking.Status == SalonBeautyBookingStatus.Cancelled
+            || booking.Status == SalonBeautyBookingStatus.Completed)
+        {
+            throw new UserFriendlyException("Booking đã hoàn thành/hủy không thể đổi stylist.");
+        }
+
+        if (booking.StylistId == input.StylistId)
+            return await MapToBookingDetailDto(booking);
+
+        var newStylist = await _stylistRepository.FindAsync(input.StylistId)
+            ?? throw new UserFriendlyException("Không tìm thấy nhân viên (stylist).");
+
+        if (booking.LocationId.HasValue && newStylist.LocationId.HasValue
+            && newStylist.LocationId.Value != booking.LocationId.Value)
+        {
+            throw new UserFriendlyException("Stylist không thuộc cơ sở của booking này.");
+        }
+
+        var oldStylist = await _stylistRepository.FindAsync(booking.StylistId);
+
+        booking.StylistId = newStylist.Id;
+
+        var noteText = $"Đổi stylist: {oldStylist?.DisplayName ?? "--"} → {newStylist.DisplayName}";
+        if (!input.Note.IsNullOrWhiteSpace())
+            noteText += $" ({input.Note!.Trim()})";
+
+        booking.Note = AppendInternalNote(booking.Note, noteText);
+
+        var updated = await _bookingRepository.UpdateAsync(booking, autoSave: true);
+        return await MapToBookingDetailDto(updated);
+    }
+
+    public async Task<SalonBeautyBookingHistoryPageDto> GetHistoryPageAsync(GetSalonBeautyBookingHistoryInput input)
+    {
+        await CheckBookingPolicyAsync(
+            MultiTenancyPermissions.SalonBeautyBookings.Default,
+            MultiTenancyPermissions.HostSalonBeautyBookings.Default);
+
+        if (input == null || input.BookingId == Guid.Empty)
+            throw new UserFriendlyException("Thiếu mã đặt lịch.");
+
+        var booking = await _bookingRepository.GetAsync(input.BookingId);
+        var customer = await _customerRepository.FindAsync(booking.CustomerId);
+        var allActivities = BuildActivities(booking);
+
+        var actionTypeOptions = new List<SalonBeautyBookingHistoryActionTypeOptionDto>
+        {
+            new() { Value = "",        Text = "Tất cả thao tác" },
+            new() { Value = "create",  Text = "Khởi tạo" },
+            new() { Value = "status",  Text = "Cập nhật trạng thái" },
+            new() { Value = "checkin", Text = "Check-in" },
+            new() { Value = "stylist", Text = "Đổi stylist" },
+            new() { Value = "cancel",  Text = "Hủy lịch" }
+        };
+
+        var filtered = allActivities.AsEnumerable();
+        if (!input.ActionType.IsNullOrWhiteSpace())
+        {
+            var key = input.ActionType!.Trim().ToLowerInvariant();
+            filtered = filtered.Where(a => ResolveActionTypeKey(a.Title) == key);
+        }
+
+        var totalCount = filtered.Count();
+        var skip = Math.Max(0, input.SkipCount);
+        var take = input.MaxResultCount <= 0 ? 10 : Math.Min(input.MaxResultCount, 100);
+
+        var items = filtered
+            .OrderByDescending(x => x.Time)
+            .Skip(skip)
+            .Take(take)
+            .Select(a =>
+            {
+                var key = ResolveActionTypeKey(a.Title);
+                return new SalonBeautyBookingHistoryItemDto
+                {
+                    Time = a.Time,
+                    PerformedBy = "System",
+                    ActionType = key,
+                    ActionTypeText = ResolveActionTypeText(key),
+                    ActionTypeClass = ResolveActionTypeClass(key, a.IsDanger),
+                    Title = a.Title,
+                    Description = a.Description ?? string.Empty,
+                    IsDanger = a.IsDanger
+                };
+            })
+            .ToList();
+
+        return new SalonBeautyBookingHistoryPageDto
+        {
+            BookingId = booking.Id,
+            BookingCode = booking.BookingCode,
+            CustomerName = customer?.Name,
+            CustomerPhoneMasked = PhoneHelper.MaskPhone(customer?.Phone),
+            Status = booking.Status,
+            StatusText = GetBookingStatusText(booking.Status),
+            CreationTime = booking.CreationTime,
+            LastActivityTime = allActivities.Count == 0 ? null : allActivities.Max(x => x.Time),
+            TotalActions = allActivities.Count,
+            ActionTypeOptions = actionTypeOptions,
+            PagedActivities = new PagedResultDto<SalonBeautyBookingHistoryItemDto>(totalCount, items)
+        };
+    }
+
+    private static string ResolveActionTypeKey(string title)
+    {
+        if (title.IsNullOrWhiteSpace()) return "other";
+        var t = title.ToLowerInvariant();
+        if (t.Contains("khởi tạo") || t.Contains("created")) return "create";
+        if (t.Contains("đổi stylist") || t.Contains("stylist")) return "stylist";
+        if (t.Contains("check-in") || t.Contains("checkin")) return "checkin";
+        if (t.Contains("hủy")) return "cancel";
+        if (t.Contains("trạng thái") || t.StartsWith("status")) return "status";
+        return "other";
+    }
+
+    private static string ResolveActionTypeText(string key) => key switch
+    {
+        "create"  => "Khởi tạo",
+        "status"  => "Cập nhật trạng thái",
+        "checkin" => "Check-in",
+        "stylist" => "Đổi stylist",
+        "cancel"  => "Hủy lịch",
+        _         => "Thao tác khác"
+    };
+
+    private static string ResolveActionTypeClass(string key, bool isDanger)
+    {
+        if (isDanger) return "is-danger";
+        return key switch
+        {
+            "create"  => "is-info",
+            "status"  => "is-primary",
+            "checkin" => "is-success",
+            "stylist" => "is-warning",
+            "cancel"  => "is-danger",
+            _         => "is-muted"
+        };
+    }
+
     public override async Task DeleteAsync(Guid id)
     {
         await CheckBookingPolicyAsync(

@@ -712,3 +712,644 @@
     width: min(100%, 730px);
     text-align: center;
 }
+
+/* ===== Detail page redesign (Material 3 / Tailwind reference) ===== */
+
+.salon-detail-page {
+    --md-primary: #006db3;
+    --md-tertiary: #b45309;
+    --md-on-surface: #1e293b;
+    --md-on-surface-variant: #64748b;
+    --md-surface-lowest: #ffffff;
+    --md-surface-low: #f8fafc;
+    --md-surface-container: #f1f5f9;
+    --md-surface-high: #e2e8f0;
+    --md-outline-variant: #cbd5e1;
+}
+
+/* Profile card */
+.salon-detail-page .salon-profile-card {
+    background: #fff;
+    border-radius: 14px;
+    padding: 24px 28px;
+    display: flex;
+    gap: 28px;
+    align-items: center;
+    min-height: 184px;
+    box-shadow: 0 4px 14px rgba(15, 23, 42, .04);
+    border: 1px solid #eef0fb;
+}
+
+.salon-profile-avatar-wrap {
+    position: relative;
+    width: 128px;
+    height: 128px;
+    flex: 0 0 128px;
+}
+
+.salon-profile-avatar {
+    width: 128px;
+    height: 128px;
+    border-radius: 14px;
+    object-fit: cover;
+    box-shadow: 0 8px 22px rgba(15, 23, 42, .12);
+    border: 4px solid #f8fafc;
+}
+
+.salon-detail-page .salon-status-pill {
+    position: absolute;
+    right: -6px;
+    bottom: -6px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 10px;
+    font-weight: 800;
+    text-transform: uppercase;
+    color: #fff;
+    border: 2px solid #fff;
+    letter-spacing: .04em;
+}
+
+.salon-detail-page .salon-status-pill.active {
+    background: #22c55e;
+}
+
+.salon-detail-page .salon-status-pill.inactive {
+    background: #94a3b8;
+}
+
+.salon-detail-page .salon-profile-main {
+    flex: 1;
+    min-width: 0;
+}
+
+.salon-detail-page .salon-profile-main h2 {
+    margin: 0 0 8px;
+    font-size: 28px;
+    font-weight: 800;
+    letter-spacing: -.02em;
+    color: var(--md-on-surface);
+}
+
+.salon-detail-page .salon-profile-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 6px;
+}
+
+.salon-detail-page .salon-code-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(0, 109, 179, .06);
+    color: var(--md-on-surface-variant);
+    border: 0;
+    padding: 6px 12px;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 13px;
+    margin: 0;
+}
+
+.salon-detail-page .salon-code-pill strong {
+    color: var(--md-primary);
+    font-weight: 800;
+    letter-spacing: .03em;
+}
+
+/* Tier badge — gold */
+.salon-tier-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 12px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: .05em;
+    text-transform: uppercase;
+    border: 1px solid;
+}
+
+.salon-tier-badge.tier-gold {
+    background: rgba(180, 83, 9, .10);
+    color: var(--md-tertiary);
+    border-color: rgba(180, 83, 9, .25);
+}
+
+.salon-tier-badge.tier-diamond {
+    background: rgba(8, 145, 178, .10);
+    color: #0891b2;
+    border-color: rgba(8, 145, 178, .25);
+}
+
+.salon-tier-badge.tier-regular {
+    background: rgba(29, 78, 216, .10);
+    color: #1d4ed8;
+    border-color: rgba(29, 78, 216, .25);
+}
+
+.salon-tier-badge.tier-new {
+    background: rgba(71, 85, 105, .10);
+    color: #475569;
+    border-color: rgba(71, 85, 105, .25);
+}
+
+/* Contact pills */
+.salon-detail-page .salon-profile-contact {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 14px;
+}
+
+.salon-contact-pill {
+    background: var(--md-surface-low);
+    border: 1px solid var(--md-outline-variant);
+    border-radius: 8px;
+    padding: 8px 14px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--md-on-surface);
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Override base contact span to behave like pill */
+.salon-detail-page .salon-profile-contact span {
+    margin: 0;
+}
+
+/* Next booking card */
+.salon-detail-page .salon-next-card {
+    background: var(--md-primary);
+    color: #fff;
+    border-radius: 14px;
+    padding: 24px;
+    min-height: 184px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    box-shadow: 0 12px 28px rgba(0, 109, 179, .25);
+}
+
+.salon-detail-page .salon-next-label {
+    text-transform: none;
+    font-weight: 700;
+    font-size: 16px;
+    letter-spacing: 0;
+}
+
+.salon-detail-page .salon-next-card h3 {
+    font-size: 24px;
+    font-weight: 800;
+    margin: 8px 0 4px;
+    letter-spacing: -.01em;
+}
+
+.salon-detail-page .salon-next-card p {
+    margin: 0;
+    font-weight: 600;
+    opacity: .82;
+    font-size: 13px;
+}
+
+.salon-detail-page .salon-next-card .btn {
+    background: rgba(255, 255, 255, .2);
+    color: #fff;
+    border: 0;
+    font-weight: 700;
+    border-radius: 8px;
+    padding: 8px 12px;
+    margin-top: 16px;
+    transition: background .15s ease;
+}
+
+.salon-detail-page .salon-next-card .btn:hover {
+    background: rgba(255, 255, 255, .3);
+}
+
+/* KPI cards */
+.salon-kpi-card {
+    background: var(--md-surface-low);
+    border-radius: 12px;
+    padding: 20px 22px;
+    border-bottom: 2px solid rgba(0, 109, 179, .2);
+    min-height: 116px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.salon-kpi-card .kpi-title {
+    color: var(--md-on-surface-variant);
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .07em;
+    margin-bottom: 4px;
+}
+
+.salon-kpi-card .kpi-value-row {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+}
+
+.salon-kpi-card .kpi-value {
+    font-size: 24px;
+    font-weight: 800;
+    color: var(--md-on-surface);
+    letter-spacing: -.01em;
+}
+
+.salon-kpi-card .kpi-unit {
+    font-size: 11px;
+    color: var(--md-on-surface-variant);
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.salon-kpi-card .kpi-foot {
+    font-size: 12px;
+    font-weight: 700;
+    margin-top: 4px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.salon-kpi-card .kpi-foot.delta-up {
+    color: #16a34a;
+}
+
+.salon-kpi-card .kpi-foot.delta-down {
+    color: #dc2626;
+}
+
+.salon-kpi-card .kpi-foot-muted {
+    color: var(--md-on-surface-variant);
+}
+
+.salon-kpi-card .kpi-foot-primary {
+    color: var(--md-primary);
+}
+
+.salon-kpi-card .kpi-foot-tier {
+    color: var(--md-tertiary);
+}
+
+.salon-kpi-card.kpi-loyalty .kpi-value {
+    color: var(--md-tertiary);
+}
+
+/* Detail info card */
+.salon-detail-page .salon-info-card {
+    background: var(--md-surface-container);
+    border: 0;
+    border-radius: 14px;
+    padding: 24px;
+}
+
+.salon-detail-page .salon-info-card h5 {
+    font-weight: 800;
+    margin-bottom: 22px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--md-on-surface);
+    font-size: 15px;
+}
+
+.salon-detail-page .salon-info-row {
+    border-bottom: 1px solid rgba(203, 213, 225, .5);
+    padding: 10px 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.salon-detail-page .salon-info-row span {
+    color: var(--md-on-surface-variant);
+    text-transform: uppercase;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .04em;
+}
+
+.salon-detail-page .salon-info-row strong {
+    color: var(--md-on-surface);
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.salon-info-note-label {
+    text-transform: uppercase;
+    font-size: 11px;
+    font-weight: 800;
+    color: var(--md-on-surface-variant);
+    letter-spacing: .04em;
+    margin: 18px 0 8px;
+}
+
+.salon-detail-page .salon-note-box {
+    background: #fff;
+    border-radius: 10px;
+    padding: 12px 14px;
+    color: var(--md-on-surface-variant);
+    font-style: italic;
+    font-weight: 500;
+    font-size: 13px;
+    line-height: 1.5;
+    border: 0;
+    border-left: 4px solid var(--md-tertiary);
+    box-shadow: 0 1px 2px rgba(15, 23, 42, .04);
+    margin: 0;
+}
+
+/* Tabs */
+.salon-detail-page .salon-tabs-card {
+    background: #fff;
+    border: 0;
+    border-radius: 14px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(15, 23, 42, .04);
+    min-height: 500px;
+}
+
+.salon-detail-page .salon-tabs-card .nav-tabs {
+    border-bottom: 1px solid var(--md-outline-variant);
+    padding: 0;
+    flex-wrap: nowrap;
+    /*overflow-x: auto;*/
+}
+
+.salon-detail-page .salon-tabs-card .nav-link {
+    color: var(--md-on-surface-variant);
+    font-weight: 600;
+    font-size: 14px;
+    padding: 16px 32px;
+    border: 0;
+    background: transparent;
+    white-space: nowrap;
+    border-radius: 0;
+}
+
+.salon-detail-page .salon-tabs-card .nav-link:hover {
+    color: var(--md-primary);
+    background: var(--md-surface-low);
+}
+
+.salon-detail-page .salon-tabs-card .nav-link.active {
+    color: var(--md-primary);
+    background: transparent;
+    font-weight: 800;
+    border: 0;
+    border-bottom: 2px solid var(--md-primary);
+    margin-bottom: -1px;
+}
+
+/* Inner table */
+.salon-detail-page .salon-inner-table-wrap {
+    background: var(--md-surface-low);
+    border-radius: 12px;
+    border: 1px solid rgba(203, 213, 225, .5);
+    padding: 0;
+    overflow: hidden;
+}
+
+.salon-detail-page .salon-inner-table {
+    margin: 0;
+}
+
+.salon-detail-page .salon-inner-table thead {
+    background: var(--md-surface-high);
+}
+
+.salon-detail-page .salon-inner-table thead th {
+    background: transparent;
+    color: var(--md-on-surface-variant);
+    font-weight: 700;
+    font-size: 11px;
+    letter-spacing: .07em;
+    text-transform: uppercase;
+    padding: 12px 24px;
+    border: 0 !important;
+}
+
+.salon-detail-page .salon-inner-table tbody td {
+    padding: 16px 24px;
+    background: transparent;
+    border-top: 1px solid rgba(203, 213, 225, .35) !important;
+    border-bottom: 0 !important;
+    color: var(--md-on-surface);
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.salon-detail-page .salon-inner-table tbody tr {
+    background: transparent;
+    box-shadow: none;
+    transition: background .12s ease;
+}
+
+.salon-detail-page .salon-inner-table tbody tr:hover {
+    background: rgba(255, 255, 255, .55);
+}
+
+.salon-detail-page .salon-money-cell {
+    color: var(--md-on-surface) !important;
+    font-weight: 700 !important;
+}
+
+/* Status badges */
+.salon-detail-page .salon-badge-success,
+.salon-detail-page .salon-badge-info,
+.salon-detail-page .salon-badge-primary,
+.salon-detail-page .salon-badge-warning,
+.salon-detail-page .salon-badge-danger,
+.salon-detail-page .salon-badge-muted {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 10px;
+    border-radius: 999px;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: .05em;
+    text-transform: uppercase;
+}
+
+.salon-detail-page .salon-badge-success {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.salon-detail-page .salon-badge-info {
+    background: #cffafe;
+    color: #155e75;
+}
+
+.salon-detail-page .salon-badge-primary {
+    background: #dbeafe;
+    color: #1d4ed8;
+}
+
+.salon-detail-page .salon-badge-warning {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.salon-detail-page .salon-badge-danger {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.salon-detail-page .salon-badge-muted {
+    background: #e2e8f0;
+    color: #475569;
+}
+
+/* Ledger entry pills (filled, larger) */
+.salon-detail-page .ledger-pill {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: .03em;
+    text-transform: uppercase;
+}
+
+.salon-detail-page .ledger-pill.salon-ledger-deposit {
+    background: #d1fae5;
+    color: #047857;
+}
+
+.salon-detail-page .ledger-pill.salon-ledger-earn {
+    background: #d1fae5;
+    color: #047857;
+}
+
+.salon-detail-page .ledger-pill.salon-ledger-redeem {
+    background: #fef3c7;
+    color: #b45309;
+}
+
+.salon-detail-page .ledger-pill.salon-ledger-adjust {
+    background: #e0e7ff;
+    color: #3730a3;
+}
+
+.salon-detail-page .ledger-pill.salon-ledger-refund {
+    background: #cffafe;
+    color: #155e75;
+}
+
+.salon-detail-page .ledger-pill.salon-ledger-muted {
+    background: #e2e8f0;
+    color: #475569;
+}
+
+/* Ledger point colors */
+.salon-detail-page .ledger-point-pos {
+    color: #16a34a !important;
+}
+
+.salon-detail-page .ledger-point-neg {
+    color: #dc2626 !important;
+}
+
+/* Tab content spacing tighter (KEY: small gap between tab header and table) */
+.salon-detail-page .salon-tabs-card .tab-content {
+    padding: 14px 16px 16px !important;
+}
+
+/* Remove scroll inside table wrap (let page scroll only) */
+.salon-detail-page .table-responsive.salon-inner-table-wrap {
+    overflow: visible !important;
+    max-height: none !important;
+}
+
+/* Pagination */
+.salon-table-card {
+    background: transparent;
+    box-shadow: none;
+}
+
+.salon-pager {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 6px 4px;
+    font-size: 12px;
+    color: var(--md-on-surface-variant);
+}
+
+.salon-pager:empty {
+    padding: 0;
+}
+
+.salon-pager-summary {
+    font-weight: 600;
+}
+
+.salon-pager-buttons {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.salon-page-btn {
+    min-width: 28px;
+    height: 28px;
+    padding: 0 8px;
+    border-radius: 6px;
+    border: 1px solid var(--md-outline-variant);
+    background: #fff;
+    color: var(--md-on-surface-variant);
+    font-weight: 700;
+    font-size: 12px;
+    line-height: 1;
+    cursor: pointer;
+    transition: all .15s ease;
+}
+
+.salon-page-btn:hover:not(:disabled):not(.active) {
+    background: var(--md-surface-low);
+    color: var(--md-primary);
+}
+
+.salon-page-btn.active {
+    background: var(--md-primary);
+    color: #fff;
+    border-color: var(--md-primary);
+}
+
+.salon-page-btn:disabled {
+    opacity: .4;
+    cursor: not-allowed;
+}
+
+/* Strong link inside tables (booking code, order code) */
+.salon-link-strong {
+    color: var(--md-primary);
+    font-weight: 800;
+    text-decoration: none;
+}
+
+.salon-link-strong:hover {
+    text-decoration: underline;
+}
+
+/* KPI loyalty: dim unit color so "Điểm" looks lighter than value */
+.salon-kpi-card.kpi-loyalty .kpi-unit {
+    color: var(--md-tertiary);
+    opacity: .6;
+}
+

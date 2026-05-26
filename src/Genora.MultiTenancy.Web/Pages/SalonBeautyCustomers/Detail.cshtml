@@ -1,4 +1,4 @@
-﻿@page
+@page
 @using Genora.MultiTenancy.Localization
 @using Microsoft.Extensions.Localization
 @model Genora.MultiTenancy.Web.Pages.SalonBeautyCustomers.DetailModel
@@ -6,50 +6,125 @@
 
 @section scripts {
     <abp-style src="/pages/salon/customer-shared.css" />
+    <script>
+        (function () {
+            function paginateTable(card) {
+                var pageSize = parseInt(card.getAttribute('data-page-size')) || 10;
+                var tbody = card.querySelector('.salon-pager-body');
+                if (!tbody) return;
+                var rows = Array.prototype.slice.call(tbody.querySelectorAll('tr'));
+                var dataRows = rows.filter(function (r) { return !r.querySelector('td[colspan]'); });
+                if (dataRows.length === 0) {
+                    var info = card.querySelector('[data-pager-info]');
+                    if (info) info.innerHTML = '';
+                    return;
+                }
+                var total = dataRows.length;
+                var pages = Math.max(1, Math.ceil(total / pageSize));
+                var current = 1;
+
+                function render() {
+                    dataRows.forEach(function (r, i) {
+                        var page = Math.floor(i / pageSize) + 1;
+                        r.style.display = (page === current) ? '' : 'none';
+                    });
+                    var info = card.querySelector('[data-pager-info]');
+                    if (!info) return;
+                    var from = (current - 1) * pageSize + 1;
+                    var to = Math.min(current * pageSize, total);
+                    var btns = '';
+                    for (var p = 1; p <= pages; p++) {
+                        btns += '<button type="button" class="salon-page-btn ' + (p === current ? 'active' : '') + '" data-page="' + p + '">' + p + '</button>';
+                    }
+                    info.innerHTML =
+                        '<div class="salon-pager-summary">Hiển thị ' + from + '-' + to + ' / ' + total + ' bản ghi</div>' +
+                        '<div class="salon-pager-buttons">' +
+                            '<button type="button" class="salon-page-btn" data-prev ' + (current === 1 ? 'disabled' : '') + '>&lsaquo;</button>' +
+                            btns +
+                            '<button type="button" class="salon-page-btn" data-next ' + (current === pages ? 'disabled' : '') + '>&rsaquo;</button>' +
+                        '</div>';
+                }
+
+                card.addEventListener('click', function (e) {
+                    var t = e.target.closest('[data-page], [data-prev], [data-next]');
+                    if (!t) return;
+                    if (t.hasAttribute('data-prev')) { if (current > 1) { current--; render(); } return; }
+                    if (t.hasAttribute('data-next')) { if (current < pages) { current++; render(); } return; }
+                    var p = parseInt(t.getAttribute('data-page'));
+                    if (p && p !== current) { current = p; render(); }
+                });
+
+                render();
+            }
+
+            document.querySelectorAll('[data-pager-table]').forEach(paginateTable);
+        })();
+    </script>
 }
 
 @{
     var avatar = string.IsNullOrWhiteSpace(Model.Customer.Avatar)
         ? "/images/getting-started/no-photo-square.png"
         : Model.Customer.Avatar;
+
+    var membershipLevel = Model.Customer.MembershipLevel?.ToLowerInvariant() ?? "new";
+    var tierClass = Model.TierColorClass(Model.Customer.MembershipLevel ?? "NEW");
+    var tierIcon = Model.TierIcon(Model.Customer.MembershipLevel ?? "NEW");
+
+    var deltaPercent = Model.Customer.MonthlyDepositChangePercent;
+    var deltaUp = deltaPercent >= 0;
+    var deltaIcon = deltaUp ? "fa-arrow-up" : "fa-arrow-down";
+    var deltaCls = deltaUp ? "delta-up" : "delta-down";
 }
 
 <div class="salon-customer-page salon-detail-page">
-    @* <div class="salon-detail-topbar">
-        <a href="/SalonBeautyCustomers" class="btn btn-outline-secondary"><i class="fa fa-arrow-left"></i> @L["Back"]</a>
-    </div> *@
 
+    <!-- Hero row: profile + next booking -->
     <div class="row g-4">
         <div class="col-xl-8">
             <div class="salon-profile-card">
                 <div class="salon-profile-avatar-wrap">
                     <img class="salon-profile-avatar" src="@avatar" alt="@Model.Customer.Name" />
-                    <span class="salon-status-pill @(Model.Customer.Status == 1 ? "active" : "inactive")">@Model.Customer.StatusText</span>
+                    <span class="salon-status-pill @(Model.Customer.Status == 1 ? "active" : "inactive")">
+                        @Model.Customer.StatusText
+                    </span>
                 </div>
                 <div class="salon-profile-main">
                     <h2>@Model.Customer.Name</h2>
-                    <div class="salon-code-pill">@L["SalonBeautyCustomer:CustomerCode"]: <strong>@Model.Customer.CustomerCode</strong></div>
-                    <div class="mt-2">
-                        <span class="salon-member-badge @Model.Customer.MembershipLevel.ToLowerInvariant()">@Model.Customer.MembershipLevel</span>
+                    <div class="salon-profile-pills">
+                        <span class="salon-code-pill">
+                            @L["SalonBeautyCustomer:CustomerCode"]:&nbsp;<strong>@Model.Customer.CustomerCode</strong>
+                        </span>
+                    </div>
+                    <div class="salon-profile-pills">
+                        <span class="salon-tier-badge @tierClass">
+                            <i class="fa @tierIcon"></i> @Model.Customer.MembershipLevelLabel
+                        </span>
                     </div>
                     <div class="salon-profile-contact">
-                        <span><i class="fa fa-phone"></i> @Model.Customer.Phone</span>
-                        <span><i class="fa fa-envelope"></i> @(Model.Customer.Email ?? "--")</span>
+                        <span class="salon-contact-pill"><i class="fa fa-phone text-primary"></i> @Model.Customer.Phone</span>
+                        <span class="salon-contact-pill"><i class="fa fa-envelope text-primary"></i> @(Model.Customer.Email ?? "--")</span>
                     </div>
                 </div>
             </div>
         </div>
+
         <div class="col-xl-4">
             <div class="salon-next-card">
                 <div class="d-flex justify-content-between align-items-start">
-                    <div>@L["SalonBeautyCustomers:NextBooking"]</div>
+                    <div class="salon-next-label">@L["SalonBeautyCustomers:NextBooking"]</div>
                     <i class="fa fa-calendar"></i>
                 </div>
                 @if (Model.NextBooking != null)
                 {
                     <h3>@Model.NextBooking.BookingDate.ToString("dd MMM, yyyy")</h3>
-                    <p>@Model.TimeText(Model.NextBooking.StartTime) - @Model.NextBooking.ServiceName</p>
-                    <a class="btn w-100" href="#booking-history">@L["SalonBeautyCustomers:ViewDetail"]</a>
+                    <p>
+                        <i class="fa fa-clock me-1"></i>
+                        @Model.TimeText(Model.NextBooking.StartTime) • @Model.NextBooking.ServiceName
+                    </p>
+                    <a class="btn w-100" href="/SalonBeautyBookings/Detail?id=@Model.NextBooking.Id">
+                        @L["SalonBeautyCustomers:ViewDetail"]
+                    </a>
                 }
                 else
                 {
@@ -61,133 +136,300 @@
         </div>
     </div>
 
+    <!-- KPI cards (clean: title → value → footer) -->
     <div class="row g-4 mt-1">
         <div class="col-lg-3 col-md-6">
-            <div class="salon-metric-card">
-                <span>@L["SalonBeautyCustomers:TotalSpent"]</span>
-                <strong>@Model.Money(Model.Customer.TotalSpent)</strong>
-                <small>@L["Common:CurrencySuffix"]</small>
+            <div class="salon-kpi-card">
+                <div class="kpi-title">@L["SalonBeautyCustomers:TotalDeposit"]</div>
+                <div class="kpi-value-row">
+                    <span class="kpi-value">@string.Format("{0:N0}", Model.Customer.TotalDeposit)</span>
+                    <span class="kpi-unit">VND</span>
+                </div>
+                <div class="kpi-foot @deltaCls">
+                    <i class="fa @deltaIcon"></i> @Model.ChangePercentText(deltaPercent) @L["SalonBeautyCustomers:DepositVsLastMonth"]
+                </div>
             </div>
         </div>
+
         <div class="col-lg-3 col-md-6">
-            <div class="salon-metric-card">
-                <span>@L["SalonBeautyCustomers:TotalVisit"]</span>
-                <strong>@Model.Customer.TotalBooking</strong>
-                <small>@L["SalonBeautyCustomers:Times"]</small>
+            <div class="salon-kpi-card">
+                <div class="kpi-title">@L["SalonBeautyCustomers:TotalVisit"]</div>
+                <div class="kpi-value-row">
+                    <span class="kpi-value">@Model.Customer.TotalBooking</span>
+                    <span class="kpi-unit">@L["SalonBeautyCustomers:Times"]</span>
+                </div>
+                <div class="kpi-foot kpi-foot-muted">
+                    @Model.Customer.VisitFrequencyLabel
+                </div>
             </div>
         </div>
+
         <div class="col-lg-3 col-md-6">
-            <div class="salon-metric-card">
-                <span>@L["SalonBeautyCustomers:Aov"]</span>
-                <strong>@Model.Money(Model.Customer.AverageOrderValue)</strong>
-                <small>@L["Common:CurrencySuffix"]</small>
+            <div class="salon-kpi-card">
+                <div class="kpi-title">@L["SalonBeautyCustomers:Aov"]</div>
+                <div class="kpi-value-row">
+                    <span class="kpi-value">@string.Format("{0:N0}", Model.Customer.AverageOrderValue)</span>
+                    <span class="kpi-unit">VND</span>
+                </div>
+                <div class="kpi-foot kpi-foot-primary">
+                    @if (!string.IsNullOrWhiteSpace(Model.Customer.NextTierLabel))
+                    {
+                        @($"{L["SalonBeautyCustomers:NextTierPrefix"].Value} {Model.Customer.NextTierLabel}")
+                    }
+                    else
+                    {
+                        @L["SalonBeautyCustomers:MaxTierReached"]
+                    }
+                </div>
             </div>
         </div>
+
         <div class="col-lg-3 col-md-6">
-            <div class="salon-metric-card accent">
-                <span>@L["SalonBeautyCustomers:LoyaltyPoint"]</span>
-                <strong>@Model.Customer.LoyaltyPoint.ToString("N0")</strong>
-                <small>@L["SalonBeautyCustomers:Point"]</small>
+            <div class="salon-kpi-card kpi-loyalty">
+                <div class="kpi-title">@L["SalonBeautyCustomers:LoyaltyPoint"]</div>
+                <div class="kpi-value-row">
+                    <span class="kpi-value">@Model.Customer.LoyaltyPoint.ToString("N0")</span>
+                    <span class="kpi-unit">@L["SalonBeautyCustomers:Point"]</span>
+                </div>
+                <div class="kpi-foot kpi-foot-tier">
+                    <i class="fa @tierIcon"></i> @Model.Customer.MembershipLevelLabel
+                </div>
             </div>
         </div>
     </div>
 
+    <!-- Detail info + tabs -->
     <div class="row g-4 mt-1">
         <div class="col-xl-3">
             <div class="salon-info-card">
-                <h5><i class="fa fa-id-card"></i> @L["SalonBeautyCustomers:DetailInfo"]</h5>
-                <div class="salon-info-row"><span>@L["SalonBeautyCustomer:Gender"]</span><strong>@Model.Customer.GenderText</strong></div>
-                <div class="salon-info-row"><span>@L["SalonBeautyCustomer:Birthday"]</span><strong>@Model.DateText(Model.Customer.Birthday)</strong></div>
-                <div class="salon-info-row"><span>@L["SalonBeautyCustomer:Source"]</span><strong>@Model.Customer.SourceText</strong></div>
-                <div class="salon-info-row"><span>@L["SalonBeautyCustomer:ZaloUserId"]</span><strong>@(Model.Customer.ZaloUserId ?? "--")</strong></div>
-                <div class="salon-info-row"><span>@L["SalonBeautyCustomer:IsFollowOa"]</span><strong>@(Model.Customer.IsFollowOa? L["SalonBeautyCustomers:Followed"] : L["SalonBeautyCustomers:NotFollowed"])</strong></div>
-                <div class="salon-info-row"><span>@L["SalonBeautyCustomers:LastServiceDate"]</span><strong>@Model.DateText(Model.Customer.LastBookingDate)</strong></div>
-                <div class="salon-note-box">@(Model.Customer.Note ?? L["SalonBeautyCustomers:NoNote"].Value)</div>
+                <h5><i class="fa fa-id-card text-primary"></i> @L["SalonBeautyCustomers:DetailInfo"]</h5>
+                <div class="salon-info-row">
+                    <span>@L["SalonBeautyCustomer:Gender"]</span>
+                    <strong>@Model.Customer.GenderText</strong>
+                </div>
+                <div class="salon-info-row">
+                    <span>@L["SalonBeautyCustomer:Birthday"]</span>
+                    <strong>@Model.DateText(Model.Customer.Birthday)</strong>
+                </div>
+                <div class="salon-info-row">
+                    <span>@L["SalonBeautyCustomer:Source"]</span>
+                    <strong>@Model.Customer.SourceText</strong>
+                </div>
+                <div class="salon-info-row">
+                    <span>@L["SalonBeautyCustomer:ZaloUserId"]</span>
+                    <strong class="text-primary">@(Model.Customer.ZaloUserId ?? "--")</strong>
+                </div>
+                <div class="salon-info-row">
+                    <span>@L["SalonBeautyCustomer:IsFollowOa"]</span>
+                    <strong>
+                        @if (Model.Customer.IsFollowOa)
+                        {
+                            <span class="salon-badge-success"><i class="fa fa-check-circle"></i> @L["SalonBeautyCustomers:Followed"]</span>
+                        }
+                        else
+                        {
+                            <span class="salon-badge-muted">@L["SalonBeautyCustomers:NotFollowed"]</span>
+                        }
+                    </strong>
+                </div>
+                <div class="salon-info-row">
+                    <span>@L["SalonBeautyCustomers:LastServiceDate"]</span>
+                    <strong>@Model.DateText(Model.Customer.LastBookingDate)</strong>
+                </div>
+                <div class="salon-info-note-label">@L["SalonBeautyCustomer:Note"]</div>
+                <div class="salon-note-box">
+                    <em>@(Model.Customer.Note ?? L["SalonBeautyCustomers:NoNote"].Value)</em>
+                </div>
             </div>
         </div>
         <div class="col-xl-9">
             <div class="salon-tabs-card">
                 <ul class="nav nav-tabs" role="tablist">
                     <li class="nav-item" role="presentation">
-                        <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#booking-history" type="button" role="tab">@L["SalonBeautyCustomers:BookingHistory"]</button>
+                        <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#booking-history" type="button" role="tab">
+                            @L["SalonBeautyCustomers:BookingHistory"]
+                        </button>
                     </li>
                     <li class="nav-item" role="presentation">
-                        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#purchase-history" type="button" role="tab">@L["SalonBeautyCustomers:PurchaseHistory"]</button>
+                        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#purchase-history" type="button" role="tab">
+                            @L["SalonBeautyCustomers:PurchaseHistory"]
+                        </button>
                     </li>
                     <li class="nav-item" role="presentation">
-                        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#loyalty-history" type="button" role="tab">@L["SalonBeautyCustomers:LoyaltyVoucher"]</button>
+                        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#voucher-tab" type="button" role="tab">
+                            @L["SalonBeautyCustomers:LoyaltyVoucher"]
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" data-bs-toggle="tab" data-bs-target="#ledger-tab" type="button" role="tab">
+                            @L["SalonBeautyCustomers:DepositLedger"]
+                        </button>
                     </li>
                 </ul>
                 <div class="tab-content p-4">
+                    <!-- Booking history -->
                     <div class="tab-pane fade show active" id="booking-history" role="tabpanel">
-                        <div class="table-responsive salon-inner-table-wrap">
-                            <table class="table salon-inner-table">
-                                <thead>
-                                    <tr>
-                                        <th>@L["SalonBeautyBooking:Date"]</th>
-                                        <th>@L["SalonBeautyBooking:Service"]</th>
-                                        <th>@L["SalonBeautyBooking:Stylist"]</th>
-                                        <th>@L["SalonBeautyBooking:Amount"]</th>
-                                        <th>@L["SalonBeautyBooking:Status"]</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @if (Model.BookingHistory.Count == 0)
-                                    {
-                                        <tr><td colspan="5" class="text-center text-muted py-4">@L["SalonBeautyCustomers:NoBookingHistory"]</td></tr>
-                                    }
-                                    else
-                                    {
-                                        foreach (var item in Model.BookingHistory)
+                        <div class="salon-table-card" data-pager-table="booking-history" data-page-size="10">
+                            <div class="table-responsive salon-inner-table-wrap">
+                                <table class="table salon-inner-table">
+                                    <thead>
+                                        <tr>
+                                            <th>@L["SalonBeautyCustomers:BookingCode"]</th>
+                                            <th>@L["SalonBeautyBooking:Date"]</th>
+                                            <th>@L["SalonBeautyBooking:Service"]</th>
+                                            <th>@L["SalonBeautyBooking:Stylist"]</th>
+                                            <th class="text-end">@L["SalonBeautyBooking:Amount"]</th>
+                                            <th class="text-center">@L["SalonBeautyBooking:Status"]</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="salon-pager-body">
+                                        @if (Model.BookingHistory.Count == 0)
                                         {
-                                            <tr>
-                                                <td>@item.BookingDate.ToString("dd/MM/yyyy") @Model.TimeText(item.StartTime)</td>
-                                                <td>@item.ServiceName</td>
-                                                <td>@item.StylistName</td>
-                                                <td>@Model.Money(item.Amount)</td>
-                                                <td><span class="salon-table-status">@item.Status</span></td>
-                                            </tr>
+                                            <tr><td colspan="6" class="text-center text-muted py-4">@L["SalonBeautyCustomers:NoBookingHistory"]</td></tr>
                                         }
-                                    }
-                                </tbody>
-                            </table>
+                                        else
+                                        {
+                                            foreach (var item in Model.BookingHistory)
+                                            {
+                                                <tr>
+                                                    <td>
+                                                        <a class="salon-link-strong" href="/SalonBeautyBookings/Detail?id=@item.Id">@item.BookingCode</a>
+                                                    </td>
+                                                    <td>
+                                                        <div class="fw-bold">@item.BookingDate.ToString("dd/MM/yyyy")</div>
+                                                        <small class="text-muted">@Model.TimeText(item.StartTime)</small>
+                                                    </td>
+                                                    <td>@item.ServiceName</td>
+                                                    <td><i class="fa fa-user me-1 text-muted"></i>@item.StylistName</td>
+                                                    <td class="text-end fw-bold salon-money-cell">@Model.MoneyWithSuffix(item.Amount)</td>
+                                                    <td class="text-center">
+                                                        <span class="@Model.BookingStatusBadgeClass(item.Status)">@Model.BookingStatusText(item.Status)</span>
+                                                    </td>
+                                                </tr>
+                                            }
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div class="salon-pager" data-pager-info></div>
                         </div>
                     </div>
+
+                    <!-- Purchase history (ProOrders) -->
                     <div class="tab-pane fade" id="purchase-history" role="tabpanel">
-                        <div class="salon-empty-state">@L["SalonBeautyCustomers:ProductShopEmpty"]</div>
-                    </div>
-                    <div class="tab-pane fade" id="loyalty-history" role="tabpanel">
-                        <div class="table-responsive salon-inner-table-wrap">
-                            <table class="table salon-inner-table">
-                                <thead>
-                                    <tr>
-                                        <th>@L["SalonBeautyBooking:Time"]</th>
-                                        <th>@L["SalonBeautyCustomers:Type"]</th>
-                                        <th>@L["SalonBeautyCustomers:Point"]</th>
-                                        <th>@L["SalonBeautyCustomers:Description"]</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @if (Model.LoyaltyTransactions.Count == 0)
-                                    {
-                                        <tr><td colspan="4" class="text-center text-muted py-4">@L["SalonBeautyCustomers:NoLoyaltyHistory"]</td></tr>
-                                    }
-                                    else
-                                    {
-                                        foreach (var item in Model.LoyaltyTransactions)
+                        <div class="salon-table-card" data-pager-table="purchase-history" data-page-size="10">
+                            <div class="table-responsive salon-inner-table-wrap">
+                                <table class="table salon-inner-table">
+                                    <thead>
+                                        <tr>
+                                            <th>@L["SalonBeautyCustomers:OrderCode"]</th>
+                                            <th>@L["SalonBeautyCustomers:OrderDate"]</th>
+                                            <th>@L["SalonBeautyCustomers:Items"]</th>
+                                            <th class="text-end">@L["SalonBeautyCustomers:Amount"]</th>
+                                            <th class="text-center">@L["SalonBeautyCustomers:ServiceStatus"]</th>
+                                            <th class="text-center">@L["SalonBeautyCustomers:PaymentStatus"]</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="salon-pager-body">
+                                        @if (Model.PurchaseHistory.Count == 0)
                                         {
-                                            <tr>
-                                                <td>@item.CreatedAt.ToString("dd/MM/yyyy HH:mm")</td>
-                                                <td>@item.TypeText</td>
-                                                <td>@item.Point.ToString("N0")</td>
-                                                <td>@(item.Description ?? "--")</td>
-                                            </tr>
+                                            <tr><td colspan="6" class="text-center text-muted py-4">@L["SalonBeautyCustomers:NoPurchaseHistory"]</td></tr>
                                         }
-                                    }
-                                </tbody>
-                            </table>
+                                        else
+                                        {
+                                            foreach (var item in Model.PurchaseHistory)
+                                            {
+                                                <tr>
+                                                    <td>
+                                                        <a class="salon-link-strong" href="/AppProOrders/Board/Detail?id=@item.Id">@item.OrderCode</a>
+                                                    </td>
+                                                    <td>@item.OrderDate.ToString("dd/MM/yyyy HH:mm")</td>
+                                                    <td>
+                                                        <div>@item.ItemsSummary</div>
+                                                        <small class="text-muted">@item.ItemCount @L["SalonBeautyCustomers:ProductUnit"]</small>
+                                                    </td>
+                                                    <td class="text-end salon-money-cell fw-bold">@Model.MoneyWithSuffix(item.Amount)</td>
+                                                    <td class="text-center">
+                                                        <span class="@Model.ProServiceStatusBadgeClass(item.ServiceStatus)">@item.ServiceStatusText</span>
+                                                    </td>
+                                                    <td class="text-center">
+                                                        <span class="@Model.ProPaymentStatusBadgeClass(item.PaymentStatus)">@item.PaymentStatusText</span>
+                                                    </td>
+                                                </tr>
+                                            }
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div class="salon-pager" data-pager-info></div>
                         </div>
-                        <div class="salon-empty-state mt-3">@L["SalonBeautyCustomers:VoucherWalletEmpty"]</div>
+                    </div>
+
+                    <!-- Voucher (table headers + empty row, per design image2) -->
+                    <div class="tab-pane fade" id="voucher-tab" role="tabpanel">
+                        <div class="salon-table-card" data-pager-table="voucher-tab" data-page-size="10">
+                            <div class="table-responsive salon-inner-table-wrap">
+                                <table class="table salon-inner-table">
+                                    <thead>
+                                        <tr>
+                                            <th>@L["SalonBeautyCustomers:VoucherCode"]</th>
+                                            <th>@L["SalonBeautyCustomers:VoucherValue"]</th>
+                                            <th>@L["SalonBeautyCustomers:VoucherExpire"]</th>
+                                            <th class="text-center">@L["SalonBeautyCustomers:VoucherStatus"]</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="salon-pager-body">
+                                        <tr>
+                                            <td colspan="4" class="text-center text-muted py-4">@L["SalonBeautyCustomers:NoVoucher"]</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div class="salon-pager" data-pager-info></div>
+                        </div>
+                    </div>
+
+                    <!-- Ledger: deposit + loyalty (image3) -->
+                    <div class="tab-pane fade" id="ledger-tab" role="tabpanel">
+                        <div class="salon-table-card" data-pager-table="ledger-tab" data-page-size="10">
+                            <div class="table-responsive salon-inner-table-wrap">
+                                <table class="table salon-inner-table">
+                                    <thead>
+                                        <tr>
+                                            <th>@L["SalonBeautyCustomers:LedgerCode"]</th>
+                                            <th>@L["SalonBeautyCustomers:LedgerDate"]</th>
+                                            <th>@L["SalonBeautyCustomers:LedgerType"]</th>
+                                            <th class="text-end">@L["SalonBeautyCustomers:LedgerAmountVnd"]</th>
+                                            <th class="text-end">@L["SalonBeautyCustomers:LedgerPoint"]</th>
+                                            <th>@L["SalonBeautyCustomers:LedgerNote"]</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="salon-pager-body">
+                                        @if (Model.DepositLedger.Count == 0)
+                                        {
+                                            <tr><td colspan="6" class="text-center text-muted py-4">@L["SalonBeautyCustomers:NoLedgerHistory"]</td></tr>
+                                        }
+                                        else
+                                        {
+                                            foreach (var item in Model.DepositLedger)
+                                            {
+                                                <tr>
+                                                    <td><strong class="text-primary">@item.Code</strong></td>
+                                                    <td>@item.EntryDate.ToString("dd/MM/yyyy HH:mm")</td>
+                                                    <td><span class="ledger-pill @Model.LedgerEntryBadgeClass(item.EntryType)">@item.EntryTypeText</span></td>
+                                                    <td class="text-end fw-bold">@(item.Amount.HasValue ? string.Format("{0:N0}", item.Amount.Value) : "--")</td>
+                                                    <td class="text-end fw-bold @(item.Point >= 0 ? "ledger-point-pos" : "ledger-point-neg")">
+                                                        @(item.Point >= 0 ? "+" : "")@item.Point.ToString("N0")
+                                                    </td>
+                                                    <td class="text-muted">@(item.Description ?? "--")</td>
+                                                </tr>
+                                            }
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div class="salon-pager" data-pager-info></div>
+                        </div>
                     </div>
                 </div>
             </div>

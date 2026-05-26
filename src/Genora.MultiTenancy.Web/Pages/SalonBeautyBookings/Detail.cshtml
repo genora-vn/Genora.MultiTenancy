@@ -192,6 +192,87 @@
                 showModal('#StatusModal');
             });
 
+            // Change Stylist
+            var stylistsCache = null;
+            var selectedStylistId = null;
+            var currentStylistId = '@Model.Booking.StylistId';
+            var currentLocationId = '@(Model.Booking.LocationId?.ToString() ?? "")';
+
+            function renderStylistList(items, keyword) {
+                var $list = $('#ChangeStylistList');
+                $list.empty();
+                if (!items || items.length === 0) {
+                    $list.html('<div class="text-center text-muted py-3">Không có nhân viên phù hợp.</div>');
+                    return;
+                }
+
+                var k = (keyword || '').toLowerCase().trim();
+                var html = '';
+                items.forEach(function (s) {
+                    if (k && s.displayName.toLowerCase().indexOf(k) === -1) return;
+                    var isCurrent = (s.id === currentStylistId);
+                    var avatar = s.avatar
+                        ? '<img src="' + s.avatar + '" alt="" />'
+                        : '<i class="fa fa-user-o"></i>';
+                    html += '<label class="sb-stylist-pick' + (isCurrent ? ' is-current' : '') + '" data-stylist-id="' + s.id + '">' +
+                        '<input type="radio" name="ChangeStylistId" value="' + s.id + '" ' + (isCurrent ? 'disabled' : '') + ' />' +
+                        '<span class="sb-stylist-pick-avatar">' + avatar + '</span>' +
+                        '<span class="sb-stylist-pick-info">' +
+                            '<span class="sb-stylist-pick-name">' + s.displayName + (isCurrent ? ' <small class="text-muted">(đang chọn)</small>' : '') + '</span>' +
+                            (s.roleText ? '<span class="sb-stylist-pick-role">' + s.roleText + '</span>' : '') +
+                        '</span>' +
+                        '</label>';
+                });
+                $list.html(html || '<div class="text-center text-muted py-3">Không có nhân viên phù hợp.</div>');
+            }
+
+            $('#BtnChangeStylist').on('click', function () {
+                selectedStylistId = null;
+                $('#ChangeStylistKeyword').val('');
+                $('#ChangeStylistNote').val('');
+                $('#ConfirmChangeStylistBtn').prop('disabled', true);
+                $('#ChangeStylistList').html('<div class="text-center text-muted py-3"><i class="fa fa-spinner fa-spin"></i> Đang tải...</div>');
+                showModal('#ChangeStylistModal');
+
+                var loc = currentLocationId ? currentLocationId : null;
+                bookingService.getStylistLookup(loc)
+                    .then(function (items) {
+                        stylistsCache = items || [];
+                        renderStylistList(stylistsCache, '');
+                    })
+                    .catch(function () {
+                        $('#ChangeStylistList').html('<div class="text-center text-danger py-3">Không tải được danh sách nhân viên.</div>');
+                    });
+            });
+
+            $('body').on('input keyup', '#ChangeStylistKeyword', function () {
+                renderStylistList(stylistsCache || [], $(this).val());
+            });
+
+            $('body').on('change', 'input[name="ChangeStylistId"]', function () {
+                selectedStylistId = $(this).val();
+                $('.sb-stylist-pick').removeClass('is-selected');
+                $(this).closest('.sb-stylist-pick').addClass('is-selected');
+                $('#ConfirmChangeStylistBtn').prop('disabled', !selectedStylistId);
+            });
+
+            $('#ConfirmChangeStylistBtn').on('click', function () {
+                if (!selectedStylistId) return;
+                var note = $.trim($('#ChangeStylistNote').val());
+
+                $('#ConfirmChangeStylistBtn').prop('disabled', true);
+                bookingService.changeStylist(bookingId, { stylistId: selectedStylistId, note: note })
+                    .then(function () {
+                        abp.notify.success('Đã đổi stylist thành công.');
+                        location.reload();
+                    })
+                    .catch(function (error) {
+                        var message = error?.message || error?.responseJSON?.error?.message || 'Đổi stylist thất bại.';
+                        abp.notify.error(message);
+                        $('#ConfirmChangeStylistBtn').prop('disabled', false);
+                    });
+            });
+
             $('#ConfirmStatusBtn').on('click', function () {
                 var $selected = $('input[name="NextBookingStatus"]:checked');
                 if ($selected.length === 0) {
@@ -483,9 +564,9 @@
                 {
                     <button type="button" id="BtnCheckin" class="sb-side-action"><i class="fa fa-sign-in"></i> Check-in</button>
                 }
-                else
+                @if (!isCancelled && !isCompleted)
                 {
-                    <button type="button" class="sb-side-action" disabled><i class="fa fa-refresh"></i> Thay đổi Stylist</button>
+                    <button type="button" id="BtnChangeStylist" class="sb-side-action"><i class="fa fa-refresh"></i> Thay đổi Stylist</button>
                 }
             </section>
 
@@ -511,7 +592,7 @@
             <section class="sb-card sb-side-card sb-activity-card">
                 <div class="sb-activity-head">
                     <h3>Lịch sử thao tác</h3>
-                    <a href="javascript:void(0);">Xem thêm</a>
+                    <a href="/SalonBeautyBookings/History?id=@Model.Booking.Id">Xem thêm</a>
                 </div>
                 <div class="sb-activity-list">
                     @foreach (var activity in Model.Booking.Activities.Take(4))
@@ -674,6 +755,39 @@
             <div class="modal-footer">
                 <button type="button" class="btn btn-light" data-bs-dismiss="modal">Hủy</button>
                 <button type="button" id="ConfirmStatusBtn" class="btn btn-primary" disabled>Cập nhật</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Change Stylist Modal -->
+<div class="modal fade sb-booking-action-modal" id="ChangeStylistModal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header sb-action-modal-header">
+                <div class="sb-action-modal-icon">
+                    <i class="fa fa-refresh"></i>
+                </div>
+                <div>
+                    <h5 class="modal-title">Thay đổi nhân viên (Stylist)</h5>
+                    <div class="text-muted small">Chọn stylist khác để gán cho lịch đặt này.</div>
+                </div>
+                <button type="button" class="btn-close ms-auto" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label fw-semibold" style="font-size:13px;">Tìm kiếm</label>
+                    <input id="ChangeStylistKeyword" class="form-control" placeholder="Nhập tên stylist..." />
+                </div>
+                <div class="sb-stylist-pick-list" id="ChangeStylistList"></div>
+                <div class="mt-3">
+                    <label class="form-label fw-semibold" style="font-size:13px;">Ghi chú nội bộ</label>
+                    <textarea id="ChangeStylistNote" class="form-control" rows="3" placeholder="Lý do đổi stylist (tùy chọn)..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal">Hủy bỏ</button>
+                <button type="button" id="ConfirmChangeStylistBtn" class="btn btn-primary" disabled>Cập nhật</button>
             </div>
         </div>
     </div>

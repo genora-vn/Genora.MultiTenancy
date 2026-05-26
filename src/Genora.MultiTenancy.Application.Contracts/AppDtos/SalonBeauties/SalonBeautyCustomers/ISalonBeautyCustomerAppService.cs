@@ -17,4 +17,6 @@ public interface ISalonBeautyCustomerAppService :
 {
     Task<List<SalonBeautyCustomerBookingHistoryDto>> GetBookingHistoryAsync(Guid id, int maxResultCount = 20);
     Task<List<SalonBeautyCustomerLoyaltyTransactionDto>> GetLoyaltyTransactionsAsync(Guid id, int maxResultCount = 20);
+    Task<List<SalonBeautyCustomerPurchaseHistoryDto>> GetPurchaseHistoryAsync(Guid id, int maxResultCount = 20);
+    Task<List<SalonBeautyCustomerLedgerDto>> GetDepositLedgerAsync(Guid id, int maxResultCount = 20);
 }

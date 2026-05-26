@@ -18,6 +18,8 @@ public interface ISalonBeautyBookingAppService :
     Task<SalonBeautyBookingDetailDto> CheckinAsync(Guid id);
     Task<SalonBeautyBookingDetailDto> UpdatePaymentAsync(Guid id, UpdateBookingPaymentDto input);
     Task<SalonBeautyBookingDetailDto> CancelAsync(Guid id, CancelBookingDto input);
+    Task<SalonBeautyBookingDetailDto> ChangeStylistAsync(Guid id, ChangeBookingStylistDto input);
+    Task<SalonBeautyBookingHistoryPageDto> GetHistoryPageAsync(GetSalonBeautyBookingHistoryInput input);
     Task<List<SalonBeautyBookingCalendarDto>> GetCalendarEventsAsync(DateTime from, DateTime to, Guid? stylistId = null, Guid? serviceId = null, Guid? locationId = null);
     Task<BookingStatisticsDto> GetStatisticsAsync(DateTime? fromDate, DateTime? toDate);
     Task<List<SalonBeautyCustomerLookupDto>> GetCustomerLookupAsync(string? filter);
