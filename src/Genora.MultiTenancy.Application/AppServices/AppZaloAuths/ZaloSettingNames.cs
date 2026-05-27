@@ -13,4 +13,5 @@ public static class ZaloSettingNames
     public const string ZbsBookingCancelled = "Genora.Zalo.Zbs.Templates.BookingCancelled";
     public const string ZbsBookingReminder = "Genora.Zalo.Zbs.Templates.BookingReminder";
     public const string ZbsBookingChanged = "Genora.Zalo.Zbs.Templates.BookingChanged";
+    public const string ZbsServiceReview = "Genora.Zalo.Zbs.Templates.ServiceReview";
 }

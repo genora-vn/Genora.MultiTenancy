@@ -37,6 +37,9 @@ public class ZaloSettingDefinitionProvider : SettingDefinitionProvider
                 .WithProviders(GlobalSettingValueProvider.ProviderName, TenantSettingValueProvider.ProviderName),
 
             new SettingDefinition(ZaloSettingNames.ZbsBookingChanged, "", isVisibleToClients: true)
+                .WithProviders(GlobalSettingValueProvider.ProviderName, TenantSettingValueProvider.ProviderName),
+
+            new SettingDefinition(ZaloSettingNames.ZbsServiceReview, "", isVisibleToClients: true)
                 .WithProviders(GlobalSettingValueProvider.ProviderName, TenantSettingValueProvider.ProviderName)
         );
     }

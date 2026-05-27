@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
 using Genora.MultiTenancy.AppDtos.SalonBeauties;
@@ -11,12 +12,15 @@ using Genora.MultiTenancy.Localization;
 using SalonBeautyStylistRole = Genora.MultiTenancy.Enums.SalonBeautyStylistRole;
 using Genora.MultiTenancy.Permissions;
 using Genora.MultiTenancy.AppServices;
+using Genora.MultiTenancy.AppServices.AppZaloAuths;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Localization;
+using Microsoft.Extensions.Logging;
 using Volo.Abp;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Application.Services;
 using Volo.Abp.Authorization;
+using Volo.Abp.BackgroundJobs;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Features;
 using Volo.Abp.MultiTenancy;
@@ -48,7 +52,11 @@ public class SalonBeautyBookingAppService :
     private readonly IRepository<SalonBeautyLocation, Guid> _locationRepository;
     private readonly IRepository<SalonBeautyTimeSlot, Guid> _timeSlotRepository;
     private readonly IRepository<SalonBeautyCustomerLoyaltyBalance, Guid> _loyaltyRepository;
+    private readonly IBackgroundJobManager _jobManager;
+    private readonly ILogger<SalonBeautyBookingAppService> _logger;
     private readonly IStringLocalizer<MultiTenancyResource> _l;
+
+    private const string ZaloDateFormat = "dd/MM/yyyy";
 
     public SalonBeautyBookingAppService(
         IRepository<SalonBeautyBooking, Guid> bookingRepository,
@@ -60,6 +68,8 @@ public class SalonBeautyBookingAppService :
         IRepository<SalonBeautyLocation, Guid> locationRepository,
         IRepository<SalonBeautyTimeSlot, Guid> timeSlotRepository,
         IRepository<SalonBeautyCustomerLoyaltyBalance, Guid> loyaltyRepository,
+        IBackgroundJobManager jobManager,
+        ILogger<SalonBeautyBookingAppService> logger,
         IStringLocalizer<MultiTenancyResource> l,
         ICurrentTenant currentTenant,
         IFeatureChecker featureChecker)
@@ -74,6 +84,8 @@ public class SalonBeautyBookingAppService :
         _locationRepository = locationRepository;
         _timeSlotRepository = timeSlotRepository;
         _loyaltyRepository = loyaltyRepository;
+        _jobManager = jobManager;
+        _logger = logger;
         _l = l;
     }
 
@@ -206,6 +218,8 @@ public class SalonBeautyBookingAppService :
             }
             await _timeSlotRepository.UpdateAsync(timeSlot, autoSave: true);
         }
+
+        await EnqueueBookingCreatedZbsAsync(booking);
 
         return await MapToBookingDetailDto(booking);
     }
@@ -368,6 +382,12 @@ public class SalonBeautyBookingAppService :
         }
 
         var updated = await _bookingRepository.UpdateAsync(booking, autoSave: true);
+
+        if (input.Status == SalonBeautyBookingStatus.Completed)
+        {
+            await EnqueueServiceReviewZbsAsync(updated);
+        }
+
         return await MapToBookingDetailDto(updated);
     }
 
@@ -1277,5 +1297,90 @@ public class SalonBeautyBookingAppService :
             throw new AbpAuthorizationException("Missing Salon Beauty booking permission.");
 
         await AuthorizationService.CheckAsync(permission);
+    }
+
+    private async Task EnqueueBookingCreatedZbsAsync(SalonBeautyBooking booking)
+    {
+        try
+        {
+            var customer = await _customerRepository.FindAsync(booking.CustomerId);
+            if (customer == null || string.IsNullOrWhiteSpace(customer.Phone))
+                return;
+
+            var address = "";
+            if (booking.LocationId.HasValue && booking.LocationId.Value != Guid.Empty)
+            {
+                var location = await _locationRepository.FindAsync(booking.LocationId.Value);
+                address = location?.Address ?? "";
+            }
+
+            var scheduleTime = $"{booking.BookingDate.ToString(ZaloDateFormat, CultureInfo.InvariantCulture)} {booking.StartTime:hh\\:mm}";
+
+            await _jobManager.EnqueueAsync(
+                new ZbsSendJobArgs
+                {
+                    TenantId = CurrentTenant.Id,
+                    TemplateKey = "BookingCreated",
+                    Phone = customer.Phone,
+                    TrackingId = booking.Id.ToString(),
+                    TemplateData = new
+                    {
+                        customer_name = customer.Name ?? "",
+                        booking_code = booking.BookingCode,
+                        schedule_time = scheduleTime,
+                        address = address
+                    }
+                },
+                priority: BackgroundJobPriority.Normal
+            );
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(
+                ex,
+                "[ZBS][Salon] Enqueue BookingCreated failed. BookingId={BookingId}, BookingCode={BookingCode}, TenantId={TenantId}",
+                booking.Id,
+                booking.BookingCode,
+                CurrentTenant.Id
+            );
+        }
+    }
+
+    private async Task EnqueueServiceReviewZbsAsync(SalonBeautyBooking booking)
+    {
+        try
+        {
+            var customer = await _customerRepository.FindAsync(booking.CustomerId);
+            if (customer == null || string.IsNullOrWhiteSpace(customer.Phone))
+                return;
+
+            var scheduleTime = $"{booking.BookingDate.ToString(ZaloDateFormat, CultureInfo.InvariantCulture)} {booking.StartTime:hh\\:mm}";
+
+            await _jobManager.EnqueueAsync(
+                new ZbsSendJobArgs
+                {
+                    TenantId = CurrentTenant.Id,
+                    TemplateKey = "ServiceReview",
+                    Phone = customer.Phone,
+                    TrackingId = booking.Id.ToString(),
+                    TemplateData = new
+                    {
+                        customer_name = customer.Name ?? "",
+                        schedule_time = scheduleTime
+                    }
+                },
+                priority: BackgroundJobPriority.Normal
+            );
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(
+                ex,
+                "[ZBS][Salon] Enqueue ServiceReview failed. BookingId={BookingId}, BookingCode={BookingCode}, TenantId={TenantId}",
+                booking.Id,
+                booking.BookingCode,
+                CurrentTenant.Id
+            );
+        }
     }
 }

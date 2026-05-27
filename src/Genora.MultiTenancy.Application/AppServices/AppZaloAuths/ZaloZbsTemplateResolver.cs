@@ -26,6 +26,7 @@ public class ZaloZbsTemplateResolver : IZaloZbsTemplateResolver
             "BookingCancelled" => await _sp.GetOrNullAsync(ZaloSettingNames.ZbsBookingCancelled),
             "BookingReminder" => await _sp.GetOrNullAsync(ZaloSettingNames.ZbsBookingReminder),
             "BookingChanged" => await _sp.GetOrNullAsync(ZaloSettingNames.ZbsBookingChanged),
+            "ServiceReview" => await _sp.GetOrNullAsync(ZaloSettingNames.ZbsServiceReview),
             _ => null
         };
     }

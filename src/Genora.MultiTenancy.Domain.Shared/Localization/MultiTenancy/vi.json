@@ -558,6 +558,7 @@
     "UpgradeSettings:ZaloZns:Template:BookingCancelled": "Hủy booking TemplateId",
     "UpgradeSettings:ZaloZns:Template:BookingReminder": "Nhắc lịch chơi TemplateId",
     "UpgradeSettings:ZaloZns:Template:BookingChanged": "Cập nhật booking TemplateId",
+    "UpgradeSettings:ZaloZns:Template:ServiceReview": "Đánh giá chất lượng dịch vụ TemplateId",
     "FeatureGroup:MiniAppHomePage": "Cấu hình Trang chủ",
     "Feature:MiniAppHomePage": "Bật cấu hình Trang chủ",
     "Feature:MiniAppHomePageDesc": "Cho phép sử dụng chức năng quản lý cấu hình Trang chủ (sửa, sắp xếp, cấu hình widget tính năng, cập nhật trạng thái)",

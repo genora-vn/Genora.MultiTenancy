@@ -1,15 +1,18 @@
 ﻿using Genora.MultiTenancy.AppDtos.SalonBeauties.SalonBeautyBookings;
+using Genora.MultiTenancy.AppServices.AppZaloAuths;
 using Genora.MultiTenancy.DomainModels.AppSalonBeauty;
 using Genora.MultiTenancy.Enums;
 using Genora.MultiTenancy.Helpers;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
 using Volo.Abp;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Application.Services;
+using Volo.Abp.BackgroundJobs;
 using Volo.Abp.Domain.Repositories;
 
 namespace Genora.MultiTenancy.AppServices.SalonBeauties.MiniApps;
@@ -27,6 +30,9 @@ public class MiniAppSalonBeautyBookingAppService : ApplicationService, IMiniAppS
     private readonly IRepository<SalonBeautyTimeSlot, Guid> _timeSlotRepository;
     private readonly IRepository<SalonBeautyLocation, Guid> _locationRepository;
     private readonly IRepository<SalonBeautyCustomerLoyaltyBalance, Guid> _loyaltyRepository;
+    private readonly IBackgroundJobManager _jobManager;
+
+    private const string ZaloDateFormat = "dd/MM/yyyy";
 
     public MiniAppSalonBeautyBookingAppService(
         IRepository<SalonBeautyBooking, Guid> bookingRepository,
@@ -37,7 +43,8 @@ public class MiniAppSalonBeautyBookingAppService : ApplicationService, IMiniAppS
         IRepository<SalonBeautyStylist, Guid> stylistRepository,
         IRepository<SalonBeautyTimeSlot, Guid> timeSlotRepository,
         IRepository<SalonBeautyLocation, Guid> locationRepository,
-        IRepository<SalonBeautyCustomerLoyaltyBalance, Guid> loyaltyRepository)
+        IRepository<SalonBeautyCustomerLoyaltyBalance, Guid> loyaltyRepository,
+        IBackgroundJobManager jobManager)
     {
         _bookingRepository = bookingRepository;
         _bookingServiceRepository = bookingServiceRepository;
@@ -48,6 +55,7 @@ public class MiniAppSalonBeautyBookingAppService : ApplicationService, IMiniAppS
         _timeSlotRepository = timeSlotRepository;
         _locationRepository = locationRepository;
         _loyaltyRepository = loyaltyRepository;
+        _jobManager = jobManager;
     }
 
     public async Task<PagedResultDto<SalonBeautyBookingDetailDto>> GetListMiniAppAsync(GetSalonBeautyBookingListInput input)
@@ -194,6 +202,8 @@ public class MiniAppSalonBeautyBookingAppService : ApplicationService, IMiniAppS
                 }
                 await _timeSlotRepository.UpdateAsync(timeSlot, autoSave: true);
             }
+
+            await EnqueueBookingCreatedZbsAsync(booking, customer);
 
             return await MapToDtoAsync(booking);
         }
@@ -347,5 +357,51 @@ public class MiniAppSalonBeautyBookingAppService : ApplicationService, IMiniAppS
         var customer = idx == 0 ? null : note[..idx];
         var internalText = note[(idx + InternalNoteSeparator.Length)..];
         return (customer, internalText);
+    }
+
+    private async Task EnqueueBookingCreatedZbsAsync(SalonBeautyBooking booking, SalonBeautyCustomer customer)
+    {
+        try
+        {
+            if (string.IsNullOrWhiteSpace(customer?.Phone))
+                return;
+
+            var address = "";
+            if (booking.LocationId.HasValue && booking.LocationId.Value != Guid.Empty)
+            {
+                var location = await _locationRepository.FindAsync(booking.LocationId.Value);
+                address = location?.Address ?? "";
+            }
+
+            var scheduleTime = $"{booking.BookingDate.ToString(ZaloDateFormat, CultureInfo.InvariantCulture)} {booking.StartTime:hh\\:mm}";
+
+            await _jobManager.EnqueueAsync(
+                new ZbsSendJobArgs
+                {
+                    TenantId = CurrentTenant.Id ?? customer.TenantId,
+                    TemplateKey = "BookingCreated",
+                    Phone = customer.Phone,
+                    TrackingId = booking.Id.ToString(),
+                    TemplateData = new
+                    {
+                        customer_name = customer.Name ?? "",
+                        booking_code = booking.BookingCode,
+                        schedule_time = scheduleTime,
+                        address = address
+                    }
+                },
+                priority: BackgroundJobPriority.Normal
+            );
+        }
+        catch (Exception ex)
+        {
+            Logger.LogWarning(
+                ex,
+                "[ZBS][MiniAppSalon] Enqueue BookingCreated failed. BookingId={BookingId}, BookingCode={BookingCode}, TenantId={TenantId}",
+                booking.Id,
+                booking.BookingCode,
+                CurrentTenant.Id
+            );
+        }
     }
 }

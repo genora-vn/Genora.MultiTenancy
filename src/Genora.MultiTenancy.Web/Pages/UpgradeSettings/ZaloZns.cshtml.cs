@@ -70,6 +70,9 @@ public class ZaloZnsModel : AbpPageModel
         [Display(Name = "BookingChanged TemplateId")]
         public string? BookingChanged { get; set; }
 
+        [Display(Name = "ServiceReview TemplateId")]
+        public string? ServiceReview { get; set; }
+
         // ── Checkout SDK — Payment Config ────────────────────────────────────
         /// <summary>
         /// Private Key HMAC SHA256 từ Zalo Developer Portal.
@@ -116,6 +119,7 @@ public class ZaloZnsModel : AbpPageModel
         Input.BookingCancelled = await _settingProvider.GetOrNullAsync(AppServices.AppZaloAuths.ZaloSettingNames.ZbsBookingCancelled);
         Input.BookingReminder  = await _settingProvider.GetOrNullAsync(AppServices.AppZaloAuths.ZaloSettingNames.ZbsBookingReminder);
         Input.BookingChanged   = await _settingProvider.GetOrNullAsync(AppServices.AppZaloAuths.ZaloSettingNames.ZbsBookingChanged);
+        Input.ServiceReview    = await _settingProvider.GetOrNullAsync(AppServices.AppZaloAuths.ZaloSettingNames.ZbsServiceReview);
 
         // ── Payment settings ─────────────────────────────────────────────────
         // Private Key không load ra UI (encrypted) — chỉ hiển thị placeholder
@@ -161,6 +165,7 @@ public class ZaloZnsModel : AbpPageModel
         await SetAsync(AppServices.AppZaloAuths.ZaloSettingNames.ZbsBookingCancelled, Input.BookingCancelled);
         await SetAsync(AppServices.AppZaloAuths.ZaloSettingNames.ZbsBookingReminder,  Input.BookingReminder);
         await SetAsync(AppServices.AppZaloAuths.ZaloSettingNames.ZbsBookingChanged,   Input.BookingChanged);
+        await SetAsync(AppServices.AppZaloAuths.ZaloSettingNames.ZbsServiceReview,    Input.ServiceReview);
 
         // ── Payment settings ─────────────────────────────────────────────────
         // Private Key: chỉ lưu nếu user nhập giá trị mới (không ghi đè bằng chuỗi rỗng)

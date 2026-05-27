@@ -505,6 +505,7 @@
     "UpgradeSettings:ZaloZns:Template:BookingCancelled": "Booking cancelled TemplateId",
     "UpgradeSettings:ZaloZns:Template:BookingReminder": "Booking reminder TemplateId",
     "UpgradeSettings:ZaloZns:Template:BookingChanged": "Booking changed TemplateId",
+    "UpgradeSettings:ZaloZns:Template:ServiceReview": "Service review TemplateId",
     "FeatureGroup:MiniAppHomePage": "Homepage Configuration",
     "Feature:MiniAppHomePage": "Enable Homepage Configuration",
     "Feature:MiniAppHomePageDesc": "Enable Homepage Configuration Management Function (edit, sort, configure feature widgets, update status)",
