@@ -20,7 +20,7 @@ public class UpdateSalonBeautyStylistDto
     public bool IsUploadImage { get; set; }
 
     [StringLength(15)]
-    [RegularExpression(@"^$|^0\d{9,10}$")]
+    [RegularExpression(@"^$|^(0\d{9,10}|84\d{9,10})$")]
     public string? Phone { get; set; }
 
     public byte? Gender { get; set; }

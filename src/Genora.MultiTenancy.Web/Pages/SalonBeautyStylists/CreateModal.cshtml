@@ -93,7 +93,7 @@
                         </div>
                         <div class="col-md-6">
                             <label class="stylist-form-label" asp-for="Stylist.Phone">@L["SalonBeautyStylist:Phone"]</label>
-                            <input asp-for="Stylist.Phone" class="form-control stylist-form-control stylist-phone-input" inputmode="numeric" pattern="^0\d{9,10}$" maxlength="11" placeholder="@L["SalonBeautyStylists:PhonePlaceholder"]" />
+                            <input asp-for="Stylist.Phone" class="form-control stylist-form-control stylist-phone-input" inputmode="numeric" pattern="^(0\d{9,10}|84\d{9,10})$" maxlength="13" placeholder="@L["SalonBeautyStylists:PhonePlaceholder"]" />
                             <span asp-validation-for="Stylist.Phone" class="text-danger"></span>
                         </div>
                         <div class="col-md-6">

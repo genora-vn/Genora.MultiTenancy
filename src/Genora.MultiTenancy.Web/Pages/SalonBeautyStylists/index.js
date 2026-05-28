@@ -302,7 +302,7 @@ $(function () {
     });
 
     function normalizePhoneInput($input) {
-        var value = ($input.val() || '').replace(/\D/g, '').substring(0, 11);
+        var value = ($input.val() || '').replace(/\D/g, '').substring(0, 13);
         $input.val(value);
     }
 
@@ -360,7 +360,7 @@ $(function () {
         var message = null;
 
         if (!displayName) { valid = false; message = l('SalonBeautyStylists:DisplayNameRequired'); }
-        else if (phone && !/^0\d{9,10}$/.test(phone)) { valid = false; message = l('SalonBeautyStylists:PhoneInvalid'); }
+        else if (phone && !/^(0\d{9,10}|84\d{9,10})$/.test(phone)) { valid = false; message = l('SalonBeautyStylists:PhoneInvalid'); }
         else if (!role) { valid = false; message = l('SalonBeautyStylists:RoleRequired'); }
         else if (!level) { valid = false; message = l('SalonBeautyStylists:LevelRequired'); }
         else if (isShowOnApp && status !== '1') { valid = false; message = l('SalonBeautyStylists:ShowOnAppRequiresActive'); }

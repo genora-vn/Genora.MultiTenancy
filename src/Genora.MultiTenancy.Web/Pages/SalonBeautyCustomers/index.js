@@ -374,7 +374,7 @@ $(function () {
     });
 
     function normalizePhoneInput($input) {
-        var value = ($input.val() || '').replace(/\D/g, '').substring(0, 11);
+        var value = ($input.val() || '').replace(/\D/g, '').substring(0, 13);
         $input.val(value);
     }
 
@@ -448,7 +448,7 @@ $(function () {
         today.setHours(0, 0, 0, 0);
 
         if (!name || !phone || source === '') return false;
-        if (!/^0\d{9,10}$/.test(phone)) return false;
+        if (!/^(0\d{9,10}|84\d{9,10})$/.test(phone)) return false;
         if (email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return false;
         if (birthday) {
             var bd = parseSalonDate(birthday);

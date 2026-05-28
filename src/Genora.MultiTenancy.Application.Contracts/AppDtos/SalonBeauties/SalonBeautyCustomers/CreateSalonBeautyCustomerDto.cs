@@ -16,7 +16,7 @@ public class CreateSalonBeautyCustomerDto
 
     [Required(ErrorMessage = "SalonBeautyCustomer:PhoneRequired")]
     [StringLength(15)]
-    [RegularExpression(@"^0\d{9,10}$", ErrorMessage = "SalonBeautyCustomer:PhoneInvalid")]
+    [RegularExpression(@"^(0\d{9,10}|84\d{9,10})$", ErrorMessage = "SalonBeautyCustomer:PhoneInvalid")]
     public string Phone { get; set; } = null!;
 
     [StringLength(255)]

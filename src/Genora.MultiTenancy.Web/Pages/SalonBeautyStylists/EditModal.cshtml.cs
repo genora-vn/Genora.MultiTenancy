@@ -108,7 +108,7 @@ public class EditModalModel : MultiTenancyPageModel
         if (string.IsNullOrWhiteSpace(displayName))
             ModelState.AddModelError("Stylist.DisplayName", _l["SalonBeautyStylists:DisplayNameRequired"]);
 
-        if (!string.IsNullOrWhiteSpace(phone) && !System.Text.RegularExpressions.Regex.IsMatch(phone.Trim(), @"^0\d{9,10}$"))
+        if (!string.IsNullOrWhiteSpace(phone) && !System.Text.RegularExpressions.Regex.IsMatch(phone.Trim(), @"^(0\d{9,10}|84\d{9,10})$"))
             ModelState.AddModelError("Stylist.Phone", _l["SalonBeautyStylists:PhoneInvalid"]);
 
         if (!role.HasValue)

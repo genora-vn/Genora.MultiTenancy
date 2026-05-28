@@ -302,7 +302,7 @@ public class SalonBeautyStylistAppService :
         if (displayName!.Trim().Length > 255)
             throw new UserFriendlyException(L("SalonBeautyStylists:DisplayNameMaxLength"));
 
-        if (!phone.IsNullOrWhiteSpace() && !Regex.IsMatch(phone.Trim(), @"^0\d{9,10}$"))
+        if (!phone.IsNullOrWhiteSpace() && !Regex.IsMatch(phone.Trim(), @"^(0\d{9,10}|84\d{9,10})$"))
             throw new UserFriendlyException(L("SalonBeautyStylists:PhoneInvalid"));
 
         if (!role.HasValue || !Enum.IsDefined(typeof(SalonBeautyStylistRole), role.Value))

@@ -595,7 +595,7 @@ public class SalonBeautyCustomerAppService :
         if (normalizedPhone.IsNullOrWhiteSpace())
             throw new BusinessException("SalonBeautyCustomer:PhoneRequired");
 
-        if (!Regex.IsMatch(normalizedPhone!, @"^0\d{9,10}$"))
+        if (!Regex.IsMatch(normalizedPhone!, @"^(0\d{9,10}|84\d{9,10})$"))
             throw new BusinessException("SalonBeautyCustomer:PhoneInvalid").WithData("Phone", phone);
 
         if (!email.IsNullOrWhiteSpace() && !Regex.IsMatch(email!.Trim(), @"^[^@\s]+@[^@\s]+\.[^@\s]+$"))
