@@ -36,6 +36,16 @@ public class AppDocumentsDataSeedContributor : IDataSeedContributor, ITransientD
     private const string PermAppNews = "MultiTenancy.AppNews";
     private const string PermHostAppNews = "MultiTenancy.HostAppNews";
 
+    // Feature constants — keep in sync with Application.Contracts/Features/*/*Features.cs
+    private const string FeatAppSettings = "MiniAppSetting.Management";
+    private const string FeatGolfCourse = "MiniAppGolfCourse.Management";
+    private const string FeatSalonBeauty = "SalonBeauty.Management";
+    private const string FeatProshop = "MiniAppProshop.Management";
+    private const string FeatFnb = "MiniAppFnb.Management";
+    private const string FeatBookings = "MiniAppBookings.Management";
+    private const string FeatMembershipTier = "MiniAppMembershipTier.Management";
+    private const string FeatNews = "MiniAppNews.Management";
+
     public AppDocumentsDataSeedContributor(
         IRepository<DocumentSection, Guid> sectionRepo,
         IRepository<DocumentPage, Guid> pageRepo,
@@ -51,15 +61,39 @@ public class AppDocumentsDataSeedContributor : IDataSeedContributor, ITransientD
         // Host-shared, only seed once at host level.
         if (context.TenantId != null) return;
 
-        var existingSlugs = (await _sectionRepo.GetListAsync())
-            .Select(x => x.Slug)
-            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var existing = (await _sectionRepo.GetListAsync())
+            .ToDictionary(x => x.Slug, x => x, StringComparer.OrdinalIgnoreCase);
 
         var seeds = BuildSeeds();
 
         foreach (var seed in seeds)
         {
-            if (existingSlugs.Contains(seed.Slug)) continue;
+            if (existing.TryGetValue(seed.Slug, out var current))
+            {
+                // Upsert metadata only — keep user-edited Name/Icon/Order/Status/Content untouched.
+                var changed = false;
+                if (current.FeatureName != seed.FeatureName)
+                {
+                    current.FeatureName = seed.FeatureName;
+                    changed = true;
+                }
+                if (current.TenantPermissionName != seed.TenantPermissionName)
+                {
+                    current.TenantPermissionName = seed.TenantPermissionName;
+                    changed = true;
+                }
+                if (current.HostPermissionName != seed.HostPermissionName)
+                {
+                    current.HostPermissionName = seed.HostPermissionName;
+                    changed = true;
+                }
+
+                if (changed)
+                {
+                    await _sectionRepo.UpdateAsync(current, autoSave: true);
+                }
+                continue;
+            }
 
             var section = new DocumentSection(_guidGenerator.Create(), seed.Name, seed.Slug)
             {
@@ -97,7 +131,7 @@ public class AppDocumentsDataSeedContributor : IDataSeedContributor, ITransientD
             Name = "Cài đặt Mini App",
             Icon = "fa fa-sliders",
             DisplayOrder = 10,
-            FeatureName = null,
+            FeatureName = FeatAppSettings,
             TenantPermissionName = PermAppSettings,
             HostPermissionName = PermHostAppSettings
         },
@@ -107,7 +141,7 @@ public class AppDocumentsDataSeedContributor : IDataSeedContributor, ITransientD
             Name = "Sân golf & Giờ chơi",
             Icon = "fa fa-flag",
             DisplayOrder = 20,
-            FeatureName = null,
+            FeatureName = FeatGolfCourse,
             TenantPermissionName = PermAppGolfCourses,
             HostPermissionName = PermHostAppGolfCourses
         },
@@ -117,7 +151,7 @@ public class AppDocumentsDataSeedContributor : IDataSeedContributor, ITransientD
             Name = "Salon Beauty",
             Icon = "fa fa-spa",
             DisplayOrder = 25,
-            FeatureName = "SalonBeauty.Management",
+            FeatureName = FeatSalonBeauty,
             TenantPermissionName = PermSalonBeautyBookings,
             HostPermissionName = PermHostSalonBeautyBookings
         },
@@ -127,7 +161,7 @@ public class AppDocumentsDataSeedContributor : IDataSeedContributor, ITransientD
             Name = "Proshop",
             Icon = "fa fa-shopping-bag",
             DisplayOrder = 26,
-            FeatureName = null,
+            FeatureName = FeatProshop,
             TenantPermissionName = PermAppProOrders,
             HostPermissionName = PermHostAppProOrders
         },
@@ -137,7 +171,7 @@ public class AppDocumentsDataSeedContributor : IDataSeedContributor, ITransientD
             Name = "F&B",
             Icon = "fa fa-cutlery",
             DisplayOrder = 27,
-            FeatureName = null,
+            FeatureName = FeatFnb,
             TenantPermissionName = PermAppFnbOrders,
             HostPermissionName = PermHostAppFnbOrders
         },
@@ -147,7 +181,7 @@ public class AppDocumentsDataSeedContributor : IDataSeedContributor, ITransientD
             Name = "Khách hàng & Đặt chỗ",
             Icon = "fa fa-address-book",
             DisplayOrder = 30,
-            FeatureName = null,
+            FeatureName = FeatBookings,
             TenantPermissionName = PermAppCustomers,
             HostPermissionName = PermHostAppCustomers
         },
@@ -157,7 +191,7 @@ public class AppDocumentsDataSeedContributor : IDataSeedContributor, ITransientD
             Name = "Khách hàng trung thành",
             Icon = "fa fa-gem",
             DisplayOrder = 40,
-            FeatureName = null,
+            FeatureName = FeatMembershipTier,
             TenantPermissionName = PermAppMembershipTiers,
             HostPermissionName = PermHostAppMembershipTiers
         },
@@ -167,7 +201,7 @@ public class AppDocumentsDataSeedContributor : IDataSeedContributor, ITransientD
             Name = "Tin tức",
             Icon = "fa fa-newspaper-o",
             DisplayOrder = 50,
-            FeatureName = null,
+            FeatureName = FeatNews,
             TenantPermissionName = PermAppNews,
             HostPermissionName = PermHostAppNews
         },
@@ -177,8 +211,8 @@ public class AppDocumentsDataSeedContributor : IDataSeedContributor, ITransientD
             Name = "Quản trị hệ thống",
             Icon = "fa fa-cog",
             DisplayOrder = 60,
+            // No feature/permission gate — always visible to anyone logged in.
             FeatureName = null,
-            // No specific permission gate — visible to anyone with documents-view access.
             TenantPermissionName = null,
             HostPermissionName = null
         }
