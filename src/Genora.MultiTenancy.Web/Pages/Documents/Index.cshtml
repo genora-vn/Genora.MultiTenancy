@@ -1,0 +1,106 @@
+@page "{*slug}"
+@using Genora.MultiTenancy.Localization
+@using Genora.MultiTenancy.Permissions
+@using Genora.MultiTenancy.Web.Pages.Documents
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.Extensions.Localization
+@model IndexModel
+@inject IStringLocalizer<MultiTenancyResource> L
+@inject IAuthorizationService AuthorizationService
+@inject Volo.Abp.MultiTenancy.ICurrentTenant CurrentTenant
+
+@section styles {
+    <abp-style src="/Pages/Documents/documents.css" />
+}
+
+@{
+    var canManage = !CurrentTenant.IsAvailable
+        && await AuthorizationService.IsGrantedAsync(MultiTenancyPermissions.HostAppDocuments.Default);
+    ViewBag.PageTitle = (Model.Document?.Title ?? L["Documents"].Value);
+}
+
+<div class="docs-shell">
+    <aside class="docs-sidebar">
+        <div class="docs-sidebar-header">
+            <a href="/Documents" class="docs-sidebar-title">@L["Documents:Sections"]</a>
+            @if (canManage)
+            {
+                <a href="/Documents/Manage" class="docs-manage-link" title="@L["Menu:DocumentsManage"]">
+                    <i class="fa fa-cog"></i>
+                </a>
+            }
+        </div>
+
+        @if (Model.Tree.Sections.Count == 0)
+        {
+            <div class="docs-empty">@L["Documents:Empty"]</div>
+        }
+        else
+        {
+            <nav class="docs-nav">
+                @foreach (var sec in Model.Tree.Sections)
+                {
+                    var iconCls = string.IsNullOrWhiteSpace(sec.Icon) ? "fa fa-folder-open" : sec.Icon;
+                    var isActiveSection = string.Equals(sec.SectionSlug, Model.SectionSlug, System.StringComparison.OrdinalIgnoreCase);
+                    <details class="docs-nav-section" open="@(isActiveSection ? "open" : null)">
+                        <summary>
+                            <i class="@iconCls"></i>
+                            <span>@sec.SectionName</span>
+                        </summary>
+                        <ul>
+                            @foreach (var pg in sec.Pages)
+                            {
+                                var isActive = isActiveSection && string.Equals(pg.Slug, Model.PageSlug, System.StringComparison.OrdinalIgnoreCase);
+                                <li class="@(isActive ? "active" : "")">
+                                    <a href="/Documents/@sec.SectionSlug/@pg.Slug">@pg.Title</a>
+                                </li>
+                            }
+                        </ul>
+                    </details>
+                }
+            </nav>
+        }
+    </aside>
+
+    <main class="docs-content">
+        @if (Model.Document != null)
+        {
+            <article class="docs-article">
+                <header class="docs-article-header">
+                    <div class="docs-breadcrumb">
+                        <a href="/Documents">@L["Documents"]</a>
+                        <span class="sep">/</span>
+                        <span>@Model.Document.SectionName</span>
+                    </div>
+                    <h1>@Model.Document.Title</h1>
+                </header>
+                <div class="docs-article-body">
+                    @Html.Raw(Model.Document.ContentHtml)
+                </div>
+                @if (Model.Document.LastModificationTime.HasValue)
+                {
+                    <footer class="docs-article-footer">
+                        @string.Format(L["Documents:LastUpdated"].Value, Model.Document.LastModificationTime.Value.ToString("dd/MM/yyyy HH:mm"))
+                    </footer>
+                }
+            </article>
+        }
+        else if (Model.DocumentNotFound)
+        {
+            <div class="docs-welcome">
+                <i class="fa fa-question-circle docs-welcome-icon"></i>
+                <h1>404</h1>
+                <p>Không tìm thấy trang tài liệu yêu cầu, hoặc bạn không có quyền xem.</p>
+                <a href="/Documents" class="btn btn-primary mt-3">@L["Documents:Welcome"]</a>
+            </div>
+        }
+        else
+        {
+            <div class="docs-welcome">
+                <i class="fa fa-book docs-welcome-icon"></i>
+                <h1>@L["Documents:Welcome"]</h1>
+                <p>@L["Documents:WelcomeDescription"]</p>
+            </div>
+        }
+    </main>
+</div>

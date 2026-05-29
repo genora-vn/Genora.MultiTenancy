@@ -1,0 +1,94 @@
+@page
+@using Genora.MultiTenancy.Localization
+@using Genora.MultiTenancy.Permissions
+@using Genora.MultiTenancy.Web.Pages.Documents.Manage
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.Extensions.Localization
+@model IndexModel
+@inject IStringLocalizer<MultiTenancyResource> L
+@inject IAuthorizationService AuthorizationService
+
+@section styles {
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/summernote@0.8.18/dist/summernote-lite.min.css" />
+    <abp-style src="/Pages/Documents/documents.css" />
+    <abp-style src="/Pages/Documents/Manage/manage.css" />
+}
+
+@section scripts {
+    <script src="https://cdn.jsdelivr.net/npm/summernote@0.8.18/dist/summernote-lite.min.js"></script>
+    <abp-script src="/Pages/Documents/Manage/manage.js" />
+}
+
+@{
+    ViewBag.PageTitle = L["Menu:DocumentsManage"].Value;
+    var canCreate = await AuthorizationService.IsGrantedAsync(MultiTenancyPermissions.HostAppDocuments.Create);
+    var canEdit = await AuthorizationService.IsGrantedAsync(MultiTenancyPermissions.HostAppDocuments.Edit);
+    var canDelete = await AuthorizationService.IsGrantedAsync(MultiTenancyPermissions.HostAppDocuments.Delete);
+}
+
+<div class="docs-manage">
+    <div class="docs-manage-header">
+        <div>
+            <h2 class="m-0">@L["Menu:DocumentsManage"]</h2>
+            <small class="text-muted">@L["Documents:WelcomeDescription"]</small>
+        </div>
+        <div class="docs-manage-actions">
+            <a href="/Documents" class="btn btn-light"><i class="fa fa-eye"></i> @L["Documents"]</a>
+            @if (canCreate)
+            {
+                <button type="button" class="btn btn-outline-primary" id="btnNewSection">
+                    <i class="fa fa-folder-plus"></i> @L["Documents:NewSection"]
+                </button>
+                <button type="button" class="btn btn-primary" id="btnNewPage">
+                    <i class="fa fa-plus"></i> @L["Documents:NewPage"]
+                </button>
+            }
+        </div>
+    </div>
+
+    <div class="row g-3 mt-1">
+        <div class="col-12 col-xl-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-body">
+                    <h5 class="card-title">@L["Documents:Sections"]</h5>
+                    <table class="table table-sm align-middle" id="tblSections">
+                        <thead>
+                            <tr>
+                                <th>@L["Documents:Title"]</th>
+                                <th>@L["Documents:Pages"]</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-xl-8">
+            <div class="card shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center mb-2 gap-2">
+                        <h5 class="card-title m-0">@L["Documents:Pages"]</h5>
+                        <select id="filterSection" class="form-select form-select-sm w-auto ms-auto"></select>
+                    </div>
+                    <table class="table table-sm align-middle" id="tblPages">
+                        <thead>
+                            <tr>
+                                <th>@L["Documents:Title"]</th>
+                                <th>@L["Documents:Section"]</th>
+                                <th>@L["Documents:DisplayOrder"]</th>
+                                <th>@L["Documents:Status"]</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<input type="hidden" id="DocsCanEdit" value="@(canEdit ? "true" : "false")" />
+<input type="hidden" id="DocsCanDelete" value="@(canDelete ? "true" : "false")" />

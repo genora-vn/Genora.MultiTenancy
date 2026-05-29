@@ -559,6 +559,21 @@ public static class MultiTenancyPermissions
     }
     #endregion
 
+    #region Thêm permission cho tính năng quản trị Documents (tài liệu hướng dẫn)
+    public static class AppDocuments
+    {
+        public const string Default = GroupName + ".AppDocuments";
+    }
+
+    public static class HostAppDocuments
+    {
+        public const string Default = GroupName + ".HostAppDocuments";
+        public const string Create = Default + ".Create";
+        public const string Edit = Default + ".Edit";
+        public const string Delete = Default + ".Delete";
+    }
+    #endregion
+
     //Add your own permission names. Example:
     //public const string MyPermission1 = GroupName + ".MyPermission1";
 }

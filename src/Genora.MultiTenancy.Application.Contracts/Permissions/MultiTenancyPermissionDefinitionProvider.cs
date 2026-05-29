@@ -1292,6 +1292,49 @@ public class MultiTenancyPermissionDefinitionProvider : PermissionDefinitionProv
         salonLoyaltyConfigHostRoot.AddChild(MultiTenancyPermissions.HostSalonBeautyLoyaltyConfig.Edit, L("Permission:Edit")).MultiTenancySide = MultiTenancySides.Host;
 
         #endregion
+
+        #region Cấu hình quyền cho tính năng Documents (tài liệu hướng dẫn)
+
+        // TENANT (chỉ có quyền View — luôn cấp, không ràng Feature)
+        var documentsGroup = context.AddGroup(
+            "AppDocuments",
+            L("PermissionGroup:AppDocuments")
+        );
+
+        var documentsTenantRoot = documentsGroup.AddPermission(
+            MultiTenancyPermissions.AppDocuments.Default,
+            L("Permission:AppDocuments")
+        );
+        documentsTenantRoot.MultiTenancySide = MultiTenancySides.Tenant;
+
+        // HOST (CRUD)
+        var documentsGroupHost = context.AddGroup(
+            "AppDocumentsHost",
+            L("PermissionGroup:AppDocumentsHost")
+        );
+
+        var documentsHostRoot = documentsGroupHost.AddPermission(
+            MultiTenancyPermissions.HostAppDocuments.Default,
+            L("Permission:AppDocuments")
+        );
+        documentsHostRoot.MultiTenancySide = MultiTenancySides.Host;
+
+        documentsHostRoot.AddChild(
+            MultiTenancyPermissions.HostAppDocuments.Create,
+            L("Permission:AppDocuments.Create")
+        ).MultiTenancySide = MultiTenancySides.Host;
+
+        documentsHostRoot.AddChild(
+            MultiTenancyPermissions.HostAppDocuments.Edit,
+            L("Permission:AppDocuments.Edit")
+        ).MultiTenancySide = MultiTenancySides.Host;
+
+        documentsHostRoot.AddChild(
+            MultiTenancyPermissions.HostAppDocuments.Delete,
+            L("Permission:AppDocuments.Delete")
+        ).MultiTenancySide = MultiTenancySides.Host;
+
+        #endregion
     }
 
     private static LocalizableString L(string name)

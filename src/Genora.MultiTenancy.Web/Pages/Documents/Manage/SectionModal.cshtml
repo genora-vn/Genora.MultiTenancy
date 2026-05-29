@@ -1,0 +1,56 @@
+@page
+@using Genora.MultiTenancy.Localization
+@using Genora.MultiTenancy.Web.Pages.Documents.Manage
+@using Microsoft.Extensions.Localization
+@using Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.TagHelpers.Modal
+@model SectionModalModel
+@inject IStringLocalizer<MultiTenancyResource> L
+
+@{ Layout = null; }
+
+<form asp-page="/Documents/Manage/SectionModal" method="post" id="SectionForm">
+    <input type="hidden" asp-for="Id" />
+
+    <abp-modal>
+        <abp-modal-header title="@(Model.IsEdit ? L["Documents:EditSection"].Value : L["Documents:NewSection"].Value)"></abp-modal-header>
+        <abp-modal-body class="docs-modal-body">
+            <abp-input asp-for="Section.Name" label="@L["Documents:Title"]" />
+            <abp-input asp-for="Section.Slug" label="@L["Documents:Slug"]" placeholder="@L["Documents:SlugAuto"]" />
+            <div class="row g-2">
+                <div class="col-6">
+                    <abp-input asp-for="Section.Icon" label="@L["Documents:Icon"]" placeholder="fa fa-folder-open" />
+                </div>
+                <div class="col-6">
+                    <abp-input asp-for="Section.DisplayOrder" label="@L["Documents:DisplayOrder"]" />
+                </div>
+            </div>
+
+            <abp-select asp-for="Section.Status" label="@L["Documents:Status"]" asp-items="Model.StatusItems" />
+
+            <div class="docs-gate-card">
+                <div class="row g-2">
+                    <div class="col-12">
+                        <label class="form-label">@L["Documents:FeatureGate"]</label>
+                        <select asp-for="Section.FeatureName" asp-items="Model.FeatureItems" class="form-select">
+                            <option value="">— @L["Documents:GateHint"] —</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">@L["Documents:TenantPermission"]</label>
+                        <select asp-for="Section.TenantPermissionName" asp-items="Model.TenantPermissionItems" class="form-select">
+                            <option value=""></option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">@L["Documents:HostPermission"]</label>
+                        <select asp-for="Section.HostPermissionName" asp-items="Model.HostPermissionItems" class="form-select">
+                            <option value=""></option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-text mt-2">@L["Documents:GateHint"]</div>
+            </div>
+        </abp-modal-body>
+        <abp-modal-footer buttons="@(AbpModalButtons.Cancel | AbpModalButtons.Save)"></abp-modal-footer>
+    </abp-modal>
+</form>

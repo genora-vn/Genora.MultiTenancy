@@ -1,0 +1,65 @@
+.docs-manage {
+    padding: 8px 4px 24px 4px;
+}
+
+.docs-manage-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+    background: #fff;
+    border-radius: 12px;
+    padding: 16px 20px;
+    border: 1px solid rgba(15, 23, 42, .08);
+    box-shadow: 0 1px 2px rgba(15, 23, 42, .04);
+    margin-bottom: 16px;
+}
+
+.docs-manage-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.docs-manage table th {
+    color: #64748b;
+    font-weight: 600;
+    font-size: 12.5px;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+}
+
+.docs-manage table td {
+    vertical-align: middle;
+    font-size: 14px;
+}
+
+.docs-status-pill {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.docs-status-pill.published { background: rgba(34, 197, 94, .12); color: #15803d; }
+.docs-status-pill.draft { background: rgba(245, 158, 11, .14); color: #b45309; }
+.docs-status-pill.hidden { background: rgba(148, 163, 184, .14); color: #475569; }
+
+.docs-modal-body { max-height: 75vh; overflow-y: auto; padding: 16px; }
+.docs-editor-wrap { min-height: 320px; }
+
+.docs-editor-wrap .note-editor { border-radius: 8px; }
+
+.docs-gate-card {
+    background: rgba(13, 110, 253, .04);
+    border: 1px dashed rgba(13, 110, 253, .25);
+    border-radius: 10px;
+    padding: 12px 14px;
+    margin-top: 8px;
+}
+
+.docs-gate-card label { font-weight: 600; color: #0f172a; }
+.docs-gate-card .form-text { font-size: 12px; }

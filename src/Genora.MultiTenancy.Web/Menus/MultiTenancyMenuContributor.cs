@@ -98,6 +98,17 @@ public class MultiTenancyMenuContributor : IMenuContributor
             )
         );
 
+        // ===== Documents (User Guide) — visible to anyone logged in =====
+        context.Menu.AddItem(
+            new ApplicationMenuItem(
+                "Documents",
+                l["Menu:Documents"],
+                "/Documents",
+                icon: "fa fa-book",
+                order: 5
+            )
+        );
+
         // ===== Permissions/Features (Tenant vs Host) =====
         if (tenant.IsAvailable) // ================= TENANT =================
         {

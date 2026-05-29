@@ -28,6 +28,7 @@ using Genora.MultiTenancy.DomainModels.AppPromotionTypes;
 using Genora.MultiTenancy.DomainModels.AppSpecialDates;
 using Genora.MultiTenancy.DomainModels.AppZaloAuth;
 using Genora.MultiTenancy.DomainModels.AppSalonBeauty;
+using Genora.MultiTenancy.DomainModels.AppDocuments;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Hosting;
 using Volo.Abp.AuditLogging.EntityFrameworkCore;
@@ -125,6 +126,10 @@ public class MultiTenancyDbContext :
     public DbSet<OptionExtend> OptionExtends { get; set; }
     public DbSet<PromotionType> PromotionTypes { get; set; }
     public DbSet<PromotionPolicy> PromotionPolicies { get; set; }
+
+    // Documentation
+    public DbSet<DocumentSection> AppDocumentSections { get; set; }
+    public DbSet<DocumentPage> AppDocumentPages { get; set; }
     // Tenant Management
     public DbSet<Tenant> Tenants { get; set; }
     public DbSet<TenantConnectionString> TenantConnectionStrings { get; set; }
@@ -525,6 +530,44 @@ public class MultiTenancyDbContext :
             b.Property(x => x.Description).HasMaxLength(1000);
 
             b.HasIndex(x => new { x.OrderId, x.ActionTime });
+        });
+
+        // ===== Documentation =====
+        builder.Entity<DocumentSection>(b =>
+        {
+            b.ToTable("AppDocumentSections");
+            b.ConfigureByConvention();
+
+            b.Property(x => x.Name).IsRequired().HasMaxLength(255);
+            b.Property(x => x.Slug).IsRequired().HasMaxLength(200);
+            b.Property(x => x.Icon).HasMaxLength(100);
+            b.Property(x => x.FeatureName).HasMaxLength(200);
+            b.Property(x => x.TenantPermissionName).HasMaxLength(200);
+            b.Property(x => x.HostPermissionName).HasMaxLength(200);
+
+            b.HasIndex(x => x.Slug).IsUnique();
+            b.HasIndex(x => x.DisplayOrder);
+
+            b.HasMany(x => x.Pages)
+             .WithOne(x => x.Section)
+             .HasForeignKey(x => x.SectionId)
+             .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        builder.Entity<DocumentPage>(b =>
+        {
+            b.ToTable("AppDocumentPages");
+            b.ConfigureByConvention();
+
+            b.Property(x => x.Title).IsRequired().HasMaxLength(255);
+            b.Property(x => x.Slug).IsRequired().HasMaxLength(200);
+            b.Property(x => x.ContentHtml).HasColumnType("nvarchar(max)");
+            b.Property(x => x.FeatureName).HasMaxLength(200);
+            b.Property(x => x.TenantPermissionName).HasMaxLength(200);
+            b.Property(x => x.HostPermissionName).HasMaxLength(200);
+
+            b.HasIndex(x => new { x.SectionId, x.Slug }).IsUnique();
+            b.HasIndex(x => new { x.SectionId, x.DisplayOrder });
         });
     }
 }

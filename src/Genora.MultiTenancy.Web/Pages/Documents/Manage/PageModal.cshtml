@@ -1,0 +1,138 @@
+@page
+@using Genora.MultiTenancy.Localization
+@using Genora.MultiTenancy.Web.Pages.Documents.Manage
+@using Microsoft.Extensions.Localization
+@using Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.TagHelpers.Modal
+@model PageModalModel
+@inject IStringLocalizer<MultiTenancyResource> L
+
+@{ Layout = null; }
+
+<form asp-page="/Documents/Manage/PageModal" method="post" id="PageForm">
+    <input type="hidden" asp-for="Id" />
+
+    <abp-modal size="ExtraLarge">
+        <abp-modal-header title="@(Model.IsEdit ? L["Documents:EditPage"].Value : L["Documents:NewPage"].Value)"></abp-modal-header>
+        <abp-modal-body class="docs-modal-body">
+            <div class="row g-2">
+                <div class="col-md-8">
+                    <abp-input asp-for="Page.Title" label="@L["Documents:Title"]" />
+                </div>
+                <div class="col-md-4">
+                    <abp-select asp-for="Page.SectionId" label="@L["Documents:Section"]" asp-items="Model.SectionItems" />
+                </div>
+            </div>
+
+            <div class="row g-2">
+                <div class="col-md-6">
+                    <abp-input asp-for="Page.Slug" label="@L["Documents:Slug"]" placeholder="@L["Documents:SlugAuto"]" />
+                </div>
+                <div class="col-md-3">
+                    <abp-input asp-for="Page.DisplayOrder" label="@L["Documents:DisplayOrder"]" />
+                </div>
+                <div class="col-md-3">
+                    <abp-select asp-for="Page.Status" label="@L["Documents:Status"]" asp-items="Model.StatusItems" />
+                </div>
+            </div>
+
+            <label class="form-label fw-semibold mt-2">@L["Documents:Content"]</label>
+            <div class="docs-editor-wrap">
+                <textarea asp-for="Page.ContentHtml" id="DocsContentEditor" class="form-control" rows="12"></textarea>
+            </div>
+
+            <div class="docs-gate-card mt-3">
+                <div class="row g-2">
+                    <div class="col-12">
+                        <label class="form-label">@L["Documents:FeatureGate"]</label>
+                        <select asp-for="Page.FeatureName" asp-items="Model.FeatureItems" class="form-select">
+                            <option value=""></option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">@L["Documents:TenantPermission"]</label>
+                        <select asp-for="Page.TenantPermissionName" asp-items="Model.TenantPermissionItems" class="form-select">
+                            <option value=""></option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">@L["Documents:HostPermission"]</label>
+                        <select asp-for="Page.HostPermissionName" asp-items="Model.HostPermissionItems" class="form-select">
+                            <option value=""></option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-text mt-2">@L["Documents:GateHint"]</div>
+            </div>
+        </abp-modal-body>
+        <abp-modal-footer buttons="@(AbpModalButtons.Cancel | AbpModalButtons.Save)"></abp-modal-footer>
+    </abp-modal>
+</form>
+
+<script>
+    (function () {
+        function initEditor() {
+            const $ta = $('#DocsContentEditor');
+            if (!$ta.length || $ta.next('.note-editor').length) return;
+
+            $ta.summernote({
+                height: 380,
+                placeholder: 'Soạn nội dung tài liệu...',
+                toolbar: [
+                    ['style', ['style', 'bold', 'italic', 'underline', 'clear']],
+                    ['font', ['fontname', 'fontsize']],
+                    ['color', ['color']],
+                    ['para', ['ul', 'ol', 'paragraph']],
+                    ['table', ['table']],
+                    ['insert', ['link', 'picture', 'video', 'hr']],
+                    ['view', ['fullscreen', 'codeview', 'help']]
+                ],
+                callbacks: {
+                    onImageUpload: function (files) {
+                        const $editor = $(this);
+                        for (let i = 0; i < files.length; i++) {
+                            uploadImage(files[i], $editor);
+                        }
+                    }
+                }
+            });
+
+            // Lazy-load content via AJAX (modal opens fast, content loads after).
+            const id = $('input[name="Id"]', '#PageForm').val();
+            if (id) {
+                fetch(abp.appPath + 'Documents/Manage/PageModal?id=' + encodeURIComponent(id) + '&handler=Content', {
+                    headers: { 'RequestVerificationToken': abp.security.antiForgery.getToken() }
+                })
+                    .then(r => r.json())
+                    .then(d => {
+                        if (d && typeof d.contentHtml === 'string') {
+                            $ta.summernote('code', d.contentHtml);
+                        }
+                    })
+                    .catch(() => { /* ignore */ });
+            }
+        }
+
+        function uploadImage(file, $editor) {
+            const fd = new FormData();
+            fd.append('file', file);
+
+            fetch(abp.appPath + 'Documents/Manage/PageModal?handler=UploadImage', {
+                method: 'POST',
+                headers: { 'RequestVerificationToken': abp.security.antiForgery.getToken() },
+                body: fd
+            })
+                .then(r => r.json())
+                .then(d => {
+                    if (d && d.url) {
+                        $editor.summernote('insertImage', d.url, file.name);
+                    } else {
+                        abp.notify.warn('Upload ảnh thất bại.');
+                    }
+                })
+                .catch(() => abp.notify.warn('Upload ảnh thất bại.'));
+        }
+
+        // Run after modal DOM is in place.
+        setTimeout(initEditor, 0);
+    })();
+</script>

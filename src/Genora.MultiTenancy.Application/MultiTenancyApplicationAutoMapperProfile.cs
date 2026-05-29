@@ -3,6 +3,7 @@ using Genora.MultiTenancy.AppDtos.AppBookings;
 using Genora.MultiTenancy.AppDtos.AppCalendarSlots;
 using Genora.MultiTenancy.AppDtos.AppCustomers;
 using Genora.MultiTenancy.AppDtos.AppCustomerTypes;
+using Genora.MultiTenancy.AppDtos.AppDocuments;
 using Genora.MultiTenancy.AppDtos.AppEmails;
 using Genora.MultiTenancy.AppDtos.AppFnbCategories;
 using Genora.MultiTenancy.AppDtos.AppFnbItems;
@@ -28,6 +29,7 @@ using Genora.MultiTenancy.DomainModels.AppBookings;
 using Genora.MultiTenancy.DomainModels.AppCalendarSlots;
 using Genora.MultiTenancy.DomainModels.AppCustomers;
 using Genora.MultiTenancy.DomainModels.AppCustomerTypes;
+using Genora.MultiTenancy.DomainModels.AppDocuments;
 using Genora.MultiTenancy.DomainModels.AppEmails;
 using Genora.MultiTenancy.DomainModels.AppFnbCategories;
 using Genora.MultiTenancy.DomainModels.AppFnbItems;
@@ -234,6 +236,17 @@ public class MultiTenancyApplicationAutoMapperProfile : Profile
         CreateMap<ProOrderItem, ProOrderItemDto>();
 
         CreateMap<PaymentConfiguration, PaymentConfigurationDto>();
+        #endregion
+
+        #region Documents
+        CreateMap<DocumentSection, DocumentSectionDto>()
+            .ForMember(d => d.Status, opt => opt.MapFrom(s => (Genora.MultiTenancy.Enums.DocumentStatus)s.Status))
+            .ForMember(d => d.PageCount, opt => opt.Ignore());
+
+        CreateMap<DocumentPage, DocumentPageDto>()
+            .ForMember(d => d.Status, opt => opt.MapFrom(s => (Genora.MultiTenancy.Enums.DocumentStatus)s.Status))
+            .ForMember(d => d.SectionName, opt => opt.MapFrom(s => s.Section != null ? s.Section.Name : string.Empty))
+            .ForMember(d => d.SectionSlug, opt => opt.MapFrom(s => s.Section != null ? s.Section.Slug : string.Empty));
         #endregion
     }
 }
