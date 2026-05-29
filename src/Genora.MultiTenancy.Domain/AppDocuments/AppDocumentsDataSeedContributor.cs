@@ -11,7 +11,7 @@ using Volo.Abp.Guids;
 
 namespace Genora.MultiTenancy.AppDocuments;
 
-public class AppDocumentsDataSeedContributor : IDataSeedContributor, ITransientDependency
+public partial class AppDocumentsDataSeedContributor : IDataSeedContributor, ITransientDependency
 {
     private readonly IRepository<DocumentSection, Guid> _sectionRepo;
     private readonly IRepository<DocumentPage, Guid> _pageRepo;
@@ -35,6 +35,54 @@ public class AppDocumentsDataSeedContributor : IDataSeedContributor, ITransientD
     private const string PermHostAppMembershipTiers = "MultiTenancy.HostAppMembershipTiers";
     private const string PermAppNews = "MultiTenancy.AppNews";
     private const string PermHostAppNews = "MultiTenancy.HostAppNews";
+    private const string PermAppPaymentConfigurations = "MultiTenancy.AppPaymentConfigurations";
+    private const string PermHostAppPaymentConfigurations = "MultiTenancy.HostAppPaymentConfigurations";
+    private const string PermAppHomePageConfigs = "MultiTenancy.AppHomePageConfigs";
+    private const string PermHostAppHomePageConfigs = "MultiTenancy.HostAppHomePageConfigs";
+    private const string PermAppZaloAuths = "MultiTenancy.AppZaloAuths";
+    private const string PermHostAppZaloAuths = "MultiTenancy.HostAppZaloAuths";
+    private const string PermAppPromotionPolicies = "MultiTenancy.AppPromotionPolicies";
+    private const string PermHostAppPromotionPolicies = "MultiTenancy.HostAppPromotionPolicies";
+    private const string PermAppCustomerTypes = "MultiTenancy.AppCustomerTypes";
+    private const string PermHostAppCustomerTypes = "MultiTenancy.HostAppCustomerTypes";
+    private const string PermAppPromotionTypes = "MultiTenancy.AppPromotionType";
+    private const string PermHostAppPromotionTypes = "MultiTenancy.HostAppPromotionType";
+    private const string PermAppCalendarSlots = "MultiTenancy.AppCalendarSlots";
+    private const string PermHostAppCalendarSlots = "MultiTenancy.HostAppCalendarSlots";
+    private const string PermAppSpecialDates = "MultiTenancy.AppSpecialDates";
+    private const string PermHostAppSpecialDates = "MultiTenancy.HostAppSpecialDates";
+    private const string PermAppBookings = "MultiTenancy.AppBookings";
+    private const string PermHostAppBookings = "MultiTenancy.HostAppBookings";
+    private const string PermSalonBeautyCustomers = "MultiTenancy.SalonBeautyCustomers";
+    private const string PermHostSalonBeautyCustomers = "MultiTenancy.HostSalonBeautyCustomers";
+    private const string PermSalonBeautyLocations = "MultiTenancy.SalonBeautyLocations";
+    private const string PermHostSalonBeautyLocations = "MultiTenancy.HostSalonBeautyLocations";
+    private const string PermSalonBeautyTimeSlots = "MultiTenancy.SalonBeautyTimeSlots";
+    private const string PermHostSalonBeautyTimeSlots = "MultiTenancy.HostSalonBeautyTimeSlots";
+    private const string PermSalonBeautyServiceCategories = "MultiTenancy.SalonBeautyServiceCategories";
+    private const string PermHostSalonBeautyServiceCategories = "MultiTenancy.HostSalonBeautyServiceCategories";
+    private const string PermSalonBeautyServices = "MultiTenancy.SalonBeautyServices";
+    private const string PermHostSalonBeautyServices = "MultiTenancy.HostSalonBeautyServices";
+    private const string PermSalonBeautyStylists = "MultiTenancy.SalonBeautyStylists";
+    private const string PermHostSalonBeautyStylists = "MultiTenancy.HostSalonBeautyStylists";
+    private const string PermSalonBeautyDeposits = "MultiTenancy.SalonBeautyDeposits";
+    private const string PermHostSalonBeautyDeposits = "MultiTenancy.HostSalonBeautyDeposits";
+    private const string PermSalonBeautyLoyaltyConfig = "MultiTenancy.SalonBeautyLoyaltyConfig";
+    private const string PermHostSalonBeautyLoyaltyConfig = "MultiTenancy.HostSalonBeautyLoyaltyConfig";
+    private const string PermAppFnbCategories = "MultiTenancy.AppFnbCategories";
+    private const string PermHostAppFnbCategories = "MultiTenancy.HostAppFnbCategories";
+    private const string PermAppFnbItems = "MultiTenancy.AppFnbItems";
+    private const string PermHostAppFnbItems = "MultiTenancy.HostAppFnbItems";
+    private const string PermAppFnbKitchenBoard = "MultiTenancy.AppFnbKitchenBoard";
+    private const string PermHostAppFnbKitchenBoard = "MultiTenancy.HostAppFnbKitchenBoard";
+    private const string PermAppProCategories = "MultiTenancy.AppProCategories";
+    private const string PermHostAppProCategories = "MultiTenancy.HostAppProCategories";
+    private const string PermAppProItems = "MultiTenancy.AppProItems";
+    private const string PermHostAppProItems = "MultiTenancy.HostAppProItems";
+    private const string PermAppProOrdersBoard = "MultiTenancy.AppProOrdersBoard";
+    private const string PermHostAppProOrdersBoard = "MultiTenancy.HostAppProOrdersBoard";
+    private const string PermAppEmails = "MultiTenancy.AppEmails";
+    private const string PermHostAppEmails = "MultiTenancy.HostAppEmails";
 
     // Feature constants — keep in sync with Application.Contracts/Features/*/*Features.cs
     private const string FeatAppSettings = "MiniAppSetting.Management";
@@ -64,10 +112,16 @@ public class AppDocumentsDataSeedContributor : IDataSeedContributor, ITransientD
         var existing = (await _sectionRepo.GetListAsync())
             .ToDictionary(x => x.Slug, x => x, StringComparer.OrdinalIgnoreCase);
 
+        var existingPages = (await _pageRepo.GetListAsync())
+            .GroupBy(p => p.SectionId)
+            .ToDictionary(g => g.Key, g => g.ToDictionary(p => p.Slug, p => p, StringComparer.OrdinalIgnoreCase));
+
         var seeds = BuildSeeds();
 
         foreach (var seed in seeds)
         {
+            DocumentSection section;
+
             if (existing.TryGetValue(seed.Slug, out var current))
             {
                 // Upsert metadata only — keep user-edited Name/Icon/Order/Status/Content untouched.
@@ -92,34 +146,73 @@ public class AppDocumentsDataSeedContributor : IDataSeedContributor, ITransientD
                 {
                     await _sectionRepo.UpdateAsync(current, autoSave: true);
                 }
-                continue;
+
+                section = current;
+            }
+            else
+            {
+                section = new DocumentSection(_guidGenerator.Create(), seed.Name, seed.Slug)
+                {
+                    Icon = seed.Icon,
+                    DisplayOrder = seed.DisplayOrder,
+                    FeatureName = seed.FeatureName,
+                    TenantPermissionName = seed.TenantPermissionName,
+                    HostPermissionName = seed.HostPermissionName,
+                    Status = (byte)DocumentStatus.Published
+                };
+
+                await _sectionRepo.InsertAsync(section, autoSave: true);
             }
 
-            var section = new DocumentSection(_guidGenerator.Create(), seed.Name, seed.Slug)
+            // Seed pages for this section
+            var sectionPages = existingPages.TryGetValue(section.Id, out var sp) ? sp : new Dictionary<string, DocumentPage>(StringComparer.OrdinalIgnoreCase);
+            var pageSeeds = GetPagesForSection(seed.Slug);
+
+            foreach (var pageSeed in pageSeeds)
             {
-                Icon = seed.Icon,
-                DisplayOrder = seed.DisplayOrder,
-                FeatureName = seed.FeatureName,
-                TenantPermissionName = seed.TenantPermissionName,
-                HostPermissionName = seed.HostPermissionName,
-                Status = (byte)DocumentStatus.Published
-            };
+                if (sectionPages.TryGetValue(pageSeed.Slug, out var existingPage))
+                {
+                    // Upsert metadata only — preserve user-edited Title/Content/Status
+                    var pageChanged = false;
+                    if (existingPage.FeatureName != pageSeed.FeatureName)
+                    {
+                        existingPage.FeatureName = pageSeed.FeatureName;
+                        pageChanged = true;
+                    }
+                    if (existingPage.TenantPermissionName != pageSeed.TenantPermissionName)
+                    {
+                        existingPage.TenantPermissionName = pageSeed.TenantPermissionName;
+                        pageChanged = true;
+                    }
+                    if (existingPage.HostPermissionName != pageSeed.HostPermissionName)
+                    {
+                        existingPage.HostPermissionName = pageSeed.HostPermissionName;
+                        pageChanged = true;
+                    }
 
-            await _sectionRepo.InsertAsync(section, autoSave: true);
+                    if (pageChanged)
+                    {
+                        await _pageRepo.UpdateAsync(existingPage, autoSave: true);
+                    }
+                    continue;
+                }
 
-            var page = new DocumentPage(
-                _guidGenerator.Create(),
-                section.Id,
-                "Giới thiệu",
-                "gioi-thieu")
-            {
-                ContentHtml = $"<h2>{System.Net.WebUtility.HtmlEncode(seed.Name)}</h2>"
-                    + "<p>Nội dung đang được biên soạn. Quản trị viên Host có thể chỉnh sửa nội dung tại trang quản lý tài liệu.</p>",
-                DisplayOrder = 1,
-                Status = (byte)DocumentStatus.Published
-            };
+                var page = new DocumentPage(
+                    _guidGenerator.Create(),
+                    section.Id,
+                    pageSeed.Title,
+                    pageSeed.Slug)
+                {
+                    ContentHtml = pageSeed.ContentHtml,
+                    DisplayOrder = pageSeed.DisplayOrder,
+                    Status = (byte)DocumentStatus.Published,
+                    FeatureName = pageSeed.FeatureName,
+                    TenantPermissionName = pageSeed.TenantPermissionName,
+                    HostPermissionName = pageSeed.HostPermissionName
+                };
 
-            await _pageRepo.InsertAsync(page, autoSave: true);
+                await _pageRepo.InsertAsync(page, autoSave: true);
+            }
         }
     }
 
@@ -224,6 +317,17 @@ public class AppDocumentsDataSeedContributor : IDataSeedContributor, ITransientD
         public string Name { get; set; } = null!;
         public string Icon { get; set; } = null!;
         public int DisplayOrder { get; set; }
+        public string? FeatureName { get; set; }
+        public string? TenantPermissionName { get; set; }
+        public string? HostPermissionName { get; set; }
+    }
+
+    private sealed class PageSeed
+    {
+        public string Slug { get; set; } = null!;
+        public string Title { get; set; } = null!;
+        public int DisplayOrder { get; set; }
+        public string ContentHtml { get; set; } = null!;
         public string? FeatureName { get; set; }
         public string? TenantPermissionName { get; set; }
         public string? HostPermissionName { get; set; }
