@@ -12,15 +12,24 @@ public partial class AppDocumentsDataSeedContributor
             Title = "Giới thiệu",
             DisplayOrder = 1,
             ContentHtml = @"<h2>Salon Beauty</h2>
-<p>Chuyên mục <strong>Salon Beauty</strong> cho phép quản lý toàn bộ hoạt động kinh doanh Salon: dịch vụ, nhân viên, nạp tiền và chương trình tích điểm khách hàng thân thiết.</p>
-<h3>Các chức năng trong chuyên mục</h3>
-<ul>
-<li><strong>Danh mục dịch vụ</strong> — Quản lý nhóm/danh mục dịch vụ Salon</li>
-<li><strong>Dịch vụ</strong> — Quản lý từng dịch vụ với giá, thời gian, nhân viên phù hợp</li>
-<li><strong>Nhân viên</strong> — Quản lý thông tin nhân viên/stylist</li>
-<li><strong>Nạp tiền</strong> — Quản lý giao dịch nạp tiền khách hàng</li>
-<li><strong>Cấu hình tích điểm</strong> — Thiết lập tỷ lệ quy đổi và bậc thưởng</li>
-</ul>",
+<p>Chuyên mục <strong>Salon Beauty</strong> cho phép quản lý toàn bộ hoạt động kinh doanh Salon: từ danh mục dịch vụ, quản lý nhân viên đến nạp tiền và chương trình tích điểm khách hàng thân thiết.</p>
+
+<h3>Tổng quan các chức năng</h3>
+
+<h4>1. Danh mục dịch vụ</h4>
+<p>Quản lý các nhóm/danh mục dịch vụ Salon (Cắt tóc, Nhuộm, Spa, Nail, Chăm sóc da...). Mỗi danh mục có icon, mô tả và thứ tự hiển thị riêng. Danh mục là cấp cha để phân loại các dịch vụ con bên trong.</p>
+
+<h4>2. Dịch vụ</h4>
+<p>Quản lý từng dịch vụ Salon với đầy đủ thông tin: danh mục, giá, thời gian thực hiện (phút), vai trò nhân viên phù hợp (Stylist/Technician/Therapist) và cấp độ tối thiểu (Junior/Senior/Master/Director). Hỗ trợ toggle trạng thái và hiển thị trên Mini App.</p>
+
+<h4>3. Nhân viên (Stylists)</h4>
+<p>Quản lý thông tin nhân viên/stylist: avatar, mã NV, cơ sở làm việc, cấp độ, vai trò, giới tính, số năm kinh nghiệm. Hỗ trợ upload avatar, toggle trạng thái hoạt động và hiển thị trên Mini App. Nhân viên được gắn với cơ sở và khung giờ làm việc.</p>
+
+<h4>4. Nạp tiền (Deposits)</h4>
+<p>Quản lý giao dịch nạp tiền khách hàng với quy trình duyệt 2 bước (Chờ duyệt → Thành công/Hủy). Khi duyệt thành công, hệ thống tự động cộng tiền vào tài khoản, tính điểm tích lũy theo tỷ lệ quy đổi + điểm thưởng theo bậc, và ghi nhận lịch sử ledger (BalanceBefore/After). Đảm bảo ACID transaction.</p>
+
+<h4>5. Cấu hình tích điểm (Loyalty Config)</h4>
+<p>Thiết lập tỷ lệ quy đổi tiền → điểm (Exchange Rate) và các bậc thưởng bonus (Bonus Tier) khi nạp tiền. Ví dụ: mỗi 10.000đ = 1 điểm, nạp từ 500K được thêm 5% điểm. Cấu hình này áp dụng cho toàn bộ giao dịch nạp tiền của tenant.</p>",
             FeatureName = FeatSalonBeauty,
             TenantPermissionName = PermSalonBeautyBookings,
             HostPermissionName = PermHostSalonBeautyBookings
@@ -209,6 +218,11 @@ public partial class AppDocumentsDataSeedContributor
 <li>Thêm các bậc thưởng bonus để khuyến khích nạp nhiều</li>
 <li>Nhấn <strong>Lưu</strong> để áp dụng</li>
 </ol>
+<h3>Lưu ý</h3>
+<ul>
+<li>Thay đổi Exchange Rate chỉ áp dụng cho giao dịch mới, không ảnh hưởng giao dịch đã duyệt</li>
+<li>Bonus Tier áp dụng theo mức nạp của từng giao dịch, không phải tổng tích lũy</li>
+</ul>
 <div class=""doc-screenshot-placeholder""><p><em>📷 Ảnh minh họa giao diện Cấu hình tích điểm sẽ được bổ sung</em></p></div>",
             FeatureName = FeatSalonBeauty,
             TenantPermissionName = PermSalonBeautyLoyaltyConfig,

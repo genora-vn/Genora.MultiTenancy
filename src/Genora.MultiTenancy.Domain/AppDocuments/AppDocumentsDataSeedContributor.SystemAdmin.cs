@@ -12,16 +12,27 @@ public partial class AppDocumentsDataSeedContributor
             Title = "Giới thiệu",
             DisplayOrder = 1,
             ContentHtml = @"<h2>Quản trị hệ thống</h2>
-<p>Chuyên mục <strong>Quản trị hệ thống</strong> cho phép quản lý người dùng, phân quyền, cấu hình email và theo dõi nhật ký hoạt động của hệ thống.</p>
-<h3>Các chức năng trong chuyên mục</h3>
-<ul>
-<li><strong>Vai trò</strong> — Quản lý vai trò và phân quyền</li>
-<li><strong>Người dùng</strong> — Quản lý tài khoản người dùng hệ thống</li>
-<li><strong>Cấu hình Email</strong> — Thiết lập SMTP gửi email</li>
-<li><strong>Zalo ZNS/ZBS</strong> — Cấu hình template tin nhắn Zalo</li>
-<li><strong>Mẫu Email</strong> — Quản lý nội dung mẫu email tự động</li>
-<li><strong>Nhật ký Email</strong> — Theo dõi lịch sử gửi email</li>
-</ul>",
+<p>Chuyên mục <strong>Quản trị hệ thống</strong> cho phép quản lý người dùng, phân quyền, cấu hình gửi email/tin nhắn và theo dõi nhật ký hoạt động. Đây là khu vực dành cho quản trị viên cấp cao để thiết lập và vận hành hệ thống.</p>
+
+<h3>Tổng quan các chức năng</h3>
+
+<h4>1. Vai trò (Roles)</h4>
+<p>Quản lý các vai trò trong hệ thống và phân quyền chi tiết cho từng vai trò. Mỗi người dùng có thể được gán một hoặc nhiều vai trò. Quyền được tổ chức theo nhóm chức năng (Xem, Tạo, Sửa, Xóa) và kiểm soát bởi Feature + Permission. Vai trò admin mặc định có tất cả quyền.</p>
+
+<h4>2. Người dùng (Users)</h4>
+<p>Quản lý tài khoản đăng nhập hệ thống quản trị. Hỗ trợ tạo tài khoản, gán vai trò, đặt lại mật khẩu, khóa/mở khóa tài khoản. Mỗi người dùng được gán vai trò để xác định quyền truy cập các chức năng trong hệ thống.</p>
+
+<h4>3. Cấu hình Email</h4>
+<p>Thiết lập thông tin SMTP server để hệ thống gửi email tự động: thông báo booking, xác nhận đơn hàng, reset mật khẩu. Cấu hình bao gồm: host, port, username, password, SSL, địa chỉ gửi đi. Hỗ trợ gửi email test để kiểm tra cấu hình.</p>
+
+<h4>4. Zalo ZNS/ZBS</h4>
+<p>Cấu hình các template tin nhắn Zalo tự động gửi cho khách hàng. ZNS (Notification Service) cho thông báo giao dịch, ZBS (Business Service) cho chăm sóc khách hàng. Mỗi template có các tham số riêng được hệ thống tự động điền khi gửi.</p>
+
+<h4>5. Mẫu Email (Email Templates)</h4>
+<p>Quản lý nội dung các mẫu email tự động gửi. Sử dụng cú pháp Scriban để chèn thông tin động (tên khách, mã booking, tổng tiền...). Hỗ trợ bật/tắt từng mẫu email và chỉnh sửa nội dung HTML.</p>
+
+<h4>6. Nhật ký Email</h4>
+<p>Theo dõi lịch sử tất cả email đã gửi từ hệ thống. Xem trạng thái gửi thành công/thất bại, nội dung email, thông tin lỗi. Hỗ trợ gửi lại email bị thất bại sau khi khắc phục nguyên nhân.</p>",
             FeatureName = null,
             TenantPermissionName = null,
             HostPermissionName = null
@@ -47,6 +58,7 @@ public partial class AppDocumentsDataSeedContributor
 <li>Mỗi module có nhóm quyền riêng (Xem, Tạo, Sửa, Xóa)</li>
 <li>Quyền được kiểm soát bởi Feature (tính năng đã bật) + Permission (quyền được gán)</li>
 <li>Vai trò <strong>admin</strong> mặc định có tất cả quyền</li>
+<li>Một người dùng có thể có nhiều vai trò — quyền được gộp (union)</li>
 </ul>
 <h3>Hướng dẫn tạo vai trò mới</h3>
 <ol>
@@ -56,6 +68,16 @@ public partial class AppDocumentsDataSeedContributor
 <li>Tick chọn các quyền cần thiết cho vai trò đó</li>
 <li>Nhấn <strong>Lưu</strong> để áp dụng</li>
 </ol>
+<h3>Ví dụ vai trò thường dùng</h3>
+<table class=""table table-bordered"">
+<thead><tr><th>Vai trò</th><th>Quyền gợi ý</th></tr></thead>
+<tbody>
+<tr><td>Nhân viên bếp</td><td>Xem đơn hàng F&amp;B, Bảng bếp</td></tr>
+<tr><td>Quản lý Proshop</td><td>CRUD sản phẩm/danh mục/đơn hàng Proshop</td></tr>
+<tr><td>Lễ tân Golf</td><td>Xem/Tạo booking, Xem khách hàng</td></tr>
+<tr><td>Quản lý Salon</td><td>Toàn bộ quyền Salon Beauty</td></tr>
+</tbody>
+</table>
 <div class=""doc-screenshot-placeholder""><p><em>📷 Ảnh minh họa giao diện Vai trò sẽ được bổ sung</em></p></div>",
             FeatureName = null,
             TenantPermissionName = null,
@@ -129,6 +151,14 @@ public partial class AppDocumentsDataSeedContributor
 <tr><td>Sender Name</td><td>Tên hiển thị</td><td>Genora System</td></tr>
 </tbody>
 </table>
+<h3>Hướng dẫn cấu hình Gmail</h3>
+<ol>
+<li>Bật xác minh 2 bước trên tài khoản Google</li>
+<li>Tạo ""Mật khẩu ứng dụng"" tại myaccount.google.com</li>
+<li>Nhập: Host = smtp.gmail.com, Port = 587, SSL = Có</li>
+<li>Username = email Gmail, Password = mật khẩu ứng dụng vừa tạo</li>
+<li>Nhấn <strong>Gửi email test</strong> để kiểm tra</li>
+</ol>
 <div class=""doc-screenshot-placeholder""><p><em>📷 Ảnh minh họa giao diện Cấu hình Email sẽ được bổ sung</em></p></div>",
             FeatureName = null,
             TenantPermissionName = null,
@@ -145,8 +175,8 @@ public partial class AppDocumentsDataSeedContributor
 <table class=""table table-bordered"">
 <thead><tr><th>Loại</th><th>Mô tả</th><th>Khi nào gửi</th></tr></thead>
 <tbody>
-<tr><td>ZNS (Zalo Notification Service)</td><td>Tin nhắn thông báo</td><td>Xác nhận booking, thông báo thanh toán</td></tr>
-<tr><td>ZBS (Zalo Business Service)</td><td>Tin nhắn chăm sóc</td><td>Nhắc lịch hẹn, đánh giá dịch vụ</td></tr>
+<tr><td>ZNS (Zalo Notification Service)</td><td>Tin nhắn thông báo giao dịch</td><td>Xác nhận booking, thông báo thanh toán</td></tr>
+<tr><td>ZBS (Zalo Business Service)</td><td>Tin nhắn chăm sóc khách hàng</td><td>Nhắc lịch hẹn, đánh giá dịch vụ</td></tr>
 </tbody>
 </table>
 <h3>Các tính năng chính</h3>
@@ -156,16 +186,21 @@ public partial class AppDocumentsDataSeedContributor
 <li><strong>Xem mẫu tin:</strong> Preview nội dung template</li>
 </ul>
 <h3>Các sự kiện gửi tin tự động</h3>
-<ul>
-<li><strong>Booking Created:</strong> Khi có booking mới (Golf/Salon)</li>
-<li><strong>Booking Confirmed:</strong> Khi booking được xác nhận</li>
-<li><strong>Service Review:</strong> Khi dịch vụ hoàn thành, gửi link đánh giá</li>
-<li><strong>Payment Success:</strong> Khi thanh toán thành công</li>
-</ul>
+<table class=""table table-bordered"">
+<thead><tr><th>Sự kiện</th><th>Loại</th><th>Tham số</th></tr></thead>
+<tbody>
+<tr><td>Booking Created</td><td>ZNS</td><td>customer_name, booking_code, schedule_time, address</td></tr>
+<tr><td>Booking Confirmed</td><td>ZNS</td><td>customer_name, booking_code, schedule_time</td></tr>
+<tr><td>Service Review</td><td>ZBS</td><td>customer_name, booking_code, schedule_time, address</td></tr>
+<tr><td>Payment Success</td><td>ZNS</td><td>customer_name, amount, order_code</td></tr>
+</tbody>
+</table>
 <h3>Lưu ý</h3>
 <ul>
-<li>Template ID phải được tạo và duyệt trên Zalo OA trước khi sử dụng</li>
-<li>Các tham số template (customer_name, booking_code...) được hệ thống tự động điền</li>
+<li>Template ID phải được tạo và duyệt trên Zalo OA Console trước khi sử dụng</li>
+<li>Các tham số template được hệ thống tự động điền — không cần nhập thủ công</li>
+<li>Khách hàng phải đã follow Zalo OA mới nhận được tin nhắn ZNS</li>
+<li>ZBS có thể gửi cho khách chưa follow nhưng bị giới hạn số lượng/ngày</li>
 </ul>
 <div class=""doc-screenshot-placeholder""><p><em>📷 Ảnh minh họa giao diện Zalo ZNS/ZBS sẽ được bổ sung</em></p></div>",
             FeatureName = null,
@@ -187,12 +222,15 @@ public partial class AppDocumentsDataSeedContributor
 <li><strong>Bật/tắt:</strong> Kích hoạt hoặc tắt gửi email cho từng mẫu</li>
 </ul>
 <h3>Các mẫu email phổ biến</h3>
-<ul>
-<li><strong>Booking New Request:</strong> Thông báo có booking mới cho quản trị viên</li>
-<li><strong>Booking Confirmed:</strong> Xác nhận booking cho khách hàng</li>
-<li><strong>Order Created:</strong> Thông báo đơn hàng mới</li>
-<li><strong>Payment Success:</strong> Xác nhận thanh toán thành công</li>
-</ul>
+<table class=""table table-bordered"">
+<thead><tr><th>Mẫu</th><th>Sự kiện</th><th>Người nhận</th></tr></thead>
+<tbody>
+<tr><td>Booking New Request</td><td>Có booking mới</td><td>Quản trị viên</td></tr>
+<tr><td>Booking Confirmed</td><td>Xác nhận booking</td><td>Khách hàng</td></tr>
+<tr><td>Order Created</td><td>Đơn hàng mới</td><td>Quản trị viên</td></tr>
+<tr><td>Payment Success</td><td>Thanh toán thành công</td><td>Khách hàng</td></tr>
+</tbody>
+</table>
 <h3>Biến Scriban thường dùng</h3>
 <table class=""table table-bordered"">
 <thead><tr><th>Biến</th><th>Mô tả</th></tr></thead>
@@ -201,12 +239,14 @@ public partial class AppDocumentsDataSeedContributor
 <tr><td>{{ booking_code }}</td><td>Mã booking</td></tr>
 <tr><td>{{ total_amount }}</td><td>Tổng tiền</td></tr>
 <tr><td>{{ play_date }}</td><td>Ngày chơi/hẹn</td></tr>
+<tr><td>{{ golf_course_name }}</td><td>Tên sân golf</td></tr>
 </tbody>
 </table>
 <h3>Lưu ý</h3>
 <ul>
-<li>Sử dụng cú pháp Scriban: <code>{{ variable_name }}</code></li>
-<li>Kiểm tra null bằng <code>!= null</code> (không dùng <code>!= empty</code>)</li>
+<li>Cú pháp Scriban: <code>{{ variable_name }}</code></li>
+<li>Kiểm tra null: dùng <code>!= null</code> (không dùng <code>!= empty</code>)</li>
+<li>Điều kiện: <code>{{ if variable != null }}...{{ end }}</code></li>
 <li>Gửi email test trước khi kích hoạt chính thức</li>
 </ul>
 <div class=""doc-screenshot-placeholder""><p><em>📷 Ảnh minh họa giao diện Mẫu Email sẽ được bổ sung</em></p></div>",
@@ -243,8 +283,8 @@ public partial class AppDocumentsDataSeedContributor
 <ol>
 <li>Lọc danh sách theo trạng thái <strong>Thất bại</strong></li>
 <li>Kiểm tra thông tin lỗi để xác định nguyên nhân</li>
+<li>Nguyên nhân phổ biến: cấu hình SMTP sai, email người nhận không tồn tại, vượt giới hạn gửi</li>
 <li>Nếu do cấu hình SMTP: sửa lại tại <strong>Cấu hình Email</strong></li>
-<li>Nếu do địa chỉ email sai: liên hệ khách hàng cập nhật</li>
 <li>Nhấn <strong>Gửi lại</strong> sau khi khắc phục</li>
 </ol>
 <div class=""doc-screenshot-placeholder""><p><em>📷 Ảnh minh họa giao diện Nhật ký Email sẽ được bổ sung</em></p></div>",

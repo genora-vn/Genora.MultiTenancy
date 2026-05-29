@@ -12,10 +12,18 @@ public partial class AppDocumentsDataSeedContributor
             Title = "Giới thiệu",
             DisplayOrder = 1,
             ContentHtml = @"<h2>Tin tức</h2>
-<p>Chuyên mục <strong>Tin tức</strong> cho phép quản lý các bài viết tin tức, thông báo hiển thị trên Zalo Mini App. Hỗ trợ soạn thảo nội dung HTML phong phú với hình ảnh, video.</p>
-<h3>Các chức năng trong chuyên mục</h3>
+<p>Chuyên mục <strong>Tin tức</strong> cho phép quản lý các bài viết tin tức, thông báo, khuyến mãi hiển thị trên Zalo Mini App. Đây là công cụ truyền thông giúp doanh nghiệp cập nhật thông tin đến khách hàng một cách nhanh chóng và chuyên nghiệp.</p>
+
+<h3>Tổng quan các chức năng</h3>
+
+<h4>1. Quản lý tin tức</h4>
+<p>Tạo và quản lý các bài viết với trình soạn thảo HTML phong phú (Summernote). Hỗ trợ chèn hình ảnh, video, bảng, liên kết vào nội dung bài viết. Mỗi bài viết có 3 trạng thái: Nháp (đang soạn), Đã xuất bản (hiển thị trên Mini App), Ẩn (tạm ẩn khỏi Mini App). Quản lý thứ tự hiển thị và ngày xuất bản để kiểm soát nội dung hiển thị cho khách hàng.</p>
+
+<h3>Lưu ý</h3>
 <ul>
-<li><strong>Quản lý tin tức</strong> — Tạo, chỉnh sửa, xuất bản và quản lý các bài viết</li>
+<li>Nội dung bài viết được lazy load khi mở modal chỉnh sửa để tối ưu hiệu suất trang danh sách</li>
+<li>Chỉ bài viết có trạng thái <strong>Đã xuất bản</strong> mới hiển thị trên Mini App</li>
+<li>Thứ tự hiển thị (Display Order) quyết định vị trí bài viết trên danh sách tin tức Mini App</li>
 </ul>",
             FeatureName = FeatNews,
             TenantPermissionName = PermAppNews,
@@ -53,15 +61,17 @@ public partial class AppDocumentsDataSeedContributor
 <ol>
 <li>Truy cập menu <strong>Tin tức → Quản lý tin tức</strong></li>
 <li>Nhấn <strong>Thêm mới</strong> để tạo bài viết</li>
-<li>Nhập tiêu đề, chọn ngày xuất bản, soạn nội dung bằng trình soạn thảo</li>
+<li>Nhập tiêu đề, chọn ngày xuất bản</li>
+<li>Soạn nội dung bằng trình soạn thảo (hỗ trợ hình ảnh, video, bảng, liên kết)</li>
 <li>Chọn trạng thái <strong>Đã xuất bản</strong> để hiển thị trên Mini App</li>
+<li>Thiết lập thứ tự hiển thị (số nhỏ hiển thị trước)</li>
 <li>Nhấn <strong>Lưu</strong> để hoàn tất</li>
 </ol>
 <h3>Lưu ý</h3>
 <ul>
-<li>Nội dung bài viết hỗ trợ HTML: hình ảnh, video, bảng, liên kết</li>
-<li>Nội dung được lazy load khi mở modal chỉnh sửa để tối ưu hiệu suất</li>
-<li>Thứ tự hiển thị (Display Order) quyết định vị trí bài viết trên Mini App</li>
+<li>Nội dung bài viết hỗ trợ HTML đầy đủ: hình ảnh, video, bảng, liên kết</li>
+<li>Khuyến nghị tối ưu hình ảnh trước khi upload (nén, resize) để Mini App load nhanh</li>
+<li>Có thể lưu bài viết ở trạng thái Nháp để soạn dần, khi hoàn tất chuyển sang Đã xuất bản</li>
 </ul>
 <div class=""doc-screenshot-placeholder""><p><em>📷 Ảnh minh họa giao diện Quản lý tin tức sẽ được bổ sung</em></p></div>",
             FeatureName = FeatNews,

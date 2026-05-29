@@ -12,14 +12,21 @@ public partial class AppDocumentsDataSeedContributor
             Title = "Giới thiệu",
             DisplayOrder = 1,
             ContentHtml = @"<h2>Proshop</h2>
-<p>Chuyên mục <strong>Proshop</strong> cho phép quản lý cửa hàng bán lẻ phụ kiện, trang phục golf. Hỗ trợ quản lý danh mục, sản phẩm, đơn hàng và bảng đơn hàng realtime.</p>
-<h3>Các chức năng trong chuyên mục</h3>
-<ul>
-<li><strong>Danh mục Proshop</strong> — Quản lý nhóm/danh mục sản phẩm</li>
-<li><strong>Sản phẩm Proshop</strong> — Quản lý từng sản phẩm với giá và hình ảnh</li>
-<li><strong>Đơn hàng Proshop</strong> — Quản lý đơn đặt hàng, theo dõi trạng thái</li>
-<li><strong>Bảng đơn hàng</strong> — Giao diện realtime theo dõi và xử lý đơn hàng</li>
-</ul>",
+<p>Chuyên mục <strong>Proshop</strong> cho phép quản lý toàn bộ hoạt động cửa hàng bán lẻ phụ kiện, trang phục golf. Từ quản lý danh mục, sản phẩm đến xử lý đơn hàng realtime với bảng đơn hàng chuyên dụng.</p>
+
+<h3>Tổng quan các chức năng</h3>
+
+<h4>1. Danh mục Proshop</h4>
+<p>Quản lý các nhóm/danh mục sản phẩm Proshop (Gậy golf, Quần áo, Giày, Phụ kiện...). Hỗ trợ import/export Excel hàng loạt, toggle trạng thái hoạt động trực tiếp trên danh sách. Mỗi sản phẩm Proshop sẽ thuộc về một danh mục để phân loại và hiển thị trên Mini App.</p>
+
+<h4>2. Sản phẩm Proshop</h4>
+<p>Quản lý từng sản phẩm bán lẻ với đầy đủ thông tin: hình ảnh, giá, danh mục, thứ tự hiển thị. Hỗ trợ import/export Excel, toggle trạng thái hoạt động và hiển thị trên Mini App (IsAvailable). Sản phẩm có badge màu theo danh mục để dễ phân biệt.</p>
+
+<h4>3. Đơn hàng Proshop</h4>
+<p>Quản lý tất cả đơn đặt hàng Proshop từ Mini App. Theo dõi trạng thái xử lý (Đã tạo → Đang xử lý → Sẵn sàng → Đã giao) và thanh toán (Chưa TT → Đã TT / Hoàn tiền). Hỗ trợ cập nhật trạng thái inline, xuất Excel, auto-refresh và thông báo realtime qua SignalR khi có đơn mới.</p>
+
+<h4>4. Bảng đơn hàng (Orders Board)</h4>
+<p>Giao diện realtime chuyên dụng cho nhân viên Proshop. Hiển thị đơn hàng dạng board theo trạng thái, phát âm thanh khi có đơn mới, hỗ trợ cập nhật trạng thái nhanh bằng một click. Thiết kế để mở trên màn hình riêng tại quầy Proshop.</p>",
             FeatureName = FeatProshop,
             TenantPermissionName = PermAppProOrders,
             HostPermissionName = PermHostAppProOrders
@@ -154,6 +161,12 @@ public partial class AppDocumentsDataSeedContributor
 <li>Nhấn vào đơn hàng để xem chi tiết sản phẩm cần chuẩn bị</li>
 <li>Nhấn nút chuyển trạng thái khi hoàn thành từng bước xử lý</li>
 </ol>
+<h3>Lưu ý</h3>
+<ul>
+<li>Nên mở Bảng đơn hàng trên màn hình/tablet riêng đặt tại quầy</li>
+<li>Đảm bảo kết nối internet ổn định để nhận thông báo realtime</li>
+<li>Có thể mở đồng thời trên nhiều thiết bị</li>
+</ul>
 <div class=""doc-screenshot-placeholder""><p><em>📷 Ảnh minh họa giao diện Bảng đơn hàng sẽ được bổ sung</em></p></div>",
             FeatureName = FeatProshop,
             TenantPermissionName = PermAppProOrdersBoard,

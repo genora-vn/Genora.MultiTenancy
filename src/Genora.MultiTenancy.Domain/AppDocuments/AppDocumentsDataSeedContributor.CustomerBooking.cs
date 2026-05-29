@@ -11,15 +11,16 @@ public partial class AppDocumentsDataSeedContributor
             Slug = "gioi-thieu",
             Title = "Giới thiệu",
             DisplayOrder = 1,
-            ContentHtml = @"<h2>Khách hàng &amp; Đặt chỗ</h2>
-<p>Chuyên mục <strong>Khách hàng &amp; Đặt chỗ</strong> cho phép quản lý toàn bộ thông tin khách hàng và các đơn đặt chỗ (booking) từ nhiều nguồn khác nhau: Mini App, Hotline, Agent.</p>
-<h3>Các chức năng trong chuyên mục</h3>
-<ul>
-<li><strong>Khách hàng Golf</strong> — Quản lý thông tin khách hàng sân golf</li>
-<li><strong>Khách hàng Salon</strong> — Quản lý thông tin khách hàng Salon Beauty</li>
-<li><strong>Đặt chỗ Golf</strong> — Quản lý booking sân golf</li>
-<li><strong>Đặt lịch Salon</strong> — Quản lý booking Salon Beauty</li>
-</ul>",
+            ContentHtml = @"<h2>Khách hàng &amp; Đặt chỗ (Golf)</h2>
+<p>Chuyên mục <strong>Khách hàng &amp; Đặt chỗ (Golf)</strong> cho phép quản lý toàn bộ thông tin khách hàng sân golf và các đơn đặt chỗ (booking) từ nhiều nguồn khác nhau.</p>
+
+<h3>Tổng quan các chức năng</h3>
+
+<h4>1. Khách hàng Golf</h4>
+<p>Quản lý danh sách khách hàng sân golf với đầy đủ thông tin: mã khách hàng, họ tên, mã VGA, số điện thoại, loại khách hàng, email và trạng thái. Hỗ trợ import hàng loạt từ Excel, phân loại theo nguồn (Zalo Mini App, Thủ công, Import, Khác) và lọc theo nhiều tiêu chí. Khách hàng từ nguồn Mini App được đồng bộ tự động và không cho phép sửa số điện thoại để đảm bảo tính nhất quán.</p>
+
+<h4>2. Đặt chỗ Golf</h4>
+<p>Quản lý tất cả booking sân golf từ nhiều nguồn: Mini App (khách tự đặt), Hotline (nhân viên đặt hộ), Agent (đại lý). Theo dõi trạng thái booking qua các giai đoạn: Đang xử lý → Đã xác nhận → Đã thanh toán → Hoàn thành (hoặc Hủy). Hỗ trợ xuất Excel, lọc theo trạng thái/nguồn/ngày chơi, và quản lý thanh toán (COD, Online, Chuyển khoản).</p>",
             FeatureName = FeatBookings,
             TenantPermissionName = PermAppCustomers,
             HostPermissionName = PermHostAppCustomers
@@ -47,6 +48,16 @@ public partial class AppDocumentsDataSeedContributor
 <li>Trạng thái (Hoạt động / Ngừng)</li>
 <li>Thời gian tạo (Từ ngày — Đến ngày)</li>
 </ul>
+<h3>Nguồn khách hàng</h3>
+<table class=""table table-bordered"">
+<thead><tr><th>Nguồn</th><th>Mô tả</th><th>Ghi chú</th></tr></thead>
+<tbody>
+<tr><td>Zalo Mini App</td><td>Khách đăng ký qua Mini App</td><td>Không được sửa SĐT</td></tr>
+<tr><td>Thủ công (Manual)</td><td>Nhân viên tạo trực tiếp</td><td>Sửa được tất cả</td></tr>
+<tr><td>Import (Extent)</td><td>Nhập từ file Excel</td><td>Sửa được tất cả</td></tr>
+<tr><td>Khác (Other)</td><td>Nguồn khác</td><td>Sửa được tất cả</td></tr>
+</tbody>
+</table>
 <h3>Lưu ý</h3>
 <ul>
 <li>Khách hàng từ nguồn <strong>Zalo Mini App</strong> không được sửa số điện thoại (vì là key đồng bộ)</li>
@@ -59,45 +70,9 @@ public partial class AppDocumentsDataSeedContributor
         },
         new PageSeed
         {
-            Slug = "khach-hang-salon",
-            Title = "Khách hàng Salon",
-            DisplayOrder = 3,
-            ContentHtml = @"<h2>Khách hàng Salon</h2>
-<p>Trang <strong>Khách hàng Salon</strong> cho phép quản lý danh sách khách hàng Salon Beauty với thông tin chi tiết về hạng thành viên, tổng chi tiêu, lịch sử đặt lịch.</p>
-<h3>Các tính năng chính</h3>
-<ul>
-<li><strong>Xem danh sách:</strong> Hiển thị khách hàng với avatar, tên, mã, SĐT, hạng thành viên, tổng chi tiêu, lần đặt gần nhất</li>
-<li><strong>Thêm mới:</strong> Tạo khách hàng mới</li>
-<li><strong>Chỉnh sửa:</strong> Cập nhật thông tin khách hàng</li>
-<li><strong>Xóa:</strong> Xóa khách hàng</li>
-<li><strong>Xuất danh sách (CSV):</strong> Export danh sách khách hàng</li>
-<li><strong>Xem chi tiết:</strong> Trang chi tiết với KPI, lịch sử mua hàng, lịch sử nạp tiền</li>
-</ul>
-<h3>Trang chi tiết khách hàng</h3>
-<ul>
-<li><strong>KPI Cards:</strong> Tổng nạp tiền, Số lần ghé, Chi tiêu trung bình, Điểm tích lũy</li>
-<li><strong>Hạng thành viên:</strong> NEW → REGULAR → VIP → DIAMOND (tự động nâng hạng)</li>
-<li><strong>Lịch sử mua hàng:</strong> Danh sách booking đã hoàn thành</li>
-<li><strong>Lịch sử nạp tiền:</strong> Danh sách giao dịch nạp tiền</li>
-</ul>
-<h3>Bộ lọc</h3>
-<ul>
-<li>Tìm kiếm theo từ khóa</li>
-<li>Khoảng thời gian (Hôm nay, 7 ngày, 30 ngày, 90 ngày, Tất cả)</li>
-<li>Nhóm khách hàng (Mới, Thường xuyên, VIP)</li>
-<li>Kênh nguồn (Zalo Mini App, Thủ công...)</li>
-<li>Trạng thái hoạt động</li>
-</ul>
-<div class=""doc-screenshot-placeholder""><p><em>📷 Ảnh minh họa giao diện Khách hàng Salon sẽ được bổ sung</em></p></div>",
-            FeatureName = FeatSalonBeauty,
-            TenantPermissionName = PermSalonBeautyCustomers,
-            HostPermissionName = PermHostSalonBeautyCustomers
-        },
-        new PageSeed
-        {
             Slug = "dat-cho-golf",
             Title = "Đặt chỗ Golf",
-            DisplayOrder = 4,
+            DisplayOrder = 3,
             ContentHtml = @"<h2>Đặt chỗ Golf</h2>
 <p>Trang <strong>Đặt chỗ Golf</strong> cho phép quản lý tất cả booking sân golf từ nhiều nguồn: Mini App, Hotline, Agent. Hỗ trợ theo dõi trạng thái, xuất Excel và quản lý thanh toán.</p>
 <h3>Các tính năng chính</h3>
@@ -128,59 +103,18 @@ public partial class AppDocumentsDataSeedContributor
 <li>Ngày chơi (Từ ngày — Đến ngày)</li>
 </ul>
 <h3>Nguồn Booking</h3>
-<ul>
-<li><strong>MiniApp:</strong> Khách tự đặt qua Zalo Mini App</li>
-<li><strong>Hotline:</strong> Nhân viên đặt hộ qua điện thoại</li>
-<li><strong>Agent:</strong> Đại lý đặt hộ</li>
-</ul>
+<table class=""table table-bordered"">
+<thead><tr><th>Nguồn</th><th>Mô tả</th></tr></thead>
+<tbody>
+<tr><td>MiniApp</td><td>Khách tự đặt qua Zalo Mini App</td></tr>
+<tr><td>Hotline</td><td>Nhân viên đặt hộ qua điện thoại</td></tr>
+<tr><td>Agent</td><td>Đại lý đặt hộ</td></tr>
+</tbody>
+</table>
 <div class=""doc-screenshot-placeholder""><p><em>📷 Ảnh minh họa giao diện Đặt chỗ Golf sẽ được bổ sung</em></p></div>",
             FeatureName = FeatBookings,
             TenantPermissionName = PermAppBookings,
             HostPermissionName = PermHostAppBookings
-        },
-        new PageSeed
-        {
-            Slug = "dat-lich-salon",
-            Title = "Đặt lịch Salon",
-            DisplayOrder = 5,
-            ContentHtml = @"<h2>Đặt lịch Salon</h2>
-<p>Trang <strong>Đặt lịch Salon</strong> cho phép quản lý tất cả booking Salon Beauty. Hỗ trợ xem dạng danh sách và lịch (Calendar View), theo dõi trạng thái dịch vụ và thanh toán.</p>
-<h3>Các tính năng chính</h3>
-<ul>
-<li><strong>Xem danh sách:</strong> Hiển thị booking với mã, khách hàng, dịch vụ, nhân viên, ngày giờ, trạng thái, thanh toán, tổng tiền</li>
-<li><strong>Thêm mới:</strong> Tạo booking mới cho khách</li>
-<li><strong>Chỉnh sửa:</strong> Cập nhật thông tin booking</li>
-<li><strong>Xem chi tiết:</strong> Trang chi tiết đầy đủ với lịch sử thao tác</li>
-<li><strong>Đổi nhân viên:</strong> Chuyển booking sang nhân viên khác (cùng cơ sở)</li>
-<li><strong>Hủy booking:</strong> Hủy với lý do</li>
-<li><strong>Cập nhật trạng thái:</strong> Chuyển trạng thái dịch vụ và thanh toán inline</li>
-<li><strong>Calendar View:</strong> Xem booking dạng lịch theo ngày/tuần</li>
-<li><strong>Auto Refresh:</strong> Tự động làm mới dữ liệu mỗi 30 giây</li>
-<li><strong>Thống kê:</strong> Cards tổng quan (Tổng booking, Tổng giá trị, Tỷ lệ hoàn thành, Chưa xử lý)</li>
-</ul>
-<h3>Trạng thái Booking Salon</h3>
-<table class=""table table-bordered"">
-<thead><tr><th>Trạng thái</th><th>Mô tả</th></tr></thead>
-<tbody>
-<tr><td>Chờ xác nhận</td><td>Booking mới tạo</td></tr>
-<tr><td>Đã xác nhận</td><td>Nhân viên xác nhận lịch hẹn</td></tr>
-<tr><td>Đang thực hiện</td><td>Khách đang sử dụng dịch vụ</td></tr>
-<tr><td>Hoàn thành</td><td>Dịch vụ đã hoàn tất</td></tr>
-<tr><td>Đã hủy</td><td>Booking bị hủy</td></tr>
-</tbody>
-</table>
-<h3>Bộ lọc</h3>
-<ul>
-<li>Tìm kiếm (mã booking, tên khách, SĐT)</li>
-<li>Cơ sở</li>
-<li>Từ ngày — Đến ngày</li>
-<li>Trạng thái</li>
-<li>Nhân viên</li>
-</ul>
-<div class=""doc-screenshot-placeholder""><p><em>📷 Ảnh minh họa giao diện Đặt lịch Salon sẽ được bổ sung</em></p></div>",
-            FeatureName = FeatSalonBeauty,
-            TenantPermissionName = PermSalonBeautyBookings,
-            HostPermissionName = PermHostSalonBeautyBookings
         }
     };
 }

@@ -12,14 +12,21 @@ public partial class AppDocumentsDataSeedContributor
             Title = "Giới thiệu",
             DisplayOrder = 1,
             ContentHtml = @"<h2>F&amp;B (Food &amp; Beverage)</h2>
-<p>Chuyên mục <strong>F&amp;B</strong> cho phép quản lý toàn bộ hoạt động đặt đồ ăn thức uống, từ danh mục sản phẩm đến đơn hàng và bảng bếp theo dõi realtime.</p>
-<h3>Các chức năng trong chuyên mục</h3>
-<ul>
-<li><strong>Danh mục F&amp;B</strong> — Quản lý nhóm/danh mục món ăn, thức uống</li>
-<li><strong>Sản phẩm F&amp;B</strong> — Quản lý từng món ăn, thức uống với giá và hình ảnh</li>
-<li><strong>Đơn hàng F&amp;B</strong> — Quản lý đơn đặt hàng, theo dõi trạng thái phục vụ và thanh toán</li>
-<li><strong>Bảng bếp</strong> — Giao diện realtime cho nhà bếp theo dõi và xử lý đơn hàng</li>
-</ul>",
+<p>Chuyên mục <strong>F&amp;B</strong> cho phép quản lý toàn bộ hoạt động đặt đồ ăn thức uống tại sân golf hoặc cơ sở kinh doanh. Từ quản lý danh mục, sản phẩm đến xử lý đơn hàng realtime với bảng bếp chuyên dụng.</p>
+
+<h3>Tổng quan các chức năng</h3>
+
+<h4>1. Danh mục F&amp;B</h4>
+<p>Quản lý các nhóm/danh mục món ăn, thức uống (Đồ uống, Món chính, Tráng miệng, Snack...). Hỗ trợ import/export Excel hàng loạt, toggle trạng thái hoạt động trực tiếp trên danh sách. Mỗi sản phẩm F&amp;B sẽ thuộc về một danh mục để phân loại và hiển thị trên Mini App.</p>
+
+<h4>2. Sản phẩm F&amp;B</h4>
+<p>Quản lý từng món ăn, thức uống với đầy đủ thông tin: hình ảnh, giá, danh mục, thứ tự hiển thị. Hỗ trợ import/export Excel, toggle trạng thái hoạt động và hiển thị trên Mini App (IsAvailable). Sản phẩm có badge màu theo danh mục để dễ phân biệt.</p>
+
+<h4>3. Đơn hàng F&amp;B</h4>
+<p>Quản lý tất cả đơn đặt đồ ăn thức uống từ Mini App. Theo dõi trạng thái phục vụ (Đã tạo → Đang chuẩn bị → Đang giao → Đã phục vụ) và thanh toán (Chưa TT → Đã TT / Thất bại). Hỗ trợ cập nhật trạng thái inline, xuất Excel, auto-refresh và thông báo realtime qua SignalR khi có đơn mới.</p>
+
+<h4>4. Bảng bếp (Kitchen Board)</h4>
+<p>Giao diện realtime chuyên dụng cho nhân viên bếp. Hiển thị đơn hàng dạng board/kanban theo trạng thái, phát âm thanh khi có đơn mới, hỗ trợ cập nhật trạng thái nhanh bằng một click. Thiết kế để mở trên màn hình riêng tại khu vực bếp.</p>",
             FeatureName = FeatFnb,
             TenantPermissionName = PermAppFnbOrders,
             HostPermissionName = PermHostAppFnbOrders
@@ -155,6 +162,12 @@ public partial class AppDocumentsDataSeedContributor
 <li>Nhấn vào đơn hàng để xem chi tiết các món cần chuẩn bị</li>
 <li>Nhấn nút chuyển trạng thái khi hoàn thành từng bước</li>
 </ol>
+<h3>Lưu ý</h3>
+<ul>
+<li>Nên mở Bảng bếp trên màn hình/tablet riêng đặt tại bếp</li>
+<li>Đảm bảo kết nối internet ổn định để nhận thông báo realtime</li>
+<li>Có thể mở đồng thời trên nhiều thiết bị</li>
+</ul>
 <div class=""doc-screenshot-placeholder""><p><em>📷 Ảnh minh họa giao diện Bảng bếp sẽ được bổ sung</em></p></div>",
             FeatureName = FeatFnb,
             TenantPermissionName = PermAppFnbKitchenBoard,

@@ -1,3 +1,11 @@
+.lpx-content {
+    padding-top: 0;
+}
+
+.lpx-content-toolbar {
+    display: none;
+}
+
 .docs-shell {
     display: grid;
     grid-template-columns: 280px 1fr;
@@ -7,7 +15,7 @@
 
 .docs-sidebar {
     position: sticky;
-    top: 80px;
+    top: 50px;
     align-self: flex-start;
     background: #fff;
     border: 1px solid rgba(15, 23, 42, .08);

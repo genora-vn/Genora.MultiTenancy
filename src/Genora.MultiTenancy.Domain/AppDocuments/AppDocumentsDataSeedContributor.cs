@@ -240,6 +240,16 @@ public partial class AppDocumentsDataSeedContributor : IDataSeedContributor, ITr
         },
         new DocumentSeed
         {
+            Slug = "salon-location-schedule",
+            Name = "Cơ sở & Lịch làm việc",
+            Icon = "fa fa-building",
+            DisplayOrder = 22,
+            FeatureName = FeatSalonBeauty,
+            TenantPermissionName = PermSalonBeautyLocations,
+            HostPermissionName = PermHostSalonBeautyLocations
+        },
+        new DocumentSeed
+        {
             Slug = "salon-beauty",
             Name = "Salon Beauty",
             Icon = "fa fa-spa",
@@ -271,12 +281,22 @@ public partial class AppDocumentsDataSeedContributor : IDataSeedContributor, ITr
         new DocumentSeed
         {
             Slug = "customer-booking",
-            Name = "Khách hàng & Đặt chỗ",
+            Name = "Khách hàng & Đặt chỗ (Golf)",
             Icon = "fa fa-address-book",
             DisplayOrder = 30,
             FeatureName = FeatBookings,
             TenantPermissionName = PermAppCustomers,
             HostPermissionName = PermHostAppCustomers
+        },
+        new DocumentSeed
+        {
+            Slug = "customer-booking-salon",
+            Name = "Khách hàng & Đặt chỗ (Salon)",
+            Icon = "fa fa-calendar-check-o",
+            DisplayOrder = 32,
+            FeatureName = FeatSalonBeauty,
+            TenantPermissionName = PermSalonBeautyCustomers,
+            HostPermissionName = PermHostSalonBeautyCustomers
         },
         new DocumentSeed
         {

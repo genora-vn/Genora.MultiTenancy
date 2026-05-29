@@ -12,17 +12,27 @@ public partial class AppDocumentsDataSeedContributor
             Title = "Giới thiệu",
             DisplayOrder = 1,
             ContentHtml = @"<h2>Sân golf &amp; Giờ chơi</h2>
-<p>Chuyên mục <strong>Sân golf &amp; Giờ chơi</strong> (hoặc <strong>Cơ sở &amp; Lịch làm việc</strong> đối với Salon Beauty) cho phép quản lý toàn bộ thông tin về cơ sở vật chất, lịch trình hoạt động, loại khách hàng, chương trình khuyến mãi và các ngày đặc biệt.</p>
-<h3>Các chức năng trong chuyên mục</h3>
-<ul>
-<li><strong>Quản lý sân golf / Cơ sở</strong> — Thông tin sân golf hoặc cơ sở kinh doanh</li>
-<li><strong>Chính sách khuyến mãi</strong> — Cấu hình chính sách hoãn/hủy booking</li>
-<li><strong>Loại khách hàng</strong> — Phân loại khách (Visitor, Member, Member Guest...)</li>
-<li><strong>Loại khuyến mãi</strong> — Các loại deal/promotion (Early Bird, Twilight...)</li>
-<li><strong>Lịch chơi / Calendar Slots</strong> — Quản lý khung giờ chơi golf</li>
-<li><strong>Ngày đặc biệt</strong> — Cấu hình ngày lễ, cuối tuần, ngày hội viên</li>
-<li><strong>Lịch làm việc</strong> — Quản lý khung giờ làm việc nhân viên (Salon)</li>
-</ul>",
+<p>Chuyên mục <strong>Sân golf &amp; Giờ chơi</strong> là trung tâm quản lý toàn bộ hoạt động vận hành sân golf trên hệ thống. Tại đây, quản trị viên có thể thiết lập thông tin sân golf, cấu hình lịch chơi (tee time), phân loại khách hàng, quản lý chương trình khuyến mãi và các ngày đặc biệt ảnh hưởng đến giá.</p>
+
+<h3>Tổng quan các chức năng</h3>
+
+<h4>1. Quản lý sân golf</h4>
+<p>Tạo và quản lý thông tin các sân golf trong hệ thống. Mỗi sân golf là đơn vị cơ sở chính, được gắn với lịch chơi, loại khách hàng và chính sách khuyến mãi. Thông tin bao gồm: mã sân, tên, địa chỉ, số điện thoại, website, mô tả chi tiết và trạng thái hoạt động.</p>
+
+<h4>2. Chính sách khuyến mãi</h4>
+<p>Cấu hình chính sách hoãn/hủy booking theo từng tổ hợp (Sân golf + Loại khuyến mãi). Chính sách bao gồm: tiêu đề, số giờ hủy trước giờ chơi (ngày thường và cuối tuần), nội dung chi tiết hiển thị cho khách hàng trên Mini App khi đặt chỗ.</p>
+
+<h4>3. Loại khách hàng</h4>
+<p>Phân loại khách hàng theo các nhóm khác nhau (Visitor, Member, Member Guest...) với mức giá gốc riêng biệt. Hỗ trợ cấu hình giá theo loại ngày: Weekday, Weekend, Holiday, MemberDay. Mỗi loại có mã màu riêng để dễ nhận biết trên giao diện.</p>
+
+<h4>4. Loại khuyến mãi</h4>
+<p>Quản lý các loại chương trình khuyến mãi/deal áp dụng cho lịch chơi golf như: Early Bird, Twilight, Weekend Special, Holiday Deal... Mỗi loại khuyến mãi được gắn vào Calendar Slot để xác định mức giá và chính sách áp dụng.</p>
+
+<h4>5. Lịch chơi (Calendar Slots)</h4>
+<p>Chức năng quan trọng nhất để vận hành đặt chỗ. Quản lý các khung giờ chơi golf (tee time) với đầy đủ thông tin: ngày chơi, giờ bắt đầu/kết thúc, loại khuyến mãi, số chỗ tối đa, trạng thái. Hỗ trợ import hàng loạt từ Excel, quản lý dạng lịch (Calendar View), và thao tác hàng loạt (bulk activate/deactivate/delete).</p>
+
+<h4>6. Ngày đặc biệt</h4>
+<p>Cấu hình các loại ngày đặc biệt (Holiday, Weekend, MemberDay) để hệ thống tự động áp dụng mức giá tương ứng. Quy tắc ưu tiên: Holiday &gt; MemberDay &gt; Weekend &gt; Weekday. Hỗ trợ chọn ngày cụ thể (Holiday) hoặc thứ trong tuần (MemberDay, Weekend).</p>",
             FeatureName = FeatGolfCourse,
             TenantPermissionName = PermAppGolfCourses,
             HostPermissionName = PermHostAppGolfCourses
@@ -62,37 +72,9 @@ public partial class AppDocumentsDataSeedContributor
         },
         new PageSeed
         {
-            Slug = "co-so",
-            Title = "Quản lý cơ sở",
-            DisplayOrder = 3,
-            ContentHtml = @"<h2>Quản lý cơ sở</h2>
-<p>Trang <strong>Quản lý cơ sở</strong> cho phép tạo và quản lý các chi nhánh/cơ sở kinh doanh của Salon Beauty. Mỗi cơ sở có thông tin riêng về địa chỉ, giờ hoạt động và cấu hình khung giờ.</p>
-<h3>Các tính năng chính</h3>
-<ul>
-<li><strong>Xem danh sách:</strong> Hiển thị tất cả cơ sở với hình ảnh, tên, địa chỉ, liên hệ, giờ hoạt động, trạng thái</li>
-<li><strong>Thêm mới:</strong> Tạo cơ sở mới với thông tin chi tiết</li>
-<li><strong>Chỉnh sửa:</strong> Cập nhật thông tin cơ sở</li>
-<li><strong>Xóa:</strong> Xóa cơ sở không còn hoạt động</li>
-<li><strong>Bật/tắt trạng thái:</strong> Toggle trạng thái hoạt động trực tiếp trên danh sách</li>
-<li><strong>Hiển thị trên App:</strong> Toggle hiển thị cơ sở trên Mini App</li>
-<li><strong>Cấu hình khung giờ:</strong> Thiết lập SlotDuration, BufferTime, MaxCapacityPerSlot cho cơ sở</li>
-</ul>
-<h3>Bộ lọc</h3>
-<ul>
-<li>Tìm kiếm theo từ khóa</li>
-<li>Lọc theo trạng thái (Hoạt động / Ngừng)</li>
-<li>Lọc theo hiển thị trên App (Có / Không)</li>
-</ul>
-<div class=""doc-screenshot-placeholder""><p><em>📷 Ảnh minh họa giao diện Quản lý cơ sở sẽ được bổ sung</em></p></div>",
-            FeatureName = FeatSalonBeauty,
-            TenantPermissionName = PermSalonBeautyLocations,
-            HostPermissionName = PermHostSalonBeautyLocations
-        },
-        new PageSeed
-        {
             Slug = "chinh-sach-khuyen-mai",
             Title = "Chính sách khuyến mãi",
-            DisplayOrder = 4,
+            DisplayOrder = 3,
             ContentHtml = @"<h2>Chính sách khuyến mãi</h2>
 <p>Trang <strong>Chính sách khuyến mãi</strong> cho phép cấu hình chính sách hoãn/hủy booking theo từng sân golf và loại khuyến mãi. Chính sách này sẽ hiển thị cho khách hàng khi đặt chỗ trên Mini App.</p>
 <h3>Các tính năng chính</h3>
@@ -124,7 +106,7 @@ public partial class AppDocumentsDataSeedContributor
         {
             Slug = "loai-khach-hang",
             Title = "Loại khách hàng",
-            DisplayOrder = 5,
+            DisplayOrder = 4,
             ContentHtml = @"<h2>Loại khách hàng</h2>
 <p>Trang <strong>Loại khách hàng</strong> cho phép phân loại khách hàng theo các nhóm khác nhau (Visitor, Member, Member Guest...) với mức giá gốc riêng biệt cho từng loại ngày.</p>
 <h3>Các tính năng chính</h3>
@@ -155,7 +137,7 @@ public partial class AppDocumentsDataSeedContributor
         {
             Slug = "loai-khuyen-mai",
             Title = "Loại khuyến mãi",
-            DisplayOrder = 6,
+            DisplayOrder = 5,
             ContentHtml = @"<h2>Loại khuyến mãi</h2>
 <p>Trang <strong>Loại khuyến mãi</strong> cho phép quản lý các loại chương trình khuyến mãi/deal áp dụng cho lịch chơi golf (Early Bird, Twilight, Weekend Special...).</p>
 <h3>Các tính năng chính</h3>
@@ -165,7 +147,7 @@ public partial class AppDocumentsDataSeedContributor
 <li><strong>Chỉnh sửa:</strong> Cập nhật thông tin</li>
 <li><strong>Xóa:</strong> Xóa loại khuyến mãi không còn sử dụng</li>
 </ul>
-<h3>Lu ý</h3>
+<h3>Lưu ý</h3>
 <p>Loại khuyến mãi được gắn vào từng Calendar Slot để xác định mức giá và chính sách áp dụng cho khung giờ đó.</p>
 <div class=""doc-screenshot-placeholder""><p><em>📷 Ảnh minh họa giao diện Loại khuyến mãi sẽ được bổ sung</em></p></div>",
             FeatureName = FeatGolfCourse,
@@ -176,7 +158,7 @@ public partial class AppDocumentsDataSeedContributor
         {
             Slug = "lich-choi",
             Title = "Lịch chơi (Calendar Slots)",
-            DisplayOrder = 7,
+            DisplayOrder = 6,
             ContentHtml = @"<h2>Lịch chơi (Calendar Slots)</h2>
 <p>Trang <strong>Lịch chơi</strong> cho phép quản lý các khung giờ chơi golf (tee time). Đây là chức năng quan trọng nhất để vận hành đặt chỗ trên Mini App.</p>
 <h3>Các tính năng chính</h3>
@@ -211,7 +193,7 @@ public partial class AppDocumentsDataSeedContributor
         {
             Slug = "ngay-dac-biet",
             Title = "Ngày đặc biệt",
-            DisplayOrder = 8,
+            DisplayOrder = 7,
             ContentHtml = @"<h2>Ngày đặc biệt</h2>
 <p>Trang <strong>Ngày đặc biệt</strong> cho phép cấu hình các loại ngày đặc biệt (Holiday, Weekend, MemberDay) để hệ thống tự động áp dụng mức giá tương ứng khi khách đặt chỗ.</p>
 <h3>Các tính năng chính</h3>
@@ -236,43 +218,6 @@ public partial class AppDocumentsDataSeedContributor
             FeatureName = FeatGolfCourse,
             TenantPermissionName = PermAppSpecialDates,
             HostPermissionName = PermHostAppSpecialDates
-        },
-        new PageSeed
-        {
-            Slug = "lich-lam-viec",
-            Title = "Lịch làm việc",
-            DisplayOrder = 9,
-            ContentHtml = @"<h2>Lịch làm việc</h2>
-<p>Trang <strong>Lịch làm việc</strong> cho phép quản lý khung giờ làm việc của nhân viên Salon Beauty. Hệ thống hỗ trợ tạo thủ công hoặc tự động sinh khung giờ theo cấu hình cơ sở.</p>
-<h3>Các tính năng chính</h3>
-<ul>
-<li><strong>Xem danh sách:</strong> Hiển thị khung giờ theo cơ sở, nhân viên, ngày, giờ, trạng thái</li>
-<li><strong>Thêm mới:</strong> Tạo khung giờ làm việc thủ công</li>
-<li><strong>Tự sinh khung giờ:</strong> Tự động tạo khung giờ dựa trên cấu hình cơ sở (SlotDuration, BufferTime)</li>
-<li><strong>Chỉnh sửa:</strong> Cập nhật trạng thái, sức chứa khung giờ</li>
-<li><strong>Xóa:</strong> Xóa khung giờ</li>
-<li><strong>Calendar View:</strong> Xem lịch làm việc dạng lịch (FullCalendar)</li>
-</ul>
-<h3>Trạng thái khung giờ</h3>
-<table class=""table table-bordered"">
-<thead><tr><th>Trạng thái</th><th>Mô tả</th><th>Hiển thị Mini App</th></tr></thead>
-<tbody>
-<tr><td>On (Mở)</td><td>Khung giờ có thể đặt lịch</td><td>Có — màu xanh</td></tr>
-<tr><td>Off (Tắt)</td><td>Khung giờ không hoạt động</td><td>Không hiển thị</td></tr>
-<tr><td>Full (Đầy)</td><td>Đã hết chỗ</td><td>Có — màu xám (không đặt được)</td></tr>
-<tr><td>PeakHour (Giờ cao điểm)</td><td>Giờ cao điểm, vẫn đặt được</td><td>Có — màu đỏ</td></tr>
-</tbody>
-</table>
-<h3>Bộ lọc</h3>
-<ul>
-<li>Cơ sở (dropdown)</li>
-<li>Từ ngày — Đến ngày</li>
-<li>Tìm kiếm theo từ khóa</li>
-</ul>
-<div class=""doc-screenshot-placeholder""><p><em>📷 Ảnh minh họa giao diện Lịch làm việc sẽ được bổ sung</em></p></div>",
-            FeatureName = FeatSalonBeauty,
-            TenantPermissionName = PermSalonBeautyTimeSlots,
-            HostPermissionName = PermHostSalonBeautyTimeSlots
         }
     };
 }

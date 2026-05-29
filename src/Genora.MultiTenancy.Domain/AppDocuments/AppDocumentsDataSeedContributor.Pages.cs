@@ -8,7 +8,9 @@ public partial class AppDocumentsDataSeedContributor
     {
         "mini-app-setup" => GetMiniAppSetupPages(),
         "golf-tee-times" => GetGolfTeeTimesPages(),
+        "salon-location-schedule" => GetSalonLocationSchedulePages(),
         "customer-booking" => GetCustomerBookingPages(),
+        "customer-booking-salon" => GetCustomerBookingSalonPages(),
         "loyalty" => GetLoyaltyPages(),
         "fnb" => GetFnbPages(),
         "proshop" => GetProshopPages(),
