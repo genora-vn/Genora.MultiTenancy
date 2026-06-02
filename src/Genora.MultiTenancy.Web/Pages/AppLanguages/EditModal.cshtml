@@ -1,0 +1,47 @@
+@page
+@using Genora.MultiTenancy.Web.Pages.AppLanguages
+@model EditModalModel
+@{ Layout = null; }
+
+<form method="post" asp-page="/AppLanguages/EditModal">
+    <input type="hidden" asp-for="Id" />
+    <abp-modal>
+        <abp-modal-header>
+            <div class="caddie-modal-header">
+                <h5 class="modal-title">Chỉnh sửa ngôn ngữ</h5>
+                <p class="caddie-modal-subtitle">Cập nhật thông tin ngôn ngữ</p>
+            </div>
+        </abp-modal-header>
+        <abp-modal-body>
+            <div class="row g-4">
+                <div class="col-md-6">
+                    <label class="caddie-form-label">Mã ngôn ngữ <span class="text-danger">*</span></label>
+                    <input type="text" asp-for="Language.LanguageCode" class="form-control caddie-form-control" />
+                </div>
+                <div class="col-md-6">
+                    <label class="caddie-form-label">Tên ngôn ngữ <span class="text-danger">*</span></label>
+                    <input type="text" asp-for="Language.LanguageName" class="form-control caddie-form-control" />
+                </div>
+                <div class="col-md-6">
+                    <label class="caddie-form-label">Tên gốc (Native)</label>
+                    <input type="text" asp-for="Language.NativeName" class="form-control caddie-form-control" />
+                </div>
+                <div class="col-md-6">
+                    <label class="caddie-form-label">Thứ tự hiển thị</label>
+                    <input type="number" asp-for="Language.SortOrder" class="form-control caddie-form-control" />
+                </div>
+                <div class="col-md-6">
+                    <label class="caddie-form-label">Trạng thái</label>
+                    <select asp-for="Language.Status" class="form-select caddie-form-control">
+                        <option value="1">Hoạt động</option>
+                        <option value="2">Ngừng</option>
+                    </select>
+                </div>
+            </div>
+        </abp-modal-body>
+        <abp-modal-footer>
+            <button type="button" class="btn btn-light px-4" data-bs-dismiss="modal" style="font-weight:700;">Hủy</button>
+            <button type="submit" class="btn-caddie-primary"><i class="fa fa-save"></i> Lưu</button>
+        </abp-modal-footer>
+    </abp-modal>
+</form>

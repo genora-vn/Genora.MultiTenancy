@@ -574,6 +574,102 @@ public static class MultiTenancyPermissions
     }
     #endregion
 
+    #region Thêm permission cho tính năng quản trị Caddie
+    public static class AppCaddies
+    {
+        public const string Default = GroupName + ".AppCaddies";
+        public const string Create = Default + ".Create";
+        public const string Edit = Default + ".Edit";
+        public const string Delete = Default + ".Delete";
+    }
+
+    public static class HostAppCaddies
+    {
+        public const string Default = GroupName + ".HostAppCaddies";
+        public const string Create = Default + ".Create";
+        public const string Edit = Default + ".Edit";
+        public const string Delete = Default + ".Delete";
+    }
+
+    public static class AppCaddieSkills
+    {
+        public const string Default = GroupName + ".AppCaddieSkills";
+        public const string Create = Default + ".Create";
+        public const string Edit = Default + ".Edit";
+        public const string Delete = Default + ".Delete";
+    }
+
+    public static class HostAppCaddieSkills
+    {
+        public const string Default = GroupName + ".HostAppCaddieSkills";
+        public const string Create = Default + ".Create";
+        public const string Edit = Default + ".Edit";
+        public const string Delete = Default + ".Delete";
+    }
+
+    public static class AppCaddieBookings
+    {
+        public const string Default = GroupName + ".AppCaddieBookings";
+        public const string Create = Default + ".Create";
+        public const string Edit = Default + ".Edit";
+        public const string Delete = Default + ".Delete";
+    }
+
+    public static class HostAppCaddieBookings
+    {
+        public const string Default = GroupName + ".HostAppCaddieBookings";
+        public const string Create = Default + ".Create";
+        public const string Edit = Default + ".Edit";
+        public const string Delete = Default + ".Delete";
+    }
+
+    public static class AppCaddieSchedules
+    {
+        public const string Default = GroupName + ".AppCaddieSchedules";
+        public const string Create = Default + ".Create";
+        public const string Edit = Default + ".Edit";
+        public const string Delete = Default + ".Delete";
+    }
+
+    public static class HostAppCaddieSchedules
+    {
+        public const string Default = GroupName + ".HostAppCaddieSchedules";
+        public const string Create = Default + ".Create";
+        public const string Edit = Default + ".Edit";
+        public const string Delete = Default + ".Delete";
+    }
+
+    public static class AppCaddieRatings
+    {
+        public const string Default = GroupName + ".AppCaddieRatings";
+        public const string Edit = Default + ".Edit";
+        public const string Delete = Default + ".Delete";
+    }
+
+    public static class HostAppCaddieRatings
+    {
+        public const string Default = GroupName + ".HostAppCaddieRatings";
+        public const string Edit = Default + ".Edit";
+        public const string Delete = Default + ".Delete";
+    }
+
+    public static class AppLanguages
+    {
+        public const string Default = GroupName + ".AppLanguages";
+        public const string Create = Default + ".Create";
+        public const string Edit = Default + ".Edit";
+        public const string Delete = Default + ".Delete";
+    }
+
+    public static class HostAppLanguages
+    {
+        public const string Default = GroupName + ".HostAppLanguages";
+        public const string Create = Default + ".Create";
+        public const string Edit = Default + ".Edit";
+        public const string Delete = Default + ".Delete";
+    }
+    #endregion
+
     //Add your own permission names. Example:
     //public const string MyPermission1 = GroupName + ".MyPermission1";
 }

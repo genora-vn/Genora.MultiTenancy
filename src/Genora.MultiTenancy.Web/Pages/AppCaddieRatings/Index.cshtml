@@ -1,0 +1,142 @@
+@page
+@using Genora.MultiTenancy.Permissions
+@using Microsoft.AspNetCore.Authorization
+@using Genora.MultiTenancy.Web.Pages.AppCaddieRatings
+@inject IAuthorizationService AuthorizationService
+@inject Volo.Abp.MultiTenancy.ICurrentTenant CurrentTenant
+@model IndexModel
+
+@section styles {
+    <abp-style src="/pages/caddie/caddie-shared.css" />
+}
+
+@section scripts {
+    <abp-script src="/Pages/AppCaddieRatings/index.js" />
+}
+
+@{
+    var canEdit = CurrentTenant.IsAvailable
+        ? await AuthorizationService.IsGrantedAsync(MultiTenancyPermissions.AppCaddieRatings.Edit)
+        : await AuthorizationService.IsGrantedAsync(MultiTenancyPermissions.HostAppCaddieRatings.Edit);
+    var canDelete = CurrentTenant.IsAvailable
+        ? await AuthorizationService.IsGrantedAsync(MultiTenancyPermissions.AppCaddieRatings.Delete)
+        : await AuthorizationService.IsGrantedAsync(MultiTenancyPermissions.HostAppCaddieRatings.Delete);
+}
+
+<div class="caddie-page">
+    <div class="caddie-header-row">
+        <div>
+            <h1 class="caddie-page-title">Lịch sử đánh giá Caddy</h1>
+            <p class="caddie-page-subtitle">Quản lý và phê duyệt đánh giá từ khách hàng sau buổi chơi.</p>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="d-flex flex-wrap gap-3 mb-4">
+        <div class="caddie-schedule-filter-group">
+            <label class="caddie-schedule-filter-label">Trạng thái duyệt</label>
+            <select id="RatingApprovalFilter" class="form-select caddie-form-control" style="min-width:150px;">
+                <option value="">Tất cả</option>
+                <option value="1">Chờ duyệt</option>
+                <option value="2">Đã duyệt</option>
+                <option value="3">Từ chối</option>
+            </select>
+        </div>
+        <div class="caddie-schedule-filter-group">
+            <label class="caddie-schedule-filter-label">Từ ngày</label>
+            <input type="date" id="RatingFromDate" class="form-control caddie-form-control" style="min-width:140px;" />
+        </div>
+        <div class="caddie-schedule-filter-group">
+            <label class="caddie-schedule-filter-label">Đến ngày</label>
+            <input type="date" id="RatingToDate" class="form-control caddie-form-control" style="min-width:140px;" />
+        </div>
+        <div class="caddie-schedule-filter-group d-flex align-items-end">
+            <button id="BtnSearch" class="btn-caddie-primary" style="padding:10px 20px;"><i class="fa fa-search"></i> Tìm</button>
+        </div>
+    </div>
+
+    <!-- Table -->
+    <div class="caddie-table-container">
+        <div class="table-responsive">
+            <table id="CaddieRatingsTable" class="caddie-table"></table>
+        </div>
+    </div>
+</div>
+
+<!-- Rating Detail Modal -->
+<div class="modal fade" id="ratingDetailModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="border-radius:12px;border:none;">
+            <div class="modal-header" style="border-bottom:1px solid rgba(192,199,212,0.1);padding:20px 24px;">
+                <div>
+                    <h5 class="modal-title" style="font-family:'Manrope';font-weight:800;">Đánh giá chi tiết Caddy</h5>
+                    <p style="font-size:12px;color:var(--caddie-on-surface-variant);margin:2px 0 0;">Thông tin phản hồi từ khách hàng sau buổi chơi</p>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" style="padding:24px;">
+                <!-- Booking + Customer -->
+                <div class="row g-3 mb-4">
+                    <div class="col-6">
+                        <div style="border:1px solid var(--caddie-outline-variant);border-radius:12px;padding:16px;">
+                            <div style="font-size:10px;font-weight:700;color:var(--caddie-on-surface-variant);text-transform:uppercase;margin-bottom:8px;"><i class="fa fa-calendar me-1"></i> THÔNG TIN ĐẶT CHỖ</div>
+                            <div style="font-size:0.875rem;">Mã đặt chỗ: <strong id="detailBookingCode">—</strong></div>
+                            <div style="font-size:0.875rem;">Ngày chơi: <span id="detailPlayDate">—</span></div>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div style="border:1px solid var(--caddie-outline-variant);border-radius:12px;padding:16px;">
+                            <div style="font-size:10px;font-weight:700;color:var(--caddie-on-surface-variant);text-transform:uppercase;margin-bottom:8px;"><i class="fa fa-user me-1"></i> KHÁCH HÀNG</div>
+                            <div class="d-flex align-items-center gap-2">
+                                <img id="detailCustomerAvatar" src="/images/default-avatar.png" class="rounded-circle" style="width:32px;height:32px;" />
+                                <div>
+                                    <strong id="detailCustomerName" style="font-size:0.875rem;">—</strong>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Skill Ratings -->
+                <h6 style="font-weight:700;margin-bottom:12px;"><i class="fa fa-star text-warning me-1"></i> Đánh giá kỹ năng</h6>
+                <div class="row g-2 mb-4" id="detailSkillRatings">
+                    <div class="col-12 text-muted">Đang tải...</div>
+                </div>
+
+                <!-- Comment -->
+                <h6 style="font-weight:700;margin-bottom:12px;"><i class="fa fa-comment text-info me-1"></i> Nhận xét từ khách hàng</h6>
+                <div class="caddie-note-quote" id="detailComment">—</div>
+            </div>
+            <div class="modal-footer" style="border-top:1px solid rgba(192,199,212,0.1);padding:16px 24px;">
+                @if (canEdit)
+                {
+                    <button type="button" class="btn btn-success btn-sm" id="btnApproveRating" style="font-weight:700;"><i class="fa fa-check me-1"></i> Duyệt</button>
+                    <button type="button" class="btn btn-danger btn-sm" id="btnRejectRating" style="font-weight:700;"><i class="fa fa-times me-1"></i> Từ chối</button>
+                }
+                <button type="button" class="btn-caddie-primary" data-bs-dismiss="modal"><i class="fa fa-check"></i> Đóng</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Reject Reason Modal -->
+<div class="modal fade" id="rejectReasonModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content" style="border-radius:12px;border:none;">
+            <div class="modal-header" style="padding:20px 24px;">
+                <h5 class="modal-title" style="font-family:'Manrope';font-weight:800;">Lý do từ chối</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" style="padding:24px;">
+                <textarea id="rejectReasonInput" class="form-control caddie-form-control" rows="3" style="resize:none;" placeholder="Nhập lý do từ chối đánh giá..."></textarea>
+            </div>
+            <div class="modal-footer" style="padding:16px 24px;">
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal" style="font-weight:700;">Hủy</button>
+                <button type="button" class="btn btn-danger" id="btnConfirmReject" style="font-weight:700;"><i class="fa fa-times me-1"></i> Xác nhận từ chối</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<input type="hidden" id="CanEdit" value="@canEdit.ToString().ToLower()" />
+<input type="hidden" id="CanDelete" value="@canDelete.ToString().ToLower()" />

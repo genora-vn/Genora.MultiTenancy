@@ -84,6 +84,11 @@ public class GolfCourse : FullAuditedAggregateRoot<Guid>, IMultiTenant
     /// </summary>
     public int? MaxMemberGuest { get; set; }
 
+    /// <summary>
+    /// Sân có hỗ trợ ca tối (Night Shift) cho caddie hay không.
+    /// </summary>
+    public bool HasNightShift { get; set; }
+
     // Navigation
     public virtual ICollection<CalendarSlot> CalendarSlots { get; set; } = new List<CalendarSlot>();
     public virtual ICollection<Booking> Bookings { get; set; } = new List<Booking>();

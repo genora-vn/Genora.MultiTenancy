@@ -29,6 +29,7 @@ using Genora.MultiTenancy.DomainModels.AppSpecialDates;
 using Genora.MultiTenancy.DomainModels.AppZaloAuth;
 using Genora.MultiTenancy.DomainModels.AppSalonBeauty;
 using Genora.MultiTenancy.DomainModels.AppDocuments;
+using Genora.MultiTenancy.DomainModels.AppCaddie;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Hosting;
 using Volo.Abp.AuditLogging.EntityFrameworkCore;
@@ -130,6 +131,18 @@ public class MultiTenancyDbContext :
     // Documentation
     public DbSet<DocumentSection> AppDocumentSections { get; set; }
     public DbSet<DocumentPage> AppDocumentPages { get; set; }
+
+    // Caddie
+    public DbSet<AppCaddie> AppCaddies { get; set; }
+    public DbSet<AppLanguage> AppLanguages { get; set; }
+    public DbSet<AppCaddieLanguage> AppCaddieLanguages { get; set; }
+    public DbSet<AppCaddieVoiceRegion> AppCaddieVoiceRegions { get; set; }
+    public DbSet<AppCaddieSkill> AppCaddieSkills { get; set; }
+    public DbSet<AppCaddieSchedule> AppCaddieSchedules { get; set; }
+    public DbSet<AppCaddieBooking> AppCaddieBookings { get; set; }
+    public DbSet<AppCaddieRating> AppCaddieRatings { get; set; }
+    public DbSet<AppCaddieRatingDetail> AppCaddieRatingDetails { get; set; }
+
     // Tenant Management
     public DbSet<Tenant> Tenants { get; set; }
     public DbSet<TenantConnectionString> TenantConnectionStrings { get; set; }
@@ -194,6 +207,7 @@ public class MultiTenancyDbContext :
         builder.ConfigureProshopModule();
         builder.ConfigurePaymentModule();
         builder.ConfigureSalonBeautyModule();
+        builder.ConfigureCaddieModule();
 
         builder.Entity<ZaloAuth>(b =>
         {

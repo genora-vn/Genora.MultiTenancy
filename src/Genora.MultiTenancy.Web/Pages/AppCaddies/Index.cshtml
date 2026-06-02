@@ -1,0 +1,59 @@
+@page
+@using Genora.MultiTenancy.Permissions
+@using Microsoft.AspNetCore.Authorization
+@using Genora.MultiTenancy.Localization
+@using Microsoft.Extensions.Localization
+@using Genora.MultiTenancy.Web.Pages.AppCaddies
+@inject IStringLocalizer<MultiTenancyResource> L
+@inject IAuthorizationService AuthorizationService
+@inject Volo.Abp.MultiTenancy.ICurrentTenant CurrentTenant
+@model IndexModel
+
+@section styles {
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+    <abp-style src="/pages/caddie/caddie-shared.css" />
+}
+
+@section scripts {
+    <abp-script src="/Pages/AppCaddies/index.js" />
+}
+
+@{
+    var canCreate = CurrentTenant.IsAvailable
+        ? await AuthorizationService.IsGrantedAsync(MultiTenancyPermissions.AppCaddies.Create)
+        : await AuthorizationService.IsGrantedAsync(MultiTenancyPermissions.HostAppCaddies.Create);
+
+    var canEdit = CurrentTenant.IsAvailable
+        ? await AuthorizationService.IsGrantedAsync(MultiTenancyPermissions.AppCaddies.Edit)
+        : await AuthorizationService.IsGrantedAsync(MultiTenancyPermissions.HostAppCaddies.Edit);
+
+    var canDelete = CurrentTenant.IsAvailable
+        ? await AuthorizationService.IsGrantedAsync(MultiTenancyPermissions.AppCaddies.Delete)
+        : await AuthorizationService.IsGrantedAsync(MultiTenancyPermissions.HostAppCaddies.Delete);
+}
+
+<div class="caddie-page">
+    <!-- Header -->
+    <div class="caddie-header-row">
+        <div>
+            <h1 class="caddie-page-title">Quản lý danh sách Caddy</h1>
+            <p class="caddie-page-subtitle">Quản lý thông tin, trạng thái và hiệu suất làm việc của đội ngũ Caddy.</p>
+        </div>
+        @if (canCreate)
+        {
+            <button type="button" id="NewCaddieButton" class="btn-caddie-primary">
+                <i class="fa fa-user-plus"></i> Thêm mới Caddy
+            </button>
+        }
+    </div>
+
+    <!-- Table -->
+    <div class="caddie-table-container">
+        <div class="table-responsive">
+            <table id="CaddiesTable" class="caddie-table"></table>
+        </div>
+    </div>
+</div>
+
+<input type="hidden" id="CanEdit" value="@canEdit.ToString().ToLower()" />
+<input type="hidden" id="CanDelete" value="@canDelete.ToString().ToLower()" />

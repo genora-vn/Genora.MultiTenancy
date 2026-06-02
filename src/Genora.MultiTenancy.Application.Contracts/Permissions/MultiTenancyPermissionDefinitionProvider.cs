@@ -16,6 +16,7 @@ using Genora.MultiTenancy.Features.AppSpecialDates;
 using Genora.MultiTenancy.Features.AppPaymentConfigurationFeatures;
 using Genora.MultiTenancy.Features.AppZaloAuths;
 using Genora.MultiTenancy.Features.AppZaloLogs;
+using Genora.MultiTenancy.Features.Caddie;
 using Genora.MultiTenancy.Localization;
 using Volo.Abp.Authorization.Permissions;
 using Volo.Abp.Features;
@@ -1333,6 +1334,155 @@ public class MultiTenancyPermissionDefinitionProvider : PermissionDefinitionProv
             MultiTenancyPermissions.HostAppDocuments.Delete,
             L("Permission:AppDocuments.Delete")
         ).MultiTenancySide = MultiTenancySides.Host;
+
+        #endregion
+
+        #region Cấu hình quyền cho tính năng quản trị Caddie
+
+        // ========== TENANT GROUP ==========
+        var caddieGroup = context.AddGroup("CaddieManagement", L("PermissionGroup:CaddieManagement"));
+
+        // CADDIE (TENANT)
+        var caddieTenantRoot = caddieGroup.AddPermission(AppCaddies.Default, L("Permission:AppCaddies"));
+        caddieTenantRoot.MultiTenancySide = MultiTenancySides.Tenant;
+        caddieTenantRoot.RequireFeatures(Features.Caddie.CaddieFeatures.Management);
+
+        var caddieTenantCreate = caddieTenantRoot.AddChild(AppCaddies.Create, L("Permission:AppCaddies.Create"));
+        caddieTenantCreate.MultiTenancySide = MultiTenancySides.Tenant;
+        caddieTenantCreate.RequireFeatures(Features.Caddie.CaddieFeatures.Management);
+
+        var caddieTenantEdit = caddieTenantRoot.AddChild(AppCaddies.Edit, L("Permission:AppCaddies.Edit"));
+        caddieTenantEdit.MultiTenancySide = MultiTenancySides.Tenant;
+        caddieTenantEdit.RequireFeatures(Features.Caddie.CaddieFeatures.Management);
+
+        var caddieTenantDelete = caddieTenantRoot.AddChild(AppCaddies.Delete, L("Permission:AppCaddies.Delete"));
+        caddieTenantDelete.MultiTenancySide = MultiTenancySides.Tenant;
+        caddieTenantDelete.RequireFeatures(Features.Caddie.CaddieFeatures.Management);
+
+        // CADDIE SKILLS (TENANT)
+        var caddieSkillTenantRoot = caddieGroup.AddPermission(AppCaddieSkills.Default, L("Permission:AppCaddieSkills"));
+        caddieSkillTenantRoot.MultiTenancySide = MultiTenancySides.Tenant;
+        caddieSkillTenantRoot.RequireFeatures(Features.Caddie.CaddieFeatures.Management);
+
+        var caddieSkillTenantCreate = caddieSkillTenantRoot.AddChild(AppCaddieSkills.Create, L("Permission:AppCaddieSkills.Create"));
+        caddieSkillTenantCreate.MultiTenancySide = MultiTenancySides.Tenant;
+        caddieSkillTenantCreate.RequireFeatures(Features.Caddie.CaddieFeatures.Management);
+
+        var caddieSkillTenantEdit = caddieSkillTenantRoot.AddChild(AppCaddieSkills.Edit, L("Permission:AppCaddieSkills.Edit"));
+        caddieSkillTenantEdit.MultiTenancySide = MultiTenancySides.Tenant;
+        caddieSkillTenantEdit.RequireFeatures(Features.Caddie.CaddieFeatures.Management);
+
+        var caddieSkillTenantDelete = caddieSkillTenantRoot.AddChild(AppCaddieSkills.Delete, L("Permission:AppCaddieSkills.Delete"));
+        caddieSkillTenantDelete.MultiTenancySide = MultiTenancySides.Tenant;
+        caddieSkillTenantDelete.RequireFeatures(Features.Caddie.CaddieFeatures.Management);
+
+        // CADDIE BOOKINGS (TENANT)
+        var caddieBookingTenantRoot = caddieGroup.AddPermission(AppCaddieBookings.Default, L("Permission:AppCaddieBookings"));
+        caddieBookingTenantRoot.MultiTenancySide = MultiTenancySides.Tenant;
+        caddieBookingTenantRoot.RequireFeatures(Features.Caddie.CaddieFeatures.Management);
+
+        var caddieBookingTenantCreate = caddieBookingTenantRoot.AddChild(AppCaddieBookings.Create, L("Permission:AppCaddieBookings.Create"));
+        caddieBookingTenantCreate.MultiTenancySide = MultiTenancySides.Tenant;
+        caddieBookingTenantCreate.RequireFeatures(Features.Caddie.CaddieFeatures.Management);
+
+        var caddieBookingTenantEdit = caddieBookingTenantRoot.AddChild(AppCaddieBookings.Edit, L("Permission:AppCaddieBookings.Edit"));
+        caddieBookingTenantEdit.MultiTenancySide = MultiTenancySides.Tenant;
+        caddieBookingTenantEdit.RequireFeatures(Features.Caddie.CaddieFeatures.Management);
+
+        var caddieBookingTenantDelete = caddieBookingTenantRoot.AddChild(AppCaddieBookings.Delete, L("Permission:AppCaddieBookings.Delete"));
+        caddieBookingTenantDelete.MultiTenancySide = MultiTenancySides.Tenant;
+        caddieBookingTenantDelete.RequireFeatures(Features.Caddie.CaddieFeatures.Management);
+
+        // CADDIE SCHEDULES (TENANT)
+        var caddieScheduleTenantRoot = caddieGroup.AddPermission(AppCaddieSchedules.Default, L("Permission:AppCaddieSchedules"));
+        caddieScheduleTenantRoot.MultiTenancySide = MultiTenancySides.Tenant;
+        caddieScheduleTenantRoot.RequireFeatures(Features.Caddie.CaddieFeatures.Management);
+
+        var caddieScheduleTenantCreate = caddieScheduleTenantRoot.AddChild(AppCaddieSchedules.Create, L("Permission:AppCaddieSchedules.Create"));
+        caddieScheduleTenantCreate.MultiTenancySide = MultiTenancySides.Tenant;
+        caddieScheduleTenantCreate.RequireFeatures(Features.Caddie.CaddieFeatures.Management);
+
+        var caddieScheduleTenantEdit = caddieScheduleTenantRoot.AddChild(AppCaddieSchedules.Edit, L("Permission:AppCaddieSchedules.Edit"));
+        caddieScheduleTenantEdit.MultiTenancySide = MultiTenancySides.Tenant;
+        caddieScheduleTenantEdit.RequireFeatures(Features.Caddie.CaddieFeatures.Management);
+
+        var caddieScheduleTenantDelete = caddieScheduleTenantRoot.AddChild(AppCaddieSchedules.Delete, L("Permission:AppCaddieSchedules.Delete"));
+        caddieScheduleTenantDelete.MultiTenancySide = MultiTenancySides.Tenant;
+        caddieScheduleTenantDelete.RequireFeatures(Features.Caddie.CaddieFeatures.Management);
+
+        // CADDIE RATINGS (TENANT)
+        var caddieRatingTenantRoot = caddieGroup.AddPermission(AppCaddieRatings.Default, L("Permission:AppCaddieRatings"));
+        caddieRatingTenantRoot.MultiTenancySide = MultiTenancySides.Tenant;
+        caddieRatingTenantRoot.RequireFeatures(Features.Caddie.CaddieFeatures.Management);
+
+        var caddieRatingTenantEdit = caddieRatingTenantRoot.AddChild(AppCaddieRatings.Edit, L("Permission:AppCaddieRatings.Edit"));
+        caddieRatingTenantEdit.MultiTenancySide = MultiTenancySides.Tenant;
+        caddieRatingTenantEdit.RequireFeatures(Features.Caddie.CaddieFeatures.Management);
+
+        var caddieRatingTenantDelete = caddieRatingTenantRoot.AddChild(AppCaddieRatings.Delete, L("Permission:AppCaddieRatings.Delete"));
+        caddieRatingTenantDelete.MultiTenancySide = MultiTenancySides.Tenant;
+        caddieRatingTenantDelete.RequireFeatures(Features.Caddie.CaddieFeatures.Management);
+
+        // LANGUAGES (TENANT)
+        var languageTenantRoot = caddieGroup.AddPermission(AppLanguages.Default, L("Permission:AppLanguages"));
+        languageTenantRoot.MultiTenancySide = MultiTenancySides.Tenant;
+        languageTenantRoot.RequireFeatures(Features.Caddie.CaddieFeatures.Management);
+
+        var languageTenantCreate = languageTenantRoot.AddChild(AppLanguages.Create, L("Permission:AppLanguages.Create"));
+        languageTenantCreate.MultiTenancySide = MultiTenancySides.Tenant;
+        languageTenantCreate.RequireFeatures(Features.Caddie.CaddieFeatures.Management);
+
+        var languageTenantEdit = languageTenantRoot.AddChild(AppLanguages.Edit, L("Permission:AppLanguages.Edit"));
+        languageTenantEdit.MultiTenancySide = MultiTenancySides.Tenant;
+        languageTenantEdit.RequireFeatures(Features.Caddie.CaddieFeatures.Management);
+
+        var languageTenantDelete = languageTenantRoot.AddChild(AppLanguages.Delete, L("Permission:AppLanguages.Delete"));
+        languageTenantDelete.MultiTenancySide = MultiTenancySides.Tenant;
+        languageTenantDelete.RequireFeatures(Features.Caddie.CaddieFeatures.Management);
+
+        // ========== HOST GROUP ==========
+        var caddieGroupHost = context.AddGroup("CaddieManagementHost", L("PermissionGroup:CaddieManagementHost"));
+
+        // CADDIE (HOST)
+        var caddieHostRoot = caddieGroupHost.AddPermission(HostAppCaddies.Default, L("Permission:AppCaddies"));
+        caddieHostRoot.MultiTenancySide = MultiTenancySides.Host;
+        caddieHostRoot.AddChild(HostAppCaddies.Create, L("Permission:AppCaddies.Create")).MultiTenancySide = MultiTenancySides.Host;
+        caddieHostRoot.AddChild(HostAppCaddies.Edit, L("Permission:AppCaddies.Edit")).MultiTenancySide = MultiTenancySides.Host;
+        caddieHostRoot.AddChild(HostAppCaddies.Delete, L("Permission:AppCaddies.Delete")).MultiTenancySide = MultiTenancySides.Host;
+
+        // CADDIE SKILLS (HOST)
+        var caddieSkillHostRoot = caddieGroupHost.AddPermission(HostAppCaddieSkills.Default, L("Permission:AppCaddieSkills"));
+        caddieSkillHostRoot.MultiTenancySide = MultiTenancySides.Host;
+        caddieSkillHostRoot.AddChild(HostAppCaddieSkills.Create, L("Permission:AppCaddieSkills.Create")).MultiTenancySide = MultiTenancySides.Host;
+        caddieSkillHostRoot.AddChild(HostAppCaddieSkills.Edit, L("Permission:AppCaddieSkills.Edit")).MultiTenancySide = MultiTenancySides.Host;
+        caddieSkillHostRoot.AddChild(HostAppCaddieSkills.Delete, L("Permission:AppCaddieSkills.Delete")).MultiTenancySide = MultiTenancySides.Host;
+
+        // CADDIE BOOKINGS (HOST)
+        var caddieBookingHostRoot = caddieGroupHost.AddPermission(HostAppCaddieBookings.Default, L("Permission:AppCaddieBookings"));
+        caddieBookingHostRoot.MultiTenancySide = MultiTenancySides.Host;
+        caddieBookingHostRoot.AddChild(HostAppCaddieBookings.Create, L("Permission:AppCaddieBookings.Create")).MultiTenancySide = MultiTenancySides.Host;
+        caddieBookingHostRoot.AddChild(HostAppCaddieBookings.Edit, L("Permission:AppCaddieBookings.Edit")).MultiTenancySide = MultiTenancySides.Host;
+        caddieBookingHostRoot.AddChild(HostAppCaddieBookings.Delete, L("Permission:AppCaddieBookings.Delete")).MultiTenancySide = MultiTenancySides.Host;
+
+        // CADDIE SCHEDULES (HOST)
+        var caddieScheduleHostRoot = caddieGroupHost.AddPermission(HostAppCaddieSchedules.Default, L("Permission:AppCaddieSchedules"));
+        caddieScheduleHostRoot.MultiTenancySide = MultiTenancySides.Host;
+        caddieScheduleHostRoot.AddChild(HostAppCaddieSchedules.Create, L("Permission:AppCaddieSchedules.Create")).MultiTenancySide = MultiTenancySides.Host;
+        caddieScheduleHostRoot.AddChild(HostAppCaddieSchedules.Edit, L("Permission:AppCaddieSchedules.Edit")).MultiTenancySide = MultiTenancySides.Host;
+        caddieScheduleHostRoot.AddChild(HostAppCaddieSchedules.Delete, L("Permission:AppCaddieSchedules.Delete")).MultiTenancySide = MultiTenancySides.Host;
+
+        // CADDIE RATINGS (HOST)
+        var caddieRatingHostRoot = caddieGroupHost.AddPermission(HostAppCaddieRatings.Default, L("Permission:AppCaddieRatings"));
+        caddieRatingHostRoot.MultiTenancySide = MultiTenancySides.Host;
+        caddieRatingHostRoot.AddChild(HostAppCaddieRatings.Edit, L("Permission:AppCaddieRatings.Edit")).MultiTenancySide = MultiTenancySides.Host;
+        caddieRatingHostRoot.AddChild(HostAppCaddieRatings.Delete, L("Permission:AppCaddieRatings.Delete")).MultiTenancySide = MultiTenancySides.Host;
+
+        // LANGUAGES (HOST)
+        var languageHostRoot = caddieGroupHost.AddPermission(HostAppLanguages.Default, L("Permission:AppLanguages"));
+        languageHostRoot.MultiTenancySide = MultiTenancySides.Host;
+        languageHostRoot.AddChild(HostAppLanguages.Create, L("Permission:AppLanguages.Create")).MultiTenancySide = MultiTenancySides.Host;
+        languageHostRoot.AddChild(HostAppLanguages.Edit, L("Permission:AppLanguages.Edit")).MultiTenancySide = MultiTenancySides.Host;
+        languageHostRoot.AddChild(HostAppLanguages.Delete, L("Permission:AppLanguages.Delete")).MultiTenancySide = MultiTenancySides.Host;
 
         #endregion
     }

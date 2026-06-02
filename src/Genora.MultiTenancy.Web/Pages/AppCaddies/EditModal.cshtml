@@ -1,0 +1,234 @@
+@page
+@using Genora.MultiTenancy.Web.Pages.AppCaddies
+@model EditModalModel
+
+@{
+    Layout = null;
+}
+
+<form method="post" asp-page="/AppCaddies/EditModal" id="editCaddieForm">
+    <input type="hidden" asp-for="Id" />
+    <abp-modal size="Large">
+        <abp-modal-header>
+            <div class="caddie-modal-header">
+                <h5 class="modal-title">Chỉnh sửa Caddy</h5>
+                <p class="caddie-modal-subtitle">Cập nhật thông tin hồ sơ Caddy</p>
+            </div>
+        </abp-modal-header>
+        <abp-modal-body>
+            <!-- Avatar Upload -->
+            <div class="text-center mb-4">
+                <div class="position-relative d-inline-block">
+                    <div class="caddie-avatar-upload" id="avatarUploadArea">
+                        @if (!string.IsNullOrEmpty(Model.Caddie.Avatar))
+                        {
+                            <img id="avatarPreview" src="@Model.Caddie.Avatar" style="display:block;" />
+                            <i class="fa fa-camera caddie-avatar-upload-icon" id="avatarIcon" style="display:none;"></i>
+                            <span class="caddie-avatar-upload-text" id="avatarText" style="display:none;">Tải ảnh</span>
+                        }
+                        else
+                        {
+                            <img id="avatarPreview" src="" style="display:none;" />
+                            <i class="fa fa-camera caddie-avatar-upload-icon" id="avatarIcon"></i>
+                            <span class="caddie-avatar-upload-text" id="avatarText">Tải ảnh</span>
+                        }
+                    </div>
+                    <span class="caddie-avatar-edit-badge"><i class="fa fa-pencil"></i></span>
+                </div>
+                <div class="text-muted mt-2" style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;">Avatar Caddy (Tròn, tối đa 2MB)</div>
+                <input type="file" id="avatarInput" accept=".jpg,.jpeg,.png,.webp" style="display:none;" />
+                <input type="hidden" asp-for="Caddie.Avatar" id="CaddieAvatar" />
+            </div>
+
+            <!-- Form Fields -->
+            <div class="row g-4">
+                <!-- Mã Caddy -->
+                <div class="col-md-6">
+                    <label class="caddie-form-label">Mã Caddy</label>
+                    <input type="text" class="form-control caddie-form-control" value="@Model.CaddieCode" disabled />
+                </div>
+                <!-- Tên Caddy -->
+                <div class="col-md-6">
+                    <label class="caddie-form-label">Tên Caddy <span class="text-danger">*</span></label>
+                    <input type="text" asp-for="Caddie.CaddieName" id="caddieName"
+                           class="form-control caddie-form-control" placeholder="Nhập họ và tên"
+                           required />
+                    <span class="text-danger caddie-validation-msg" id="caddieNameErr" style="display:none;font-size:12px;">Vui lòng nhập tên Caddy</span>
+                </div>
+                <!-- Số điện thoại -->
+                <div class="col-md-6">
+                    <label class="caddie-form-label">Số điện thoại</label>
+                    <input type="tel" asp-for="Caddie.Phone" class="form-control caddie-form-control" placeholder="09xx xxx xxx" />
+                </div>
+                <!-- Giới tính -->
+                <div class="col-md-6">
+                    <label class="caddie-form-label">Giới tính</label>
+                    <select asp-for="Caddie.Gender" asp-items="Model.GenderItems" class="form-select caddie-form-control">
+                        <option value="">-- Chọn --</option>
+                    </select>
+                </div>
+                <!-- Chiều cao -->
+                <div class="col-md-6">
+                    <label class="caddie-form-label">Chiều cao (CM)</label>
+                    <input type="number" asp-for="Caddie.HeightCm" class="form-control caddie-form-control" placeholder="165" min="100" max="250" />
+                </div>
+                <!-- Giọng nói (Vùng miền) — Select2 tags -->
+                <div class="col-md-6">
+                    <label class="caddie-form-label">Giọng nói (Vùng miền)</label>
+                    <select id="voiceRegionSelect" class="form-select caddie-form-control" multiple>
+                        @foreach (var item in Model.VoiceRegionItems)
+                        {
+                            var isSelected = Model.SelectedVoiceRegions != null && Model.SelectedVoiceRegions.Contains(byte.Parse(item.Value));
+                            if (isSelected)
+                            {
+                                <option value="@item.Value" selected>@item.Text</option>
+                            }
+                            else
+                            {
+                                <option value="@item.Value">@item.Text</option>
+                            }
+                        }
+                    </select>
+                    <div id="voiceRegionHiddens"></div>
+                </div>
+                <!-- Ngoại ngữ — Select2 tags -->
+                <div class="col-md-6">
+                    <label class="caddie-form-label">Ngoại ngữ</label>
+                    <select id="languageSelect" class="form-select caddie-form-control" multiple>
+                        @foreach (var item in Model.LanguageItems)
+                        {
+                            var isSelected = Model.SelectedLanguageIds != null && Model.SelectedLanguageIds.Contains(Guid.Parse(item.Value));
+                            if (isSelected)
+                            {
+                                <option value="@item.Value" selected>@item.Text</option>
+                            }
+                            else
+                            {
+                                <option value="@item.Value">@item.Text</option>
+                            }
+                        }
+                    </select>
+                    <div id="languageHiddens"></div>
+                </div>
+                <!-- Thời gian vào làm -->
+                <div class="col-md-6">
+                    <label class="caddie-form-label">Thời gian vào làm</label>
+                    <input type="date" asp-for="Caddie.JoinDate" class="form-control caddie-form-control" />
+                </div>
+                <!-- Hiển thị trên App -->
+                <div class="col-md-6">
+                    <label class="caddie-form-label">Hiển thị trên App</label>
+                    <select asp-for="Caddie.IsShowOnApp" class="form-select caddie-form-control">
+                        <option value="true">Có</option>
+                        <option value="false">Không</option>
+                    </select>
+                </div>
+                <!-- Trạng thái hoạt động -->
+                <div class="col-md-6">
+                    <label class="caddie-form-label">Trạng thái hoạt động</label>
+                    <select asp-for="Caddie.Status" class="form-select caddie-form-control">
+                        <option value="1">Đang hoạt động</option>
+                        <option value="2">Ngừng hoạt động</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Ghi chú nội bộ -->
+            <div class="mt-4">
+                <label class="caddie-form-label">Ghi chú nội bộ</label>
+                <textarea asp-for="Caddie.Note" class="form-control caddie-form-control" rows="3" style="border-radius:4px 4px 0 0;resize:none;min-height:100px;" placeholder="Nhập ghi chú dành cho quản trị viên..."></textarea>
+            </div>
+
+            <input type="hidden" asp-for="Caddie.GolfCourseId" />
+        </abp-modal-body>
+        <abp-modal-footer>
+            <button type="button" class="btn btn-light px-4" data-bs-dismiss="modal" style="font-weight:700;color:var(--caddie-outline);">Hủy</button>
+            <button type="submit" id="btnSaveCaddie" class="btn-caddie-primary">
+                <i class="fa fa-save"></i> Lưu thông tin
+            </button>
+        </abp-modal-footer>
+    </abp-modal>
+</form>
+
+<script>
+(function () {
+    // ── Avatar upload ──────────────────────────────────────────────
+    var uploadArea = document.getElementById('avatarUploadArea');
+    var fileInput  = document.getElementById('avatarInput');
+    var preview    = document.getElementById('avatarPreview');
+    var icon       = document.getElementById('avatarIcon');
+    var text       = document.getElementById('avatarText');
+
+    uploadArea.addEventListener('click', function () { fileInput.click(); });
+
+    fileInput.addEventListener('change', function (e) {
+        var file = e.target.files[0];
+        if (!file) return;
+        if (file.size > 2 * 1024 * 1024) { abp.notify.error('Ảnh tối đa 2MB'); return; }
+        var reader = new FileReader();
+        reader.onload = function (ev) {
+            preview.src = ev.target.result;
+            preview.style.display = 'block';
+            if (icon) icon.style.display = 'none';
+            if (text) text.style.display = 'none';
+            document.getElementById('CaddieAvatar').value = ev.target.result;
+        };
+        reader.readAsDataURL(file);
+    });
+
+    // ── Select2 tag helper ─────────────────────────────────────────
+    function initSelect2Tags(selectId, hiddenContainerId, inputNamePrefix) {
+        var $sel = $('#' + selectId);
+        $sel.select2({
+            placeholder: '-- Chọn hoặc tìm kiếm --',
+            allowClear: true,
+            width: '100%',
+            tags: false,
+            dropdownParent: $sel.closest('.modal-content').length ? $sel.closest('.modal-content') : $(document.body)
+        });
+
+        $sel.on('change', function () {
+            var container = document.getElementById(hiddenContainerId);
+            container.innerHTML = '';
+            var vals = $(this).val() || [];
+            vals.forEach(function (v, i) {
+                var inp = document.createElement('input');
+                inp.type  = 'hidden';
+                inp.name  = inputNamePrefix + '[' + i + ']';
+                inp.value = v;
+                container.appendChild(inp);
+            });
+        });
+
+        // Trigger initial change to populate hidden inputs
+        $sel.trigger('change');
+    }
+
+    initSelect2Tags('voiceRegionSelect', 'voiceRegionHiddens', 'SelectedVoiceRegions');
+    initSelect2Tags('languageSelect',    'languageHiddens',    'SelectedLanguageIds');
+
+    // ── Validation — enable Save button only when CaddieName filled ──
+    var nameInput = document.getElementById('caddieName');
+    var saveBtn   = document.getElementById('btnSaveCaddie');
+    var nameErr   = document.getElementById('caddieNameErr');
+
+    function checkValid() {
+        var ok = nameInput.value.trim().length > 0;
+        saveBtn.disabled = !ok;
+        nameErr.style.display = ok ? 'none' : 'block';
+    }
+
+    checkValid(); // Initial check
+    nameInput.addEventListener('input', checkValid);
+    nameInput.addEventListener('blur',  checkValid);
+
+    // ── Prevent submit if invalid ──────────────────────────────────
+    document.getElementById('editCaddieForm').addEventListener('submit', function (e) {
+        if (nameInput.value.trim().length === 0) {
+            e.preventDefault();
+            nameErr.style.display = 'block';
+            nameInput.focus();
+        }
+    });
+})();
+</script>

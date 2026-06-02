@@ -1,0 +1,388 @@
+/* ===== Caddie Module Styles ===== */
+:root {
+    --caddie-primary: #005ea4;
+    --caddie-primary-container: #0077ce;
+    --caddie-on-primary: #ffffff;
+    --caddie-surface: #faf8ff;
+    --caddie-surface-container-low: #f2f3ff;
+    --caddie-surface-container: #eaedff;
+    --caddie-surface-container-high: #e2e7ff;
+    --caddie-surface-container-highest: #dae2fd;
+    --caddie-on-surface: #131b2e;
+    --caddie-on-surface-variant: #404752;
+    --caddie-outline: #707783;
+    --caddie-outline-variant: #c0c7d4;
+    --caddie-tertiary: #8f4a00;
+    --caddie-error: #ba1a1a;
+}
+
+/* Page Layout */
+.caddie-page { padding: 24px; font-family: 'Inter', sans-serif; }
+.caddie-page h1, .caddie-page h2, .caddie-page h3 { font-family: 'Manrope', sans-serif; }
+
+/* Header */
+.caddie-header-row { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 32px; }
+.caddie-page-title { font-size: 1.75rem; font-weight: 800; color: var(--caddie-on-surface); letter-spacing: -0.02em; margin-bottom: 4px; }
+.caddie-page-subtitle { color: var(--caddie-on-surface-variant); font-size: 0.875rem; margin: 0; }
+
+/* Primary Button */
+.btn-caddie-primary {
+    background: var(--caddie-primary);
+    color: var(--caddie-on-primary);
+    font-weight: 700;
+    padding: 12px 24px;
+    border-radius: 8px;
+    border: none;
+    box-shadow: 0 4px 12px rgba(0, 94, 164, 0.1);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.2s;
+}
+.btn-caddie-primary:hover { background: var(--caddie-primary-container); color: #fff; transform: scale(0.98); }
+
+/* Table Container */
+.caddie-table-container {
+    background: #fff;
+    border-radius: 12px;
+    padding: 8px;
+    border: none;
+}
+
+/* Table */
+.caddie-table { width: 100%; border-separate; border-spacing: 0 6px; }
+.caddie-table thead th {
+    padding: 16px 24px;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--caddie-on-surface-variant);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    border: none;
+    background: transparent;
+}
+.caddie-table tbody tr { transition: all 0.15s; }
+.caddie-table tbody td {
+    padding: 16px 24px;
+    background: var(--caddie-surface-container-low);
+    border: none;
+    vertical-align: middle;
+    font-size: 0.875rem;
+}
+.caddie-table tbody tr:hover td { background: var(--caddie-surface-container-high); }
+.caddie-table tbody td:first-child { border-radius: 8px 0 0 8px; }
+.caddie-table tbody td:last-child { border-radius: 0 8px 8px 0; }
+
+/* Caddie Code */
+.caddie-code { font-weight: 700; color: var(--caddie-primary); }
+
+/* Avatar + Name */
+.caddie-name-cell { display: flex; align-items: center; gap: 12px; }
+.caddie-avatar { width: 32px; height: 32px; border-radius: 50%; object-fit: cover; border: 1px solid #fff; box-shadow: 0 1px 3px rgba(0,0,0,.1); }
+.caddie-name { font-weight: 700; color: var(--caddie-on-surface); }
+
+/* Language Badges */
+.caddie-lang-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: 700;
+    margin: 1px 2px;
+}
+.caddie-lang-badge-primary { background: #d3e4ff; color: #004881; }
+.caddie-lang-badge-tertiary { background: #ffdcc4; color: #6f3800; }
+.caddie-lang-badge-default { background: var(--caddie-surface-container-highest); color: var(--caddie-on-surface-variant); }
+
+/* Star Rating */
+.caddie-stars { color: #f59e0b; font-size: 1rem; }
+.caddie-stars .star-empty { color: #cbd5e1; }
+
+/* Toggle Switch */
+.caddie-toggle-switch { position: relative; display: inline-flex; align-items: center; cursor: pointer; }
+.caddie-toggle-switch input { position: absolute; opacity: 0; width: 0; height: 0; }
+.caddie-toggle-slider {
+    width: 44px; height: 24px;
+    background: var(--caddie-outline-variant);
+    border-radius: 12px;
+    position: relative;
+    transition: all 0.3s;
+}
+.caddie-toggle-slider::after {
+    content: '';
+    position: absolute;
+    top: 2px; left: 2px;
+    width: 20px; height: 20px;
+    background: #fff;
+    border-radius: 50%;
+    transition: all 0.3s;
+    border: 1px solid #e5e7eb;
+}
+.caddie-toggle-switch input:checked + .caddie-toggle-slider { background: var(--caddie-primary); }
+.caddie-toggle-switch input:checked + .caddie-toggle-slider::after { transform: translateX(20px); border-color: transparent; }
+
+/* Action Dropdown */
+.caddie-action-btn {
+    padding: 8px;
+    border-radius: 8px;
+    border: none;
+    background: transparent;
+    transition: background 0.15s;
+}
+.caddie-action-btn:hover { background: #fff; }
+
+/* Pagination */
+.caddie-pagination { display: flex; align-items: center; justify-content: space-between; padding: 16px 24px; margin-top: 8px; }
+.caddie-pagination-info { font-size: 12px; color: var(--caddie-on-surface-variant); }
+.caddie-pagination-info strong { font-weight: 700; }
+
+/* Detail Page */
+.caddie-detail-page { padding: 24px; }
+.caddie-profile-card {
+    background: #fff;
+    border-radius: 12px;
+    padding: 24px;
+    box-shadow: 0 1px 3px rgba(0,0,0,.06);
+    display: flex;
+    gap: 32px;
+    align-items: center;
+}
+.caddie-profile-avatar-wrap { position: relative; }
+.caddie-profile-avatar {
+    width: 128px; height: 128px;
+    border-radius: 12px;
+    object-fit: cover;
+    box-shadow: 0 4px 12px rgba(0,0,0,.1);
+    border: 4px solid var(--caddie-surface-container-low);
+}
+.caddie-profile-status-badge {
+    position: absolute;
+    bottom: -8px; right: -8px;
+    background: #22c55e;
+    color: #fff;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 4px 8px;
+    border-radius: 12px;
+    border: 2px solid #fff;
+    text-transform: uppercase;
+}
+.caddie-profile-name { font-size: 1.75rem; font-weight: 800; color: var(--caddie-on-surface); letter-spacing: -0.02em; }
+.caddie-profile-code-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(0, 94, 164, 0.05);
+    padding: 4px 12px;
+    border-radius: 8px;
+    font-size: 0.875rem;
+}
+.caddie-profile-code-badge .code { color: var(--caddie-primary); font-weight: 800; letter-spacing: 0.02em; }
+
+/* Next Booking Card */
+.caddie-next-booking-card {
+    background: var(--caddie-primary);
+    color: var(--caddie-on-primary);
+    border-radius: 12px;
+    padding: 24px;
+    box-shadow: 0 8px 24px rgba(0, 94, 164, 0.2);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    height: 100%;
+}
+.caddie-next-booking-title { font-weight: 700; font-size: 1rem; }
+.caddie-next-booking-date { font-size: 1.75rem; font-weight: 800; margin-top: 12px; }
+.caddie-next-booking-sub { opacity: 0.8; font-size: 0.875rem; }
+.caddie-next-booking-btn {
+    margin-top: 20px;
+    width: 100%;
+    padding: 8px;
+    background: rgba(255,255,255,0.2);
+    border: none;
+    border-radius: 8px;
+    color: #fff;
+    font-weight: 700;
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+.caddie-next-booking-btn:hover { background: rgba(255,255,255,0.3); }
+
+/* Info Sidebar */
+.caddie-info-card {
+    background: var(--caddie-surface-container-highest);
+    border-radius: 12px;
+    padding: 24px;
+}
+.caddie-info-card h3 { font-weight: 700; font-size: 1rem; margin-bottom: 20px; display: flex; align-items: center; gap: 8px; }
+.caddie-info-item { padding: 8px 0; border-bottom: 1px solid rgba(192, 199, 212, 0.3); }
+.caddie-info-item:last-child { border-bottom: none; }
+.caddie-info-label { font-size: 10px; font-weight: 700; color: var(--caddie-on-surface-variant); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 4px; }
+.caddie-info-value { font-size: 0.875rem; font-weight: 700; color: var(--caddie-on-surface); }
+.caddie-info-tag {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    margin: 2px;
+}
+.caddie-info-tag-primary { background: rgba(0, 94, 164, 0.1); color: var(--caddie-primary); border: 1px solid rgba(0, 94, 164, 0.2); }
+.caddie-info-tag-tertiary { background: rgba(143, 74, 0, 0.1); color: var(--caddie-tertiary); border: 1px solid rgba(143, 74, 0, 0.2); }
+.caddie-note-quote {
+    background: #fff;
+    padding: 12px;
+    border-radius: 8px;
+    font-size: 12px;
+    font-style: italic;
+    color: var(--caddie-on-surface-variant);
+    border-left: 4px solid var(--caddie-tertiary);
+    box-shadow: 0 1px 3px rgba(0,0,0,.05);
+}
+
+/* Tabs */
+.caddie-tabs .nav-link {
+    padding: 16px 32px;
+    font-weight: 700;
+    font-size: 0.875rem;
+    color: var(--caddie-on-surface-variant);
+    border: none;
+    border-bottom: 2px solid transparent;
+}
+.caddie-tabs .nav-link.active { color: var(--caddie-primary); border-bottom-color: var(--caddie-primary); }
+.caddie-tabs .nav-link:hover { color: var(--caddie-primary); background: var(--caddie-surface-container-low); }
+
+/* FAB */
+.caddie-fab {
+    position: fixed;
+    bottom: 32px; right: 32px;
+    width: 56px; height: 56px;
+    border-radius: 50%;
+    background: var(--caddie-primary);
+    color: #fff;
+    border: none;
+    box-shadow: 0 8px 24px rgba(0, 94, 164, 0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.25rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    z-index: 100;
+}
+.caddie-fab:hover { transform: scale(1.1); }
+.caddie-fab:active { transform: scale(0.95); }
+
+/* Modal Styles */
+.caddie-modal-header { border-bottom: 1px solid rgba(192, 199, 212, 0.1); }
+.caddie-modal-header h5 { font-family: 'Manrope', sans-serif; font-weight: 800; font-size: 1.25rem; color: var(--caddie-on-surface); }
+.caddie-modal-subtitle { font-size: 11px; color: var(--caddie-on-surface-variant); margin-top: 2px; }
+.caddie-form-label {
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--caddie-on-surface-variant);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 4px;
+}
+.caddie-form-control {
+    background: var(--caddie-surface-container-low);
+    border: none;
+    border-bottom: 2px solid var(--caddie-outline-variant);
+    border-radius: 4px 4px 0 0;
+    padding: 10px 12px;
+    font-size: 0.875rem;
+    transition: border-color 0.2s;
+}
+.caddie-form-control:focus { border-bottom-color: var(--caddie-primary); box-shadow: none; background: var(--caddie-surface-container-low); }
+.caddie-form-control:disabled { background: var(--caddie-surface-container); color: var(--caddie-outline); cursor: not-allowed; }
+
+/* Avatar Upload */
+.caddie-avatar-upload {
+    width: 96px; height: 96px;
+    border-radius: 50%;
+    border: 2px dashed var(--caddie-primary);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    overflow: hidden;
+    position: relative;
+}
+.caddie-avatar-upload:hover { background: rgba(0, 94, 164, 0.05); }
+.caddie-avatar-upload img { width: 100%; height: 100%; object-fit: cover; }
+.caddie-avatar-upload-icon { color: var(--caddie-primary); font-size: 1.5rem; }
+.caddie-avatar-upload-text { font-size: 10px; font-weight: 700; color: var(--caddie-primary); text-transform: uppercase; margin-top: 4px; }
+.caddie-avatar-edit-badge {
+    position: absolute;
+    bottom: -4px; right: -4px;
+    width: 24px; height: 24px;
+    background: var(--caddie-primary);
+    color: #fff;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    box-shadow: 0 2px 6px rgba(0,0,0,.2);
+}
+
+/* Schedule Calendar */
+.caddie-schedule-page { padding: 24px; }
+.caddie-schedule-filters { display: flex; flex-wrap: wrap; gap: 16px; margin-bottom: 24px; }
+.caddie-schedule-filter-group { display: flex; flex-direction: column; gap: 4px; }
+.caddie-schedule-filter-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--caddie-on-surface-variant); margin-left: 4px; }
+.caddie-schedule-view-toggle { display: flex; background: var(--caddie-surface-container-high); padding: 4px; border-radius: 8px; }
+.caddie-schedule-view-btn { padding: 8px 24px; font-size: 0.875rem; font-weight: 700; border: none; background: transparent; color: var(--caddie-on-surface-variant); border-radius: 6px; cursor: pointer; transition: all 0.2s; }
+.caddie-schedule-view-btn.active { background: #fff; color: var(--caddie-primary); box-shadow: 0 1px 3px rgba(0,0,0,.1); }
+
+.caddie-schedule-legend { display: flex; align-items: center; gap: 24px; padding: 12px 16px; background: rgba(242, 243, 255, 0.5); border-radius: 12px; border: 1px solid rgba(192, 199, 212, 0.1); margin-bottom: 24px; }
+.caddie-schedule-legend-label { font-size: 11px; font-weight: 600; color: var(--caddie-on-surface-variant); text-transform: uppercase; letter-spacing: 0.08em; }
+.caddie-schedule-legend-item { display: flex; align-items: center; gap: 8px; font-size: 0.875rem; font-weight: 500; }
+.caddie-schedule-legend-dot { width: 12px; height: 12px; border-radius: 50%; }
+.caddie-schedule-legend-dot.available { background: var(--caddie-primary); }
+.caddie-schedule-legend-dot.booked { background: var(--caddie-tertiary); }
+.caddie-schedule-legend-dot.off { background: var(--caddie-outline-variant); }
+
+/* Calendar Grid */
+.caddie-calendar { background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,.06); border: 1px solid rgba(192, 199, 212, 0.1); }
+.caddie-calendar-header { display: grid; grid-template-columns: repeat(7, 1fr); border-bottom: 1px solid rgba(192, 199, 212, 0.2); background: var(--caddie-surface-container); }
+.caddie-calendar-header-cell { padding: 16px; text-align: center; border-right: 1px solid rgba(192, 199, 212, 0.2); }
+.caddie-calendar-header-cell:last-child { border-right: none; }
+.caddie-calendar-header-cell .day-name { font-size: 10px; font-weight: 700; text-transform: uppercase; color: var(--caddie-on-surface-variant); }
+.caddie-calendar-header-cell .day-num { font-size: 1.25rem; font-weight: 700; }
+.caddie-calendar-header-cell.today { background: rgba(0, 94, 164, 0.05); }
+.caddie-calendar-header-cell.today .day-name { color: var(--caddie-primary); }
+.caddie-calendar-header-cell.today .day-num { color: var(--caddie-primary); }
+.caddie-calendar-header-cell.weekend .day-name { color: var(--caddie-error); }
+.caddie-calendar-header-cell.weekend .day-num { color: var(--caddie-error); }
+
+.caddie-calendar-body { display: grid; grid-template-columns: repeat(7, 1fr); min-height: 500px; }
+.caddie-calendar-day { padding: 8px; border-right: 1px solid rgba(192, 199, 212, 0.1); display: flex; flex-direction: column; gap: 8px; }
+.caddie-calendar-day:last-child { border-right: none; }
+.caddie-calendar-day.today { background: rgba(0, 94, 164, 0.03); }
+.caddie-calendar-day.weekend { background: rgba(186, 26, 26, 0.02); }
+
+.caddie-schedule-card {
+    padding: 12px;
+    background: #fff;
+    border-radius: 8px;
+    border-left: 4px solid var(--caddie-primary);
+    box-shadow: 0 1px 3px rgba(0,0,0,.06);
+    cursor: pointer;
+    transition: transform 0.15s;
+}
+.caddie-schedule-card:hover { transform: scale(1.02); }
+.caddie-schedule-card.booked { border-left-color: var(--caddie-tertiary); }
+.caddie-schedule-card.off { border-left-color: var(--caddie-outline-variant); opacity: 0.6; }
+.caddie-schedule-card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 4px; }
+.caddie-schedule-card-name { font-size: 0.8rem; font-weight: 700; }
+.caddie-schedule-card-code { font-size: 10px; padding: 2px 6px; border-radius: 4px; font-weight: 700; text-transform: uppercase; }
+.caddie-schedule-card-code.available { background: rgba(0, 94, 164, 0.1); color: var(--caddie-primary); }
+.caddie-schedule-card-code.booked { background: rgba(143, 74, 0, 0.1); color: var(--caddie-tertiary); }
+.caddie-schedule-card-code.off { background: rgba(192, 199, 212, 0.2); color: var(--caddie-on-surface-variant); }
+.caddie-schedule-card-info { font-size: 11px; color: var(--caddie-on-surface-variant); display: flex; align-items: center; gap: 4px; }

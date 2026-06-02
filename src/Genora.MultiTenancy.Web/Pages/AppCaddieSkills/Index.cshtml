@@ -1,0 +1,51 @@
+@page
+@using Genora.MultiTenancy.Permissions
+@using Microsoft.AspNetCore.Authorization
+@using Genora.MultiTenancy.Web.Pages.AppCaddieSkills
+@inject IAuthorizationService AuthorizationService
+@inject Volo.Abp.MultiTenancy.ICurrentTenant CurrentTenant
+@model IndexModel
+
+@section styles {
+    <abp-style src="/pages/caddie/caddie-shared.css" />
+}
+
+@section scripts {
+    <abp-script src="/Pages/AppCaddieSkills/index.js" />
+}
+
+@{
+    var canCreate = CurrentTenant.IsAvailable
+        ? await AuthorizationService.IsGrantedAsync(MultiTenancyPermissions.AppCaddieSkills.Create)
+        : await AuthorizationService.IsGrantedAsync(MultiTenancyPermissions.HostAppCaddieSkills.Create);
+    var canEdit = CurrentTenant.IsAvailable
+        ? await AuthorizationService.IsGrantedAsync(MultiTenancyPermissions.AppCaddieSkills.Edit)
+        : await AuthorizationService.IsGrantedAsync(MultiTenancyPermissions.HostAppCaddieSkills.Edit);
+    var canDelete = CurrentTenant.IsAvailable
+        ? await AuthorizationService.IsGrantedAsync(MultiTenancyPermissions.AppCaddieSkills.Delete)
+        : await AuthorizationService.IsGrantedAsync(MultiTenancyPermissions.HostAppCaddieSkills.Delete);
+}
+
+<div class="caddie-page">
+    <div class="caddie-header-row">
+        <div>
+            <h1 class="caddie-page-title">Quản lý chuyên môn (Skills)</h1>
+            <p class="caddie-page-subtitle">Quản lý danh sách kỹ năng chuyên môn dùng để đánh giá Caddy.</p>
+        </div>
+        @if (canCreate)
+        {
+            <button type="button" id="NewSkillButton" class="btn-caddie-primary">
+                <i class="fa fa-plus"></i> Thêm kỹ năng
+            </button>
+        }
+    </div>
+
+    <div class="caddie-table-container">
+        <div class="table-responsive">
+            <table id="CaddieSkillsTable" class="caddie-table"></table>
+        </div>
+    </div>
+</div>
+
+<input type="hidden" id="CanEdit" value="@canEdit.ToString().ToLower()" />
+<input type="hidden" id="CanDelete" value="@canDelete.ToString().ToLower()" />

@@ -186,6 +186,16 @@ public class MultiTenancyMenuContributor : IMenuContributor
                     await perms.IsGrantedAsync(MultiTenancyPermissions.SalonBeautyLoyaltyConfig.Default)
                 );
 
+            var canSeeCaddie =
+                await feature.IsEnabledAsync(Features.Caddie.CaddieFeatures.Management) &&
+                (
+                    await perms.IsGrantedAsync(MultiTenancyPermissions.AppCaddies.Default) ||
+                    await perms.IsGrantedAsync(MultiTenancyPermissions.AppCaddieBookings.Default) ||
+                    await perms.IsGrantedAsync(MultiTenancyPermissions.AppCaddieSchedules.Default) ||
+                    await perms.IsGrantedAsync(MultiTenancyPermissions.AppCaddieSkills.Default) ||
+                    await perms.IsGrantedAsync(MultiTenancyPermissions.AppCaddieRatings.Default)
+                );
+
             // ===== Home Page Config (Theme + Widgets) =====
             var canSeeHomePageConfigs =
                 await feature.IsEnabledAsync(AppHomePageFeatures.Management) &&
@@ -441,6 +451,97 @@ public class MultiTenancyMenuContributor : IMenuContributor
                 //}
 
                 context.Menu.AddItem(groupSalonBeauty);
+            }
+
+            // ── CADDIE ──────────────────────────────────────────────────────
+            if (canSeeCaddie)
+            {
+                var groupCaddie = new ApplicationMenuItem(
+                    name: "MenuGroup.Caddie",
+                    displayName: l["MenuGroup:Caddie"],
+                    icon: "fa fa-golf-ball",
+                    order: 48
+                );
+
+                if (await perms.IsGrantedAsync(MultiTenancyPermissions.AppCaddies.Default))
+                {
+                    groupCaddie.AddItem(
+                        new ApplicationMenuItem(
+                            name: "AppCaddies",
+                            displayName: l["Menu:AppCaddies"],
+                            url: "/AppCaddies",
+                            icon: "fa fa-user-tie",
+                            order: 1
+                        ).RequirePermissions(MultiTenancyPermissions.AppCaddies.Default)
+                    );
+                }
+
+                if (await perms.IsGrantedAsync(MultiTenancyPermissions.AppCaddieSkills.Default))
+                {
+                    groupCaddie.AddItem(
+                        new ApplicationMenuItem(
+                            name: "AppCaddieSkills",
+                            displayName: l["Menu:AppCaddieSkills"],
+                            url: "/AppCaddieSkills",
+                            icon: "fa fa-star",
+                            order: 2
+                        ).RequirePermissions(MultiTenancyPermissions.AppCaddieSkills.Default)
+                    );
+                }
+
+                if (await perms.IsGrantedAsync(MultiTenancyPermissions.AppCaddieSchedules.Default))
+                {
+                    groupCaddie.AddItem(
+                        new ApplicationMenuItem(
+                            name: "AppCaddieSchedules",
+                            displayName: l["Menu:AppCaddieSchedules"],
+                            url: "/AppCaddieSchedules",
+                            icon: "fa fa-calendar-alt",
+                            order: 3
+                        ).RequirePermissions(MultiTenancyPermissions.AppCaddieSchedules.Default)
+                    );
+                }
+
+                if (await perms.IsGrantedAsync(MultiTenancyPermissions.AppCaddieBookings.Default))
+                {
+                    groupCaddie.AddItem(
+                        new ApplicationMenuItem(
+                            name: "AppCaddieBookings",
+                            displayName: l["Menu:AppCaddieBookings"],
+                            url: "/AppCaddieBookings",
+                            icon: "fa fa-clipboard-list",
+                            order: 4
+                        ).RequirePermissions(MultiTenancyPermissions.AppCaddieBookings.Default)
+                    );
+                }
+
+                if (await perms.IsGrantedAsync(MultiTenancyPermissions.AppCaddieRatings.Default))
+                {
+                    groupCaddie.AddItem(
+                        new ApplicationMenuItem(
+                            name: "AppCaddieRatings",
+                            displayName: l["Menu:AppCaddieRatings"],
+                            url: "/AppCaddieRatings",
+                            icon: "fa fa-star-half-alt",
+                            order: 5
+                        ).RequirePermissions(MultiTenancyPermissions.AppCaddieRatings.Default)
+                    );
+                }
+
+                if (await perms.IsGrantedAsync(MultiTenancyPermissions.AppLanguages.Default))
+                {
+                    groupCaddie.AddItem(
+                        new ApplicationMenuItem(
+                            name: "AppLanguages",
+                            displayName: l["Menu:AppLanguages"],
+                            url: "/AppLanguages",
+                            icon: "fa fa-language",
+                            order: 6
+                        ).RequirePermissions(MultiTenancyPermissions.AppLanguages.Default)
+                    );
+                }
+
+                context.Menu.AddItem(groupCaddie);
             }
 
             // =========================================================
@@ -986,6 +1087,14 @@ public class MultiTenancyMenuContributor : IMenuContributor
                 await perms.IsGrantedAsync(MultiTenancyPermissions.HostAppFnbOrders.Default) ||
                 await perms.IsGrantedAsync(MultiTenancyPermissions.HostAppFnbKitchenBoard.Default);
 
+            var hostCanSeeCaddie =
+                await perms.IsGrantedAsync(MultiTenancyPermissions.HostAppCaddies.Default) ||
+                await perms.IsGrantedAsync(MultiTenancyPermissions.HostAppCaddieBookings.Default) ||
+                await perms.IsGrantedAsync(MultiTenancyPermissions.HostAppCaddieSchedules.Default) ||
+                await perms.IsGrantedAsync(MultiTenancyPermissions.HostAppCaddieSkills.Default) ||
+                await perms.IsGrantedAsync(MultiTenancyPermissions.HostAppCaddieRatings.Default) ||
+                await perms.IsGrantedAsync(MultiTenancyPermissions.HostAppLanguages.Default);
+
             if (hostCanSeeFnb)
             {
                 var groupFnb = new ApplicationMenuItem(
@@ -1224,6 +1333,97 @@ public class MultiTenancyMenuContributor : IMenuContributor
                 //}
 
                 context.Menu.AddItem(groupSalonBeauty);
+            }
+
+            // ── CADDIE (HOST) ────────────────────────────────────────────────
+            if (hostCanSeeCaddie)
+            {
+                var groupCaddie = new ApplicationMenuItem(
+                    name: "MenuGroup.Caddie",
+                    displayName: l["MenuGroup:Caddie"],
+                    icon: "fa fa-golf-ball",
+                    order: 48
+                );
+
+                if (await perms.IsGrantedAsync(MultiTenancyPermissions.HostAppCaddies.Default))
+                {
+                    groupCaddie.AddItem(
+                        new ApplicationMenuItem(
+                            name: "AppCaddiesHost",
+                            displayName: l["Menu:AppCaddies"],
+                            url: "/AppCaddies",
+                            icon: "fa fa-user-tie",
+                            order: 1
+                        ).RequirePermissions(MultiTenancyPermissions.HostAppCaddies.Default)
+                    );
+                }
+
+                if (await perms.IsGrantedAsync(MultiTenancyPermissions.HostAppCaddieSkills.Default))
+                {
+                    groupCaddie.AddItem(
+                        new ApplicationMenuItem(
+                            name: "AppCaddieSkillsHost",
+                            displayName: l["Menu:AppCaddieSkills"],
+                            url: "/AppCaddieSkills",
+                            icon: "fa fa-star",
+                            order: 2
+                        ).RequirePermissions(MultiTenancyPermissions.HostAppCaddieSkills.Default)
+                    );
+                }
+
+                if (await perms.IsGrantedAsync(MultiTenancyPermissions.HostAppCaddieSchedules.Default))
+                {
+                    groupCaddie.AddItem(
+                        new ApplicationMenuItem(
+                            name: "AppCaddieSchedulesHost",
+                            displayName: l["Menu:AppCaddieSchedules"],
+                            url: "/AppCaddieSchedules",
+                            icon: "fa fa-calendar-alt",
+                            order: 3
+                        ).RequirePermissions(MultiTenancyPermissions.HostAppCaddieSchedules.Default)
+                    );
+                }
+
+                if (await perms.IsGrantedAsync(MultiTenancyPermissions.HostAppCaddieBookings.Default))
+                {
+                    groupCaddie.AddItem(
+                        new ApplicationMenuItem(
+                            name: "AppCaddieBookingsHost",
+                            displayName: l["Menu:AppCaddieBookings"],
+                            url: "/AppCaddieBookings",
+                            icon: "fa fa-clipboard-list",
+                            order: 4
+                        ).RequirePermissions(MultiTenancyPermissions.HostAppCaddieBookings.Default)
+                    );
+                }
+
+                if (await perms.IsGrantedAsync(MultiTenancyPermissions.HostAppCaddieRatings.Default))
+                {
+                    groupCaddie.AddItem(
+                        new ApplicationMenuItem(
+                            name: "AppCaddieRatingsHost",
+                            displayName: l["Menu:AppCaddieRatings"],
+                            url: "/AppCaddieRatings",
+                            icon: "fa fa-star-half-alt",
+                            order: 5
+                        ).RequirePermissions(MultiTenancyPermissions.HostAppCaddieRatings.Default)
+                    );
+                }
+
+                if (await perms.IsGrantedAsync(MultiTenancyPermissions.HostAppLanguages.Default))
+                {
+                    groupCaddie.AddItem(
+                        new ApplicationMenuItem(
+                            name: "AppLanguagesHost",
+                            displayName: l["Menu:AppLanguages"],
+                            url: "/AppLanguages",
+                            icon: "fa fa-language",
+                            order: 6
+                        ).RequirePermissions(MultiTenancyPermissions.HostAppLanguages.Default)
+                    );
+                }
+
+                context.Menu.AddItem(groupCaddie);
             }
 
             // ===== Home Page Config (Theme + Widgets) - HOST =====
