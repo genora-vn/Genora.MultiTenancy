@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using Volo.Abp.Content;
 
 namespace Genora.MultiTenancy.AppDtos.Caddies;
 
@@ -10,8 +11,17 @@ public class CreateUpdateCaddieDto
     [StringLength(255)]
     public string CaddieName { get; set; } = null!;
 
-    [StringLength(1048576)] // 1MB base64 max
-    public string? Avatar { get; set; }
+    /// <summary>
+    /// Avatar file upload (IRemoteStreamContent from multipart form).
+    /// Server will upload and store URL.
+    /// </summary>
+    public IRemoteStreamContent? AvatarFile { get; set; }
+
+    /// <summary>
+    /// Current avatar URL (used for display / keep existing).
+    /// </summary>
+    [StringLength(500)]
+    public string? AvatarUrl { get; set; }
 
     public byte? Gender { get; set; }
 

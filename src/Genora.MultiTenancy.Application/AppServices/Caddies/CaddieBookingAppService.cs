@@ -5,13 +5,16 @@ using System.Threading.Tasks;
 using Genora.MultiTenancy.AppDtos.Caddies;
 using Genora.MultiTenancy.DomainModels.AppCaddie;
 using Genora.MultiTenancy.Enums;
+using Genora.MultiTenancy.Features.Caddie;
 using Genora.MultiTenancy.Localization;
 using Genora.MultiTenancy.Permissions;
 using Microsoft.AspNetCore.Authorization;
 using Volo.Abp;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Application.Services;
+using Volo.Abp.Authorization;
 using Volo.Abp.Domain.Repositories;
+using Volo.Abp.Features;
 using Volo.Abp.Guids;
 using Volo.Abp.MultiTenancy;
 
@@ -24,6 +27,7 @@ public class CaddieBookingAppService : ApplicationService
     private readonly IRepository<AppCaddie, Guid> _caddieRepo;
     private readonly IRepository<AppCaddieSchedule, Guid> _scheduleRepo;
     private readonly ICurrentTenant _currentTenant;
+    private readonly IFeatureChecker _featureChecker;
     private readonly IGuidGenerator _guidGenerator;
 
     public CaddieBookingAppService(
@@ -31,12 +35,14 @@ public class CaddieBookingAppService : ApplicationService
         IRepository<AppCaddie, Guid> caddieRepo,
         IRepository<AppCaddieSchedule, Guid> scheduleRepo,
         ICurrentTenant currentTenant,
+        IFeatureChecker featureChecker,
         IGuidGenerator guidGenerator)
     {
         _bookingRepo = bookingRepo;
         _caddieRepo = caddieRepo;
         _scheduleRepo = scheduleRepo;
         _currentTenant = currentTenant;
+        _featureChecker = featureChecker;
         _guidGenerator = guidGenerator;
         LocalizationResource = typeof(MultiTenancyResource);
     }
@@ -44,8 +50,16 @@ public class CaddieBookingAppService : ApplicationService
     private string P(string tenantPerm, string hostPerm)
         => _currentTenant.IsAvailable ? tenantPerm : hostPerm;
 
+    private async Task EnsureFeatureAsync()
+    {
+        if (!_currentTenant.IsAvailable) return;
+        if (!await _featureChecker.IsEnabledAsync(CaddieFeatures.Management))
+            throw new AbpAuthorizationException($"Feature '{CaddieFeatures.Management}' is disabled for this tenant.");
+    }
+
     public async Task<PagedResultDto<CaddieBookingDto>> GetListAsync(GetCaddieBookingListInput input)
     {
+        await EnsureFeatureAsync();
         await AuthorizationService.CheckAsync(
             P(MultiTenancyPermissions.AppCaddieBookings.Default, MultiTenancyPermissions.HostAppCaddieBookings.Default));
 
@@ -99,6 +113,7 @@ public class CaddieBookingAppService : ApplicationService
 
     public async Task<CaddieBookingDto> GetAsync(Guid id)
     {
+        await EnsureFeatureAsync();
         await AuthorizationService.CheckAsync(
             P(MultiTenancyPermissions.AppCaddieBookings.Default, MultiTenancyPermissions.HostAppCaddieBookings.Default));
 
@@ -109,6 +124,7 @@ public class CaddieBookingAppService : ApplicationService
 
     public async Task UpdateStatusAsync(Guid id, UpdateCaddieBookingStatusDto input)
     {
+        await EnsureFeatureAsync();
         await AuthorizationService.CheckAsync(
             P(MultiTenancyPermissions.AppCaddieBookings.Edit, MultiTenancyPermissions.HostAppCaddieBookings.Edit));
 
@@ -150,6 +166,7 @@ public class CaddieBookingAppService : ApplicationService
 
     public async Task DeleteAsync(Guid id)
     {
+        await EnsureFeatureAsync();
         await AuthorizationService.CheckAsync(
             P(MultiTenancyPermissions.AppCaddieBookings.Delete, MultiTenancyPermissions.HostAppCaddieBookings.Delete));
 
@@ -160,11 +177,6 @@ public class CaddieBookingAppService : ApplicationService
 
     private void ValidateStatusTransition(byte currentStatus, byte newStatus)
     {
-        // BR-01: No backward transitions
-        // BR-02: Valid flow: NEW → CONFIRMED → COMPLETED
-        // BR-03: CANCELLED from NEW or CONFIRMED only
-        // BR-14: COMPLETED cannot be CANCELLED
-
         var current = (CaddieBookingStatus)currentStatus;
         var next = (CaddieBookingStatus)newStatus;
 

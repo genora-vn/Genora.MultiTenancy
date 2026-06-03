@@ -3,6 +3,12 @@ $(function () {
     var canEdit = $('#CanEdit').val() === 'true';
     var canDelete = $('#CanDelete').val() === 'true';
 
+    // Init flatpickr for date filter
+    flatpickr('#BookingDateFilter', {
+        dateFormat: 'd/m/Y',
+        allowInput: true
+    });
+
     var dataTable = $('#CaddieBookingsTable').DataTable(
         abp.libs.datatables.normalizeConfiguration({
             serverSide: true,
@@ -10,28 +16,34 @@ $(function () {
             searching: false,
             scrollX: true,
             ajax: abp.libs.datatables.createAjax(bookingService.getList, function () {
+                var dateVal = $('#BookingDateFilter').val();
+                var isoDate = '';
+                if (dateVal) {
+                    var parts = dateVal.split('/');
+                    if (parts.length === 3) isoDate = parts[2] + '-' + parts[1] + '-' + parts[0];
+                }
                 return {
                     filter: $('#BookingFilter').val() || undefined,
                     status: $('#BookingStatusFilter').val() || undefined,
                     paymentStatus: $('#BookingPaymentFilter').val() || undefined,
-                    fromDate: $('#BookingFromDate').val() || undefined,
-                    toDate: $('#BookingToDate').val() || undefined
+                    fromDate: isoDate || undefined,
+                    toDate: isoDate || undefined
                 };
             }),
             columnDefs: [
                 {
-                    title: 'Thao tác',
+                    title: 'Hành động',
                     orderable: false,
-                    width: '60px',
+                    width: '70px',
                     render: function (data, type, row) {
                         var items = [];
-                        items.push('<li><a class="dropdown-item booking-action-detail" data-id="' + row.id + '"><i class="fa fa-eye me-2 text-primary"></i>Xem chi tiết</a></li>');
+                        items.push('<li><a class="dropdown-item booking-action-detail" data-id="' + row.id + '"><i class="fa fa-eye me-2 text-primary"></i>Chi tiết Booking</a></li>');
                         if (canEdit && row.status !== 3 && row.status !== 4) {
                             items.push('<li><a class="dropdown-item booking-action-status" data-id="' + row.id + '" data-status="' + row.status + '"><i class="fa fa-exchange-alt me-2"></i>Cập nhật trạng thái</a></li>');
                         }
                         if (canDelete) {
                             items.push('<li><hr class="dropdown-divider"></li>');
-                            items.push('<li><a class="dropdown-item text-danger booking-action-delete" data-id="' + row.id + '" data-code="' + row.bookingCode + '"><i class="fa fa-trash me-2"></i>Xóa</a></li>');
+                            items.push('<li><a class="dropdown-item text-danger booking-action-delete" data-id="' + row.id + '" data-code="' + row.bookingCode + '"><i class="fa fa-trash me-2"></i>Hủy yêu cầu</a></li>');
                         }
                         return '<div class="dropdown"><button class="caddie-action-btn dropdown-toggle" data-bs-toggle="dropdown"><i class="fa fa-ellipsis-v"></i></button><ul class="dropdown-menu dropdown-menu-end shadow-sm">' + items.join('') + '</ul></div>';
                     }
@@ -39,65 +51,65 @@ $(function () {
                 {
                     title: 'Mã Booking',
                     data: 'bookingCode',
-                    render: function (data) { return '<span class="caddie-code">' + data + '</span>'; }
+                    render: function (data) { return '<span style="font-weight:700;color:var(--caddie-primary);">#' + data + '</span>'; }
                 },
                 {
-                    title: 'Khách hàng',
+                    title: 'Ngày & Giờ đặt',
+                    data: 'creationTime',
+                    render: function (data) {
+                        if (!data) return '—';
+                        var dt = luxon.DateTime.fromISO(data);
+                        return '<p class="mb-0" style="font-size:14px;">' + dt.toFormat('dd/MM/yyyy') + '</p><p class="mb-0" style="font-size:12px;color:var(--caddie-on-surface-variant);">' + dt.toFormat('hh:mm a') + '</p>';
+                    }
+                },
+                {
+                    title: 'Tên khách hàng',
                     data: 'customerName',
+                    render: function (data) { return '<span style="font-weight:500;">' + (data || '—') + '</span>'; }
+                },
+                {
+                    title: 'Ngày & Giờ chơi',
+                    data: 'bookingDate',
                     render: function (data, type, row) {
-                        return '<strong>' + data + '</strong><br/><small style="color:var(--caddie-on-surface-variant);">' + (row.phoneMasked || '') + '</small>';
+                        if (!data) return '—';
+                        var date = luxon.DateTime.fromISO(data).toFormat('dd/MM/yyyy');
+                        var time = row.startTime ? row.startTime.substring(0, 5) : '';
+                        return '<p class="mb-0" style="font-weight:600;">' + date + '</p>' + (time ? '<p class="mb-0" style="font-size:12px;color:var(--caddie-on-surface-variant);">' + time + '</p>' : '');
                     }
                 },
                 {
                     title: 'Caddy',
                     data: 'caddieName',
                     render: function (data, type, row) {
-                        return '<strong>' + (data || '—') + '</strong><br/><small style="color:var(--caddie-primary);">' + (row.caddieCode || '') + '</small>';
+                        var initials = (data || '?').split(' ').map(function(n) { return n[0]; }).join('').substring(0, 2).toUpperCase();
+                        return '<div class="d-flex align-items-center gap-2">' +
+                            '<span class="d-inline-flex align-items-center justify-content-center rounded-circle" style="width:32px;height:32px;background:var(--caddie-surface-container-high);color:var(--caddie-primary);font-size:11px;font-weight:700;">' + initials + '</span>' +
+                            '<span style="font-size:13px;">' + (data || '—') + '</span></div>';
                     }
                 },
                 {
-                    title: 'Ngày chơi',
-                    data: 'bookingDate',
+                    title: 'TT Thanh toán',
+                    data: 'paymentStatus',
+                    className: 'text-center',
                     render: function (data, type, row) {
-                        if (!data) return '—';
-                        var date = luxon.DateTime.fromISO(data).toFormat('dd/MM/yyyy');
-                        var time = row.startTime ? row.startTime.substring(0, 5) : '';
-                        return date + (time ? '<br/><small style="color:var(--caddie-on-surface-variant);">' + time + '</small>' : '');
+                        var style = data === 2
+                            ? 'background:var(--caddie-surface-container-high);color:var(--caddie-primary);'
+                            : 'background:#fef2f2;color:#991b1b;';
+                        return '<span style="' + style + 'font-size:10px;font-weight:700;padding:4px 10px;border-radius:20px;text-transform:uppercase;">' + (row.paymentStatusText || '—') + '</span>';
                     }
                 },
                 {
-                    title: 'Số hố',
-                    data: 'numberOfHoles',
-                    width: '60px',
-                    render: function (data) { return data ? data + ' hố' : '—'; }
-                },
-                {
-                    title: 'Trạng thái',
+                    title: 'TT Chơi',
                     data: 'status',
                     render: function (data, type, row) {
-                        var colors = { 1: 'background:#dbeafe;color:#1e40af;', 2: 'background:#dcfce7;color:#166534;', 3: 'background:#f0fdf4;color:#15803d;', 4: 'background:#fef2f2;color:#991b1b;' };
+                        var colors = {
+                            1: 'background:#dbeafe;color:#1e40af;',
+                            2: 'background:#fef3c7;color:#92400e;',
+                            3: 'background:var(--caddie-surface-container-high);color:var(--caddie-on-surface-variant);',
+                            4: 'background:#fef2f2;color:#991b1b;'
+                        };
                         var style = colors[data] || 'background:#f3f4f6;color:#6b7280;';
-                        return '<span style="' + style + 'font-size:10px;font-weight:700;padding:4px 8px;border-radius:4px;text-transform:uppercase;">' + (row.statusText || '—') + '</span>';
-                    }
-                },
-                {
-                    title: 'Thanh toán',
-                    data: 'paymentStatus',
-                    render: function (data, type, row) {
-                        var style = data === 2
-                            ? 'background:#dcfce7;color:#166534;border:1px solid #bbf7d0;'
-                            : 'background:#fef9c3;color:#a16207;border:1px solid #fde68a;';
-                        return '<span style="' + style + 'font-size:10px;font-weight:700;padding:4px 8px;border-radius:4px;text-transform:uppercase;">' + (row.paymentStatusText || '—') + '</span>';
-                    }
-                },
-                {
-                    title: 'Check-in',
-                    data: 'checkinStatus',
-                    render: function (data, type, row) {
-                        var style = data === 2
-                            ? 'background:#dcfce7;color:#166534;'
-                            : 'background:#f3f4f6;color:#6b7280;';
-                        return '<span style="' + style + 'font-size:10px;font-weight:700;padding:4px 8px;border-radius:4px;text-transform:uppercase;">' + (row.checkinStatusText || '—') + '</span>';
+                        return '<span style="' + style + 'font-size:10px;font-weight:700;padding:4px 10px;border-radius:20px;text-transform:uppercase;">' + (row.statusText || '—') + '</span>';
                     }
                 }
             ]
@@ -114,7 +126,6 @@ $(function () {
         var currentStatus = $(this).data('status');
         $('#statusBookingId').val(id);
 
-        // Show only valid next statuses
         var $select = $('#statusNewValue');
         $select.find('option').hide();
         if (currentStatus === 1) { $select.find('option[value="2"]').show(); $select.find('option[value="4"]').show(); $select.val('2'); }
@@ -163,9 +174,9 @@ $(function () {
             });
     });
 
-    // Detail (navigate to caddie detail page)
+    // Detail - navigate to detail page
     $(document).on('click', '.booking-action-detail', function () {
         var id = $(this).data('id');
-        abp.notify.info('Chi tiết booking #' + id + ' — sẽ hiển thị khi hoàn thiện module.');
+        window.location.href = '/AppCaddieBookings/Detail?id=' + id;
     });
 });

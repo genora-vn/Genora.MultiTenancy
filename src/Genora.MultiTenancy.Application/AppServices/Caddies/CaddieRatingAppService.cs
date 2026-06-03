@@ -5,13 +5,16 @@ using System.Threading.Tasks;
 using Genora.MultiTenancy.AppDtos.Caddies;
 using Genora.MultiTenancy.DomainModels.AppCaddie;
 using Genora.MultiTenancy.Enums;
+using Genora.MultiTenancy.Features.Caddie;
 using Genora.MultiTenancy.Localization;
 using Genora.MultiTenancy.Permissions;
 using Microsoft.AspNetCore.Authorization;
 using Volo.Abp;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Application.Services;
+using Volo.Abp.Authorization;
 using Volo.Abp.Domain.Repositories;
+using Volo.Abp.Features;
 using Volo.Abp.MultiTenancy;
 
 namespace Genora.MultiTenancy.AppServices.Caddies;
@@ -25,6 +28,7 @@ public class CaddieRatingAppService : ApplicationService
     private readonly IRepository<AppCaddieBooking, Guid> _bookingRepo;
     private readonly IRepository<AppCaddieSkill, Guid> _skillRepo;
     private readonly ICurrentTenant _currentTenant;
+    private readonly IFeatureChecker _featureChecker;
 
     public CaddieRatingAppService(
         IRepository<AppCaddieRating, Guid> ratingRepo,
@@ -32,7 +36,8 @@ public class CaddieRatingAppService : ApplicationService
         IRepository<AppCaddie, Guid> caddieRepo,
         IRepository<AppCaddieBooking, Guid> bookingRepo,
         IRepository<AppCaddieSkill, Guid> skillRepo,
-        ICurrentTenant currentTenant)
+        ICurrentTenant currentTenant,
+        IFeatureChecker featureChecker)
     {
         _ratingRepo = ratingRepo;
         _ratingDetailRepo = ratingDetailRepo;
@@ -40,14 +45,23 @@ public class CaddieRatingAppService : ApplicationService
         _bookingRepo = bookingRepo;
         _skillRepo = skillRepo;
         _currentTenant = currentTenant;
+        _featureChecker = featureChecker;
         LocalizationResource = typeof(MultiTenancyResource);
     }
 
     private string P(string tenantPerm, string hostPerm)
         => _currentTenant.IsAvailable ? tenantPerm : hostPerm;
 
+    private async Task EnsureFeatureAsync()
+    {
+        if (!_currentTenant.IsAvailable) return;
+        if (!await _featureChecker.IsEnabledAsync(CaddieFeatures.Management))
+            throw new AbpAuthorizationException($"Feature '{CaddieFeatures.Management}' is disabled for this tenant.");
+    }
+
     public async Task<PagedResultDto<CaddieRatingDto>> GetListAsync(GetCaddieRatingListInput input)
     {
+        await EnsureFeatureAsync();
         await AuthorizationService.CheckAsync(
             P(MultiTenancyPermissions.AppCaddieRatings.Default, MultiTenancyPermissions.HostAppCaddieRatings.Default));
 
@@ -117,6 +131,7 @@ public class CaddieRatingAppService : ApplicationService
 
     public async Task<CaddieRatingDto> GetAsync(Guid id)
     {
+        await EnsureFeatureAsync();
         await AuthorizationService.CheckAsync(
             P(MultiTenancyPermissions.AppCaddieRatings.Default, MultiTenancyPermissions.HostAppCaddieRatings.Default));
 
@@ -171,6 +186,7 @@ public class CaddieRatingAppService : ApplicationService
 
     public async Task ApproveRejectAsync(Guid id, ApproveRejectRatingDto input)
     {
+        await EnsureFeatureAsync();
         await AuthorizationService.CheckAsync(
             P(MultiTenancyPermissions.AppCaddieRatings.Edit, MultiTenancyPermissions.HostAppCaddieRatings.Edit));
 
@@ -198,6 +214,7 @@ public class CaddieRatingAppService : ApplicationService
 
     public async Task DeleteAsync(Guid id)
     {
+        await EnsureFeatureAsync();
         await AuthorizationService.CheckAsync(
             P(MultiTenancyPermissions.AppCaddieRatings.Delete, MultiTenancyPermissions.HostAppCaddieRatings.Delete));
 

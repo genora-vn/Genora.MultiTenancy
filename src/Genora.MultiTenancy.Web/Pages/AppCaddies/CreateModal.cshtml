@@ -6,7 +6,7 @@
     Layout = null;
 }
 
-<form method="post" asp-page="/AppCaddies/CreateModal" id="createCaddieForm">
+<form method="post" asp-page="/AppCaddies/CreateModal" id="createCaddieForm" enctype="multipart/form-data">
     <abp-modal size="Large">
         <abp-modal-header>
             <div class="caddie-modal-header">
@@ -25,9 +25,8 @@
                     </div>
                     <span class="caddie-avatar-edit-badge"><i class="fa fa-pencil"></i></span>
                 </div>
-                <div class="text-muted mt-2" style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;">Avatar Caddy (Tròn, tối đa 2MB)</div>
-                <input type="file" id="avatarInput" accept=".jpg,.jpeg,.png,.webp" style="display:none;" />
-                <input type="hidden" asp-for="Caddie.Avatar" id="CaddieAvatar" />
+                <div class="text-muted mt-2" style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;">Avatar Caddy (Tròn, tối đa 15 MB)</div>
+                <input type="file" name="AvatarFile" id="avatarInput" accept=".jpg,.jpeg,.png,.webp" style="display:none;" />
             </div>
 
             <!-- Form Fields -->
@@ -87,7 +86,8 @@
                 <!-- Thời gian vào làm -->
                 <div class="col-md-6">
                     <label class="caddie-form-label">Thời gian vào làm</label>
-                    <input type="date" asp-for="Caddie.JoinDate" class="form-control caddie-form-control" />
+                    <input type="text" id="JoinDatePicker" class="form-control caddie-form-control" placeholder="dd/mm/yyyy" autocomplete="off" />
+                    <input type="hidden" asp-for="Caddie.JoinDate" id="JoinDateHidden" />
                 </div>
                 <!-- Hiển thị trên App -->
                 <div class="col-md-6">
@@ -127,7 +127,7 @@
 
 <script>
 (function () {
-    // ── Avatar upload ──────────────────────────────────────────────
+    // ── Avatar upload (preview only, file sent via multipart form) ──
     var uploadArea = document.getElementById('avatarUploadArea');
     var fileInput  = document.getElementById('avatarInput');
     var preview    = document.getElementById('avatarPreview');
@@ -139,14 +139,25 @@
     fileInput.addEventListener('change', function (e) {
         var file = e.target.files[0];
         if (!file) return;
-        if (file.size > 2 * 1024 * 1024) { abp.notify.error('Ảnh tối đa 2MB'); return; }
+        if (file.size > 15 * 1024 * 1024) {
+            abp.notify.error('Ảnh tối đa 15 MB');
+            fileInput.value = '';
+            return;
+        }
+        var allowedExts = ['.jpg', '.jpeg', '.png', '.webp'];
+        var ext = '.' + file.name.split('.').pop().toLowerCase();
+        if (allowedExts.indexOf(ext) === -1) {
+            abp.notify.error('Chỉ chấp nhận file .jpg, .jpeg, .png, .webp');
+            fileInput.value = '';
+            return;
+        }
+        // Preview
         var reader = new FileReader();
         reader.onload = function (ev) {
             preview.src = ev.target.result;
             preview.style.display = 'block';
             icon.style.display = 'none';
             text.style.display = 'none';
-            document.getElementById('CaddieAvatar').value = ev.target.result;
         };
         reader.readAsDataURL(file);
     });
@@ -160,6 +171,12 @@
             width: '100%',
             tags: false,
             dropdownParent: $sel.closest('.modal-content').length ? $sel.closest('.modal-content') : $(document.body)
+        });
+
+        // Fix height to match other inputs
+        $sel.next('.select2-container').find('.select2-selection--multiple').css({
+            'min-height': '38px',
+            'padding': '4px 8px'
         });
 
         $sel.on('change', function () {
@@ -179,6 +196,22 @@
     initSelect2Tags('voiceRegionSelect', 'voiceRegionHiddens', 'SelectedVoiceRegions');
     initSelect2Tags('languageSelect',    'languageHiddens',    'SelectedLanguageIds');
 
+    // ── Flatpickr for JoinDate ─────────────────────────────────────
+    flatpickr('#JoinDatePicker', {
+        dateFormat: 'd/m/Y',
+        onChange: function (selectedDates) {
+            if (selectedDates.length) {
+                var d = selectedDates[0];
+                var isoDate = d.getFullYear() + '-' +
+                    String(d.getMonth() + 1).padStart(2, '0') + '-' +
+                    String(d.getDate()).padStart(2, '0');
+                $('#JoinDateHidden').val(isoDate);
+            } else {
+                $('#JoinDateHidden').val('');
+            }
+        }
+    });
+
     // ── Validation — enable Save button only when CaddieName filled ──
     var nameInput = document.getElementById('caddieName');
     var saveBtn   = document.getElementById('btnSaveCaddie');
@@ -187,18 +220,22 @@
     function checkValid() {
         var ok = nameInput.value.trim().length > 0;
         saveBtn.disabled = !ok;
-        nameErr.style.display = ok ? 'none' : 'block';
+        if (nameErr) {
+            nameErr.style.display = ok ? 'none' : 'block';
+        }
     }
 
     nameInput.addEventListener('input', checkValid);
     nameInput.addEventListener('blur',  checkValid);
+    checkValid();
 
     // ── Prevent submit if invalid ──────────────────────────────────
     document.getElementById('createCaddieForm').addEventListener('submit', function (e) {
         if (nameInput.value.trim().length === 0) {
             e.preventDefault();
-            nameErr.style.display = 'block';
+            if (nameErr) nameErr.style.display = 'block';
             nameInput.focus();
+            return false;
         }
     });
 })();

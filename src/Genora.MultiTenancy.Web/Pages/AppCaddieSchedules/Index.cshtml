@@ -7,11 +7,12 @@
 @model IndexModel
 
 @section styles {
-    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
     <abp-style src="/pages/caddie/caddie-shared.css" />
 }
 
 @section scripts {
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <abp-script src="/Pages/AppCaddieSchedules/index.js" />
 }
 
@@ -34,13 +35,15 @@
     <div class="caddie-header-row">
         <div>
             <h1 class="caddie-page-title">Lịch làm việc Caddy</h1>
-            <p class="caddie-page-subtitle">Quản lý và theo dõi lịch phục vụ của đội ngũ Caddy theo tuần.</p>
+            <p class="caddie-page-subtitle">Quản lý và theo dõi lịch phục vụ của đội ngũ Caddy.</p>
         </div>
     </div>
 
     <!-- Filters & View Toggle -->
     <div class="d-flex flex-wrap justify-content-between align-items-end gap-3 mb-4">
         <div class="d-flex flex-wrap gap-3">
+            <!-- Khu vực sân và Nhóm Caddy tạm ẩn -->
+            <!--
             <div class="caddie-schedule-filter-group">
                 <label class="caddie-schedule-filter-label">Khu vực sân</label>
                 <select id="FilterGolfCourse" class="form-select caddie-form-control" style="min-width:160px;">
@@ -53,6 +56,7 @@
                     <option value="">Tất cả nhóm</option>
                 </select>
             </div>
+            -->
             <div class="caddie-schedule-filter-group">
                 <label class="caddie-schedule-filter-label">Trạng thái</label>
                 <select id="FilterStatus" class="form-select caddie-form-control" style="min-width:160px;">
@@ -64,17 +68,17 @@
             </div>
         </div>
         <div class="d-flex align-items-center gap-3">
-            <!-- Week Navigation -->
+            <!-- Navigation -->
             <div class="d-flex align-items-center gap-2">
-                <a href="/AppCaddieSchedules?weekStart=@prevWeek.ToString("yyyy-MM-dd")" class="btn btn-sm btn-light"><i class="fa fa-chevron-left"></i></a>
-                <span style="font-weight:700;font-size:0.875rem;">@Model.CurrentWeekStart.ToString("dd/MM") — @Model.CurrentWeekStart.AddDays(6).ToString("dd/MM/yyyy")</span>
-                <a href="/AppCaddieSchedules?weekStart=@nextWeek.ToString("yyyy-MM-dd")" class="btn btn-sm btn-light"><i class="fa fa-chevron-right"></i></a>
+                <a href="/AppCaddieSchedules?weekStart=@prevWeek.ToString("yyyy-MM-dd")&view=@Model.CurrentView" class="btn btn-sm btn-light" id="btnPrev"><i class="fa fa-chevron-left"></i></a>
+                <span style="font-weight:700;font-size:0.875rem;" id="dateRangeLabel">@Model.CurrentWeekStart.ToString("dd/MM") — @Model.CurrentWeekStart.AddDays(6).ToString("dd/MM/yyyy")</span>
+                <a href="/AppCaddieSchedules?weekStart=@nextWeek.ToString("yyyy-MM-dd")&view=@Model.CurrentView" class="btn btn-sm btn-light" id="btnNext"><i class="fa fa-chevron-right"></i></a>
             </div>
             <!-- View Toggle -->
             <div class="caddie-schedule-view-toggle">
-                <button class="caddie-schedule-view-btn">Ngày</button>
-                <button class="caddie-schedule-view-btn active">Tuần</button>
-                <button class="caddie-schedule-view-btn">Tháng</button>
+                <a href="/AppCaddieSchedules?weekStart=@Model.CurrentWeekStart.ToString("yyyy-MM-dd")&view=day" class="caddie-schedule-view-btn @(Model.CurrentView == "day" ? "active" : "")">Ngày</a>
+                <a href="/AppCaddieSchedules?weekStart=@Model.CurrentWeekStart.ToString("yyyy-MM-dd")&view=week" class="caddie-schedule-view-btn @(Model.CurrentView == "week" ? "active" : "")">Tuần</a>
+                <a href="/AppCaddieSchedules?weekStart=@Model.CurrentWeekStart.ToString("yyyy-MM-dd")&view=month" class="caddie-schedule-view-btn @(Model.CurrentView == "month" ? "active" : "")">Tháng</a>
             </div>
         </div>
     </div>
@@ -97,89 +101,176 @@
     </div>
 
     <!-- Calendar Grid -->
-    <div class="caddie-calendar">
-        <!-- Header -->
-        <div class="caddie-calendar-header">
-            @foreach (var day in weekDays)
-            {
-                var isToday = day.Date == today;
-                var isWeekend = day.DayOfWeek == DayOfWeek.Saturday || day.DayOfWeek == DayOfWeek.Sunday;
-                var cellClass = isToday ? "today" : (isWeekend ? "weekend" : "");
-                var dayName = day.DayOfWeek switch
-                {
-                    DayOfWeek.Monday => "Thứ 2",
-                    DayOfWeek.Tuesday => "Thứ 3",
-                    DayOfWeek.Wednesday => "Thứ 4",
-                    DayOfWeek.Thursday => "Thứ 5",
-                    DayOfWeek.Friday => "Thứ 6",
-                    DayOfWeek.Saturday => "Thứ 7",
-                    DayOfWeek.Sunday => "Chủ Nhật",
-                    _ => ""
-                };
-                <div class="caddie-calendar-header-cell @cellClass">
+    @if (Model.CurrentView == "day")
+    {
+        <!-- Day View: show only today or selected day -->
+        var selectedDay = Model.CurrentWeekStart;
+        var daySchedules = Model.Schedules.Where(s => s.WorkDate.Date == selectedDay.Date).ToList();
+        var dayName = selectedDay.DayOfWeek switch
+        {
+            DayOfWeek.Monday => "Thứ 2",
+            DayOfWeek.Tuesday => "Thứ 3",
+            DayOfWeek.Wednesday => "Thứ 4",
+            DayOfWeek.Thursday => "Thứ 5",
+            DayOfWeek.Friday => "Thứ 6",
+            DayOfWeek.Saturday => "Thứ 7",
+            DayOfWeek.Sunday => "Chủ Nhật",
+            _ => ""
+        };
+        <div class="caddie-calendar">
+            <div class="caddie-calendar-header">
+                <div class="caddie-calendar-header-cell today" style="flex:1;">
                     <div class="day-name">@dayName</div>
-                    <div class="day-num">@day.Day</div>
+                    <div class="day-num">@selectedDay.Day/@selectedDay.Month/@selectedDay.Year</div>
                 </div>
-            }
-        </div>
-
-        <!-- Body -->
-        <div class="caddie-calendar-body">
-            @foreach (var day in weekDays)
-            {
-                var isToday = day.Date == today;
-                var isWeekend = day.DayOfWeek == DayOfWeek.Saturday || day.DayOfWeek == DayOfWeek.Sunday;
-                var dayClass = isToday ? "today" : (isWeekend ? "weekend" : "");
-                var daySchedules = Model.Schedules.Where(s => s.WorkDate.Date == day.Date).ToList();
-
-                <div class="caddie-calendar-day @dayClass">
+            </div>
+            <div class="caddie-calendar-body" style="grid-template-columns:1fr;">
+                <div class="caddie-calendar-day today" style="min-height:400px;">
                     @if (daySchedules.Any())
                     {
                         @foreach (var schedule in daySchedules)
                         {
-                            var cardClass = schedule.SlotStatus switch
-                            {
-                                2 => "booked",
-                                3 => "off",
-                                _ => ""
-                            };
-                            var codeClass = schedule.SlotStatus switch
-                            {
-                                2 => "booked",
-                                3 => "off",
-                                _ => "available"
-                            };
-                            <div class="caddie-schedule-card @cardClass" data-id="@schedule.Id" data-caddie-id="@schedule.CaddieId">
+                            var cardClass = schedule.SlotStatus switch { 2 => "booked", 3 => "off", _ => "" };
+                            var codeClass = schedule.SlotStatus switch { 2 => "booked", 3 => "off", _ => "available" };
+                            <div class="caddie-schedule-card @cardClass" data-id="@schedule.Id" data-caddie-id="@schedule.CaddieId" data-status="@schedule.SlotStatus">
                                 <div class="caddie-schedule-card-header">
                                     <span class="caddie-schedule-card-name">@schedule.CaddieName</span>
                                     <span class="caddie-schedule-card-code @codeClass">@schedule.CaddieCode</span>
                                 </div>
-                                @if (schedule.SlotStatus == 3)
-                                {
-                                    <div class="caddie-schedule-card-info">
-                                        <span>@(schedule.Note ?? "Nghỉ")</span>
-                                    </div>
-                                }
-                                else
-                                {
-                                    <div class="caddie-schedule-card-info">
-                                        <i class="fa fa-clock" style="font-size:11px;"></i>
-                                        <span>@schedule.StartTime.ToString(@"hh\:mm") - @schedule.EndTime.ToString(@"hh\:mm")</span>
-                                    </div>
-                                    @if (!string.IsNullOrEmpty(schedule.Note))
-                                    {
-                                        <div class="caddie-schedule-card-info" style="margin-top:2px;">
-                                            <span>@schedule.Note</span>
-                                        </div>
-                                    }
-                                }
+                                <div class="caddie-schedule-card-info">
+                                    <i class="fa fa-clock" style="font-size:11px;"></i>
+                                    <span>@schedule.StartTime.ToString(@"hh\:mm") - @schedule.EndTime.ToString(@"hh\:mm")</span>
+                                </div>
+                                <div class="caddie-schedule-card-info">
+                                    <span>Ca: @schedule.ShiftCodeText</span>
+                                </div>
                             </div>
                         }
                     }
+                    else
+                    {
+                        <div class="text-center text-muted py-5">Không có lịch trong ngày này</div>
+                    }
                 </div>
-            }
+            </div>
         </div>
-    </div>
+    }
+    else if (Model.CurrentView == "month")
+    {
+        <!-- Month View: simplified grid showing count per day -->
+        var monthStart = new DateTime(Model.CurrentWeekStart.Year, Model.CurrentWeekStart.Month, 1);
+        var daysInMonth = DateTime.DaysInMonth(monthStart.Year, monthStart.Month);
+        <div class="caddie-calendar">
+            <div class="caddie-calendar-header">
+                <div class="caddie-calendar-header-cell">T2</div>
+                <div class="caddie-calendar-header-cell">T3</div>
+                <div class="caddie-calendar-header-cell">T4</div>
+                <div class="caddie-calendar-header-cell">T5</div>
+                <div class="caddie-calendar-header-cell">T6</div>
+                <div class="caddie-calendar-header-cell weekend">T7</div>
+                <div class="caddie-calendar-header-cell weekend">CN</div>
+            </div>
+            <div class="caddie-calendar-body" style="grid-template-columns:repeat(7,1fr);">
+                @{
+                    // Padding for start of month
+                    var firstDayOfWeek = ((int)monthStart.DayOfWeek + 6) % 7; // Mon=0
+                    for (int p = 0; p < firstDayOfWeek; p++)
+                    {
+                        <div class="caddie-calendar-day" style="min-height:80px;opacity:0.3;"></div>
+                    }
+                    for (int d = 1; d <= daysInMonth; d++)
+                    {
+                        var thisDay = new DateTime(monthStart.Year, monthStart.Month, d);
+                        var isToday2 = thisDay.Date == today;
+                        var dayScheds = Model.Schedules.Where(s => s.WorkDate.Date == thisDay.Date).ToList();
+                        var availCount = dayScheds.Count(s => s.SlotStatus == 1);
+                        var bookedCount = dayScheds.Count(s => s.SlotStatus == 2);
+                        var offCount = dayScheds.Count(s => s.SlotStatus == 3);
+                        <div class="caddie-calendar-day @(isToday2 ? "today" : "")" style="min-height:80px;padding:8px;cursor:pointer;" onclick="window.location.href='/AppCaddieSchedules?weekStart=@thisDay.ToString("yyyy-MM-dd")&view=day'">
+                            <div style="font-weight:@(isToday2 ? "800" : "600");font-size:13px;margin-bottom:4px;">@d</div>
+                            @if (dayScheds.Any())
+                            {
+                                @if (availCount > 0) { <div style="font-size:10px;color:#166534;">●@availCount trống</div> }
+                                @if (bookedCount > 0) { <div style="font-size:10px;color:#1e40af;">●@bookedCount phục vụ</div> }
+                                @if (offCount > 0) { <div style="font-size:10px;color:#991b1b;">●@offCount nghỉ</div> }
+                            }
+                        </div>
+                    }
+                }
+            </div>
+        </div>
+    }
+    else
+    {
+        <!-- Week View (default) -->
+        <div class="caddie-calendar">
+            <div class="caddie-calendar-header">
+                @foreach (var day in weekDays)
+                {
+                    var isToday3 = day.Date == today;
+                    var isWeekend = day.DayOfWeek == DayOfWeek.Saturday || day.DayOfWeek == DayOfWeek.Sunday;
+                    var cellClass = isToday3 ? "today" : (isWeekend ? "weekend" : "");
+                    var dayName2 = day.DayOfWeek switch
+                    {
+                        DayOfWeek.Monday => "Thứ 2",
+                        DayOfWeek.Tuesday => "Thứ 3",
+                        DayOfWeek.Wednesday => "Thứ 4",
+                        DayOfWeek.Thursday => "Thứ 5",
+                        DayOfWeek.Friday => "Thứ 6",
+                        DayOfWeek.Saturday => "Thứ 7",
+                        DayOfWeek.Sunday => "Chủ Nhật",
+                        _ => ""
+                    };
+                    <div class="caddie-calendar-header-cell @cellClass">
+                        <div class="day-name">@dayName2</div>
+                        <div class="day-num">@day.Day</div>
+                    </div>
+                }
+            </div>
+            <div class="caddie-calendar-body">
+                @foreach (var day in weekDays)
+                {
+                    var isToday4 = day.Date == today;
+                    var isWeekend2 = day.DayOfWeek == DayOfWeek.Saturday || day.DayOfWeek == DayOfWeek.Sunday;
+                    var dayClass = isToday4 ? "today" : (isWeekend2 ? "weekend" : "");
+                    var daySchedules2 = Model.Schedules.Where(s => s.WorkDate.Date == day.Date).ToList();
+
+                    <div class="caddie-calendar-day @dayClass">
+                        @if (daySchedules2.Any())
+                        {
+                            @foreach (var schedule in daySchedules2)
+                            {
+                                var cardClass = schedule.SlotStatus switch { 2 => "booked", 3 => "off", _ => "" };
+                                var codeClass = schedule.SlotStatus switch { 2 => "booked", 3 => "off", _ => "available" };
+                                <div class="caddie-schedule-card @cardClass" data-id="@schedule.Id" data-caddie-id="@schedule.CaddieId" data-status="@schedule.SlotStatus">
+                                    <div class="caddie-schedule-card-header">
+                                        <span class="caddie-schedule-card-name">@schedule.CaddieName</span>
+                                        <span class="caddie-schedule-card-code @codeClass">@schedule.CaddieCode</span>
+                                    </div>
+                                    @if (schedule.SlotStatus == 3)
+                                    {
+                                        <div class="caddie-schedule-card-info">
+                                            <span>@(schedule.Note ?? "Nghỉ")</span>
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <div class="caddie-schedule-card-info">
+                                            <i class="fa fa-clock" style="font-size:11px;"></i>
+                                            <span>@schedule.StartTime.ToString(@"hh\:mm") - @schedule.EndTime.ToString(@"hh\:mm")</span>
+                                        </div>
+                                        <div class="caddie-schedule-card-info">
+                                            <span>Ca: @schedule.ShiftCodeText</span>
+                                        </div>
+                                    }
+                                </div>
+                            }
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+    }
 
     <!-- FAB: Add Schedule -->
     @if (canCreate)
@@ -191,13 +282,13 @@
     }
 </div>
 
-<!-- Schedule Detail/Edit Modal -->
+<!-- Schedule Detail Modal -->
 <div class="modal fade" id="scheduleDetailModal" tabindex="-1">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content" style="border-radius:12px;border:none;">
             <div class="modal-header" style="border-bottom:1px solid rgba(192,199,212,0.1);padding:20px 24px;">
                 <div>
-                    <h5 class="modal-title" style="font-family:'Manrope';font-weight:800;">Chi tiết ca làm việc</h5>
+                    <h5 class="modal-title" style="font-weight:800;">Chi tiết ca làm việc</h5>
                     <p style="font-size:12px;color:var(--caddie-on-surface-variant);margin:2px 0 0;">Thông tin điều phối Caddy trong ngày</p>
                 </div>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
@@ -252,6 +343,7 @@
 
 <input type="hidden" id="CanEdit" value="@canEdit.ToString().ToLower()" />
 <input type="hidden" id="WeekStart" value="@Model.CurrentWeekStart.ToString("yyyy-MM-dd")" />
+<input type="hidden" id="CurrentView" value="@Model.CurrentView" />
 
 <!-- Caddie Items for Create Modal -->
 <script>

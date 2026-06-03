@@ -1,0 +1,199 @@
+@page
+@using Genora.MultiTenancy.Web.Pages.AppCaddieBookings
+@model DetailModel
+
+@section styles {
+    <abp-style src="/pages/caddie/caddie-shared.css" />
+}
+
+@{
+    var statusClass = Model.Booking.Status switch
+    {
+        1 => "background:#dbeafe;color:#1e40af;",
+        2 => "background:#fef3c7;color:#92400e;",
+        3 => "background:#dcfce7;color:#166534;",
+        4 => "background:#fef2f2;color:#991b1b;",
+        _ => "background:#f3f4f6;color:#6b7280;"
+    };
+    var paymentBadge = Model.Booking.PaymentStatus == 2
+        ? "background:#dcfce7;color:#166534;"
+        : "background:#fef9c3;color:#a16207;";
+}
+
+<div class="caddie-page">
+    <!-- Header -->
+    <div class="d-flex flex-wrap align-items-end justify-content-between mb-4">
+        <div>
+            <div class="d-flex align-items-center gap-3 mb-1">
+                <span style="@statusClass font-size:10px;font-weight:800;padding:4px 12px;border-radius:20px;text-transform:uppercase;">@Model.Booking.StatusText</span>
+                <span style="color:var(--caddie-on-surface-variant);font-size:13px;">
+                    <i class="fa fa-calendar-alt me-1"></i>@Model.Booking.BookingDate.ToString("dd/MM/yyyy") @Model.Booking.StartTime.ToString(@"hh\:mm")
+                </span>
+            </div>
+            <h1 class="caddie-page-title">Lịch đặt #@Model.Booking.BookingCode</h1>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="/AppCaddieBookings" class="btn btn-light" style="font-weight:700;border-radius:8px;">
+                <i class="fa fa-arrow-left me-1"></i> Quay lại
+            </a>
+            @if (Model.CanEdit && Model.Booking.Status != 3 && Model.Booking.Status != 4)
+            {
+                <button class="btn btn-outline-secondary" style="font-weight:700;border-radius:8px;" id="btnCancelBooking">Hủy lịch</button>
+                <button class="btn-caddie-primary" id="btnUpdateStatus">Cập nhật trạng thái</button>
+            }
+        </div>
+    </div>
+
+    <!-- Progress Tracker -->
+    <div class="card mb-4" style="border:1px solid rgba(192,199,212,0.2);border-radius:16px;">
+        <div class="card-body p-4">
+            <div class="position-relative d-flex justify-content-between" style="padding:0 40px;">
+                @{
+                    var step1Done = Model.Booking.Status >= 1;
+                    var step2Done = Model.Booking.Status >= 2;
+                    var step3Done = Model.Booking.Status >= 3;
+                    var progressWidth = Model.Booking.Status switch { 1 => "0%", 2 => "50%", 3 => "100%", 4 => "50%", _ => "0%" };
+                }
+                <div class="position-absolute" style="top:20px;left:60px;right:60px;height:4px;background:#e2e7ff;border-radius:2px;"></div>
+                <div class="position-absolute" style="top:20px;left:60px;width:@progressWidth;height:4px;background:var(--caddie-primary);border-radius:2px;"></div>
+
+                <div class="text-center position-relative" style="z-index:1;">
+                    <div class="d-inline-flex align-items-center justify-content-center rounded-circle mb-2" style="width:40px;height:40px;@(step1Done ? "background:var(--caddie-primary);color:#fff;" : "background:#e2e7ff;color:var(--caddie-outline);")">
+                        <i class="fa fa-check"></i>
+                    </div>
+                    <div style="font-size:12px;font-weight:700;">Đã đặt</div>
+                </div>
+                <div class="text-center position-relative" style="z-index:1;">
+                    <div class="d-inline-flex align-items-center justify-content-center rounded-circle mb-2" style="width:40px;height:40px;@(step2Done ? "background:var(--caddie-primary);color:#fff;" : "background:#e2e7ff;color:var(--caddie-outline);")">
+                        <i class="fa fa-golf-ball"></i>
+                    </div>
+                    <div style="font-size:12px;font-weight:700;">Đang phục vụ</div>
+                </div>
+                <div class="text-center position-relative" style="z-index:1;">
+                    <div class="d-inline-flex align-items-center justify-content-center rounded-circle mb-2" style="width:40px;height:40px;@(step3Done ? "background:var(--caddie-primary);color:#fff;" : "background:#e2e7ff;color:var(--caddie-outline);")">
+                        <i class="fa fa-check-double"></i>
+                    </div>
+                    <div style="font-size:12px;font-weight:700;">Hoàn thành</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Content Grid -->
+    <div class="row g-4">
+        <!-- Left Column -->
+        <div class="col-lg-8">
+            <!-- Booking Info -->
+            <div class="card mb-4" style="border:1px solid rgba(192,199,212,0.2);border-radius:16px;">
+                <div class="card-header" style="border-bottom:1px solid rgba(192,199,212,0.15);padding:16px 24px;">
+                    <h5 style="font-weight:700;margin:0;">Thông tin Booking</h5>
+                </div>
+                <div class="card-body p-4">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <div style="font-size:11px;color:var(--caddie-outline);text-transform:uppercase;font-weight:700;letter-spacing:0.05em;">Mã Booking</div>
+                            <div style="font-weight:600;">@Model.Booking.BookingCode</div>
+                        </div>
+                        <div class="col-md-6">
+                            <div style="font-size:11px;color:var(--caddie-outline);text-transform:uppercase;font-weight:700;letter-spacing:0.05em;">Ngày chơi</div>
+                            <div style="font-weight:600;">@Model.Booking.BookingDate.ToString("dd/MM/yyyy")</div>
+                        </div>
+                        <div class="col-md-6">
+                            <div style="font-size:11px;color:var(--caddie-outline);text-transform:uppercase;font-weight:700;letter-spacing:0.05em;">Giờ chơi</div>
+                            <div style="font-weight:600;color:var(--caddie-primary);">@Model.Booking.StartTime.ToString(@"hh\:mm")</div>
+                        </div>
+                        <div class="col-md-6">
+                            <div style="font-size:11px;color:var(--caddie-outline);text-transform:uppercase;font-weight:700;letter-spacing:0.05em;">Số hố</div>
+                            <div style="font-weight:600;">@(Model.Booking.NumberOfHoles > 0 ? Model.Booking.NumberOfHoles + " hố" : "—")</div>
+                        </div>
+                        @if (!string.IsNullOrEmpty(Model.Booking.Note))
+                        {
+                            <div class="col-12">
+                                <div style="font-size:11px;color:var(--caddie-outline);text-transform:uppercase;font-weight:700;letter-spacing:0.05em;">Ghi chú</div>
+                                <div style="font-weight:500;">@Model.Booking.Note</div>
+                            </div>
+                        }
+                        @if (!string.IsNullOrEmpty(Model.Booking.CancelReason))
+                        {
+                            <div class="col-12">
+                                <div style="font-size:11px;color:var(--caddie-error);text-transform:uppercase;font-weight:700;letter-spacing:0.05em;">Lý do hủy</div>
+                                <div style="font-weight:500;color:var(--caddie-error);">@Model.Booking.CancelReason</div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Sidebar -->
+        <div class="col-lg-4">
+            <!-- Thông tin Golfer -->
+            <div class="card mb-4" style="border:1px solid rgba(192,199,212,0.2);border-radius:16px;">
+                <div class="card-header" style="border-bottom:1px solid rgba(192,199,212,0.15);padding:16px 24px;">
+                    <h5 style="font-weight:700;margin:0;">Thông tin Golfer</h5>
+                </div>
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-center gap-3 mb-3">
+                        @{
+                            var golferInitials = (Model.Booking.CustomerName ?? "?").Split(' ').Select(n => n.FirstOrDefault()).Take(2);
+                            var initStr = string.Join("", golferInitials).ToUpper();
+                        }
+                        <div class="d-flex align-items-center justify-content-center rounded-circle" style="width:48px;height:48px;background:rgba(0,94,164,0.1);color:var(--caddie-primary);font-weight:800;font-size:18px;">@initStr</div>
+                        <div>
+                            <div style="font-weight:700;font-size:16px;">@Model.Booking.CustomerName</div>
+                            <div style="font-size:13px;color:var(--caddie-on-surface-variant);">@(Model.Booking.PhoneMasked ?? "—")</div>
+                        </div>
+                    </div>
+                    <div style="background:var(--caddie-surface-container-low);border-radius:8px;padding:12px;" class="mt-3">
+                        <div class="d-flex justify-content-between mb-1" style="font-size:12px;">
+                            <span style="color:var(--caddie-outline);font-weight:700;text-transform:uppercase;">Ngày chơi</span>
+                            <span style="font-weight:700;">@Model.Booking.BookingDate.ToString("dd/MM/yyyy")</span>
+                        </div>
+                        <div class="d-flex justify-content-between" style="font-size:12px;">
+                            <span style="color:var(--caddie-outline);font-weight:700;text-transform:uppercase;">Giờ chơi</span>
+                            <span style="font-weight:700;color:var(--caddie-primary);">@Model.Booking.StartTime.ToString(@"hh\:mm")</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Thông tin Caddy -->
+            <div class="card mb-4" style="border:1px solid rgba(192,199,212,0.2);border-radius:16px;">
+                <div class="card-body p-4">
+                    <h5 style="font-weight:700;margin-bottom:16px;">Thông tin Caddy</h5>
+                    <div class="d-flex align-items-center gap-3 mb-3">
+                        @{
+                            var caddyInitials = (Model.Booking.CaddieName ?? "?").Split(' ').Select(n => n.FirstOrDefault()).Take(2);
+                            var caddyInitStr = string.Join("", caddyInitials).ToUpper();
+                        }
+                        <div class="d-flex align-items-center justify-content-center rounded-circle" style="width:48px;height:48px;background:var(--caddie-surface-container-high);color:var(--caddie-on-surface);font-weight:700;">@caddyInitStr</div>
+                        <div>
+                            <div style="font-weight:700;">@(Model.Booking.CaddieName ?? "—")</div>
+                            <div style="font-size:12px;color:var(--caddie-on-surface-variant);">Mã Caddy: <span style="color:var(--caddie-on-surface);">@(Model.Booking.CaddieCode ?? "—")</span></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Chi tiết thanh toán -->
+            <div class="card mb-4" style="border:1px solid rgba(192,199,212,0.2);border-radius:16px;">
+                <div class="card-header d-flex justify-content-between align-items-center" style="border-bottom:1px solid rgba(192,199,212,0.15);padding:16px 24px;">
+                    <h5 style="font-weight:700;margin:0;">Thanh toán</h5>
+                    <span style="@paymentBadge font-size:10px;font-weight:800;padding:4px 12px;border-radius:20px;text-transform:uppercase;">@Model.Booking.PaymentStatusText</span>
+                </div>
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-center gap-2" style="font-size:13px;color:var(--caddie-on-surface-variant);">
+                        <i class="fa fa-credit-card"></i>
+                        <span>Check-in: <strong>@Model.Booking.CheckinStatusText</strong></span>
+                    </div>
+                    @if (Model.Booking.CheckinTime.HasValue)
+                    {
+                        <div class="mt-2" style="font-size:12px;color:var(--caddie-outline);">
+                            Check-in lúc: @Model.Booking.CheckinTime.Value.ToString("dd/MM/yyyy HH:mm")
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

@@ -106,6 +106,13 @@ public partial class AppDocumentsDataSeedContributor : IDataSeedContributor, ITr
 
     public async Task SeedAsync(DataSeedContext context)
     {
+        // ──────────────────────────────────────────────────────────────────────
+        // TẠMTẮT: AppDocuments data seed bị comment để tránh ghi đè dữ liệu đã
+        // được user chỉnh sửa qua CMS. Bật lại khi cần seed lần đầu.
+        // ──────────────────────────────────────────────────────────────────────
+        return;
+
+        /*
         // Host-shared, only seed once at host level.
         if (context.TenantId != null) return;
 
@@ -214,6 +221,7 @@ public partial class AppDocumentsDataSeedContributor : IDataSeedContributor, ITr
                 await _pageRepo.InsertAsync(page, autoSave: true);
             }
         }
+        */
     }
 
     private static List<DocumentSeed> BuildSeeds() => new()

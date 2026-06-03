@@ -17,9 +17,13 @@ public class IndexModel : MultiTenancyPageModel
     [BindProperty(SupportsGet = true)]
     public DateTime? WeekStart { get; set; }
 
+    [BindProperty(SupportsGet = true)]
+    public string? View { get; set; }
+
     public List<CaddieScheduleDto> Schedules { get; set; } = new();
     public List<SelectListItem> CaddieItems { get; set; } = new();
     public DateTime CurrentWeekStart { get; set; }
+    public string CurrentView { get; set; } = "week";
 
     private readonly CaddieScheduleAppService _scheduleService;
     private readonly CaddieAppService _caddieService;
@@ -32,6 +36,11 @@ public class IndexModel : MultiTenancyPageModel
 
     public async Task OnGetAsync()
     {
+        // Determine view mode
+        CurrentView = (View ?? "week").ToLower();
+        if (CurrentView != "day" && CurrentView != "week" && CurrentView != "month")
+            CurrentView = "week";
+
         // Determine week start (Monday)
         var today = DateTime.Today;
         if (WeekStart.HasValue)
@@ -42,8 +51,34 @@ public class IndexModel : MultiTenancyPageModel
             CurrentWeekStart = today.AddDays(-diff);
         }
 
-        // Load schedules for the week
-        Schedules = await _scheduleService.GetWeekScheduleAsync(CurrentWeekStart);
+        // Load schedules based on view mode
+        if (CurrentView == "month")
+        {
+            // Load entire month
+            var monthStart = new DateTime(CurrentWeekStart.Year, CurrentWeekStart.Month, 1);
+            var monthEnd = monthStart.AddMonths(1);
+            Schedules = await _scheduleService.GetListAsync(new GetCaddieScheduleListInput
+            {
+                FromDate = monthStart,
+                ToDate = monthEnd.AddDays(-1),
+                MaxResultCount = 1000
+            }).ContinueWith(t => t.Result.Items.ToList());
+        }
+        else if (CurrentView == "day")
+        {
+            // Load single day
+            Schedules = await _scheduleService.GetListAsync(new GetCaddieScheduleListInput
+            {
+                FromDate = CurrentWeekStart.Date,
+                ToDate = CurrentWeekStart.Date,
+                MaxResultCount = 500
+            }).ContinueWith(t => t.Result.Items.ToList());
+        }
+        else
+        {
+            // Load week
+            Schedules = await _scheduleService.GetWeekScheduleAsync(CurrentWeekStart);
+        }
 
         // Load caddie lookup
         var caddies = await _caddieService.GetListAsync(new GetCaddieListInput

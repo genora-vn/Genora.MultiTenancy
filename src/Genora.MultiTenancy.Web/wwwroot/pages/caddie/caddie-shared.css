@@ -17,8 +17,8 @@
 }
 
 /* Page Layout */
-.caddie-page { padding: 24px; font-family: 'Inter', sans-serif; }
-.caddie-page h1, .caddie-page h2, .caddie-page h3 { font-family: 'Manrope', sans-serif; }
+.caddie-page { padding: 24px; }
+.caddie-page h1, .caddie-page h2, .caddie-page h3 { font-weight: 700; }
 
 /* Header */
 .caddie-header-row { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 32px; }
@@ -386,3 +386,109 @@
 .caddie-schedule-card-code.booked { background: rgba(143, 74, 0, 0.1); color: var(--caddie-tertiary); }
 .caddie-schedule-card-code.off { background: rgba(192, 199, 212, 0.2); color: var(--caddie-on-surface-variant); }
 .caddie-schedule-card-info { font-size: 11px; color: var(--caddie-on-surface-variant); display: flex; align-items: center; gap: 4px; }
+
+/* ===== UI Polish: Animations & Transitions ===== */
+@keyframes caddie-fadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+@keyframes caddie-slideUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.caddie-page, .caddie-schedule-page { animation: caddie-fadeIn 0.3s ease-out; }
+.caddie-table-container { animation: caddie-slideUp 0.35s ease-out; }
+.caddie-filter-section { animation: caddie-fadeIn 0.25s ease-out; }
+
+/* Cards hover effects */
+.caddie-page .card {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.caddie-page .card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+}
+
+/* Filter section style */
+.caddie-filter-section {
+    background: var(--caddie-surface-container-low);
+    padding: 20px 24px;
+    border-radius: 12px;
+}
+
+/* Modal animation */
+.modal.fade .modal-dialog {
+    transition: transform 0.25s ease-out, opacity 0.2s ease-out;
+}
+
+/* FAB animation */
+.caddie-fab {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.caddie-fab:hover {
+    transform: scale(1.05);
+    box-shadow: 0 8px 24px rgba(0, 94, 164, 0.3);
+}
+.caddie-fab:active {
+    transform: scale(0.95);
+}
+
+/* Smooth status badges */
+.caddie-table tbody td span[style*="border-radius"] {
+    transition: all 0.15s ease;
+}
+
+/* ===== Responsive: Mobile & Tablet ===== */
+@media (max-width: 768px) {
+    .caddie-page, .caddie-schedule-page { padding: 12px; }
+    .caddie-page-title { font-size: 1.25rem; }
+    .caddie-header-row { flex-direction: column; gap: 12px; align-items: flex-start; }
+
+    .caddie-filter-section { padding: 12px; }
+    .caddie-filter-section .row { gap: 8px; }
+
+    .caddie-table thead th { padding: 10px 12px; font-size: 10px; }
+    .caddie-table tbody td { padding: 10px 12px; font-size: 12px; }
+
+    /* Calendar: stack on mobile */
+    .caddie-calendar-header { grid-template-columns: repeat(7, 1fr); }
+    .caddie-calendar-header-cell { padding: 8px 4px; }
+    .caddie-calendar-header-cell .day-name { font-size: 9px; }
+    .caddie-calendar-header-cell .day-num { font-size: 1rem; }
+    .caddie-calendar-body { min-height: 300px; }
+    .caddie-calendar-day { padding: 4px; }
+    .caddie-schedule-card { padding: 8px; }
+    .caddie-schedule-card-name { font-size: 0.7rem; }
+
+    /* Schedule view toggle */
+    .caddie-schedule-view-toggle { gap: 2px; }
+    .caddie-schedule-view-btn { padding: 6px 10px; font-size: 11px; }
+
+    /* Modal full width on mobile */
+    .modal-dialog { margin: 8px; max-width: calc(100% - 16px); }
+
+    /* KPI cards stack */
+    .row.g-4 > [class*="col-md-4"] { flex: 0 0 100%; max-width: 100%; }
+}
+
+@media (max-width: 576px) {
+    .caddie-page-title { font-size: 1.1rem; }
+    .caddie-page-subtitle { font-size: 12px; }
+    .btn-caddie-primary { padding: 10px 16px; font-size: 13px; }
+    .caddie-fab { width: 48px !important; height: 48px; padding: 0 !important; border-radius: 50% !important; }
+    .caddie-fab span { display: none; }
+}
+
+@media (min-width: 769px) and (max-width: 1024px) {
+    .caddie-page, .caddie-schedule-page { padding: 16px; }
+    .caddie-calendar-body { min-height: 400px; }
+}
+
+/* ===== Print styles ===== */
+@media print {
+    .caddie-fab, .btn-caddie-primary, .caddie-schedule-view-toggle,
+    .caddie-filter-section, .caddie-header-row button { display: none !important; }
+    .caddie-page, .caddie-schedule-page { padding: 0; }
+    .caddie-table-container { box-shadow: none; border: 1px solid #ddd; }
+}

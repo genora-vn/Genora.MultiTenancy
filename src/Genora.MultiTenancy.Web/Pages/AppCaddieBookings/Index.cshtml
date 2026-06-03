@@ -7,10 +7,12 @@
 @model IndexModel
 
 @section styles {
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
     <abp-style src="/pages/caddie/caddie-shared.css" />
 }
 
 @section scripts {
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <abp-script src="/Pages/AppCaddieBookings/index.js" />
 }
 
@@ -26,45 +28,48 @@
 <div class="caddie-page">
     <div class="caddie-header-row">
         <div>
-            <h1 class="caddie-page-title">Lịch sử đặt Caddy</h1>
+            <h1 class="caddie-page-title">Lịch sử Đặt Caddy</h1>
             <p class="caddie-page-subtitle">Quản lý và theo dõi toàn bộ booking caddie trong hệ thống.</p>
         </div>
     </div>
 
     <!-- Filters -->
-    <div class="d-flex flex-wrap gap-3 mb-4">
-        <div class="caddie-schedule-filter-group">
-            <label class="caddie-schedule-filter-label">Tìm kiếm</label>
-            <input id="BookingFilter" class="form-control caddie-form-control" style="min-width:200px;" placeholder="Mã booking, tên KH, SĐT..." />
-        </div>
-        <div class="caddie-schedule-filter-group">
-            <label class="caddie-schedule-filter-label">Trạng thái</label>
-            <select id="BookingStatusFilter" class="form-select caddie-form-control" style="min-width:150px;">
-                <option value="">Tất cả</option>
-                <option value="1">Mới</option>
-                <option value="2">Đã xác nhận</option>
-                <option value="3">Hoàn thành</option>
-                <option value="4">Đã hủy</option>
-            </select>
-        </div>
-        <div class="caddie-schedule-filter-group">
-            <label class="caddie-schedule-filter-label">Thanh toán</label>
-            <select id="BookingPaymentFilter" class="form-select caddie-form-control" style="min-width:150px;">
-                <option value="">Tất cả</option>
-                <option value="1">Chưa thanh toán</option>
-                <option value="2">Đã thanh toán</option>
-            </select>
-        </div>
-        <div class="caddie-schedule-filter-group">
-            <label class="caddie-schedule-filter-label">Từ ngày</label>
-            <input type="date" id="BookingFromDate" class="form-control caddie-form-control" style="min-width:140px;" />
-        </div>
-        <div class="caddie-schedule-filter-group">
-            <label class="caddie-schedule-filter-label">Đến ngày</label>
-            <input type="date" id="BookingToDate" class="form-control caddie-form-control" style="min-width:140px;" />
-        </div>
-        <div class="caddie-schedule-filter-group d-flex align-items-end">
-            <button id="BtnSearch" class="btn-caddie-primary" style="padding:10px 20px;"><i class="fa fa-search"></i> Tìm</button>
+    <div class="caddie-filter-section mb-4">
+        <div class="row g-3 align-items-end">
+            <div class="col-md-4">
+                <label class="caddie-schedule-filter-label">TÌM KIẾM</label>
+                <div class="position-relative">
+                    <i class="fa fa-search position-absolute" style="left:12px;top:50%;transform:translateY(-50%);color:var(--caddie-outline);"></i>
+                    <input id="BookingFilter" class="form-control caddie-form-control" style="padding-left:36px;" placeholder="Mã booking hoặc tên golfer..." />
+                </div>
+            </div>
+            <div class="col-md-2">
+                <label class="caddie-schedule-filter-label">NGÀY CHƠI</label>
+                <input type="text" id="BookingDateFilter" class="form-control caddie-form-control" placeholder="dd/mm/yyyy" autocomplete="off" />
+            </div>
+            <div class="col-md-2">
+                <label class="caddie-schedule-filter-label">TRẠNG THÁI</label>
+                <select id="BookingStatusFilter" class="form-select caddie-form-control">
+                    <option value="">Tất cả trạng thái</option>
+                    <option value="1">Mới</option>
+                    <option value="2">Đã xác nhận</option>
+                    <option value="3">Hoàn thành</option>
+                    <option value="4">Đã hủy</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="caddie-schedule-filter-label">THANH TOÁN</label>
+                <select id="BookingPaymentFilter" class="form-select caddie-form-control">
+                    <option value="">Tất cả</option>
+                    <option value="1">Chưa thanh toán</option>
+                    <option value="2">Đã thanh toán</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <button id="BtnSearch" class="btn-caddie-primary w-100">
+                    <i class="fa fa-filter"></i> Lọc kết quả
+                </button>
+            </div>
         </div>
     </div>
 
@@ -81,7 +86,7 @@
     <div class="modal-dialog modal-dialog-centered modal-sm">
         <div class="modal-content" style="border-radius:12px;border:none;">
             <div class="modal-header" style="border-bottom:1px solid rgba(192,199,212,0.1);padding:20px 24px;">
-                <h5 class="modal-title" style="font-family:'Manrope';font-weight:800;">Cập nhật trạng thái</h5>
+                <h5 class="modal-title" style="font-weight:800;">Cập nhật trạng thái</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body" style="padding:24px;">

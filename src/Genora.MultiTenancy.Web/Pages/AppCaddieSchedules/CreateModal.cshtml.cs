@@ -19,6 +19,18 @@ public class CreateModalModel : MultiTenancyPageModel
     [BindProperty]
     public CreateUpdateCaddieScheduleDto Schedule { get; set; } = new();
 
+    /// <summary>
+    /// End date for auto-generate range (optional, only for Create mode)
+    /// </summary>
+    [BindProperty]
+    public DateTime? WorkDateTo { get; set; }
+
+    /// <summary>
+    /// Multiple shift codes selected (for Create mode)
+    /// </summary>
+    [BindProperty]
+    public List<byte> SelectedShiftCodes { get; set; } = new();
+
     public List<SelectListItem> CaddieItems { get; set; } = new();
     public List<SelectListItem> ShiftItems { get; set; } = new();
     public List<SelectListItem> StatusItems { get; set; } = new();
@@ -73,9 +85,55 @@ public class CreateModalModel : MultiTenancyPageModel
     public async Task<IActionResult> OnPostAsync()
     {
         if (Id.HasValue)
+        {
+            // Edit: single record update
             await _scheduleService.UpdateAsync(Id.Value, Schedule);
+        }
         else
-            await _scheduleService.CreateAsync(Schedule);
+        {
+            // Create: auto-generate for date range and multiple shifts
+            var fromDate = Schedule.WorkDate;
+            var toDate = WorkDateTo ?? fromDate; // If no end date, only 1 day
+
+            // Ensure toDate >= fromDate
+            if (toDate < fromDate) toDate = fromDate;
+
+            // Limit range to max 31 days to prevent abuse
+            if ((toDate - fromDate).TotalDays > 31) toDate = fromDate.AddDays(31);
+
+            // Collect shifts to generate
+            var shifts = SelectedShiftCodes?.Any() == true
+                ? SelectedShiftCodes.Distinct().ToList()
+                : new List<byte> { Schedule.ShiftCode };
+
+            // Generate schedules for each day and each shift
+            for (var date = fromDate; date <= toDate; date = date.AddDays(1))
+            {
+                foreach (var shiftCode in shifts)
+                {
+                    var dto = new CreateUpdateCaddieScheduleDto
+                    {
+                        CaddieId = Schedule.CaddieId,
+                        WorkDate = date,
+                        ShiftCode = shiftCode,
+                        StartTime = Schedule.StartTime,
+                        EndTime = Schedule.EndTime,
+                        SlotStatus = Schedule.SlotStatus,
+                        IsNightShift = shiftCode == (byte)CaddieShiftCode.Night || Schedule.IsNightShift,
+                        Note = Schedule.Note
+                    };
+
+                    try
+                    {
+                        await _scheduleService.CreateAsync(dto);
+                    }
+                    catch
+                    {
+                        // Skip if max shifts exceeded for a day (business rule)
+                    }
+                }
+            }
+        }
 
         return NoContent();
     }

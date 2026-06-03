@@ -4,12 +4,15 @@ using System.Linq.Dynamic.Core;
 using System.Threading.Tasks;
 using Genora.MultiTenancy.AppDtos.Caddies;
 using Genora.MultiTenancy.DomainModels.AppCaddie;
+using Genora.MultiTenancy.Features.Caddie;
 using Genora.MultiTenancy.Localization;
 using Genora.MultiTenancy.Permissions;
 using Microsoft.AspNetCore.Authorization;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Application.Services;
+using Volo.Abp.Authorization;
 using Volo.Abp.Domain.Repositories;
+using Volo.Abp.Features;
 using Volo.Abp.Guids;
 using Volo.Abp.MultiTenancy;
 
@@ -20,15 +23,18 @@ public class CaddieSkillAppService : ApplicationService
 {
     private readonly IRepository<AppCaddieSkill, Guid> _repo;
     private readonly ICurrentTenant _currentTenant;
+    private readonly IFeatureChecker _featureChecker;
     private readonly IGuidGenerator _guidGenerator;
 
     public CaddieSkillAppService(
         IRepository<AppCaddieSkill, Guid> repo,
         ICurrentTenant currentTenant,
+        IFeatureChecker featureChecker,
         IGuidGenerator guidGenerator)
     {
         _repo = repo;
         _currentTenant = currentTenant;
+        _featureChecker = featureChecker;
         _guidGenerator = guidGenerator;
         LocalizationResource = typeof(MultiTenancyResource);
     }
@@ -36,8 +42,16 @@ public class CaddieSkillAppService : ApplicationService
     private string P(string tenantPerm, string hostPerm)
         => _currentTenant.IsAvailable ? tenantPerm : hostPerm;
 
+    private async Task EnsureFeatureAsync()
+    {
+        if (!_currentTenant.IsAvailable) return;
+        if (!await _featureChecker.IsEnabledAsync(CaddieFeatures.Management))
+            throw new AbpAuthorizationException($"Feature '{CaddieFeatures.Management}' is disabled for this tenant.");
+    }
+
     public async Task<PagedResultDto<CaddieSkillDto>> GetListAsync(PagedAndSortedResultRequestDto input)
     {
+        await EnsureFeatureAsync();
         await AuthorizationService.CheckAsync(
             P(MultiTenancyPermissions.AppCaddieSkills.Default, MultiTenancyPermissions.HostAppCaddieSkills.Default));
 
@@ -79,6 +93,7 @@ public class CaddieSkillAppService : ApplicationService
 
     public async Task<CaddieSkillDto> CreateAsync(CreateUpdateCaddieSkillDto input)
     {
+        await EnsureFeatureAsync();
         await AuthorizationService.CheckAsync(
             P(MultiTenancyPermissions.AppCaddieSkills.Create, MultiTenancyPermissions.HostAppCaddieSkills.Create));
 
@@ -106,6 +121,7 @@ public class CaddieSkillAppService : ApplicationService
 
     public async Task<CaddieSkillDto> UpdateAsync(Guid id, CreateUpdateCaddieSkillDto input)
     {
+        await EnsureFeatureAsync();
         await AuthorizationService.CheckAsync(
             P(MultiTenancyPermissions.AppCaddieSkills.Edit, MultiTenancyPermissions.HostAppCaddieSkills.Edit));
 
@@ -131,6 +147,7 @@ public class CaddieSkillAppService : ApplicationService
 
     public async Task DeleteAsync(Guid id)
     {
+        await EnsureFeatureAsync();
         await AuthorizationService.CheckAsync(
             P(MultiTenancyPermissions.AppCaddieSkills.Delete, MultiTenancyPermissions.HostAppCaddieSkills.Delete));
 

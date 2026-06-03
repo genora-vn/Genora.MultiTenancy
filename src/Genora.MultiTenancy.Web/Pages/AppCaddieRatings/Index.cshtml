@@ -27,31 +27,92 @@
     <div class="caddie-header-row">
         <div>
             <h1 class="caddie-page-title">Lịch sử đánh giá Caddy</h1>
-            <p class="caddie-page-subtitle">Quản lý và phê duyệt đánh giá từ khách hàng sau buổi chơi.</p>
+            <p class="caddie-page-subtitle">Quản lý và phê duyệt phản hồi từ Golfer dành cho đội ngũ Caddy.</p>
+        </div>
+    </div>
+
+    <!-- KPI Cards -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-4">
+            <div class="card" style="border:none;background:var(--caddie-surface-container-high);border-radius:12px;">
+                <div class="card-body p-4 d-flex align-items-center justify-content-between">
+                    <div>
+                        <p style="font-size:13px;color:var(--caddie-on-surface-variant);margin-bottom:4px;">Tổng số đánh giá</p>
+                        <h3 style="font-weight:800;margin:0;" id="kpiTotalRatings">—</h3>
+                    </div>
+                    <div style="width:48px;height:48px;border-radius:12px;background:rgba(0,94,164,0.1);display:flex;align-items:center;justify-content:center;">
+                        <i class="fa fa-star" style="font-size:20px;color:var(--caddie-primary);"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card" style="border:none;background:var(--caddie-surface-container-high);border-radius:12px;">
+                <div class="card-body p-4 d-flex align-items-center justify-content-between">
+                    <div>
+                        <p style="font-size:13px;color:var(--caddie-on-surface-variant);margin-bottom:4px;">Đánh giá chờ duyệt</p>
+                        <h3 style="font-weight:800;margin:0;" id="kpiPendingRatings">—</h3>
+                        <p style="font-size:11px;color:var(--caddie-tertiary);font-weight:700;margin:4px 0 0;">
+                            <i class="fa fa-clock"></i> Cần xử lý ngay
+                        </p>
+                    </div>
+                    <div style="width:48px;height:48px;border-radius:12px;background:rgba(143,74,0,0.1);display:flex;align-items:center;justify-content:center;">
+                        <i class="fa fa-hourglass-half" style="font-size:20px;color:var(--caddie-tertiary);"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card" style="border:none;background:var(--caddie-surface-container-high);border-radius:12px;">
+                <div class="card-body p-4 d-flex align-items-center justify-content-between">
+                    <div>
+                        <p style="font-size:13px;color:var(--caddie-on-surface-variant);margin-bottom:4px;">Rating trung bình</p>
+                        <h3 style="font-weight:800;margin:0;" id="kpiAvgRating">— / 5.0</h3>
+                        <div id="kpiAvgStars" class="mt-1"></div>
+                    </div>
+                    <div style="width:48px;height:48px;border-radius:12px;background:rgba(0,93,183,0.1);display:flex;align-items:center;justify-content:center;">
+                        <i class="fa fa-award" style="font-size:20px;color:var(--caddie-secondary);"></i>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
     <!-- Filters -->
-    <div class="d-flex flex-wrap gap-3 mb-4">
-        <div class="caddie-schedule-filter-group">
-            <label class="caddie-schedule-filter-label">Trạng thái duyệt</label>
-            <select id="RatingApprovalFilter" class="form-select caddie-form-control" style="min-width:150px;">
-                <option value="">Tất cả</option>
-                <option value="1">Chờ duyệt</option>
-                <option value="2">Đã duyệt</option>
-                <option value="3">Từ chối</option>
-            </select>
-        </div>
-        <div class="caddie-schedule-filter-group">
-            <label class="caddie-schedule-filter-label">Từ ngày</label>
-            <input type="date" id="RatingFromDate" class="form-control caddie-form-control" style="min-width:140px;" />
-        </div>
-        <div class="caddie-schedule-filter-group">
-            <label class="caddie-schedule-filter-label">Đến ngày</label>
-            <input type="date" id="RatingToDate" class="form-control caddie-form-control" style="min-width:140px;" />
-        </div>
-        <div class="caddie-schedule-filter-group d-flex align-items-end">
-            <button id="BtnSearch" class="btn-caddie-primary" style="padding:10px 20px;"><i class="fa fa-search"></i> Tìm</button>
+    <div class="caddie-filter-section mb-4">
+        <div class="row g-3 align-items-end">
+            <div class="col-md-3">
+                <label class="caddie-schedule-filter-label">TÌM CADDY</label>
+                <input id="RatingCaddyFilter" class="form-control caddie-form-control" placeholder="Tên hoặc mã Caddy..." />
+            </div>
+            <div class="col-md-3">
+                <label class="caddie-schedule-filter-label">GOLFER</label>
+                <input id="RatingGolferFilter" class="form-control caddie-form-control" placeholder="Tên Golfer..." />
+            </div>
+            <div class="col-md-2">
+                <label class="caddie-schedule-filter-label">ĐÁNH GIÁ</label>
+                <select id="RatingScoreFilter" class="form-select caddie-form-control">
+                    <option value="">Tất cả Rating</option>
+                    <option value="5">5 Sao</option>
+                    <option value="4">4 Sao</option>
+                    <option value="3">3 Sao</option>
+                    <option value="2">Dưới 3 Sao</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="caddie-schedule-filter-label">TRẠNG THÁI</label>
+                <select id="RatingApprovalFilter" class="form-select caddie-form-control">
+                    <option value="">Tất cả trạng thái</option>
+                    <option value="1">Chờ duyệt</option>
+                    <option value="2">Đã duyệt</option>
+                    <option value="3">Từ chối</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <button id="BtnSearch" class="btn-caddie-primary w-100">
+                    <i class="fa fa-filter"></i> Áp dụng
+                </button>
+            </div>
         </div>
     </div>
 
@@ -65,55 +126,63 @@
 
 <!-- Rating Detail Modal -->
 <div class="modal fade" id="ratingDetailModal" tabindex="-1">
-    <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
         <div class="modal-content" style="border-radius:12px;border:none;">
             <div class="modal-header" style="border-bottom:1px solid rgba(192,199,212,0.1);padding:20px 24px;">
                 <div>
-                    <h5 class="modal-title" style="font-family:'Manrope';font-weight:800;">Đánh giá chi tiết Caddy</h5>
-                    <p style="font-size:12px;color:var(--caddie-on-surface-variant);margin:2px 0 0;">Thông tin phản hồi từ khách hàng sau buổi chơi</p>
+                    <h5 class="modal-title" style="font-weight:800;">Chi tiết đánh giá <span id="detailRatingCode"></span></h5>
+                    <p style="font-size:12px;color:var(--caddie-on-surface-variant);margin:2px 0 0;">Phản hồi từ khách hàng sau buổi chơi</p>
                 </div>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body" style="padding:24px;">
-                <!-- Booking + Customer -->
-                <div class="row g-3 mb-4">
-                    <div class="col-6">
-                        <div style="border:1px solid var(--caddie-outline-variant);border-radius:12px;padding:16px;">
-                            <div style="font-size:10px;font-weight:700;color:var(--caddie-on-surface-variant);text-transform:uppercase;margin-bottom:8px;"><i class="fa fa-calendar me-1"></i> THÔNG TIN ĐẶT CHỖ</div>
-                            <div style="font-size:0.875rem;">Mã đặt chỗ: <strong id="detailBookingCode">—</strong></div>
-                            <div style="font-size:0.875rem;">Ngày chơi: <span id="detailPlayDate">—</span></div>
+                <div class="row g-4">
+                    <!-- Left: Info -->
+                    <div class="col-md-5">
+                        <!-- Golfer info -->
+                        <div style="border:1px solid var(--caddie-outline-variant);border-radius:12px;padding:16px;margin-bottom:16px;">
+                            <div style="font-size:10px;font-weight:700;color:var(--caddie-on-surface-variant);text-transform:uppercase;margin-bottom:8px;">THÔNG TIN GOLFER</div>
+                            <div class="d-flex align-items-center gap-2 mb-2">
+                                <div id="detailGolferInitials" class="d-flex align-items-center justify-content-center rounded-circle" style="width:36px;height:36px;background:rgba(0,94,164,0.1);color:var(--caddie-primary);font-weight:700;font-size:13px;"></div>
+                                <strong id="detailCustomerName" style="font-size:14px;">—</strong>
+                            </div>
+                            <div style="font-size:12px;color:var(--caddie-on-surface-variant);">Ngày chơi: <strong id="detailPlayDate">—</strong></div>
+                            <div style="font-size:12px;color:var(--caddie-on-surface-variant);">Giờ chơi: <strong id="detailPlayTime">—</strong></div>
                         </div>
-                    </div>
-                    <div class="col-6">
+                        <!-- Caddy info -->
                         <div style="border:1px solid var(--caddie-outline-variant);border-radius:12px;padding:16px;">
-                            <div style="font-size:10px;font-weight:700;color:var(--caddie-on-surface-variant);text-transform:uppercase;margin-bottom:8px;"><i class="fa fa-user me-1"></i> KHÁCH HÀNG</div>
-                            <div class="d-flex align-items-center gap-2">
-                                <img id="detailCustomerAvatar" src="/images/default-avatar.png" class="rounded-circle" style="width:32px;height:32px;" />
+                            <div style="font-size:10px;font-weight:700;color:var(--caddie-on-surface-variant);text-transform:uppercase;margin-bottom:8px;">THÔNG TIN CADDY</div>
+                            <div class="d-flex align-items-center gap-2 mb-2">
+                                <div id="detailCaddyInitials" class="d-flex align-items-center justify-content-center rounded-circle" style="width:36px;height:36px;background:var(--caddie-surface-container-high);color:var(--caddie-on-surface);font-weight:700;font-size:13px;"></div>
                                 <div>
-                                    <strong id="detailCustomerName" style="font-size:0.875rem;">—</strong>
+                                    <strong id="detailCaddyName" style="font-size:14px;">—</strong>
+                                    <div style="font-size:11px;color:var(--caddie-on-surface-variant);">Mã: <span id="detailCaddyCode">—</span></div>
                                 </div>
                             </div>
+                            <div class="d-flex align-items-center gap-2 mt-2" id="detailOverallStars"></div>
+                        </div>
+                    </div>
+                    <!-- Right: Skills + Comment -->
+                    <div class="col-md-7">
+                        <h6 style="font-weight:700;margin-bottom:12px;">Đánh giá kỹ năng chi tiết</h6>
+                        <div id="detailSkillRatings" class="mb-4" style="background:var(--caddie-surface-container-low);border-radius:8px;padding:16px;">
+                            <div class="text-muted">Đang tải...</div>
+                        </div>
+
+                        <h6 style="font-weight:700;margin-bottom:12px;">Nhận xét từ khách hàng</h6>
+                        <div style="background:var(--caddie-surface-container-low);border-left:4px solid var(--caddie-primary);border-radius:0 8px 8px 0;padding:16px;">
+                            <p id="detailComment" style="font-style:italic;color:var(--caddie-on-surface-variant);margin:0;">—</p>
                         </div>
                     </div>
                 </div>
-
-                <!-- Skill Ratings -->
-                <h6 style="font-weight:700;margin-bottom:12px;"><i class="fa fa-star text-warning me-1"></i> Đánh giá kỹ năng</h6>
-                <div class="row g-2 mb-4" id="detailSkillRatings">
-                    <div class="col-12 text-muted">Đang tải...</div>
-                </div>
-
-                <!-- Comment -->
-                <h6 style="font-weight:700;margin-bottom:12px;"><i class="fa fa-comment text-info me-1"></i> Nhận xét từ khách hàng</h6>
-                <div class="caddie-note-quote" id="detailComment">—</div>
             </div>
             <div class="modal-footer" style="border-top:1px solid rgba(192,199,212,0.1);padding:16px 24px;">
                 @if (canEdit)
                 {
-                    <button type="button" class="btn btn-success btn-sm" id="btnApproveRating" style="font-weight:700;"><i class="fa fa-check me-1"></i> Duyệt</button>
-                    <button type="button" class="btn btn-danger btn-sm" id="btnRejectRating" style="font-weight:700;"><i class="fa fa-times me-1"></i> Từ chối</button>
+                    <button type="button" class="btn btn-outline-danger btn-sm" id="btnRejectRating" style="font-weight:700;"><i class="fa fa-times me-1"></i> Từ chối / Ẩn</button>
+                    <button type="button" class="btn btn-success btn-sm" id="btnApproveRating" style="font-weight:700;"><i class="fa fa-check me-1"></i> Phê duyệt</button>
                 }
-                <button type="button" class="btn-caddie-primary" data-bs-dismiss="modal"><i class="fa fa-check"></i> Đóng</button>
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal" style="font-weight:700;">Đóng</button>
             </div>
         </div>
     </div>
@@ -124,7 +193,7 @@
     <div class="modal-dialog modal-dialog-centered modal-sm">
         <div class="modal-content" style="border-radius:12px;border:none;">
             <div class="modal-header" style="padding:20px 24px;">
-                <h5 class="modal-title" style="font-family:'Manrope';font-weight:800;">Lý do từ chối</h5>
+                <h5 class="modal-title" style="font-weight:800;">Lý do từ chối</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body" style="padding:24px;">

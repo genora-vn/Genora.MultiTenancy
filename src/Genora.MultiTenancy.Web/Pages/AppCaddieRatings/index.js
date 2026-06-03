@@ -4,6 +4,40 @@ $(function () {
     var canDelete = $('#CanDelete').val() === 'true';
     var currentRatingId = null;
 
+    // Load KPI stats
+    function loadKpiStats() {
+        // Total ratings
+        ratingService.getList({ maxResultCount: 1 }).then(function (res) {
+            $('#kpiTotalRatings').text(res.totalCount.toLocaleString());
+        });
+        // Pending
+        ratingService.getList({ maxResultCount: 1, approvalStatus: 1 }).then(function (res) {
+            $('#kpiPendingRatings').text(res.totalCount.toLocaleString());
+        });
+        // Avg rating (get approved ratings)
+        ratingService.getList({ maxResultCount: 100, approvalStatus: 2 }).then(function (res) {
+            if (res.items.length > 0) {
+                var sum = 0;
+                res.items.forEach(function (r) { sum += r.overallRating; });
+                var avg = (sum / res.items.length).toFixed(1);
+                $('#kpiAvgRating').text(avg + ' / 5.0');
+                var starsHtml = '';
+                for (var i = 1; i <= 5; i++) {
+                    starsHtml += i <= Math.round(parseFloat(avg))
+                        ? '<i class="fa fa-star" style="color:var(--caddie-primary);font-size:12px;"></i>'
+                        : '<i class="fa fa-star" style="color:#cbd5e1;font-size:12px;"></i>';
+                }
+                $('#kpiAvgStars').html(starsHtml);
+            }
+        });
+    }
+    loadKpiStats();
+
+    function getInitials(name) {
+        if (!name) return '?';
+        return name.split(' ').map(function (n) { return n[0]; }).join('').substring(0, 2).toUpperCase();
+    }
+
     var dataTable = $('#CaddieRatingsTable').DataTable(
         abp.libs.datatables.normalizeConfiguration({
             serverSide: true,
@@ -21,84 +55,76 @@ $(function () {
                 {
                     title: 'Thao tác',
                     orderable: false,
-                    width: '60px',
+                    width: '80px',
                     render: function (data, type, row) {
                         var items = [];
                         items.push('<li><a class="dropdown-item rating-action-detail" data-id="' + row.id + '"><i class="fa fa-eye me-2 text-primary"></i>Xem chi tiết</a></li>');
                         if (canEdit && row.approvalStatus === 1) {
-                            items.push('<li><a class="dropdown-item rating-action-approve" data-id="' + row.id + '"><i class="fa fa-check me-2 text-success"></i>Duyệt</a></li>');
+                            items.push('<li><a class="dropdown-item rating-action-approve" data-id="' + row.id + '"><i class="fa fa-check me-2 text-success"></i>Phê duyệt</a></li>');
                             items.push('<li><a class="dropdown-item rating-action-reject" data-id="' + row.id + '"><i class="fa fa-times me-2 text-danger"></i>Từ chối</a></li>');
                         }
                         if (canDelete) {
                             items.push('<li><hr class="dropdown-divider"></li>');
                             items.push('<li><a class="dropdown-item text-danger rating-action-delete" data-id="' + row.id + '"><i class="fa fa-trash me-2"></i>Xóa</a></li>');
                         }
-                        return '<div class="dropdown"><button class="caddie-action-btn dropdown-toggle" data-bs-toggle="dropdown"><i class="fa fa-ellipsis-v"></i></button><ul class="dropdown-menu dropdown-menu-end shadow-sm">' + items.join('') + '</ul></div>';
+                        return '<div class="dropdown"><button class="btn btn-sm btn-primary dropdown-toggle" data-bs-toggle="dropdown" style="font-size:11px;font-weight:700;border-radius:6px;padding:4px 10px;">Thao tác <i class="fa fa-chevron-down ms-1" style="font-size:9px;"></i></button><ul class="dropdown-menu dropdown-menu-end shadow-sm">' + items.join('') + '</ul></div>';
                     }
                 },
                 {
-                    title: 'Caddy',
-                    data: 'caddieName',
-                    render: function (data, type, row) {
-                        return '<strong>' + (data || '—') + '</strong><br/><small style="color:var(--caddie-primary);">' + (row.caddieCode || '') + '</small>';
-                    }
+                    title: 'Mã ĐG',
+                    data: 'bookingCode',
+                    render: function (data) { return '<span style="font-weight:700;color:var(--caddie-primary);">#' + (data || '—') + '</span>'; }
                 },
                 {
-                    title: 'Khách hàng',
-                    data: 'customerName',
-                    render: function (data) { return '<strong>' + (data || '—') + '</strong>'; }
-                },
-                {
-                    title: 'Ngày chơi',
-                    data: 'bookingDate',
-                    render: function (data, type, row) {
-                        if (!data) return '—';
-                        var date = luxon.DateTime.fromISO(data).toFormat('dd/MM/yyyy');
-                        var time = row.bookingStartTime ? row.bookingStartTime.substring(0, 5) : '';
-                        return date + (time ? ' <small style="color:var(--caddie-on-surface-variant);">' + time + '</small>' : '');
-                    }
-                },
-                {
-                    title: 'Thời gian đánh giá',
+                    title: 'Ngày / Giờ',
                     data: 'creationTime',
                     render: function (data) {
                         if (!data) return '—';
-                        return luxon.DateTime.fromISO(data).toFormat('dd/MM/yyyy HH:mm');
+                        var dt = luxon.DateTime.fromISO(data);
+                        return '<div><span style="font-size:13px;font-weight:600;">' + dt.toFormat('dd/MM/yyyy') + '</span><br/><span style="font-size:11px;color:var(--caddie-on-surface-variant);">' + dt.toFormat('HH:mm') + '</span></div>';
                     }
                 },
                 {
-                    title: 'Đánh giá',
+                    title: 'Golfer',
+                    data: 'customerName',
+                    render: function (data) { return '<span style="font-weight:500;">' + (data || '—') + '</span>'; }
+                },
+                {
+                    title: 'Caddy được đánh giá',
+                    data: 'caddieName',
+                    render: function (data, type, row) {
+                        var initials = getInitials(data);
+                        return '<div class="d-flex align-items-center gap-2">' +
+                            '<span class="d-inline-flex align-items-center justify-content-center rounded-circle" style="width:28px;height:28px;background:var(--caddie-surface-container-high);font-size:10px;font-weight:700;">' + initials + '</span>' +
+                            '<span style="font-size:13px;font-weight:600;">' + (data || '—') + '</span></div>';
+                    }
+                },
+                {
+                    title: 'Rating',
                     data: 'overallRating',
                     render: function (data) {
                         var stars = '';
                         for (var i = 1; i <= 5; i++) {
                             stars += i <= data
-                                ? '<i class="fa fa-star caddie-stars"></i>'
-                                : '<i class="fa fa-star caddie-stars star-empty" style="color:#cbd5e1;"></i>';
+                                ? '<i class="fa fa-star" style="color:var(--caddie-primary);font-size:12px;"></i>'
+                                : '<i class="fa fa-star" style="color:#cbd5e1;font-size:12px;"></i>';
                         }
                         return stars;
                     }
                 },
                 {
-                    title: 'Nhận xét',
-                    data: 'comment',
-                    render: function (data) {
-                        if (!data) return '<span style="color:#707783">—</span>';
-                        var truncated = data.length > 40 ? data.substring(0, 40) + '...' : data;
-                        return '<em style="color:var(--caddie-on-surface-variant);font-size:12px;">"' + truncated + '"</em>';
-                    }
-                },
-                {
                     title: 'Trạng thái',
                     data: 'approvalStatus',
+                    className: 'text-center',
                     render: function (data, type, row) {
                         var styles = {
-                            1: 'background:#fef9c3;color:#a16207;border:1px solid #fde68a;',
-                            2: 'background:#dcfce7;color:#166534;border:1px solid #bbf7d0;',
-                            3: 'background:#fef2f2;color:#991b1b;border:1px solid #fecaca;'
+                            1: 'background:#fef9c3;color:#a16207;',
+                            2: 'background:var(--caddie-surface-container-high);color:var(--caddie-primary);',
+                            3: 'background:#f3f4f6;color:#6b7280;'
                         };
+                        var labels = { 1: 'CHỜ DUYỆT', 2: 'ĐÃ DUYỆT', 3: 'ĐÃ ẨN' };
                         var style = styles[data] || 'background:#f3f4f6;color:#6b7280;';
-                        return '<span style="' + style + 'font-size:10px;font-weight:700;padding:4px 8px;border-radius:4px;text-transform:uppercase;">' + (row.approvalStatusText || '—') + '</span>';
+                        return '<span style="' + style + 'font-size:10px;font-weight:700;padding:4px 10px;border-radius:20px;">' + (labels[data] || row.approvalStatusText || '—') + '</span>';
                     }
                 }
             ]
@@ -108,16 +134,34 @@ $(function () {
     // Search
     $('#BtnSearch').click(function () { dataTable.ajax.reload(); });
 
-    // Detail
+    // Detail modal
     $(document).on('click', '.rating-action-detail', function () {
         var id = $(this).data('id');
         currentRatingId = id;
         ratingService.get(id).then(function (dto) {
-            $('#detailBookingCode').text('#' + (dto.bookingCode || '—'));
-            var playDate = dto.bookingDate ? luxon.DateTime.fromISO(dto.bookingDate).toFormat('dd/MM/yyyy') : '';
-            var playTime = dto.bookingStartTime ? dto.bookingStartTime.substring(0, 5) : '';
-            $('#detailPlayDate').text(playDate + (playTime ? ' - ' + playTime : ''));
+            $('#detailRatingCode').text('#' + (dto.bookingCode || dto.id.substring(0, 8)));
             $('#detailCustomerName').text(dto.customerName || '—');
+            $('#detailGolferInitials').text(getInitials(dto.customerName));
+            $('#detailCaddyName').text(dto.caddieName || '—');
+            $('#detailCaddyCode').text(dto.caddieCode || '—');
+            $('#detailCaddyInitials').text(getInitials(dto.caddieName));
+
+            var playDate = dto.bookingDate ? luxon.DateTime.fromISO(dto.bookingDate).toFormat('dd/MM/yyyy') : '—';
+            var playTime = dto.bookingStartTime ? dto.bookingStartTime.substring(0, 5) : '—';
+            $('#detailPlayDate').text(playDate);
+            $('#detailPlayTime').text(playTime);
+
+            // Overall stars
+            var overallHtml = '';
+            for (var i = 1; i <= 5; i++) {
+                overallHtml += i <= dto.overallRating
+                    ? '<i class="fa fa-star" style="color:var(--caddie-primary);"></i>'
+                    : '<i class="fa fa-star" style="color:#cbd5e1;"></i>';
+            }
+            overallHtml += ' <strong style="margin-left:4px;">' + dto.overallRating.toFixed(1) + '</strong>';
+            $('#detailOverallStars').html(overallHtml);
+
+            // Comment
             $('#detailComment').text(dto.comment ? '"' + dto.comment + '"' : '— Không có nhận xét —');
 
             // Skill ratings
@@ -127,17 +171,17 @@ $(function () {
                     var stars = '';
                     for (var i = 1; i <= 5; i++) {
                         stars += i <= d.score
-                            ? '<i class="fa fa-star caddie-stars"></i>'
-                            : '<i class="fa fa-star" style="color:#cbd5e1;"></i>';
+                            ? '<i class="fa fa-star" style="color:var(--caddie-primary);font-size:13px;"></i>'
+                            : '<i class="fa fa-star" style="color:#cbd5e1;font-size:13px;"></i>';
                     }
-                    skillHtml += '<div class="col-6 d-flex justify-content-between align-items-center" style="font-size:0.875rem;"><span>' + (d.skillName || '—') + '</span><span>' + stars + '</span></div>';
+                    skillHtml += '<div class="d-flex justify-content-between align-items-center mb-3"><span style="font-weight:500;">' + (d.skillName || '—') + '</span><span>' + stars + '</span></div>';
                 });
             } else {
-                skillHtml = '<div class="col-12 text-muted">Không có đánh giá kỹ năng</div>';
+                skillHtml = '<div class="text-muted">Không có đánh giá kỹ năng chi tiết</div>';
             }
             $('#detailSkillRatings').html(skillHtml);
 
-            // Show/hide approve/reject buttons
+            // Show/hide buttons
             if (dto.approvalStatus === 1 && canEdit) {
                 $('#btnApproveRating, #btnRejectRating').show();
             } else {
@@ -149,17 +193,18 @@ $(function () {
         });
     });
 
-    // Approve from detail modal
+    // Approve
     $('#btnApproveRating').click(function () {
         if (!currentRatingId) return;
         ratingService.approveReject(currentRatingId, { approvalStatus: 2 }).then(function () {
             bootstrap.Modal.getInstance(document.getElementById('ratingDetailModal')).hide();
             dataTable.ajax.reload();
-            abp.notify.success('Đã duyệt đánh giá');
+            loadKpiStats();
+            abp.notify.success('Đã phê duyệt đánh giá');
         }).catch(function (err) { abp.notify.error(err.message || 'Lỗi'); });
     });
 
-    // Reject from detail modal → open reason modal
+    // Reject from detail modal
     $('#btnRejectRating').click(function () {
         bootstrap.Modal.getInstance(document.getElementById('ratingDetailModal')).hide();
         $('#rejectReasonInput').val('');
@@ -174,6 +219,7 @@ $(function () {
         ratingService.approveReject(currentRatingId, { approvalStatus: 3, rejectReason: reason }).then(function () {
             bootstrap.Modal.getInstance(document.getElementById('rejectReasonModal')).hide();
             dataTable.ajax.reload();
+            loadKpiStats();
             abp.notify.success('Đã từ chối đánh giá');
         }).catch(function (err) { abp.notify.error(err.message || 'Lỗi'); });
     });
@@ -181,11 +227,12 @@ $(function () {
     // Quick approve from dropdown
     $(document).on('click', '.rating-action-approve', function () {
         var id = $(this).data('id');
-        abp.message.confirm('Duyệt đánh giá này?', 'Xác nhận').then(function (confirmed) {
+        abp.message.confirm('Phê duyệt đánh giá này?', 'Xác nhận').then(function (confirmed) {
             if (confirmed) {
                 ratingService.approveReject(id, { approvalStatus: 2 }).then(function () {
                     dataTable.ajax.reload();
-                    abp.notify.success('Đã duyệt đánh giá');
+                    loadKpiStats();
+                    abp.notify.success('Đã phê duyệt đánh giá');
                 });
             }
         });
@@ -206,6 +253,7 @@ $(function () {
             if (confirmed) {
                 ratingService.delete(id).then(function () {
                     dataTable.ajax.reload();
+                    loadKpiStats();
                     abp.notify.success('Đã xóa đánh giá');
                 });
             }

@@ -1,17 +1,21 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Linq.Dynamic.Core;
 using System.Threading.Tasks;
+using Genora.MultiTenancy.AppDtos.AppImages;
 using Genora.MultiTenancy.AppDtos.Caddies;
 using Genora.MultiTenancy.DomainModels.AppCaddie;
 using Genora.MultiTenancy.DomainModels.AppGolfCourses;
 using Genora.MultiTenancy.Enums;
+using Genora.MultiTenancy.Features.Caddie;
 using Genora.MultiTenancy.Localization;
 using Genora.MultiTenancy.Permissions;
 using Microsoft.AspNetCore.Authorization;
+using Volo.Abp;
 using Volo.Abp.Application.Dtos;
-using Volo.Abp.Application.Services;
+using Volo.Abp.Content;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Features;
 using Volo.Abp.Guids;
@@ -20,16 +24,25 @@ using Volo.Abp.MultiTenancy;
 namespace Genora.MultiTenancy.AppServices.Caddies;
 
 [Authorize]
-public class CaddieAppService : ApplicationService, ICaddieAppService
+public class CaddieAppService : FeatureProtectedCrudAppService<
+    AppCaddie, CaddieDto, Guid, GetCaddieListInput, CreateUpdateCaddieDto>, ICaddieAppService
 {
+    private const int AVATAR_MAX_MB = 15;
+    private const long AVATAR_MAX_BYTES = AVATAR_MAX_MB * 1024L * 1024L;
+    private static readonly string[] AllowedExtensions = { ".jpg", ".jpeg", ".png", ".webp" };
+
+    protected override string FeatureName => CaddieFeatures.Management;
+    protected override string TenantDefaultPermission => MultiTenancyPermissions.AppCaddies.Default;
+    protected override string HostDefaultPermission => MultiTenancyPermissions.HostAppCaddies.Default;
+
     private readonly IRepository<AppCaddie, Guid> _caddieRepo;
     private readonly IRepository<AppCaddieLanguage, Guid> _caddieLanguageRepo;
     private readonly IRepository<AppCaddieVoiceRegion, Guid> _caddieVoiceRegionRepo;
     private readonly IRepository<AppLanguage, Guid> _languageRepo;
     private readonly IRepository<GolfCourse, Guid> _golfCourseRepo;
     private readonly ICurrentTenant _currentTenant;
-    private readonly IFeatureChecker _featureChecker;
     private readonly IGuidGenerator _guidGenerator;
+    private readonly IManageImageService _manageImageService;
 
     public CaddieAppService(
         IRepository<AppCaddie, Guid> caddieRepo,
@@ -39,7 +52,9 @@ public class CaddieAppService : ApplicationService, ICaddieAppService
         IRepository<GolfCourse, Guid> golfCourseRepo,
         ICurrentTenant currentTenant,
         IFeatureChecker featureChecker,
-        IGuidGenerator guidGenerator)
+        IGuidGenerator guidGenerator,
+        IManageImageService manageImageService)
+        : base(caddieRepo, currentTenant, featureChecker)
     {
         _caddieRepo = caddieRepo;
         _caddieLanguageRepo = caddieLanguageRepo;
@@ -47,18 +62,23 @@ public class CaddieAppService : ApplicationService, ICaddieAppService
         _languageRepo = languageRepo;
         _golfCourseRepo = golfCourseRepo;
         _currentTenant = currentTenant;
-        _featureChecker = featureChecker;
         _guidGenerator = guidGenerator;
+        _manageImageService = manageImageService;
         LocalizationResource = typeof(MultiTenancyResource);
+
+        GetPolicyName = MultiTenancyPermissions.AppCaddies.Default;
+        GetListPolicyName = MultiTenancyPermissions.AppCaddies.Default;
+        CreatePolicyName = MultiTenancyPermissions.AppCaddies.Create;
+        UpdatePolicyName = MultiTenancyPermissions.AppCaddies.Edit;
+        DeletePolicyName = MultiTenancyPermissions.AppCaddies.Delete;
     }
 
     private string P(string tenantPerm, string hostPerm)
         => _currentTenant.IsAvailable ? tenantPerm : hostPerm;
 
-    public async Task<PagedResultDto<CaddieDto>> GetListAsync(GetCaddieListInput input)
+    public override async Task<PagedResultDto<CaddieDto>> GetListAsync(GetCaddieListInput input)
     {
-        await AuthorizationService.CheckAsync(
-            P(MultiTenancyPermissions.AppCaddies.Default, MultiTenancyPermissions.HostAppCaddies.Default));
+        await CheckGetListPolicyAsync();
 
         var query = await _caddieRepo.GetQueryableAsync();
 
@@ -121,10 +141,9 @@ public class CaddieAppService : ApplicationService, ICaddieAppService
         return new PagedResultDto<CaddieDto>(totalCount, dtos);
     }
 
-    public async Task<CaddieDto> GetAsync(Guid id)
+    public override async Task<CaddieDto> GetAsync(Guid id)
     {
-        await AuthorizationService.CheckAsync(
-            P(MultiTenancyPermissions.AppCaddies.Default, MultiTenancyPermissions.HostAppCaddies.Default));
+        await CheckGetPolicyAsync();
 
         var caddie = await _caddieRepo.GetAsync(id);
         var dto = MapToDto(caddie);
@@ -151,21 +170,27 @@ public class CaddieAppService : ApplicationService, ICaddieAppService
         return dto;
     }
 
-    public async Task<CaddieDto> CreateAsync(CreateUpdateCaddieDto input)
+    public override async Task<CaddieDto> CreateAsync(CreateUpdateCaddieDto input)
     {
         await AuthorizationService.CheckAsync(
             P(MultiTenancyPermissions.AppCaddies.Create, MultiTenancyPermissions.HostAppCaddies.Create));
 
         var code = await GenerateCaddieCodeAsync();
 
-        var caddie = new AppCaddie
+        // Handle avatar upload
+        var avatarUrl = await ResolveAvatarAsync(input.AvatarFile, null);
+
+        // Resolve GolfCourseId: use input or fallback to the single configured course
+        var golfCourseId = await ResolveGolfCourseIdAsync(input.GolfCourseId);
+
+        var caddie = new AppCaddie(_guidGenerator.Create())
         {
             CaddieCode = code,
             CaddieName = input.CaddieName,
-            Avatar = input.Avatar,
+            Avatar = avatarUrl,
             Gender = input.Gender,
             Phone = input.Phone,
-            GolfCourseId = input.GolfCourseId == Guid.Empty ? null : input.GolfCourseId,
+            GolfCourseId = golfCourseId,
             JoinDate = input.JoinDate,
             HeightCm = input.HeightCm,
             Status = input.Status,
@@ -184,18 +209,24 @@ public class CaddieAppService : ApplicationService, ICaddieAppService
         return await GetAsync(caddie.Id);
     }
 
-    public async Task<CaddieDto> UpdateAsync(Guid id, CreateUpdateCaddieDto input)
+    public override async Task<CaddieDto> UpdateAsync(Guid id, CreateUpdateCaddieDto input)
     {
         await AuthorizationService.CheckAsync(
             P(MultiTenancyPermissions.AppCaddies.Edit, MultiTenancyPermissions.HostAppCaddies.Edit));
 
         var caddie = await _caddieRepo.GetAsync(id);
 
+        // Handle avatar upload
+        var avatarUrl = await ResolveAvatarAsync(input.AvatarFile, caddie.Avatar);
+
+        // Resolve GolfCourseId: use input or fallback to the single configured course
+        var golfCourseId = await ResolveGolfCourseIdAsync(input.GolfCourseId);
+
         caddie.CaddieName = input.CaddieName;
-        caddie.Avatar = input.Avatar;
+        caddie.Avatar = avatarUrl;
         caddie.Gender = input.Gender;
         caddie.Phone = input.Phone;
-        caddie.GolfCourseId = input.GolfCourseId == Guid.Empty ? null : input.GolfCourseId;
+        caddie.GolfCourseId = golfCourseId;
         caddie.JoinDate = input.JoinDate;
         caddie.HeightCm = input.HeightCm;
         caddie.Status = input.Status;
@@ -213,10 +244,15 @@ public class CaddieAppService : ApplicationService, ICaddieAppService
         return await GetAsync(caddie.Id);
     }
 
-    public async Task DeleteAsync(Guid id)
+    public override async Task DeleteAsync(Guid id)
     {
         await AuthorizationService.CheckAsync(
             P(MultiTenancyPermissions.AppCaddies.Delete, MultiTenancyPermissions.HostAppCaddies.Delete));
+
+        var caddie = await _caddieRepo.GetAsync(id);
+
+        // Delete avatar file if local
+        await DeleteOldAvatarIfLocalAsync(caddie.Avatar);
 
         await _caddieRepo.DeleteAsync(id);
     }
@@ -249,6 +285,81 @@ public class CaddieAppService : ApplicationService, ICaddieAppService
 
         return $"CD-{DateTime.Now:yyyyMMddHHmmss}";
     }
+
+    /// <summary>
+    /// Resolve GolfCourseId: use provided value, or fallback to the single configured golf course.
+    /// </summary>
+    private async Task<Guid> ResolveGolfCourseIdAsync(Guid? inputGolfCourseId)
+    {
+        if (inputGolfCourseId.HasValue && inputGolfCourseId.Value != Guid.Empty)
+            return inputGolfCourseId.Value;
+
+        // Fallback: get the first (and typically only) golf course
+        var courseQuery = (await _golfCourseRepo.GetQueryableAsync())
+            .Select(x => x.Id);
+        var courseId = await AsyncExecuter.FirstOrDefaultAsync(courseQuery);
+
+        if (courseId == Guid.Empty)
+            throw new UserFriendlyException("Chưa có sân golf nào được cấu hình. Vui lòng tạo sân golf trước.");
+
+        return courseId;
+    }
+
+    #region Avatar helpers
+
+    private async Task<string?> ResolveAvatarAsync(IRemoteStreamContent? avatarFile, string? currentAvatar)
+    {
+        if (avatarFile == null || avatarFile.ContentLength == null || avatarFile.ContentLength == 0)
+            return currentAvatar;
+
+        // Validate file
+        ValidateAvatarFile(avatarFile);
+
+        // Delete old avatar if local
+        await DeleteOldAvatarIfLocalAsync(currentAvatar);
+
+        // Upload new avatar
+        var tenantId = _currentTenant.Id?.ToString() ?? "host";
+
+        var uploadedUrl = await _manageImageService.UploadImageAsync(
+            avatarFile, tenantId, "caddies", AllowedExtensions);
+
+        return uploadedUrl;
+    }
+
+    private void ValidateAvatarFile(IRemoteStreamContent file)
+    {
+        var fileSize = file.ContentLength ?? 0;
+        if (fileSize > AVATAR_MAX_BYTES)
+        {
+            throw new UserFriendlyException(
+                $"Dung lượng ảnh không được vượt quá {AVATAR_MAX_MB} MB. File hiện tại: {fileSize / (1024.0 * 1024.0):F1} MB");
+        }
+
+        var ext = Path.GetExtension(file.FileName)?.ToLowerInvariant();
+        if (string.IsNullOrEmpty(ext) || !AllowedExtensions.Contains(ext))
+        {
+            throw new UserFriendlyException(
+                $"Chỉ chấp nhận file ảnh: {string.Join(", ", AllowedExtensions)}");
+        }
+
+        if (file.ContentType == null || !file.ContentType.StartsWith("image/"))
+        {
+            throw new UserFriendlyException("File không phải là ảnh hợp lệ.");
+        }
+    }
+
+    private async Task DeleteOldAvatarIfLocalAsync(string? avatarUrl)
+    {
+        if (!string.IsNullOrWhiteSpace(avatarUrl) && avatarUrl.StartsWith("/uploads/"))
+        {
+            await _manageImageService.DeleteFileAsync(avatarUrl);
+        }
+    }
+
+    #endregion
+
+    #region Private helpers
 
     private async Task SaveCaddieLanguagesAsync(Guid caddieId, List<Guid> languageIds)
     {
@@ -338,4 +449,6 @@ public class CaddieAppService : ApplicationService, ICaddieAppService
         (byte)CaddieVoiceRegion.South => "Miền Nam",
         _ => "Khác"
     };
+
+    #endregion
 }

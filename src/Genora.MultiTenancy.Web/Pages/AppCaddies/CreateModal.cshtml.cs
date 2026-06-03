@@ -5,8 +5,10 @@ using System.Threading.Tasks;
 using Genora.MultiTenancy.AppDtos.Caddies;
 using Genora.MultiTenancy.AppServices.Caddies;
 using Genora.MultiTenancy.Enums;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using Volo.Abp.Content;
 
 namespace Genora.MultiTenancy.Web.Pages.AppCaddies;
 
@@ -14,6 +16,9 @@ public class CreateModalModel : MultiTenancyPageModel
 {
     [BindProperty]
     public CreateUpdateCaddieDto Caddie { get; set; } = new();
+
+    [BindProperty]
+    public IFormFile? AvatarFile { get; set; }
 
     [BindProperty]
     public List<Guid> SelectedLanguageIds { get; set; } = new();
@@ -51,11 +56,38 @@ public class CreateModalModel : MultiTenancyPageModel
 
     public async Task<IActionResult> OnPostAsync()
     {
-        Caddie.LanguageIds = SelectedLanguageIds ?? new();
-        Caddie.VoiceRegions = SelectedVoiceRegions ?? new();
+        try
+        {
+            // Map selected items to DTO
+            Caddie.LanguageIds = SelectedLanguageIds ?? new();
+            Caddie.VoiceRegions = SelectedVoiceRegions ?? new();
 
-        await _caddieAppService.CreateAsync(Caddie);
-        return NoContent();
+            // Convert IFormFile to IRemoteStreamContent for the service
+            if (AvatarFile != null && AvatarFile.Length > 0)
+            {
+                Caddie.AvatarFile = new RemoteStreamContent(
+                    AvatarFile.OpenReadStream(),
+                    AvatarFile.FileName,
+                    AvatarFile.ContentType,
+                    AvatarFile.Length);
+            }
+
+            // Validate
+            if (string.IsNullOrWhiteSpace(Caddie.CaddieName))
+            {
+                ModelState.AddModelError("Caddie.CaddieName", "Tên Caddy không được để trống");
+                return Page();
+            }
+
+            // Create
+            await _caddieAppService.CreateAsync(Caddie);
+            return NoContent();
+        }
+        catch (Exception ex)
+        {
+            ModelState.AddModelError(string.Empty, ex.Message);
+            return Page();
+        }
     }
 
     private async Task BuildSelectListsAsync()

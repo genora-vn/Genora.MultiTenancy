@@ -49,4 +49,13 @@ public class AppCaddie : FullAuditedAggregateRoot<Guid>, IMultiTenant
     public virtual ICollection<AppCaddieLanguage> Languages { get; set; } = new List<AppCaddieLanguage>();
     public virtual ICollection<AppCaddieVoiceRegion> VoiceRegions { get; set; } = new List<AppCaddieVoiceRegion>();
     public virtual ICollection<AppCaddieSchedule> Schedules { get; set; } = new List<AppCaddieSchedule>();
+
+    // ABP requires constructor with Id for Entity<Guid>
+    public AppCaddie()
+    {
+    }
+
+    public AppCaddie(Guid id) : base(id)
+    {
+    }
 }

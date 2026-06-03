@@ -6,12 +6,16 @@ using System.Threading.Tasks;
 using Genora.MultiTenancy.AppDtos.Caddies;
 using Genora.MultiTenancy.DomainModels.AppCaddie;
 using Genora.MultiTenancy.Enums;
+using Genora.MultiTenancy.Features.Caddie;
 using Genora.MultiTenancy.Localization;
 using Genora.MultiTenancy.Permissions;
 using Microsoft.AspNetCore.Authorization;
+using Volo.Abp;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Application.Services;
+using Volo.Abp.Authorization;
 using Volo.Abp.Domain.Repositories;
+using Volo.Abp.Features;
 using Volo.Abp.Guids;
 using Volo.Abp.MultiTenancy;
 
@@ -23,17 +27,20 @@ public class CaddieScheduleAppService : ApplicationService
     private readonly IRepository<AppCaddieSchedule, Guid> _scheduleRepo;
     private readonly IRepository<AppCaddie, Guid> _caddieRepo;
     private readonly ICurrentTenant _currentTenant;
+    private readonly IFeatureChecker _featureChecker;
     private readonly IGuidGenerator _guidGenerator;
 
     public CaddieScheduleAppService(
         IRepository<AppCaddieSchedule, Guid> scheduleRepo,
         IRepository<AppCaddie, Guid> caddieRepo,
         ICurrentTenant currentTenant,
+        IFeatureChecker featureChecker,
         IGuidGenerator guidGenerator)
     {
         _scheduleRepo = scheduleRepo;
         _caddieRepo = caddieRepo;
         _currentTenant = currentTenant;
+        _featureChecker = featureChecker;
         _guidGenerator = guidGenerator;
         LocalizationResource = typeof(MultiTenancyResource);
     }
@@ -41,8 +48,16 @@ public class CaddieScheduleAppService : ApplicationService
     private string P(string tenantPerm, string hostPerm)
         => _currentTenant.IsAvailable ? tenantPerm : hostPerm;
 
+    private async Task EnsureFeatureAsync()
+    {
+        if (!_currentTenant.IsAvailable) return;
+        if (!await _featureChecker.IsEnabledAsync(CaddieFeatures.Management))
+            throw new AbpAuthorizationException($"Feature '{CaddieFeatures.Management}' is disabled for this tenant.");
+    }
+
     public async Task<PagedResultDto<CaddieScheduleDto>> GetListAsync(GetCaddieScheduleListInput input)
     {
+        await EnsureFeatureAsync();
         await AuthorizationService.CheckAsync(
             P(MultiTenancyPermissions.AppCaddieSchedules.Default, MultiTenancyPermissions.HostAppCaddieSchedules.Default));
 
@@ -84,6 +99,7 @@ public class CaddieScheduleAppService : ApplicationService
 
     public async Task<List<CaddieScheduleDto>> GetWeekScheduleAsync(DateTime weekStart)
     {
+        await EnsureFeatureAsync();
         await AuthorizationService.CheckAsync(
             P(MultiTenancyPermissions.AppCaddieSchedules.Default, MultiTenancyPermissions.HostAppCaddieSchedules.Default));
 
@@ -111,6 +127,7 @@ public class CaddieScheduleAppService : ApplicationService
 
     public async Task<CaddieScheduleDto> CreateAsync(CreateUpdateCaddieScheduleDto input)
     {
+        await EnsureFeatureAsync();
         await AuthorizationService.CheckAsync(
             P(MultiTenancyPermissions.AppCaddieSchedules.Create, MultiTenancyPermissions.HostAppCaddieSchedules.Create));
 
@@ -120,10 +137,10 @@ public class CaddieScheduleAppService : ApplicationService
         var existingCount = await AsyncExecuter.CountAsync(existingQuery);
 
         if (existingCount >= 2 && !input.IsNightShift)
-            throw new Volo.Abp.UserFriendlyException("Một caddie tối đa 2 ca/ngày.");
+            throw new UserFriendlyException("Một caddie tối đa 2 ca/ngày.");
 
         if (existingCount >= 3)
-            throw new Volo.Abp.UserFriendlyException("Một caddie tối đa 3 ca/ngày (bao gồm ca tối).");
+            throw new UserFriendlyException("Một caddie tối đa 3 ca/ngày (bao gồm ca tối).");
 
         var entity = new AppCaddieSchedule
         {
@@ -145,6 +162,7 @@ public class CaddieScheduleAppService : ApplicationService
 
     public async Task<CaddieScheduleDto> UpdateAsync(Guid id, CreateUpdateCaddieScheduleDto input)
     {
+        await EnsureFeatureAsync();
         await AuthorizationService.CheckAsync(
             P(MultiTenancyPermissions.AppCaddieSchedules.Edit, MultiTenancyPermissions.HostAppCaddieSchedules.Edit));
 
@@ -167,6 +185,7 @@ public class CaddieScheduleAppService : ApplicationService
 
     public async Task UpdateSlotStatusAsync(Guid id, byte slotStatus, string? note)
     {
+        await EnsureFeatureAsync();
         await AuthorizationService.CheckAsync(
             P(MultiTenancyPermissions.AppCaddieSchedules.Edit, MultiTenancyPermissions.HostAppCaddieSchedules.Edit));
 
@@ -180,6 +199,7 @@ public class CaddieScheduleAppService : ApplicationService
 
     public async Task DeleteAsync(Guid id)
     {
+        await EnsureFeatureAsync();
         await AuthorizationService.CheckAsync(
             P(MultiTenancyPermissions.AppCaddieSchedules.Delete, MultiTenancyPermissions.HostAppCaddieSchedules.Delete));
 
