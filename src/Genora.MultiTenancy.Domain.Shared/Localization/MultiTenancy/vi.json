@@ -1581,6 +1581,10 @@
     "Caddie:RatingAvg": "Đánh giá trung bình",
     "Caddie:TotalBooking": "Tổng lượt đặt",
     "Caddie:Filter": "Tìm theo tên, mã, SĐT...",
-    "Caddie:MaxAvatarSize": "Dung lượng tối đa: 15 MB"
+    "Caddie:MaxAvatarSize": "Dung lượng tối đa: 15 MB",
+    "Menu:AppCaddieDashboard": "Tổng quan Caddy",
+    "Menu:AppCaddieReports": "Báo cáo Caddy",
+    "Permission:AppCaddieDashboard": "Xem tổng quan Caddy",
+    "Permission:AppCaddieReports": "Xem báo cáo Caddy"
   }
 }

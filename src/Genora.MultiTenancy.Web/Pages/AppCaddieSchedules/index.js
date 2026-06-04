@@ -88,4 +88,49 @@ $(function () {
     createModal.onResult(function () {
         window.location.reload();
     });
+
+    // ── Excel Import ──────────────────────────────────────────────────
+    $('#btnImportExcel').click(function () {
+        $('#excelFileInput').click();
+    });
+
+    $('#excelFileInput').on('change', function () {
+        var file = this.files[0];
+        if (!file) return;
+
+        var formData = new FormData();
+        formData.append('file', file);
+
+        abp.ui.setBusy();
+        $.ajax({
+            url: '/api/app/caddie-schedule-excel/upload',
+            type: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            headers: { 'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val() },
+            success: function (result) {
+                abp.ui.clearBusy();
+                var msg = 'Import hoàn tất: ' + result.successCount + '/' + result.totalRows + ' thành công.';
+                if (result.errorCount > 0) {
+                    msg += '\n\nLỗi (' + result.errorCount + '):\n' + (result.errors || []).join('\n');
+                    abp.notify.warn(msg);
+                } else {
+                    abp.notify.success(msg);
+                }
+                window.location.reload();
+            },
+            error: function (xhr) {
+                abp.ui.clearBusy();
+                var errMsg = 'Import thất bại.';
+                if (xhr.responseJSON && xhr.responseJSON.error && xhr.responseJSON.error.message) {
+                    errMsg = xhr.responseJSON.error.message;
+                }
+                abp.notify.error(errMsg);
+            }
+        });
+
+        // Reset file input
+        $(this).val('');
+    });
 });

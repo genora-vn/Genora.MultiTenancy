@@ -6,15 +6,12 @@ $(function () {
 
     // Load KPI stats
     function loadKpiStats() {
-        // Total ratings
         ratingService.getList({ maxResultCount: 1 }).then(function (res) {
             $('#kpiTotalRatings').text(res.totalCount.toLocaleString());
         });
-        // Pending
         ratingService.getList({ maxResultCount: 1, approvalStatus: 1 }).then(function (res) {
             $('#kpiPendingRatings').text(res.totalCount.toLocaleString());
         });
-        // Avg rating (get approved ratings)
         ratingService.getList({ maxResultCount: 100, approvalStatus: 2 }).then(function (res) {
             if (res.items.length > 0) {
                 var sum = 0;
@@ -38,6 +35,20 @@ $(function () {
         return name.split(' ').map(function (n) { return n[0]; }).join('').substring(0, 2).toUpperCase();
     }
 
+    function renderStars(rating, size) {
+        size = size || '12px';
+        var stars = '';
+        var fullStars = Math.floor(rating);
+        var hasHalf = (rating - fullStars) >= 0.25 && (rating - fullStars) < 0.75;
+        var emptyFrom = hasHalf ? fullStars + 1 : fullStars;
+        for (var i = 1; i <= 5; i++) {
+            if (i <= fullStars) stars += '<i class="fa fa-star" style="color:var(--caddie-primary);font-size:' + size + ';"></i>';
+            else if (i === fullStars + 1 && hasHalf) stars += '<i class="fa fa-star-half-alt" style="color:var(--caddie-primary);font-size:' + size + ';"></i>';
+            else stars += '<i class="fa fa-star" style="color:#cbd5e1;font-size:' + size + ';"></i>';
+        }
+        return stars;
+    }
+
     var dataTable = $('#CaddieRatingsTable').DataTable(
         abp.libs.datatables.normalizeConfiguration({
             serverSide: true,
@@ -46,20 +57,22 @@ $(function () {
             scrollX: true,
             ajax: abp.libs.datatables.createAjax(ratingService.getList, function () {
                 return {
-                    approvalStatus: $('#RatingApprovalFilter').val() || undefined,
-                    fromDate: $('#RatingFromDate').val() || undefined,
-                    toDate: $('#RatingToDate').val() || undefined
+                    filter: $('#RatingCaddyFilter').val() || undefined,
+                    customerFilter: $('#RatingGolferFilter').val() || undefined,
+                    approvalStatus: $('#RatingApprovalFilter').val() || undefined
                 };
             }),
             columnDefs: [
                 {
                     title: 'Thao tác',
                     orderable: false,
-                    width: '80px',
+                    width: '90px',
                     render: function (data, type, row) {
                         var items = [];
-                        items.push('<li><a class="dropdown-item rating-action-detail" data-id="' + row.id + '"><i class="fa fa-eye me-2 text-primary"></i>Xem chi tiết</a></li>');
+                        items.push('<li><a class="dropdown-item rating-action-detail" data-id="' + row.id + '"><i class="fa fa-search me-2 text-info"></i>Xem nhanh đánh giá</a></li>');
+                        items.push('<li><a class="dropdown-item rating-action-detail-page" data-id="' + row.id + '"><i class="fa fa-external-link-alt me-2 text-primary"></i>Xem chi tiết</a></li>');
                         if (canEdit && row.approvalStatus === 1) {
+                            items.push('<li><hr class="dropdown-divider"></li>');
                             items.push('<li><a class="dropdown-item rating-action-approve" data-id="' + row.id + '"><i class="fa fa-check me-2 text-success"></i>Phê duyệt</a></li>');
                             items.push('<li><a class="dropdown-item rating-action-reject" data-id="' + row.id + '"><i class="fa fa-times me-2 text-danger"></i>Từ chối</a></li>');
                         }
@@ -103,13 +116,7 @@ $(function () {
                     title: 'Rating',
                     data: 'overallRating',
                     render: function (data) {
-                        var stars = '';
-                        for (var i = 1; i <= 5; i++) {
-                            stars += i <= data
-                                ? '<i class="fa fa-star" style="color:var(--caddie-primary);font-size:12px;"></i>'
-                                : '<i class="fa fa-star" style="color:#cbd5e1;font-size:12px;"></i>';
-                        }
-                        return stars;
+                        return renderStars(data);
                     }
                 },
                 {
@@ -117,11 +124,7 @@ $(function () {
                     data: 'approvalStatus',
                     className: 'text-center',
                     render: function (data, type, row) {
-                        var styles = {
-                            1: 'background:#fef9c3;color:#a16207;',
-                            2: 'background:var(--caddie-surface-container-high);color:var(--caddie-primary);',
-                            3: 'background:#f3f4f6;color:#6b7280;'
-                        };
+                        var styles = { 1: 'background:#fef9c3;color:#a16207;', 2: 'background:var(--caddie-surface-container-high);color:var(--caddie-primary);', 3: 'background:#f3f4f6;color:#6b7280;' };
                         var labels = { 1: 'CHỜ DUYỆT', 2: 'ĐÃ DUYỆT', 3: 'ĐÃ ẨN' };
                         var style = styles[data] || 'background:#f3f4f6;color:#6b7280;';
                         return '<span style="' + style + 'font-size:10px;font-weight:700;padding:4px 10px;border-radius:20px;">' + (labels[data] || row.approvalStatusText || '—') + '</span>';
@@ -133,8 +136,9 @@ $(function () {
 
     // Search
     $('#BtnSearch').click(function () { dataTable.ajax.reload(); });
+    $('#RatingCaddyFilter, #RatingGolferFilter').on('keypress', function (e) { if (e.which === 13) dataTable.ajax.reload(); });
 
-    // Detail modal
+    // Quick view detail modal
     $(document).on('click', '.rating-action-detail', function () {
         var id = $(this).data('id');
         currentRatingId = id;
@@ -151,14 +155,17 @@ $(function () {
             $('#detailPlayDate').text(playDate);
             $('#detailPlayTime').text(playTime);
 
-            // Overall stars
-            var overallHtml = '';
-            for (var i = 1; i <= 5; i++) {
-                overallHtml += i <= dto.overallRating
-                    ? '<i class="fa fa-star" style="color:var(--caddie-primary);"></i>'
-                    : '<i class="fa fa-star" style="color:#cbd5e1;"></i>';
+            // Calculate avg rating from skills
+            var avgRating = dto.overallRating;
+            if (dto.details && dto.details.length > 0) {
+                var sum = 0;
+                dto.details.forEach(function (d) { sum += d.score; });
+                avgRating = sum / dto.details.length;
             }
-            overallHtml += ' <strong style="margin-left:4px;">' + dto.overallRating.toFixed(1) + '</strong>';
+
+            // Overall stars (from skills avg)
+            var overallHtml = renderStars(avgRating, '16px');
+            overallHtml += ' <strong style="margin-left:4px;">' + avgRating.toFixed(1) + '</strong>';
             $('#detailOverallStars').html(overallHtml);
 
             // Comment
@@ -168,13 +175,7 @@ $(function () {
             var skillHtml = '';
             if (dto.details && dto.details.length > 0) {
                 dto.details.forEach(function (d) {
-                    var stars = '';
-                    for (var i = 1; i <= 5; i++) {
-                        stars += i <= d.score
-                            ? '<i class="fa fa-star" style="color:var(--caddie-primary);font-size:13px;"></i>'
-                            : '<i class="fa fa-star" style="color:#cbd5e1;font-size:13px;"></i>';
-                    }
-                    skillHtml += '<div class="d-flex justify-content-between align-items-center mb-3"><span style="font-weight:500;">' + (d.skillName || '—') + '</span><span>' + stars + '</span></div>';
+                    skillHtml += '<div class="d-flex justify-content-between align-items-center mb-3"><span style="font-weight:500;">' + (d.skillName || '—') + '</span><span>' + renderStars(d.score, '13px') + '</span></div>';
                 });
             } else {
                 skillHtml = '<div class="text-muted">Không có đánh giá kỹ năng chi tiết</div>';
@@ -188,9 +189,13 @@ $(function () {
                 $('#btnApproveRating, #btnRejectRating').hide();
             }
 
-            var modal = new bootstrap.Modal(document.getElementById('ratingDetailModal'));
-            modal.show();
+            new bootstrap.Modal(document.getElementById('ratingDetailModal')).show();
         });
+    });
+
+    // Open detail page
+    $(document).on('click', '.rating-action-detail-page', function () {
+        window.location.href = '/AppCaddieRatings/Detail?id=' + $(this).data('id');
     });
 
     // Approve
@@ -208,8 +213,7 @@ $(function () {
     $('#btnRejectRating').click(function () {
         bootstrap.Modal.getInstance(document.getElementById('ratingDetailModal')).hide();
         $('#rejectReasonInput').val('');
-        var modal = new bootstrap.Modal(document.getElementById('rejectReasonModal'));
-        modal.show();
+        new bootstrap.Modal(document.getElementById('rejectReasonModal')).show();
     });
 
     // Confirm reject
@@ -242,8 +246,7 @@ $(function () {
     $(document).on('click', '.rating-action-reject', function () {
         currentRatingId = $(this).data('id');
         $('#rejectReasonInput').val('');
-        var modal = new bootstrap.Modal(document.getElementById('rejectReasonModal'));
-        modal.show();
+        new bootstrap.Modal(document.getElementById('rejectReasonModal')).show();
     });
 
     // Delete

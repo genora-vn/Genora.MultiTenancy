@@ -1,0 +1,190 @@
+@page
+@using Genora.MultiTenancy.Web.Pages.AppCaddieReports
+@model IndexModel
+
+@section styles {
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
+    <abp-style src="/pages/caddie/caddie-shared.css" />
+}
+
+@section scripts {
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            flatpickr('#FromDatePicker', { dateFormat: 'd/m/Y', defaultDate: '@Model.FromDate?.ToString("dd/MM/yyyy")' });
+            flatpickr('#ToDatePicker', { dateFormat: 'd/m/Y', defaultDate: '@Model.ToDate?.ToString("dd/MM/yyyy")' });
+
+            document.getElementById('btnFilter').addEventListener('click', function () {
+                var from = document.getElementById('FromDatePicker').value;
+                var to = document.getElementById('ToDatePicker').value;
+                var fromIso = '', toIso = '';
+                if (from) { var p = from.split('/'); fromIso = p[2] + '-' + p[1] + '-' + p[0]; }
+                if (to) { var p = to.split('/'); toIso = p[2] + '-' + p[1] + '-' + p[0]; }
+                window.location.href = '/AppCaddieReports?FromDate=' + fromIso + '&ToDate=' + toIso;
+            });
+
+            document.getElementById('btnExport').addEventListener('click', function () {
+                // Export table to CSV
+                var rows = document.querySelectorAll('#reportTable tr');
+                var csv = [];
+                rows.forEach(function (row) {
+                    var cols = row.querySelectorAll('td, th');
+                    var rowData = [];
+                    cols.forEach(function (col) { rowData.push('"' + col.innerText.replace(/"/g, '""') + '"'); });
+                    csv.push(rowData.join(','));
+                });
+                var blob = new Blob(['﻿' + csv.join('\n')], { type: 'text/csv;charset=utf-8;' });
+                var link = document.createElement('a');
+                link.href = URL.createObjectURL(blob);
+                link.download = 'BaoCao_Caddy_' + new Date().toISOString().slice(0, 10) + '.csv';
+                link.click();
+            });
+        });
+    </script>
+}
+
+<div class="caddie-page">
+    <!-- Header -->
+    <div class="caddie-header-row">
+        <div>
+            <h1 class="caddie-page-title">Báo cáo hiệu suất Caddy</h1>
+            <p class="caddie-page-subtitle">Thống kê hiệu suất phục vụ của từng Caddy theo thời gian.</p>
+        </div>
+        <button class="btn-caddie-primary" id="btnExport">
+            <i class="fa fa-download"></i> Xuất báo cáo (CSV)
+        </button>
+    </div>
+
+    <!-- KPI Summary -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-3">
+            <div class="card" style="border:none;background:var(--caddie-surface-container-high);border-radius:12px;">
+                <div class="card-body p-3 text-center">
+                    <div style="font-size:11px;color:var(--caddie-on-surface-variant);font-weight:700;text-transform:uppercase;">Tổng Booking</div>
+                    <div style="font-size:24px;font-weight:800;">@Model.TotalBookings</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card" style="border:none;background:var(--caddie-surface-container-high);border-radius:12px;">
+                <div class="card-body p-3 text-center">
+                    <div style="font-size:11px;color:var(--caddie-on-surface-variant);font-weight:700;text-transform:uppercase;">Hoàn thành</div>
+                    <div style="font-size:24px;font-weight:800;color:#166534;">@Model.TotalCompleted</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card" style="border:none;background:var(--caddie-surface-container-high);border-radius:12px;">
+                <div class="card-body p-3 text-center">
+                    <div style="font-size:11px;color:var(--caddie-on-surface-variant);font-weight:700;text-transform:uppercase;">Đã hủy</div>
+                    <div style="font-size:24px;font-weight:800;color:#991b1b;">@Model.TotalCancelled</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card" style="border:none;background:var(--caddie-surface-container-high);border-radius:12px;">
+                <div class="card-body p-3 text-center">
+                    <div style="font-size:11px;color:var(--caddie-on-surface-variant);font-weight:700;text-transform:uppercase;">Tỉ lệ hoàn thành</div>
+                    <div style="font-size:24px;font-weight:800;color:var(--caddie-primary);">@Model.CompletionRate%</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Date Filter -->
+    <div class="caddie-filter-section mb-4">
+        <div class="row g-3 align-items-end">
+            <div class="col-md-3">
+                <label class="caddie-schedule-filter-label">TỪ NGÀY</label>
+                <input type="text" id="FromDatePicker" class="form-control caddie-form-control" placeholder="dd/mm/yyyy" autocomplete="off" />
+            </div>
+            <div class="col-md-3">
+                <label class="caddie-schedule-filter-label">ĐẾN NGÀY</label>
+                <input type="text" id="ToDatePicker" class="form-control caddie-form-control" placeholder="dd/mm/yyyy" autocomplete="off" />
+            </div>
+            <div class="col-md-2">
+                <button class="btn-caddie-primary w-100" id="btnFilter">
+                    <i class="fa fa-filter"></i> Lọc
+                </button>
+            </div>
+            <div class="col-md-4 text-end">
+                <span style="font-size:12px;color:var(--caddie-on-surface-variant);">
+                    Khoảng thời gian: <strong>@Model.FromDate?.ToString("dd/MM/yyyy")</strong> — <strong>@Model.ToDate?.ToString("dd/MM/yyyy")</strong>
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Report Table -->
+    <div class="caddie-table-container">
+        <div class="table-responsive">
+            <table class="caddie-table" id="reportTable">
+                <thead>
+                    <tr>
+                        <th>Mã</th>
+                        <th>Tên Caddy</th>
+                        <th class="text-center">Tổng đặt</th>
+                        <th class="text-center">Hoàn thành</th>
+                        <th class="text-center">Đã hủy</th>
+                        <th class="text-center">Tỉ lệ HT</th>
+                        <th class="text-center">Đánh giá</th>
+                        <th class="text-center">Rating TB</th>
+                        <th class="text-center">Trạng thái</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.PerformanceData.Any())
+                    {
+                        @foreach (var row in Model.PerformanceData)
+                        {
+                            var rateColor = row.CompletionRate >= 80 ? "#166534" : (row.CompletionRate >= 50 ? "#a16207" : "#991b1b");
+                            var rateBg = row.CompletionRate >= 80 ? "#dcfce7" : (row.CompletionRate >= 50 ? "#fef9c3" : "#fef2f2");
+                            <tr>
+                                <td><span style="font-weight:700;color:var(--caddie-primary);">@row.CaddieCode</span></td>
+                                <td><strong>@row.CaddieName</strong></td>
+                                <td class="text-center"><strong>@row.TotalBookings</strong></td>
+                                <td class="text-center" style="color:#166534;font-weight:600;">@row.CompletedBookings</td>
+                                <td class="text-center" style="color:#991b1b;font-weight:600;">@row.CancelledBookings</td>
+                                <td class="text-center">
+                                    <span style="background:@rateBg;color:@rateColor;font-size:11px;font-weight:700;padding:3px 8px;border-radius:4px;">@row.CompletionRate%</span>
+                                </td>
+                                <td class="text-center">@row.TotalRatings</td>
+                                <td class="text-center">
+                                    @if (row.AvgRating > 0)
+                                    {
+                                        <span style="font-weight:700;color:var(--caddie-primary);">
+                                            <i class="fa fa-star" style="color:#f59e0b;font-size:11px;"></i> @row.AvgRating
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span style="color:var(--caddie-outline);">—</span>
+                                    }
+                                </td>
+                                <td class="text-center">
+                                    @if (row.Status == 1)
+                                    {
+                                        <span style="background:#dcfce7;color:#166534;font-size:10px;font-weight:700;padding:3px 8px;border-radius:4px;">ACTIVE</span>
+                                    }
+                                    else
+                                    {
+                                        <span style="background:#f3f4f6;color:#6b7280;font-size:10px;font-weight:700;padding:3px 8px;border-radius:4px;">INACTIVE</span>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="9" class="text-center py-5" style="color:var(--caddie-outline);">
+                                <i class="fa fa-inbox" style="font-size:32px;"></i>
+                                <p class="mt-2 mb-0">Không có dữ liệu trong khoảng thời gian này.</p>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

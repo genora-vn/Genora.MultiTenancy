@@ -153,4 +153,15 @@ public class CaddieSkillAppService : ApplicationService
 
         await _repo.DeleteAsync(id);
     }
+
+    public async Task UpdateStatusAsync(Guid id, byte status)
+    {
+        await EnsureFeatureAsync();
+        await AuthorizationService.CheckAsync(
+            P(MultiTenancyPermissions.AppCaddieSkills.Edit, MultiTenancyPermissions.HostAppCaddieSkills.Edit));
+
+        var entity = await _repo.GetAsync(id);
+        entity.Status = status;
+        await _repo.UpdateAsync(entity, autoSave: true);
+    }
 }

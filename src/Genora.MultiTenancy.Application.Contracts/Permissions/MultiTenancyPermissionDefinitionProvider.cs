@@ -1440,6 +1440,16 @@ public class MultiTenancyPermissionDefinitionProvider : PermissionDefinitionProv
         languageTenantDelete.MultiTenancySide = MultiTenancySides.Tenant;
         languageTenantDelete.RequireFeatures(Features.Caddie.CaddieFeatures.Management);
 
+        // CADDIE DASHBOARD (TENANT)
+        var dashboardTenantRoot = caddieGroup.AddPermission(AppCaddieDashboard.Default, L("Permission:AppCaddieDashboard"));
+        dashboardTenantRoot.MultiTenancySide = MultiTenancySides.Tenant;
+        dashboardTenantRoot.RequireFeatures(Features.Caddie.CaddieFeatures.Management);
+
+        // CADDIE REPORTS (TENANT)
+        var reportsTenantRoot = caddieGroup.AddPermission(AppCaddieReports.Default, L("Permission:AppCaddieReports"));
+        reportsTenantRoot.MultiTenancySide = MultiTenancySides.Tenant;
+        reportsTenantRoot.RequireFeatures(Features.Caddie.CaddieFeatures.Management);
+
         // ========== HOST GROUP ==========
         var caddieGroupHost = context.AddGroup("CaddieManagementHost", L("PermissionGroup:CaddieManagementHost"));
 
@@ -1483,6 +1493,14 @@ public class MultiTenancyPermissionDefinitionProvider : PermissionDefinitionProv
         languageHostRoot.AddChild(HostAppLanguages.Create, L("Permission:AppLanguages.Create")).MultiTenancySide = MultiTenancySides.Host;
         languageHostRoot.AddChild(HostAppLanguages.Edit, L("Permission:AppLanguages.Edit")).MultiTenancySide = MultiTenancySides.Host;
         languageHostRoot.AddChild(HostAppLanguages.Delete, L("Permission:AppLanguages.Delete")).MultiTenancySide = MultiTenancySides.Host;
+
+        // CADDIE DASHBOARD (HOST)
+        var dashboardHostRoot = caddieGroupHost.AddPermission(HostAppCaddieDashboard.Default, L("Permission:AppCaddieDashboard"));
+        dashboardHostRoot.MultiTenancySide = MultiTenancySides.Host;
+
+        // CADDIE REPORTS (HOST)
+        var reportsHostRoot = caddieGroupHost.AddPermission(HostAppCaddieReports.Default, L("Permission:AppCaddieReports"));
+        reportsHostRoot.MultiTenancySide = MultiTenancySides.Host;
 
         #endregion
     }

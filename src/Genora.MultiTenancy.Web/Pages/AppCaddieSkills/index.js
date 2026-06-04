@@ -36,12 +36,12 @@ $(function () {
                     render: function (data) { return '<span class="caddie-code">' + data + '</span>'; }
                 },
                 {
-                    title: 'Tên kỹ năng',
+                    title: 'TÊN KỸ NĂNG / CHUYÊN MÔN',
                     data: 'skillName',
                     render: function (data) { return '<strong>' + data + '</strong>'; }
                 },
                 {
-                    title: 'Mô tả',
+                    title: 'Ghi chú nội bộ',
                     data: 'description',
                     render: function (data) { return data || '<span style="color:#707783">—</span>'; }
                 },
@@ -53,16 +53,38 @@ $(function () {
                 {
                     title: 'Trạng thái',
                     data: 'status',
-                    width: '100px',
-                    render: function (data) {
-                        return data === 1
-                            ? '<span style="background:#dcfce7;color:#166534;font-size:10px;font-weight:700;padding:4px 8px;border-radius:4px;text-transform:uppercase;">Hoạt động</span>'
-                            : '<span style="background:#f3f4f6;color:#6b7280;font-size:10px;font-weight:700;padding:4px 8px;border-radius:4px;text-transform:uppercase;">Ngừng</span>';
+                    width: '120px',
+                    render: function (data, type, row) {
+                        if (!canEdit) {
+                            return data === 1
+                                ? '<span style="background:#dcfce7;color:#166534;font-size:10px;font-weight:700;padding:4px 8px;border-radius:4px;text-transform:uppercase;">Hoạt động</span>'
+                                : '<span style="background:#f3f4f6;color:#6b7280;font-size:10px;font-weight:700;padding:4px 8px;border-radius:4px;text-transform:uppercase;">Ngừng</span>';
+                        }
+                        var checked = data === 1 ? 'checked' : '';
+                        return '<label class="caddie-toggle-switch">' +
+                            '<input type="checkbox" class="skill-toggle-status" data-id="' + row.id + '" ' + checked + ' />' +
+                            '<span class="caddie-toggle-slider"></span>' +
+                            '</label>';
                     }
                 }
             ]
         })
     );
+
+    // Toggle status
+    $(document).on('change', '.skill-toggle-status', function () {
+        var id = $(this).data('id');
+        var newStatus = $(this).is(':checked') ? 1 : 2;
+        var $toggle = $(this);
+
+        skillService.updateStatus(id, newStatus).then(function () {
+            abp.notify.success(newStatus === 1 ? 'Đã bật hoạt động' : 'Đã tắt hoạt động');
+        }).catch(function (err) {
+            // Revert toggle on error
+            $toggle.prop('checked', !$toggle.is(':checked'));
+            abp.notify.error(err.message || 'Cập nhật thất bại');
+        });
+    });
 
     $('#NewSkillButton').click(function () { createModal.open(); });
     createModal.onResult(function () { dataTable.ajax.reload(); abp.notify.success('Thêm kỹ năng thành công'); });

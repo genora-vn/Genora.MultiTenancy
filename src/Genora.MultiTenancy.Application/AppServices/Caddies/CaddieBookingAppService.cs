@@ -83,6 +83,9 @@ public class CaddieBookingAppService : ApplicationService
         if (input.PaymentStatus.HasValue)
             query = query.Where(x => x.PaymentStatus == input.PaymentStatus.Value);
 
+        if (input.CheckinStatus.HasValue)
+            query = query.Where(x => x.CheckinStatus == input.CheckinStatus.Value);
+
         if (input.FromDate.HasValue)
             query = query.Where(x => x.BookingDate >= input.FromDate.Value);
 

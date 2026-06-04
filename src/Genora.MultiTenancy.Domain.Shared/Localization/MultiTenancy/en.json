@@ -1181,6 +1181,10 @@
     "Caddie:RatingAvg": "Average Rating",
     "Caddie:TotalBooking": "Total Bookings",
     "Caddie:Filter": "Search by name, code, phone...",
-    "Caddie:MaxAvatarSize": "Maximum size: 15 MB"
+    "Caddie:MaxAvatarSize": "Maximum size: 15 MB",
+    "Menu:AppCaddieDashboard": "Caddy Dashboard",
+    "Menu:AppCaddieReports": "Caddy Reports",
+    "Permission:AppCaddieDashboard": "Caddy Dashboard",
+    "Permission:AppCaddieReports": "Caddy Reports"
   }
 }

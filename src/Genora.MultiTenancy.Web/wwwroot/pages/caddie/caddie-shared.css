@@ -16,8 +16,12 @@
     --caddie-error: #ba1a1a;
 }
 
+.lpx-content-container .lpx-content {
+    padding-top: 0 !important;
+}
+
 /* Page Layout */
-.caddie-page { padding: 24px; }
+.caddie-page { padding: 0; }
 .caddie-page h1, .caddie-page h2, .caddie-page h3 { font-weight: 700; }
 
 /* Header */
@@ -137,7 +141,7 @@
 .caddie-pagination-info strong { font-weight: 700; }
 
 /* Detail Page */
-.caddie-detail-page { padding: 24px; }
+.caddie-detail-page { padding: 0; }
 .caddie-profile-card {
     background: #fff;
     border-radius: 12px;
@@ -332,7 +336,7 @@
 }
 
 /* Schedule Calendar */
-.caddie-schedule-page { padding: 24px; }
+.caddie-schedule-page { padding: 0; }
 .caddie-schedule-filters { display: flex; flex-wrap: wrap; gap: 16px; margin-bottom: 24px; }
 .caddie-schedule-filter-group { display: flex; flex-direction: column; gap: 4px; }
 .caddie-schedule-filter-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--caddie-on-surface-variant); margin-left: 4px; }

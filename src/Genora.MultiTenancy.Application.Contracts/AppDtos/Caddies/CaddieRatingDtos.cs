@@ -40,6 +40,10 @@ public class GetCaddieRatingListInput : PagedAndSortedResultRequestDto
     public byte? ApprovalStatus { get; set; }
     public DateTime? FromDate { get; set; }
     public DateTime? ToDate { get; set; }
+    /// <summary>Filter by caddie name/code</summary>
+    public string? Filter { get; set; }
+    /// <summary>Filter by customer/golfer name</summary>
+    public string? CustomerFilter { get; set; }
 }
 
 public class ApproveRejectRatingDto

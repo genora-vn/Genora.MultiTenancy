@@ -1,0 +1,261 @@
+@page
+@using Genora.MultiTenancy.Web.Pages.AppCaddieRatings
+@model DetailModel
+
+@section styles {
+    <abp-style src="/pages/caddie/caddie-shared.css" />
+}
+
+@{
+    var statusStyle = Model.Rating.ApprovalStatus switch
+    {
+        1 => "background:#fef9c3;color:#a16207;",
+        2 => "background:var(--caddie-surface-container-high);color:var(--caddie-primary);",
+        3 => "background:#f3f4f6;color:#6b7280;",
+        _ => "background:#f3f4f6;color:#6b7280;"
+    };
+    var statusLabel = Model.Rating.ApprovalStatus switch
+    {
+        1 => "CHỜ DUYỆT",
+        2 => "ĐÃ DUYỆT",
+        3 => "ĐÃ ẨN",
+        _ => "—"
+    };
+}
+
+<div class="caddie-page">
+    <!-- Header -->
+    <div class="d-flex flex-wrap justify-content-between align-items-start mb-4">
+        <div>
+            <a href="/AppCaddieRatings" style="font-weight:700;color:var(--caddie-primary);text-decoration:none;font-size:13px;">
+                <i class="fa fa-arrow-left me-1"></i> Quay lại danh sách
+            </a>
+            <h1 class="caddie-page-title mt-2">Chi tiết đánh giá <span style="color:var(--caddie-primary);">#@(Model.Rating.BookingCode ?? Model.Rating.Id.ToString()[..8])</span></h1>
+        </div>
+        @if (Model.CanEdit && Model.Rating.ApprovalStatus == 1)
+        {
+            <div class="d-flex gap-2">
+                <button class="btn btn-outline-danger" style="font-weight:700;border-radius:8px;" id="btnRejectPage">
+                    Từ chối / Ẩn
+                </button>
+                <button class="btn btn-success" style="font-weight:700;border-radius:8px;" id="btnApprovePage">
+                    Phê duyệt
+                </button>
+            </div>
+        }
+    </div>
+
+    <!-- Content Grid -->
+    <div class="row g-4">
+        <!-- Left Column: Golfer + Caddy Info -->
+        <div class="col-lg-4">
+            <!-- Golfer Info -->
+            <div class="card mb-4" style="border:1px solid rgba(192,199,212,0.2);border-radius:16px;">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <h6 style="font-weight:700;text-transform:uppercase;font-size:11px;color:var(--caddie-on-surface-variant);letter-spacing:0.05em;margin:0;">THÔNG TIN GOLFER</h6>
+                    </div>
+                    <div class="d-flex align-items-center gap-3 mb-3">
+                        @{
+                            var golferInitials = (Model.Rating.CustomerName ?? "?").Split(' ').Select(n => n.FirstOrDefault()).Take(2);
+                            var golferInitStr = string.Join("", golferInitials).ToUpper();
+                        }
+                        <div class="d-flex align-items-center justify-content-center rounded" style="width:56px;height:56px;background:rgba(0,94,164,0.1);color:var(--caddie-primary);font-weight:800;font-size:18px;border-radius:12px!important;">@golferInitStr</div>
+                        <div>
+                            <div style="font-weight:800;font-size:16px;">@(Model.Rating.CustomerName ?? "—")</div>
+                        </div>
+                    </div>
+                    <div style="border-top:1px solid rgba(192,199,212,0.2);padding-top:12px;" class="mt-3">
+                        <div class="mb-2">
+                            <span style="font-size:11px;color:var(--caddie-on-surface-variant);">Ngày chơi</span>
+                            <div style="font-weight:700;">@(Model.Rating.BookingDate?.ToString("dd/MM/yyyy") ?? "—")</div>
+                        </div>
+                        <div>
+                            <span style="font-size:11px;color:var(--caddie-on-surface-variant);">Giờ chơi</span>
+                            <div style="font-weight:700;">@(Model.Rating.BookingStartTime?.ToString(@"hh\:mm") ?? "—")</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Caddy Info -->
+            <div class="card mb-4" style="border:1px solid rgba(192,199,212,0.2);border-radius:16px;">
+                <div class="card-body p-4">
+                    <h6 style="font-weight:700;text-transform:uppercase;font-size:11px;color:var(--caddie-on-surface-variant);letter-spacing:0.05em;margin-bottom:16px;">THÔNG TIN CADDY</h6>
+                    <div class="d-flex align-items-center gap-3 mb-3">
+                        @{
+                            var caddyInitials = (Model.Rating.CaddieName ?? "?").Split(' ').Select(n => n.FirstOrDefault()).Take(2);
+                            var caddyInitStr = string.Join("", caddyInitials).ToUpper();
+                        }
+                        <div class="d-flex align-items-center justify-content-center rounded" style="width:56px;height:56px;background:var(--caddie-surface-container-high);color:var(--caddie-on-surface);font-weight:700;font-size:16px;border-radius:12px!important;">@caddyInitStr</div>
+                        <div>
+                            <div style="font-weight:800;font-size:16px;">@(Model.Rating.CaddieName ?? "—")</div>
+                            <div class="d-flex align-items-center gap-1 mt-1">
+                                @for (int i = 1; i <= 5; i++)
+                                {
+                                    if (i <= (int)Model.AvgSkillRating)
+                                    {
+                                        <i class="fa fa-star" style="color:var(--caddie-primary);font-size:12px;"></i>
+                                    }
+                                    else
+                                    {
+                                        <i class="fa fa-star" style="color:#cbd5e1;font-size:12px;"></i>
+                                    }
+                                }
+                                <span style="font-weight:700;font-size:12px;margin-left:4px;">@Model.AvgSkillRating</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div style="border-top:1px solid rgba(192,199,212,0.2);padding-top:12px;">
+                        <div class="mb-2">
+                            <span style="font-size:11px;color:var(--caddie-on-surface-variant);">Mã caddy</span>
+                            <div style="font-weight:700;">@(Model.Rating.CaddieCode ?? "—")</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column: Skill Ratings + Comment + History -->
+        <div class="col-lg-8">
+            <!-- Skill Ratings -->
+            <div class="card mb-4" style="border:1px solid rgba(192,199,212,0.2);border-radius:16px;">
+                <div class="card-body p-4">
+                    <h5 style="font-weight:800;margin-bottom:24px;"><i class="fa fa-chart-bar me-2" style="color:var(--caddie-primary);"></i>Đánh giá kỹ năng chi tiết</h5>
+                    @if (Model.Rating.Details != null && Model.Rating.Details.Any())
+                    {
+                        <div class="row g-4">
+                            @foreach (var detail in Model.Rating.Details)
+                            {
+                                <div class="col-md-6">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <div style="font-weight:700;">@(detail.SkillName ?? "—")</div>
+                                        </div>
+                                        <div class="d-flex gap-1">
+                                            @for (int i = 1; i <= 5; i++)
+                                            {
+                                                if (i <= detail.Score)
+                                                {
+                                                    <i class="fa fa-star" style="color:var(--caddie-tertiary);font-size:16px;"></i>
+                                                }
+                                                else
+                                                {
+                                                    <i class="fa fa-star" style="color:#cbd5e1;font-size:16px;"></i>
+                                                }
+                                            }
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <p class="text-muted">Không có đánh giá kỹ năng chi tiết.</p>
+                    }
+                </div>
+            </div>
+
+            <!-- Customer Comment -->
+            <div class="card mb-4" style="border:1px solid rgba(192,199,212,0.2);border-radius:16px;">
+                <div class="card-body p-4">
+                    <h6 style="font-weight:700;text-transform:uppercase;font-size:11px;color:var(--caddie-on-surface-variant);letter-spacing:0.05em;margin-bottom:16px;">NHẬN XÉT TỪ KHÁCH HÀNG</h6>
+                    @if (!string.IsNullOrEmpty(Model.Rating.Comment))
+                    {
+                        <div style="background:var(--caddie-surface-container-low);border-left:4px solid var(--caddie-primary);border-radius:0 12px 12px 0;padding:20px;">
+                            <p style="font-style:italic;color:var(--caddie-on-surface);font-size:15px;line-height:1.7;margin:0;">
+                                "@Model.Rating.Comment"
+                            </p>
+                        </div>
+                    }
+                    else
+                    {
+                        <p class="text-muted">— Không có nhận xét —</p>
+                    }
+                </div>
+            </div>
+
+            <!-- Approval History -->
+            <div class="card" style="border:1px solid rgba(192,199,212,0.2);border-radius:16px;">
+                <div class="card-body p-4">
+                    <h5 style="font-weight:800;margin-bottom:20px;">Lịch sử phê duyệt</h5>
+                    <div class="position-relative" style="padding-left:20px;">
+                        <div class="position-absolute" style="left:4px;top:8px;bottom:8px;width:2px;background:rgba(192,199,212,0.3);"></div>
+
+                        <!-- Submitted -->
+                        <div class="d-flex gap-3 mb-4 position-relative">
+                            <div class="d-flex align-items-center justify-content-center rounded-circle position-absolute" style="left:-16px;width:10px;height:10px;background:var(--caddie-primary);z-index:1;top:5px;"></div>
+                            <div style="padding-left:8px;">
+                                <div style="font-weight:700;font-size:13px;">Khách hàng gửi đánh giá</div>
+                                <div style="font-size:11px;color:var(--caddie-on-surface-variant);">Hệ thống ghi nhận lúc @Model.Rating.CreationTime.ToString("HH:mm, dd/MM/yyyy")</div>
+                            </div>
+                        </div>
+
+                        @if (Model.Rating.ApprovalStatus == 2 && Model.Rating.ApprovedAt.HasValue)
+                        {
+                            <div class="d-flex gap-3 mb-4 position-relative">
+                                <div class="d-flex align-items-center justify-content-center rounded-circle position-absolute" style="left:-16px;width:10px;height:10px;background:#16a34a;z-index:1;top:5px;"></div>
+                                <div style="padding-left:8px;">
+                                    <div style="font-weight:700;font-size:13px;color:#16a34a;">Đã phê duyệt</div>
+                                    <div style="font-size:11px;color:var(--caddie-on-surface-variant);">@Model.Rating.ApprovedAt.Value.ToString("HH:mm, dd/MM/yyyy")</div>
+                                </div>
+                            </div>
+                        }
+                        else if (Model.Rating.ApprovalStatus == 3 && Model.Rating.ApprovedAt.HasValue)
+                        {
+                            <div class="d-flex gap-3 mb-4 position-relative">
+                                <div class="d-flex align-items-center justify-content-center rounded-circle position-absolute" style="left:-16px;width:10px;height:10px;background:#dc2626;z-index:1;top:5px;"></div>
+                                <div style="padding-left:8px;">
+                                    <div style="font-weight:700;font-size:13px;color:#dc2626;">Đã từ chối</div>
+                                    <div style="font-size:11px;color:var(--caddie-on-surface-variant);">@Model.Rating.ApprovedAt.Value.ToString("HH:mm, dd/MM/yyyy")</div>
+                                    @if (!string.IsNullOrEmpty(Model.Rating.RejectReason))
+                                    {
+                                        <div style="font-size:12px;color:#dc2626;margin-top:4px;">Lý do: @Model.Rating.RejectReason</div>
+                                    }
+                                </div>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="d-flex gap-3 position-relative">
+                                <div class="d-flex align-items-center justify-content-center rounded-circle position-absolute" style="left:-16px;width:10px;height:10px;background:var(--caddie-primary);border:2px dashed var(--caddie-primary);z-index:1;top:5px;"></div>
+                                <div style="padding-left:8px;">
+                                    <div style="font-weight:700;font-size:13px;color:var(--caddie-primary);">Chờ phê duyệt cuối cùng</div>
+                                    <div style="font-size:11px;color:var(--caddie-on-surface-variant);">Trạng thái hiện tại</div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@if (Model.CanEdit && Model.Rating.ApprovalStatus == 1)
+{
+    <script>
+        document.getElementById('btnApprovePage').addEventListener('click', function () {
+            abp.message.confirm('Phê duyệt đánh giá này?', 'Xác nhận').then(function (confirmed) {
+                if (confirmed) {
+                    genora.multiTenancy.appServices.caddies.caddieRating.approveReject('@Model.Rating.Id', { approvalStatus: 2 }).then(function () {
+                        abp.notify.success('Đã phê duyệt');
+                        window.location.reload();
+                    });
+                }
+            });
+        });
+
+        document.getElementById('btnRejectPage').addEventListener('click', function () {
+            abp.message.prompt('Nhập lý do từ chối:', 'Từ chối đánh giá').then(function (reason) {
+                if (reason) {
+                    genora.multiTenancy.appServices.caddies.caddieRating.approveReject('@Model.Rating.Id', { approvalStatus: 3, rejectReason: reason }).then(function () {
+                        abp.notify.success('Đã từ chối');
+                        window.location.reload();
+                    });
+                }
+            });
+        });
+    </script>
+}

@@ -67,12 +67,16 @@ public class AppCaddieScheduleExcelImporter : ITransientDependency
             }
 
             // Parse WorkDate
-            if (!DateTime.TryParseExact(workDateStr, new[] { "dd/MM/yyyy", "d/M/yyyy", "yyyy-MM-dd" },
+            if (!DateTime.TryParseExact(workDateStr, new[] { "dd/MM/yyyy", "d/M/yyyy", "yyyy-MM-dd", "dd/MM/yyyy HH:mm:ss", "d/M/yyyy HH:mm:ss", "M/d/yyyy", "M/d/yyyy HH:mm:ss" },
                 CultureInfo.InvariantCulture, DateTimeStyles.None, out var workDate))
             {
-                // Try parsing as Excel date number
+                // Try parsing as Excel date number or general DateTime
                 if (double.TryParse(workDateStr, out var excelDate))
                     workDate = DateTime.FromOADate(excelDate);
+                else if (DateTime.TryParse(workDateStr, CultureInfo.InvariantCulture, DateTimeStyles.None, out var parsedDate))
+                    workDate = parsedDate;
+                else if (DateTime.TryParse(workDateStr, new CultureInfo("vi-VN"), DateTimeStyles.None, out var parsedDateVi))
+                    workDate = parsedDateVi;
                 else
                 {
                     errors.Add($"Dòng {row}: Ngày làm việc '{workDateStr}' không hợp lệ");

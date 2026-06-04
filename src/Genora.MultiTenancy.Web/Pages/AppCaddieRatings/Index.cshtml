@@ -32,9 +32,9 @@
     </div>
 
     <!-- KPI Cards -->
-    <div class="row g-4 mb-4">
+    <div class="row g-4 mb-4" style="align-items:stretch;">
         <div class="col-md-4">
-            <div class="card" style="border:none;background:var(--caddie-surface-container-high);border-radius:12px;">
+            <div class="card h-100" style="border:none;background:var(--caddie-surface-container-high);border-radius:12px;">
                 <div class="card-body p-4 d-flex align-items-center justify-content-between">
                     <div>
                         <p style="font-size:13px;color:var(--caddie-on-surface-variant);margin-bottom:4px;">Tổng số đánh giá</p>
@@ -47,7 +47,7 @@
             </div>
         </div>
         <div class="col-md-4">
-            <div class="card" style="border:none;background:var(--caddie-surface-container-high);border-radius:12px;">
+            <div class="card h-100" style="border:none;background:var(--caddie-surface-container-high);border-radius:12px;">
                 <div class="card-body p-4 d-flex align-items-center justify-content-between">
                     <div>
                         <p style="font-size:13px;color:var(--caddie-on-surface-variant);margin-bottom:4px;">Đánh giá chờ duyệt</p>
@@ -63,7 +63,7 @@
             </div>
         </div>
         <div class="col-md-4">
-            <div class="card" style="border:none;background:var(--caddie-surface-container-high);border-radius:12px;">
+            <div class="card h-100" style="border:none;background:var(--caddie-surface-container-high);border-radius:12px;">
                 <div class="card-body p-4 d-flex align-items-center justify-content-between">
                     <div>
                         <p style="font-size:13px;color:var(--caddie-on-surface-variant);margin-bottom:4px;">Rating trung bình</p>
@@ -190,18 +190,22 @@
 
 <!-- Reject Reason Modal -->
 <div class="modal fade" id="rejectReasonModal" tabindex="-1">
-    <div class="modal-dialog modal-dialog-centered modal-sm">
-        <div class="modal-content" style="border-radius:12px;border:none;">
-            <div class="modal-header" style="padding:20px 24px;">
-                <h5 class="modal-title" style="font-weight:800;">Lý do từ chối</h5>
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="border-radius:16px;border:none;">
+            <div class="modal-header" style="padding:24px 28px;border-bottom:1px solid rgba(192,199,212,0.15);">
+                <div>
+                    <h5 class="modal-title" style="font-weight:800;font-size:18px;">Từ chối đánh giá</h5>
+                    <p style="font-size:13px;color:var(--caddie-on-surface-variant);margin:4px 0 0;">Vui lòng nhập lý do từ chối để thông báo cho hệ thống</p>
+                </div>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-            <div class="modal-body" style="padding:24px;">
-                <textarea id="rejectReasonInput" class="form-control caddie-form-control" rows="3" style="resize:none;" placeholder="Nhập lý do từ chối đánh giá..."></textarea>
+            <div class="modal-body" style="padding:28px;">
+                <label class="caddie-form-label">Lý do từ chối <span class="text-danger">*</span></label>
+                <textarea id="rejectReasonInput" class="form-control caddie-form-control" rows="4" style="resize:none;min-height:120px;" placeholder="Nhập lý do từ chối đánh giá (VD: Nội dung không phù hợp, spam, vi phạm quy định...)"></textarea>
             </div>
-            <div class="modal-footer" style="padding:16px 24px;">
-                <button type="button" class="btn btn-light" data-bs-dismiss="modal" style="font-weight:700;">Hủy</button>
-                <button type="button" class="btn btn-danger" id="btnConfirmReject" style="font-weight:700;"><i class="fa fa-times me-1"></i> Xác nhận từ chối</button>
+            <div class="modal-footer" style="padding:20px 28px;border-top:1px solid rgba(192,199,212,0.15);">
+                <button type="button" class="btn btn-light px-4" data-bs-dismiss="modal" style="font-weight:700;">Hủy</button>
+                <button type="button" class="btn btn-danger px-4" id="btnConfirmReject" style="font-weight:700;border-radius:8px;"><i class="fa fa-times me-1"></i> Xác nhận từ chối</button>
             </div>
         </div>
     </div>

@@ -668,6 +668,26 @@ public static class MultiTenancyPermissions
         public const string Edit = Default + ".Edit";
         public const string Delete = Default + ".Delete";
     }
+
+    public static class AppCaddieDashboard
+    {
+        public const string Default = GroupName + ".AppCaddieDashboard";
+    }
+
+    public static class HostAppCaddieDashboard
+    {
+        public const string Default = GroupName + ".HostAppCaddieDashboard";
+    }
+
+    public static class AppCaddieReports
+    {
+        public const string Default = GroupName + ".AppCaddieReports";
+    }
+
+    public static class HostAppCaddieReports
+    {
+        public const string Default = GroupName + ".HostAppCaddieReports";
+    }
     #endregion
 
     //Add your own permission names. Example:

@@ -1,0 +1,219 @@
+@page
+@using Genora.MultiTenancy.Web.Pages.AppCaddieDashboard
+@model IndexModel
+
+@section styles {
+    <abp-style src="/pages/caddie/caddie-shared.css" />
+}
+
+@section scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // Bookings by Day (Line chart)
+            new Chart(document.getElementById('chartBookingsDay').getContext('2d'), {
+                type: 'line',
+                data: {
+                    labels: @Html.Raw(Model.BookingsByDayLabels),
+                    datasets: [{
+                        label: 'Số lượt đặt',
+                        data: @Html.Raw(Model.BookingsByDayData),
+                        borderColor: '#005ea4',
+                        backgroundColor: 'rgba(0, 94, 164, 0.08)',
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.4,
+                        pointRadius: 3,
+                        pointBackgroundColor: '#005ea4'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { beginAtZero: true, ticks: { stepSize: 1 } },
+                        x: { grid: { display: false } }
+                    }
+                }
+            });
+
+            // Rating Distribution (Doughnut chart)
+            new Chart(document.getElementById('chartRatingDist').getContext('2d'), {
+                type: 'doughnut',
+                data: {
+                    labels: @Html.Raw(Model.RatingDistLabels),
+                    datasets: [{
+                        data: @Html.Raw(Model.RatingDistData),
+                        backgroundColor: ['#ef4444', '#f97316', '#eab308', '#22c55e', '#005ea4'],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    cutout: '65%',
+                    plugins: {
+                        legend: { position: 'bottom', labels: { boxWidth: 12, padding: 16 } }
+                    }
+                }
+            });
+
+            // Top Caddies (Bar chart)
+            new Chart(document.getElementById('chartTopCaddies').getContext('2d'), {
+                type: 'bar',
+                data: {
+                    labels: @Html.Raw(Model.TopCaddiesLabels),
+                    datasets: [{
+                        label: 'Tổng lượt đặt',
+                        data: @Html.Raw(Model.TopCaddiesData),
+                        backgroundColor: 'rgba(0, 94, 164, 0.7)',
+                        borderRadius: 6,
+                        barThickness: 32
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    indexAxis: 'y',
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { beginAtZero: true, ticks: { stepSize: 1 } },
+                        y: { grid: { display: false } }
+                    }
+                }
+            });
+        });
+    </script>
+}
+
+<div class="caddie-page">
+    <!-- Header -->
+    <div class="caddie-header-row">
+        <div>
+            <h1 class="caddie-page-title">Tổng quan Caddy</h1>
+            <p class="caddie-page-subtitle">Thống kê hoạt động đội ngũ Caddy trong tháng này.</p>
+        </div>
+    </div>
+
+    <!-- KPI Cards -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-2">
+            <div class="card h-100" style="border:none;background:var(--caddie-surface-container-high);border-radius:12px;">
+                <div class="card-body p-3 text-center">
+                    <div style="font-size:11px;color:var(--caddie-on-surface-variant);font-weight:700;text-transform:uppercase;">Tổng Caddy</div>
+                    <div style="font-size:28px;font-weight:800;color:var(--caddie-on-surface);">@Model.TotalCaddies</div>
+                    <div style="font-size:11px;color:var(--caddie-primary);font-weight:600;">@Model.ActiveCaddies hoạt động</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="card h-100" style="border:none;background:var(--caddie-surface-container-high);border-radius:12px;">
+                <div class="card-body p-3 text-center">
+                    <div style="font-size:11px;color:var(--caddie-on-surface-variant);font-weight:700;text-transform:uppercase;">Booking tháng</div>
+                    <div style="font-size:28px;font-weight:800;color:var(--caddie-on-surface);">@Model.TotalBookingsThisMonth</div>
+                    <div style="font-size:11px;color:var(--caddie-primary);font-weight:600;">lượt đặt</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="card h-100" style="border:none;background:var(--caddie-surface-container-high);border-radius:12px;">
+                <div class="card-body p-3 text-center">
+                    <div style="font-size:11px;color:var(--caddie-on-surface-variant);font-weight:700;text-transform:uppercase;">Đánh giá tháng</div>
+                    <div style="font-size:28px;font-weight:800;color:var(--caddie-on-surface);">@Model.TotalRatingsThisMonth</div>
+                    <div style="font-size:11px;color:var(--caddie-tertiary);font-weight:600;">@Model.PendingRatings chờ duyệt</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="card h-100" style="border:none;background:var(--caddie-surface-container-high);border-radius:12px;">
+                <div class="card-body p-3 text-center">
+                    <div style="font-size:11px;color:var(--caddie-on-surface-variant);font-weight:700;text-transform:uppercase;">Rating TB</div>
+                    <div style="font-size:28px;font-weight:800;color:var(--caddie-primary);">@Model.AvgRating</div>
+                    <div style="font-size:11px;color:var(--caddie-on-surface-variant);font-weight:600;">/ 5.0 sao</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card h-100" style="border:none;background:linear-gradient(135deg, var(--caddie-primary), var(--caddie-primary-container));border-radius:12px;">
+                <div class="card-body p-3 d-flex align-items-center justify-content-center">
+                    <div class="text-center text-white">
+                        <i class="fa fa-golf-ball" style="font-size:24px;opacity:0.8;"></i>
+                        <div style="font-size:13px;font-weight:700;margin-top:8px;">Caddy Management System</div>
+                        <div style="font-size:11px;opacity:0.8;">Powered by Genora</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Row 1 -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-8">
+            <div class="card" style="border:1px solid rgba(192,199,212,0.2);border-radius:16px;">
+                <div class="card-header" style="border-bottom:1px solid rgba(192,199,212,0.15);padding:16px 24px;background:transparent;">
+                    <h5 style="font-weight:700;margin:0;"><i class="fa fa-chart-line me-2" style="color:var(--caddie-primary);"></i>Lượt đặt Caddy (14 ngày gần nhất)</h5>
+                </div>
+                <div class="card-body p-4">
+                    <canvas id="chartBookingsDay" height="80"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card" style="border:1px solid rgba(192,199,212,0.2);border-radius:16px;">
+                <div class="card-header" style="border-bottom:1px solid rgba(192,199,212,0.15);padding:16px 24px;background:transparent;">
+                    <h5 style="font-weight:700;margin:0;"><i class="fa fa-star me-2" style="color:var(--caddie-tertiary);"></i>Phân bổ đánh giá</h5>
+                </div>
+                <div class="card-body p-4 d-flex align-items-center justify-content-center">
+                    <canvas id="chartRatingDist" height="200"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Row 2 -->
+    <div class="row g-4">
+        <div class="col-md-6">
+            <div class="card" style="border:1px solid rgba(192,199,212,0.2);border-radius:16px;">
+                <div class="card-header" style="border-bottom:1px solid rgba(192,199,212,0.15);padding:16px 24px;background:transparent;">
+                    <h5 style="font-weight:700;margin:0;"><i class="fa fa-trophy me-2" style="color:var(--caddie-primary);"></i>Top 5 Caddy được đặt nhiều nhất</h5>
+                </div>
+                <div class="card-body p-4">
+                    <canvas id="chartTopCaddies" height="120"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card" style="border:1px solid rgba(192,199,212,0.2);border-radius:16px;">
+                <div class="card-header" style="border-bottom:1px solid rgba(192,199,212,0.15);padding:16px 24px;background:transparent;">
+                    <h5 style="font-weight:700;margin:0;"><i class="fa fa-link me-2" style="color:var(--caddie-secondary);"></i>Truy cập nhanh</h5>
+                </div>
+                <div class="card-body p-4">
+                    <div class="row g-3">
+                        <div class="col-6">
+                            <a href="/AppCaddies" class="d-block p-3 text-center text-decoration-none" style="background:var(--caddie-surface-container-low);border-radius:12px;">
+                                <i class="fa fa-user-tie" style="font-size:20px;color:var(--caddie-primary);"></i>
+                                <div style="font-size:12px;font-weight:700;margin-top:8px;color:var(--caddie-on-surface);">Danh sách Caddy</div>
+                            </a>
+                        </div>
+                        <div class="col-6">
+                            <a href="/AppCaddieSchedules" class="d-block p-3 text-center text-decoration-none" style="background:var(--caddie-surface-container-low);border-radius:12px;">
+                                <i class="fa fa-calendar-alt" style="font-size:20px;color:var(--caddie-primary);"></i>
+                                <div style="font-size:12px;font-weight:700;margin-top:8px;color:var(--caddie-on-surface);">Lịch làm việc</div>
+                            </a>
+                        </div>
+                        <div class="col-6">
+                            <a href="/AppCaddieBookings" class="d-block p-3 text-center text-decoration-none" style="background:var(--caddie-surface-container-low);border-radius:12px;">
+                                <i class="fa fa-clipboard-list" style="font-size:20px;color:var(--caddie-primary);"></i>
+                                <div style="font-size:12px;font-weight:700;margin-top:8px;color:var(--caddie-on-surface);">Đặt Caddy</div>
+                            </a>
+                        </div>
+                        <div class="col-6">
+                            <a href="/AppCaddieReports" class="d-block p-3 text-center text-decoration-none" style="background:var(--caddie-surface-container-low);border-radius:12px;">
+                                <i class="fa fa-file-alt" style="font-size:20px;color:var(--caddie-primary);"></i>
+                                <div style="font-size:12px;font-weight:700;margin-top:8px;color:var(--caddie-on-surface);">Báo cáo</div>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

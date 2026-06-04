@@ -12,6 +12,7 @@ using Volo.Abp.Application.Services;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Guids;
 using Volo.Abp.Users;
+using Volo.Abp.Validation;
 
 namespace Genora.MultiTenancy.AppServices.Caddies;
 
@@ -137,7 +138,7 @@ public class MiniAppCaddieAppService : ApplicationService
         var caddie = await _caddieRepo.GetAsync(caddieId);
 
         if (caddie.Status != (byte)CaddieStatus.Active || !caddie.IsShowOnApp)
-            throw new UserFriendlyException("Caddie không khả dụng.");
+            throw new AbpValidationException("Caddie không khả dụng.");
 
         var experienceYear = caddie.JoinDate.HasValue
             ? (int)((DateTime.Now - caddie.JoinDate.Value).TotalDays / 365.25) : 0;
@@ -224,11 +225,11 @@ public class MiniAppCaddieAppService : ApplicationService
         // Validate caddie
         var caddie = await _caddieRepo.GetAsync(input.CaddieId);
         if (caddie.Status != (byte)CaddieStatus.Active)
-            throw new UserFriendlyException("Caddie không khả dụng.");
+            throw new AbpValidationException("Caddie không khả dụng.");
 
         // Validate booking date
         if (input.BookingDate.Date < DateTime.Today)
-            throw new UserFriendlyException("Ngày chơi không được nhỏ hơn ngày hiện tại.");
+            throw new AbpValidationException("Ngày chơi không được nhỏ hơn ngày hiện tại.");
 
         // Find available schedule slot
         var scheduleQuery = (await _scheduleRepo.GetQueryableAsync())
@@ -240,7 +241,7 @@ public class MiniAppCaddieAppService : ApplicationService
         var schedule = await AsyncExecuter.FirstOrDefaultAsync(scheduleQuery);
 
         if (schedule == null)
-            throw new UserFriendlyException("Caddie không có lịch trống vào thời gian này.");
+            throw new AbpValidationException("Caddie không có lịch trống vào thời gian này.");
 
         // Generate booking code
         var bookingCode = $"CB-{DateTime.Now:yyyyMMdd}-{Guid.NewGuid().ToString()[..4].ToUpper()}";
@@ -357,21 +358,21 @@ public class MiniAppCaddieAppService : ApplicationService
         var booking = await _bookingRepo.GetAsync(input.BookingId);
 
         if (booking.CustomerId != customerId)
-            throw new UserFriendlyException("Bạn không có quyền đánh giá booking này.");
+            throw new AbpValidationException("Bạn không có quyền đánh giá booking này.");
 
         if (booking.Status != (byte)CaddieBookingStatus.Completed)
-            throw new UserFriendlyException("Chỉ booking đã hoàn thành mới được đánh giá.");
+            throw new AbpValidationException("Chỉ booking đã hoàn thành mới được đánh giá.");
 
         // Check if already rated
         var existingQuery = (await _ratingRepo.GetQueryableAsync())
             .Where(x => x.BookingId == input.BookingId);
         var existingCount = await AsyncExecuter.CountAsync(existingQuery);
         if (existingCount > 0)
-            throw new UserFriendlyException("Booking này đã được đánh giá.");
+            throw new AbpValidationException("Booking này đã được đánh giá.");
 
         // Validate rating
         if (input.OverallRating < 1 || input.OverallRating > 5)
-            throw new UserFriendlyException("Đánh giá phải từ 1 đến 5 sao.");
+            throw new AbpValidationException("Đánh giá phải từ 1 đến 5 sao.");
 
         // Create rating
         var rating = new AppCaddieRating

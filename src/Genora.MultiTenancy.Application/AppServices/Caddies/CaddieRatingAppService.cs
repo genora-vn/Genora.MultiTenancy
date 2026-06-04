@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Dynamic.Core;
 using System.Threading.Tasks;
@@ -69,6 +70,28 @@ public class CaddieRatingAppService : ApplicationService
 
         if (input.CaddieId.HasValue)
             query = query.Where(x => x.CaddieId == input.CaddieId.Value);
+
+        // Filter by caddie name/code
+        if (!string.IsNullOrWhiteSpace(input.Filter))
+        {
+            var keyword = input.Filter.Trim().ToLower();
+            var filterCaddieQuery = (await _caddieRepo.GetQueryableAsync())
+                .Where(c => c.CaddieName.ToLower().Contains(keyword) || c.CaddieCode.ToLower().Contains(keyword))
+                .Select(c => c.Id);
+            var matchingCaddieIds = await AsyncExecuter.ToListAsync(filterCaddieQuery);
+            query = query.Where(x => matchingCaddieIds.Contains(x.CaddieId));
+        }
+
+        // Filter by customer/golfer name
+        if (!string.IsNullOrWhiteSpace(input.CustomerFilter))
+        {
+            var custKeyword = input.CustomerFilter.Trim().ToLower();
+            var filterBookingQuery = (await _bookingRepo.GetQueryableAsync())
+                .Where(b => b.CustomerName.ToLower().Contains(custKeyword))
+                .Select(b => b.Id);
+            var matchingBookingIds = await AsyncExecuter.ToListAsync(filterBookingQuery);
+            query = query.Where(x => matchingBookingIds.Contains(x.BookingId));
+        }
 
         if (input.ApprovalStatus.HasValue)
             query = query.Where(x => x.ApprovalStatus == input.ApprovalStatus.Value);
@@ -235,14 +258,44 @@ public class CaddieRatingAppService : ApplicationService
 
     private async Task UpdateCaddieRatingAvgAsync(Guid caddieId)
     {
+        // Get all approved ratings for this caddie
         var approvedQuery = (await _ratingRepo.GetQueryableAsync())
             .Where(x => x.CaddieId == caddieId && x.ApprovalStatus == (byte)CaddieRatingApprovalStatus.Approved);
+        var approvedRatings = await AsyncExecuter.ToListAsync(approvedQuery);
 
-        var ratings = await AsyncExecuter.ToListAsync(approvedQuery.Select(x => x.OverallRating));
+        if (!approvedRatings.Any())
+        {
+            var caddie2 = await _caddieRepo.GetAsync(caddieId);
+            caddie2.RatingAvg = 0;
+            caddie2.TotalBooking = 0;
+            await _caddieRepo.UpdateAsync(caddie2, autoSave: true);
+            return;
+        }
+
+        // For each rating, compute avg from skill details
+        var ratingIds = approvedRatings.Select(r => r.Id).ToList();
+        var allDetails = await AsyncExecuter.ToListAsync(
+            (await _ratingDetailRepo.GetQueryableAsync()).Where(d => ratingIds.Contains(d.RatingId)));
+
+        var perBookingAvgs = new List<decimal>();
+        foreach (var rating in approvedRatings)
+        {
+            var details = allDetails.Where(d => d.RatingId == rating.Id).ToList();
+            if (details.Any())
+            {
+                // Avg from skill scores
+                perBookingAvgs.Add((decimal)details.Average(d => d.Score));
+            }
+            else
+            {
+                // Fallback to OverallRating if no details
+                perBookingAvgs.Add(rating.OverallRating);
+            }
+        }
 
         var caddie = await _caddieRepo.GetAsync(caddieId);
-        caddie.RatingAvg = ratings.Any() ? (decimal)ratings.Average() : 0;
-        caddie.TotalBooking = ratings.Count;
+        caddie.RatingAvg = Math.Round(perBookingAvgs.Average(), 2);
+        caddie.TotalBooking = approvedRatings.Count;
         await _caddieRepo.UpdateAsync(caddie, autoSave: true);
     }
 

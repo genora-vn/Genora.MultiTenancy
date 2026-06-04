@@ -38,6 +38,7 @@ public class GetCaddieBookingListInput : PagedAndSortedResultRequestDto
     public Guid? GolfCourseId { get; set; }
     public byte? Status { get; set; }
     public byte? PaymentStatus { get; set; }
+    public byte? CheckinStatus { get; set; }
     public DateTime? FromDate { get; set; }
     public DateTime? ToDate { get; set; }
 }

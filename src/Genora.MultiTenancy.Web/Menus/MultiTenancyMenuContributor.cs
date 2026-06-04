@@ -541,6 +541,33 @@ public class MultiTenancyMenuContributor : IMenuContributor
                     );
                 }
 
+                // Dashboard & Reports (with permissions)
+                if (await perms.IsGrantedAsync(MultiTenancyPermissions.AppCaddieDashboard.Default))
+                {
+                    groupCaddie.AddItem(
+                        new ApplicationMenuItem(
+                            name: "AppCaddieDashboard",
+                            displayName: l["Menu:AppCaddieDashboard"],
+                            url: "/AppCaddieDashboard",
+                            icon: "fa fa-chart-bar",
+                            order: 0
+                        ).RequirePermissions(MultiTenancyPermissions.AppCaddieDashboard.Default)
+                    );
+                }
+
+                if (await perms.IsGrantedAsync(MultiTenancyPermissions.AppCaddieReports.Default))
+                {
+                    groupCaddie.AddItem(
+                        new ApplicationMenuItem(
+                            name: "AppCaddieReports",
+                            displayName: l["Menu:AppCaddieReports"],
+                            url: "/AppCaddieReports",
+                            icon: "fa fa-file-alt",
+                            order: 7
+                        ).RequirePermissions(MultiTenancyPermissions.AppCaddieReports.Default)
+                    );
+                }
+
                 context.Menu.AddItem(groupCaddie);
             }
 
@@ -1420,6 +1447,33 @@ public class MultiTenancyMenuContributor : IMenuContributor
                             icon: "fa fa-language",
                             order: 6
                         ).RequirePermissions(MultiTenancyPermissions.HostAppLanguages.Default)
+                    );
+                }
+
+                // Dashboard & Reports (HOST)
+                if (await perms.IsGrantedAsync(MultiTenancyPermissions.HostAppCaddieDashboard.Default))
+                {
+                    groupCaddie.AddItem(
+                        new ApplicationMenuItem(
+                            name: "AppCaddieDashboardHost",
+                            displayName: l["Menu:AppCaddieDashboard"],
+                            url: "/AppCaddieDashboard",
+                            icon: "fa fa-chart-bar",
+                            order: 0
+                        ).RequirePermissions(MultiTenancyPermissions.HostAppCaddieDashboard.Default)
+                    );
+                }
+
+                if (await perms.IsGrantedAsync(MultiTenancyPermissions.HostAppCaddieReports.Default))
+                {
+                    groupCaddie.AddItem(
+                        new ApplicationMenuItem(
+                            name: "AppCaddieReportsHost",
+                            displayName: l["Menu:AppCaddieReports"],
+                            url: "/AppCaddieReports",
+                            icon: "fa fa-file-alt",
+                            order: 7
+                        ).RequirePermissions(MultiTenancyPermissions.HostAppCaddieReports.Default)
                     );
                 }
 
