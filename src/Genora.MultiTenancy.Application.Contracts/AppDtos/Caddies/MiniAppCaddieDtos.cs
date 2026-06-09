@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Genora.MultiTenancy.AppDtos.AppZaloAuths;
 
 namespace Genora.MultiTenancy.AppDtos.Caddies;
 
@@ -48,6 +49,7 @@ public class MiniAppCaddieReviewDto
 
 public class MiniAppCreateCaddieBookingDto
 {
+    public Guid CustomerId { get; set; }
     public Guid CaddieId { get; set; }
     public DateTime BookingDate { get; set; }
     public TimeSpan StartTime { get; set; }
@@ -57,6 +59,7 @@ public class MiniAppCreateCaddieBookingDto
 
 public class MiniAppCreateCaddieRatingDto
 {
+    public Guid CustomerId { get; set; }
     public Guid BookingId { get; set; }
     public int OverallRating { get; set; }
     public string? Comment { get; set; }
@@ -83,4 +86,42 @@ public class MiniAppCaddieBookingHistoryDto
     public byte PaymentStatus { get; set; }
     public string? PaymentStatusText { get; set; }
     public bool HasRating { get; set; }
+}
+
+// ── Response wrappers (ZaloBaseResponse pattern) ──────────────────────
+
+/// <summary>GET /api/mini-app/caddie/available</summary>
+public class MiniAppCaddieListResponse : ZaloBaseResponse
+{
+    public List<MiniAppCaddieListDto>? Data { get; set; }
+}
+
+/// <summary>GET /api/mini-app/caddie/{id}</summary>
+public class MiniAppCaddieDetailResponse : ZaloBaseResponse
+{
+    public MiniAppCaddieDetailDto? Data { get; set; }
+}
+
+/// <summary>POST /api/mini-app/caddie/booking</summary>
+public class MiniAppCaddieBookingResponse : ZaloBaseResponse
+{
+    public MiniAppCaddieBookingHistoryDto? Data { get; set; }
+}
+
+/// <summary>GET /api/mini-app/caddie/booking/history</summary>
+public class MiniAppCaddieBookingHistoryResponse : ZaloBaseResponse
+{
+    public List<MiniAppCaddieBookingHistoryDto>? Data { get; set; }
+}
+
+/// <summary>POST /api/mini-app/caddie/rating</summary>
+public class MiniAppCaddieRatingResponse : ZaloBaseResponse
+{
+    public object? Data { get; set; }
+}
+
+/// <summary>GET /api/mini-app/caddie/skills</summary>
+public class MiniAppCaddieSkillsResponse : ZaloBaseResponse
+{
+    public List<CaddieSkillDto>? Data { get; set; }
 }

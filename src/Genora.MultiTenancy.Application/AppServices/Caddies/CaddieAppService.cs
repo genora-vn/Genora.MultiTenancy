@@ -40,6 +40,7 @@ public class CaddieAppService : FeatureProtectedCrudAppService<
     private readonly IRepository<AppCaddieVoiceRegion, Guid> _caddieVoiceRegionRepo;
     private readonly IRepository<AppLanguage, Guid> _languageRepo;
     private readonly IRepository<GolfCourse, Guid> _golfCourseRepo;
+    private readonly IRepository<AppCaddieBooking, Guid> _bookingRepo;
     private readonly ICurrentTenant _currentTenant;
     private readonly IGuidGenerator _guidGenerator;
     private readonly IManageImageService _manageImageService;
@@ -50,6 +51,7 @@ public class CaddieAppService : FeatureProtectedCrudAppService<
         IRepository<AppCaddieVoiceRegion, Guid> caddieVoiceRegionRepo,
         IRepository<AppLanguage, Guid> languageRepo,
         IRepository<GolfCourse, Guid> golfCourseRepo,
+        IRepository<AppCaddieBooking, Guid> bookingRepo,
         ICurrentTenant currentTenant,
         IFeatureChecker featureChecker,
         IGuidGenerator guidGenerator,
@@ -61,6 +63,7 @@ public class CaddieAppService : FeatureProtectedCrudAppService<
         _caddieVoiceRegionRepo = caddieVoiceRegionRepo;
         _languageRepo = languageRepo;
         _golfCourseRepo = golfCourseRepo;
+        _bookingRepo = bookingRepo;
         _currentTenant = currentTenant;
         _guidGenerator = guidGenerator;
         _manageImageService = manageImageService;
@@ -124,6 +127,13 @@ public class CaddieAppService : FeatureProtectedCrudAppService<
             .Where(x => caddieIds.Contains(x.CaddieId));
         var caddieVoiceRegions = await AsyncExecuter.ToListAsync(vrQuery);
 
+        // Load last booking date per caddie
+        var bookingQuery = (await _bookingRepo.GetQueryableAsync())
+            .Where(x => caddieIds.Contains(x.CaddieId))
+            .GroupBy(x => x.CaddieId)
+            .Select(g => new { CaddieId = g.Key, LastDate = g.Max(b => b.BookingDate) });
+        var lastBookingDates = await AsyncExecuter.ToListAsync(bookingQuery);
+
         var dtos = items.Select(x =>
         {
             var dto = MapToDto(x);
@@ -135,6 +145,7 @@ public class CaddieAppService : FeatureProtectedCrudAppService<
                 .Where(vr => vr.CaddieId == x.Id)
                 .Select(vr => GetVoiceRegionText(vr.VoiceRegion))
                 .ToList();
+            dto.LastBookingDate = lastBookingDates.FirstOrDefault(b => b.CaddieId == x.Id)?.LastDate;
             return dto;
         }).ToList();
 

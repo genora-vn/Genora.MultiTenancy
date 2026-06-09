@@ -143,7 +143,8 @@
                         <div style="border:1px solid var(--caddie-outline-variant);border-radius:12px;padding:16px;margin-bottom:16px;">
                             <div style="font-size:10px;font-weight:700;color:var(--caddie-on-surface-variant);text-transform:uppercase;margin-bottom:8px;">THÔNG TIN GOLFER</div>
                             <div class="d-flex align-items-center gap-2 mb-2">
-                                <div id="detailGolferInitials" class="d-flex align-items-center justify-content-center rounded-circle" style="width:36px;height:36px;background:rgba(0,94,164,0.1);color:var(--caddie-primary);font-weight:700;font-size:13px;"></div>
+                                <img id="detailGolferAvatar" src="" style="width:36px;height:36px;border-radius:50%;object-fit:cover;display:none;" onerror="this.style.display='none';document.getElementById('detailGolferInitials').style.display='flex';" />
+                                <div id="detailGolferInitials" style="width:36px;height:36px;border-radius:50%;background:rgba(0,94,164,0.1);color:var(--caddie-primary);font-weight:700;font-size:13px;display:flex;align-items:center;justify-content:center;"></div>
                                 <strong id="detailCustomerName" style="font-size:14px;">—</strong>
                             </div>
                             <div style="font-size:12px;color:var(--caddie-on-surface-variant);">Ngày chơi: <strong id="detailPlayDate">—</strong></div>
@@ -153,7 +154,8 @@
                         <div style="border:1px solid var(--caddie-outline-variant);border-radius:12px;padding:16px;">
                             <div style="font-size:10px;font-weight:700;color:var(--caddie-on-surface-variant);text-transform:uppercase;margin-bottom:8px;">THÔNG TIN CADDY</div>
                             <div class="d-flex align-items-center gap-2 mb-2">
-                                <div id="detailCaddyInitials" class="d-flex align-items-center justify-content-center rounded-circle" style="width:36px;height:36px;background:var(--caddie-surface-container-high);color:var(--caddie-on-surface);font-weight:700;font-size:13px;"></div>
+                                <img id="detailCaddyAvatar" src="" style="width:36px;height:36px;border-radius:50%;object-fit:cover;display:none;" onerror="this.style.display='none';document.getElementById('detailCaddyInitials').style.display='flex';" />
+                                <div id="detailCaddyInitials" style="width:36px;height:36px;border-radius:50%;background:var(--caddie-surface-container-high);color:var(--caddie-on-surface);font-weight:700;font-size:13px;display:flex;align-items:center;justify-content:center;"></div>
                                 <div>
                                     <strong id="detailCaddyName" style="font-size:14px;">—</strong>
                                     <div style="font-size:11px;color:var(--caddie-on-surface-variant);">Mã: <span id="detailCaddyCode">—</span></div>
@@ -176,13 +178,13 @@
                     </div>
                 </div>
             </div>
-            <div class="modal-footer" style="border-top:1px solid rgba(192,199,212,0.1);padding:16px 24px;">
+            <div class="modal-footer" style="border-top:1px solid rgba(192,199,212,0.1);padding:16px 24px;display:flex;align-items:center;">
                 @if (canEdit)
                 {
-                    <button type="button" class="btn btn-outline-danger btn-sm" id="btnRejectRating" style="font-weight:700;"><i class="fa fa-times me-1"></i> Từ chối / Ẩn</button>
-                    <button type="button" class="btn btn-success btn-sm" id="btnApproveRating" style="font-weight:700;"><i class="fa fa-check me-1"></i> Phê duyệt</button>
+                    <button type="button" class="btn btn-outline-danger btn-sm" id="btnRejectRating" style="font-weight:700;padding:8px 16px;"><i class="fa fa-times me-1"></i> Từ chối / Ẩn</button>
+                    <button type="button" class="btn btn-success btn-sm" id="btnApproveRating" style="font-weight:700;padding:8px 16px;"><i class="fa fa-check me-1"></i> Phê duyệt</button>
                 }
-                <button type="button" class="btn btn-light" data-bs-dismiss="modal" style="font-weight:700;">Đóng</button>
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal" style="font-weight:700;padding:8px 16px;">Đóng</button>
             </div>
         </div>
     </div>

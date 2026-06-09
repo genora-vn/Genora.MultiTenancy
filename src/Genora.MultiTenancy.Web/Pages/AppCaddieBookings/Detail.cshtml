@@ -1,13 +1,21 @@
 @page
 @using Genora.MultiTenancy.Web.Pages.AppCaddieBookings
+@using Genora.MultiTenancy.Permissions
+@using Microsoft.AspNetCore.Authorization
+@inject IAuthorizationService AuthorizationService
+@inject Volo.Abp.MultiTenancy.ICurrentTenant CurrentTenant
 @model DetailModel
 
 @section styles {
     <abp-style src="/pages/caddie/caddie-shared.css" />
 }
 
+@section scripts {
+    <abp-script src="/Pages/AppCaddieBookings/detail.js" />
+}
+
 @{
-    var statusClass = Model.Booking.Status switch
+    var statusStyle = Model.Booking.Status switch
     {
         1 => "background:#dbeafe;color:#1e40af;",
         2 => "background:#fef3c7;color:#92400e;",
@@ -18,6 +26,26 @@
     var paymentBadge = Model.Booking.PaymentStatus == 2
         ? "background:#dcfce7;color:#166534;"
         : "background:#fef9c3;color:#a16207;";
+    var step1Done = Model.Booking.Status >= 1;
+    var step2Done = Model.Booking.Status >= 2 || Model.Booking.Status == 4;
+    var step3Done = Model.Booking.Status >= 3;
+    var isCancelled = Model.Booking.Status == 4;
+    // Progress uses calc relative to track width (100% - 120px)
+    // Status 1=no fill, Status 2=half track, Status 3=full track, Status 4=half track
+    var progressStyle = Model.Booking.Status switch
+    {
+        1 => "width:0;",
+        2 => "width:calc((100% - 120px) / 2);",
+        3 => "width:calc(100% - 120px);",
+        4 => "width:calc((100% - 120px) / 2);",
+        _ => "width:0;"
+    };
+
+    var golferInitials = string.Join("", (Model.Booking.CustomerName ?? "?").Split(' ').Select(n => n.FirstOrDefault())).ToUpper();
+    if (golferInitials.Length > 2) golferInitials = golferInitials[..2];
+
+    var caddyInitials = string.Join("", (Model.Booking.CaddieName ?? "?").Split(' ').Select(n => n.FirstOrDefault())).ToUpper();
+    if (caddyInitials.Length > 2) caddyInitials = caddyInitials[..2];
 }
 
 <div class="caddie-page">
@@ -25,7 +53,7 @@
     <div class="d-flex flex-wrap align-items-end justify-content-between mb-4">
         <div>
             <div class="d-flex align-items-center gap-3 mb-1">
-                <span style="@statusClass font-size:10px;font-weight:800;padding:4px 12px;border-radius:20px;text-transform:uppercase;">@Model.Booking.StatusText</span>
+                <span style="@statusStyle font-size:10px;font-weight:800;padding:4px 12px;border-radius:20px;text-transform:uppercase;">@Model.Booking.StatusText</span>
                 <span style="color:var(--caddie-on-surface-variant);font-size:13px;">
                     <i class="fa fa-calendar-alt me-1"></i>@Model.Booking.BookingDate.ToString("dd/MM/yyyy") @Model.Booking.StartTime.ToString(@"hh\:mm")
                 </span>
@@ -48,26 +76,28 @@
     <div class="card mb-4" style="border:1px solid rgba(192,199,212,0.2);border-radius:16px;">
         <div class="card-body p-4">
             <div class="position-relative d-flex justify-content-between" style="padding:0 40px;">
-                @{
-                    var step1Done = Model.Booking.Status >= 1;
-                    var step2Done = Model.Booking.Status >= 2;
-                    var step3Done = Model.Booking.Status >= 3;
-                    var progressWidth = Model.Booking.Status switch { 1 => "0%", 2 => "50%", 3 => "100%", 4 => "50%", _ => "0%" };
-                }
                 <div class="position-absolute" style="top:20px;left:60px;right:60px;height:4px;background:#e2e7ff;border-radius:2px;"></div>
-                <div class="position-absolute" style="top:20px;left:60px;width:@progressWidth;height:4px;background:var(--caddie-primary);border-radius:2px;"></div>
+                <div class="position-absolute" style="top:20px;left:60px;@progressStyle height:4px;background:var(--caddie-primary);border-radius:2px;"></div>
 
                 <div class="text-center position-relative" style="z-index:1;">
                     <div class="d-inline-flex align-items-center justify-content-center rounded-circle mb-2" style="width:40px;height:40px;@(step1Done ? "background:var(--caddie-primary);color:#fff;" : "background:#e2e7ff;color:var(--caddie-outline);")">
                         <i class="fa fa-check"></i>
                     </div>
                     <div style="font-size:12px;font-weight:700;">Đã đặt</div>
+                    <div style="font-size:10px;color:var(--caddie-on-surface-variant);">@Model.Booking.CreationTime.ToString("HH:mm dd/MM")</div>
                 </div>
                 <div class="text-center position-relative" style="z-index:1;">
                     <div class="d-inline-flex align-items-center justify-content-center rounded-circle mb-2" style="width:40px;height:40px;@(step2Done ? "background:var(--caddie-primary);color:#fff;" : "background:#e2e7ff;color:var(--caddie-outline);")">
-                        <i class="fa fa-golf-ball"></i>
+                        @if (isCancelled)
+                        {
+                            <i class="fa fa-times"></i>
+                        }
+                        else
+                        {
+                            <i class="fa fa-golf-ball"></i>
+                        }
                     </div>
-                    <div style="font-size:12px;font-weight:700;">Đang phục vụ</div>
+                    <div style="font-size:12px;font-weight:700;">@(isCancelled ? "Đã hủy" : "Đang phục vụ")</div>
                 </div>
                 <div class="text-center position-relative" style="z-index:1;">
                     <div class="d-inline-flex align-items-center justify-content-center rounded-circle mb-2" style="width:40px;height:40px;@(step3Done ? "background:var(--caddie-primary);color:#fff;" : "background:#e2e7ff;color:var(--caddie-outline);")">
@@ -79,48 +109,62 @@
         </div>
     </div>
 
-    <!-- Content Grid -->
-    <div class="row g-4">
-        <!-- Left Column -->
+    <!-- Content Grid: Main + Sidebar -->
+    <div class="row g-3">
+        <!-- Left: Main Content -->
         <div class="col-lg-8">
-            <!-- Booking Info -->
-            <div class="card mb-4" style="border:1px solid rgba(192,199,212,0.2);border-radius:16px;">
-                <div class="card-header" style="border-bottom:1px solid rgba(192,199,212,0.15);padding:16px 24px;">
-                    <h5 style="font-weight:700;margin:0;">Thông tin Booking</h5>
+            <!-- Chi tiết đánh giá Caddy -->
+            <div class="card mb-3" style="border:1px solid rgba(192,199,212,0.2);border-radius:16px;">
+                <div class="card-header" style="border-bottom:1px solid rgba(192,199,212,0.15);padding:16px 24px;background:transparent;">
+                    <h5 style="font-weight:700;margin:0;">Chi tiết đánh giá Caddy</h5>
                 </div>
                 <div class="card-body p-4">
-                    <div class="row g-3">
-                        <div class="col-md-6">
-                            <div style="font-size:11px;color:var(--caddie-outline);text-transform:uppercase;font-weight:700;letter-spacing:0.05em;">Mã Booking</div>
-                            <div style="font-weight:600;">@Model.Booking.BookingCode</div>
+                    @if (Model.RatingDetails.Any())
+                    {
+                        <div style="display:grid;grid-template-columns:1fr;gap:20px;">
+                            @foreach (var skill in Model.RatingDetails)
+                            {
+                                <div class="d-flex align-items-center justify-content-between">
+                                    <span style="font-weight:500;color:var(--caddie-on-surface);">@skill.SkillName</span>
+                                    <span>
+                                        @for (int i = 1; i <= 5; i++)
+                                        {
+                                            if (i <= skill.Score)
+                                            {
+                                                <i class="fa fa-star" style="color:#f59e0b;font-size:16px;"></i>
+                                            }
+                                            else
+                                            {
+                                                <i class="fa fa-star" style="color:#e2e8f0;font-size:16px;"></i>
+                                            }
+                                        }
+                                    </span>
+                                </div>
+                            }
                         </div>
-                        <div class="col-md-6">
-                            <div style="font-size:11px;color:var(--caddie-outline);text-transform:uppercase;font-weight:700;letter-spacing:0.05em;">Ngày chơi</div>
-                            <div style="font-weight:600;">@Model.Booking.BookingDate.ToString("dd/MM/yyyy")</div>
+                    }
+                    else
+                    {
+                        <p style="color:var(--caddie-outline);margin:0;font-style:italic;">Chưa có đánh giá cho booking này.</p>
+                    }
+                </div>
+            </div>
+
+            <!-- Đánh giá từ khách hàng -->
+            <div class="card mb-3" style="border:1px solid rgba(192,199,212,0.2);border-radius:16px;">
+                <div class="card-body p-4">
+                    <h5 style="font-weight:700;margin-bottom:16px;">Đánh giá từ khách hàng</h5>
+                    @if (!string.IsNullOrEmpty(Model.RatingComment))
+                    {
+                        <div style="background:var(--caddie-surface-container-low);border-left:4px solid var(--caddie-primary);padding:20px 24px;border-radius:0 12px 12px 0;">
+                            <span style="color:rgba(0,94,164,0.3);font-size:2rem;line-height:1;display:block;margin-bottom:8px;font-family:serif;">"</span>
+                            <p style="font-style:italic;color:var(--caddie-on-surface);line-height:1.7;margin:0;font-size:0.95rem;">@Model.RatingComment</p>
                         </div>
-                        <div class="col-md-6">
-                            <div style="font-size:11px;color:var(--caddie-outline);text-transform:uppercase;font-weight:700;letter-spacing:0.05em;">Giờ chơi</div>
-                            <div style="font-weight:600;color:var(--caddie-primary);">@Model.Booking.StartTime.ToString(@"hh\:mm")</div>
-                        </div>
-                        <div class="col-md-6">
-                            <div style="font-size:11px;color:var(--caddie-outline);text-transform:uppercase;font-weight:700;letter-spacing:0.05em;">Số hố</div>
-                            <div style="font-weight:600;">@(Model.Booking.NumberOfHoles > 0 ? Model.Booking.NumberOfHoles + " hố" : "—")</div>
-                        </div>
-                        @if (!string.IsNullOrEmpty(Model.Booking.Note))
-                        {
-                            <div class="col-12">
-                                <div style="font-size:11px;color:var(--caddie-outline);text-transform:uppercase;font-weight:700;letter-spacing:0.05em;">Ghi chú</div>
-                                <div style="font-weight:500;">@Model.Booking.Note</div>
-                            </div>
-                        }
-                        @if (!string.IsNullOrEmpty(Model.Booking.CancelReason))
-                        {
-                            <div class="col-12">
-                                <div style="font-size:11px;color:var(--caddie-error);text-transform:uppercase;font-weight:700;letter-spacing:0.05em;">Lý do hủy</div>
-                                <div style="font-weight:500;color:var(--caddie-error);">@Model.Booking.CancelReason</div>
-                            </div>
-                        }
-                    </div>
+                    }
+                    else
+                    {
+                        <p style="color:var(--caddie-outline);margin:0;font-style:italic;">Chưa có nhận xét từ khách hàng.</p>
+                    }
                 </div>
             </div>
         </div>
@@ -128,23 +172,30 @@
         <!-- Right Sidebar -->
         <div class="col-lg-4">
             <!-- Thông tin Golfer -->
-            <div class="card mb-4" style="border:1px solid rgba(192,199,212,0.2);border-radius:16px;">
-                <div class="card-header" style="border-bottom:1px solid rgba(192,199,212,0.15);padding:16px 24px;">
+            <div class="card mb-3" style="border:1px solid rgba(192,199,212,0.2);border-radius:16px;">
+                <div class="card-header" style="border-bottom:1px solid rgba(192,199,212,0.15);padding:16px 24px;background:transparent;">
                     <h5 style="font-weight:700;margin:0;">Thông tin Golfer</h5>
                 </div>
                 <div class="card-body p-4">
                     <div class="d-flex align-items-center gap-3 mb-3">
-                        @{
-                            var golferInitials = (Model.Booking.CustomerName ?? "?").Split(' ').Select(n => n.FirstOrDefault()).Take(2);
-                            var initStr = string.Join("", golferInitials).ToUpper();
+                        @if (!string.IsNullOrEmpty(Model.CustomerAvatar))
+                        {
+                            <img src="@Model.CustomerAvatar" style="width:48px;height:48px;border-radius:50%;object-fit:cover;border:2px solid rgba(0,94,164,0.1);" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';" />
+                            <div class="d-none align-items-center justify-content-center rounded-circle" style="width:48px;height:48px;background:rgba(0,94,164,0.1);color:var(--caddie-primary);font-weight:800;font-size:16px;">@golferInitials</div>
                         }
-                        <div class="d-flex align-items-center justify-content-center rounded-circle" style="width:48px;height:48px;background:rgba(0,94,164,0.1);color:var(--caddie-primary);font-weight:800;font-size:18px;">@initStr</div>
+                        else
+                        {
+                            <div class="d-flex align-items-center justify-content-center rounded-circle" style="width:48px;height:48px;background:rgba(0,94,164,0.1);color:var(--caddie-primary);font-weight:800;font-size:16px;">@golferInitials</div>
+                        }
                         <div>
                             <div style="font-weight:700;font-size:16px;">@Model.Booking.CustomerName</div>
-                            <div style="font-size:13px;color:var(--caddie-on-surface-variant);">@(Model.Booking.PhoneMasked ?? "—")</div>
+                            <div class="golfer-phone-hover" style="font-size:13px;color:var(--caddie-on-surface-variant);cursor:pointer;" title="Hover để xem số đầy đủ"
+                                 data-masked="@(Model.Booking.PhoneMasked ?? "—")" data-full="@Model.Booking.Phone">
+                                @(Model.Booking.PhoneMasked ?? "—")
+                            </div>
                         </div>
                     </div>
-                    <div style="background:var(--caddie-surface-container-low);border-radius:8px;padding:12px;" class="mt-3">
+                    <div style="background:var(--caddie-surface-container-low);border-radius:8px;padding:12px;">
                         <div class="d-flex justify-content-between mb-1" style="font-size:12px;">
                             <span style="color:var(--caddie-outline);font-weight:700;text-transform:uppercase;">Ngày chơi</span>
                             <span style="font-weight:700;">@Model.Booking.BookingDate.ToString("dd/MM/yyyy")</span>
@@ -158,42 +209,192 @@
             </div>
 
             <!-- Thông tin Caddy -->
-            <div class="card mb-4" style="border:1px solid rgba(192,199,212,0.2);border-radius:16px;">
+            <div class="card mb-3" style="border:1px solid rgba(192,199,212,0.2);border-radius:16px;">
                 <div class="card-body p-4">
                     <h5 style="font-weight:700;margin-bottom:16px;">Thông tin Caddy</h5>
                     <div class="d-flex align-items-center gap-3 mb-3">
-                        @{
-                            var caddyInitials = (Model.Booking.CaddieName ?? "?").Split(' ').Select(n => n.FirstOrDefault()).Take(2);
-                            var caddyInitStr = string.Join("", caddyInitials).ToUpper();
+                        @if (!string.IsNullOrEmpty(Model.CaddieAvatar))
+                        {
+                            <div style="position:relative;">
+                                <img src="@Model.CaddieAvatar" style="width:52px;height:52px;border-radius:12px;object-fit:cover;box-shadow:0 2px 8px rgba(0,0,0,0.1);" onerror="this.style.display='none';this.parentElement.querySelector('.caddie-initials-fallback').style.display='flex';" />
+                                <div class="caddie-initials-fallback d-none align-items-center justify-content-center" style="width:52px;height:52px;background:var(--caddie-surface-container-high);color:var(--caddie-on-surface);font-weight:700;border-radius:12px;">@caddyInitials</div>
+                                <span style="position:absolute;bottom:-3px;right:-3px;width:12px;height:12px;background:#22c55e;border:2px solid #fff;border-radius:50%;"></span>
+                            </div>
                         }
-                        <div class="d-flex align-items-center justify-content-center rounded-circle" style="width:48px;height:48px;background:var(--caddie-surface-container-high);color:var(--caddie-on-surface);font-weight:700;">@caddyInitStr</div>
+                        else
+                        {
+                            <div class="d-flex align-items-center justify-content-center" style="width:52px;height:52px;background:var(--caddie-surface-container-high);color:var(--caddie-on-surface);font-weight:700;border-radius:12px;">@caddyInitials</div>
+                        }
                         <div>
                             <div style="font-weight:700;">@(Model.Booking.CaddieName ?? "—")</div>
                             <div style="font-size:12px;color:var(--caddie-on-surface-variant);">Mã Caddy: <span style="color:var(--caddie-on-surface);">@(Model.Booking.CaddieCode ?? "—")</span></div>
+                            <div class="caddie-phone-hover" style="font-size:12px;color:var(--caddie-on-surface-variant);cursor:pointer;" title="Hover để xem số đầy đủ"
+                                 data-masked="SĐT: @(Model.CaddiePhoneMasked ?? "—")" data-full="SĐT: @(Model.CaddiePhone ?? "—")">
+                                SĐT: @(Model.CaddiePhoneMasked ?? "—")
+                            </div>
                         </div>
                     </div>
+                    <!-- Caddie rating stars -->
+                    <div style="border-top:1px solid rgba(192,199,212,0.2);padding-top:12px;margin-bottom:12px;">
+                        <div style="font-size:10px;font-weight:700;color:var(--caddie-on-surface-variant);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px;">Đánh giá sao</div>
+                        <div class="d-flex align-items-center gap-2">
+                            <span>
+                                @{
+                                    var caddieStars = (int)Math.Floor(Model.CaddieRatingAvg);
+                                }
+                                @for (int i = 1; i <= 5; i++)
+                                {
+                                    if (i <= caddieStars)
+                                    {
+                                        <i class="fa fa-star" style="color:#f59e0b;font-size:14px;"></i>
+                                    }
+                                    else
+                                    {
+                                        <i class="fa fa-star" style="color:#cbd5e1;font-size:14px;"></i>
+                                    }
+                                }
+                            </span>
+                            <strong style="font-size:14px;">@Model.CaddieRatingAvg.ToString("0.0")</strong>
+                        </div>
+                    </div>
+                    @if (Model.CanEdit && Model.Booking.Status != 3 && Model.Booking.Status != 4)
+                    {
+                        <button class="btn btn-light w-100 mt-2" style="font-weight:700;font-size:12px;border-radius:8px;" id="btnChangeCaddy">
+                            <i class="fa fa-sync me-1"></i> Thay đổi Caddy
+                        </button>
+                    }
                 </div>
             </div>
 
             <!-- Chi tiết thanh toán -->
-            <div class="card mb-4" style="border:1px solid rgba(192,199,212,0.2);border-radius:16px;">
-                <div class="card-header d-flex justify-content-between align-items-center" style="border-bottom:1px solid rgba(192,199,212,0.15);padding:16px 24px;">
-                    <h5 style="font-weight:700;margin:0;">Thanh toán</h5>
+            <div class="card mb-3" style="border:1px solid rgba(192,199,212,0.2);border-radius:16px;">
+                <div class="card-header d-flex justify-content-between align-items-center" style="border-bottom:1px solid rgba(192,199,212,0.15);padding:16px 24px;background:transparent;">
+                    <h5 style="font-weight:700;margin:0;">Chi tiết thanh toán</h5>
                     <span style="@paymentBadge font-size:10px;font-weight:800;padding:4px 12px;border-radius:20px;text-transform:uppercase;">@Model.Booking.PaymentStatusText</span>
                 </div>
                 <div class="card-body p-4">
-                    <div class="d-flex align-items-center gap-2" style="font-size:13px;color:var(--caddie-on-surface-variant);">
-                        <i class="fa fa-credit-card"></i>
-                        <span>Check-in: <strong>@Model.Booking.CheckinStatusText</strong></span>
+                    <div class="d-flex justify-content-between mb-2" style="font-size:13px;">
+                        <span style="color:var(--caddie-on-surface-variant);">Tạm tính</span>
+                        <span style="font-weight:500;">—</span>
                     </div>
-                    @if (Model.Booking.CheckinTime.HasValue)
-                    {
-                        <div class="mt-2" style="font-size:12px;color:var(--caddie-outline);">
-                            Check-in lúc: @Model.Booking.CheckinTime.Value.ToString("dd/MM/yyyy HH:mm")
+                    <div class="d-flex justify-content-between mb-2" style="font-size:13px;">
+                        <span style="color:var(--caddie-on-surface-variant);">Phụ phí</span>
+                        <span style="font-weight:500;">0đ</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2" style="font-size:13px;">
+                        <span style="color:var(--caddie-on-surface-variant);">Khuyến mãi</span>
+                        <span style="font-weight:500;color:#16a34a;">—</span>
+                    </div>
+                    <div class="d-flex justify-content-between pt-3 mt-2" style="border-top:1px solid rgba(192,199,212,0.2);">
+                        <span style="font-weight:700;">Tổng cộng</span>
+                        <span style="font-weight:800;font-size:1.1rem;color:var(--caddie-primary);">—</span>
+                    </div>
+                    <div class="d-flex align-items-center gap-2 mt-3 pt-3" style="border-top:1px solid rgba(192,199,212,0.1);font-size:12px;color:var(--caddie-on-surface-variant);">
+                        <i class="fa fa-credit-card"></i>
+                        <span style="font-weight:700;text-transform:uppercase;">Phương thức:</span>
+                        <span style="font-weight:700;color:var(--caddie-on-surface);">—</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Lịch sử thao tác -->
+            <div class="card mb-3" style="border:1px solid rgba(192,199,212,0.2);border-radius:16px;">
+                <div class="card-body p-4">
+                    <h6 style="font-weight:700;font-size:11px;color:var(--caddie-on-surface-variant);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:16px;">Lịch sử thao tác</h6>
+                    <div style="position:relative;padding-left:16px;">
+                        <div style="position:absolute;left:3px;top:8px;bottom:8px;width:2px;background:rgba(192,199,212,0.3);"></div>
+                        <!-- Booking created -->
+                        <div class="d-flex gap-3 mb-3" style="position:relative;">
+                            <div style="width:8px;height:8px;background:var(--caddie-primary);border-radius:50%;margin-top:5px;position:absolute;left:-16px;box-shadow:0 0 0 3px rgba(0,94,164,0.1);"></div>
+                            <div>
+                                <div style="font-size:12px;font-weight:700;color:var(--caddie-on-surface);">Tạo booking: @Model.Booking.BookingCode</div>
+                                <div style="font-size:10px;color:var(--caddie-on-surface-variant);">Hệ thống • @Model.Booking.CreationTime.ToString("HH:mm, dd/MM/yyyy")</div>
+                            </div>
                         </div>
-                    }
+                        @if (Model.Booking.Status >= 2)
+                        {
+                            <div class="d-flex gap-3 mb-3" style="position:relative;">
+                                <div style="width:8px;height:8px;background:var(--caddie-primary);border-radius:50%;margin-top:5px;position:absolute;left:-16px;box-shadow:0 0 0 3px rgba(0,94,164,0.1);"></div>
+                                <div>
+                                    <div style="font-size:12px;font-weight:700;color:var(--caddie-on-surface);">Phân công Caddy: @(Model.Booking.CaddieName ?? "—")</div>
+                                    <div style="font-size:10px;color:var(--caddie-on-surface-variant);">Hệ thống tự động</div>
+                                </div>
+                            </div>
+                        }
+                        @if (Model.Booking.Status == 4 && !string.IsNullOrEmpty(Model.Booking.CancelReason))
+                        {
+                            <div class="d-flex gap-3" style="position:relative;">
+                                <div style="width:8px;height:8px;background:var(--caddie-error);border-radius:50%;margin-top:5px;position:absolute;left:-16px;"></div>
+                                <div>
+                                    <div style="font-size:12px;font-weight:700;color:var(--caddie-error);">Đã hủy: @Model.Booking.CancelReason</div>
+                                    <div style="font-size:10px;color:var(--caddie-on-surface-variant);">—</div>
+                                </div>
+                            </div>
+                        }
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
+
+<!-- Status Update Modal -->
+<div class="modal fade" id="statusModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content" style="border-radius:12px;border:none;">
+            <div class="modal-header" style="padding:20px 24px;border-bottom:1px solid rgba(192,199,212,0.1);">
+                <h5 class="modal-title" style="font-weight:800;">Cập nhật trạng thái</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" style="padding:24px;">
+                <div class="mb-3">
+                    <label class="caddie-form-label">Trạng thái mới</label>
+                    <select id="modalStatusValue" class="form-select caddie-form-control">
+                        @if (Model.Booking.Status == 1) { <option value="2">Đã xác nhận</option> }
+                        @if (Model.Booking.Status == 1 || Model.Booking.Status == 2) { <option value="3">Hoàn thành</option> }
+                        <option value="4">Đã hủy</option>
+                    </select>
+                </div>
+                <div class="mb-3" id="modalCancelGroup" style="display:none;">
+                    <label class="caddie-form-label">Lý do hủy <span class="text-danger">*</span></label>
+                    <textarea id="modalCancelReason" class="form-control caddie-form-control" rows="2" style="resize:none;" placeholder="Nhập lý do hủy..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer" style="padding:16px 24px;border-top:1px solid rgba(192,199,212,0.1);">
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal" style="font-weight:700;">Hủy</button>
+                <button type="button" class="btn-caddie-primary" id="btnConfirmStatus"><i class="fa fa-check"></i> Xác nhận</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Change Caddy Modal -->
+<div class="modal fade" id="changeCaddyModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="border-radius:12px;border:none;">
+            <div class="modal-header" style="padding:20px 24px;border-bottom:1px solid rgba(192,199,212,0.1);">
+                <h5 class="modal-title" style="font-weight:800;">Thay đổi Caddy</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" style="padding:24px;">
+                <div class="mb-3">
+                    <label class="caddie-form-label">Chọn Caddy mới <span class="text-danger">*</span></label>
+                    <select id="modalNewCaddieId" class="form-select caddie-form-control">
+                        <option value="">-- Chọn Caddy --</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="caddie-form-label">Ghi chú</label>
+                    <textarea id="modalChangeCaddyNote" class="form-control caddie-form-control" rows="2" style="resize:none;" placeholder="Lý do đổi caddy..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer" style="padding:16px 24px;border-top:1px solid rgba(192,199,212,0.1);">
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal" style="font-weight:700;">Hủy</button>
+                <button type="button" class="btn-caddie-primary" id="btnConfirmChangeCaddy"><i class="fa fa-sync"></i> Đổi Caddy</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<input type="hidden" id="BookingId" value="@Model.Booking.Id" />
+<input type="hidden" id="CurrentCaddieId" value="@Model.Booking.CaddieId" />

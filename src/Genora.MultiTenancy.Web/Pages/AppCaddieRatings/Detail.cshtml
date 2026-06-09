@@ -21,6 +21,12 @@
         3 => "ĐÃ ẨN",
         _ => "—"
     };
+
+    var golferInitials = (Model.Rating.CustomerName ?? "?").Split(' ').Select(n => n.FirstOrDefault()).Take(2);
+    var golferInitStr = string.Join("", golferInitials).ToUpper();
+
+    var caddyInitials = (Model.Rating.CaddieName ?? "?").Split(' ').Select(n => n.FirstOrDefault()).Take(2);
+    var caddyInitStr = string.Join("", caddyInitials).ToUpper();
 }
 
 <div class="caddie-page">
@@ -46,26 +52,41 @@
     </div>
 
     <!-- Content Grid -->
-    <div class="row g-4">
+    <div class="row g-3">
         <!-- Left Column: Golfer + Caddy Info -->
         <div class="col-lg-4">
             <!-- Golfer Info -->
-            <div class="card mb-4" style="border:1px solid rgba(192,199,212,0.2);border-radius:16px;">
+            <div class="card mb-3" style="border:1px solid rgba(192,199,212,0.2);border-radius:16px;">
                 <div class="card-body p-4">
                     <div class="d-flex align-items-center justify-content-between mb-3">
                         <h6 style="font-weight:700;text-transform:uppercase;font-size:11px;color:var(--caddie-on-surface-variant);letter-spacing:0.05em;margin:0;">THÔNG TIN GOLFER</h6>
                     </div>
                     <div class="d-flex align-items-center gap-3 mb-3">
-                        @{
-                            var golferInitials = (Model.Rating.CustomerName ?? "?").Split(' ').Select(n => n.FirstOrDefault()).Take(2);
-                            var golferInitStr = string.Join("", golferInitials).ToUpper();
+                        @if (!string.IsNullOrEmpty(Model.CustomerAvatar))
+                        {
+                            <img src="@Model.CustomerAvatar" style="width:56px;height:56px;border-radius:12px;object-fit:cover;box-shadow:0 2px 8px rgba(0,0,0,0.1);" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';" />
+                            <div class="d-none align-items-center justify-content-center" style="width:56px;height:56px;background:rgba(0,94,164,0.1);color:var(--caddie-primary);font-weight:800;font-size:18px;border-radius:12px;">@golferInitStr</div>
                         }
-                        <div class="d-flex align-items-center justify-content-center rounded" style="width:56px;height:56px;background:rgba(0,94,164,0.1);color:var(--caddie-primary);font-weight:800;font-size:18px;border-radius:12px!important;">@golferInitStr</div>
+                        else
+                        {
+                            <div class="d-flex align-items-center justify-content-center" style="width:56px;height:56px;background:rgba(0,94,164,0.1);color:var(--caddie-primary);font-weight:800;font-size:18px;border-radius:12px;">@golferInitStr</div>
+                        }
                         <div>
                             <div style="font-weight:800;font-size:16px;">@(Model.Rating.CustomerName ?? "—")</div>
+                            @if (!string.IsNullOrEmpty(Model.CustomerCode))
+                            {
+                                <div style="font-size:11px;color:var(--caddie-primary);font-weight:700;margin-top:2px;">Member ID: @Model.CustomerCode</div>
+                            }
                         </div>
                     </div>
                     <div style="border-top:1px solid rgba(192,199,212,0.2);padding-top:12px;" class="mt-3">
+                        <div class="mb-2">
+                            <span style="font-size:11px;color:var(--caddie-on-surface-variant);">Số điện thoại</span>
+                            <div class="rating-phone-hover" style="font-weight:700;cursor:pointer;" title="Hover để xem số đầy đủ"
+                                 data-masked="@(Model.CustomerPhoneMasked ?? "—")" data-full="@(Model.CustomerPhone ?? "—")">
+                                @(Model.CustomerPhoneMasked ?? "—")
+                            </div>
+                        </div>
                         <div class="mb-2">
                             <span style="font-size:11px;color:var(--caddie-on-surface-variant);">Ngày chơi</span>
                             <div style="font-weight:700;">@(Model.Rating.BookingDate?.ToString("dd/MM/yyyy") ?? "—")</div>
@@ -79,30 +100,37 @@
             </div>
 
             <!-- Caddy Info -->
-            <div class="card mb-4" style="border:1px solid rgba(192,199,212,0.2);border-radius:16px;">
+            <div class="card mb-3" style="border:1px solid rgba(192,199,212,0.2);border-radius:16px;">
                 <div class="card-body p-4">
                     <h6 style="font-weight:700;text-transform:uppercase;font-size:11px;color:var(--caddie-on-surface-variant);letter-spacing:0.05em;margin-bottom:16px;">THÔNG TIN CADDY</h6>
                     <div class="d-flex align-items-center gap-3 mb-3">
-                        @{
-                            var caddyInitials = (Model.Rating.CaddieName ?? "?").Split(' ').Select(n => n.FirstOrDefault()).Take(2);
-                            var caddyInitStr = string.Join("", caddyInitials).ToUpper();
+                        @if (!string.IsNullOrEmpty(Model.Rating.CaddieAvatar))
+                        {
+                            <img src="@Model.Rating.CaddieAvatar" style="width:56px;height:56px;border-radius:12px;object-fit:cover;box-shadow:0 2px 8px rgba(0,0,0,0.1);" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';" />
+                            <div class="d-none align-items-center justify-content-center" style="width:56px;height:56px;background:var(--caddie-surface-container-high);color:var(--caddie-on-surface);font-weight:700;font-size:16px;border-radius:12px;">@caddyInitStr</div>
                         }
-                        <div class="d-flex align-items-center justify-content-center rounded" style="width:56px;height:56px;background:var(--caddie-surface-container-high);color:var(--caddie-on-surface);font-weight:700;font-size:16px;border-radius:12px!important;">@caddyInitStr</div>
+                        else
+                        {
+                            <div class="d-flex align-items-center justify-content-center" style="width:56px;height:56px;background:var(--caddie-surface-container-high);color:var(--caddie-on-surface);font-weight:700;font-size:16px;border-radius:12px;">@caddyInitStr</div>
+                        }
                         <div>
                             <div style="font-weight:800;font-size:16px;">@(Model.Rating.CaddieName ?? "—")</div>
                             <div class="d-flex align-items-center gap-1 mt-1">
+                                @{
+                                    var caddieStarCount = (int)Math.Floor(Model.Rating.CaddieRatingAvg);
+                                }
                                 @for (int i = 1; i <= 5; i++)
                                 {
-                                    if (i <= (int)Model.AvgSkillRating)
+                                    if (i <= caddieStarCount)
                                     {
-                                        <i class="fa fa-star" style="color:var(--caddie-primary);font-size:12px;"></i>
+                                        <i class="fa fa-star" style="color:#f59e0b;font-size:12px;"></i>
                                     }
                                     else
                                     {
                                         <i class="fa fa-star" style="color:#cbd5e1;font-size:12px;"></i>
                                     }
                                 }
-                                <span style="font-weight:700;font-size:12px;margin-left:4px;">@Model.AvgSkillRating</span>
+                                <span style="font-weight:700;font-size:12px;margin-left:4px;">@Model.Rating.CaddieRatingAvg.ToString("0.0")</span>
                             </div>
                         </div>
                     </div>
@@ -110,6 +138,18 @@
                         <div class="mb-2">
                             <span style="font-size:11px;color:var(--caddie-on-surface-variant);">Mã caddy</span>
                             <div style="font-weight:700;">@(Model.Rating.CaddieCode ?? "—")</div>
+                        </div>
+                        <div>
+                            <span style="font-size:11px;color:var(--caddie-on-surface-variant);">Số điện thoại</span>
+                            @{
+                                var caddiePhoneMasked = !string.IsNullOrEmpty(Model.Rating.CaddiePhone) && Model.Rating.CaddiePhone.Length >= 7
+                                    ? Model.Rating.CaddiePhone[..4] + " **** " + Model.Rating.CaddiePhone[^2..]
+                                    : (Model.Rating.CaddiePhone ?? "—");
+                            }
+                            <div class="rating-phone-hover" style="font-weight:700;cursor:pointer;" title="Hover để xem số đầy đủ"
+                                 data-masked="@caddiePhoneMasked" data-full="@(Model.Rating.CaddiePhone ?? "—")">
+                                @caddiePhoneMasked
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -131,6 +171,7 @@
                                     <div class="d-flex justify-content-between align-items-center">
                                         <div>
                                             <div style="font-weight:700;">@(detail.SkillName ?? "—")</div>
+                                            <div style="font-size:11px;color:var(--caddie-on-surface-variant);">@GetSkillNote(detail.SkillName)</div>
                                         </div>
                                         <div class="d-flex gap-1">
                                             @for (int i = 1; i <= 5; i++)
@@ -154,25 +195,23 @@
                     {
                         <p class="text-muted">Không có đánh giá kỹ năng chi tiết.</p>
                     }
-                </div>
-            </div>
 
-            <!-- Customer Comment -->
-            <div class="card mb-4" style="border:1px solid rgba(192,199,212,0.2);border-radius:16px;">
-                <div class="card-body p-4">
-                    <h6 style="font-weight:700;text-transform:uppercase;font-size:11px;color:var(--caddie-on-surface-variant);letter-spacing:0.05em;margin-bottom:16px;">NHẬN XÉT TỪ KHÁCH HÀNG</h6>
-                    @if (!string.IsNullOrEmpty(Model.Rating.Comment))
-                    {
-                        <div style="background:var(--caddie-surface-container-low);border-left:4px solid var(--caddie-primary);border-radius:0 12px 12px 0;padding:20px;">
-                            <p style="font-style:italic;color:var(--caddie-on-surface);font-size:15px;line-height:1.7;margin:0;">
-                                "@Model.Rating.Comment"
-                            </p>
-                        </div>
-                    }
-                    else
-                    {
-                        <p class="text-muted">— Không có nhận xét —</p>
-                    }
+                    <!-- Customer Comment -->
+                    <div class="mt-4 pt-4" style="border-top:1px solid rgba(192,199,212,0.2);">
+                        <h6 style="font-weight:700;text-transform:uppercase;font-size:11px;color:var(--caddie-on-surface-variant);letter-spacing:0.05em;margin-bottom:12px;">NHẬN XÉT TỪ KHÁCH HÀNG</h6>
+                        @if (!string.IsNullOrEmpty(Model.Rating.Comment))
+                        {
+                            <div style="background:var(--caddie-surface-container-low);border-left:4px solid var(--caddie-primary);border-radius:0 12px 12px 0;padding:20px;">
+                                <p style="font-style:italic;color:var(--caddie-on-surface);font-size:15px;line-height:1.7;margin:0;">
+                                    "@Model.Rating.Comment"
+                                </p>
+                            </div>
+                        }
+                        else
+                        {
+                            <p class="text-muted">— Không có nhận xét —</p>
+                        }
+                    </div>
                 </div>
             </div>
 
@@ -235,6 +274,29 @@
 
 @if (Model.CanEdit && Model.Rating.ApprovalStatus == 1)
 {
+    <!-- Reject Reason Modal for Detail page -->
+    <div class="modal fade" id="rejectReasonModalDetail" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content" style="border-radius:16px;border:none;">
+                <div class="modal-header" style="padding:24px 28px;border-bottom:1px solid rgba(192,199,212,0.15);">
+                    <div>
+                        <h5 class="modal-title" style="font-weight:800;font-size:18px;">Từ chối đánh giá</h5>
+                        <p style="font-size:13px;color:var(--caddie-on-surface-variant);margin:4px 0 0;">Vui lòng nhập lý do từ chối</p>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" style="padding:28px;">
+                    <label class="caddie-form-label">Lý do từ chối <span class="text-danger">*</span></label>
+                    <textarea id="rejectReasonDetailInput" class="form-control caddie-form-control" rows="4" style="resize:none;min-height:120px;" placeholder="Nhập lý do từ chối đánh giá..."></textarea>
+                </div>
+                <div class="modal-footer" style="padding:20px 28px;border-top:1px solid rgba(192,199,212,0.15);">
+                    <button type="button" class="btn btn-light px-4" data-bs-dismiss="modal" style="font-weight:700;">Hủy</button>
+                    <button type="button" class="btn btn-danger px-4" id="btnConfirmRejectDetail" style="font-weight:700;border-radius:8px;"><i class="fa fa-times me-1"></i> Xác nhận từ chối</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
         document.getElementById('btnApprovePage').addEventListener('click', function () {
             abp.message.confirm('Phê duyệt đánh giá này?', 'Xác nhận').then(function (confirmed) {
@@ -248,14 +310,50 @@
         });
 
         document.getElementById('btnRejectPage').addEventListener('click', function () {
-            abp.message.prompt('Nhập lý do từ chối:', 'Từ chối đánh giá').then(function (reason) {
-                if (reason) {
-                    genora.multiTenancy.appServices.caddies.caddieRating.approveReject('@Model.Rating.Id', { approvalStatus: 3, rejectReason: reason }).then(function () {
-                        abp.notify.success('Đã từ chối');
-                        window.location.reload();
-                    });
-                }
+            document.getElementById('rejectReasonDetailInput').value = '';
+            new bootstrap.Modal(document.getElementById('rejectReasonModalDetail')).show();
+        });
+
+        document.getElementById('btnConfirmRejectDetail').addEventListener('click', function () {
+            var reason = document.getElementById('rejectReasonDetailInput').value;
+            if (!reason) {
+                abp.notify.error('Vui lòng nhập lý do từ chối');
+                return;
+            }
+            genora.multiTenancy.appServices.caddies.caddieRating.approveReject('@Model.Rating.Id', { approvalStatus: 3, rejectReason: reason }).then(function () {
+                bootstrap.Modal.getInstance(document.getElementById('rejectReasonModalDetail')).hide();
+                abp.notify.success('Đã từ chối');
+                window.location.reload();
+            }).catch(function (err) {
+                abp.notify.error(err.message || 'Lỗi');
             });
         });
     </script>
+}
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        document.querySelectorAll('.rating-phone-hover').forEach(function (el) {
+            var masked = el.getAttribute('data-masked') || '';
+            var full = el.getAttribute('data-full') || '';
+            el.addEventListener('mouseenter', function () { el.textContent = full; });
+            el.addEventListener('mouseleave', function () { el.textContent = masked; });
+        });
+    });
+</script>
+
+@functions {
+    string GetSkillNote(string? skillName)
+    {
+        if (string.IsNullOrEmpty(skillName)) return "";
+        return skillName.ToLower() switch
+        {
+            "đọc line" => "Khả năng phán đoán đường bóng",
+            "tư vấn gậy" => "Am hiểu kỹ thuật & địa hình",
+            "thái độ" or "thái độ làm việc" => "Phục vụ & Giao tiếp",
+            "giao tiếp" => "Kỹ năng giao tiếp với khách",
+            "hiểu biết địa hình" or "chuyên môn" => "Luật chơi & Hỗ trợ trận đấu",
+            _ => ""
+        };
+    }
 }

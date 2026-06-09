@@ -4,9 +4,12 @@ using System.Linq;
 using System.Threading.Tasks;
 using Genora.MultiTenancy.AppDtos.Caddies;
 using Genora.MultiTenancy.DomainModels.AppCaddie;
+using Genora.MultiTenancy.DomainModels.AppCustomers;
 using Genora.MultiTenancy.DomainModels.AppGolfCourses;
 using Genora.MultiTenancy.Enums;
+using Genora.MultiTenancy.Helpers;
 using Genora.MultiTenancy.Localization;
+using Microsoft.Extensions.Configuration;
 using Volo.Abp;
 using Volo.Abp.Application.Services;
 using Volo.Abp.Domain.Repositories;
@@ -27,8 +30,10 @@ public class MiniAppCaddieAppService : ApplicationService
     private readonly IRepository<AppCaddieRating, Guid> _ratingRepo;
     private readonly IRepository<AppCaddieRatingDetail, Guid> _ratingDetailRepo;
     private readonly IRepository<AppCaddieSkill, Guid> _skillRepo;
+    private readonly IRepository<Customer, Guid> _customerRepo;
     private readonly IGuidGenerator _guidGenerator;
     private readonly ICurrentUser _currentUser;
+    private readonly IConfiguration _configuration;
 
     public MiniAppCaddieAppService(
         IRepository<AppCaddie, Guid> caddieRepo,
@@ -40,8 +45,10 @@ public class MiniAppCaddieAppService : ApplicationService
         IRepository<AppCaddieRating, Guid> ratingRepo,
         IRepository<AppCaddieRatingDetail, Guid> ratingDetailRepo,
         IRepository<AppCaddieSkill, Guid> skillRepo,
+        IRepository<Customer, Guid> customerRepo,
         IGuidGenerator guidGenerator,
-        ICurrentUser currentUser)
+        ICurrentUser currentUser,
+        IConfiguration configuration)
     {
         _caddieRepo = caddieRepo;
         _caddieLanguageRepo = caddieLanguageRepo;
@@ -52,8 +59,10 @@ public class MiniAppCaddieAppService : ApplicationService
         _ratingRepo = ratingRepo;
         _ratingDetailRepo = ratingDetailRepo;
         _skillRepo = skillRepo;
+        _customerRepo = customerRepo;
         _guidGenerator = guidGenerator;
         _currentUser = currentUser;
+        _configuration = configuration;
         LocalizationResource = typeof(MultiTenancyResource);
     }
 
@@ -108,7 +117,7 @@ public class MiniAppCaddieAppService : ApplicationService
                 Id = x.Id,
                 CaddieCode = x.CaddieCode,
                 CaddieName = x.CaddieName,
-                Avatar = x.Avatar,
+                Avatar = ResolveAvatarUrl(x.Avatar),
                 Gender = x.Gender,
                 GenderText = x.Gender switch
                 {
@@ -184,7 +193,7 @@ public class MiniAppCaddieAppService : ApplicationService
             Id = caddie.Id,
             CaddieCode = caddie.CaddieCode,
             CaddieName = caddie.CaddieName,
-            Avatar = caddie.Avatar,
+            Avatar = ResolveAvatarUrl(caddie.Avatar),
             Gender = caddie.Gender,
             GenderText = caddie.Gender switch
             {
@@ -220,8 +229,19 @@ public class MiniAppCaddieAppService : ApplicationService
     /// <summary>
     /// POST đặt caddie
     /// </summary>
-    public async Task<MiniAppCaddieBookingHistoryDto> CreateBookingAsync(MiniAppCreateCaddieBookingDto input, Guid customerId, string customerName, string phone)
+    public async Task<MiniAppCaddieBookingHistoryDto> CreateBookingAsync(MiniAppCreateCaddieBookingDto input)
     {
+        // Look up customer from DB
+        if (input.CustomerId == Guid.Empty)
+            throw new AbpValidationException("CustomerId không hợp lệ.");
+
+        var customer = await _customerRepo.FindAsync(input.CustomerId);
+        if (customer == null)
+            throw new AbpValidationException("Không tìm thấy thông tin khách hàng.");
+
+        var customerName = customer.FullName;
+        var phone = customer.PhoneNumber;
+
         // Validate caddie
         var caddie = await _caddieRepo.GetAsync(input.CaddieId);
         if (caddie.Status != (byte)CaddieStatus.Active)
@@ -250,7 +270,7 @@ public class MiniAppCaddieAppService : ApplicationService
         var booking = new AppCaddieBooking
         {
             BookingCode = bookingCode,
-            CustomerId = customerId,
+            CustomerId = input.CustomerId,
             CustomerName = customerName,
             Phone = phone,
             GolfCourseId = caddie.GolfCourseId ?? Guid.Empty,
@@ -277,7 +297,7 @@ public class MiniAppCaddieAppService : ApplicationService
             Id = booking.Id,
             BookingCode = booking.BookingCode,
             CaddieName = caddie.CaddieName,
-            CaddieAvatar = caddie.Avatar,
+            CaddieAvatar = ResolveAvatarUrl(caddie.Avatar),
             BookingDate = booking.BookingDate,
             StartTime = booking.StartTime,
             NumberOfHoles = booking.NumberOfHoles,
@@ -324,7 +344,7 @@ public class MiniAppCaddieAppService : ApplicationService
                 Id = x.Id,
                 BookingCode = x.BookingCode,
                 CaddieName = caddie?.CaddieName ?? "—",
-                CaddieAvatar = caddie?.Avatar,
+                CaddieAvatar = ResolveAvatarUrl(caddie?.Avatar),
                 BookingDate = x.BookingDate,
                 StartTime = x.StartTime,
                 NumberOfHoles = x.NumberOfHoles,
@@ -352,12 +372,20 @@ public class MiniAppCaddieAppService : ApplicationService
     /// <summary>
     /// POST đánh giá caddie
     /// </summary>
-    public async Task CreateRatingAsync(MiniAppCreateCaddieRatingDto input, Guid customerId)
+    public async Task CreateRatingAsync(MiniAppCreateCaddieRatingDto input)
     {
+        // Validate customer
+        if (input.CustomerId == Guid.Empty)
+            throw new AbpValidationException("CustomerId không hợp lệ.");
+
+        var customer = await _customerRepo.FindAsync(input.CustomerId);
+        if (customer == null)
+            throw new AbpValidationException("Không tìm thấy thông tin khách hàng.");
+
         // Validate booking
         var booking = await _bookingRepo.GetAsync(input.BookingId);
 
-        if (booking.CustomerId != customerId)
+        if (booking.CustomerId != input.CustomerId)
             throw new AbpValidationException("Bạn không có quyền đánh giá booking này.");
 
         if (booking.Status != (byte)CaddieBookingStatus.Completed)
@@ -378,7 +406,7 @@ public class MiniAppCaddieAppService : ApplicationService
         var rating = new AppCaddieRating
         {
             BookingId = input.BookingId,
-            CustomerId = customerId,
+            CustomerId = input.CustomerId,
             CaddieId = booking.CaddieId,
             OverallRating = input.OverallRating,
             Comment = input.Comment,
@@ -428,4 +456,8 @@ public class MiniAppCaddieAppService : ApplicationService
         (byte)CaddieVoiceRegion.South => "Miền Nam",
         _ => "Khác"
     };
+
+    /// <summary>Resolve avatar path to full URL using App:AppUrl config</summary>
+    private string? ResolveAvatarUrl(string? url)
+        => ImageHelper.NormalizeThumb(_configuration, url);
 }

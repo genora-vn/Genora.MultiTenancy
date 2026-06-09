@@ -5,6 +5,7 @@ using System.Linq.Dynamic.Core;
 using System.Threading.Tasks;
 using Genora.MultiTenancy.AppDtos.Caddies;
 using Genora.MultiTenancy.DomainModels.AppCaddie;
+using Genora.MultiTenancy.DomainModels.AppCustomers;
 using Genora.MultiTenancy.Enums;
 using Genora.MultiTenancy.Features.Caddie;
 using Genora.MultiTenancy.Localization;
@@ -28,6 +29,7 @@ public class CaddieRatingAppService : ApplicationService
     private readonly IRepository<AppCaddie, Guid> _caddieRepo;
     private readonly IRepository<AppCaddieBooking, Guid> _bookingRepo;
     private readonly IRepository<AppCaddieSkill, Guid> _skillRepo;
+    private readonly IRepository<Customer, Guid> _customerRepo;
     private readonly ICurrentTenant _currentTenant;
     private readonly IFeatureChecker _featureChecker;
 
@@ -37,6 +39,7 @@ public class CaddieRatingAppService : ApplicationService
         IRepository<AppCaddie, Guid> caddieRepo,
         IRepository<AppCaddieBooking, Guid> bookingRepo,
         IRepository<AppCaddieSkill, Guid> skillRepo,
+        IRepository<Customer, Guid> customerRepo,
         ICurrentTenant currentTenant,
         IFeatureChecker featureChecker)
     {
@@ -45,6 +48,7 @@ public class CaddieRatingAppService : ApplicationService
         _caddieRepo = caddieRepo;
         _bookingRepo = bookingRepo;
         _skillRepo = skillRepo;
+        _customerRepo = customerRepo;
         _currentTenant = currentTenant;
         _featureChecker = featureChecker;
         LocalizationResource = typeof(MultiTenancyResource);
@@ -96,6 +100,22 @@ public class CaddieRatingAppService : ApplicationService
         if (input.ApprovalStatus.HasValue)
             query = query.Where(x => x.ApprovalStatus == input.ApprovalStatus.Value);
 
+        // Filter by star rating
+        if (input.OverallRating.HasValue)
+        {
+            var ratingFilter = input.OverallRating.Value;
+            if (ratingFilter == 2)
+            {
+                // "Dưới 3 sao" → OverallRating < 3
+                query = query.Where(x => x.OverallRating < 3);
+            }
+            else
+            {
+                // Exact star value (3, 4, 5)
+                query = query.Where(x => x.OverallRating == ratingFilter);
+            }
+        }
+
         if (input.FromDate.HasValue)
             query = query.Where(x => x.CreationTime >= input.FromDate.Value);
 
@@ -104,15 +124,23 @@ public class CaddieRatingAppService : ApplicationService
 
         var totalCount = await AsyncExecuter.CountAsync(query);
 
-        var sorting = input.Sorting.IsNullOrWhiteSpace() ? "CreationTime DESC" : input.Sorting;
+        // Only allow sorting by properties that exist on AppCaddieRating entity
+        var allowedSortFields = new[] { "CreationTime", "OverallRating", "ApprovalStatus", "CaddieId", "CustomerId" };
+        var sorting = "CreationTime DESC";
+        if (!input.Sorting.IsNullOrWhiteSpace())
+        {
+            var sortField = input.Sorting.Split(' ')[0];
+            if (allowedSortFields.Any(f => f.Equals(sortField, StringComparison.OrdinalIgnoreCase)))
+                sorting = input.Sorting;
+        }
         var items = await AsyncExecuter.ToListAsync(
             query.OrderBy(sorting).Skip(input.SkipCount).Take(input.MaxResultCount));
 
-        // Load caddie names
+        // Load caddie names + avatars
         var caddieIds = items.Select(x => x.CaddieId).Distinct().ToList();
         var caddieQuery = (await _caddieRepo.GetQueryableAsync())
             .Where(x => caddieIds.Contains(x.Id))
-            .Select(x => new { x.Id, x.CaddieName, x.CaddieCode });
+            .Select(x => new { x.Id, x.CaddieName, x.CaddieCode, x.Avatar, x.RatingAvg, x.Phone });
         var caddies = await AsyncExecuter.ToListAsync(caddieQuery);
 
         // Load booking info
@@ -122,10 +150,32 @@ public class CaddieRatingAppService : ApplicationService
             .Select(x => new { x.Id, x.BookingCode, x.BookingDate, x.StartTime, x.CustomerName });
         var bookings = await AsyncExecuter.ToListAsync(bookingQuery);
 
+        // Load customer avatars
+        var customerIds = items.Select(x => x.CustomerId).Distinct().ToList();
+        var customerQuery = (await _customerRepo.GetQueryableAsync())
+            .Where(x => customerIds.Contains(x.Id))
+            .Select(x => new { x.Id, x.AvatarUrl });
+        var customers = await AsyncExecuter.ToListAsync(customerQuery);
+
+        // Load rating details to compute actual average per rating
+        var ratingIds = items.Select(x => x.Id).ToList();
+        var ratingDetailQuery = (await _ratingDetailRepo.GetQueryableAsync())
+            .Where(x => ratingIds.Contains(x.RatingId))
+            .Select(x => new { x.RatingId, x.Score });
+        var allRatingDetails = await AsyncExecuter.ToListAsync(ratingDetailQuery);
+
         var dtos = items.Select(x =>
         {
             var caddie = caddies.FirstOrDefault(c => c.Id == x.CaddieId);
             var booking = bookings.FirstOrDefault(b => b.Id == x.BookingId);
+            var customer = customers.FirstOrDefault(c => c.Id == x.CustomerId);
+
+            // Compute actual rating from skill details (not from OverallRating which may be inaccurate)
+            var details = allRatingDetails.Where(d => d.RatingId == x.Id).ToList();
+            var computedRating = details.Count > 0
+                ? Math.Round((decimal)details.Average(d => d.Score), 1)
+                : (decimal)x.OverallRating;
+
             return new CaddieRatingDto
             {
                 Id = x.Id,
@@ -133,10 +183,15 @@ public class CaddieRatingAppService : ApplicationService
                 BookingCode = booking?.BookingCode,
                 CustomerId = x.CustomerId,
                 CustomerName = booking?.CustomerName,
+                CustomerAvatar = customer?.AvatarUrl,
                 CaddieId = x.CaddieId,
                 CaddieName = caddie?.CaddieName,
                 CaddieCode = caddie?.CaddieCode,
-                OverallRating = x.OverallRating,
+                CaddieAvatar = caddie?.Avatar,
+                CaddiePhone = caddie?.Phone,
+                CaddieRatingAvg = caddie?.RatingAvg ?? 0,
+                OverallRating = (int)Math.Round(computedRating),
+                ComputedRating = computedRating,
                 Comment = x.Comment,
                 ApprovalStatus = x.ApprovalStatus,
                 ApprovalStatusText = GetApprovalStatusText(x.ApprovalStatus),
@@ -162,6 +217,15 @@ public class CaddieRatingAppService : ApplicationService
         var caddie = await _caddieRepo.GetAsync(rating.CaddieId);
         var booking = await _bookingRepo.GetAsync(rating.BookingId);
 
+        // Load customer avatar
+        string? customerAvatar = null;
+        try
+        {
+            var customer = await _customerRepo.FindAsync(rating.CustomerId);
+            customerAvatar = customer?.AvatarUrl;
+        }
+        catch { /* customer may not exist */ }
+
         // Load details
         var detailQuery = (await _ratingDetailRepo.GetQueryableAsync())
             .Where(x => x.RatingId == id);
@@ -174,6 +238,11 @@ public class CaddieRatingAppService : ApplicationService
             .Select(x => new { x.Id, x.SkillName });
         var skills = await AsyncExecuter.ToListAsync(skillQuery);
 
+        // Compute actual rating from skill details
+        var computedRating = details.Count > 0
+            ? Math.Round((decimal)details.Average(d => d.Score), 1)
+            : (decimal)rating.OverallRating;
+
         return new CaddieRatingDto
         {
             Id = rating.Id,
@@ -181,10 +250,15 @@ public class CaddieRatingAppService : ApplicationService
             BookingCode = booking.BookingCode,
             CustomerId = rating.CustomerId,
             CustomerName = booking.CustomerName,
+            CustomerAvatar = customerAvatar,
             CaddieId = rating.CaddieId,
             CaddieName = caddie.CaddieName,
             CaddieCode = caddie.CaddieCode,
-            OverallRating = rating.OverallRating,
+            CaddieAvatar = caddie.Avatar,
+            CaddiePhone = caddie.Phone,
+            CaddieRatingAvg = caddie.RatingAvg,
+            OverallRating = (int)Math.Round(computedRating),
+            ComputedRating = computedRating,
             Comment = rating.Comment,
             ApprovalStatus = rating.ApprovalStatus,
             ApprovalStatusText = GetApprovalStatusText(rating.ApprovalStatus),

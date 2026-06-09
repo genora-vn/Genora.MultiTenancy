@@ -12,19 +12,25 @@ $(function () {
         ratingService.getList({ maxResultCount: 1, approvalStatus: 1 }).then(function (res) {
             $('#kpiPendingRatings').text(res.totalCount.toLocaleString());
         });
-        ratingService.getList({ maxResultCount: 100, approvalStatus: 2 }).then(function (res) {
+        // Rating avg: fetch ALL approved ratings, compute avg from overallRating
+        ratingService.getList({ maxResultCount: 500, approvalStatus: 2 }).then(function (res) {
             if (res.items.length > 0) {
                 var sum = 0;
                 res.items.forEach(function (r) { sum += r.overallRating; });
-                var avg = (sum / res.items.length).toFixed(1);
+                // Divide by TOTAL count (including approved) not just items loaded
+                var avg = (sum / res.totalCount).toFixed(1);
                 $('#kpiAvgRating').text(avg + ' / 5.0');
                 var starsHtml = '';
+                var filledStars = Math.floor(parseFloat(avg));
                 for (var i = 1; i <= 5; i++) {
-                    starsHtml += i <= Math.round(parseFloat(avg))
-                        ? '<i class="fa fa-star" style="color:var(--caddie-primary);font-size:12px;"></i>'
+                    starsHtml += i <= filledStars
+                        ? '<i class="fa fa-star" style="color:#f59e0b;font-size:12px;"></i>'
                         : '<i class="fa fa-star" style="color:#cbd5e1;font-size:12px;"></i>';
                 }
                 $('#kpiAvgStars').html(starsHtml);
+            } else {
+                $('#kpiAvgRating').text('0.0 / 5.0');
+                $('#kpiAvgStars').html('');
             }
         });
     }
@@ -36,15 +42,14 @@ $(function () {
     }
 
     function renderStars(rating, size) {
-        size = size || '12px';
+        size = size || '13px';
         var stars = '';
-        var fullStars = Math.floor(rating);
-        var hasHalf = (rating - fullStars) >= 0.25 && (rating - fullStars) < 0.75;
-        var emptyFrom = hasHalf ? fullStars + 1 : fullStars;
+        var filled = Math.floor(rating);
         for (var i = 1; i <= 5; i++) {
-            if (i <= fullStars) stars += '<i class="fa fa-star" style="color:var(--caddie-primary);font-size:' + size + ';"></i>';
-            else if (i === fullStars + 1 && hasHalf) stars += '<i class="fa fa-star-half-alt" style="color:var(--caddie-primary);font-size:' + size + ';"></i>';
-            else stars += '<i class="fa fa-star" style="color:#cbd5e1;font-size:' + size + ';"></i>';
+            if (i <= filled)
+                stars += '<i class="fa fa-star" style="color:#f59e0b;font-size:' + size + ';"></i>';
+            else
+                stars += '<i class="fa fa-star" style="color:#cbd5e1;font-size:' + size + ';"></i>';
         }
         return stars;
     }
@@ -59,7 +64,8 @@ $(function () {
                 return {
                     filter: $('#RatingCaddyFilter').val() || undefined,
                     customerFilter: $('#RatingGolferFilter').val() || undefined,
-                    approvalStatus: $('#RatingApprovalFilter').val() || undefined
+                    approvalStatus: $('#RatingApprovalFilter').val() || undefined,
+                    overallRating: $('#RatingScoreFilter').val() || undefined
                 };
             }),
             columnDefs: [
@@ -106,17 +112,26 @@ $(function () {
                     title: 'Caddy được đánh giá',
                     data: 'caddieName',
                     render: function (data, type, row) {
-                        var initials = getInitials(data);
-                        return '<div class="d-flex align-items-center gap-2">' +
-                            '<span class="d-inline-flex align-items-center justify-content-center rounded-circle" style="width:28px;height:28px;background:var(--caddie-surface-container-high);font-size:10px;font-weight:700;">' + initials + '</span>' +
+                        var avatarHtml = '';
+                        if (row.caddieAvatar) {
+                            avatarHtml = '<img src="' + row.caddieAvatar + '" style="width:28px;height:28px;border-radius:50%;object-fit:cover;" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'flex\';" />' +
+                                '<span class="d-none align-items-center justify-content-center rounded-circle" style="width:28px;height:28px;background:var(--caddie-surface-container-high);font-size:10px;font-weight:700;">' + getInitials(data) + '</span>';
+                        } else {
+                            avatarHtml = '<span class="d-inline-flex align-items-center justify-content-center rounded-circle" style="width:28px;height:28px;background:var(--caddie-surface-container-high);font-size:10px;font-weight:700;">' + getInitials(data) + '</span>';
+                        }
+                        return '<div class="d-flex align-items-center gap-2">' + avatarHtml +
                             '<span style="font-size:13px;font-weight:600;">' + (data || '—') + '</span></div>';
                     }
                 },
                 {
                     title: 'Rating',
-                    data: 'overallRating',
-                    render: function (data) {
-                        return renderStars(data);
+                    data: 'computedRating',
+                    render: function (data, type, row) {
+                        var rating = parseFloat(data || 0);
+                        if (!rating || rating === 0) {
+                            return '<span style="color:#9ca3af;font-size:12px;">Chưa đánh giá</span>';
+                        }
+                        return renderStars(rating) + ' <strong style="font-size:11px;margin-left:3px;">' + rating.toFixed(1) + '</strong>';
                     }
                 },
                 {
@@ -134,9 +149,10 @@ $(function () {
         })
     );
 
-    // Search
+    // Search + score filter
     $('#BtnSearch').click(function () { dataTable.ajax.reload(); });
     $('#RatingCaddyFilter, #RatingGolferFilter').on('keypress', function (e) { if (e.which === 13) dataTable.ajax.reload(); });
+    $('#RatingScoreFilter').change(function () { dataTable.ajax.reload(); });
 
     // Quick view detail modal
     $(document).on('click', '.rating-action-detail', function () {
@@ -145,13 +161,29 @@ $(function () {
         ratingService.get(id).then(function (dto) {
             $('#detailRatingCode').text('#' + (dto.bookingCode || dto.id.substring(0, 8)));
             $('#detailCustomerName').text(dto.customerName || '—');
-            $('#detailGolferInitials').text(getInitials(dto.customerName));
             $('#detailCaddyName').text(dto.caddieName || '—');
             $('#detailCaddyCode').text(dto.caddieCode || '—');
-            $('#detailCaddyInitials').text(getInitials(dto.caddieName));
+
+            // Golfer avatar
+            if (dto.customerAvatar) {
+                $('#detailGolferAvatar').attr('src', dto.customerAvatar).css('display', 'block');
+                $('#detailGolferInitials').css('display', 'none');
+            } else {
+                $('#detailGolferAvatar').css('display', 'none');
+                $('#detailGolferInitials').text(getInitials(dto.customerName)).css('display', 'flex');
+            }
+
+            // Caddy avatar
+            if (dto.caddieAvatar) {
+                $('#detailCaddyAvatar').attr('src', dto.caddieAvatar).css('display', 'block');
+                $('#detailCaddyInitials').css('display', 'none');
+            } else {
+                $('#detailCaddyAvatar').css('display', 'none');
+                $('#detailCaddyInitials').text(getInitials(dto.caddieName)).css('display', 'flex');
+            }
 
             var playDate = dto.bookingDate ? luxon.DateTime.fromISO(dto.bookingDate).toFormat('dd/MM/yyyy') : '—';
-            var playTime = dto.bookingStartTime ? dto.bookingStartTime.substring(0, 5) : '—';
+            var playTime = dto.bookingStartTime ? (typeof dto.bookingStartTime === 'string' ? dto.bookingStartTime.substring(0, 5) : '—') : '—';
             $('#detailPlayDate').text(playDate);
             $('#detailPlayTime').text(playTime);
 
@@ -163,7 +195,7 @@ $(function () {
                 avgRating = sum / dto.details.length;
             }
 
-            // Overall stars (from skills avg)
+            // Overall stars
             var overallHtml = renderStars(avgRating, '16px');
             overallHtml += ' <strong style="margin-left:4px;">' + avgRating.toFixed(1) + '</strong>';
             $('#detailOverallStars').html(overallHtml);

@@ -49,7 +49,7 @@ $(function () {
                     title: 'Tên Caddy',
                     data: 'caddieName',
                     render: function (data, type, row) {
-                        var avatar = row.avatar || '/images/default-avatar.png';
+                        var avatar = (row.avatar && row.avatar.trim()) ? row.avatar : '/images/default-avatar.png';
                         return '<div class="caddie-name-cell">' +
                             '<img src="' + avatar + '" class="caddie-avatar" onerror="this.src=\'/images/default-avatar.png\'" />' +
                             '<span class="caddie-name">' + data + '</span></div>';
@@ -88,14 +88,19 @@ $(function () {
                     title: 'Đánh giá sao',
                     data: 'ratingAvg',
                     render: function (data) {
+                        // floor-based: 4.1 → 4 filled, 0.0 → 0 filled
+                        var filled = Math.floor(data || 0);
                         var stars = '';
-                        var rating = Math.round(data * 2) / 2;
                         for (var i = 1; i <= 5; i++) {
-                            if (i <= rating) stars += '<i class="fa fa-star caddie-stars"></i>';
-                            else if (i - 0.5 <= rating) stars += '<i class="fa fa-star-half-alt caddie-stars"></i>';
-                            else stars += '<i class="fa fa-star caddie-stars star-empty"></i>';
+                            if (i <= filled)
+                                stars += '<i class="fa fa-star" style="color:#f59e0b;font-size:13px;"></i>';
+                            else
+                                stars += '<i class="fa fa-star" style="color:#cbd5e1;font-size:13px;"></i>';
                         }
-                        return stars;
+                        var label = data > 0
+                            ? ' <span style="font-size:11px;color:var(--caddie-on-surface-variant);margin-left:2px;">' + parseFloat(data).toFixed(1) + '</span>'
+                            : '';
+                        return '<span title="' + parseFloat(data).toFixed(1) + '/5">' + stars + label + '</span>';
                     }
                 },
                 {

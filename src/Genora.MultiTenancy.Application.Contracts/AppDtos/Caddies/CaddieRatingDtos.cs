@@ -14,7 +14,12 @@ public class CaddieRatingDto : EntityDto<Guid>
     public Guid CaddieId { get; set; }
     public string? CaddieName { get; set; }
     public string? CaddieCode { get; set; }
+    public string? CaddieAvatar { get; set; }
+    public string? CaddiePhone { get; set; }
+    public decimal CaddieRatingAvg { get; set; }
     public int OverallRating { get; set; }
+    /// <summary>Actual computed rating avg from skill details (decimal, e.g. 2.5)</summary>
+    public decimal ComputedRating { get; set; }
     public string? Comment { get; set; }
     public byte ApprovalStatus { get; set; }
     public string? ApprovalStatusText { get; set; }
@@ -38,6 +43,8 @@ public class GetCaddieRatingListInput : PagedAndSortedResultRequestDto
 {
     public Guid? CaddieId { get; set; }
     public byte? ApprovalStatus { get; set; }
+    /// <summary>Filter by star rating (e.g. 5=5 stars, 4=4 stars, 3=3 stars, 2=below 3 stars)</summary>
+    public int? OverallRating { get; set; }
     public DateTime? FromDate { get; set; }
     public DateTime? ToDate { get; set; }
     /// <summary>Filter by caddie name/code</summary>

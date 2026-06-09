@@ -29,6 +29,8 @@ public class CaddieBookingDto : EntityDto<Guid>
     public DateTime? CheckinTime { get; set; }
     public string? CancelReason { get; set; }
     public DateTime CreationTime { get; set; }
+    /// <summary>Average rating for this booking (from CaddieRating details). Null if not rated.</summary>
+    public decimal? BookingRatingAvg { get; set; }
 }
 
 public class GetCaddieBookingListInput : PagedAndSortedResultRequestDto

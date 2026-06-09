@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Dynamic.Core;
 using System.Threading.Tasks;
@@ -26,6 +27,8 @@ public class CaddieBookingAppService : ApplicationService
     private readonly IRepository<AppCaddieBooking, Guid> _bookingRepo;
     private readonly IRepository<AppCaddie, Guid> _caddieRepo;
     private readonly IRepository<AppCaddieSchedule, Guid> _scheduleRepo;
+    private readonly IRepository<AppCaddieRating, Guid> _ratingRepo;
+    private readonly IRepository<AppCaddieRatingDetail, Guid> _ratingDetailRepo;
     private readonly ICurrentTenant _currentTenant;
     private readonly IFeatureChecker _featureChecker;
     private readonly IGuidGenerator _guidGenerator;
@@ -34,6 +37,8 @@ public class CaddieBookingAppService : ApplicationService
         IRepository<AppCaddieBooking, Guid> bookingRepo,
         IRepository<AppCaddie, Guid> caddieRepo,
         IRepository<AppCaddieSchedule, Guid> scheduleRepo,
+        IRepository<AppCaddieRating, Guid> ratingRepo,
+        IRepository<AppCaddieRatingDetail, Guid> ratingDetailRepo,
         ICurrentTenant currentTenant,
         IFeatureChecker featureChecker,
         IGuidGenerator guidGenerator)
@@ -41,6 +46,8 @@ public class CaddieBookingAppService : ApplicationService
         _bookingRepo = bookingRepo;
         _caddieRepo = caddieRepo;
         _scheduleRepo = scheduleRepo;
+        _ratingRepo = ratingRepo;
+        _ratingDetailRepo = ratingDetailRepo;
         _currentTenant = currentTenant;
         _featureChecker = featureChecker;
         _guidGenerator = guidGenerator;
@@ -105,10 +112,34 @@ public class CaddieBookingAppService : ApplicationService
             .Select(x => new { x.Id, x.CaddieName, x.CaddieCode });
         var caddies = await AsyncExecuter.ToListAsync(caddieQuery);
 
+        // Load ratings for these bookings (to compute per-booking rating avg)
+        var bookingIds = items.Select(x => x.Id).ToList();
+        var ratingsQuery = (await _ratingRepo.GetQueryableAsync())
+            .Where(x => bookingIds.Contains(x.BookingId))
+            .Select(x => new { x.Id, x.BookingId });
+        var ratings = await AsyncExecuter.ToListAsync(ratingsQuery);
+
+        var ratingIds = ratings.Select(r => r.Id).ToList();
+        var detailsQuery = (await _ratingDetailRepo.GetQueryableAsync())
+            .Where(x => ratingIds.Contains(x.RatingId))
+            .Select(x => new { x.RatingId, x.Score });
+        var allDetails = await AsyncExecuter.ToListAsync(detailsQuery);
+
+        // Build a map: BookingId → avg score from all detail scores of that booking's rating(s)
+        var bookingRatingMap = new Dictionary<Guid, decimal>();
+        foreach (var rating in ratings)
+        {
+            var details = allDetails.Where(d => d.RatingId == rating.Id).ToList();
+            if (details.Count > 0)
+                bookingRatingMap[rating.BookingId] = Math.Round((decimal)details.Average(d => d.Score), 1);
+        }
+
         var dtos = items.Select(x =>
         {
             var caddie = caddies.FirstOrDefault(c => c.Id == x.CaddieId);
-            return MapToDto(x, caddie?.CaddieName, caddie?.CaddieCode);
+            var dto = MapToDto(x, caddie?.CaddieName, caddie?.CaddieCode);
+            dto.BookingRatingAvg = bookingRatingMap.TryGetValue(x.Id, out var avg) ? avg : (decimal?)null;
+            return dto;
         }).ToList();
 
         return new PagedResultDto<CaddieBookingDto>(totalCount, dtos);
@@ -176,6 +207,53 @@ public class CaddieBookingAppService : ApplicationService
         var booking = await _bookingRepo.GetAsync(id);
         await ReleaseScheduleSlotAsync(booking.ScheduleId);
         await _bookingRepo.DeleteAsync(id);
+    }
+
+    public async Task ChangeCaddyAsync(Guid bookingId, Guid newCaddieId, string? note)
+    {
+        await EnsureFeatureAsync();
+        await AuthorizationService.CheckAsync(
+            P(MultiTenancyPermissions.AppCaddieBookings.Edit, MultiTenancyPermissions.HostAppCaddieBookings.Edit));
+
+        var booking = await _bookingRepo.GetAsync(bookingId);
+
+        if (booking.Status == (byte)CaddieBookingStatus.Completed || booking.Status == (byte)CaddieBookingStatus.Cancelled)
+            throw new UserFriendlyException("Không thể đổi Caddy cho booking đã hoàn thành hoặc đã hủy.");
+
+        if (booking.CaddieId == newCaddieId)
+            throw new UserFriendlyException("Caddy mới phải khác Caddy hiện tại.");
+
+        var newCaddie = await _caddieRepo.GetAsync(newCaddieId);
+        if (newCaddie.Status != (byte)CaddieStatus.Active)
+            throw new UserFriendlyException("Caddy mới không khả dụng.");
+
+        // Release old schedule slot
+        await ReleaseScheduleSlotAsync(booking.ScheduleId);
+
+        // Find available slot for new caddie
+        var newScheduleQuery = (await _scheduleRepo.GetQueryableAsync())
+            .Where(x => x.CaddieId == newCaddieId
+                && x.WorkDate == booking.BookingDate
+                && x.SlotStatus == (byte)CaddieSlotStatus.Available
+                && x.StartTime <= booking.StartTime
+                && x.EndTime > booking.StartTime);
+        var newSchedule = await AsyncExecuter.FirstOrDefaultAsync(newScheduleQuery);
+
+        if (newSchedule == null)
+            throw new UserFriendlyException("Caddy mới không có lịch trống vào thời gian này. Vui lòng tạo lịch trước.");
+
+        // Update booking
+        booking.CaddieId = newCaddieId;
+        booking.ScheduleId = newSchedule.Id;
+        if (!string.IsNullOrWhiteSpace(note))
+            booking.Note = (booking.Note ?? "") + $"\n[Đổi caddy: {note}]";
+
+        await _bookingRepo.UpdateAsync(booking, autoSave: true);
+
+        // Lock new schedule slot
+        newSchedule.SlotStatus = (byte)CaddieSlotStatus.Booked;
+        newSchedule.BookingId = booking.Id;
+        await _scheduleRepo.UpdateAsync(newSchedule, autoSave: true);
     }
 
     private void ValidateStatusTransition(byte currentStatus, byte newStatus)

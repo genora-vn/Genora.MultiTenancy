@@ -434,14 +434,14 @@ public class MiniAppController : MultiTenancyController
 
     /// <summary>
     /// GET danh sách caddie available theo ngày + giờ
-    /// GET /api/mini-app/caddie/available?bookingDate=2026-06-10&startTime=08:00
+    /// GET /api/mini-app/caddie/available?bookingDate=2026-06-10&amp;startTime=08:00
     /// </summary>
     [HttpGet("caddie/available")]
     [AllowAnonymous]
-    public async Task<IActionResult> GetAvailableCaddies([FromQuery] DateTime bookingDate, [FromQuery] TimeSpan? startTime)
+    public async Task<MiniAppCaddieListResponse> GetAvailableCaddies([FromQuery] DateTime bookingDate, [FromQuery] TimeSpan? startTime)
     {
         var result = await _miniCaddie.GetAvailableCaddiesAsync(bookingDate, startTime);
-        return Ok(result);
+        return new MiniAppCaddieListResponse { Error = 0, Message = "Success", Data = result };
     }
 
     /// <summary>
@@ -450,38 +450,23 @@ public class MiniAppController : MultiTenancyController
     /// </summary>
     [HttpGet("caddie/{id}")]
     [AllowAnonymous]
-    public async Task<IActionResult> GetCaddieDetail(Guid id)
+    public async Task<MiniAppCaddieDetailResponse> GetCaddieDetail(Guid id)
     {
         var result = await _miniCaddie.GetCaddieDetailAsync(id);
-        return Ok(result);
+        return new MiniAppCaddieDetailResponse { Error = 0, Message = "Success", Data = result };
     }
 
     /// <summary>
     /// POST đặt caddie
     /// POST /api/mini-app/caddie/booking
-    /// Body: { caddieId, bookingDate, startTime, numberOfHoles, note }
-    /// Header: X-Customer-Id, X-Customer-Name, X-Customer-Phone (từ Mini App user context)
+    /// Body: { customerId, caddieId, bookingDate, startTime, numberOfHoles, note }
     /// </summary>
     [HttpPost("caddie/booking")]
     [AllowAnonymous]
-    public async Task<IActionResult> CreateCaddieBooking([FromBody] MiniAppCreateCaddieBookingDto input, CancellationToken ct)
+    public async Task<MiniAppCaddieBookingResponse> CreateCaddieBooking([FromBody] MiniAppCreateCaddieBookingDto input)
     {
-        // Extract customer info from headers (Mini App middleware hoặc từ Zalo user context)
-        var customerIdHeader = Request.Headers["X-Customer-Id"].ToString();
-        var customerName = Request.Headers["X-Customer-Name"].ToString();
-        var phone = Request.Headers["X-Customer-Phone"].ToString();
-
-        if (string.IsNullOrWhiteSpace(customerIdHeader) || !Guid.TryParse(customerIdHeader, out var customerId))
-            return BadRequest("Missing or invalid X-Customer-Id header");
-
-        if (string.IsNullOrWhiteSpace(customerName))
-            return BadRequest("Missing X-Customer-Name header");
-
-        if (string.IsNullOrWhiteSpace(phone))
-            return BadRequest("Missing X-Customer-Phone header");
-
-        var result = await _miniCaddie.CreateBookingAsync(input, customerId, customerName, phone);
-        return Ok(result);
+        var result = await _miniCaddie.CreateBookingAsync(input);
+        return new MiniAppCaddieBookingResponse { Error = 0, Message = "Đặt caddy thành công", Data = result };
     }
 
     /// <summary>
@@ -490,32 +475,23 @@ public class MiniAppController : MultiTenancyController
     /// </summary>
     [HttpGet("caddie/booking/history")]
     [AllowAnonymous]
-    public async Task<IActionResult> GetCaddieBookingHistory([FromQuery] Guid customerId)
+    public async Task<MiniAppCaddieBookingHistoryResponse> GetCaddieBookingHistory([FromQuery] Guid customerId)
     {
-        if (customerId == Guid.Empty)
-            return BadRequest("Missing customerId");
-
         var result = await _miniCaddie.GetBookingHistoryAsync(customerId);
-        return Ok(result);
+        return new MiniAppCaddieBookingHistoryResponse { Error = 0, Message = "Success", Data = result };
     }
 
     /// <summary>
     /// POST đánh giá caddie
     /// POST /api/mini-app/caddie/rating
-    /// Body: { bookingId, overallRating, comment, skillRatings: [{ skillId, score }] }
-    /// Header: X-Customer-Id
+    /// Body: { customerId, bookingId, overallRating, comment, skillRatings: [{ skillId, score }] }
     /// </summary>
     [HttpPost("caddie/rating")]
     [AllowAnonymous]
-    public async Task<IActionResult> CreateCaddieRating([FromBody] MiniAppCreateCaddieRatingDto input)
+    public async Task<MiniAppCaddieRatingResponse> CreateCaddieRating([FromBody] MiniAppCreateCaddieRatingDto input)
     {
-        var customerIdHeader = Request.Headers["X-Customer-Id"].ToString();
-
-        if (string.IsNullOrWhiteSpace(customerIdHeader) || !Guid.TryParse(customerIdHeader, out var customerId))
-            return BadRequest("Missing or invalid X-Customer-Id header");
-
-        await _miniCaddie.CreateRatingAsync(input, customerId);
-        return Ok(new { message = "Đánh giá thành công. Chờ quản trị viên duyệt." });
+        await _miniCaddie.CreateRatingAsync(input);
+        return new MiniAppCaddieRatingResponse { Error = 0, Message = "Đánh giá thành công. Chờ quản trị viên duyệt." };
     }
 
     /// <summary>
@@ -524,9 +500,9 @@ public class MiniAppController : MultiTenancyController
     /// </summary>
     [HttpGet("caddie/skills")]
     [AllowAnonymous]
-    public async Task<IActionResult> GetActiveCaddieSkills()
+    public async Task<MiniAppCaddieSkillsResponse> GetActiveCaddieSkills()
     {
         var result = await _miniCaddie.GetActiveSkillsAsync();
-        return Ok(result);
+        return new MiniAppCaddieSkillsResponse { Error = 0, Message = "Success", Data = result };
     }
 }
