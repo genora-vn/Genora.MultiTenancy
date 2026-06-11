@@ -47,6 +47,8 @@ namespace Genora.MultiTenancy.AppDtos.AppGolfCourses
         public short? CancellationPolicyHours { get; set; }
         public string? PromotionTypeIds { get; set; }
 
+        public decimal? CaddieFee { get; set; }
+
         public List<Guid> PromotionTypeIdList =>
             !string.IsNullOrWhiteSpace(PromotionTypeIds)
                 ? PromotionTypeIds

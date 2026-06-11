@@ -49,3 +49,19 @@ public class CaddieScheduleCalendarDto
     public DateTime WeekEnd { get; set; }
     public List<CaddieScheduleDto> Schedules { get; set; } = new();
 }
+
+public class DeleteCaddieScheduleRangeInput
+{
+    public DateTime FromDate { get; set; }
+    public DateTime ToDate { get; set; }
+    public TimeSpan? FromTime { get; set; }
+    public TimeSpan? ToTime { get; set; }
+    public Guid? CaddieId { get; set; }
+}
+
+public class DeleteCaddieScheduleRangeResultDto
+{
+    public int TotalFound { get; set; }
+    public int DeletedCount { get; set; }
+    public int SkippedCount { get; set; }
+}

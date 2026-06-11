@@ -15,7 +15,6 @@ public class CaddieBookingDto : EntityDto<Guid>
     public Guid CaddieId { get; set; }
     public string? CaddieName { get; set; }
     public string? CaddieCode { get; set; }
-    public Guid ScheduleId { get; set; }
     public DateTime BookingDate { get; set; }
     public TimeSpan StartTime { get; set; }
     public int? NumberOfHoles { get; set; }
@@ -24,6 +23,9 @@ public class CaddieBookingDto : EntityDto<Guid>
     public string? StatusText { get; set; }
     public byte PaymentStatus { get; set; }
     public string? PaymentStatusText { get; set; }
+    public decimal TotalCaddieFee { get; set; }
+    public byte PaymentMethod { get; set; }
+    public string? PaymentMethodText { get; set; }
     public byte CheckinStatus { get; set; }
     public string? CheckinStatusText { get; set; }
     public DateTime? CheckinTime { get; set; }

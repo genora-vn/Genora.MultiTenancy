@@ -131,16 +131,30 @@ public class CaddieScheduleAppService : ApplicationService
         await AuthorizationService.CheckAsync(
             P(MultiTenancyPermissions.AppCaddieSchedules.Create, MultiTenancyPermissions.HostAppCaddieSchedules.Create));
 
-        // Validate: max 2 shifts per day (3 if night shift)
+        // Check if schedule already exists for same caddie + date + shift + startTime (unique time slot)
         var existingQuery = (await _scheduleRepo.GetQueryableAsync())
-            .Where(x => x.CaddieId == input.CaddieId && x.WorkDate == input.WorkDate);
-        var existingCount = await AsyncExecuter.CountAsync(existingQuery);
+            .Where(x => x.CaddieId == input.CaddieId
+                && x.WorkDate == input.WorkDate
+                && x.ShiftCode == input.ShiftCode
+                && x.StartTime == input.StartTime);
+        var existing = await AsyncExecuter.FirstOrDefaultAsync(existingQuery);
 
-        if (existingCount >= 2 && !input.IsNightShift)
-            throw new UserFriendlyException("Một caddie tối đa 2 ca/ngày.");
+        if (existing != null)
+        {
+            // If existing has booking, skip (don't overwrite)
+            if (existing.SlotStatus == (byte)CaddieSlotStatus.Booked && existing.BookingId.HasValue)
+                throw new UserFriendlyException("Khung giờ này đã có booking, không thể ghi đè.");
 
-        if (existingCount >= 3)
-            throw new UserFriendlyException("Một caddie tối đa 3 ca/ngày (bao gồm ca tối).");
+            // Overwrite existing
+            existing.EndTime = input.EndTime;
+            existing.SlotStatus = input.SlotStatus;
+            existing.IsNightShift = input.IsNightShift;
+            existing.Note = input.Note;
+            await _scheduleRepo.UpdateAsync(existing, autoSave: true);
+
+            var caddieUpdate = await _caddieRepo.GetAsync(input.CaddieId);
+            return MapToDto(existing, caddieUpdate.CaddieName, caddieUpdate.CaddieCode);
+        }
 
         var entity = new AppCaddieSchedule
         {
@@ -203,7 +217,51 @@ public class CaddieScheduleAppService : ApplicationService
         await AuthorizationService.CheckAsync(
             P(MultiTenancyPermissions.AppCaddieSchedules.Delete, MultiTenancyPermissions.HostAppCaddieSchedules.Delete));
 
+        var entity = await _scheduleRepo.GetAsync(id);
+
+        // Don't allow delete if booked (has booking)
+        if (entity.SlotStatus == (byte)CaddieSlotStatus.Booked && entity.BookingId.HasValue)
+            throw new UserFriendlyException("Không thể xóa ca làm việc đang có booking.");
+
         await _scheduleRepo.DeleteAsync(id);
+    }
+
+    /// <summary>
+    /// Xóa lịch làm việc theo khoảng ngày/giờ. Bỏ qua những ca đã có booking.
+    /// </summary>
+    public async Task<DeleteCaddieScheduleRangeResultDto> DeleteRangeAsync(DeleteCaddieScheduleRangeInput input)
+    {
+        await EnsureFeatureAsync();
+        await AuthorizationService.CheckAsync(
+            P(MultiTenancyPermissions.AppCaddieSchedules.Delete, MultiTenancyPermissions.HostAppCaddieSchedules.Delete));
+
+        var query = (await _scheduleRepo.GetQueryableAsync())
+            .Where(x => x.WorkDate >= input.FromDate && x.WorkDate <= input.ToDate);
+
+        if (input.FromTime.HasValue)
+            query = query.Where(x => x.StartTime >= input.FromTime.Value);
+
+        if (input.ToTime.HasValue)
+            query = query.Where(x => x.EndTime <= input.ToTime.Value);
+
+        if (input.CaddieId.HasValue)
+            query = query.Where(x => x.CaddieId == input.CaddieId.Value);
+
+        var items = await AsyncExecuter.ToListAsync(query);
+
+        // Separate: can delete vs cannot delete (has booking)
+        var canDelete = items.Where(x => x.SlotStatus != (byte)CaddieSlotStatus.Booked || !x.BookingId.HasValue).ToList();
+        var skipped = items.Count - canDelete.Count;
+
+        if (canDelete.Any())
+            await _scheduleRepo.DeleteManyAsync(canDelete, autoSave: true);
+
+        return new DeleteCaddieScheduleRangeResultDto
+        {
+            TotalFound = items.Count,
+            DeletedCount = canDelete.Count,
+            SkippedCount = skipped
+        };
     }
 
     private static CaddieScheduleDto MapToDto(AppCaddieSchedule entity, string? caddieName, string? caddieCode)

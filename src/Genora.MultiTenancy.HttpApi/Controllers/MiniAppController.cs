@@ -59,6 +59,7 @@ public class MiniAppController : MultiTenancyController
     private readonly IMiniAppProOrderService      _miniProOrder;
     private readonly IMiniAppProPaymentAppService _miniProPayment;
     private readonly MiniAppCaddieAppService      _miniCaddie;
+    private readonly IMiniAppCaddiePaymentAppService _miniCaddiePayment;
 
     public MiniAppController(IZaloApiClient zaloApiClient,
                              IMiniAppBookingAppService miniBooking,
@@ -81,7 +82,8 @@ public class MiniAppController : MultiTenancyController
                              IMiniAppProItemService miniProItem,
                              IMiniAppProOrderService miniProOrder,
                              IMiniAppProPaymentAppService miniProPayment,
-                             MiniAppCaddieAppService miniCaddie)
+                             MiniAppCaddieAppService miniCaddie,
+                             IMiniAppCaddiePaymentAppService miniCaddiePayment)
     {
         _zaloApiClient = zaloApiClient;
         _miniBooking = miniBooking;
@@ -105,6 +107,7 @@ public class MiniAppController : MultiTenancyController
         _miniProOrder = miniProOrder;
         _miniProPayment = miniProPayment;
         _miniCaddie = miniCaddie;
+        _miniCaddiePayment = miniCaddiePayment;
     }
 
     [HttpPost("create-booking")]
@@ -482,6 +485,18 @@ public class MiniAppController : MultiTenancyController
     }
 
     /// <summary>
+    /// GET chi tiết lịch đặt caddie
+    /// GET /api/mini-app/caddie/booking/{id}
+    /// </summary>
+    [HttpGet("caddie/booking/{id}")]
+    [AllowAnonymous]
+    public async Task<MiniAppCaddieBookingDetailResponse> GetCaddieBookingDetail(Guid id)
+    {
+        var result = await _miniCaddie.GetBookingDetailAsync(id);
+        return new MiniAppCaddieBookingDetailResponse { Error = 0, Message = "Success", Data = result };
+    }
+
+    /// <summary>
     /// POST đánh giá caddie
     /// POST /api/mini-app/caddie/rating
     /// Body: { customerId, bookingId, overallRating, comment, skillRatings: [{ skillId, score }] }
@@ -505,4 +520,34 @@ public class MiniAppController : MultiTenancyController
         var result = await _miniCaddie.GetActiveSkillsAsync();
         return new MiniAppCaddieSkillsResponse { Error = 0, Message = "Success", Data = result };
     }
+
+    /// <summary>
+    /// GET danh sách ngôn ngữ cấu hình
+    /// GET /api/mini-app/caddie/languages
+    /// </summary>
+    [HttpGet("caddie/languages")]
+    [AllowAnonymous]
+    public async Task<MiniAppCaddieLanguagesResponse> GetCaddieLanguages()
+    {
+        var result = await _miniCaddie.GetActiveLanguagesAsync();
+        return new MiniAppCaddieLanguagesResponse { Error = 0, Message = "Success", Data = result };
+    }
+
+    /// <summary>
+    /// Tạo dữ liệu order đã ký MAC để Mini App gọi Zalo Checkout SDK createOrder() cho đặt Caddie.
+    /// POST /api/mini-app/caddie/prepare-order
+    /// </summary>
+    [HttpPost("caddie/prepare-order")]
+    [AllowAnonymous]
+    public Task<PrepareOrderResult> PrepareCaddieOrderAsync([FromBody] PrepareCaddieBookingInput input)
+        => _miniCaddiePayment.PrepareOrderAsync(input);
+
+    /// <summary>
+    /// Kiểm tra trạng thái giao dịch CaddieBooking sau khi Mini App gọi createOrder() xong.
+    /// GET /api/mini-app/caddie/check-transaction/{orderId}
+    /// </summary>
+    [HttpGet("caddie/check-transaction/{orderId}")]
+    [AllowAnonymous]
+    public Task<CheckTransactionResult> CheckCaddieTransactionAsync(string orderId)
+        => _miniCaddiePayment.CheckTransactionAsync(orderId);
 }

@@ -103,6 +103,15 @@ public class AppCaddieScheduleController : AbpController
 
         return _exporter.Export(result.Items.ToList());
     }
+
+    /// <summary>
+    /// Xóa lịch làm việc theo khoảng ngày/giờ. Bỏ qua ca đã có booking.
+    /// </summary>
+    [HttpPost("delete-range")]
+    public async Task<DeleteCaddieScheduleRangeResultDto> DeleteRange([FromBody] DeleteCaddieScheduleRangeInput input)
+    {
+        return await _scheduleService.DeleteRangeAsync(input);
+    }
 }
 
 public class ImportCaddieScheduleResultDto

@@ -134,25 +134,12 @@ public static class MultiTenancyDbContextModelCreatingExtensionsCaddie
             b.Property(x => x.Status).HasDefaultValue((byte)1);
             b.Property(x => x.PaymentStatus).HasDefaultValue((byte)1);
             b.Property(x => x.CheckinStatus).HasDefaultValue((byte)1);
-
-            b.HasOne(x => x.Caddie)
-                .WithMany()
-                .HasForeignKey(x => x.CaddieId)
-                .IsRequired()
-                .OnDelete(DeleteBehavior.Restrict);
-
-            b.HasOne(x => x.Schedule)
-                .WithMany()
-                .HasForeignKey(x => x.ScheduleId)
-                .IsRequired()
-                .OnDelete(DeleteBehavior.Restrict);
+            b.Property(x => x.PaymentMethod).HasDefaultValue((byte)0);
+            b.Property(x => x.TotalCaddieFee).HasColumnType("decimal(18,2)").HasDefaultValue(0m);
 
             b.HasIndex(x => new { x.TenantId, x.BookingCode })
                 .IsUnique()
                 .HasDatabaseName("IX_AppCaddieBookings_TenantId_Code");
-
-            b.HasIndex(x => new { x.TenantId, x.CaddieId, x.BookingDate })
-                .HasDatabaseName("IX_AppCaddieBookings_TenantId_Caddie_Date");
 
             b.HasIndex(x => new { x.TenantId, x.CustomerId })
                 .HasDatabaseName("IX_AppCaddieBookings_TenantId_CustomerId");
@@ -207,6 +194,39 @@ public static class MultiTenancyDbContextModelCreatingExtensionsCaddie
             b.HasIndex(x => new { x.TenantId, x.RatingId, x.SkillId })
                 .IsUnique()
                 .HasDatabaseName("IX_AppCaddieRatingDetails_TenantId_Rating_Skill");
+        });
+
+        builder.Entity<AppCaddieBookingDetail>(b =>
+        {
+            b.ToTable(MultiTenancyConsts.DbTablePrefix + "CaddieBookingDetails");
+            b.ConfigureByConvention();
+
+            b.Property(x => x.Note).HasMaxLength(500);
+            b.Property(x => x.Status).HasDefaultValue((byte)1);
+
+            b.HasOne(x => x.CaddieBooking)
+                .WithMany()
+                .HasForeignKey(x => x.CaddieBookingId)
+                .IsRequired()
+                .OnDelete(DeleteBehavior.Cascade);
+
+            b.HasOne(x => x.Caddie)
+                .WithMany()
+                .HasForeignKey(x => x.CaddieId)
+                .IsRequired()
+                .OnDelete(DeleteBehavior.Restrict);
+
+            b.HasOne(x => x.Schedule)
+                .WithMany()
+                .HasForeignKey(x => x.ScheduleId)
+                .IsRequired()
+                .OnDelete(DeleteBehavior.Restrict);
+
+            b.HasIndex(x => new { x.TenantId, x.CaddieBookingId })
+                .HasDatabaseName("IX_AppCaddieBookingDetails_TenantId_BookingId");
+
+            b.HasIndex(x => new { x.TenantId, x.CaddieId })
+                .HasDatabaseName("IX_AppCaddieBookingDetails_TenantId_CaddieId");
         });
     }
 }

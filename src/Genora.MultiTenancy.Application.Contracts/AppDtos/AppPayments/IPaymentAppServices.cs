@@ -72,6 +72,23 @@ public interface IMiniAppSalonBeautyPaymentAppService
 }
 
 /// <summary>
+/// Interface cho MiniApp gọi payment flow — Đặt Caddie (CaddieBooking)
+/// </summary>
+public interface IMiniAppCaddiePaymentAppService
+{
+    /// <summary>
+    /// Tạo payload đã ký MAC để Mini App gọi Zalo Checkout SDK createOrder() cho đặt Caddie.
+    /// CaddieBooking: orderId = {BookingCode}_{unixTimestamp}
+    /// </summary>
+    Task<PrepareOrderResult> PrepareOrderAsync(PrepareCaddieBookingInput input);
+
+    /// <summary>
+    /// Mini App poll kiểm tra trạng thái giao dịch CaddieBooking sau khi createOrder().
+    /// </summary>
+    Task<CheckTransactionResult> CheckTransactionAsync(string orderId);
+}
+
+/// <summary>
 /// Xử lý Callback từ Zalo Checkout SDK Server (sau khi giao dịch hoàn tất).
 /// Áp dụng cho cả Booking và FnbOrder — phân biệt qua orderId prefix (KH/FNB).
 /// </summary>

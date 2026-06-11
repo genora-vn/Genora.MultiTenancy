@@ -27,10 +27,6 @@ public class AppCaddieBooking : FullAuditedAggregateRoot<Guid>, IMultiTenant
 
     public Guid GolfCourseId { get; set; }
 
-    public Guid CaddieId { get; set; }
-
-    public Guid ScheduleId { get; set; }
-
     public DateTime BookingDate { get; set; }
 
     public TimeSpan StartTime { get; set; }
@@ -44,13 +40,20 @@ public class AppCaddieBooking : FullAuditedAggregateRoot<Guid>, IMultiTenant
 
     public byte PaymentStatus { get; set; } = 1;
 
+    /// <summary>
+    /// Phương thức thanh toán: COD = 0, Online = 1, BankTransfer = 2
+    /// </summary>
+    public byte PaymentMethod { get; set; }
+
+    /// <summary>
+    /// Tổng phí dịch vụ Caddie (VNĐ)
+    /// </summary>
+    public decimal TotalCaddieFee { get; set; }
+
     public byte CheckinStatus { get; set; } = 1;
 
     public DateTime? CheckinTime { get; set; }
 
     [StringLength(1000)]
     public string? CancelReason { get; set; }
-
-    public virtual AppCaddie? Caddie { get; set; }
-    public virtual AppCaddieSchedule? Schedule { get; set; }
 }

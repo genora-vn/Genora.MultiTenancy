@@ -85,6 +85,7 @@ public static class MultiTenancyDbContextModelCreatingExtensionsMiniApp
             b.Property(x => x.BannerUrl).HasMaxLength(500);
             b.Property(x => x.BookingStatus).HasDefaultValue((byte)1);
             b.Property(x => x.IsActive).HasDefaultValue(true);
+            b.Property(x => x.CaddieFee).HasColumnType("decimal(18,2)");
 
             b.HasIndex(x => new { x.TenantId, x.Code })
                 .IsUnique()

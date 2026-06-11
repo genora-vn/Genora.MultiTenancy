@@ -66,6 +66,8 @@ public class CreateUpdateAppGolfCourseDto
     [Range(0, 100)]
     public int? MaxMemberGuest { get; set; }
 
+    public decimal? CaddieFee { get; set; }
+
     public List<GolfCoursePromotionTypeDto> AvailablePromotionTypes { get; set; } = new();
     public List<GolfCourseUtilityDto> AvailableUtilities { get; set; } = new List<GolfCourseUtilityDto>();
     public List<GolfCourseHoleDto> AvailableHoles { get; set; } = new List<GolfCourseHoleDto>();

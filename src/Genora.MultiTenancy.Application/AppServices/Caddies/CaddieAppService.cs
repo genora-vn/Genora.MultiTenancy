@@ -41,6 +41,7 @@ public class CaddieAppService : FeatureProtectedCrudAppService<
     private readonly IRepository<AppLanguage, Guid> _languageRepo;
     private readonly IRepository<GolfCourse, Guid> _golfCourseRepo;
     private readonly IRepository<AppCaddieBooking, Guid> _bookingRepo;
+    private readonly IRepository<AppCaddieBookingDetail, Guid> _bookingDetailRepo;
     private readonly ICurrentTenant _currentTenant;
     private readonly IGuidGenerator _guidGenerator;
     private readonly IManageImageService _manageImageService;
@@ -52,6 +53,7 @@ public class CaddieAppService : FeatureProtectedCrudAppService<
         IRepository<AppLanguage, Guid> languageRepo,
         IRepository<GolfCourse, Guid> golfCourseRepo,
         IRepository<AppCaddieBooking, Guid> bookingRepo,
+        IRepository<AppCaddieBookingDetail, Guid> bookingDetailRepo,
         ICurrentTenant currentTenant,
         IFeatureChecker featureChecker,
         IGuidGenerator guidGenerator,
@@ -64,6 +66,7 @@ public class CaddieAppService : FeatureProtectedCrudAppService<
         _languageRepo = languageRepo;
         _golfCourseRepo = golfCourseRepo;
         _bookingRepo = bookingRepo;
+        _bookingDetailRepo = bookingDetailRepo;
         _currentTenant = currentTenant;
         _guidGenerator = guidGenerator;
         _manageImageService = manageImageService;
@@ -127,12 +130,21 @@ public class CaddieAppService : FeatureProtectedCrudAppService<
             .Where(x => caddieIds.Contains(x.CaddieId));
         var caddieVoiceRegions = await AsyncExecuter.ToListAsync(vrQuery);
 
-        // Load last booking date per caddie
-        var bookingQuery = (await _bookingRepo.GetQueryableAsync())
-            .Where(x => caddieIds.Contains(x.CaddieId))
+        // Load last booking date per caddie (via BookingDetails → Bookings)
+        var detailsForCaddies = await AsyncExecuter.ToListAsync(
+            (await _bookingDetailRepo.GetQueryableAsync())
+                .Where(d => caddieIds.Contains(d.CaddieId))
+                .Select(d => new { d.CaddieId, d.CaddieBookingId }));
+        var bookingIdsForLastDate = detailsForCaddies.Select(d => d.CaddieBookingId).Distinct().ToList();
+        var bookingsForDate = await AsyncExecuter.ToListAsync(
+            (await _bookingRepo.GetQueryableAsync())
+                .Where(b => bookingIdsForLastDate.Contains(b.Id))
+                .Select(b => new { b.Id, b.BookingDate }));
+        var lastBookingDates = detailsForCaddies
+            .Join(bookingsForDate, d => d.CaddieBookingId, b => b.Id, (d, b) => new { d.CaddieId, b.BookingDate })
             .GroupBy(x => x.CaddieId)
-            .Select(g => new { CaddieId = g.Key, LastDate = g.Max(b => b.BookingDate) });
-        var lastBookingDates = await AsyncExecuter.ToListAsync(bookingQuery);
+            .Select(g => new { CaddieId = g.Key, LastDate = g.Max(x => x.BookingDate) })
+            .ToList();
 
         var dtos = items.Select(x =>
         {

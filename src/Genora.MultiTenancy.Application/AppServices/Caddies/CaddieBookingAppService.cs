@@ -25,6 +25,7 @@ namespace Genora.MultiTenancy.AppServices.Caddies;
 public class CaddieBookingAppService : ApplicationService
 {
     private readonly IRepository<AppCaddieBooking, Guid> _bookingRepo;
+    private readonly IRepository<AppCaddieBookingDetail, Guid> _bookingDetailRepo;
     private readonly IRepository<AppCaddie, Guid> _caddieRepo;
     private readonly IRepository<AppCaddieSchedule, Guid> _scheduleRepo;
     private readonly IRepository<AppCaddieRating, Guid> _ratingRepo;
@@ -35,6 +36,7 @@ public class CaddieBookingAppService : ApplicationService
 
     public CaddieBookingAppService(
         IRepository<AppCaddieBooking, Guid> bookingRepo,
+        IRepository<AppCaddieBookingDetail, Guid> bookingDetailRepo,
         IRepository<AppCaddie, Guid> caddieRepo,
         IRepository<AppCaddieSchedule, Guid> scheduleRepo,
         IRepository<AppCaddieRating, Guid> ratingRepo,
@@ -44,6 +46,7 @@ public class CaddieBookingAppService : ApplicationService
         IGuidGenerator guidGenerator)
     {
         _bookingRepo = bookingRepo;
+        _bookingDetailRepo = bookingDetailRepo;
         _caddieRepo = caddieRepo;
         _scheduleRepo = scheduleRepo;
         _ratingRepo = ratingRepo;
@@ -81,8 +84,15 @@ public class CaddieBookingAppService : ApplicationService
                 x.Phone.Contains(keyword));
         }
 
+        // Filter by CaddieId through BookingDetails
         if (input.CaddieId.HasValue)
-            query = query.Where(x => x.CaddieId == input.CaddieId.Value);
+        {
+            var detailQuery = (await _bookingDetailRepo.GetQueryableAsync())
+                .Where(d => d.CaddieId == input.CaddieId.Value)
+                .Select(d => d.CaddieBookingId);
+            var matchingBookingIds = await AsyncExecuter.ToListAsync(detailQuery);
+            query = query.Where(x => matchingBookingIds.Contains(x.Id));
+        }
 
         if (input.Status.HasValue)
             query = query.Where(x => x.Status == input.Status.Value);
@@ -105,15 +115,20 @@ public class CaddieBookingAppService : ApplicationService
         var items = await AsyncExecuter.ToListAsync(
             query.OrderBy(sorting).Skip(input.SkipCount).Take(input.MaxResultCount));
 
-        // Load caddie names
-        var caddieIds = items.Select(x => x.CaddieId).Distinct().ToList();
+        // Load booking details to get caddie info
+        var bookingIds = items.Select(x => x.Id).ToList();
+        var allBookingDetails = await AsyncExecuter.ToListAsync(
+            (await _bookingDetailRepo.GetQueryableAsync())
+                .Where(d => bookingIds.Contains(d.CaddieBookingId)));
+
+        // Load caddie names from details
+        var caddieIds = allBookingDetails.Select(d => d.CaddieId).Distinct().ToList();
         var caddieQuery = (await _caddieRepo.GetQueryableAsync())
             .Where(x => caddieIds.Contains(x.Id))
             .Select(x => new { x.Id, x.CaddieName, x.CaddieCode });
         var caddies = await AsyncExecuter.ToListAsync(caddieQuery);
 
-        // Load ratings for these bookings (to compute per-booking rating avg)
-        var bookingIds = items.Select(x => x.Id).ToList();
+        // Load ratings for these bookings
         var ratingsQuery = (await _ratingRepo.GetQueryableAsync())
             .Where(x => bookingIds.Contains(x.BookingId))
             .Select(x => new { x.Id, x.BookingId });
@@ -123,21 +138,22 @@ public class CaddieBookingAppService : ApplicationService
         var detailsQuery = (await _ratingDetailRepo.GetQueryableAsync())
             .Where(x => ratingIds.Contains(x.RatingId))
             .Select(x => new { x.RatingId, x.Score });
-        var allDetails = await AsyncExecuter.ToListAsync(detailsQuery);
+        var allRatingDetails = await AsyncExecuter.ToListAsync(detailsQuery);
 
-        // Build a map: BookingId → avg score from all detail scores of that booking's rating(s)
         var bookingRatingMap = new Dictionary<Guid, decimal>();
         foreach (var rating in ratings)
         {
-            var details = allDetails.Where(d => d.RatingId == rating.Id).ToList();
+            var details = allRatingDetails.Where(d => d.RatingId == rating.Id).ToList();
             if (details.Count > 0)
                 bookingRatingMap[rating.BookingId] = Math.Round((decimal)details.Average(d => d.Score), 1);
         }
 
         var dtos = items.Select(x =>
         {
-            var caddie = caddies.FirstOrDefault(c => c.Id == x.CaddieId);
-            var dto = MapToDto(x, caddie?.CaddieName, caddie?.CaddieCode);
+            // Get first caddie from booking details (primary)
+            var firstDetail = allBookingDetails.FirstOrDefault(d => d.CaddieBookingId == x.Id);
+            var caddie = firstDetail != null ? caddies.FirstOrDefault(c => c.Id == firstDetail.CaddieId) : null;
+            var dto = MapToDto(x, caddie?.CaddieName, caddie?.CaddieCode, firstDetail?.CaddieId ?? Guid.Empty);
             dto.BookingRatingAvg = bookingRatingMap.TryGetValue(x.Id, out var avg) ? avg : (decimal?)null;
             return dto;
         }).ToList();
@@ -152,8 +168,24 @@ public class CaddieBookingAppService : ApplicationService
             P(MultiTenancyPermissions.AppCaddieBookings.Default, MultiTenancyPermissions.HostAppCaddieBookings.Default));
 
         var booking = await _bookingRepo.GetAsync(id);
-        var caddie = await _caddieRepo.GetAsync(booking.CaddieId);
-        return MapToDto(booking, caddie.CaddieName, caddie.CaddieCode);
+
+        // Get primary caddie from details
+        var detailQuery = (await _bookingDetailRepo.GetQueryableAsync())
+            .Where(d => d.CaddieBookingId == id);
+        var firstDetail = await AsyncExecuter.FirstOrDefaultAsync(detailQuery);
+
+        string? caddieName = null;
+        string? caddieCode = null;
+        Guid caddieId = Guid.Empty;
+        if (firstDetail != null)
+        {
+            var caddie = await _caddieRepo.FindAsync(firstDetail.CaddieId);
+            caddieName = caddie?.CaddieName;
+            caddieCode = caddie?.CaddieCode;
+            caddieId = firstDetail.CaddieId;
+        }
+
+        return MapToDto(booking, caddieName, caddieCode, caddieId);
     }
 
     public async Task UpdateStatusAsync(Guid id, UpdateCaddieBookingStatusDto input)
@@ -169,7 +201,6 @@ public class CaddieBookingAppService : ApplicationService
             var newStatus = input.Status.Value;
             ValidateStatusTransition(booking.Status, newStatus);
 
-            // BR-04: Cancel requires reason
             if (newStatus == (byte)CaddieBookingStatus.Cancelled && string.IsNullOrWhiteSpace(input.CancelReason))
                 throw new UserFriendlyException("Vui lòng nhập lý do hủy booking.");
 
@@ -177,8 +208,8 @@ public class CaddieBookingAppService : ApplicationService
             if (newStatus == (byte)CaddieBookingStatus.Cancelled)
             {
                 booking.CancelReason = input.CancelReason;
-                // Release schedule slot
-                await ReleaseScheduleSlotAsync(booking.ScheduleId);
+                // Release all schedule slots from details
+                await ReleaseAllScheduleSlotsAsync(id);
             }
         }
 
@@ -204,8 +235,15 @@ public class CaddieBookingAppService : ApplicationService
         await AuthorizationService.CheckAsync(
             P(MultiTenancyPermissions.AppCaddieBookings.Delete, MultiTenancyPermissions.HostAppCaddieBookings.Delete));
 
-        var booking = await _bookingRepo.GetAsync(id);
-        await ReleaseScheduleSlotAsync(booking.ScheduleId);
+        await ReleaseAllScheduleSlotsAsync(id);
+
+        // Delete booking details
+        var detailQuery = (await _bookingDetailRepo.GetQueryableAsync())
+            .Where(d => d.CaddieBookingId == id);
+        var details = await AsyncExecuter.ToListAsync(detailQuery);
+        if (details.Any())
+            await _bookingDetailRepo.DeleteManyAsync(details, autoSave: true);
+
         await _bookingRepo.DeleteAsync(id);
     }
 
@@ -220,7 +258,15 @@ public class CaddieBookingAppService : ApplicationService
         if (booking.Status == (byte)CaddieBookingStatus.Completed || booking.Status == (byte)CaddieBookingStatus.Cancelled)
             throw new UserFriendlyException("Không thể đổi Caddy cho booking đã hoàn thành hoặc đã hủy.");
 
-        if (booking.CaddieId == newCaddieId)
+        // Get first detail (primary caddie)
+        var detailQuery = (await _bookingDetailRepo.GetQueryableAsync())
+            .Where(d => d.CaddieBookingId == bookingId);
+        var firstDetail = await AsyncExecuter.FirstOrDefaultAsync(detailQuery);
+
+        if (firstDetail == null)
+            throw new UserFriendlyException("Booking không có thông tin caddie.");
+
+        if (firstDetail.CaddieId == newCaddieId)
             throw new UserFriendlyException("Caddy mới phải khác Caddy hiện tại.");
 
         var newCaddie = await _caddieRepo.GetAsync(newCaddieId);
@@ -228,7 +274,7 @@ public class CaddieBookingAppService : ApplicationService
             throw new UserFriendlyException("Caddy mới không khả dụng.");
 
         // Release old schedule slot
-        await ReleaseScheduleSlotAsync(booking.ScheduleId);
+        await ReleaseScheduleSlotAsync(firstDetail.ScheduleId);
 
         // Find available slot for new caddie
         var newScheduleQuery = (await _scheduleRepo.GetQueryableAsync())
@@ -242,13 +288,16 @@ public class CaddieBookingAppService : ApplicationService
         if (newSchedule == null)
             throw new UserFriendlyException("Caddy mới không có lịch trống vào thời gian này. Vui lòng tạo lịch trước.");
 
-        // Update booking
-        booking.CaddieId = newCaddieId;
-        booking.ScheduleId = newSchedule.Id;
-        if (!string.IsNullOrWhiteSpace(note))
-            booking.Note = (booking.Note ?? "") + $"\n[Đổi caddy: {note}]";
+        // Update detail
+        firstDetail.CaddieId = newCaddieId;
+        firstDetail.ScheduleId = newSchedule.Id;
+        await _bookingDetailRepo.UpdateAsync(firstDetail, autoSave: true);
 
-        await _bookingRepo.UpdateAsync(booking, autoSave: true);
+        if (!string.IsNullOrWhiteSpace(note))
+        {
+            booking.Note = (booking.Note ?? "") + $"\n[Đổi caddy: {note}]";
+            await _bookingRepo.UpdateAsync(booking, autoSave: true);
+        }
 
         // Lock new schedule slot
         newSchedule.SlotStatus = (byte)CaddieSlotStatus.Booked;
@@ -274,6 +323,18 @@ public class CaddieBookingAppService : ApplicationService
             throw new UserFriendlyException($"Không thể chuyển trạng thái từ '{GetStatusText(currentStatus)}' sang '{GetStatusText(newStatus)}'.");
     }
 
+    private async Task ReleaseAllScheduleSlotsAsync(Guid bookingId)
+    {
+        var detailQuery = (await _bookingDetailRepo.GetQueryableAsync())
+            .Where(d => d.CaddieBookingId == bookingId);
+        var details = await AsyncExecuter.ToListAsync(detailQuery);
+
+        foreach (var detail in details)
+        {
+            await ReleaseScheduleSlotAsync(detail.ScheduleId);
+        }
+    }
+
     private async Task ReleaseScheduleSlotAsync(Guid scheduleId)
     {
         try
@@ -286,7 +347,7 @@ public class CaddieBookingAppService : ApplicationService
         catch { /* Schedule may not exist */ }
     }
 
-    private static CaddieBookingDto MapToDto(AppCaddieBooking entity, string? caddieName, string? caddieCode)
+    private static CaddieBookingDto MapToDto(AppCaddieBooking entity, string? caddieName, string? caddieCode, Guid caddieId)
     {
         return new CaddieBookingDto
         {
@@ -297,10 +358,9 @@ public class CaddieBookingAppService : ApplicationService
             Phone = entity.Phone,
             PhoneMasked = MaskPhone(entity.Phone),
             GolfCourseId = entity.GolfCourseId,
-            CaddieId = entity.CaddieId,
+            CaddieId = caddieId,
             CaddieName = caddieName,
             CaddieCode = caddieCode,
-            ScheduleId = entity.ScheduleId,
             BookingDate = entity.BookingDate,
             StartTime = entity.StartTime,
             NumberOfHoles = entity.NumberOfHoles,
@@ -312,6 +372,15 @@ public class CaddieBookingAppService : ApplicationService
             {
                 (byte)CaddiePaymentStatus.Unpaid => "Chưa thanh toán",
                 (byte)CaddiePaymentStatus.Paid => "Đã thanh toán",
+                _ => "Khác"
+            },
+            TotalCaddieFee = entity.TotalCaddieFee,
+            PaymentMethod = entity.PaymentMethod,
+            PaymentMethodText = entity.PaymentMethod switch
+            {
+                0 => "Thanh toán tại quầy",
+                1 => "Thanh toán online",
+                2 => "Chuyển khoản",
                 _ => "Khác"
             },
             CheckinStatus = entity.CheckinStatus,

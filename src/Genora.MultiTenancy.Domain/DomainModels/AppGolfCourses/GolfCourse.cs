@@ -89,6 +89,11 @@ public class GolfCourse : FullAuditedAggregateRoot<Guid>, IMultiTenant
     /// </summary>
     public bool HasNightShift { get; set; }
 
+    /// <summary>
+    /// Phí dịch vụ Caddie (VNĐ)
+    /// </summary>
+    public decimal? CaddieFee { get; set; }
+
     // Navigation
     public virtual ICollection<CalendarSlot> CalendarSlots { get; set; } = new List<CalendarSlot>();
     public virtual ICollection<Booking> Bookings { get; set; } = new List<Booking>();

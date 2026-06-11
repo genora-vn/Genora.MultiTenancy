@@ -41,6 +41,8 @@ public class AppGolfCourseDto : AuditedEntityDto<Guid>
     public bool IsMemberSupported { get; set; }
     public int? MaxMemberGuest { get; set; }
 
+    public decimal? CaddieFee { get; set; }
+
     public List<Guid> PromotionTypeIdList =>
         !string.IsNullOrWhiteSpace(PromotionTypeIds)
             ? PromotionTypeIds

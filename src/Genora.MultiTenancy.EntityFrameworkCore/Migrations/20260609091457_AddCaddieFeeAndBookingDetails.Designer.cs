@@ -4,6 +4,7 @@ using Genora.MultiTenancy.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Volo.Abp.EntityFrameworkCore;
 
@@ -12,9 +13,11 @@ using Volo.Abp.EntityFrameworkCore;
 namespace Genora.MultiTenancy.Migrations
 {
     [DbContext(typeof(MultiTenancyDbContext))]
-    partial class MultiTenancyDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260609091457_AddCaddieFeeAndBookingDetails")]
+    partial class AddCaddieFeeAndBookingDetails
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -517,6 +520,9 @@ namespace Genora.MultiTenancy.Migrations
                     b.Property<DateTime>("BookingDate")
                         .HasColumnType("datetime2");
 
+                    b.Property<Guid>("CaddieId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<string>("CancelReason")
                         .HasMaxLength(1000)
                         .HasColumnType("nvarchar(1000)");
@@ -589,11 +595,6 @@ namespace Genora.MultiTenancy.Migrations
                     b.Property<int?>("NumberOfHoles")
                         .HasColumnType("int");
 
-                    b.Property<byte>("PaymentMethod")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("tinyint")
-                        .HasDefaultValue((byte)0);
-
                     b.Property<byte>("PaymentStatus")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("tinyint")
@@ -603,6 +604,9 @@ namespace Genora.MultiTenancy.Migrations
                         .IsRequired()
                         .HasMaxLength(20)
                         .HasColumnType("nvarchar(20)");
+
+                    b.Property<Guid>("ScheduleId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<TimeSpan>("StartTime")
                         .HasColumnType("time");
@@ -616,12 +620,11 @@ namespace Genora.MultiTenancy.Migrations
                         .HasColumnType("uniqueidentifier")
                         .HasColumnName("TenantId");
 
-                    b.Property<decimal>("TotalCaddieFee")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("decimal(18,2)")
-                        .HasDefaultValue(0m);
-
                     b.HasKey("Id");
+
+                    b.HasIndex("CaddieId");
+
+                    b.HasIndex("ScheduleId");
 
                     b.HasIndex("TenantId", "BookingCode")
                         .IsUnique()
@@ -630,6 +633,9 @@ namespace Genora.MultiTenancy.Migrations
 
                     b.HasIndex("TenantId", "CustomerId")
                         .HasDatabaseName("IX_AppCaddieBookings_TenantId_CustomerId");
+
+                    b.HasIndex("TenantId", "CaddieId", "BookingDate")
+                        .HasDatabaseName("IX_AppCaddieBookings_TenantId_Caddie_Date");
 
                     b.ToTable("AppCaddieBookings", (string)null);
                 });
@@ -7037,6 +7043,25 @@ namespace Genora.MultiTenancy.Migrations
                     b.Navigation("Customer");
 
                     b.Navigation("GolfCourse");
+                });
+
+            modelBuilder.Entity("Genora.MultiTenancy.DomainModels.AppCaddie.AppCaddieBooking", b =>
+                {
+                    b.HasOne("Genora.MultiTenancy.DomainModels.AppCaddie.AppCaddie", "Caddie")
+                        .WithMany()
+                        .HasForeignKey("CaddieId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Genora.MultiTenancy.DomainModels.AppCaddie.AppCaddieSchedule", "Schedule")
+                        .WithMany()
+                        .HasForeignKey("ScheduleId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Caddie");
+
+                    b.Navigation("Schedule");
                 });
 
             modelBuilder.Entity("Genora.MultiTenancy.DomainModels.AppCaddie.AppCaddieBookingDetail", b =>

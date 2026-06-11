@@ -140,6 +140,7 @@ public class MultiTenancyDbContext :
     public DbSet<AppCaddieSkill> AppCaddieSkills { get; set; }
     public DbSet<AppCaddieSchedule> AppCaddieSchedules { get; set; }
     public DbSet<AppCaddieBooking> AppCaddieBookings { get; set; }
+    public DbSet<AppCaddieBookingDetail> AppCaddieBookingDetails { get; set; }
     public DbSet<AppCaddieRating> AppCaddieRatings { get; set; }
     public DbSet<AppCaddieRatingDetail> AppCaddieRatingDetails { get; set; }
 
