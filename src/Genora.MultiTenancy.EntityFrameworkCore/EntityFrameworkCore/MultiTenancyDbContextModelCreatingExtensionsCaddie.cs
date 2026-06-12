@@ -228,5 +228,18 @@ public static class MultiTenancyDbContextModelCreatingExtensionsCaddie
             b.HasIndex(x => new { x.TenantId, x.CaddieId })
                 .HasDatabaseName("IX_AppCaddieBookingDetails_TenantId_CaddieId");
         });
+
+        builder.Entity<AppCaddieScheduleTemplate>(b =>
+        {
+            b.ToTable(MultiTenancyConsts.DbTablePrefix + "CaddieScheduleTemplates");
+            b.ConfigureByConvention();
+
+            b.Property(x => x.Note).HasMaxLength(500);
+            b.Property(x => x.TemplateName).HasMaxLength(100);
+            b.Property(x => x.SlotStatus).HasDefaultValue((byte)1);
+
+            b.HasIndex(x => new { x.TenantId, x.CaddieId, x.DayOfWeek, x.ShiftCode, x.StartTime })
+                .HasDatabaseName("IX_AppCaddieScheduleTemplates_Caddie_Day_Shift_Start");
+        });
     }
 }

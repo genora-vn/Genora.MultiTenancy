@@ -25,6 +25,7 @@ namespace Genora.MultiTenancy.AppServices.Caddies;
 public class CaddieScheduleAppService : ApplicationService
 {
     private readonly IRepository<AppCaddieSchedule, Guid> _scheduleRepo;
+    private readonly IRepository<AppCaddieScheduleTemplate, Guid> _templateRepo;
     private readonly IRepository<AppCaddie, Guid> _caddieRepo;
     private readonly ICurrentTenant _currentTenant;
     private readonly IFeatureChecker _featureChecker;
@@ -32,12 +33,14 @@ public class CaddieScheduleAppService : ApplicationService
 
     public CaddieScheduleAppService(
         IRepository<AppCaddieSchedule, Guid> scheduleRepo,
+        IRepository<AppCaddieScheduleTemplate, Guid> templateRepo,
         IRepository<AppCaddie, Guid> caddieRepo,
         ICurrentTenant currentTenant,
         IFeatureChecker featureChecker,
         IGuidGenerator guidGenerator)
     {
         _scheduleRepo = scheduleRepo;
+        _templateRepo = templateRepo;
         _caddieRepo = caddieRepo;
         _currentTenant = currentTenant;
         _featureChecker = featureChecker;
@@ -264,6 +267,124 @@ public class CaddieScheduleAppService : ApplicationService
         };
     }
 
+    /// <summary>
+    /// Save lịch tuần hiện tại làm template (pattern tuần) cho caddie
+    /// </summary>
+    public async Task<List<CaddieScheduleTemplateDto>> SaveTemplateAsync(SaveScheduleTemplateInput input)
+    {
+        await EnsureFeatureAsync();
+        await AuthorizationService.CheckAsync(
+            P(MultiTenancyPermissions.AppCaddieSchedules.Create, MultiTenancyPermissions.HostAppCaddieSchedules.Create));
+
+        var weekEnd = input.WeekStart.AddDays(7);
+
+        // Load current week schedules for this caddie
+        var scheduleQuery = (await _scheduleRepo.GetQueryableAsync())
+            .Where(x => x.CaddieId == input.CaddieId && x.WorkDate >= input.WeekStart && x.WorkDate < weekEnd);
+        var schedules = await AsyncExecuter.ToListAsync(scheduleQuery);
+
+        if (!schedules.Any())
+            throw new UserFriendlyException("Không có lịch làm việc nào trong tuần này để lưu template.");
+
+        // Delete existing templates for this caddie
+        var existingTemplates = await AsyncExecuter.ToListAsync(
+            (await _templateRepo.GetQueryableAsync()).Where(x => x.CaddieId == input.CaddieId));
+        if (existingTemplates.Any())
+            await _templateRepo.DeleteManyAsync(existingTemplates, autoSave: true);
+
+        // Create template entries from current week
+        var templates = schedules.Select(s => new AppCaddieScheduleTemplate
+        {
+            CaddieId = input.CaddieId,
+            DayOfWeek = (byte)s.WorkDate.DayOfWeek,
+            ShiftCode = s.ShiftCode,
+            StartTime = s.StartTime,
+            EndTime = s.EndTime,
+            SlotStatus = (byte)CaddieSlotStatus.Available, // Template always creates available slots
+            IsNightShift = s.IsNightShift,
+            Note = s.Note,
+            TemplateName = input.TemplateName
+        }).ToList();
+
+        await _templateRepo.InsertManyAsync(templates, autoSave: true);
+
+        var caddie = await _caddieRepo.GetAsync(input.CaddieId);
+        return templates.Select(t => MapTemplateToDto(t, caddie.CaddieName, caddie.CaddieCode)).ToList();
+    }
+
+    /// <summary>
+    /// Apply template lịch tuần cho caddie vào tuần target
+    /// </summary>
+    public async Task<ApplyScheduleTemplateResultDto> ApplyTemplateAsync(ApplyScheduleTemplateInput input)
+    {
+        await EnsureFeatureAsync();
+        await AuthorizationService.CheckAsync(
+            P(MultiTenancyPermissions.AppCaddieSchedules.Create, MultiTenancyPermissions.HostAppCaddieSchedules.Create));
+
+        // Load templates for this caddie
+        var templateQuery = (await _templateRepo.GetQueryableAsync())
+            .Where(x => x.CaddieId == input.CaddieId);
+        var templates = await AsyncExecuter.ToListAsync(templateQuery);
+
+        if (!templates.Any())
+            throw new UserFriendlyException("Caddie này chưa có template lịch. Vui lòng lưu template trước.");
+
+        int generated = 0;
+        int skipped = 0;
+
+        foreach (var template in templates)
+        {
+            // Calculate target date from DayOfWeek offset
+            var targetDate = input.TargetWeekStart.AddDays((int)template.DayOfWeek == 0 ? 6 : (int)template.DayOfWeek - 1);
+            // Adjust: Monday=1 is day 0 of week. Sunday=0 is day 6.
+            var daysFromMonday = template.DayOfWeek == 0 ? 6 : template.DayOfWeek - 1;
+            targetDate = input.TargetWeekStart.AddDays(daysFromMonday);
+
+            try
+            {
+                await CreateAsync(new CreateUpdateCaddieScheduleDto
+                {
+                    CaddieId = input.CaddieId,
+                    WorkDate = targetDate,
+                    ShiftCode = template.ShiftCode,
+                    StartTime = template.StartTime,
+                    EndTime = template.EndTime,
+                    SlotStatus = template.SlotStatus,
+                    IsNightShift = template.IsNightShift,
+                    Note = template.Note
+                });
+                generated++;
+            }
+            catch
+            {
+                skipped++; // Slot already booked or other validation
+            }
+        }
+
+        return new ApplyScheduleTemplateResultDto
+        {
+            GeneratedCount = generated,
+            SkippedCount = skipped
+        };
+    }
+
+    /// <summary>
+    /// Get template list for caddie
+    /// </summary>
+    public async Task<List<CaddieScheduleTemplateDto>> GetTemplatesAsync(Guid caddieId)
+    {
+        await EnsureFeatureAsync();
+        var query = (await _templateRepo.GetQueryableAsync())
+            .Where(x => x.CaddieId == caddieId)
+            .OrderBy(x => x.DayOfWeek).ThenBy(x => x.ShiftCode).ThenBy(x => x.StartTime);
+        var items = await AsyncExecuter.ToListAsync(query);
+
+        if (!items.Any()) return new List<CaddieScheduleTemplateDto>();
+
+        var caddie = await _caddieRepo.GetAsync(caddieId);
+        return items.Select(t => MapTemplateToDto(t, caddie.CaddieName, caddie.CaddieCode)).ToList();
+    }
+
     private static CaddieScheduleDto MapToDto(AppCaddieSchedule entity, string? caddieName, string? caddieCode)
     {
         return new CaddieScheduleDto
@@ -294,6 +415,43 @@ public class CaddieScheduleAppService : ApplicationService
             BookingId = entity.BookingId,
             IsNightShift = entity.IsNightShift,
             Note = entity.Note
+        };
+    }
+
+    private static CaddieScheduleTemplateDto MapTemplateToDto(AppCaddieScheduleTemplate t, string? caddieName, string? caddieCode)
+    {
+        return new CaddieScheduleTemplateDto
+        {
+            Id = t.Id,
+            CaddieId = t.CaddieId,
+            CaddieName = caddieName,
+            CaddieCode = caddieCode,
+            DayOfWeek = t.DayOfWeek,
+            DayOfWeekText = t.DayOfWeek switch
+            {
+                0 => "Chủ nhật",
+                1 => "Thứ 2",
+                2 => "Thứ 3",
+                3 => "Thứ 4",
+                4 => "Thứ 5",
+                5 => "Thứ 6",
+                6 => "Thứ 7",
+                _ => "—"
+            },
+            ShiftCode = t.ShiftCode,
+            ShiftCodeText = t.ShiftCode switch
+            {
+                (byte)CaddieShiftCode.Morning => "Sáng",
+                (byte)CaddieShiftCode.Afternoon => "Chiều",
+                (byte)CaddieShiftCode.Night => "Tối",
+                _ => "Khác"
+            },
+            StartTime = t.StartTime,
+            EndTime = t.EndTime,
+            SlotStatus = t.SlotStatus,
+            IsNightShift = t.IsNightShift,
+            Note = t.Note,
+            TemplateName = t.TemplateName
         };
     }
 }

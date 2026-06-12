@@ -15,6 +15,7 @@ using Volo.Abp;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Application.Services;
 using Volo.Abp.Authorization;
+using Volo.Abp.BackgroundJobs;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Features;
 using Volo.Abp.MultiTenancy;
@@ -32,6 +33,7 @@ public class CaddieRatingAppService : ApplicationService
     private readonly IRepository<Customer, Guid> _customerRepo;
     private readonly ICurrentTenant _currentTenant;
     private readonly IFeatureChecker _featureChecker;
+    private readonly IBackgroundJobManager _backgroundJobManager;
 
     public CaddieRatingAppService(
         IRepository<AppCaddieRating, Guid> ratingRepo,
@@ -41,7 +43,8 @@ public class CaddieRatingAppService : ApplicationService
         IRepository<AppCaddieSkill, Guid> skillRepo,
         IRepository<Customer, Guid> customerRepo,
         ICurrentTenant currentTenant,
-        IFeatureChecker featureChecker)
+        IFeatureChecker featureChecker,
+        IBackgroundJobManager backgroundJobManager)
     {
         _ratingRepo = ratingRepo;
         _ratingDetailRepo = ratingDetailRepo;
@@ -51,6 +54,7 @@ public class CaddieRatingAppService : ApplicationService
         _customerRepo = customerRepo;
         _currentTenant = currentTenant;
         _featureChecker = featureChecker;
+        _backgroundJobManager = backgroundJobManager;
         LocalizationResource = typeof(MultiTenancyResource);
     }
 
@@ -304,9 +308,12 @@ public class CaddieRatingAppService : ApplicationService
 
         await _ratingRepo.UpdateAsync(rating, autoSave: true);
 
-        // Update caddie rating_avg if approved
-        if (input.ApprovalStatus == (byte)CaddieRatingApprovalStatus.Approved)
-            await UpdateCaddieRatingAvgAsync(rating.CaddieId);
+        // Enqueue background job to recalculate caddie rating avg
+        if (input.ApprovalStatus == (byte)CaddieRatingApprovalStatus.Approved ||
+            input.ApprovalStatus == (byte)CaddieRatingApprovalStatus.Rejected)
+        {
+            await _backgroundJobManager.EnqueueAsync(new RecalculateCaddieRatingArgs { CaddieId = rating.CaddieId, TenantId = _currentTenant.Id });
+        }
     }
 
     public async Task DeleteAsync(Guid id)
@@ -326,51 +333,8 @@ public class CaddieRatingAppService : ApplicationService
 
         await _ratingRepo.DeleteAsync(id);
 
-        // Recalculate rating avg
-        await UpdateCaddieRatingAvgAsync(rating.CaddieId);
-    }
-
-    private async Task UpdateCaddieRatingAvgAsync(Guid caddieId)
-    {
-        // Get all approved ratings for this caddie
-        var approvedQuery = (await _ratingRepo.GetQueryableAsync())
-            .Where(x => x.CaddieId == caddieId && x.ApprovalStatus == (byte)CaddieRatingApprovalStatus.Approved);
-        var approvedRatings = await AsyncExecuter.ToListAsync(approvedQuery);
-
-        if (!approvedRatings.Any())
-        {
-            var caddie2 = await _caddieRepo.GetAsync(caddieId);
-            caddie2.RatingAvg = 0;
-            caddie2.TotalBooking = 0;
-            await _caddieRepo.UpdateAsync(caddie2, autoSave: true);
-            return;
-        }
-
-        // For each rating, compute avg from skill details
-        var ratingIds = approvedRatings.Select(r => r.Id).ToList();
-        var allDetails = await AsyncExecuter.ToListAsync(
-            (await _ratingDetailRepo.GetQueryableAsync()).Where(d => ratingIds.Contains(d.RatingId)));
-
-        var perBookingAvgs = new List<decimal>();
-        foreach (var rating in approvedRatings)
-        {
-            var details = allDetails.Where(d => d.RatingId == rating.Id).ToList();
-            if (details.Any())
-            {
-                // Avg from skill scores
-                perBookingAvgs.Add((decimal)details.Average(d => d.Score));
-            }
-            else
-            {
-                // Fallback to OverallRating if no details
-                perBookingAvgs.Add(rating.OverallRating);
-            }
-        }
-
-        var caddie = await _caddieRepo.GetAsync(caddieId);
-        caddie.RatingAvg = Math.Round(perBookingAvgs.Average(), 2);
-        caddie.TotalBooking = approvedRatings.Count;
-        await _caddieRepo.UpdateAsync(caddie, autoSave: true);
+        // Enqueue background job to recalculate caddie rating avg
+        await _backgroundJobManager.EnqueueAsync(new RecalculateCaddieRatingArgs { CaddieId = rating.CaddieId, TenantId = _currentTenant.Id });
     }
 
     private static string GetApprovalStatusText(byte status) => status switch

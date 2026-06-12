@@ -165,21 +165,23 @@ $(function () {
         window.location.reload();
     });
 
-    // ── Excel Import ──────────────────────────────────────────────────
+    // ── Excel Import with Preview ──────────────────────────────────
+    var importFile = null;
+
     $('#btnImportExcel').click(function () {
         $('#excelFileInput').click();
     });
 
     $('#excelFileInput').on('change', function () {
-        var file = this.files[0];
-        if (!file) return;
+        importFile = this.files[0];
+        if (!importFile) return;
 
         var formData = new FormData();
-        formData.append('file', file);
+        formData.append('file', importFile);
 
         abp.ui.setBusy();
         $.ajax({
-            url: '/api/app/caddie-schedule-excel/upload',
+            url: '/api/app/caddie-schedule-excel/preview',
             type: 'POST',
             data: formData,
             processData: false,
@@ -187,6 +189,58 @@ $(function () {
             headers: { 'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val() },
             success: function (result) {
                 abp.ui.clearBusy();
+                if (result.totalRows === 0) {
+                    abp.message.warn('File Excel không có dữ liệu hợp lệ.', 'Preview');
+                    importFile = null;
+                    return;
+                }
+
+                // Build preview table
+                var html = '<table class="table table-sm table-bordered" style="font-size:12px;"><thead><tr><th>Ngày</th><th>Ca</th><th>Giờ BĐ</th><th>Giờ KT</th><th>Trạng thái</th><th>Ghi chú</th></tr></thead><tbody>';
+                result.items.forEach(function (item) {
+                    var date = item.workDate ? luxon.DateTime.fromISO(item.workDate).toFormat('dd/MM/yyyy') : '—';
+                    html += '<tr><td>' + date + '</td><td>' + (item.shiftCodeText || '') + '</td><td>' + (item.startTime || '') + '</td><td>' + (item.endTime || '') + '</td><td>' + (item.slotStatusText || '') + '</td><td>' + (item.note || '') + '</td></tr>';
+                });
+                html += '</tbody></table>';
+
+                $('#importPreviewContent').html(html);
+                $('#importPreviewCount').text(result.totalRows + ' bản ghi');
+                new bootstrap.Modal(document.getElementById('importPreviewModal')).show();
+            },
+            error: function (xhr) {
+                abp.ui.clearBusy();
+                importFile = null;
+                var errMsg = 'Đọc file thất bại.';
+                if (xhr.responseJSON && xhr.responseJSON.error && xhr.responseJSON.error.message) {
+                    errMsg = xhr.responseJSON.error.message;
+                }
+                abp.message.error(errMsg, 'Lỗi Preview');
+            }
+        });
+
+        // Reset file input value (allows re-selecting same file)
+        $(this).val('');
+    });
+
+    // Confirm import after preview
+    $('#btnConfirmImport').click(function () {
+        if (!importFile) { abp.notify.error('Không tìm thấy file. Vui lòng chọn lại.'); return; }
+
+        var formData = new FormData();
+        formData.append('file', importFile);
+
+        bootstrap.Modal.getInstance(document.getElementById('importPreviewModal')).hide();
+        abp.ui.setBusy();
+        $.ajax({
+            url: '/api/app/caddie-schedule-excel/confirm-import',
+            type: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            headers: { 'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val() },
+            success: function (result) {
+                abp.ui.clearBusy();
+                importFile = null;
                 var msg = 'Import hoàn tất: ' + result.successCount + '/' + result.totalRows + ' thành công.';
                 if (result.errorCount > 0) {
                     msg += '\n\nLỗi (' + result.errorCount + '):\n' + (result.errors || []).join('\n');
@@ -200,6 +254,7 @@ $(function () {
             },
             error: function (xhr) {
                 abp.ui.clearBusy();
+                importFile = null;
                 var errMsg = 'Import thất bại.';
                 if (xhr.responseJSON && xhr.responseJSON.error && xhr.responseJSON.error.message) {
                     errMsg = xhr.responseJSON.error.message;
@@ -207,8 +262,92 @@ $(function () {
                 abp.message.error(errMsg, 'Lỗi Import');
             }
         });
+    });
 
-        // Reset file input
-        $(this).val('');
+    // ── Schedule Template ─────────────────────────────────────────────
+    var weekStart = $('#WeekStart').val();
+    var applyWeekPicker = flatpickr('#applyTargetWeek', { dateFormat: 'd/m/Y' });
+
+    function loadCaddieSelect($select) {
+        $select.find('option:not(:first)').remove();
+        if (window.__caddieItems) {
+            window.__caddieItems.forEach(function (c) {
+                $select.append('<option value="' + c.value + '">' + c.text + '</option>');
+            });
+        }
+    }
+
+    // Save Template
+    $('#btnSaveTemplate').click(function () {
+        loadCaddieSelect($('#templateCaddieId'));
+        var weekLabel = luxon.DateTime.fromISO(weekStart).toFormat('dd/MM') + ' — ' + luxon.DateTime.fromISO(weekStart).plus({ days: 6 }).toFormat('dd/MM/yyyy');
+        $('#saveTemplateWeekLabel').text(weekLabel);
+        new bootstrap.Modal(document.getElementById('saveTemplateModal')).show();
+    });
+
+    $('#btnConfirmSaveTemplate').click(function () {
+        var caddieId = $('#templateCaddieId').val();
+        var templateName = $('#templateName').val();
+
+        if (!caddieId) { abp.notify.error('Vui lòng chọn Caddie'); return; }
+
+        abp.ui.setBusy();
+        $.ajax({
+            url: '/api/app/caddie-schedule-excel/save-template',
+            type: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({ caddieId: caddieId, weekStart: weekStart, templateName: templateName }),
+            headers: { 'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val() },
+            success: function (result) {
+                abp.ui.clearBusy();
+                bootstrap.Modal.getInstance(document.getElementById('saveTemplateModal')).hide();
+                abp.notify.success('Đã lưu template (' + result.length + ' khung giờ)');
+            },
+            error: function (xhr) {
+                abp.ui.clearBusy();
+                var errMsg = xhr.responseJSON && xhr.responseJSON.error ? xhr.responseJSON.error.message : 'Lưu template thất bại';
+                abp.message.error(errMsg, 'Lỗi');
+            }
+        });
+    });
+
+    // Apply Template
+    $('#btnApplyTemplate').click(function () {
+        loadCaddieSelect($('#applyCaddieId'));
+        new bootstrap.Modal(document.getElementById('applyTemplateModal')).show();
+    });
+
+    $('#btnConfirmApplyTemplate').click(function () {
+        var caddieId = $('#applyCaddieId').val();
+        var targetWeekStr = $('#applyTargetWeek').val();
+
+        if (!caddieId) { abp.notify.error('Vui lòng chọn Caddie'); return; }
+        if (!targetWeekStr) { abp.notify.error('Vui lòng chọn ngày bắt đầu tuần'); return; }
+
+        // Parse dd/mm/yyyy to ISO
+        var parts = targetWeekStr.split('/');
+        var targetWeekStart = parts[2] + '-' + parts[1] + '-' + parts[0];
+
+        abp.ui.setBusy();
+        $.ajax({
+            url: '/api/app/caddie-schedule-excel/apply-template',
+            type: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({ caddieId: caddieId, targetWeekStart: targetWeekStart }),
+            headers: { 'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val() },
+            success: function (result) {
+                abp.ui.clearBusy();
+                bootstrap.Modal.getInstance(document.getElementById('applyTemplateModal')).hide();
+                var msg = 'Đã tạo ' + result.generatedCount + ' khung giờ.';
+                if (result.skippedCount > 0) msg += ' Bỏ qua ' + result.skippedCount + ' khung giờ đã tồn tại.';
+                abp.notify.success(msg);
+                setTimeout(function () { window.location.reload(); }, 1500);
+            },
+            error: function (xhr) {
+                abp.ui.clearBusy();
+                var errMsg = xhr.responseJSON && xhr.responseJSON.error ? xhr.responseJSON.error.message : 'Áp dụng template thất bại';
+                abp.message.error(errMsg, 'Lỗi');
+            }
+        });
     });
 });

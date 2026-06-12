@@ -56,6 +56,12 @@
                 <button type="button" id="btnDeleteRange" class="btn btn-sm btn-outline-danger" style="font-weight:600;border-radius:6px;white-space:nowrap;" title="Xóa lịch làm việc">
                     <i class="fa fa-trash me-1"></i> Xóa lịch
                 </button>
+                <button type="button" id="btnSaveTemplate" class="btn btn-sm btn-outline-warning" style="font-weight:600;border-radius:6px;white-space:nowrap;" title="Lưu lịch tuần hiện tại làm template">
+                    <i class="fa fa-save me-1"></i> Lưu Template
+                </button>
+                <button type="button" id="btnApplyTemplate" class="btn btn-sm btn-outline-info" style="font-weight:600;border-radius:6px;white-space:nowrap;" title="Áp dụng template cho tuần tiếp theo">
+                    <i class="fa fa-magic me-1"></i> Áp dụng Template
+                </button>
             }
             <!-- Excel buttons inline -->
             <a href="/api/app/caddie-schedule-excel/download-template" class="btn btn-sm btn-outline-secondary" style="font-weight:600;border-radius:6px;white-space:nowrap;" title="Tải file mẫu">
@@ -378,6 +384,94 @@
             <div class="modal-footer" style="padding:16px 24px;border-top:1px solid rgba(192,199,212,0.1);">
                 <button type="button" class="btn btn-light" data-bs-dismiss="modal" style="font-weight:700;">Hủy</button>
                 <button type="button" class="btn btn-danger" id="btnConfirmDeleteRange" style="font-weight:700;border-radius:8px;"><i class="fa fa-trash me-1"></i> Xóa lịch</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Import Preview Modal -->
+<div class="modal fade" id="importPreviewModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content" style="border-radius:12px;border:none;">
+            <div class="modal-header" style="padding:20px 24px;border-bottom:1px solid rgba(192,199,212,0.1);">
+                <div>
+                    <h5 class="modal-title" style="font-weight:800;">Xem trước dữ liệu Import</h5>
+                    <p style="font-size:12px;color:var(--caddie-on-surface-variant);margin:2px 0 0;">Kiểm tra dữ liệu trước khi lưu vào hệ thống. Tổng: <strong id="importPreviewCount">0</strong></p>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" style="padding:24px;max-height:400px;overflow-y:auto;">
+                <div id="importPreviewContent">
+                    <p class="text-muted">Đang tải...</p>
+                </div>
+            </div>
+            <div class="modal-footer" style="padding:16px 24px;border-top:1px solid rgba(192,199,212,0.1);">
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal" style="font-weight:700;">Hủy</button>
+                <button type="button" class="btn-caddie-primary" id="btnConfirmImport"><i class="fa fa-check me-1"></i> Xác nhận Import</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Save Template Modal -->
+<div class="modal fade" id="saveTemplateModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="border-radius:12px;border:none;">
+            <div class="modal-header" style="padding:20px 24px;border-bottom:1px solid rgba(192,199,212,0.1);">
+                <div>
+                    <h5 class="modal-title" style="font-weight:800;">Lưu Template lịch tuần</h5>
+                    <p style="font-size:12px;color:var(--caddie-on-surface-variant);margin:2px 0 0;">Lưu lịch tuần hiện tại thành mẫu để áp dụng cho các tuần tiếp theo.</p>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" style="padding:24px;">
+                <div class="mb-3">
+                    <label class="caddie-form-label">Chọn Caddie <span class="text-danger">*</span></label>
+                    <select id="templateCaddieId" class="form-select caddie-form-control">
+                        <option value="">-- Chọn Caddie --</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="caddie-form-label">Tên template (tùy chọn)</label>
+                    <input type="text" id="templateName" class="form-control caddie-form-control" placeholder="VD: Ca chuẩn tuần" />
+                </div>
+                <p style="font-size:12px;color:var(--caddie-on-surface-variant);"><i class="fa fa-info-circle me-1"></i> Hệ thống sẽ lưu tất cả lịch trong tuần hiện tại (<strong id="saveTemplateWeekLabel"></strong>) của Caddie được chọn làm mẫu.</p>
+            </div>
+            <div class="modal-footer" style="padding:16px 24px;border-top:1px solid rgba(192,199,212,0.1);">
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal" style="font-weight:700;">Hủy</button>
+                <button type="button" class="btn btn-warning" id="btnConfirmSaveTemplate" style="font-weight:700;border-radius:8px;"><i class="fa fa-save me-1"></i> Lưu Template</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Apply Template Modal -->
+<div class="modal fade" id="applyTemplateModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="border-radius:12px;border:none;">
+            <div class="modal-header" style="padding:20px 24px;border-bottom:1px solid rgba(192,199,212,0.1);">
+                <div>
+                    <h5 class="modal-title" style="font-weight:800;">Áp dụng Template lịch</h5>
+                    <p style="font-size:12px;color:var(--caddie-on-surface-variant);margin:2px 0 0;">Tự động tạo lịch cho tuần mới từ template đã lưu.</p>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" style="padding:24px;">
+                <div class="mb-3">
+                    <label class="caddie-form-label">Chọn Caddie <span class="text-danger">*</span></label>
+                    <select id="applyCaddieId" class="form-select caddie-form-control">
+                        <option value="">-- Chọn Caddie --</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="caddie-form-label">Tuần bắt đầu từ ngày <span class="text-danger">*</span></label>
+                    <input type="text" id="applyTargetWeek" class="form-control caddie-form-control" placeholder="dd/mm/yyyy" />
+                </div>
+                <p style="font-size:12px;color:var(--caddie-on-surface-variant);"><i class="fa fa-info-circle me-1"></i> Lịch sẽ được generate từ template đã lưu. Nếu trùng khung giờ đã có booking sẽ bị bỏ qua.</p>
+            </div>
+            <div class="modal-footer" style="padding:16px 24px;border-top:1px solid rgba(192,199,212,0.1);">
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal" style="font-weight:700;">Hủy</button>
+                <button type="button" class="btn btn-info text-white" id="btnConfirmApplyTemplate" style="font-weight:700;border-radius:8px;"><i class="fa fa-magic me-1"></i> Áp dụng</button>
             </div>
         </div>
     </div>

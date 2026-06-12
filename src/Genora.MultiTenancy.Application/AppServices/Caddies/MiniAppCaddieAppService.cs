@@ -275,6 +275,23 @@ public class MiniAppCaddieAppService : ApplicationService
 
             if (firstCaddie == null) firstCaddie = caddie;
 
+            // Schedule Conflict Detection: check for existing bookings that overlap this time slot
+            var existingBookingDetails = await AsyncExecuter.ToListAsync(
+                (await _bookingDetailRepo.GetQueryableAsync())
+                    .Where(d => d.CaddieId == item.CaddieId));
+            var existingBookingIds = existingBookingDetails.Select(d => d.CaddieBookingId).Distinct().ToList();
+            if (existingBookingIds.Any())
+            {
+                var conflictQuery = (await _bookingRepo.GetQueryableAsync())
+                    .Where(b => existingBookingIds.Contains(b.Id)
+                        && b.BookingDate == input.BookingDate.Date
+                        && b.Status != (byte)CaddieBookingStatus.Cancelled
+                        && b.StartTime == input.StartTime);
+                var conflictBooking = await AsyncExecuter.FirstOrDefaultAsync(conflictQuery);
+                if (conflictBooking != null)
+                    throw new AbpValidationException($"Caddie {caddie.CaddieName} đã có booking #{conflictBooking.BookingCode} trùng thời gian.");
+            }
+
             var scheduleQuery = (await _scheduleRepo.GetQueryableAsync())
                 .Where(x => x.CaddieId == item.CaddieId
                     && x.WorkDate == input.BookingDate.Date
