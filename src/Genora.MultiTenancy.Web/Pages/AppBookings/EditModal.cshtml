@@ -10,7 +10,10 @@
     Layout = null;
 }
 
-<form asp-page="/AppBookings/EditModal" method="post" id="EditBookingForm">
+<form asp-page="/AppBookings/EditModal" method="post" id="EditBookingForm"
+      data-calendar-slot-id="@Model.Booking.CalendarSlotId"
+      data-number-holes="@(Model.BookingView.NumberHoles ?? 18)"
+      data-customer-type-code="@Model.CustomerTypeCode">
     <input type="hidden" asp-for="Id" />
 
     <!-- Hidden để preserve các field không cho sửa nhưng vẫn post về -->
@@ -435,6 +438,54 @@
                 syncDisplayToHidden($(this));
             });
             recalcTotalAmountFromPlayers();
+        });
+
+        // ===== VgaCode validation — auto-update price khi admin nhập Mã hội viên =====
+        var calendarSlotId = $form.attr('data-calendar-slot-id') || '';
+        var numberHoles = parseInt($form.attr('data-number-holes') || '18', 10);
+        var customerType = ($form.attr('data-customer-type-code') || '').trim().toUpperCase();
+
+        function validateVgaCode($input) {
+            // Chỉ xử lý khi người booking là Member (MB)
+            if (customerType !== 'MB') return;
+
+            var vgaCode = ($input.val() || '').trim();
+            if (!vgaCode || !calendarSlotId) return;
+
+            // Tìm ô giá tương ứng cùng dòng
+            var $row = $input.closest('tr');
+            var $priceDisplay = $row.find('input.money-display[data-role="player-price"]');
+            var $priceHidden = $row.find('input[type="hidden"][name$=".PricePerPlayer"]');
+
+            // Bỏ qua dòng đầu tiên (người booking)
+            var rowIndex = $row.index();
+            if (rowIndex === 0) return;
+
+            $.ajax({
+                url: '/api/mini-app/validate-vga-code',
+                type: 'GET',
+                data: {
+                    vgaCode: vgaCode,
+                    calendarSlotId: calendarSlotId,
+                    numberHoles: numberHoles
+                },
+                success: function (res) {
+                    if (res && res.isValid && res.pricePerGolfer != null) {
+                        var price = Math.round(res.pricePerGolfer);
+                        $priceHidden.val(String(price));
+                        $priceDisplay.val(formatMoneyVN(String(price)));
+                        recalcTotalAmountFromPlayers();
+                    }
+                },
+                error: function () {
+                    // không xử lý lỗi — giữ nguyên giá hiện tại
+                }
+            });
+        }
+
+        // Bind blur cho VgaCode inputs (cả existing và new rows)
+        $tbody.on('blur', 'input[name$=".VgaCode"]', function () {
+            validateVgaCode($(this));
         });
     });
 </script>

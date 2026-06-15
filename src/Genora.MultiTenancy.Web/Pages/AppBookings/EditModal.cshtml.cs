@@ -24,6 +24,11 @@ public class EditModalModel : PageModel
     // DTO hiển thị thông tin đầy đủ (bao gồm BookingCode, CustomerName, GolfCourseName...)
     public AppBookingDto BookingView { get; set; }
 
+    /// <summary>
+    /// Mã loại khách hàng (MB, VIS, MBG,...) — dùng cho JS validate VgaCode
+    /// </summary>
+    public string CustomerTypeCode { get; set; } = "";
+
     public List<SelectListItem> StatusItems { get; set; } = new();
     public List<SelectListItem> PaymentMethodItems { get; set; } = new();
     public List<SelectListItem> SourceItems { get; set; } = new();
@@ -42,6 +47,7 @@ public class EditModalModel : PageModel
 
         Id = id;
         BookingView = dto;
+        CustomerTypeCode = dto.CustomerTypeCode ?? "";
 
         Booking = new CreateUpdateAppBookingDto
         {

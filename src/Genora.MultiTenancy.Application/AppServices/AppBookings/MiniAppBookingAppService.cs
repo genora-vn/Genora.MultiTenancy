@@ -147,7 +147,16 @@ public class MiniAppBookingAppService : ApplicationService, IMiniAppBookingAppSe
             ? PriceByHoleHelper.GetPriceByNumberHoles(myPriceRow, input.NumberHoles)
             : 0m;
 
-        input.TotalAmount = input.PricePerGolfer * input.NumberOfGolfers;
+        // TotalAmount = tổng giá thực tế từ từng người chơi (sum PricePerGolfer trong players)
+        // Fallback: nếu không có players thì dùng PricePerGolfer * NumberOfGolfers
+        if (input.Players != null && input.Players.Any())
+        {
+            input.TotalAmount = input.Players.Sum(p => p.PricePerGolfer);
+        }
+        else
+        {
+            input.TotalAmount = input.PricePerGolfer * input.NumberOfGolfers;
+        }
 
         var booking = new Booking(
             GuidGenerator.Create(),
@@ -264,9 +273,9 @@ public class MiniAppBookingAppService : ApplicationService, IMiniAppBookingAppSe
                 booking.CalendarSlotId,
                 booking.NumberHole,
                 booking.NumberOfGolfers,
-                booking.GolfCourseId
+                booking.GolfCourseId,
+                savedPlayers
             );
-
             var emailTotalAmount = SumPriceBreakdownItems(priceBreakdownItems);
             if (emailTotalAmount <= 0m)
             {
@@ -617,7 +626,8 @@ public class MiniAppBookingAppService : ApplicationService, IMiniAppBookingAppSe
                     booking.CalendarSlotId,
                     booking.NumberHole,
                     booking.NumberOfGolfers,
-                    booking.GolfCourseId
+                    booking.GolfCourseId,
+                    newPlayers
                 );
 
                 var emailTotalAmount = SumPriceBreakdownItems(priceBreakdownItems);
@@ -880,10 +890,38 @@ public class MiniAppBookingAppService : ApplicationService, IMiniAppBookingAppSe
 
             var golfCourse = await _golfCourseRepo.FindAsync(booking.GolfCourseId);
             dto.IsMemberSupported = golfCourse?.IsMemberSupported ?? false;
-            // Calculate actual MaxMemberGuest: how many guests get MemberGuest price in this booking
+
+            // ===== Kiểm tra VgaCode của người chơi cùng → đếm số người là Member =====
+            int validMemberCompanions = 0;
             if (golfCourse?.IsMemberSupported == true && currentCt?.Code == "MB")
             {
-                dto.MaxMemberGuest = Math.Min(booking.NumberOfGolfers - 1, golfCourse.MaxMemberGuest ?? 0);
+                // Lấy VgaCode của các người chơi cùng (không phải người booking)
+                var companionVgaCodes = players
+                    .Where(p => p.CustomerId != booking.CustomerId && !string.IsNullOrWhiteSpace(p.VgaCode))
+                    .Select(p => p.VgaCode!.Trim())
+                    .ToList();
+
+                if (companionVgaCodes.Count > 0)
+                {
+                    // Kiểm tra VgaCode tồn tại trong AppCustomers và CustomerType là MB
+                    var matchedCustomers = await _customerRepo.GetListAsync(
+                        c => companionVgaCodes.Contains(c.VgaCode));
+
+                    if (matchedCustomers.Count > 0)
+                    {
+                        var allCts = await _customerType.GetListAsync();
+                        var mbType = allCts.FirstOrDefault(c => c.Code == "MB");
+                        if (mbType != null)
+                        {
+                            validMemberCompanions = matchedCustomers
+                                .Count(c => c.CustomerTypeId == mbType.Id);
+                        }
+                    }
+                }
+
+                int originalMaxMbg = Math.Min(booking.NumberOfGolfers - 1, golfCourse.MaxMemberGuest ?? 0);
+                // Giảm MaxMemberGuest theo số người chơi cùng đã xác nhận là Member
+                dto.MaxMemberGuest = Math.Max(0, originalMaxMbg - validMemberCompanions);
             }
             else
             {
@@ -967,18 +1005,23 @@ public class MiniAppBookingAppService : ApplicationService, IMiniAppBookingAppSe
                 if (golfCourse?.IsMemberSupported == true && currentCt?.Code == "MB")
                 {
                     decimal mbgSlotPrice = dto.MemberGuestPrice ?? 0m;
-                    int visitorSlots     = Math.Max(0, numGolfers - maxMbg - 1);
 
-                    dto.CustomerBillTotalPrice = mbSlotPrice
-                        + (mbgSlotPrice * Math.Min(maxMbg, numGolfers - 1))
+                    // Số người chơi cùng đã xác nhận là Member → được giá MB
+                    int mbCount = 1 + validMemberCompanions; // người booking + companion members
+                    int remainingCompanions = numGolfers - mbCount;
+                    int mbgCount = Math.Min(Math.Max(0, maxMbg - validMemberCompanions), remainingCompanions);
+                    int visitorSlots = Math.Max(0, remainingCompanions - mbgCount);
+
+                    dto.CustomerBillTotalPrice = (mbSlotPrice * mbCount)
+                        + (mbgSlotPrice * mbgCount)
                         + (visitorSlots * dto.VisitorPrice);
 
                     decimal mbOriginal  = mbCtx?.OriginalPrice  ?? 0m;
                     decimal mbgOriginal = mbgCtx?.OriginalPrice ?? 0m;
                     decimal visOriginal = visCtx?.OriginalPrice ?? 0m;
 
-                    dto.OriginalBillTotalPrice = mbOriginal
-                        + (mbgOriginal * Math.Min(maxMbg, numGolfers - 1))
+                    dto.OriginalBillTotalPrice = (mbOriginal * mbCount)
+                        + (mbgOriginal * mbgCount)
                         + (visitorSlots * visOriginal);
                 }
                 else
@@ -1402,7 +1445,8 @@ public class MiniAppBookingAppService : ApplicationService, IMiniAppBookingAppSe
     Guid? calendarSlotId,
     short? numberHoles,
     int numberOfGolfers,
-    Guid golfCourseId)
+    Guid golfCourseId,
+    List<BookingPlayer>? players = null)
     {
         var result = new List<BookingPriceBreakdownEmailItemDto>();
 
@@ -1470,10 +1514,28 @@ public class MiniAppBookingAppService : ApplicationService, IMiniAppBookingAppSe
 
         if (customerTypeCode == "MB" && isMemberSupported)
         {
-            AddItem(mbType, 1);
+            // ===== Đếm số companion đã nhập VgaCode hợp lệ và là Member =====
+            int validMemberCompanions = 0;
+            if (players != null && players.Count > 0 && mbType != null)
+            {
+                var companionVgaCodes = players
+                    .Where(p => p.CustomerId != customer.Id && !string.IsNullOrWhiteSpace(p.VgaCode))
+                    .Select(p => p.VgaCode!.Trim())
+                    .ToList();
 
-            var remaining = Math.Max(0, numberOfGolfers - 1);
-            var mbgCount = Math.Min(maxMemberGuest, remaining);
+                if (companionVgaCodes.Count > 0)
+                {
+                    var matchedCustomers = await _customerRepo.GetListAsync(
+                        c => companionVgaCodes.Contains(c.VgaCode));
+                    validMemberCompanions = matchedCustomers.Count(c => c.CustomerTypeId == mbType.Id);
+                }
+            }
+
+            int mbCount = 1 + validMemberCompanions;
+            AddItem(mbType, mbCount);
+
+            var remaining = Math.Max(0, numberOfGolfers - mbCount);
+            var mbgCount = Math.Min(Math.Max(0, maxMemberGuest - validMemberCompanions), remaining);
             var visCount = Math.Max(0, remaining - mbgCount);
 
             AddItem(mbgType, mbgCount);

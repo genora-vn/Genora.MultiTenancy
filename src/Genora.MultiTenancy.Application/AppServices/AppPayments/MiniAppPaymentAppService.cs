@@ -1,9 +1,11 @@
 using Genora.MultiTenancy.AppDtos.AppPayments;
 using Genora.MultiTenancy.AppServices.AppZaloAuths;
+using Genora.MultiTenancy.DomainModels.AppBookingPlayers;
 using Genora.MultiTenancy.DomainModels.AppBookings;
 using Genora.MultiTenancy.Enums;
 using Genora.MultiTenancy.Enums.ErrorCodes;
 using System;
+using System.Linq;
 using System.Threading.Tasks;
 using Volo.Abp;
 using Volo.Abp.Application.Services;
@@ -20,17 +22,20 @@ namespace Genora.MultiTenancy.AppServices.AppPayments;
 public class MiniAppPaymentAppService : ApplicationService, IMiniAppPaymentAppService
 {
     private readonly IRepository<Booking, Guid> _bookingRepo;
+    private readonly IRepository<BookingPlayer, Guid> _playerRepo;
     private readonly ISettingProvider            _settingProvider;
     private readonly ICurrentTenant              _currentTenant;
     private readonly VietQrApiClient             _vietQr;
 
     public MiniAppPaymentAppService(
         IRepository<Booking, Guid> bookingRepo,
+        IRepository<BookingPlayer, Guid> playerRepo,
         ISettingProvider settingProvider,
         ICurrentTenant currentTenant,
         VietQrApiClient vietQr)
     {
         _bookingRepo     = bookingRepo;
+        _playerRepo      = playerRepo;
         _settingProvider = settingProvider;
         _currentTenant   = currentTenant;
         _vietQr          = vietQr;
@@ -63,7 +68,12 @@ public class MiniAppPaymentAppService : ApplicationService, IMiniAppPaymentAppSe
 
         // 3. Tạo orderId duy nhất: BookingCode + timestamp (tránh trùng khi retry)
         var orderId     = $"{booking.BookingCode}_{DateTimeOffset.UtcNow.ToUnixTimeSeconds()}";
-        decimal? totalAmount = booking.TotalAmount;
+
+        // Amount = tổng giá thực tế từng người chơi (sum PricePerPlayer) — fallback booking.TotalAmount
+        var players = await _playerRepo.GetListAsync(x => x.BookingId == booking.Id);
+        decimal totalFromPlayers = players.Sum(p => p.PricePerPlayer ?? 0m);
+        decimal? totalAmount = totalFromPlayers > 0 ? totalFromPlayers : booking.TotalAmount;
+
         var amount = (long)(totalAmount ?? 0m);
         var description = $"Thanh toan dat san - {booking.BookingCode}";
 

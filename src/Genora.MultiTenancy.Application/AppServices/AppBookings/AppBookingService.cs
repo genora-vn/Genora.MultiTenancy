@@ -353,6 +353,7 @@ public class AppBookingService :
 
             CustomerId = booking.CustomerId,
             CustomerType = ctName,
+            CustomerTypeCode = ct?.Code,
             PromotionType = promotionTypeName,
 
             CustomerName = customer?.FullName,
@@ -501,7 +502,8 @@ public class AppBookingService :
                 entity.CalendarSlotId,
                 entity.NumberHole,
                 entity.NumberOfGolfers,
-                entity.GolfCourseId
+                entity.GolfCourseId,
+                savedPlayers
             );
 
             var emailTotalAmount = SumPriceBreakdownItems(priceBreakdownItems);
@@ -842,7 +844,8 @@ public class AppBookingService :
                     entity.CalendarSlotId,
                     entity.NumberHole,
                     entity.NumberOfGolfers,
-                    entity.GolfCourseId
+                    entity.GolfCourseId,
+                    newPlayers
                 );
 
                 var emailTotalAmount = SumPriceBreakdownItems(priceBreakdownItems);
@@ -1465,7 +1468,8 @@ public class AppBookingService :
     Guid? calendarSlotId,
     short? numberHoles,
     int numberOfGolfers,
-    Guid golfCourseId)
+    Guid golfCourseId,
+    List<BookingPlayer>? players = null)
     {
         var result = new List<BookingPriceBreakdownEmailItemDto>();
 
@@ -1533,10 +1537,28 @@ public class AppBookingService :
 
         if (customerTypeCode == "MB" && isMemberSupported)
         {
-            AddItem(mbType, 1);
+            // ===== Đếm số companion đã nhập VgaCode hợp lệ và là Member =====
+            int validMemberCompanions = 0;
+            if (players != null && players.Count > 0 && mbType != null)
+            {
+                var companionVgaCodes = players
+                    .Where(p => p.CustomerId != customer.Id && !string.IsNullOrWhiteSpace(p.VgaCode))
+                    .Select(p => p.VgaCode!.Trim())
+                    .ToList();
 
-            var remaining = Math.Max(0, numberOfGolfers - 1);
-            var mbgCount = Math.Min(maxMemberGuest, remaining);
+                if (companionVgaCodes.Count > 0)
+                {
+                    var matchedCustomers = await _customerRepository.GetListAsync(
+                        c => companionVgaCodes.Contains(c.VgaCode));
+                    validMemberCompanions = matchedCustomers.Count(c => c.CustomerTypeId == mbType.Id);
+                }
+            }
+
+            int mbCount = 1 + validMemberCompanions;
+            AddItem(mbType, mbCount);
+
+            var remaining = Math.Max(0, numberOfGolfers - mbCount);
+            var mbgCount = Math.Min(Math.Max(0, maxMemberGuest - validMemberCompanions), remaining);
             var visCount = Math.Max(0, remaining - mbgCount);
 
             AddItem(mbgType, mbgCount);

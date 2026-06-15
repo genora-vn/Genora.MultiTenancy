@@ -703,6 +703,74 @@ namespace Genora.MultiTenancy.AppServices.AppCalendarSlots
             return dto;
         }
 
+        /// <summary>
+        /// Validate VGA Code: kiểm tra trong AppCustomers có tồn tại VgaCode = mã nhập vào.
+        /// Nếu hợp lệ → trả về giá theo loại khách hàng từ AppCalendarSlotPrices + giá gốc từ AppCustomerTypes.
+        /// </summary>
+        public async Task<ValidateVgaCodeResultDto> ValidateVgaCodeAsync(string vgaCode, Guid calendarSlotId, short numberHoles)
+        {
+            var invalidResult = new ValidateVgaCodeResultDto { IsValid = false };
+
+            if (string.IsNullOrWhiteSpace(vgaCode))
+                return invalidResult;
+
+            // 1) Tìm customer có VgaCode khớp
+            var customer = await _customerRepo.FirstOrDefaultAsync(c => c.VgaCode == vgaCode.Trim());
+            if (customer == null || !customer.CustomerTypeId.HasValue)
+                return invalidResult;
+
+            // 2) Lấy CustomerType của customer
+            var customerType = await _customerTypeRepository.FindAsync(customer.CustomerTypeId.Value);
+            if (customerType == null)
+                return invalidResult;
+
+            // 3) Lấy CalendarSlot để biết PlayDate
+            var slot = await _calendarSlotRepository.FindAsync(calendarSlotId);
+            if (slot == null)
+                return invalidResult;
+
+            // 4) Lấy giá từ AppCalendarSlotPrices theo CustomerTypeId + CalendarSlotId
+            var prices = await _priceRepository.GetListAsync(p => p.CalendarSlotId == calendarSlotId);
+            var priceRow = prices.FirstOrDefault(p => p.CustomerTypeId == customerType.Id);
+
+            decimal pricePerGolfer = 0m;
+            if (priceRow != null)
+            {
+                pricePerGolfer = PriceByHoleHelper.GetPriceByNumberHoles(priceRow, numberHoles);
+            }
+            else
+            {
+                // Fallback: lấy giá thấp nhất trong slot nếu không có row cho customer type này
+                pricePerGolfer = prices.Count > 0
+                    ? prices.Select(p => PriceByHoleHelper.GetPriceByNumberHoles(p, numberHoles))
+                            .DefaultIfEmpty(0m)
+                            .Min()
+                    : 0m;
+            }
+
+            // 5) Lấy giá gốc theo loại ngày (Weekday/Weekend/Holiday/MemberDay)
+            var specialDates = await _specialDateRepository.GetListAsync(x => x.IsActive);
+            var slotKind = CustomerTypeOriginalPriceResolver.ResolveKind(slot.ApplyDate, specialDates);
+            decimal originalPrice = CustomerTypeOriginalPriceResolver.GetOriginalPriceByKind(customerType, slotKind) ?? 0m;
+
+            // Fallback: nếu chưa cấu hình OriginalPrice cho loại khách → lấy VIS original
+            if (originalPrice <= 0)
+            {
+                var customerTypes = await _customerTypeRepository.GetListAsync();
+                var visCustomerType = customerTypes.FirstOrDefault(c => c.Code == "VIS");
+                originalPrice = CustomerTypeOriginalPriceResolver.GetOriginalPriceByKind(visCustomerType, slotKind) ?? 0m;
+            }
+
+            return new ValidateVgaCodeResultDto
+            {
+                IsValid = true,
+                CustomerTypeCode = customerType.Code,
+                CustomerTypeName = customerType.Name,
+                PricePerGolfer = pricePerGolfer,
+                OriginalPrice = originalPrice
+            };
+        }
+
         private static int ParseHoles(object? numberHoles)
         {
             if (numberHoles == null) return 18;

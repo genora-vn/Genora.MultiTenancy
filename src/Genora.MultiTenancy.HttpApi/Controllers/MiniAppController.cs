@@ -206,6 +206,18 @@ public class MiniAppController : MultiTenancyController
         return _miniAppCalendarSlot.GetMiniAppAsync(input);
     }
 
+    /// <summary>
+    /// Validate VGA Code và trả về giá theo loại khách hàng tương ứng.
+    /// Dùng cho front-end cập nhật lại giá khi người chơi cùng nhập Mã hội viên.
+    /// </summary>
+    [HttpGet("validate-vga-code")]
+    [AllowAnonymous]
+    public Task<ValidateVgaCodeResultDto> ValidateVgaCodeAsync(
+        [FromQuery] string vgaCode,
+        [FromQuery] Guid calendarSlotId,
+        [FromQuery] short numberHoles = 18)
+        => _miniAppCalendarSlot.ValidateVgaCodeAsync(vgaCode, calendarSlotId, numberHoles);
+
     // <summary>
     /// Lấy thông tin user từ Zalo Graph API
     /// </summary>
