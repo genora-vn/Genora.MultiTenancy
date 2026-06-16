@@ -116,9 +116,9 @@ public static class MultiTenancyDbContextModelCreatingExtensionsCaddie
                 .IsRequired(false)
                 .OnDelete(DeleteBehavior.SetNull);
 
-            b.HasIndex(x => new { x.TenantId, x.CaddieId, x.WorkDate, x.ShiftCode })
+            b.HasIndex(x => new { x.TenantId, x.CaddieId, x.WorkDate, x.ShiftCode, x.StartTime })
                 .IsUnique()
-                .HasDatabaseName("IX_AppCaddieSchedules_TenantId_Caddie_Date_Shift");
+                .HasDatabaseName("IX_AppCaddieSchedules_TenantId_Caddie_Date_Shift_Start");
         });
 
         builder.Entity<AppCaddieBooking>(b =>
