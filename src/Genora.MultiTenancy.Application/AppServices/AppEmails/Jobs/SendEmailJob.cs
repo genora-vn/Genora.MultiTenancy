@@ -1,7 +1,8 @@
-﻿using Genora.MultiTenancy.DomainModels.AppEmails;
+using Genora.MultiTenancy.DomainModels.AppEmails;
 using Genora.MultiTenancy.Enums;
 using Microsoft.Extensions.Logging;
 using System;
+using System.Net.Mail;
 using System.Threading.Tasks;
 using Volo.Abp.BackgroundJobs;
 using Volo.Abp.DependencyInjection;
@@ -40,7 +41,6 @@ public class SendEmailJob : AsyncBackgroundJob<SendEmailJobArgs>, ITransientDepe
 
         using (_currentTenant.Change(args.TenantId))
         {
-            // ✅ tránh throw mù mờ, log rõ mail có tồn tại không
             var mail = await _repo.FirstOrDefaultAsync(x => x.Id == args.EmailId);
             if (mail == null)
             {
@@ -49,7 +49,6 @@ public class SendEmailJob : AsyncBackgroundJob<SendEmailJobArgs>, ITransientDepe
                 return;
             }
 
-            // ✅ check lệch tenant (debug cực nhanh)
             if (mail.TenantId != args.TenantId)
             {
                 _logger.LogWarning("[SendEmailJob] Tenant mismatch. ArgsTenantId={ArgsTenantId} MailTenantId={MailTenantId} EmailId={EmailId}",
@@ -70,20 +69,50 @@ public class SendEmailJob : AsyncBackgroundJob<SendEmailJobArgs>, ITransientDepe
             try
             {
                 var tos = (mail.ToEmails ?? "")
-                    .Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+                    .Split(new[] { ';', ',' }, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
 
-                _logger.LogWarning("[SendEmailJob] SENDING ToCount={ToCount} Subject={Subject} TenantId={TenantId} EmailId={EmailId}",
-                    tos.Length, mail.Subject, args.TenantId, mail.Id);
+                var ccs = (mail.CcEmails ?? "")
+                    .Split(new[] { ';', ',' }, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+
+                var bccs = (mail.BccEmails ?? "")
+                    .Split(new[] { ';', ',' }, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+
+                _logger.LogWarning("[SendEmailJob] SENDING ToCount={ToCount} CcCount={CcCount} BccCount={BccCount} Subject={Subject} TenantId={TenantId} EmailId={EmailId}",
+                    tos.Length, ccs.Length, bccs.Length, mail.Subject, args.TenantId, mail.Id);
+
+                if (tos.Length == 0)
+                {
+                    _logger.LogWarning("[SendEmailJob] No recipients. TenantId={TenantId} EmailId={EmailId}", args.TenantId, mail.Id);
+                    mail.Status = EmailStatus.Abandoned;
+                    mail.LastError = "No recipients (ToEmails is empty)";
+                    await _repo.UpdateAsync(mail, autoSave: true);
+                    return;
+                }
+
+                // Gửi email với MailMessage để hỗ trợ đầy đủ To, Cc, Bcc
+                // Người nhận thấy được danh sách To và Cc (Bcc thì ẩn)
+                var message = new MailMessage();
 
                 foreach (var to in tos)
                 {
-                    await _emailSender.SendAsync(
-                        to,
-                        mail.Subject,
-                        mail.Body,
-                        isBodyHtml: true
-                    );
+                    message.To.Add(new MailAddress(to));
                 }
+
+                foreach (var cc in ccs)
+                {
+                    message.CC.Add(new MailAddress(cc));
+                }
+
+                foreach (var bcc in bccs)
+                {
+                    message.Bcc.Add(new MailAddress(bcc));
+                }
+
+                message.Subject = mail.Subject;
+                message.Body = mail.Body;
+                message.IsBodyHtml = true;
+
+                await _emailSender.SendAsync(message);
 
                 mail.Status = EmailStatus.Sent;
                 mail.SentTime = DateTime.UtcNow;

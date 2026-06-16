@@ -21,6 +21,22 @@ public class AppEmailFeatureDefinitionProvider : FeatureDefinitionProvider
             description: L("Feature:MiniAppEmailDesc"),
             valueType: new ToggleStringValueType()
         );
+
+        group.AddFeature(
+            AppEmailFeatures.AllowEmailSettings,
+            defaultValue: "false",
+            displayName: L("Feature:AllowEmailSettings"),
+            description: L("Feature:AllowEmailSettingsDesc"),
+            valueType: new ToggleStringValueType()
+        );
+
+        group.AddFeature(
+            AppEmailFeatures.AllowEmailTemplate,
+            defaultValue: "false",
+            displayName: L("Feature:AllowEmailTemplate"),
+            description: L("Feature:AllowEmailTemplateDesc"),
+            valueType: new ToggleStringValueType()
+        );
     }
 
     private static LocalizableString L(string name)

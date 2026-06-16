@@ -552,8 +552,14 @@
     "FeatureGroup:MiniAppEmail": "Email Mini App",
     "Feature:MiniAppEmail": "Bật quản trị Email Mini App",
     "Feature:MiniAppEmailDesc": "Cho phép quản trị, gửi và theo dõi email từ Mini App.",
-    "PermissionGroup:MiniAppEmail": "Email Mini App (Tenant)",
-    "PermissionGroup:MiniAppEmailHost": "Email Mini App (Host)",
+
+    "Feature:AllowEmailSettings": "Cho phép cài đặt email",
+    "Feature:AllowEmailSettingsDesc": "Cho phép người dùng thay đổi cài đặt gửi email.",
+    "Feature:AllowEmailTemplate": "Cho phép cấu hình mẫu email",
+    "Feature:AllowEmailTemplateDesc": "Cho phép người dùng cấu hình mẫu email (Đến/Cc/Bcc/Chủ đề).",
+    "PermissionGroup:MiniAppEmail": "Email ứng dụng Mini (Người dùng)",
+    "PermissionGroup:MiniAppEmailHost": "Email ứng dụng Mini (Máy chủ)",
+
     "Permission:MiniAppEmail": "Quản trị Email Mini App",
     "Permission:MiniAppEmail.Create": "Tạo email",
     "Permission:MiniAppEmail.Edit": "Sửa email",

@@ -8,4 +8,14 @@ public static class AppEmailFeatures
     /// Công tắc tổng bật/tắt quản lý email trên Mini App.
     /// </summary>
     public const string Management = GroupName + ".Management";
+
+    /// <summary>
+    /// Cho phép thay đổi cài đặt email (Gửi email menu).
+    /// </summary>
+    public const string AllowEmailSettings = GroupName + ".AllowEmailSettings";
+
+    /// <summary>
+    /// Cho phép cấu hình template Email (Cấu hình template Email menu).
+    /// </summary>
+    public const string AllowEmailTemplate = GroupName + ".AllowEmailTemplate";
 }

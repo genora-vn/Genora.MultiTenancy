@@ -1010,16 +1010,20 @@ public class MultiTenancyMenuContributor : IMenuContributor
                     order: 1
                 );
 
-                // 1) Gửi email (ABP default)
-                upgradeSettings.AddItem(
-                    new ApplicationMenuItem(
-                        name: "System.UpgradeSettings.Emailing",
-                        displayName: l["Menu:SystemUpgradeSettings.Emailing"],
-                        url: "/SettingManagement",
-                        icon: "fa fa-envelope",
-                        order: 1
-                    )
-                );
+                // 1) Gửi email (ABP default) — chỉ hiện khi feature AllowEmailSettings được bật
+                var allowEmailSettings = await feature.IsEnabledAsync(AppEmailFeatures.AllowEmailSettings);
+                if (allowEmailSettings)
+                {
+                    upgradeSettings.AddItem(
+                        new ApplicationMenuItem(
+                            name: "System.UpgradeSettings.Emailing",
+                            displayName: l["Menu:SystemUpgradeSettings.Emailing"],
+                            url: "/SettingManagement",
+                            icon: "fa fa-envelope",
+                            order: 1
+                        )
+                    );
+                }
 
                 // 2) Label / shortcut: ZNS/ZBS (Zalo)
                 upgradeSettings.AddItem(
@@ -1032,16 +1036,20 @@ public class MultiTenancyMenuContributor : IMenuContributor
                     )
                 );
 
-                // 3) Label / shortcut: Email templates
-                upgradeSettings.AddItem(
-                    new ApplicationMenuItem(
-                        name: "System.UpgradeSettings.EmailTemplates",
-                        displayName: l["Menu:SystemUpgradeSettings.EmailTemplates"],
-                        url: "/UpgradeSettings/EmailTemplates",
-                        icon: "fa fa-file-text-o",
-                        order: 3
-                    )
-                );
+                // 3) Label / shortcut: Email templates — chỉ hiện khi feature AllowEmailTemplate được bật
+                var allowEmailTemplate = await feature.IsEnabledAsync(AppEmailFeatures.AllowEmailTemplate);
+                if (allowEmailTemplate)
+                {
+                    upgradeSettings.AddItem(
+                        new ApplicationMenuItem(
+                            name: "System.UpgradeSettings.EmailTemplates",
+                            displayName: l["Menu:SystemUpgradeSettings.EmailTemplates"],
+                            url: "/UpgradeSettings/EmailTemplates",
+                            icon: "fa fa-file-text-o",
+                            order: 3
+                        )
+                    );
+                }
 
                 administration.AddItem(upgradeSettings);
             }

@@ -134,12 +134,11 @@ public class CaddieScheduleAppService : ApplicationService
         await AuthorizationService.CheckAsync(
             P(MultiTenancyPermissions.AppCaddieSchedules.Create, MultiTenancyPermissions.HostAppCaddieSchedules.Create));
 
-        // Check if schedule already exists for same caddie + date + shift + startTime (unique time slot)
+        // Check if schedule already exists for same caddie + date + shift (unique index constraint)
         var existingQuery = (await _scheduleRepo.GetQueryableAsync())
             .Where(x => x.CaddieId == input.CaddieId
                 && x.WorkDate == input.WorkDate
-                && x.ShiftCode == input.ShiftCode
-                && x.StartTime == input.StartTime);
+                && x.ShiftCode == input.ShiftCode);
         var existing = await AsyncExecuter.FirstOrDefaultAsync(existingQuery);
 
         if (existing != null)
@@ -148,7 +147,8 @@ public class CaddieScheduleAppService : ApplicationService
             if (existing.SlotStatus == (byte)CaddieSlotStatus.Booked && existing.BookingId.HasValue)
                 throw new UserFriendlyException("Khung giờ này đã có booking, không thể ghi đè.");
 
-            // Overwrite existing
+            // Overwrite existing (upsert pattern)
+            existing.StartTime = input.StartTime;
             existing.EndTime = input.EndTime;
             existing.SlotStatus = input.SlotStatus;
             existing.IsNightShift = input.IsNightShift;
