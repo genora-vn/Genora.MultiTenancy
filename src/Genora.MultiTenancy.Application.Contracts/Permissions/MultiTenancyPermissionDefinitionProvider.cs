@@ -1503,6 +1503,109 @@ public class MultiTenancyPermissionDefinitionProvider : PermissionDefinitionProv
         reportsHostRoot.MultiTenancySide = MultiTenancySides.Host;
 
         #endregion
+
+        #region Hoa Linh
+
+        // ========== TENANT GROUP ==========
+        var hlGroup = context.AddGroup("HoaLinhManagement", L("PermissionGroup:HoaLinhManagement"));
+
+        // HL PRODUCTS (TENANT) - Read-only
+        var hlProductTenantRoot = hlGroup.AddPermission(AppHlProducts.Default, L("Permission:AppHlProducts"));
+        hlProductTenantRoot.MultiTenancySide = MultiTenancySides.Tenant;
+        hlProductTenantRoot.RequireFeatures(Features.AppHoaLinhFeatures.AppHoaLinhFeatures.Management);
+
+        // HL CUSTOMERS (TENANT) - Read-only
+        var hlCustomerTenantRoot = hlGroup.AddPermission(AppHlCustomers.Default, L("Permission:AppHlCustomers"));
+        hlCustomerTenantRoot.MultiTenancySide = MultiTenancySides.Tenant;
+        hlCustomerTenantRoot.RequireFeatures(Features.AppHoaLinhFeatures.AppHoaLinhFeatures.Management);
+
+        // HL ORDERS (TENANT) - CRUD
+        var hlOrderTenantRoot = hlGroup.AddPermission(AppHlOrders.Default, L("Permission:AppHlOrders"));
+        hlOrderTenantRoot.MultiTenancySide = MultiTenancySides.Tenant;
+        hlOrderTenantRoot.RequireFeatures(Features.AppHoaLinhFeatures.AppHoaLinhFeatures.Management);
+
+        var hlOrderTenantCreate = hlOrderTenantRoot.AddChild(AppHlOrders.Create, L("Permission:AppHlOrders.Create"));
+        hlOrderTenantCreate.MultiTenancySide = MultiTenancySides.Tenant;
+        hlOrderTenantCreate.RequireFeatures(Features.AppHoaLinhFeatures.AppHoaLinhFeatures.Management);
+
+        var hlOrderTenantEdit = hlOrderTenantRoot.AddChild(AppHlOrders.Edit, L("Permission:AppHlOrders.Edit"));
+        hlOrderTenantEdit.MultiTenancySide = MultiTenancySides.Tenant;
+        hlOrderTenantEdit.RequireFeatures(Features.AppHoaLinhFeatures.AppHoaLinhFeatures.Management);
+
+        var hlOrderTenantDelete = hlOrderTenantRoot.AddChild(AppHlOrders.Delete, L("Permission:AppHlOrders.Delete"));
+        hlOrderTenantDelete.MultiTenancySide = MultiTenancySides.Tenant;
+        hlOrderTenantDelete.RequireFeatures(Features.AppHoaLinhFeatures.AppHoaLinhFeatures.Management);
+
+        // HL LOYALTY (TENANT) - Read-only
+        var hlLoyaltyTenantRoot = hlGroup.AddPermission(AppHlLoyalty.Default, L("Permission:AppHlLoyalty"));
+        hlLoyaltyTenantRoot.MultiTenancySide = MultiTenancySides.Tenant;
+        hlLoyaltyTenantRoot.RequireFeatures(Features.AppHoaLinhFeatures.AppHoaLinhFeatures.Management);
+
+        // HL GIFT EXCHANGE (TENANT) - CRUD
+        var hlGiftTenantRoot = hlGroup.AddPermission(AppHlGiftExchange.Default, L("Permission:AppHlGiftExchange"));
+        hlGiftTenantRoot.MultiTenancySide = MultiTenancySides.Tenant;
+        hlGiftTenantRoot.RequireFeatures(Features.AppHoaLinhFeatures.AppHoaLinhFeatures.Management);
+
+        var hlGiftTenantCreate = hlGiftTenantRoot.AddChild(AppHlGiftExchange.Create, L("Permission:AppHlGiftExchange.Create"));
+        hlGiftTenantCreate.MultiTenancySide = MultiTenancySides.Tenant;
+        hlGiftTenantCreate.RequireFeatures(Features.AppHoaLinhFeatures.AppHoaLinhFeatures.Management);
+
+        var hlGiftTenantEdit = hlGiftTenantRoot.AddChild(AppHlGiftExchange.Edit, L("Permission:AppHlGiftExchange.Edit"));
+        hlGiftTenantEdit.MultiTenancySide = MultiTenancySides.Tenant;
+        hlGiftTenantEdit.RequireFeatures(Features.AppHoaLinhFeatures.AppHoaLinhFeatures.Management);
+
+        var hlGiftTenantDelete = hlGiftTenantRoot.AddChild(AppHlGiftExchange.Delete, L("Permission:AppHlGiftExchange.Delete"));
+        hlGiftTenantDelete.MultiTenancySide = MultiTenancySides.Tenant;
+        hlGiftTenantDelete.RequireFeatures(Features.AppHoaLinhFeatures.AppHoaLinhFeatures.Management);
+
+        // HL DASHBOARD (TENANT)
+        var hlDashboardTenantRoot = hlGroup.AddPermission(AppHlDashboard.Default, L("Permission:AppHlDashboard"));
+        hlDashboardTenantRoot.MultiTenancySide = MultiTenancySides.Tenant;
+        hlDashboardTenantRoot.RequireFeatures(Features.AppHoaLinhFeatures.AppHoaLinhFeatures.Management);
+
+        // HL API LOGS (TENANT)
+        var hlApiLogsTenantRoot = hlGroup.AddPermission(AppHlApiLogs.Default, L("Permission:AppHlApiLogs"));
+        hlApiLogsTenantRoot.MultiTenancySide = MultiTenancySides.Tenant;
+        hlApiLogsTenantRoot.RequireFeatures(Features.AppHoaLinhFeatures.AppHoaLinhFeatures.Management);
+
+        // ========== HOST GROUP ==========
+        var hlGroupHost = context.AddGroup("HoaLinhManagementHost", L("PermissionGroup:HoaLinhManagementHost"));
+
+        // HL PRODUCTS (HOST)
+        var hlProductHostRoot = hlGroupHost.AddPermission(HostAppHlProducts.Default, L("Permission:AppHlProducts"));
+        hlProductHostRoot.MultiTenancySide = MultiTenancySides.Host;
+
+        // HL CUSTOMERS (HOST)
+        var hlCustomerHostRoot = hlGroupHost.AddPermission(HostAppHlCustomers.Default, L("Permission:AppHlCustomers"));
+        hlCustomerHostRoot.MultiTenancySide = MultiTenancySides.Host;
+
+        // HL ORDERS (HOST)
+        var hlOrderHostRoot = hlGroupHost.AddPermission(HostAppHlOrders.Default, L("Permission:AppHlOrders"));
+        hlOrderHostRoot.MultiTenancySide = MultiTenancySides.Host;
+        hlOrderHostRoot.AddChild(HostAppHlOrders.Create, L("Permission:AppHlOrders.Create")).MultiTenancySide = MultiTenancySides.Host;
+        hlOrderHostRoot.AddChild(HostAppHlOrders.Edit, L("Permission:AppHlOrders.Edit")).MultiTenancySide = MultiTenancySides.Host;
+        hlOrderHostRoot.AddChild(HostAppHlOrders.Delete, L("Permission:AppHlOrders.Delete")).MultiTenancySide = MultiTenancySides.Host;
+
+        // HL LOYALTY (HOST)
+        var hlLoyaltyHostRoot = hlGroupHost.AddPermission(HostAppHlLoyalty.Default, L("Permission:AppHlLoyalty"));
+        hlLoyaltyHostRoot.MultiTenancySide = MultiTenancySides.Host;
+
+        // HL GIFT EXCHANGE (HOST)
+        var hlGiftHostRoot = hlGroupHost.AddPermission(HostAppHlGiftExchange.Default, L("Permission:AppHlGiftExchange"));
+        hlGiftHostRoot.MultiTenancySide = MultiTenancySides.Host;
+        hlGiftHostRoot.AddChild(HostAppHlGiftExchange.Create, L("Permission:AppHlGiftExchange.Create")).MultiTenancySide = MultiTenancySides.Host;
+        hlGiftHostRoot.AddChild(HostAppHlGiftExchange.Edit, L("Permission:AppHlGiftExchange.Edit")).MultiTenancySide = MultiTenancySides.Host;
+        hlGiftHostRoot.AddChild(HostAppHlGiftExchange.Delete, L("Permission:AppHlGiftExchange.Delete")).MultiTenancySide = MultiTenancySides.Host;
+
+        // HL DASHBOARD (HOST)
+        var hlDashboardHostRoot = hlGroupHost.AddPermission(HostAppHlDashboard.Default, L("Permission:AppHlDashboard"));
+        hlDashboardHostRoot.MultiTenancySide = MultiTenancySides.Host;
+
+        // HL API LOGS (HOST)
+        var hlApiLogsHostRoot = hlGroupHost.AddPermission(HostAppHlApiLogs.Default, L("Permission:AppHlApiLogs"));
+        hlApiLogsHostRoot.MultiTenancySide = MultiTenancySides.Host;
+
+        #endregion
     }
 
     private static LocalizableString L(string name)

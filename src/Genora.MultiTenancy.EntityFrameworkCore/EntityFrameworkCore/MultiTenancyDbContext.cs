@@ -30,6 +30,9 @@ using Genora.MultiTenancy.DomainModels.AppZaloAuth;
 using Genora.MultiTenancy.DomainModels.AppSalonBeauty;
 using Genora.MultiTenancy.DomainModels.AppDocuments;
 using Genora.MultiTenancy.DomainModels.AppCaddie;
+using Genora.MultiTenancy.DomainModels.AppHlApiLogs;
+using Genora.MultiTenancy.DomainModels.AppHlGiftExchanges;
+using Genora.MultiTenancy.DomainModels.AppHlOrders;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Hosting;
 using Volo.Abp.AuditLogging.EntityFrameworkCore;
@@ -145,6 +148,12 @@ public class MultiTenancyDbContext :
     public DbSet<AppCaddieRating> AppCaddieRatings { get; set; }
     public DbSet<AppCaddieRatingDetail> AppCaddieRatingDetails { get; set; }
 
+    // Hoa Linh
+    public DbSet<HlOrder> AppHlOrders { get; set; }
+    public DbSet<HlOrderItem> AppHlOrderItems { get; set; }
+    public DbSet<HlGiftExchange> AppHlGiftExchanges { get; set; }
+    public DbSet<HlApiLog> AppHlApiLogs { get; set; }
+
     // Tenant Management
     public DbSet<Tenant> Tenants { get; set; }
     public DbSet<TenantConnectionString> TenantConnectionStrings { get; set; }
@@ -210,6 +219,7 @@ public class MultiTenancyDbContext :
         builder.ConfigurePaymentModule();
         builder.ConfigureSalonBeautyModule();
         builder.ConfigureCaddieModule();
+        builder.ConfigureHoaLinhModule();
 
         builder.Entity<ZaloAuth>(b =>
         {

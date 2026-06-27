@@ -690,6 +690,92 @@ public static class MultiTenancyPermissions
     }
     #endregion
 
+    #region Hoa Linh
+
+    public static class AppHlProducts
+    {
+        public const string Default = GroupName + ".AppHlProducts";
+    }
+
+    public static class HostAppHlProducts
+    {
+        public const string Default = GroupName + ".HostAppHlProducts";
+    }
+
+    public static class AppHlCustomers
+    {
+        public const string Default = GroupName + ".AppHlCustomers";
+    }
+
+    public static class HostAppHlCustomers
+    {
+        public const string Default = GroupName + ".HostAppHlCustomers";
+    }
+
+    public static class AppHlOrders
+    {
+        public const string Default = GroupName + ".AppHlOrders";
+        public const string Create = Default + ".Create";
+        public const string Edit = Default + ".Edit";
+        public const string Delete = Default + ".Delete";
+    }
+
+    public static class HostAppHlOrders
+    {
+        public const string Default = GroupName + ".HostAppHlOrders";
+        public const string Create = Default + ".Create";
+        public const string Edit = Default + ".Edit";
+        public const string Delete = Default + ".Delete";
+    }
+
+    public static class AppHlLoyalty
+    {
+        public const string Default = GroupName + ".AppHlLoyalty";
+    }
+
+    public static class HostAppHlLoyalty
+    {
+        public const string Default = GroupName + ".HostAppHlLoyalty";
+    }
+
+    public static class AppHlGiftExchange
+    {
+        public const string Default = GroupName + ".AppHlGiftExchange";
+        public const string Create = Default + ".Create";
+        public const string Edit = Default + ".Edit";
+        public const string Delete = Default + ".Delete";
+    }
+
+    public static class HostAppHlGiftExchange
+    {
+        public const string Default = GroupName + ".HostAppHlGiftExchange";
+        public const string Create = Default + ".Create";
+        public const string Edit = Default + ".Edit";
+        public const string Delete = Default + ".Delete";
+    }
+
+    public static class AppHlDashboard
+    {
+        public const string Default = GroupName + ".AppHlDashboard";
+    }
+
+    public static class HostAppHlDashboard
+    {
+        public const string Default = GroupName + ".HostAppHlDashboard";
+    }
+
+    public static class AppHlApiLogs
+    {
+        public const string Default = GroupName + ".AppHlApiLogs";
+    }
+
+    public static class HostAppHlApiLogs
+    {
+        public const string Default = GroupName + ".HostAppHlApiLogs";
+    }
+
+    #endregion
+
     //Add your own permission names. Example:
     //public const string MyPermission1 = GroupName + ".MyPermission1";
 }

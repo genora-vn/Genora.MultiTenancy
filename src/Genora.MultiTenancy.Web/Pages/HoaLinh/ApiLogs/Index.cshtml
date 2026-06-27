@@ -1,0 +1,103 @@
+@page
+@model Genora.MultiTenancy.Web.Pages.HoaLinh.ApiLogs.IndexModel
+@inject IHtmlLocalizer<MultiTenancyResource> L
+@using Microsoft.AspNetCore.Mvc.Localization
+@using Genora.MultiTenancy.Localization
+
+@section styles {
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
+    <style>
+        .hl-log-error { background-color: #fff5f5; }
+        .hl-badge-error { background-color: #f8d7da; color: #721c24; }
+        .hl-badge-success { background-color: #d4edda; color: #155724; }
+        .hl-log-url { max-width: 280px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    </style>
+}
+
+@section scripts {
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="~/Pages/HoaLinh/ApiLogs/index.js" asp-append-version="true"></script>
+}
+
+<abp-card>
+    <abp-card-header>
+        <abp-row>
+            <abp-column size-md="_6">
+                <h4 class="mb-0"><i class="fa fa-file-alt me-2"></i>@L["Menu:AppHlApiLogs"]</h4>
+            </abp-column>
+            <abp-column size-md="_6" class="text-end">
+                <button id="BtnDelete" class="btn btn-outline-danger btn-sm me-1">
+                    <i class="fa fa-trash"></i> Xóa theo bộ lọc
+                </button>
+                <button id="BtnRefresh" class="btn btn-outline-secondary btn-sm">
+                    <i class="fa fa-sync-alt"></i> Refresh
+                </button>
+            </abp-column>
+        </abp-row>
+    </abp-card-header>
+    <abp-card-body>
+        <div class="row mb-3 align-items-center g-2">
+            <div class="col-md-2">
+                <select id="FilterDataType" class="form-select form-select-sm">
+                    <option value="">Tất cả loại</option>
+                    <option value="Customer">Customer</option>
+                    <option value="Product">Product</option>
+                    <option value="ProductGroup">ProductGroup</option>
+                    <option value="Brand">Brand</option>
+                    <option value="Order">Order</option>
+                    <option value="Saleman">Saleman</option>
+                    <option value="Campaign">Campaign</option>
+                    <option value="MasterData">MasterData</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <select id="FilterIsError" class="form-select form-select-sm">
+                    <option value="">Tất cả</option>
+                    <option value="true">Có lỗi</option>
+                    <option value="false">Thành công</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <input type="text" id="FilterDateFrom" class="form-control form-control-sm" placeholder="Từ ngày" />
+            </div>
+            <div class="col-md-2">
+                <input type="text" id="FilterDateTo" class="form-control form-control-sm" placeholder="Đến ngày" />
+            </div>
+            <div class="col-md-1">
+                <button id="BtnSearch" class="btn btn-primary btn-sm w-100"><i class="fa fa-search"></i></button>
+            </div>
+        </div>
+
+        <div id="ApiLogTableContainer">
+            <table id="HlApiLogsTable" class="table table-hover table-bordered table-sm w-100">
+                <thead class="table-light">
+                    <tr>
+                        <th>Thời gian</th>
+                        <th>Method</th>
+                        <th>URL</th>
+                        <th>Loại</th>
+                        <th>Nguồn</th>
+                        <th class="text-center">Status</th>
+                        <th class="text-end">Duration</th>
+                        <th>Kết quả</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+
+        <div class="d-flex justify-content-between align-items-center mt-3">
+            <div id="PagingInfo" class="text-muted small"></div>
+            <div class="d-flex align-items-center gap-2">
+                <select id="PageSize" class="form-select form-select-sm" style="width:auto">
+                    <option value="20" selected>20</option>
+                    <option value="50">50</option>
+                    <option value="100">100</option>
+                </select>
+                <nav>
+                    <ul id="Pagination" class="pagination pagination-sm mb-0"></ul>
+                </nav>
+            </div>
+        </div>
+    </abp-card-body>
+</abp-card>

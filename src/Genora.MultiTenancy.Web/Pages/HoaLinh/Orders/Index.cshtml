@@ -1,0 +1,121 @@
+@page
+@model Genora.MultiTenancy.Web.Pages.HoaLinh.Orders.IndexModel
+@inject IHtmlLocalizer<MultiTenancyResource> L
+@using Microsoft.AspNetCore.Mvc.Localization
+@using Genora.MultiTenancy.Localization
+
+@section styles {
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
+    <style>
+        .hl-badge-created { background-color: #d1ecf1; color: #0c5460; }
+        .hl-badge-processing { background-color: #fff3cd; color: #856404; }
+        .hl-badge-completed { background-color: #d4edda; color: #155724; }
+        .hl-badge-paid { background-color: #cce5ff; color: #004085; }
+        .hl-badge-cancelled { background-color: #f8d7da; color: #721c24; }
+        .hl-badge-rejected { background-color: #d6d8db; color: #1b1e21; }
+        .hl-badge-returned { background-color: #e2e3e5; color: #383d41; }
+        .hl-badge-default { background-color: #e9ecef; color: #495057; }
+        .hl-badge-genora { background-color: #e0f2fe; color: #0369a1; font-weight: 600; }
+        .hl-badge-hoalinh { background-color: #dcfce7; color: #166534; font-weight: 600; }
+        .hl-clickable { cursor: pointer; }
+        .hl-clickable:hover { background-color: #f0f4ff !important; }
+    </style>
+}
+
+@section scripts {
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="~/Pages/HoaLinh/Orders/index.js" asp-append-version="true"></script>
+}
+
+<abp-card>
+    <abp-card-header>
+        <abp-row>
+            <abp-column size-md="_6">
+                <h4 class="mb-0"><i class="fa fa-receipt me-2"></i>@L["Menu:AppHlOrders"]</h4>
+            </abp-column>
+            <abp-column size-md="_6" class="text-end">
+                <button id="BtnRefresh" class="btn btn-outline-secondary btn-sm">
+                    <i class="fa fa-sync-alt"></i> Refresh
+                </button>
+            </abp-column>
+        </abp-row>
+    </abp-card-header>
+    <abp-card-body>
+        <div class="row mb-3 align-items-center g-2">
+            <div class="col-md-3">
+                <input type="text" id="FilterText" class="form-control form-control-sm" placeholder="Tìm mã đơn, tên KH, NV Sales..." />
+            </div>
+            <div class="col-md-2">
+                <select id="FilterSource" class="form-select form-select-sm">
+                    <option value="">Tất cả đơn hàng</option>
+                    <option value="genora">Genora (Mini App)</option>
+                    <option value="hoalinh">Hoa Linh (DMS)</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <select id="FilterStatus" class="form-select form-select-sm">
+                    <option value="">Tất cả trạng thái</option>
+                    <option value="1">Khởi tạo</option>
+                    <option value="2">Đang xử lý</option>
+                    <option value="3">Hoàn thành</option>
+                    <option value="4">Đã thanh toán</option>
+                    <option value="5">Đã hủy</option>
+                    <option value="6">Từ chối</option>
+                    <option value="7">Đã trả hàng</option>
+                </select>
+            </div>
+            <div class="col-md-1">
+                <input type="text" id="FilterDateFrom" class="form-control form-control-sm" placeholder="Từ ngày" />
+            </div>
+            <div class="col-md-1">
+                <input type="text" id="FilterDateTo" class="form-control form-control-sm" placeholder="Đến ngày" />
+            </div>
+            <div class="col-md-1">
+                <button id="BtnSearch" class="btn btn-primary btn-sm w-100"><i class="fa fa-search"></i></button>
+            </div>
+        </div>
+
+        <div id="OrderTableContainer">
+            <table id="HlOrdersTable" class="table table-hover table-bordered table-sm w-100">
+                <thead class="table-light">
+                    <tr>
+                        <th>Nguồn</th>
+                        <th>Mã đơn hàng</th>
+                        <th>Khách hàng</th>
+                        <th class="text-end">Thành tiền</th>
+                        <th>Trạng thái</th>
+                        <th>Ngày đặt</th>
+                        <th>NV Sales / Ghi chú</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+
+        <div class="d-flex justify-content-between align-items-center mt-3">
+            <div id="PagingInfo" class="text-muted small"></div>
+            <div class="d-flex align-items-center gap-2">
+                <select id="PageSize" class="form-select form-select-sm" style="width:auto">
+                    <option value="10">10</option>
+                    <option value="20" selected>20</option>
+                    <option value="50">50</option>
+                    <option value="100">100</option>
+                </select>
+                <nav><ul id="Pagination" class="pagination pagination-sm mb-0"></ul></nav>
+            </div>
+        </div>
+    </abp-card-body>
+</abp-card>
+
+<!-- Detail Modal -->
+<div class="modal fade" id="OrderDetailModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fa fa-receipt me-2"></i>Chi tiết đơn hàng</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="OrderDetailBody"></div>
+        </div>
+    </div>
+</div>

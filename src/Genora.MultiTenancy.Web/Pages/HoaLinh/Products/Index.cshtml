@@ -1,0 +1,97 @@
+@page
+@model Genora.MultiTenancy.Web.Pages.HoaLinh.Products.IndexModel
+@inject IHtmlLocalizer<MultiTenancyResource> L
+@using Microsoft.AspNetCore.Mvc.Localization
+@using Genora.MultiTenancy.Localization
+
+@section styles {
+    <style>
+        .hl-product-img { width: 48px; height: 48px; object-fit: contain; border-radius: 4px; background: #f8f9fa; }
+        .hl-badge-active { background-color: #d4edda; color: #155724; }
+        .hl-badge-inactive { background-color: #f8d7da; color: #721c24; }
+        .hl-detail-img { max-width: 200px; max-height: 200px; object-fit: contain; }
+        .hl-clickable { cursor: pointer; }
+        .hl-clickable:hover { background-color: #f0f4ff !important; }
+    </style>
+}
+
+@section scripts {
+    <script src="~/Pages/HoaLinh/Products/index.js" asp-append-version="true"></script>
+}
+
+<abp-card>
+    <abp-card-header>
+        <abp-row>
+            <abp-column size-md="_6">
+                <h4 class="mb-0"><i class="fa fa-box-open me-2"></i>@L["Menu:AppHlProducts"]</h4>
+            </abp-column>
+            <abp-column size-md="_6" class="text-end">
+                <button id="BtnRefresh" class="btn btn-outline-secondary btn-sm">
+                    <i class="fa fa-sync-alt"></i> Refresh
+                </button>
+            </abp-column>
+        </abp-row>
+    </abp-card-header>
+    <abp-card-body>
+        <div class="row mb-3 align-items-center g-2">
+            <div class="col-md-3">
+                <input type="text" id="FilterText" class="form-control form-control-sm" placeholder="Tìm theo tên, mã SP, nhóm SP, thương hiệu..." />
+            </div>
+            <div class="col-md-2">
+                <select id="FilterBrand" class="form-select form-select-sm">
+                    <option value="">Tất cả danh mục</option>
+                </select>
+            </div>
+            <div class="col-md-1">
+                <button id="BtnSearch" class="btn btn-primary btn-sm w-100"><i class="fa fa-search"></i></button>
+            </div>
+        </div>
+
+        <div id="ProductTableContainer">
+            <table id="HlProductsTable" class="table table-hover table-bordered table-sm w-100">
+                <thead class="table-light">
+                    <tr>
+                        <th style="width:60px">Ảnh</th>
+                        <th>Mã SP</th>
+                        <th>Tên sản phẩm</th>
+                        <th>Nhóm SP</th>
+                        <th>Thương hiệu</th>
+                        <th>ĐVT</th>
+                        <th class="text-end">Giá bán</th>
+                        <th class="text-center">Trạng thái</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+
+        <div class="d-flex justify-content-between align-items-center mt-3">
+            <div id="PagingInfo" class="text-muted small"></div>
+            <div class="d-flex align-items-center gap-2">
+                <select id="PageSize" class="form-select form-select-sm" style="width:auto">
+                    <option value="10">10</option>
+                    <option value="20" selected>20</option>
+                    <option value="50">50</option>
+                    <option value="100">100</option>
+                </select>
+                <nav>
+                    <ul id="Pagination" class="pagination pagination-sm mb-0"></ul>
+                </nav>
+            </div>
+        </div>
+    </abp-card-body>
+</abp-card>
+
+<!-- Detail Modal -->
+<div class="modal fade" id="ProductDetailModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fa fa-box-open me-2"></i>Chi tiết sản phẩm</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="ProductDetailBody">
+            </div>
+        </div>
+    </div>
+</div>

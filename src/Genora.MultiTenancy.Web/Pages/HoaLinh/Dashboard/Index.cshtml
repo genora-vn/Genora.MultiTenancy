@@ -1,0 +1,98 @@
+@page
+@model Genora.MultiTenancy.Web.Pages.HoaLinh.Dashboard.IndexModel
+@inject IHtmlLocalizer<MultiTenancyResource> L
+@using Microsoft.AspNetCore.Mvc.Localization
+@using Genora.MultiTenancy.Localization
+
+@section styles {
+    <style>
+        .hl-kpi-card { border: none; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,.06); transition: transform .15s; }
+        .hl-kpi-card:hover { transform: translateY(-2px); }
+        .hl-kpi-value { font-size: 2rem; font-weight: 700; }
+        .hl-badge-created { background-color: #d1ecf1; color: #0c5460; }
+        .hl-badge-processing { background-color: #fff3cd; color: #856404; }
+        .hl-badge-completed { background-color: #d4edda; color: #155724; }
+        .hl-badge-paid { background-color: #cce5ff; color: #004085; }
+        .hl-badge-cancelled { background-color: #f8d7da; color: #721c24; }
+        .hl-badge-rejected { background-color: #d6d8db; color: #1b1e21; }
+        .hl-badge-returned { background-color: #e2e3e5; color: #383d41; }
+        .hl-badge-default { background-color: #e9ecef; color: #495057; }
+    </style>
+}
+
+@section scripts {
+    <script src="~/Pages/HoaLinh/Dashboard/index.js" asp-append-version="true"></script>
+}
+
+<div class="mb-4">
+    <h4><i class="fa fa-chart-line me-2"></i>@L["Menu:AppHlDashboard"] — Hoa Linh</h4>
+    <p class="text-muted mb-0">Tổng quan hoạt động kinh doanh và hệ thống tích hợp DMS</p>
+</div>
+
+<div class="row g-3 mb-3">
+    <div class="col-md-3">
+        <div class="card hl-kpi-card">
+            <div class="card-body text-center py-3">
+                <div class="text-muted small mb-1">Tổng sản phẩm</div>
+                <div id="KpiProducts" class="hl-kpi-value text-primary">-</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card hl-kpi-card">
+            <div class="card-body text-center py-3">
+                <div class="text-muted small mb-1">Tổng khách hàng</div>
+                <div id="KpiCustomers" class="hl-kpi-value text-success">-</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card hl-kpi-card">
+            <div class="card-body text-center py-3">
+                <div class="text-muted small mb-1">Tổng đơn hàng</div>
+                <div id="KpiOrders" class="hl-kpi-value text-warning">-</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card hl-kpi-card">
+            <div class="card-body text-center py-3">
+                <div class="text-muted small mb-1">Nhân viên Sales</div>
+                <div id="KpiSalemans" class="hl-kpi-value text-info">-</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header py-2"><i class="fa fa-receipt me-1"></i> Đơn hàng gần đây</div>
+            <div class="card-body p-0">
+                <table class="table table-sm table-hover mb-0">
+                    <thead class="table-light">
+                        <tr><th>Mã đơn</th><th>Khách hàng</th><th>Ngày đặt</th><th>Trạng thái</th></tr>
+                    </thead>
+                    <tbody id="RecentOrders">
+                        <tr><td colspan="4" class="text-center text-muted py-3">Đang tải...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header py-2"><i class="fa fa-box-open me-1"></i> Sản phẩm mới nhất</div>
+            <div class="card-body p-0">
+                <table class="table table-sm table-hover mb-0">
+                    <thead class="table-light">
+                        <tr><th>Mã SP</th><th>Tên sản phẩm</th><th>Thương hiệu</th><th class="text-end">Giá</th></tr>
+                    </thead>
+                    <tbody id="RecentProducts">
+                        <tr><td colspan="4" class="text-center text-muted py-3">Đang tải...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

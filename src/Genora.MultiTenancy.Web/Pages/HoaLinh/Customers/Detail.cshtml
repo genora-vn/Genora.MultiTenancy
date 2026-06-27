@@ -1,0 +1,131 @@
+@page
+@model Genora.MultiTenancy.Web.Pages.HoaLinh.Customers.DetailModel
+@inject IHtmlLocalizer<MultiTenancyResource> L
+@using Microsoft.AspNetCore.Mvc.Localization
+@using Genora.MultiTenancy.Localization
+
+@section styles {
+    <style>
+        .hl-profile-section { background: #fff; border-radius: 12px; padding: 2rem; box-shadow: 0 1px 6px rgba(0,0,0,.06); margin-bottom: 1.5rem; }
+        .hl-avatar { width: 100px; height: 100px; border-radius: 12px; background: #e9ecef; display: flex; align-items: center; justify-content: center; font-size: 2.5rem; color: #6c757d; }
+        .hl-customer-name { font-size: 1.5rem; font-weight: 700; color: #1a202c; }
+        .hl-customer-code { font-size: 0.85rem; color: #718096; }
+        .hl-tier-badge { display: inline-block; padding: 5px 14px; border-radius: 6px; font-weight: 600; font-size: 0.8rem; background: #ebf5ff; color: #1e40af; border: 1px solid #bfdbfe; }
+        .hl-status-badge { display: inline-block; padding: 3px 10px; border-radius: 4px; font-size: 0.75rem; font-weight: 600; background: #dcfce7; color: #166534; }
+        .hl-phone-link { font-size: 0.9rem; color: #374151; font-weight: 500; }
+        .hl-kpi-card { background: #fff; border: 1px solid #e5e7eb; border-radius: 10px; padding: 1.25rem; text-align: center; }
+        .hl-kpi-value { font-size: 1.4rem; font-weight: 700; }
+        .hl-kpi-label { font-size: 0.75rem; color: #6b7280; margin-top: 4px; }
+        .hl-kpi-sub { font-size: 0.7rem; color: #9ca3af; }
+        .hl-info-section { margin-bottom: 1.5rem; }
+        .hl-info-label { font-size: 0.7rem; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px; }
+        .hl-info-value { font-size: 0.9rem; font-weight: 500; color: #374151; }
+        .hl-badge-created { background-color: #d1ecf1; color: #0c5460; }
+        .hl-badge-processing { background-color: #fff3cd; color: #856404; }
+        .hl-badge-completed { background-color: #d4edda; color: #155724; }
+        .hl-badge-paid { background-color: #cce5ff; color: #004085; }
+        .hl-badge-cancelled { background-color: #f8d7da; color: #721c24; }
+        .hl-badge-default { background-color: #e9ecef; color: #495057; }
+    </style>
+}
+
+@section scripts {
+    <script>var customerPhone = '@Model.Phone';</script>
+    <script src="~/Pages/HoaLinh/Customers/detail.js" asp-append-version="true"></script>
+}
+
+<!-- Profile Header -->
+<div class="hl-profile-section">
+    <div class="d-flex align-items-start gap-3">
+        <div class="hl-avatar" id="Avatar"><i class="fa fa-building"></i></div>
+        <div class="flex-grow-1">
+            <div id="CustName" class="hl-customer-name">Đang tải...</div>
+            <div class="mb-2">
+                <span class="hl-customer-code">Mã khách hàng: <strong id="CustCode"></strong></span>
+            </div>
+            <div class="d-flex align-items-center gap-2 mb-2">
+                <span id="TierBadge" class="hl-tier-badge" style="display:none"></span>
+                <span id="StatusBadge" class="hl-status-badge">ĐANG HOẠT ĐỘNG</span>
+            </div>
+            <div class="d-flex align-items-center gap-3">
+                <span class="hl-phone-link"><i class="fa fa-phone me-1"></i> <span id="CustPhone"></span></span>
+                <span class="text-muted"><i class="fa fa-envelope me-1"></i> <span id="CustChannel"></span></span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- KPI Cards -->
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <div class="hl-kpi-card">
+            <div id="KpiSales" class="hl-kpi-value text-primary">0</div>
+            <div class="hl-kpi-label">DOANH SỐ TÍCH LŨY</div>
+            <div class="hl-kpi-sub">VND</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="hl-kpi-card">
+            <div id="KpiPoints" class="hl-kpi-value text-success">0</div>
+            <div class="hl-kpi-label">ĐIỂM TÍCH LŨY</div>
+            <div id="KpiTierSub" class="hl-kpi-sub"></div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="hl-kpi-card">
+            <div id="KpiNextPoints" class="hl-kpi-value text-warning">0</div>
+            <div class="hl-kpi-label">ĐIỂM LÊN HẠNG TIẾP</div>
+            <div id="KpiNextTier" class="hl-kpi-sub"></div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="hl-kpi-card">
+            <div id="KpiGkhl" class="hl-kpi-value">-</div>
+            <div class="hl-kpi-label">GẮN KẾT HOA LINH</div>
+            <div class="hl-kpi-sub" id="KpiGkhlStatus"></div>
+        </div>
+    </div>
+</div>
+
+<!-- Info + Tabs -->
+<div class="row">
+    <div class="col-md-4">
+        <div class="card mb-3">
+            <div class="card-header py-2"><i class="fa fa-info-circle me-1"></i> Thông tin chi tiết</div>
+            <div class="card-body">
+                <div class="hl-info-section"><div class="hl-info-label">KÊNH</div><div id="InfoChannel" class="hl-info-value">-</div></div>
+                <div class="hl-info-section"><div class="hl-info-label">PHÂN NHÓM</div><div id="InfoSubChannel" class="hl-info-value">-</div></div>
+                <div class="hl-info-section"><div class="hl-info-label">NHÓM KH</div><div id="InfoGroup" class="hl-info-value">-</div></div>
+                <div class="hl-info-section"><div class="hl-info-label">ĐỊA CHỈ</div><div id="InfoAddress" class="hl-info-value">-</div></div>
+                <div class="hl-info-section"><div class="hl-info-label">NGÀY SINH</div><div id="InfoBirthday" class="hl-info-value">-</div></div>
+                <div class="hl-info-section"><div class="hl-info-label">NV SALES</div><div id="InfoDsr" class="hl-info-value">-</div></div>
+                <div class="hl-info-section"><div class="hl-info-label">NHÀ PHÂN PHỐI</div><div id="InfoDistributor" class="hl-info-value">-</div></div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-8">
+        <ul class="nav nav-tabs" role="tablist">
+            <li class="nav-item"><a class="nav-link active" data-bs-toggle="tab" href="#tabOrders">Lịch sử đơn hàng</a></li>
+            <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tabBranches">Danh sách chi nhánh</a></li>
+        </ul>
+        <div class="tab-content border border-top-0 rounded-bottom p-3">
+            <div class="tab-pane active" id="tabOrders">
+                <table class="table table-sm table-bordered table-hover">
+                    <thead class="table-light">
+                        <tr><th>Mã đơn</th><th>Ngày</th><th class="text-end">Thành tiền</th><th>NV Sales</th><th>Trạng thái</th></tr>
+                    </thead>
+                    <tbody id="OrdersBody"><tr><td colspan="5" class="text-center text-muted py-3">Đang tải...</td></tr></tbody>
+                </table>
+                <div id="OrdersPagingInfo" class="text-muted small"></div>
+            </div>
+            <div class="tab-pane" id="tabBranches">
+                <table class="table table-sm table-bordered table-hover">
+                    <thead class="table-light">
+                        <tr><th>Mã CN</th><th>Tên chi nhánh</th><th>Địa chỉ</th><th>Kênh</th><th>NV Sales</th></tr>
+                    </thead>
+                    <tbody id="BranchesBody"><tr><td colspan="5" class="text-center text-muted py-3">Đang tải...</td></tr></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

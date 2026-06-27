@@ -1189,6 +1189,36 @@
     "Menu:AppCaddieDashboard": "Caddy Dashboard",
     "Menu:AppCaddieReports": "Caddy Reports",
     "Permission:AppCaddieDashboard": "Caddy Dashboard",
-    "Permission:AppCaddieReports": "Caddy Reports"
+    "Permission:AppCaddieReports": "Caddy Reports",
+
+    "FeatureGroup:HoaLinh": "Hoa Linh Module",
+    "Feature:HoaLinh": "Enable Hoa Linh Module",
+    "Feature:HoaLinhDesc": "Enable Hoa Linh Dealer Portal & Mini App features",
+
+    "PermissionGroup:HoaLinhManagement": "Hoa Linh Management",
+    "PermissionGroup:HoaLinhManagementHost": "Hoa Linh Management (Host)",
+
+    "Permission:AppHlProducts": "View Products",
+    "Permission:AppHlCustomers": "View Customers",
+    "Permission:AppHlOrders": "View Orders",
+    "Permission:AppHlOrders.Create": "Create Orders",
+    "Permission:AppHlOrders.Edit": "Edit Orders",
+    "Permission:AppHlOrders.Delete": "Delete Orders",
+    "Permission:AppHlLoyalty": "View Loyalty",
+    "Permission:AppHlGiftExchange": "View Gift Exchange",
+    "Permission:AppHlGiftExchange.Create": "Create Gift Exchange",
+    "Permission:AppHlGiftExchange.Edit": "Edit Gift Exchange",
+    "Permission:AppHlGiftExchange.Delete": "Delete Gift Exchange",
+    "Permission:AppHlDashboard": "View Dashboard",
+    "Permission:AppHlApiLogs": "View API Logs",
+
+    "Menu:HoaLinh": "Hoa Linh",
+    "Menu:AppHlProducts": "Products",
+    "Menu:AppHlCustomers": "Customers",
+    "Menu:AppHlOrders": "Orders",
+    "Menu:AppHlLoyalty": "Loyalty",
+    "Menu:AppHlGiftExchange": "Gift Exchange",
+    "Menu:AppHlDashboard": "Dashboard",
+    "Menu:AppHlApiLogs": "API Logs"
   }
 }

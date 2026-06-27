@@ -5,6 +5,7 @@ using Genora.MultiTenancy.AppServices.AppEmails;
 using Genora.MultiTenancy.AppServices.AppEmails.Templates;
 using Genora.MultiTenancy.AppServices.AppPayments;
 using Genora.MultiTenancy.AppServices.AppZaloAuths;
+using Genora.MultiTenancy.AppServices.HoaLinh;
 using Microsoft.Extensions.DependencyInjection;
 using SixLabors.ImageSharp;
 using System;
@@ -106,5 +107,22 @@ public class MultiTenancyApplicationModule : AbpModule
             client.Timeout     = TimeSpan.FromSeconds(5);
             client.DefaultRequestHeaders.Add("Accept", "application/json");
         });
+
+        // Hoa Linh DMS API client
+        context.Services.AddHttpClient("HoaLinhDms", client =>
+        {
+            var config = context.Services.GetConfiguration();
+            var baseUrl = config["HoaLinhApi:BaseUrl"] ?? "https://dmsapi.hoalinh.io.vn";
+            var apiKey = config["HoaLinhApi:ApiKey"] ?? "";
+            var timeout = int.TryParse(config["HoaLinhApi:TimeoutSeconds"], out var t) ? t : 30;
+
+            client.BaseAddress = new Uri(baseUrl);
+            client.Timeout = TimeSpan.FromSeconds(timeout);
+            client.DefaultRequestHeaders.Add("Accept", "application/json");
+            client.DefaultRequestHeaders.Add("X-API-Key", apiKey);
+        });
+
+        context.Services.AddScoped<IHlApiClientService, HlApiClientService>();
+        context.Services.AddScoped<IHlDataAccessService, HlDataAccessService>();
     }
 }

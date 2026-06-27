@@ -1591,6 +1591,36 @@
     "Menu:AppCaddieDashboard": "Tổng quan Caddy",
     "Menu:AppCaddieReports": "Báo cáo Caddy",
     "Permission:AppCaddieDashboard": "Xem tổng quan Caddy",
-    "Permission:AppCaddieReports": "Xem báo cáo Caddy"
+    "Permission:AppCaddieReports": "Xem báo cáo Caddy",
+
+    "FeatureGroup:HoaLinh": "Module Hoa Linh",
+    "Feature:HoaLinh": "Bật Module Hoa Linh",
+    "Feature:HoaLinhDesc": "Bật tính năng Hoa Linh Dealer Portal & Mini App",
+
+    "PermissionGroup:HoaLinhManagement": "Quản lý Hoa Linh",
+    "PermissionGroup:HoaLinhManagementHost": "Quản lý Hoa Linh (Host)",
+
+    "Permission:AppHlProducts": "Xem sản phẩm",
+    "Permission:AppHlCustomers": "Xem khách hàng",
+    "Permission:AppHlOrders": "Xem đơn hàng",
+    "Permission:AppHlOrders.Create": "Tạo đơn hàng",
+    "Permission:AppHlOrders.Edit": "Sửa đơn hàng",
+    "Permission:AppHlOrders.Delete": "Xóa đơn hàng",
+    "Permission:AppHlLoyalty": "Xem Loyalty",
+    "Permission:AppHlGiftExchange": "Xem đổi quà",
+    "Permission:AppHlGiftExchange.Create": "Tạo yêu cầu đổi quà",
+    "Permission:AppHlGiftExchange.Edit": "Sửa yêu cầu đổi quà",
+    "Permission:AppHlGiftExchange.Delete": "Xóa yêu cầu đổi quà",
+    "Permission:AppHlDashboard": "Xem tổng quan",
+    "Permission:AppHlApiLogs": "Xem nhật ký API",
+
+    "Menu:HoaLinh": "Hoa Linh",
+    "Menu:AppHlProducts": "Sản phẩm",
+    "Menu:AppHlCustomers": "Khách hàng",
+    "Menu:AppHlOrders": "Đơn hàng",
+    "Menu:AppHlLoyalty": "Loyalty",
+    "Menu:AppHlGiftExchange": "Đổi quà",
+    "Menu:AppHlDashboard": "Tổng quan",
+    "Menu:AppHlApiLogs": "Nhật ký API"
   }
 }

@@ -16,6 +16,7 @@ using Genora.MultiTenancy.Features.AppPaymentConfigurationFeatures;
 using Genora.MultiTenancy.Features.AppZaloAuths;
 using Genora.MultiTenancy.Features.AppZaloLogs;
 using Genora.MultiTenancy.Features.SalonBeauty;
+using Genora.MultiTenancy.Features.AppHoaLinhFeatures;
 using Genora.MultiTenancy.Localization;
 using Genora.MultiTenancy.Permissions;
 using Microsoft.Extensions.DependencyInjection;
@@ -2014,6 +2015,144 @@ public class MultiTenancyMenuContributor : IMenuContributor
             }
 
             administration.AddItem(systemLogs);
+        }
+
+        // ── HOA LINH ──────────────────────────────────────────────────────
+        var canSeeHoaLinh =
+            await feature.IsEnabledAsync(Features.AppHoaLinhFeatures.AppHoaLinhFeatures.Management) &&
+            (
+                await perms.IsGrantedAsync(MultiTenancyPermissions.AppHlProducts.Default) ||
+                await perms.IsGrantedAsync(MultiTenancyPermissions.AppHlCustomers.Default) ||
+                await perms.IsGrantedAsync(MultiTenancyPermissions.AppHlOrders.Default) ||
+                await perms.IsGrantedAsync(MultiTenancyPermissions.AppHlLoyalty.Default) ||
+                await perms.IsGrantedAsync(MultiTenancyPermissions.AppHlGiftExchange.Default) ||
+                await perms.IsGrantedAsync(MultiTenancyPermissions.AppHlDashboard.Default) ||
+                await perms.IsGrantedAsync(MultiTenancyPermissions.AppHlApiLogs.Default)
+            );
+
+        var canSeeHoaLinhHost =
+            await perms.IsGrantedAsync(MultiTenancyPermissions.HostAppHlProducts.Default) ||
+            await perms.IsGrantedAsync(MultiTenancyPermissions.HostAppHlCustomers.Default) ||
+            await perms.IsGrantedAsync(MultiTenancyPermissions.HostAppHlOrders.Default) ||
+            await perms.IsGrantedAsync(MultiTenancyPermissions.HostAppHlLoyalty.Default) ||
+            await perms.IsGrantedAsync(MultiTenancyPermissions.HostAppHlGiftExchange.Default) ||
+            await perms.IsGrantedAsync(MultiTenancyPermissions.HostAppHlDashboard.Default) ||
+            await perms.IsGrantedAsync(MultiTenancyPermissions.HostAppHlApiLogs.Default);
+
+        if (canSeeHoaLinh || canSeeHoaLinhHost)
+        {
+            var groupHl = new ApplicationMenuItem(
+                name: "MenuGroup.HoaLinh",
+                displayName: l["Menu:HoaLinh"],
+                icon: "fa fa-leaf",
+                order: 50
+            );
+
+            if (await perms.IsGrantedAsync(MultiTenancyPermissions.AppHlDashboard.Default) ||
+                await perms.IsGrantedAsync(MultiTenancyPermissions.HostAppHlDashboard.Default))
+            {
+                groupHl.AddItem(
+                    new ApplicationMenuItem(
+                        name: "AppHlDashboard",
+                        displayName: l["Menu:AppHlDashboard"],
+                        url: "/HoaLinh/Dashboard",
+                        icon: "fa fa-chart-line",
+                        order: 1
+                    )
+                );
+            }
+
+            if (await perms.IsGrantedAsync(MultiTenancyPermissions.AppHlProducts.Default) ||
+                await perms.IsGrantedAsync(MultiTenancyPermissions.HostAppHlProducts.Default))
+            {
+                groupHl.AddItem(
+                    new ApplicationMenuItem(
+                        name: "AppHlBrands",
+                        displayName: "Danh mục SP",
+                        url: "/HoaLinh/Brands",
+                        icon: "fa fa-tags",
+                        order: 2
+                    )
+                );
+
+                groupHl.AddItem(
+                    new ApplicationMenuItem(
+                        name: "AppHlProducts",
+                        displayName: l["Menu:AppHlProducts"],
+                        url: "/HoaLinh/Products",
+                        icon: "fa fa-box-open",
+                        order: 3
+                    )
+                );
+            }
+
+            if (await perms.IsGrantedAsync(MultiTenancyPermissions.AppHlCustomers.Default) ||
+                await perms.IsGrantedAsync(MultiTenancyPermissions.HostAppHlCustomers.Default))
+            {
+                groupHl.AddItem(
+                    new ApplicationMenuItem(
+                        name: "AppHlCustomers",
+                        displayName: l["Menu:AppHlCustomers"],
+                        url: "/HoaLinh/Customers",
+                        icon: "fa fa-users",
+                        order: 4
+                    )
+                );
+
+                groupHl.AddItem(
+                    new ApplicationMenuItem(
+                        name: "AppHlSalemans",
+                        displayName: "Nhân viên Sales",
+                        url: "/HoaLinh/Salemans",
+                        icon: "fa fa-user-tie",
+                        order: 5
+                    )
+                );
+            }
+
+            if (await perms.IsGrantedAsync(MultiTenancyPermissions.AppHlOrders.Default) ||
+                await perms.IsGrantedAsync(MultiTenancyPermissions.HostAppHlOrders.Default))
+            {
+                groupHl.AddItem(
+                    new ApplicationMenuItem(
+                        name: "AppHlOrders",
+                        displayName: l["Menu:AppHlOrders"],
+                        url: "/HoaLinh/Orders",
+                        icon: "fa fa-receipt",
+                        order: 4
+                    )
+                );
+            }
+
+            if (await perms.IsGrantedAsync(MultiTenancyPermissions.AppHlLoyalty.Default) ||
+                await perms.IsGrantedAsync(MultiTenancyPermissions.HostAppHlLoyalty.Default))
+            {
+                groupHl.AddItem(
+                    new ApplicationMenuItem(
+                        name: "AppHlLoyalty",
+                        displayName: l["Menu:AppHlLoyalty"],
+                        url: "/HoaLinh/Loyalty",
+                        icon: "fa fa-star",
+                        order: 5
+                    )
+                );
+            }
+
+            if (await perms.IsGrantedAsync(MultiTenancyPermissions.AppHlGiftExchange.Default) ||
+                await perms.IsGrantedAsync(MultiTenancyPermissions.HostAppHlGiftExchange.Default))
+            {
+                groupHl.AddItem(
+                    new ApplicationMenuItem(
+                        name: "AppHlGiftExchange",
+                        displayName: l["Menu:AppHlGiftExchange"],
+                        url: "/HoaLinh/GiftExchanges",
+                        icon: "fa fa-gift",
+                        order: 6
+                    )
+                );
+            }
+
+            context.Menu.AddItem(groupHl);
         }
 
         foreach (var rootItem in context.Menu.Items)

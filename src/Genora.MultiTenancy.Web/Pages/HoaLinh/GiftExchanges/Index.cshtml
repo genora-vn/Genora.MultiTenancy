@@ -1,0 +1,102 @@
+@page
+@model Genora.MultiTenancy.Web.Pages.HoaLinh.GiftExchanges.IndexModel
+@inject IHtmlLocalizer<MultiTenancyResource> L
+@using Microsoft.AspNetCore.Mvc.Localization
+@using Genora.MultiTenancy.Localization
+
+@section styles {
+    <style>
+        .hl-ge-pending { background-color: #fff3cd; color: #856404; }
+        .hl-ge-approved { background-color: #cce5ff; color: #004085; }
+        .hl-ge-rejected { background-color: #f8d7da; color: #721c24; }
+        .hl-ge-completed { background-color: #d4edda; color: #155724; }
+        .hl-ge-default { background-color: #e9ecef; color: #495057; }
+        .hl-clickable { cursor: pointer; }
+        .hl-clickable:hover { background-color: #f0f4ff !important; }
+    </style>
+}
+
+@section scripts {
+    <script src="~/Pages/HoaLinh/GiftExchanges/index.js" asp-append-version="true"></script>
+}
+
+<abp-card>
+    <abp-card-header>
+        <abp-row>
+            <abp-column size-md="_6">
+                <h4 class="mb-0"><i class="fa fa-gift me-2"></i>@L["Menu:AppHlGiftExchange"]</h4>
+            </abp-column>
+            <abp-column size-md="_6" class="text-end">
+                <button id="BtnRefresh" class="btn btn-outline-secondary btn-sm">
+                    <i class="fa fa-sync-alt"></i> Refresh
+                </button>
+            </abp-column>
+        </abp-row>
+    </abp-card-header>
+    <abp-card-body>
+        <div class="row mb-3 align-items-center g-2">
+            <div class="col-md-3">
+                <input type="text" id="FilterText" class="form-control form-control-sm" placeholder="Tìm mã, tên KH, tên quà..." />
+            </div>
+            <div class="col-md-2">
+                <select id="FilterStatus" class="form-select form-select-sm">
+                    <option value="">Tất cả trạng thái</option>
+                    <option value="1">Chờ xử lý</option>
+                    <option value="2">Đã duyệt</option>
+                    <option value="3">Từ chối</option>
+                    <option value="4">Hoàn thành</option>
+                </select>
+            </div>
+            <div class="col-md-1">
+                <button id="BtnSearch" class="btn btn-primary btn-sm w-100"><i class="fa fa-search"></i></button>
+            </div>
+        </div>
+
+        <div id="GiftExchangeContainer">
+            <table id="HlGiftTable" class="table table-hover table-bordered table-sm w-100">
+                <thead class="table-light">
+                    <tr>
+                        <th>Mã yêu cầu</th>
+                        <th>Khách hàng</th>
+                        <th>Quà tặng</th>
+                        <th class="text-center">Điểm</th>
+                        <th class="text-center">SL</th>
+                        <th>Trạng thái</th>
+                        <th>Ngày tạo</th>
+                        <th style="width:120px" class="text-center">Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+
+        <div class="d-flex justify-content-between align-items-center mt-3">
+            <div id="PagingInfo" class="text-muted small"></div>
+            <div class="d-flex align-items-center gap-2">
+                <select id="PageSize" class="form-select form-select-sm" style="width:auto">
+                    <option value="10">10</option>
+                    <option value="20" selected>20</option>
+                    <option value="50">50</option>
+                </select>
+                <nav><ul id="Pagination" class="pagination pagination-sm mb-0"></ul></nav>
+            </div>
+        </div>
+    </abp-card-body>
+</abp-card>
+
+<!-- Detail Modal -->
+<div class="modal fade" id="GiftDetailModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fa fa-gift me-2"></i>Chi tiết yêu cầu đổi quà</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="GiftDetailBody"></div>
+            <div class="modal-footer" id="GiftDetailFooter" style="display:none">
+                <button id="BtnReject" class="btn btn-danger btn-sm"><i class="fa fa-times me-1"></i>Từ chối</button>
+                <button id="BtnApprove" class="btn btn-success btn-sm"><i class="fa fa-check me-1"></i>Duyệt</button>
+            </div>
+        </div>
+    </div>
+</div>

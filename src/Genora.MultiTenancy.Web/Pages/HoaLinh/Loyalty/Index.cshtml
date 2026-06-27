@@ -1,0 +1,125 @@
+@page
+@model Genora.MultiTenancy.Web.Pages.HoaLinh.Loyalty.IndexModel
+@inject IHtmlLocalizer<MultiTenancyResource> L
+@using Microsoft.AspNetCore.Mvc.Localization
+@using Genora.MultiTenancy.Localization
+
+@section styles {
+    <style>
+        .hl-loyalty-header { background: #f8f9fa; border-radius: 10px; padding: 1.5rem; border: 1px solid #e9ecef; }
+        .hl-loyalty-name { font-size: 1.25rem; font-weight: 700; color: #2d3748; }
+        .hl-loyalty-code { font-size: 0.85rem; color: #718096; }
+        .hl-loyalty-tier { display: inline-block; padding: 4px 14px; border-radius: 20px; font-weight: 700; font-size: 0.9rem; }
+        .hl-tier-vang { background: linear-gradient(135deg, #f6d365, #fda085); color: #fff; }
+        .hl-tier-bac { background: linear-gradient(135deg, #a8c0ff, #3f2b96); color: #fff; }
+        .hl-tier-kimcuong { background: linear-gradient(135deg, #667eea, #764ba2); color: #fff; }
+        .hl-tier-default { background: #e2e8f0; color: #4a5568; }
+        .hl-stat-card { background: #fff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 1rem; text-align: center; }
+        .hl-stat-value { font-size: 1.5rem; font-weight: 700; color: #2d3748; }
+        .hl-stat-label { font-size: 0.8rem; color: #718096; margin-top: 2px; }
+        .hl-info-table td { padding: 0.4rem 0.5rem; border: none; }
+        .hl-info-label { color: #718096; font-size: 0.85rem; min-width: 120px; }
+        .hl-info-value { font-weight: 500; color: #2d3748; }
+        .hl-gkhl-badge { display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: 600; }
+        .hl-gkhl-yes { background: #fef3cd; color: #92400e; }
+        .hl-gkhl-no { background: #f1f5f9; color: #64748b; }
+    </style>
+}
+
+@section scripts {
+    <script src="~/Pages/HoaLinh/Loyalty/index.js" asp-append-version="true"></script>
+}
+
+<abp-card>
+    <abp-card-header>
+        <abp-row>
+            <abp-column size-md="_6">
+                <h4 class="mb-0"><i class="fa fa-star me-2"></i>@L["Menu:AppHlLoyalty"]</h4>
+            </abp-column>
+            <abp-column size-md="_6" class="text-end">
+                <button id="BtnRefresh" class="btn btn-outline-secondary btn-sm">
+                    <i class="fa fa-sync-alt"></i> Refresh
+                </button>
+            </abp-column>
+        </abp-row>
+    </abp-card-header>
+    <abp-card-body>
+        <div class="row mb-4">
+            <div class="col-md-5">
+                <div class="input-group">
+                    <input type="text" id="FilterPhone" class="form-control" placeholder="Nhập số điện thoại khách hàng..." />
+                    <button id="BtnSearch" class="btn btn-primary"><i class="fa fa-search me-1"></i> Tra cứu</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="LoyaltyResult" style="display:none;">
+            <!-- Header: Tên + Hạng -->
+            <div class="hl-loyalty-header mb-3">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <div id="CustomerName" class="hl-loyalty-name"></div>
+                        <div id="CustomerCode" class="hl-loyalty-code"></div>
+                    </div>
+                    <div id="MembershipTier"></div>
+                </div>
+            </div>
+
+            <!-- Stats cards -->
+            <div class="row g-3 mb-3">
+                <div class="col-md-3">
+                    <div class="hl-stat-card">
+                        <div id="LoyaltyPoint" class="hl-stat-value text-primary">0</div>
+                        <div class="hl-stat-label">Điểm tích lũy</div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="hl-stat-card">
+                        <div id="AccumulatedSales" class="hl-stat-value text-success">0</div>
+                        <div class="hl-stat-label">Doanh số tích lũy</div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="hl-stat-card">
+                        <div id="PointsToNext" class="hl-stat-value text-warning">0</div>
+                        <div class="hl-stat-label">Điểm lên hạng tiếp</div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="hl-stat-card">
+                        <div id="NextTier" class="hl-stat-value text-info">-</div>
+                        <div class="hl-stat-label">Hạng tiếp theo</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Info details -->
+            <div class="card">
+                <div class="card-header py-2"><i class="fa fa-info-circle me-1"></i> Thông tin chi tiết</div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <table class="table hl-info-table mb-0">
+                                <tr><td class="hl-info-label">Kênh:</td><td id="CustChannel" class="hl-info-value"></td></tr>
+                                <tr><td class="hl-info-label">Phân nhóm:</td><td id="CustSubChannel" class="hl-info-value"></td></tr>
+                                <tr><td class="hl-info-label">Nhóm KH:</td><td id="CustGroup" class="hl-info-value"></td></tr>
+                            </table>
+                        </div>
+                        <div class="col-md-6">
+                            <table class="table hl-info-table mb-0">
+                                <tr><td class="hl-info-label">NV Sales:</td><td id="DsrName" class="hl-info-value"></td></tr>
+                                <tr><td class="hl-info-label">NPP:</td><td id="DistributorName" class="hl-info-value"></td></tr>
+                                <tr><td class="hl-info-label">GKHL:</td><td id="IsGkhl" class="hl-info-value"></td></tr>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="LoyaltyEmpty" class="text-center text-muted py-5">
+            <i class="fa fa-search fa-3x mb-3 opacity-25"></i>
+            <p class="mb-0">Nhập số điện thoại khách hàng để tra cứu thông tin Loyalty</p>
+        </div>
+    </abp-card-body>
+</abp-card>
