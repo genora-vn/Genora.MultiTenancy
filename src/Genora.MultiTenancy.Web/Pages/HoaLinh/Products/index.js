@@ -25,8 +25,9 @@
             return;
         }
         data.forEach(function (item) {
-            var imgHtml = (item.imageUrl || item.imageAvatarUrl)
-                ? '<img src="' + (item.imageAvatarUrl || item.imageUrl) + '" class="hl-product-img" />'
+            var imgSrc = item.imageUrl || item.imageAvatarUrl || '';
+            var imgHtml = imgSrc
+                ? '<img src="' + imgSrc + '" class="hl-product-img" />'
                 : '<div class="hl-product-img d-flex align-items-center justify-content-center"><i class="fa fa-image text-muted"></i></div>';
             var statusBadge = item.isActive
                 ? '<span class="badge hl-badge-active">Hoạt động</span>'
@@ -34,7 +35,7 @@
             var code = item.productCode || item.productGroupCode || '';
             var name = item.productName || item.productGroupName || '';
             tbody.append(
-                '<tr class="hl-clickable" data-code="' + code + '">' +
+                '<tr class="hl-clickable" data-code="' + code + '" data-img="' + (imgSrc || '') + '">' +
                 '<td class="text-center">' + imgHtml + '</td>' +
                 '<td><code>' + code + '</code></td>' +
                 '<td>' + name + '</td>' +
@@ -98,16 +99,20 @@
         }
     }
 
-    function showDetail(productCode) {
+    function showDetail(productCode, rowImgUrl) {
         service.getProductDetail(productCode).then(function (result) {
             var body = $('#ProductDetailBody'); body.empty();
             if (result.success && result.data && result.data.length > 0) {
                 var p = result.data[0];
+                var imgSrc = p.imageAvatarUrl || p.imageUrl || rowImgUrl || '';
+                var imgHtml = imgSrc
+                    ? '<img src="' + imgSrc + '" class="hl-detail-img mb-3" />'
+                    : '<div class="hl-detail-img-placeholder"><i class="fa fa-image fa-3x text-muted"></i></div>';
                 body.html(
-                    '<div class="row"><div class="col-md-4 text-center">' + (p.imageUrl ? '<img src="' + p.imageUrl + '" class="hl-detail-img mb-3" />' : '') + '</div>' +
+                    '<div class="row"><div class="col-md-4 text-center">' + imgHtml + '</div>' +
                     '<div class="col-md-8"><table class="table table-sm table-borderless">' +
-                    '<tr><td class="text-muted" style="width:140px">Mã SP:</td><td><strong>' + (p.productCode || '') + '</strong></td></tr>' +
-                    '<tr><td class="text-muted">Tên SP:</td><td><strong>' + (p.productName || '') + '</strong></td></tr>' +
+                    '<tr><td class="text-muted" style="width:140px">Mã SP:</td><td><strong>' + (p.productCode || p.productGroupCode || '') + '</strong></td></tr>' +
+                    '<tr><td class="text-muted">Tên SP:</td><td><strong>' + (p.productName || p.productGroupName || '') + '</strong></td></tr>' +
                     '<tr><td class="text-muted">Nhóm SP:</td><td>' + (p.productGroupName || '-') + '</td></tr>' +
                     '<tr><td class="text-muted">Thương hiệu:</td><td>' + (p.brandName || '-') + '</td></tr>' +
                     '<tr><td class="text-muted">ĐVT:</td><td>' + (p.productUnit || '-') + '</td></tr>' +
@@ -131,7 +136,9 @@
         if (page >= 1 && page <= totalPages && page !== currentPage) { currentPage = page; loadData(); }
     });
     $(document).on('click', '#HlProductsTable tbody tr.hl-clickable', function () {
-        var code = $(this).data('code'); if (code) showDetail(code);
+        var code = $(this).data('code');
+        var img = $(this).data('img') || '';
+        if (code) showDetail(code, img);
     });
 
     loadData();

@@ -19,6 +19,7 @@
         .hl-badge-hoalinh { background-color: #dcfce7; color: #166534; font-weight: 600; }
         .hl-clickable { cursor: pointer; }
         .hl-clickable:hover { background-color: #f0f4ff !important; }
+        .hl-btn-status { font-size: 0.7rem; padding: 2px 5px; margin-left: 4px; cursor: pointer; }
     </style>
 }
 
@@ -34,16 +35,14 @@
                 <h4 class="mb-0"><i class="fa fa-receipt me-2"></i>@L["Menu:AppHlOrders"]</h4>
             </abp-column>
             <abp-column size-md="_6" class="text-end">
-                <button id="BtnRefresh" class="btn btn-outline-secondary btn-sm">
-                    <i class="fa fa-sync-alt"></i> Refresh
-                </button>
+                <button id="BtnRefresh" class="btn btn-outline-secondary btn-sm"><i class="fa fa-sync-alt"></i> Refresh</button>
             </abp-column>
         </abp-row>
     </abp-card-header>
     <abp-card-body>
         <div class="row mb-3 align-items-center g-2">
-            <div class="col-md-3">
-                <input type="text" id="FilterText" class="form-control form-control-sm" placeholder="Tìm mã đơn, tên KH, NV Sales..." />
+            <div class="col-md-2">
+                <input type="text" id="FilterText" class="form-control form-control-sm" placeholder="Tìm mã đơn, tên KH..." />
             </div>
             <div class="col-md-2">
                 <select id="FilterSource" class="form-select form-select-sm">
@@ -55,7 +54,7 @@
             <div class="col-md-2">
                 <select id="FilterStatus" class="form-select form-select-sm">
                     <option value="">Tất cả trạng thái</option>
-                    <option value="1">Khởi tạo</option>
+                    <option value="1">Khởi tạo / Đơn mới</option>
                     <option value="2">Đang xử lý</option>
                     <option value="3">Hoàn thành</option>
                     <option value="4">Đã thanh toán</option>
@@ -85,7 +84,7 @@
                         <th class="text-end">Thành tiền</th>
                         <th>Trạng thái</th>
                         <th>Ngày đặt</th>
-                        <th>NV Sales / Ghi chú</th>
+                        <th>Nhân viên Sales</th>
                     </tr>
                 </thead>
                 <tbody></tbody>
@@ -116,6 +115,46 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body" id="OrderDetailBody"></div>
+        </div>
+    </div>
+</div>
+
+<!-- Update Status Modal -->
+<div class="modal fade" id="UpdateStatusModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fa fa-edit me-2"></i>Cập nhật trạng thái đơn hàng</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="UpdateOrderId" />
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Trạng thái đơn hàng</label>
+                    <div>
+                        <div class="form-check"><input class="form-check-input" type="radio" name="deliveryStatus" id="ds1" value="1"><label class="form-check-label" for="ds1">Đơn mới</label></div>
+                        <div class="form-check"><input class="form-check-input" type="radio" name="deliveryStatus" id="ds2" value="2"><label class="form-check-label" for="ds2">Đang xử lý</label></div>
+                        <div class="form-check"><input class="form-check-input" type="radio" name="deliveryStatus" id="ds3" value="3"><label class="form-check-label" for="ds3">Đang giao</label></div>
+                        <div class="form-check"><input class="form-check-input" type="radio" name="deliveryStatus" id="ds4" value="4"><label class="form-check-label" for="ds4">Hoàn thành</label></div>
+                        <div class="form-check"><input class="form-check-input" type="radio" name="deliveryStatus" id="ds5" value="5"><label class="form-check-label" for="ds5">Đã hủy</label></div>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Trạng thái thanh toán</label>
+                    <div>
+                        <div class="form-check"><input class="form-check-input" type="radio" name="paymentStatus" id="ps1" value="1"><label class="form-check-label" for="ps1">Chưa thanh toán</label></div>
+                        <div class="form-check"><input class="form-check-input" type="radio" name="paymentStatus" id="ps2" value="2"><label class="form-check-label" for="ps2">Đã thanh toán</label></div>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Ghi chú nội bộ</label>
+                    <textarea id="UpdateNote" class="form-control form-control-sm" rows="2" placeholder="Ghi chú (tùy chọn)"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Hủy</button>
+                <button type="button" class="btn btn-primary btn-sm" id="BtnSaveStatus"><i class="fa fa-save me-1"></i>Lưu</button>
+            </div>
         </div>
     </div>
 </div>

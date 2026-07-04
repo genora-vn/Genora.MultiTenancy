@@ -6,6 +6,8 @@ using Genora.MultiTenancy.AppServices.AppEmails.Templates;
 using Genora.MultiTenancy.AppServices.AppPayments;
 using Genora.MultiTenancy.AppServices.AppZaloAuths;
 using Genora.MultiTenancy.AppServices.HoaLinh;
+using Genora.MultiTenancy.AppDtos.UrBox;
+using Genora.MultiTenancy.AppServices.UrBox;
 using Microsoft.Extensions.DependencyInjection;
 using SixLabors.ImageSharp;
 using System;
@@ -124,5 +126,21 @@ public class MultiTenancyApplicationModule : AbpModule
 
         context.Services.AddScoped<IHlApiClientService, HlApiClientService>();
         context.Services.AddScoped<IHlDataAccessService, HlDataAccessService>();
+        context.Services.AddScoped<IHlPaymentService, HlPaymentService>();
+
+        // ── UrBox (kho quà eVoucher) ─────────────────────────────────────────
+        var urBoxSection = configuration.GetSection(UrBoxSettings.SectionName);
+        Configure<UrBoxSettings>(urBoxSection);
+
+        var urBoxBaseUrl = configuration[$"{UrBoxSettings.SectionName}:UrBoxApiUrl"] ?? "https://sandapi.urbox.dev";
+        var urBoxTimeout = int.TryParse(configuration[$"{UrBoxSettings.SectionName}:TimeoutSeconds"], out var ubt) ? ubt : 30;
+        context.Services.AddHttpClient("UrBox", client =>
+        {
+            client.BaseAddress = new Uri(urBoxBaseUrl);
+            client.Timeout = TimeSpan.FromSeconds(urBoxTimeout > 0 ? urBoxTimeout : 30);
+            client.DefaultRequestHeaders.Add("Accept", "application/json");
+        });
+
+        context.Services.AddScoped<IUrBoxService, UrBoxService>();
     }
 }

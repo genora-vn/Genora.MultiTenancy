@@ -149,10 +149,11 @@ public interface IHlApiClientService
     Task<HlApiResult<List<HlOrderHeaderDto>>> GetOrderHeaderDetailAsync(string orderNumber);
 
     /// <summary>
-    /// Lấy order header theo customer_code + zalo_order_number
-    /// GET /api/get-order-header-zalo?customer_code={}&zalo_order_number={}
+    /// Lấy order header theo customer_code (bắt buộc) + zalo_order_number (không bắt buộc)
+    /// GET /api/get-order-header-zalo?customer_code={}[&zalo_order_number={}]
+    /// Không truyền zaloOrderNumber → lấy toàn bộ đơn theo mã khách hàng.
     /// </summary>
-    Task<HlApiResult<List<HlOrderHeaderDto>>> GetOrderHeaderZaloAsync(string customerCode, string zaloOrderNumber);
+    Task<HlApiResult<List<HlOrderHeaderDto>>> GetOrderHeaderZaloAsync(string customerCode, string? zaloOrderNumber = null);
 
     /// <summary>
     /// Lấy order detail theo customer_code + zalo_order_number

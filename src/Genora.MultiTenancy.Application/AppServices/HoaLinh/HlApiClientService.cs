@@ -178,9 +178,11 @@ public class HlApiClientService : IHlApiClientService
         return await GetAsync<List<HlOrderHeaderDto>>(url, "Order");
     }
 
-    public async Task<HlApiResult<List<HlOrderHeaderDto>>> GetOrderHeaderZaloAsync(string customerCode, string zaloOrderNumber)
+    public async Task<HlApiResult<List<HlOrderHeaderDto>>> GetOrderHeaderZaloAsync(string customerCode, string? zaloOrderNumber = null)
     {
-        var url = $"/api/get-order-header-zalo?customer_code={Uri.EscapeDataString(customerCode)}&zalo_order_number={Uri.EscapeDataString(zaloOrderNumber)}";
+        var url = $"/api/get-order-header-zalo?customer_code={Uri.EscapeDataString(customerCode)}";
+        if (!string.IsNullOrWhiteSpace(zaloOrderNumber))
+            url += $"&zalo_order_number={Uri.EscapeDataString(zaloOrderNumber)}";
         return await GetAsync<List<HlOrderHeaderDto>>(url, "Order");
     }
 

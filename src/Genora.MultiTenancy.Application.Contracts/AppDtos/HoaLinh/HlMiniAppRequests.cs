@@ -21,6 +21,9 @@ public class HlCreateOrderRequest
     public string? ReceiverName { get; set; }
     public string? ReceiverPhone { get; set; }
 
+    /// <summary>Mã trình dược viên (DSR) phụ trách — map dsrCode trên DMS. Nhận từ body param "receiveCode".</summary>
+    public string? ReceiveCode { get; set; }
+
     public string? DiscountCode { get; set; }
     public decimal DiscountAmount { get; set; }
     public decimal SystemDiscount { get; set; }

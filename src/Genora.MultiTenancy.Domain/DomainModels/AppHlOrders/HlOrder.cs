@@ -49,6 +49,10 @@ public class HlOrder : FullAuditedAggregateRoot<Guid>, IMultiTenant
     [StringLength(150)]
     public string? ReceiverName { get; set; }
 
+    /// <summary>Mã trình dược viên (DSR) phụ trách — map dsrCode trên DMS Hoa Linh</summary>
+    [StringLength(50)]
+    public string? ReceiverCode { get; set; }
+
     /// <summary>SĐT người nhận</summary>
     [StringLength(20)]
     public string? ReceiverPhone { get; set; }

@@ -27,6 +27,7 @@ public static class MultiTenancyDbContextModelCreatingExtensionsHoaLinh
             b.Property(x => x.BranchName).HasMaxLength(250);
             b.Property(x => x.DeliveryAddress).HasMaxLength(500);
             b.Property(x => x.ReceiverName).HasMaxLength(150);
+            b.Property(x => x.ReceiverCode).HasMaxLength(50);
             b.Property(x => x.ReceiverPhone).HasMaxLength(20);
             b.Property(x => x.SubTotal).HasColumnType("decimal(18,2)");
             b.Property(x => x.DiscountCode).HasMaxLength(50);

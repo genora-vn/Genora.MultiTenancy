@@ -8,4 +8,6 @@ public static class ZaloLogActions
     public const string SEND_OA_MSG = "SEND_OA_MSG";
     public const string GET_ME = "GET_ME";
     public const string DECODE_PHONE = "DECODE_PHONE";
+    public const string GET_ARTICLE_LIST = "GET_ARTICLE_LIST";
+    public const string GET_ARTICLE_DETAIL = "GET_ARTICLE_DETAIL";
 }

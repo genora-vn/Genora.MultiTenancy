@@ -3,7 +3,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Genora.MultiTenancy.AppDtos.AppZaloAuths;
+using Genora.MultiTenancy.AppDtos.AppPayments;
 using Genora.MultiTenancy.AppDtos.HoaLinh;
+using Genora.MultiTenancy.AppServices.AppPayments;
+using Genora.MultiTenancy.AppServices.AppZaloAuths;
 using Genora.MultiTenancy.AppServices.HoaLinh;
 using Genora.MultiTenancy.Controllers;
 using Genora.MultiTenancy.DomainModels.AppHlGiftExchanges;
@@ -34,22 +38,41 @@ public class HoaLinhMiniAppController : MultiTenancyController
     private readonly IRepository<HlGiftExchange, Guid> _giftRepo;
     private readonly ICurrentTenant _currentTenant;
     private readonly IAsyncQueryableExecuter _asyncExecuter;
+    private readonly IZaloApiClient _zaloApiClient;
+    private readonly IHlPaymentService _paymentService;
 
     public HoaLinhMiniAppController(
         IHlApiClientService hlApi,
         IRepository<HlOrder, Guid> orderRepo,
         IRepository<HlGiftExchange, Guid> giftRepo,
         ICurrentTenant currentTenant,
-        IAsyncQueryableExecuter asyncExecuter)
+        IAsyncQueryableExecuter asyncExecuter,
+        IZaloApiClient zaloApiClient,
+        IHlPaymentService paymentService)
     {
         _hlApi = hlApi;
         _orderRepo = orderRepo;
         _giftRepo = giftRepo;
         _currentTenant = currentTenant;
         _asyncExecuter = asyncExecuter;
+        _zaloApiClient = zaloApiClient;
+        _paymentService = paymentService;
     }
 
     #region Auth
+
+    /// <summary>
+    /// Giải mã số điện thoại từ Zalo code + accessToken
+    /// </summary>
+    [HttpPost("decode-phone")]
+    public async Task<IActionResult> DecodePhone([FromBody] ZaloDecodeRequest request, CancellationToken ct)
+    {
+        if (string.IsNullOrWhiteSpace(request.Code) || string.IsNullOrWhiteSpace(request.AccessToken))
+            return BadRequest("Missing code or accessToken");
+
+        var result = await _zaloApiClient.DecodePhoneAsync(request.Code, request.AccessToken, ct);
+        return Ok(result);
+    }
 
     /// <summary>
     /// Check khách hàng tồn tại trên DMS Hoa Linh bằng SĐT
@@ -129,6 +152,16 @@ public class HoaLinhMiniAppController : MultiTenancyController
     }
 
     /// <summary>
+    /// Lấy danh sách sản phẩm
+    /// </summary>
+    [HttpGet("product-group")]
+    public async Task<IActionResult> GetProductGroups([FromQuery] int page = 1, [FromQuery] int limit = 20)
+    {
+        var result = await _hlApi.GetProductGroupsAsync(page, limit);
+        return Ok(result);
+    }
+
+    /// <summary>
     /// Lấy chi tiết sản phẩm (ProductGroup — có description, instruction)
     /// </summary>
     [HttpGet("products/{productCode}")]
@@ -167,6 +200,7 @@ public class HoaLinhMiniAppController : MultiTenancyController
             DeliveryAddress = request.DeliveryAddress,
             ReceiverName = request.ReceiverName,
             ReceiverPhone = request.ReceiverPhone,
+            ReceiverCode = request.ReceiveCode,
             DiscountCode = request.DiscountCode,
             DiscountAmount = request.DiscountAmount,
             SystemDiscount = request.SystemDiscount,
@@ -214,28 +248,202 @@ public class HoaLinhMiniAppController : MultiTenancyController
     }
 
     /// <summary>
-    /// Lấy lịch sử đơn hàng của KH theo customer_code (từ DMS Hoa Linh)
+    /// Lấy lịch sử đơn hàng của KH.
+    /// - customerCode (bắt buộc): lấy toàn bộ đơn theo mã khách hàng.
+    /// - zaloOrderNumber (không bắt buộc): nếu truyền → lọc theo mã order Genora trên DMS.
+    /// Merge đơn từ DMS Hoa Linh (Source=hoalinh) + đơn từ Genora DB (Source=genora).
+    /// Nếu DMS trả về zalo_order_number = OrderCode trong Genora → sync trạng thái từ DMS,
+    /// và đơn đó CHỈ hiển thị 1 lần dưới Source=genora (không nhân đôi).
     /// </summary>
     [HttpGet("orders")]
-    public async Task<IActionResult> GetOrders([FromQuery] string? customerCode, [FromQuery] int page = 1, [FromQuery] int limit = 20)
+    public async Task<IActionResult> GetOrders([FromQuery] string? customerCode, [FromQuery] string? zaloOrderNumber, [FromQuery] int page = 1, [FromQuery] int limit = 20)
     {
         if (string.IsNullOrWhiteSpace(customerCode))
             return BadRequest(HlApiResult<object>.Fail("Thiếu mã khách hàng"));
 
-        // Dùng API get-order-header-zalo theo customer_code
-        var result = await _hlApi.GetOrderHeaderZaloAsync(customerCode, "");
-        return Ok(result);
+        // 1. Lấy đơn từ DMS Hoa Linh (truyền zaloOrderNumber nếu có → lọc theo mã order Genora)
+        var hlResult = await _hlApi.GetOrderHeaderZaloAsync(customerCode, zaloOrderNumber);
+        var hlOrders = (hlResult.Success && hlResult.Data != null) ? hlResult.Data : new List<HlOrderHeaderDto>();
+
+        // 2. Lấy đơn từ Genora DB theo customerCode
+        var queryable = await _orderRepo.GetQueryableAsync();
+        var genoraQuery = queryable.Where(x => x.CustomerCode == customerCode);
+        if (!string.IsNullOrWhiteSpace(zaloOrderNumber))
+            genoraQuery = genoraQuery.Where(x => x.OrderCode == zaloOrderNumber);
+        var genoraOrders = await _asyncExecuter.ToListAsync(
+            genoraQuery.OrderByDescending(x => x.CreationTime));
+
+        // 3. Sync status: nếu DMS có zalo_order_number = OrderCode Genora → cập nhật status Genora
+        //    Các mã order Genora đã được DMS ghi nhận (để loại khỏi danh sách hoalinh, tránh nhân đôi)
+        var matchedGenoraCodes = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var hlOrder in hlOrders)
+        {
+            if (string.IsNullOrWhiteSpace(hlOrder.ZaloOrderNumber)) continue;
+            var matchedOrder = genoraOrders.FirstOrDefault(x => x.OrderCode == hlOrder.ZaloOrderNumber);
+            if (matchedOrder == null) continue;
+
+            matchedGenoraCodes.Add(hlOrder.ZaloOrderNumber!);
+
+            // Map DMS statusCode → Genora DeliveryStatus
+            var newDeliveryStatus = MapHlStatusToDeliveryStatus(hlOrder.OrderStatusCode);
+            if (matchedOrder.DeliveryStatus != newDeliveryStatus)
+            {
+                matchedOrder.DeliveryStatus = newDeliveryStatus;
+                matchedOrder.ExternalOrderCode = hlOrder.OrderNumber;
+                matchedOrder.IsSyncedToHl = true;
+                matchedOrder.SyncedAt = DateTime.Now;
+                await _orderRepo.UpdateAsync(matchedOrder, autoSave: true);
+            }
+        }
+
+        // 4a. Đơn Genora (Source=genora)
+        var genoraResult = genoraOrders.Select(o => new
+        {
+            Source = "genora",
+            Id = (object)o.Id,
+            o.OrderCode,
+            o.CustomerCode,
+            o.CustomerName,
+            o.BranchName,
+            o.DeliveryAddress,
+            o.TotalAmount,
+            DeliveryStatus = (int)o.DeliveryStatus,
+            DeliveryStatusText = GetDeliveryStatusText(o.DeliveryStatus),
+            PaymentStatus = (int)o.PaymentStatus,
+            PaymentStatusText = GetPaymentStatusText(o.PaymentStatus),
+            OrderDate = o.CreationTime.ToString("yyyy-MM-dd"),
+            o.Note,
+            o.ReceiverName
+        });
+
+        // 4b. Đơn thuần DMS Hoa Linh (Source=hoalinh) — loại các đơn đã map với Genora để tránh nhân đôi
+        var hlOnlyResult = hlOrders
+            .Where(h => string.IsNullOrWhiteSpace(h.ZaloOrderNumber)
+                        || !matchedGenoraCodes.Contains(h.ZaloOrderNumber!))
+            .Select(h => new
+            {
+                Source = "hoalinh",
+                Id = (object?)null,
+                OrderCode = h.OrderNumber,
+                h.CustomerCode,
+                h.CustomerName,
+                BranchName = h.DistributorName,
+                h.DeliveryAddress,
+                TotalAmount = h.TotalAmount ?? 0,
+                DeliveryStatus = h.OrderStatusCode ?? 0,
+                DeliveryStatusText = h.OrderStatus ?? "Không xác định",
+                PaymentStatus = 0,
+                PaymentStatusText = "",
+                OrderDate = h.OrderDate ?? "",
+                Note = (string?)null,
+                ReceiverName = h.DsrName
+            });
+
+        // 5. Gộp 2 nguồn, sắp xếp theo ngày giảm dần
+        var combined = genoraResult.Cast<object>()
+            .Concat(hlOnlyResult.Cast<object>())
+            .ToList();
+
+        return Ok(HlApiResult<object>.Ok(combined));
+    }
+
+    private static Enums.HlOrderDeliveryStatus MapHlStatusToDeliveryStatus(int? hlStatusCode)
+    {
+        return hlStatusCode switch
+        {
+            1 => Enums.HlOrderDeliveryStatus.PendingConfirmation, // Khởi tạo → Đơn mới
+            2 => Enums.HlOrderDeliveryStatus.Processing,          // Đang xử lý
+            3 => Enums.HlOrderDeliveryStatus.Completed,           // Hoàn thành
+            4 => Enums.HlOrderDeliveryStatus.Completed,           // Đã thanh toán → Hoàn thành
+            5 => Enums.HlOrderDeliveryStatus.Cancelled,           // Đã hủy
+            6 => Enums.HlOrderDeliveryStatus.Cancelled,           // Từ chối → Đã hủy
+            7 => Enums.HlOrderDeliveryStatus.Completed,           // Đã trả hàng → Hoàn thành
+            _ => Enums.HlOrderDeliveryStatus.PendingConfirmation
+        };
+    }
+
+    private static string GetDeliveryStatusText(Enums.HlOrderDeliveryStatus status)
+    {
+        return status switch
+        {
+            Enums.HlOrderDeliveryStatus.PendingConfirmation => "Đơn mới",
+            Enums.HlOrderDeliveryStatus.Processing => "Đang xử lý",
+            Enums.HlOrderDeliveryStatus.Delivering => "Đang giao",
+            Enums.HlOrderDeliveryStatus.Completed => "Hoàn thành",
+            Enums.HlOrderDeliveryStatus.Cancelled => "Đã hủy",
+            _ => "Không xác định"
+        };
+    }
+
+    private static string GetPaymentStatusText(Enums.HlOrderPaymentStatus status)
+    {
+        return status switch
+        {
+            Enums.HlOrderPaymentStatus.Unpaid => "Chưa thanh toán",
+            Enums.HlOrderPaymentStatus.Paid => "Đã thanh toán",
+            Enums.HlOrderPaymentStatus.Debt => "Công nợ",
+            _ => "Không xác định"
+        };
     }
 
     /// <summary>
-    /// Lấy chi tiết đơn hàng từ API HL
+    /// Lấy chi tiết đơn hàng theo nguồn (source).
+    /// - source=genora: lấy chi tiết từ Genora DB (HL.AppHlOrders) theo OrderCode + customerCode.
+    /// - source=hoalinh (mặc định): gọi API DMS Hoa Linh GetOrderDetailAsync theo orderNumber.
     /// </summary>
     [HttpGet("orders/{orderNumber}")]
-    public async Task<IActionResult> GetOrderDetail(string orderNumber)
+    public async Task<IActionResult> GetOrderDetail(string orderNumber, [FromQuery] string? source, [FromQuery] string? customerCode)
     {
         if (string.IsNullOrWhiteSpace(orderNumber))
             return BadRequest(HlApiResult<object>.Fail("Thiếu mã đơn hàng"));
 
+        // Đơn Genora → đọc trực tiếp từ DB, map sang shape giống API Hoa Linh DMS (mỗi item = 1 record)
+        if (string.Equals(source, "genora", StringComparison.OrdinalIgnoreCase))
+        {
+            var queryable = await _orderRepo.WithDetailsAsync(x => x.Items);
+            var query = queryable.Where(x => x.OrderCode == orderNumber);
+            if (!string.IsNullOrWhiteSpace(customerCode))
+                query = query.Where(x => x.CustomerCode == customerCode);
+
+            var order = await _asyncExecuter.FirstOrDefaultAsync(query);
+            if (order == null)
+                return Ok(HlApiResult<object>.Fail("Không tìm thấy đơn hàng"));
+
+            var orderStatusText = GetDeliveryStatusText(order.DeliveryStatus);
+            var orderDate = order.CreationTime.ToString("yyyy-MM-dd");
+            var orderTime = order.CreationTime.ToString("HH:mm:ss");
+
+            // Map từng item sang HlOrderDetailDto để đồng nhất trường với DMS
+            var detailList = order.Items.Select(i => new HlOrderDetailDto
+            {
+                DistributorCode = order.BranchCode,        // Mã chi nhánh
+                CustomerCode = order.CustomerCode,          // Mã khách hàng
+                OrderNumber = order.ExternalOrderCode,      // Mã đơn hàng Hoa Linh (nếu đã đẩy DMS)
+                ProductCode = i.ProductCode,                // Mã sản phẩm
+                DistributorName = order.BranchName,         // Tên chi nhánh
+                DsrCode = order.ReceiverCode,               // Mã trình dược viên
+                DsrName = order.ReceiverName,               // Tên trình dược viên
+                CustomerName = order.CustomerName,          // Tên khách hàng
+                DeliveryAddress = order.DeliveryAddress,    // Địa chỉ giao hàng
+                ProductGroupCode = i.ProductGroupCode,      // Mã danh mục sản phẩm
+                ProductGroupName = i.ProductGroupName,      // Tên danh mục sản phẩm
+                ProductName = i.ProductName,                // Tên sản phẩm
+                ProductUnit = i.ProductUnit,                // Đơn vị tính
+                ProductPrice = i.Price,                     // Giá sản phẩm
+                Quantity = i.Quantity,                      // Số lượng
+                TotalAmount = i.Amount,                     // Tổng giá trị
+                NetValue = i.Amount,
+                GrossValue = i.Amount,
+                OrderStatus = orderStatusText,              // Trạng thái đơn hàng
+                OrderDate = orderDate,                      // Ngày đặt hàng
+                OrderTime = orderTime,                      // Giờ đặt hàng
+                ZaloOrderNumber = order.OrderCode           // Mã đơn hàng Genora
+            }).ToList();
+
+            return Ok(HlApiResult<List<HlOrderDetailDto>>.Ok(detailList));
+        }
+
+        // Mặc định (source=hoalinh) → gọi API DMS
         var result = await _hlApi.GetOrderDetailAsync(orderNumber);
         return Ok(result);
     }
@@ -446,6 +654,34 @@ public class HoaLinhMiniAppController : MultiTenancyController
 
     #endregion
 
+    #region News (Zalo OA Articles)
+
+    /// <summary>
+    /// Lấy danh sách tin tức (bài viết Zalo OA).
+    /// Access token lấy từ ZaloAuth active theo tenant (fallback test token nếu cấu hình).
+    /// </summary>
+    [HttpGet("news")]
+    public async Task<IActionResult> GetNews([FromQuery] int offset = 0, [FromQuery] int limit = 10, [FromQuery] string type = "normal", CancellationToken ct = default)
+    {
+        var result = await _zaloApiClient.GetArticleListAsync(offset, limit, type, ct);
+        return Ok(result);
+    }
+
+    /// <summary>
+    /// Lấy chi tiết 1 tin tức (bài viết Zalo OA) theo id.
+    /// </summary>
+    [HttpGet("news/{articleId}")]
+    public async Task<IActionResult> GetNewsDetail(string articleId, CancellationToken ct)
+    {
+        if (string.IsNullOrWhiteSpace(articleId))
+            return BadRequest(HlApiResult<object>.Fail("Thiếu mã bài viết"));
+
+        var result = await _zaloApiClient.GetArticleDetailAsync(articleId, ct);
+        return Ok(result);
+    }
+
+    #endregion
+
     #region Salemans
 
     /// <summary>
@@ -459,6 +695,37 @@ public class HoaLinhMiniAppController : MultiTenancyController
 
         var result = await _hlApi.GetSalemanDetailAsync(dsrCode);
         return Ok(result);
+    }
+
+    #endregion
+
+    #region Payment
+
+    /// <summary>
+    /// Chuẩn bị thanh toán đơn hàng — trả về MAC signature cho Zalo Checkout SDK
+    /// </summary>
+    [HttpPost("payment/prepare-order")]
+    public async Task<IActionResult> PrepareOrder([FromBody] PrepareHlOrderInput input)
+    {
+        try
+        {
+            var result = await _paymentService.PrepareOrderAsync(input);
+            return Ok(HlApiResult<PrepareOrderResult>.Ok(result));
+        }
+        catch (UserFriendlyException ex)
+        {
+            return Ok(HlApiResult<object>.Fail(ex.Message));
+        }
+    }
+
+    /// <summary>
+    /// Kiểm tra trạng thái giao dịch thanh toán
+    /// </summary>
+    [HttpGet("payment/check-transaction/{orderId}")]
+    public async Task<IActionResult> CheckTransaction(string orderId)
+    {
+        var result = await _paymentService.CheckTransactionAsync(orderId);
+        return Ok(HlApiResult<CheckTransactionResult>.Ok(result));
     }
 
     #endregion

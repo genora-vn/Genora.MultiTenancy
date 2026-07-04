@@ -20,6 +20,7 @@ public class ZaloApiClient : BaseZaloClient, IZaloApiClient
 {
     private readonly IZaloTokenProvider _tokenProvider;
     private readonly IZaloRuntimeConfigProvider _zaloCfg;
+    private readonly ILogger<BaseZaloClient> _apiLogger;
 
     public ZaloApiClient(
         IHttpClientFactory factory,
@@ -32,6 +33,7 @@ public class ZaloApiClient : BaseZaloClient, IZaloApiClient
     {
         _tokenProvider = tokenProvider;
         _zaloCfg = zaloCfg;
+        _apiLogger = logger;
     }
 
     public async Task<string> SendZnsAsync(object payload, CancellationToken ct)
@@ -70,6 +72,107 @@ public class ZaloApiClient : BaseZaloClient, IZaloApiClient
 
         return body;
     }
+
+    #region Articles (Zalo OA bài viết)
+
+    public async Task<ZaloArticleListResponse> GetArticleListAsync(int offset, int limit, string type, CancellationToken ct)
+    {
+        var baseUrl = (_cfg["Zalo:OpenApiBaseUrl"] ?? "https://openapi.zalo.me").TrimEnd('/');
+        var url = BuildUrl(baseUrl, "/v2.0/article/getslice", new Dictionary<string, string?>
+        {
+            ["offset"] = offset.ToString(),
+            ["limit"] = limit.ToString(),
+            ["type"] = string.IsNullOrWhiteSpace(type) ? "normal" : type
+        });
+
+        var body = await SendWithAccessTokenGetAsync(url, ZaloLogActions.GET_ARTICLE_LIST, ct);
+
+        return SafeDeserialize<ZaloArticleListResponse>(body)
+            ?? new ZaloArticleListResponse { Error = -1, Message = $"Parse error, raw: {body}" };
+    }
+
+    public async Task<ZaloArticleDetailResponse> GetArticleDetailAsync(string articleId, CancellationToken ct)
+    {
+        if (string.IsNullOrWhiteSpace(articleId))
+            throw new ArgumentException("Missing articleId", nameof(articleId));
+
+        var baseUrl = (_cfg["Zalo:OpenApiBaseUrl"] ?? "https://openapi.zalo.me").TrimEnd('/');
+        var url = BuildUrl(baseUrl, "/v2.0/article/getdetail", new Dictionary<string, string?>
+        {
+            ["id"] = articleId
+        });
+
+        var body = await SendWithAccessTokenGetAsync(url, ZaloLogActions.GET_ARTICLE_DETAIL, ct);
+
+        return SafeDeserialize<ZaloArticleDetailResponse>(body)
+            ?? new ZaloArticleDetailResponse { Error = -1, Message = $"Parse error, raw: {body}" };
+    }
+
+    /// <summary>
+    /// GET có header access_token. Lấy token từ ZaloAuth active (theo tenant);
+    /// nếu không có/lỗi (vd Host chưa cấp quyền) fallback sang config Zalo:TestAccessToken.
+    /// Nếu token có dấu hiệu hết hạn/không hợp lệ → refresh 1 lần rồi thử lại.
+    /// </summary>
+    private async Task<string> SendWithAccessTokenGetAsync(string url, string action, CancellationToken ct)
+    {
+        var token = await ResolveAccessTokenAsync();
+
+        var headers = new Dictionary<string, string> { ["access_token"] = token };
+        var body = await SendAsync(HttpMethod.Get, url, headers, action, null, ct);
+
+        if (IsLikelyInvalidToken(body))
+        {
+            try
+            {
+                await _tokenProvider.RefreshNowAsync();
+                var token2 = await _tokenProvider.GetAccessTokenAsync();
+                if (!string.IsNullOrWhiteSpace(token2))
+                {
+                    headers["access_token"] = token2;
+                    body = await SendAsync(HttpMethod.Get, url, headers, action, null, ct);
+                }
+            }
+            catch (Exception ex)
+            {
+                _apiLogger.LogWarning(ex, "Zalo article: refresh token failed, giữ nguyên response gốc");
+            }
+        }
+
+        return body;
+    }
+
+    /// <summary>
+    /// Lấy access token từ DB (ZaloAuth active theo tenant). Nếu lỗi hoặc rỗng
+    /// (Host chưa cấp quyền), fallback sang config Zalo:TestAccessToken để test.
+    /// </summary>
+    private async Task<string> ResolveAccessTokenAsync()
+    {
+        try
+        {
+            var token = await _tokenProvider.GetAccessTokenAsync();
+            if (!string.IsNullOrWhiteSpace(token))
+                return token;
+        }
+        catch (Exception ex)
+        {
+            _apiLogger.LogWarning(ex, "Zalo article: không lấy được token từ ZaloAuth, thử fallback test token");
+        }
+
+        var testToken = _cfg["Zalo:TestAccessToken"];
+        if (!string.IsNullOrWhiteSpace(testToken))
+            return testToken;
+
+        throw new InvalidOperationException("Không có access token Zalo (ZaloAuth chưa cấu hình và thiếu Zalo:TestAccessToken)");
+    }
+
+    private static T? SafeDeserialize<T>(string? json) where T : class
+    {
+        if (string.IsNullOrWhiteSpace(json)) return null;
+        try { return JsonSerializer.Deserialize<T>(json, _zaloJsonOptions); }
+        catch { return null; }
+    }
+
+    #endregion
 
     public async Task<ZaloMeResponse> GetZaloMeAsync(string accessToken, CancellationToken ct)
     {
