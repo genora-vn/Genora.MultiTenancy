@@ -6,6 +6,7 @@ using Genora.MultiTenancy.AppServices.AppEmails.Templates;
 using Genora.MultiTenancy.AppServices.AppPayments;
 using Genora.MultiTenancy.AppServices.AppZaloAuths;
 using Genora.MultiTenancy.AppServices.HoaLinh;
+using Genora.MultiTenancy.AppDtos.HoaLinh;
 using Genora.MultiTenancy.AppDtos.UrBox;
 using Genora.MultiTenancy.AppServices.UrBox;
 using Microsoft.Extensions.DependencyInjection;
@@ -127,6 +128,7 @@ public class MultiTenancyApplicationModule : AbpModule
         context.Services.AddScoped<IHlApiClientService, HlApiClientService>();
         context.Services.AddScoped<IHlDataAccessService, HlDataAccessService>();
         context.Services.AddScoped<IHlPaymentService, HlPaymentService>();
+        context.Services.AddScoped<IHlCustomerAppService, HlCustomerAppService>();
 
         // ── UrBox (kho quà eVoucher) ─────────────────────────────────────────
         var urBoxSection = configuration.GetSection(UrBoxSettings.SectionName);

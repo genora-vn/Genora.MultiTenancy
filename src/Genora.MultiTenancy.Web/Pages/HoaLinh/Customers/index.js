@@ -8,6 +8,7 @@
         var search = ($('#FilterText').val() || '').toLowerCase();
         var channel = $('#FilterChannel').val();
         var gkhl = $('#FilterGkhl').val();
+        var source = $('#FilterSource').val();
         var filtered = allData;
         if (search) filtered = filtered.filter(function (i) {
             return (i.custCode && i.custCode.toLowerCase().includes(search)) || (i.custName && i.custName.toLowerCase().includes(search)) || (i.custPhone && i.custPhone.includes(search)) || (i.dsrName && i.dsrName.toLowerCase().includes(search));
@@ -15,7 +16,15 @@
         if (channel) filtered = filtered.filter(function (i) { return i.custChannel === channel; });
         if (gkhl === 'true') filtered = filtered.filter(function (i) { return i.isGkhl === true; });
         if (gkhl === 'false') filtered = filtered.filter(function (i) { return !i.isGkhl; });
+        if (source) filtered = filtered.filter(function (i) { return String(i.source) === source; });
         return filtered;
+    }
+
+    function sourceBadge(item) {
+        var txt = item.sourceText || '';
+        if (item.source === 5) return '<span class="badge hl-src-dms">' + txt + '</span>';
+        if (item.source === 1) return '<span class="badge hl-src-mini">' + txt + '</span>';
+        return txt ? '<span class="badge hl-src-other">' + txt + '</span>' : '<span class="text-muted">-</span>';
     }
 
     function renderTable() {
@@ -26,7 +35,7 @@
         if (currentPage > totalPages) currentPage = totalPages;
         var pageData = filtered.slice((currentPage - 1) * ps, currentPage * ps);
         var tbody = $('#HlCustomersTable tbody'); tbody.empty();
-        if (pageData.length === 0) { tbody.append('<tr><td colspan="10" class="text-center text-muted py-4">Không có dữ liệu</td></tr>'); }
+        if (pageData.length === 0) { tbody.append('<tr><td colspan="11" class="text-center text-muted py-4">Không có dữ liệu</td></tr>'); }
         else {
             pageData.forEach(function (item) {
                 var gkhlBadge = item.isGkhl ? '<span class="badge hl-badge-gkhl">Có</span>' : '<span class="text-muted">-</span>';
@@ -44,6 +53,7 @@
                     '<td class="text-center">' + gkhlBadge + '</td>' +
                     '<td class="text-center">' + tierBadge + '</td>' +
                     '<td class="text-end">' + points + '</td>' +
+                    '<td class="text-center">' + sourceBadge(item) + '</td>' +
                     '</tr>'
                 );
             });
@@ -76,6 +86,7 @@
         $('#FilterText').val('');
         $('#FilterChannel').val('');
         $('#FilterGkhl').val('');
+        $('#FilterSource').val('');
         currentPage = 1;
         loadData();
     }
@@ -83,6 +94,9 @@
     $('#BtnSearch').click(function () { loadData(); });
     $('#BtnRefresh').click(function () { resetFilters(); });
     $('#FilterText').keypress(function (e) { if (e.which === 13) loadData(); });
+    $('#FilterSource').change(function () { currentPage = 1; renderTable(); });
+    $('#FilterChannel').change(function () { currentPage = 1; renderTable(); });
+    $('#FilterGkhl').change(function () { currentPage = 1; renderTable(); });
     $('#PageSize').change(function () { currentPage = 1; renderTable(); });
     $(document).on('click', '#Pagination .page-link', function (e) { e.preventDefault(); var p = parseInt($(this).data('page')); if (p >= 1 && p <= totalPages && p !== currentPage) { currentPage = p; renderTable(); } });
 

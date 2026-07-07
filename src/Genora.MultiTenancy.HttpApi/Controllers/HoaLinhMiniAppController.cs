@@ -15,6 +15,7 @@ using Genora.MultiTenancy.DomainModels.AppHlOrders;
 using Genora.MultiTenancy.Enums;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 using Volo.Abp;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Linq;
@@ -40,6 +41,7 @@ public class HoaLinhMiniAppController : MultiTenancyController
     private readonly IAsyncQueryableExecuter _asyncExecuter;
     private readonly IZaloApiClient _zaloApiClient;
     private readonly IHlPaymentService _paymentService;
+    private readonly IHlCustomerAppService _hlCustomerService;
 
     public HoaLinhMiniAppController(
         IHlApiClientService hlApi,
@@ -48,7 +50,8 @@ public class HoaLinhMiniAppController : MultiTenancyController
         ICurrentTenant currentTenant,
         IAsyncQueryableExecuter asyncExecuter,
         IZaloApiClient zaloApiClient,
-        IHlPaymentService paymentService)
+        IHlPaymentService paymentService,
+        IHlCustomerAppService hlCustomerService)
     {
         _hlApi = hlApi;
         _orderRepo = orderRepo;
@@ -57,6 +60,7 @@ public class HoaLinhMiniAppController : MultiTenancyController
         _asyncExecuter = asyncExecuter;
         _zaloApiClient = zaloApiClient;
         _paymentService = paymentService;
+        _hlCustomerService = hlCustomerService;
     }
 
     #region Auth
@@ -75,12 +79,36 @@ public class HoaLinhMiniAppController : MultiTenancyController
     }
 
     /// <summary>
-    /// Check khách hàng tồn tại trên DMS Hoa Linh bằng SĐT
-    /// Mini App gọi sau khi decode-phone thành công
+    /// Check khách hàng tồn tại trên DMS Hoa Linh bằng SĐT (GET — không có dữ liệu Mini App bổ sung).
+    /// Mini App gọi sau khi decode-phone thành công. Đồng thời đăng ký/đồng bộ vào dbo.AppCustomers.
     /// </summary>
     [HttpGet("auth/{phone}")]
     public async Task<IActionResult> CheckCustomer(string phone)
     {
+        return await CheckAndRegisterAsync(new HlCheckCustomerRequest { PhoneNumber = phone });
+    }
+
+    /// <summary>
+    /// Check + đăng ký khách hàng (POST — nhận thông tin Mini App: fullName, avatarUrl, zaloUserId, isFollower, note).
+    /// - Tồn tại bên HL DMS → lưu mã KH + nguồn HoaLinh + thông tin trả về.
+    /// - Chưa có bên HL DMS → tự sinh mã + nguồn ZaloMiniApp, lưu thông tin từ Mini App.
+    /// </summary>
+    [HttpPost("auth")]
+    public async Task<IActionResult> CheckCustomerWithInfo([FromBody] HlCheckCustomerRequest request)
+    {
+        if (request == null || string.IsNullOrWhiteSpace(request.PhoneNumber))
+            return BadRequest(HlApiResult<object>.Fail("Thiếu số điện thoại"));
+
+        return await CheckAndRegisterAsync(request);
+    }
+
+    /// <summary>
+    /// Logic chung: check bên HL DMS + upsert vào dbo.AppCustomers.
+    /// Luôn đăng ký khách vào AppCustomers dù có hay không bên HL DMS (nguồn khác nhau).
+    /// </summary>
+    private async Task<IActionResult> CheckAndRegisterAsync(HlCheckCustomerRequest request)
+    {
+        var phone = request.PhoneNumber;
         if (string.IsNullOrWhiteSpace(phone))
             return BadRequest(HlApiResult<object>.Fail("Thiếu số điện thoại"));
 
@@ -89,20 +117,19 @@ public class HoaLinhMiniAppController : MultiTenancyController
         if (!result.Success)
             return Ok(HlApiResult<object>.Fail(result.Error ?? "Lỗi khi kiểm tra khách hàng"));
 
-        if (result.Data == null || result.Data.Count == 0)
-            return Ok(HlApiResult<object>.Fail(
-                "Số điện thoại của bạn chưa có trong hệ thống. Quý Khách vui lòng liên hệ Nhân viên Kinh doanh phụ trách địa bàn hoặc Hotline Công ty để được hỗ trợ."));
+        var hlCustomer = (result.Data != null && result.Data.Count > 0) ? result.Data[0] : null;
+        var existsOnHl = hlCustomer != null && hlCustomer.IsCustomer != false;
 
-        var customer = result.Data[0];
-        if (customer.IsCustomer == false)
-            return Ok(HlApiResult<object>.Fail(
-                "Số điện thoại của bạn chưa có trong hệ thống. Quý Khách vui lòng liên hệ Nhân viên Kinh doanh phụ trách địa bàn hoặc Hotline Công ty để được hỗ trợ."));
+        // Đăng ký/đồng bộ vào dbo.AppCustomers + lấy DTO trả về (luôn có dữ liệu KH).
+        // Dù tồn tại hay không bên HL DMS, khách vẫn được lưu và trả về thông tin.
+        var customerDto = await _hlCustomerService.UpsertFromHoaLinhAsync(request, existsOnHl ? hlCustomer : null);
 
-        return Ok(HlApiResult<HlCustomerDto>.Ok(customer));
+        return Ok(HlApiResult<HlCustomerDto>.Ok(customerDto));
     }
 
     /// <summary>
-    /// Lấy thông tin chi tiết khách hàng sau khi đăng nhập thành công
+    /// Lấy thông tin chi tiết khách hàng sau khi đăng nhập thành công.
+    /// Ưu tiên dữ liệu bên Hoa Linh DMS; nếu không tồn tại thì lấy từ dbo.AppCustomers.
     /// </summary>
     [HttpGet("customer/{phone}")]
     public async Task<IActionResult> GetCustomer(string phone)
@@ -110,8 +137,15 @@ public class HoaLinhMiniAppController : MultiTenancyController
         if (string.IsNullOrWhiteSpace(phone))
             return BadRequest(HlApiResult<object>.Fail("Thiếu số điện thoại"));
 
-        var result = await _hlApi.GetCustomerDetailAsync(phone);
-        return Ok(result);
+        // 1. Check bên Hoa Linh DMS trước — mỗi bản ghi tương ứng 1 chi nhánh
+        var hlResult = await _hlApi.GetCustomerDetailAsync(phone);
+        var hlCustomers = (hlResult.Success && hlResult.Data != null) ? hlResult.Data : new List<HlCustomerDto>();
+        if (hlCustomers.Count > 0)
+            return Ok(HlApiResult<List<HlCustomerDto>>.Ok(hlCustomers));
+
+        // 2. Fallback: lấy từ dbo.AppCustomers (cũng trả list — mỗi bản ghi 1 chi nhánh)
+        var local = await _hlCustomerService.GetFromAppCustomersAsync(phone);
+        return Ok(HlApiResult<List<HlCustomerDto>>.Ok(local));
     }
 
     #endregion
@@ -570,6 +604,20 @@ public class HoaLinhMiniAppController : MultiTenancyController
     public async Task<IActionResult> GetCampaigns([FromQuery] int page = 1, [FromQuery] int limit = 20)
     {
         var result = await _hlApi.GetCampaignsAsync(page, limit);
+        return Ok(result);
+    }
+
+    /// <summary>
+    /// Lấy chi tiết chiến dịch theo mã khách hàng (custCode).
+    /// GET /api/CustomerCampaigns/{custCode} — trả list (mỗi bản ghi 1 chiến dịch KH tham gia).
+    /// </summary>
+    [HttpGet("campaigns/{custCode}")]
+    public async Task<IActionResult> GetCampaignDetail(string custCode)
+    {
+        if (string.IsNullOrWhiteSpace(custCode))
+            return BadRequest(HlApiResult<object>.Fail("Thiếu mã khách hàng"));
+
+        var result = await _hlApi.GetCampaignDetailAsync(custCode);
         return Ok(result);
     }
 

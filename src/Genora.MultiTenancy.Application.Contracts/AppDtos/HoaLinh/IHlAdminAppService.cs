@@ -25,7 +25,7 @@ public interface IHlAdminAppService : IApplicationService
     Task<HlApiResult<List<HlProductGroupDto>>> GetProductGroupDetailAsync(string code);
 
     // Customers
-    Task<HlApiResult<HlPagedResponse<HlCustomerDto>>> GetCustomersAsync(int page, int limit, string? search = null);
+    Task<HlApiResult<HlPagedResponse<HlCustomerDto>>> GetCustomersAsync(int page, int limit, string? search = null, int? source = null);
     Task<HlApiResult<List<HlCustomerDto>>> GetCustomerDetailAsync(string phone);
     Task<HlApiResult<List<HlCustomerDto>>> GetCustomerByPhoneAsync(string phone);
 

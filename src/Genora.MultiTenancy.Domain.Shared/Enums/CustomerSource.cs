@@ -7,5 +7,6 @@ namespace Genora.MultiTenancy.Enums
         Manual = 2,
         Extent = 3,
         Other = 4,
+        HoaLinh = 5,
     }
 }

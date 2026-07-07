@@ -12,4 +12,13 @@ public class HlCampaignDto
     public string? EndDate { get; set; }
     public string? Status { get; set; }
     public string? Description { get; set; }
+
+    // Bổ sung trường từ API chi tiết chiến dịch (CustomerCampaigns/{custCode})
+    public int? CampaignPeriod { get; set; }
+    public string? DisplayType { get; set; }
+    public decimal? AccumulatedSales { get; set; }
+    public int? AccumulatedPoints { get; set; }
+    public string? MembershipTier { get; set; }
+    public string? VoucherCode { get; set; }
+    public string? VoucherName { get; set; }
 }

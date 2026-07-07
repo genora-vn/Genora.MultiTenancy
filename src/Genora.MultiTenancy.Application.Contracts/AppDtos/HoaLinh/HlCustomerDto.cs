@@ -30,4 +30,13 @@ public class HlCustomerDto
     public bool? IsCustomer { get; set; }
     public string? LoyaltyTier { get; set; }
     public int? LoyaltyPoint { get; set; }
+
+    /// <summary>Nguồn khách hàng (CustomerSource): 1=ZaloMiniApp/Genora, 5=HoaLinh... Dùng cho filter admin.</summary>
+    public int? Source { get; set; }
+
+    /// <summary>Tên nguồn hiển thị (Genora (Mini App), Hoa Linh (DMS)...).</summary>
+    public string? SourceText { get; set; }
+
+    /// <summary>Đánh dấu bản ghi có tồn tại trong dbo.AppCustomers (Genora) hay không.</summary>
+    public bool ExistsInGenora { get; set; }
 }
