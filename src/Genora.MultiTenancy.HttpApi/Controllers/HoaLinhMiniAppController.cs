@@ -42,6 +42,7 @@ public class HoaLinhMiniAppController : MultiTenancyController
     private readonly IZaloApiClient _zaloApiClient;
     private readonly IHlPaymentService _paymentService;
     private readonly IHlCustomerAppService _hlCustomerService;
+    private readonly IHlPointAppService _hlPointService;
 
     public HoaLinhMiniAppController(
         IHlApiClientService hlApi,
@@ -51,7 +52,8 @@ public class HoaLinhMiniAppController : MultiTenancyController
         IAsyncQueryableExecuter asyncExecuter,
         IZaloApiClient zaloApiClient,
         IHlPaymentService paymentService,
-        IHlCustomerAppService hlCustomerService)
+        IHlCustomerAppService hlCustomerService,
+        IHlPointAppService hlPointService)
     {
         _hlApi = hlApi;
         _orderRepo = orderRepo;
@@ -61,6 +63,7 @@ public class HoaLinhMiniAppController : MultiTenancyController
         _zaloApiClient = zaloApiClient;
         _paymentService = paymentService;
         _hlCustomerService = hlCustomerService;
+        _hlPointService = hlPointService;
     }
 
     #region Auth
@@ -159,11 +162,19 @@ public class HoaLinhMiniAppController : MultiTenancyController
     public async Task<IActionResult> GetBrands([FromQuery] int page = 1, [FromQuery] int limit = 50)
     {
         var result = await _hlApi.GetBrandsAsync(page, limit);
+
+        // Chỉ trả về thương hiệu đang hoạt động (isActive = true)
+        if (result.Success && result.Data?.Data != null)
+        {
+            result.Data.Data = result.Data.Data.Where(x => x.IsActive == true).ToList();
+            result.Data.TotalRecords = result.Data.Data.Count;
+        }
+
         return Ok(result);
     }
 
     /// <summary>
-    /// Lấy sản phẩm theo danh mục (brand_code)
+    /// Lấy sản phẩm theo danh mục (brand_code) — chỉ sản phẩm đang hoạt động
     /// </summary>
     [HttpGet("brands/{brandCode}/products")]
     public async Task<IActionResult> GetProductsByBrand(string brandCode)
@@ -172,6 +183,14 @@ public class HoaLinhMiniAppController : MultiTenancyController
             return BadRequest(HlApiResult<object>.Fail("Thiếu mã danh mục"));
 
         var result = await _hlApi.GetProductsByBrandAsync(brandCode);
+
+        // Chỉ trả về sản phẩm đang hoạt động (isActive = true)
+        if (result.Success && result.Data != null)
+        {
+            var active = result.Data.Where(x => x.IsActive == true).ToList();
+            return Ok(HlApiResult<List<HlProductByBrandDto>>.Ok(active));
+        }
+
         return Ok(result);
     }
 
@@ -621,6 +640,53 @@ public class HoaLinhMiniAppController : MultiTenancyController
         return Ok(result);
     }
 
+    /// <summary>
+    /// Đổi điểm/tiền từ chiến dịch → cộng vào quỹ điểm thưởng (BonusPoint/BonusAmount).
+    /// Mỗi (khách + chiến dịch) chỉ đổi 1 lần.
+    /// </summary>
+    [HttpPost("loyalty/redeem")]
+    public async Task<IActionResult> RedeemPoint([FromBody] HlRedeemPointInput input)
+    {
+        if (input == null || string.IsNullOrWhiteSpace(input.CustomerCode) || string.IsNullOrWhiteSpace(input.CampaignCode))
+            return BadRequest(HlApiResult<object>.Fail("Thiếu mã khách hàng hoặc mã chiến dịch"));
+
+        try
+        {
+            var result = await _hlPointService.RedeemFromCampaignAsync(input);
+            return Ok(HlApiResult<HlPointBatchDto>.Ok(result, "Đổi điểm thành công"));
+        }
+        catch (UserFriendlyException ex)
+        {
+            return Ok(HlApiResult<object>.Fail(ex.Message));
+        }
+    }
+
+    /// <summary>
+    /// Lấy số dư điểm thưởng (điểm + tiền) + danh sách lô còn hiệu lực.
+    /// </summary>
+    [HttpGet("loyalty/balance/{customerCode}")]
+    public async Task<IActionResult> GetLoyaltyBalance(string customerCode)
+    {
+        if (string.IsNullOrWhiteSpace(customerCode))
+            return BadRequest(HlApiResult<object>.Fail("Thiếu mã khách hàng"));
+
+        var result = await _hlPointService.GetBalanceAsync(customerCode);
+        return Ok(HlApiResult<HlPointBalanceDto>.Ok(result));
+    }
+
+    /// <summary>
+    /// Lấy lịch sử giao dịch điểm thưởng của khách.
+    /// </summary>
+    [HttpGet("loyalty/history/{customerCode}")]
+    public async Task<IActionResult> GetLoyaltyHistory(string customerCode, [FromQuery] int skip = 0, [FromQuery] int take = 20)
+    {
+        if (string.IsNullOrWhiteSpace(customerCode))
+            return BadRequest(HlApiResult<object>.Fail("Thiếu mã khách hàng"));
+
+        var result = await _hlPointService.GetCustomerHistoryAsync(customerCode, skip, take);
+        return Ok(HlApiResult<List<HlPointTransactionDto>>.Ok(result));
+    }
+
     #endregion
 
     #region Gift Exchange
@@ -634,7 +700,32 @@ public class HoaLinhMiniAppController : MultiTenancyController
         if (request == null || string.IsNullOrWhiteSpace(request.GiftName))
             return BadRequest(HlApiResult<object>.Fail("Thiếu thông tin quà tặng"));
 
+        if (string.IsNullOrWhiteSpace(request.CustomerCode))
+            return BadRequest(HlApiResult<object>.Fail("Thiếu mã khách hàng"));
+
+        var quantity = request.Quantity > 0 ? request.Quantity : 1;
+        var totalPointsUsed = request.PointsRequired * quantity;
+
         var exchangeCode = $"HLGE-{DateTime.Now:yyMMdd}{Guid.NewGuid().ToString("N")[..4].ToUpper()}";
+
+        // Tiêu điểm thưởng (FIFO) trước khi tạo yêu cầu đổi quà — guard số dư.
+        if (totalPointsUsed > 0)
+        {
+            try
+            {
+                await _hlPointService.SpendAsync(
+                    request.CustomerCode,
+                    (int)HlPointUnit.Point,
+                    totalPointsUsed,
+                    exchangeCode,
+                    $"Đổi quà: {request.GiftName}");
+            }
+            catch (UserFriendlyException ex)
+            {
+                // Không đủ điểm / không tìm thấy KH → trả lỗi, KHÔNG tạo yêu cầu đổi quà
+                return Ok(HlApiResult<object>.Fail(ex.Message));
+            }
+        }
 
         var entity = new HlGiftExchange(
             Guid.NewGuid(), exchangeCode, request.GiftName, request.PointsRequired, _currentTenant.Id)
@@ -644,8 +735,8 @@ public class HoaLinhMiniAppController : MultiTenancyController
             CustomerPhone = request.CustomerPhone,
             GiftCode = request.GiftCode,
             GiftImageUrl = request.GiftImageUrl,
-            Quantity = request.Quantity > 0 ? request.Quantity : 1,
-            TotalPointsUsed = request.PointsRequired * (request.Quantity > 0 ? request.Quantity : 1),
+            Quantity = quantity,
+            TotalPointsUsed = totalPointsUsed,
             Note = request.Note,
             DeliveryAddress = request.DeliveryAddress,
             Status = HlGiftExchangeStatus.Pending

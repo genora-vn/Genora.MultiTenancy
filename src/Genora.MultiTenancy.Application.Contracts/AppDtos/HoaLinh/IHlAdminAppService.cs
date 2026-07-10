@@ -46,6 +46,10 @@ public interface IHlAdminAppService : IApplicationService
     Task<HlApiResult<HlPagedResponse<HlCampaignDto>>> GetCampaignsAsync(int page, int limit);
     Task<HlApiResult<List<HlCampaignDto>>> GetCampaignDetailAsync(string custCode);
 
+    // Point History (Lịch sử điểm thưởng)
+    Task<HlApiResult<HlPagedResponse<HlPointTransactionDto>>> GetPointHistoryAsync(HlPointHistoryFilter filter);
+    Task<HlApiResult<HlPagedResponse<HlPointBatchDto>>> GetPointBatchesAsync(int page, int limit, string? search = null);
+
     // API Logs
     Task<HlApiResult<HlPagedResponse<HlApiLogDto>>> GetApiLogsAsync(int page, int limit, string? dataType = null, bool? isError = null, DateTime? dateFrom = null, DateTime? dateTo = null);
     Task<HlApiResult<int>> DeleteApiLogsAsync(string? dataType = null, bool? isError = null, DateTime? dateFrom = null, DateTime? dateTo = null);

@@ -129,6 +129,11 @@ public class MultiTenancyApplicationModule : AbpModule
         context.Services.AddScoped<IHlDataAccessService, HlDataAccessService>();
         context.Services.AddScoped<IHlPaymentService, HlPaymentService>();
         context.Services.AddScoped<IHlCustomerAppService, HlCustomerAppService>();
+        context.Services.AddScoped<IHlPointAppService, HlPointAppService>();
+        Configure<Genora.MultiTenancy.HoaLinh.HlPointExpireOptions>(
+            configuration.GetSection(Genora.MultiTenancy.HoaLinh.HlPointExpireOptions.SectionName));
+        Configure<Genora.MultiTenancy.HoaLinh.HlLoyaltyOptions>(
+            configuration.GetSection(Genora.MultiTenancy.HoaLinh.HlLoyaltyOptions.SectionName));
 
         // ── UrBox (kho quà eVoucher) ─────────────────────────────────────────
         var urBoxSection = configuration.GetSection(UrBoxSettings.SectionName);

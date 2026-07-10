@@ -1620,6 +1620,7 @@
     "Menu:AppHlOrders": "Đơn hàng",
     "Menu:AppHlLoyalty": "Loyalty",
     "Menu:AppHlGiftExchange": "Đổi quà",
+    "Menu:AppHlPointHistory": "Lịch sử điểm thưởng",
     "Menu:AppHlDashboard": "Tổng quan",
     "Menu:AppHlApiLogs": "Nhật ký API"
   }

@@ -2152,6 +2152,20 @@ public class MultiTenancyMenuContributor : IMenuContributor
                 );
             }
 
+            if (await perms.IsGrantedAsync(MultiTenancyPermissions.AppHlLoyalty.Default) ||
+                await perms.IsGrantedAsync(MultiTenancyPermissions.HostAppHlLoyalty.Default))
+            {
+                groupHl.AddItem(
+                    new ApplicationMenuItem(
+                        name: "AppHlPointHistory",
+                        displayName: l["Menu:AppHlPointHistory"],
+                        url: "/HoaLinh/PointHistory",
+                        icon: "fa fa-coins",
+                        order: 7
+                    )
+                );
+            }
+
             context.Menu.AddItem(groupHl);
         }
 

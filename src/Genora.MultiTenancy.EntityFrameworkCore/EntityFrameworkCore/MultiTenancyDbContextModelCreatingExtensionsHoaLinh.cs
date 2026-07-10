@@ -1,6 +1,7 @@
 using Genora.MultiTenancy.DomainModels.AppHlApiLogs;
 using Genora.MultiTenancy.DomainModels.AppHlGiftExchanges;
 using Genora.MultiTenancy.DomainModels.AppHlOrders;
+using Genora.MultiTenancy.DomainModels.AppHlPoints;
 using Microsoft.EntityFrameworkCore;
 using Volo.Abp;
 using Volo.Abp.EntityFrameworkCore.Modeling;
@@ -127,6 +128,66 @@ public static class MultiTenancyDbContextModelCreatingExtensionsHoaLinh
 
             b.HasIndex(x => new { x.TenantId, x.DataType })
                 .HasDatabaseName("IX_AppHlApiLogs_TenantId_DataType");
+        });
+
+        // ========== HlPointBatch ==========
+        builder.Entity<HlPointBatch>(b =>
+        {
+            b.ToTable("AppHlPointBatches", "HL");
+            b.ConfigureByConvention();
+
+            b.Property(x => x.BatchCode).IsRequired().HasMaxLength(50);
+            b.Property(x => x.CustomerCode).HasMaxLength(50);
+            b.Property(x => x.CustomerName).HasMaxLength(250);
+            b.Property(x => x.CustomerPhone).HasMaxLength(20);
+            b.Property(x => x.CampaignCode).HasMaxLength(50);
+            b.Property(x => x.CampaignName).HasMaxLength(250);
+            b.Property(x => x.DisplayType).HasMaxLength(100);
+            b.Property(x => x.MembershipTier).HasMaxLength(100);
+            b.Property(x => x.Unit).HasConversion<byte>();
+            b.Property(x => x.Status).HasConversion<byte>();
+            b.Property(x => x.SourceValue).HasColumnType("decimal(18,2)");
+            b.Property(x => x.ConvertedValue).HasColumnType("decimal(18,2)");
+            b.Property(x => x.RemainingValue).HasColumnType("decimal(18,2)");
+
+            b.HasIndex(x => new { x.TenantId, x.BatchCode })
+                .IsUnique()
+                .HasDatabaseName("IX_AppHlPointBatches_TenantId_BatchCode");
+
+            b.HasIndex(x => new { x.TenantId, x.CustomerCode })
+                .HasDatabaseName("IX_AppHlPointBatches_TenantId_CustomerCode");
+
+            b.HasIndex(x => new { x.TenantId, x.Status, x.ExpireDate })
+                .HasDatabaseName("IX_AppHlPointBatches_TenantId_Status_ExpireDate");
+
+            // Chặn đổi trùng: mỗi (khách + chiến dịch) chỉ đổi 1 lần
+            b.HasIndex(x => new { x.TenantId, x.CustomerCode, x.CampaignCode })
+                .IsUnique()
+                .HasDatabaseName("IX_AppHlPointBatches_TenantId_Customer_Campaign");
+        });
+
+        // ========== HlPointTransaction ==========
+        builder.Entity<HlPointTransaction>(b =>
+        {
+            b.ToTable("AppHlPointTransactions", "HL");
+            b.ConfigureByConvention();
+
+            b.Property(x => x.CustomerCode).HasMaxLength(50);
+            b.Property(x => x.CustomerName).HasMaxLength(250);
+            b.Property(x => x.CustomerPhone).HasMaxLength(20);
+            b.Property(x => x.Type).HasConversion<byte>();
+            b.Property(x => x.Unit).HasConversion<byte>();
+            b.Property(x => x.Value).HasColumnType("decimal(18,2)");
+            b.Property(x => x.BalancePointAfter).HasColumnType("decimal(18,2)");
+            b.Property(x => x.BalanceAmountAfter).HasColumnType("decimal(18,2)");
+            b.Property(x => x.RefCode).HasMaxLength(50);
+            b.Property(x => x.Description).HasMaxLength(500);
+
+            b.HasIndex(x => new { x.TenantId, x.CustomerCode, x.CreationTime })
+                .HasDatabaseName("IX_AppHlPointTransactions_TenantId_Customer_Time");
+
+            b.HasIndex(x => new { x.TenantId, x.Type })
+                .HasDatabaseName("IX_AppHlPointTransactions_TenantId_Type");
         });
     }
 }

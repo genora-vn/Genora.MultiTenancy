@@ -1,0 +1,112 @@
+@page
+@model Genora.MultiTenancy.Web.Pages.HoaLinh.PointHistory.IndexModel
+@inject IHtmlLocalizer<MultiTenancyResource> L
+@using Microsoft.AspNetCore.Mvc.Localization
+@using Genora.MultiTenancy.Localization
+
+@section styles {
+    <style>
+        .hl-pt-earn { background-color: #d4edda; color: #155724; }
+        .hl-pt-spend { background-color: #ffe5d0; color: #8a4b1d; }
+        .hl-pt-expire { background-color: #e9ecef; color: #495057; }
+        .hl-pt-adjust { background-color: #cce5ff; color: #004085; }
+        .hl-unit-point { background-color: #e2e3f1; color: #383d6e; }
+        .hl-unit-amount { background-color: #d1e7dd; color: #0f5132; }
+        .hl-val-plus { color: #157347; font-weight: 600; }
+        .hl-val-minus { color: #b02a37; font-weight: 600; }
+    </style>
+}
+
+@section scripts {
+    <script src="~/Pages/HoaLinh/PointHistory/index.js" asp-append-version="true"></script>
+}
+
+<abp-card>
+    <abp-card-header>
+        <abp-row>
+            <abp-column size-md="_6">
+                <h4 class="mb-0"><i class="fa fa-coins me-2"></i>@L["Menu:AppHlPointHistory"]</h4>
+            </abp-column>
+            <abp-column size-md="_6" class="text-end">
+                <button id="BtnRefresh" class="btn btn-outline-secondary btn-sm">
+                    <i class="fa fa-sync-alt"></i> Refresh
+                </button>
+            </abp-column>
+        </abp-row>
+    </abp-card-header>
+    <abp-card-body>
+        <ul class="nav nav-tabs mb-3" id="PointTabs">
+            <li class="nav-item"><a class="nav-link active" data-tab="txn" href="#">Lịch sử giao dịch</a></li>
+            <li class="nav-item"><a class="nav-link" data-tab="batch" href="#">Lô điểm đã đổi</a></li>
+        </ul>
+
+        <div class="row mb-3 align-items-center g-2">
+            <div class="col-md-3">
+                <input type="text" id="FilterText" class="form-control form-control-sm" placeholder="Tìm mã KH, tên, SĐT, mã tham chiếu..." />
+            </div>
+            <div class="col-md-2" id="TypeFilterWrap">
+                <select id="FilterType" class="form-select form-select-sm">
+                    <option value="">Tất cả loại</option>
+                    <option value="1">Đổi điểm</option>
+                    <option value="2">Tiêu điểm</option>
+                    <option value="3">Hết hạn</option>
+                    <option value="4">Điều chỉnh</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <input type="date" id="FilterDateFrom" class="form-control form-control-sm" />
+            </div>
+            <div class="col-md-2">
+                <input type="date" id="FilterDateTo" class="form-control form-control-sm" />
+            </div>
+            <div class="col-md-1">
+                <button id="BtnSearch" class="btn btn-primary btn-sm w-100"><i class="fa fa-search"></i></button>
+            </div>
+        </div>
+
+        <div id="PointContainer">
+            <table id="PointTable" class="table table-hover table-bordered table-sm w-100">
+                <thead class="table-light">
+                    <tr id="TxnHead">
+                        <th>Mã KH</th>
+                        <th>Khách hàng</th>
+                        <th class="text-center">Loại</th>
+                        <th class="text-center">Đơn vị</th>
+                        <th class="text-end">Giá trị</th>
+                        <th class="text-end">Số dư điểm</th>
+                        <th class="text-end">Số dư tiền</th>
+                        <th>Tham chiếu</th>
+                        <th>Mô tả</th>
+                        <th>Thời gian</th>
+                    </tr>
+                    <tr id="BatchHead" style="display:none">
+                        <th>Mã lô</th>
+                        <th>Mã KH</th>
+                        <th>Khách hàng</th>
+                        <th>Chiến dịch</th>
+                        <th class="text-center">Đơn vị</th>
+                        <th class="text-end">Giá trị đổi</th>
+                        <th class="text-end">Còn lại</th>
+                        <th class="text-center">Trạng thái</th>
+                        <th>Ngày đổi</th>
+                        <th>Hết hạn</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+
+        <div class="d-flex justify-content-between align-items-center mt-3">
+            <div id="PagingInfo" class="text-muted small"></div>
+            <div class="d-flex align-items-center gap-2">
+                <select id="PageSize" class="form-select form-select-sm" style="width:auto">
+                    <option value="10">10</option>
+                    <option value="20" selected>20</option>
+                    <option value="50">50</option>
+                    <option value="100">100</option>
+                </select>
+                <nav><ul id="Pagination" class="pagination pagination-sm mb-0"></ul></nav>
+            </div>
+        </div>
+    </abp-card-body>
+</abp-card>

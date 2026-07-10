@@ -64,6 +64,9 @@ public class Customer : FullAuditedAggregateRoot<Guid>, IMultiTenant
 
     public decimal BonusPoint { get; set; }
 
+    /// <summary>Tổng tiền thưởng đã đổi còn hiệu lực (đổi bằng accumulatedSales từ chiến dịch HL)</summary>
+    public decimal BonusAmount { get; set; }
+
     public Guid? MembershipTierId { get; set; }
 
     public bool IsActive { get; set; } = true;

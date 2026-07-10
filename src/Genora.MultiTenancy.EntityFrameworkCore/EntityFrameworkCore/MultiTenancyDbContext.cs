@@ -33,6 +33,7 @@ using Genora.MultiTenancy.DomainModels.AppCaddie;
 using Genora.MultiTenancy.DomainModels.AppHlApiLogs;
 using Genora.MultiTenancy.DomainModels.AppHlGiftExchanges;
 using Genora.MultiTenancy.DomainModels.AppHlOrders;
+using Genora.MultiTenancy.DomainModels.AppHlPoints;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Hosting;
 using Volo.Abp.AuditLogging.EntityFrameworkCore;
@@ -153,6 +154,8 @@ public class MultiTenancyDbContext :
     public DbSet<HlOrderItem> AppHlOrderItems { get; set; }
     public DbSet<HlGiftExchange> AppHlGiftExchanges { get; set; }
     public DbSet<HlApiLog> AppHlApiLogs { get; set; }
+    public DbSet<HlPointBatch> AppHlPointBatches { get; set; }
+    public DbSet<HlPointTransaction> AppHlPointTransactions { get; set; }
 
     // Tenant Management
     public DbSet<Tenant> Tenants { get; set; }

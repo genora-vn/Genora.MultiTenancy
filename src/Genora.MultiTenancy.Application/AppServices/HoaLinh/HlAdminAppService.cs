@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Genora.MultiTenancy.AppDtos.HoaLinh;
 using Genora.MultiTenancy.DomainModels.AppCustomers;
 using Genora.MultiTenancy.DomainModels.AppHlApiLogs;
+using Genora.MultiTenancy.DomainModels.AppHlPoints;
 using Genora.MultiTenancy.Enums;
 using Genora.MultiTenancy.Permissions;
 using Microsoft.AspNetCore.Authorization;
@@ -26,6 +27,8 @@ public class HlAdminAppService : ApplicationService, IHlAdminAppService
     private readonly IAuthorizationService _authService;
     private readonly IRepository<HlApiLog, Guid> _apiLogRepo;
     private readonly IRepository<Customer, Guid> _customerRepo;
+    private readonly IRepository<HlPointTransaction, Guid> _pointTxnRepo;
+    private readonly IRepository<HlPointBatch, Guid> _pointBatchRepo;
 
     public HlAdminAppService(
         IHlApiClientService hlApi,
@@ -33,7 +36,9 @@ public class HlAdminAppService : ApplicationService, IHlAdminAppService
         ICurrentTenant currentTenant,
         IAuthorizationService authService,
         IRepository<HlApiLog, Guid> apiLogRepo,
-        IRepository<Customer, Guid> customerRepo)
+        IRepository<Customer, Guid> customerRepo,
+        IRepository<HlPointTransaction, Guid> pointTxnRepo,
+        IRepository<HlPointBatch, Guid> pointBatchRepo)
     {
         _hlApi = hlApi;
         _dataAccess = dataAccess;
@@ -41,6 +46,8 @@ public class HlAdminAppService : ApplicationService, IHlAdminAppService
         _authService = authService;
         _apiLogRepo = apiLogRepo;
         _customerRepo = customerRepo;
+        _pointTxnRepo = pointTxnRepo;
+        _pointBatchRepo = pointBatchRepo;
     }
 
     /// <summary>
@@ -243,6 +250,131 @@ public class HlAdminAppService : ApplicationService, IHlAdminAppService
         await CheckPermissionAsync(MultiTenancyPermissions.AppHlLoyalty.Default, MultiTenancyPermissions.HostAppHlLoyalty.Default);
         return await _hlApi.GetCampaignDetailAsync(custCode);
     }
+
+    #endregion
+
+    #region Point History (Lịch sử điểm thưởng)
+
+    public async Task<HlApiResult<HlPagedResponse<HlPointTransactionDto>>> GetPointHistoryAsync(HlPointHistoryFilter filter)
+    {
+        await CheckPermissionAsync(MultiTenancyPermissions.AppHlLoyalty.Default, MultiTenancyPermissions.HostAppHlLoyalty.Default);
+
+        var page = filter.Page <= 0 ? 1 : filter.Page;
+        var limit = filter.Limit <= 0 ? 20 : filter.Limit;
+
+        var queryable = await _pointTxnRepo.GetQueryableAsync();
+        queryable = queryable
+            .WhereIf(!string.IsNullOrWhiteSpace(filter.Search),
+                x => x.CustomerCode!.Contains(filter.Search!)
+                     || x.CustomerName!.Contains(filter.Search!)
+                     || x.CustomerPhone!.Contains(filter.Search!)
+                     || x.RefCode!.Contains(filter.Search!))
+            .WhereIf(filter.Type.HasValue, x => (int)x.Type == filter.Type!.Value)
+            .WhereIf(filter.DateFrom.HasValue, x => x.CreationTime >= filter.DateFrom)
+            .WhereIf(filter.DateTo.HasValue, x => x.CreationTime <= filter.DateTo!.Value.AddDays(1));
+
+        var totalCount = await AsyncExecuter.CountAsync(queryable);
+        var items = await AsyncExecuter.ToListAsync(
+            queryable.OrderByDescending(x => x.CreationTime).Skip((page - 1) * limit).Take(limit));
+
+        var dtos = items.Select(x => new HlPointTransactionDto
+        {
+            Id = x.Id,
+            CustomerCode = x.CustomerCode,
+            CustomerName = x.CustomerName,
+            CustomerPhone = x.CustomerPhone,
+            Type = (int)x.Type,
+            TypeText = GetPointTypeText(x.Type),
+            Unit = (int)x.Unit,
+            UnitText = x.Unit == HlPointUnit.Amount ? "Tiền" : "Điểm",
+            Value = x.Value,
+            BalancePointAfter = x.BalancePointAfter,
+            BalanceAmountAfter = x.BalanceAmountAfter,
+            BatchId = x.BatchId,
+            RefCode = x.RefCode,
+            Description = x.Description,
+            CreationTime = x.CreationTime
+        }).ToList();
+
+        var paged = new HlPagedResponse<HlPointTransactionDto>
+        {
+            TotalRecords = totalCount,
+            Page = page,
+            Limit = limit,
+            TotalPages = totalCount > 0 ? (int)Math.Ceiling((double)totalCount / limit) : 0,
+            Data = dtos
+        };
+        return HlApiResult<HlPagedResponse<HlPointTransactionDto>>.Ok(paged);
+    }
+
+    public async Task<HlApiResult<HlPagedResponse<HlPointBatchDto>>> GetPointBatchesAsync(int page, int limit, string? search = null)
+    {
+        await CheckPermissionAsync(MultiTenancyPermissions.AppHlLoyalty.Default, MultiTenancyPermissions.HostAppHlLoyalty.Default);
+
+        page = page <= 0 ? 1 : page;
+        limit = limit <= 0 ? 20 : limit;
+
+        var queryable = await _pointBatchRepo.GetQueryableAsync();
+        queryable = queryable.WhereIf(!string.IsNullOrWhiteSpace(search),
+            x => x.CustomerCode!.Contains(search!)
+                 || x.CustomerName!.Contains(search!)
+                 || x.BatchCode.Contains(search!)
+                 || x.CampaignCode!.Contains(search!));
+
+        var totalCount = await AsyncExecuter.CountAsync(queryable);
+        var items = await AsyncExecuter.ToListAsync(
+            queryable.OrderByDescending(x => x.CreationTime).Skip((page - 1) * limit).Take(limit));
+
+        var dtos = items.Select(x => new HlPointBatchDto
+        {
+            Id = x.Id,
+            BatchCode = x.BatchCode,
+            CustomerCode = x.CustomerCode,
+            CustomerName = x.CustomerName,
+            CustomerPhone = x.CustomerPhone,
+            CampaignCode = x.CampaignCode,
+            CampaignName = x.CampaignName,
+            CampaignPeriod = x.CampaignPeriod,
+            DisplayType = x.DisplayType,
+            MembershipTier = x.MembershipTier,
+            Unit = (int)x.Unit,
+            UnitText = x.Unit == HlPointUnit.Amount ? "Tiền" : "Điểm",
+            SourceValue = x.SourceValue,
+            ConvertedValue = x.ConvertedValue,
+            RemainingValue = x.RemainingValue,
+            Status = (int)x.Status,
+            StatusText = GetBatchStatusText(x.Status),
+            ExchangedAt = x.ExchangedAt,
+            ExpireDate = x.ExpireDate
+        }).ToList();
+
+        var paged = new HlPagedResponse<HlPointBatchDto>
+        {
+            TotalRecords = totalCount,
+            Page = page,
+            Limit = limit,
+            TotalPages = totalCount > 0 ? (int)Math.Ceiling((double)totalCount / limit) : 0,
+            Data = dtos
+        };
+        return HlApiResult<HlPagedResponse<HlPointBatchDto>>.Ok(paged);
+    }
+
+    private static string GetPointTypeText(HlPointTransactionType t) => t switch
+    {
+        HlPointTransactionType.Earn => "Đổi điểm",
+        HlPointTransactionType.Spend => "Tiêu điểm",
+        HlPointTransactionType.Expire => "Hết hạn",
+        HlPointTransactionType.Adjust => "Điều chỉnh",
+        _ => "Không xác định"
+    };
+
+    private static string GetBatchStatusText(HlPointBatchStatus s) => s switch
+    {
+        HlPointBatchStatus.Active => "Còn hiệu lực",
+        HlPointBatchStatus.Exhausted => "Đã dùng hết",
+        HlPointBatchStatus.Expired => "Hết hạn",
+        _ => "Không xác định"
+    };
 
     #endregion
 

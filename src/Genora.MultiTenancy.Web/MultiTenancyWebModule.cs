@@ -497,6 +497,12 @@ public class MultiTenancyWebModule : AbpModule
             await context.AddBackgroundWorkerAsync<AuditLogCleanupWorker>();
         }
 
+        var hlPointOpts = sp.GetRequiredService<IOptions<Genora.MultiTenancy.HoaLinh.HlPointExpireOptions>>().Value;
+        if (hlPointOpts.Enabled)
+        {
+            await context.AddBackgroundWorkerAsync<Genora.MultiTenancy.AppServices.HoaLinh.HlPointExpireWorker>();
+        }
+
         var shouldRegisterRecurring = config.GetValue("Hangfire:RegisterRecurringJobs", true);
 
         var hangfireQueue = config["Hangfire:Queue"];
