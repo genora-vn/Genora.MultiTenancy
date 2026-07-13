@@ -215,6 +215,20 @@ public class HoaLinhMiniAppController : MultiTenancyController
     }
 
     /// <summary>
+    /// Lấy danh sách sản phẩm bán chạy theo khách hàng (top mua nhiều)
+    /// GET /api/TopCustomerProductsWithDetails/{customerCode}
+    /// </summary>
+    [HttpGet("best-seller-products/{customerCode}")]
+    public async Task<IActionResult> GetBestSellerProducts(string customerCode)
+    {
+        if (string.IsNullOrWhiteSpace(customerCode))
+            return BadRequest(HlApiResult<object>.Fail("Thiếu mã khách hàng"));
+
+        var result = await _hlApi.GetTopProductsAsync(customerCode);
+        return Ok(result);
+    }
+
+    /// <summary>
     /// Lấy chi tiết sản phẩm (ProductGroup — có description, instruction)
     /// </summary>
     [HttpGet("products/{productCode}")]

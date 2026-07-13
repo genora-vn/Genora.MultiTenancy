@@ -18,7 +18,10 @@ public class HlRedeemPointInput
     [Required]
     public string CampaignCode { get; set; } = null!;
 
-    /// <summary>Đơn vị đổi: 1=Point (điểm tích lũy), 2=Amount (tiền tích lũy)</summary>
+    /// <summary>
+    /// (Deprecated — backend tự quyết theo voucherType của chiến dịch)
+    /// Đơn vị đổi: 1=Point, 2=Amount. Giữ để tương thích ngược, không còn dùng.
+    /// </summary>
     public int Unit { get; set; } = 1;
 }
 
@@ -35,6 +38,12 @@ public class HlPointBatchDto
     public int? CampaignPeriod { get; set; }
     public string? DisplayType { get; set; }
     public string? MembershipTier { get; set; }
+    public decimal? AccumulatedSales { get; set; }
+    public int? AccumulatedPoints { get; set; }
+    public string? VoucherCode { get; set; }
+    public string? VoucherName { get; set; }
+    public int? VoucherType { get; set; }
+    public decimal? VoucherValue { get; set; }
     public int Unit { get; set; }
     public string? UnitText { get; set; }
     public decimal SourceValue { get; set; }

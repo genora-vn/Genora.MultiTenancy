@@ -21,4 +21,8 @@ public class HlCampaignDto
     public string? MembershipTier { get; set; }
     public string? VoucherCode { get; set; }
     public string? VoucherName { get; set; }
+
+    // Bổ sung field voucher chi tiết (2026-07)
+    public int? VoucherType { get; set; }
+    public decimal? VoucherValue { get; set; }
 }

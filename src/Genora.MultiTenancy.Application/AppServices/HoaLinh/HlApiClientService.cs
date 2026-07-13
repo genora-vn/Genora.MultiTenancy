@@ -146,6 +146,12 @@ public class HlApiClientService : IHlApiClientService
         return await GetAsync<List<HlProductByBrandDto>>(url, "Product");
     }
 
+    public async Task<HlApiResult<List<HlTopProductDto>>> GetTopProductsAsync(string customerCode)
+    {
+        var url = $"/api/TopCustomerProductsWithDetails/{Uri.EscapeDataString(customerCode)}";
+        return await GetAsync<List<HlTopProductDto>>(url, "Product");
+    }
+
     #endregion
 
     #region Product Groups

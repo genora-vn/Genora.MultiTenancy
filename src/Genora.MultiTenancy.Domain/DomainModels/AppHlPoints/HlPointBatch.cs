@@ -49,6 +49,25 @@ public class HlPointBatch : FullAuditedAggregateRoot<Guid>, IMultiTenant
     [StringLength(100)]
     public string? MembershipTier { get; set; }
 
+    // ── Thông tin voucher của chiến dịch (đầy đủ để đối soát) ───────────────
+    /// <summary>Tổng doanh số tích lũy của chiến dịch (accumulatedSales)</summary>
+    public decimal? AccumulatedSales { get; set; }
+
+    /// <summary>Tổng điểm tích lũy của chiến dịch (accumulatedPoints)</summary>
+    public int? AccumulatedPoints { get; set; }
+
+    [StringLength(50)]
+    public string? VoucherCode { get; set; }
+
+    [StringLength(250)]
+    public string? VoucherName { get; set; }
+
+    /// <summary>Loại voucher: 1=tiền (BonusAmount), 2=quà hàng hóa, 3=voucher giảm giá %</summary>
+    public int? VoucherType { get; set; }
+
+    /// <summary>Giá trị voucher (voucherValue) — số tiền quy đổi khi VoucherType=1</summary>
+    public decimal? VoucherValue { get; set; }
+
     // ── Giá trị đổi ────────────────────────────────────────────────────────
     /// <summary>Đơn vị: Point (accumulatedPoints) hoặc Amount (accumulatedSales)</summary>
     public HlPointUnit Unit { get; set; }

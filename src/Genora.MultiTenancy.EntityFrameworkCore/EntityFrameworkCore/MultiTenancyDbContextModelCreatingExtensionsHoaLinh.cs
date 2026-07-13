@@ -144,8 +144,12 @@ public static class MultiTenancyDbContextModelCreatingExtensionsHoaLinh
             b.Property(x => x.CampaignName).HasMaxLength(250);
             b.Property(x => x.DisplayType).HasMaxLength(100);
             b.Property(x => x.MembershipTier).HasMaxLength(100);
+            b.Property(x => x.VoucherCode).HasMaxLength(50);
+            b.Property(x => x.VoucherName).HasMaxLength(250);
             b.Property(x => x.Unit).HasConversion<byte>();
             b.Property(x => x.Status).HasConversion<byte>();
+            b.Property(x => x.AccumulatedSales).HasColumnType("decimal(18,2)");
+            b.Property(x => x.VoucherValue).HasColumnType("decimal(18,2)");
             b.Property(x => x.SourceValue).HasColumnType("decimal(18,2)");
             b.Property(x => x.ConvertedValue).HasColumnType("decimal(18,2)");
             b.Property(x => x.RemainingValue).HasColumnType("decimal(18,2)");

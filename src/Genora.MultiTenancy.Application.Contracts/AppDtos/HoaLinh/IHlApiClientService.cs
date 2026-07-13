@@ -116,6 +116,12 @@ public interface IHlApiClientService
     /// </summary>
     Task<HlApiResult<List<HlProductByBrandDto>>> GetProductsByBrandAsync(string brandCode);
 
+    /// <summary>
+    /// Lấy danh sách sản phẩm bán chạy theo khách hàng (top mua nhiều)
+    /// GET /api/TopCustomerProductsWithDetails/{customerCode}
+    /// </summary>
+    Task<HlApiResult<List<HlTopProductDto>>> GetTopProductsAsync(string customerCode);
+
     #endregion
 
     #region Product Groups

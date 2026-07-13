@@ -64,8 +64,6 @@ public class HlPointAppService : ApplicationService, IHlPointAppService
         if (string.IsNullOrWhiteSpace(input.CampaignCode))
             throw new UserFriendlyException("Thiếu mã chiến dịch");
 
-        var unit = input.Unit == (int)HlPointUnit.Amount ? HlPointUnit.Amount : HlPointUnit.Point;
-
         using var uow = _uowManager.Begin(requiresNew: true, isTransactional: true);
 
         // 1. Chặn đổi trùng: mỗi (khách + chiến dịch) chỉ đổi 1 lần
@@ -84,20 +82,28 @@ public class HlPointAppService : ApplicationService, IHlPointAppService
         if (campaign == null)
             throw new UserFriendlyException("Không tìm thấy chiến dịch với mã đã chọn.");
 
-        // 3. Giá trị nguồn theo đơn vị
-        decimal sourceValue = unit == HlPointUnit.Amount
-            ? (campaign.AccumulatedSales ?? 0)
-            : (campaign.AccumulatedPoints ?? 0);
+        // 3. Quyết định loại quy đổi theo voucherType của chiến dịch (BR: backend tự quyết, không theo client)
+        //    voucherType = 1: đổi bằng TIỀN → cộng BonusAmount (giá trị = voucherValue). ĐANG HỖ TRỢ.
+        //    voucherType = 2: quà tặng hàng hóa — chưa hỗ trợ (mở rộng sau).
+        //    voucherType = 3: voucher giảm giá (%) — chưa hỗ trợ (mở rộng sau).
+        var voucherType = campaign.VoucherType ?? 0;
+        if (voucherType != 1)
+            throw new UserFriendlyException(
+                "Chiến dịch này chưa hỗ trợ quy đổi tự động (chỉ hỗ trợ đổi bằng tiền thưởng). Vui lòng liên hệ để được hỗ trợ.");
 
+        var unit = HlPointUnit.Amount; // voucherType=1 → tiền thưởng (BonusAmount)
+
+        // Giá trị quy đổi = voucherValue (số tiền thưởng của chiến dịch)
+        var sourceValue = campaign.VoucherValue ?? 0;
         if (sourceValue <= 0)
-            throw new UserFriendlyException("Giá trị tích lũy của chiến dịch không hợp lệ để đổi.");
+            throw new UserFriendlyException("Giá trị voucher của chiến dịch không hợp lệ để quy đổi.");
 
-        // Áp tỉ lệ quy đổi theo cấu hình (mặc định 1 = giữ nguyên). Làm tròn 2 chữ số.
-        var rate = unit == HlPointUnit.Amount ? _loyaltyOptions.AmountRate : _loyaltyOptions.PointRate;
+        // Áp tỉ lệ quy đổi tiền theo cấu hình (mặc định 1 = giữ nguyên). Làm tròn 2 chữ số.
+        var rate = _loyaltyOptions.AmountRate;
         if (rate <= 0) rate = 1m;
         var convertedValue = Math.Round(sourceValue * rate, 2, MidpointRounding.AwayFromZero);
 
-        // 4. Tạo lô điểm (hạn +1 năm)
+        // 4. Tạo lô (hạn +1 năm) — lưu đầy đủ thông tin chiến dịch + voucher để đối soát
         var now = DateTime.Now;
         var batch = new HlPointBatch(GuidGenerator.Create(), await GenerateBatchCodeAsync(now), _currentTenant.Id)
         {
@@ -109,6 +115,12 @@ public class HlPointAppService : ApplicationService, IHlPointAppService
             CampaignPeriod = campaign.CampaignPeriod,
             DisplayType = campaign.DisplayType,
             MembershipTier = campaign.MembershipTier,
+            AccumulatedSales = campaign.AccumulatedSales,
+            AccumulatedPoints = campaign.AccumulatedPoints,
+            VoucherCode = campaign.VoucherCode,
+            VoucherName = campaign.VoucherName,
+            VoucherType = campaign.VoucherType,
+            VoucherValue = campaign.VoucherValue,
             Unit = unit,
             SourceValue = sourceValue,
             ConvertedValue = convertedValue,
@@ -295,6 +307,12 @@ public class HlPointAppService : ApplicationService, IHlPointAppService
         CampaignPeriod = b.CampaignPeriod,
         DisplayType = b.DisplayType,
         MembershipTier = b.MembershipTier,
+        AccumulatedSales = b.AccumulatedSales,
+        AccumulatedPoints = b.AccumulatedPoints,
+        VoucherCode = b.VoucherCode,
+        VoucherName = b.VoucherName,
+        VoucherType = b.VoucherType,
+        VoucherValue = b.VoucherValue,
         Unit = (int)b.Unit,
         UnitText = GetUnitText(b.Unit),
         SourceValue = b.SourceValue,
