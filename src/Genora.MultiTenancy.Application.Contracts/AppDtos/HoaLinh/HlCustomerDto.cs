@@ -39,4 +39,10 @@ public class HlCustomerDto
 
     /// <summary>Đánh dấu bản ghi có tồn tại trong dbo.AppCustomers (Genora) hay không.</summary>
     public bool ExistsInGenora { get; set; }
+
+    /// <summary>
+    /// Số dư tiền thưởng (BonusAmount) từ dbo.AppCustomers — dùng đổi quà UrBox.
+    /// Chỉ có giá trị khi: tồn tại custCode + custChannel="OTC" + isGkhl=true; ngược lại = 0.
+    /// </summary>
+    public decimal BonusAmount { get; set; }
 }

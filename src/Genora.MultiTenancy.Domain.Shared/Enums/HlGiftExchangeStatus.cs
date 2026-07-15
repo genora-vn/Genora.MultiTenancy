@@ -1,19 +1,19 @@
 namespace Genora.MultiTenancy.Enums;
 
 /// <summary>
-/// Trạng thái đổi quà Hoa Linh
+/// Trạng thái đổi quà Hoa Linh (theo kết quả gọi API UrBox)
 /// </summary>
 public enum HlGiftExchangeStatus : byte
 {
-    /// <summary>Chờ xử lý</summary>
-    Pending = 1,
+    /// <summary>Thất bại (UrBox trả lỗi / không phát hành được voucher)</summary>
+    Failed = 0,
 
-    /// <summary>Đã duyệt</summary>
-    Approved = 2,
+    /// <summary>Thành công (đã phát hành voucher)</summary>
+    Success = 1,
 
-    /// <summary>Từ chối</summary>
-    Rejected = 3,
+    /// <summary>Đang xử lý (đã gửi yêu cầu, chờ UrBox)</summary>
+    Processing = 2,
 
-    /// <summary>Hoàn thành</summary>
-    Completed = 4
+    /// <summary>Đã sử dụng</summary>
+    Used = 3
 }

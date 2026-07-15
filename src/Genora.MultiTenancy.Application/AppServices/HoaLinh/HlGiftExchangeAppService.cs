@@ -81,12 +81,12 @@ public class HlGiftExchangeAppService : ApplicationService, IHlGiftExchangeAppSe
 
         var entity = await _giftRepo.GetAsync(input.Id);
 
-        if (entity.Status != HlGiftExchangeStatus.Pending)
-            throw new UserFriendlyException("Chỉ có thể duyệt/từ chối yêu cầu đang chờ xử lý");
+        if (entity.Status != HlGiftExchangeStatus.Processing)
+            throw new UserFriendlyException("Chỉ có thể duyệt/từ chối yêu cầu đang xử lý");
 
         entity.Status = input.IsApproved
-            ? HlGiftExchangeStatus.Approved
-            : HlGiftExchangeStatus.Rejected;
+            ? HlGiftExchangeStatus.Success
+            : HlGiftExchangeStatus.Failed;
 
         entity.ApprovedBy = CurrentUser.Id;
         entity.ApprovedAt = DateTime.Now;
@@ -119,7 +119,8 @@ public class HlGiftExchangeAppService : ApplicationService, IHlGiftExchangeAppSe
             UrBoxVoucherCode = entity.UrBoxVoucherCode,
             DeliveryAddress = entity.DeliveryAddress,
             CreationTime = entity.CreationTime,
-            ApprovedAt = entity.ApprovedAt
+            ApprovedAt = entity.ApprovedAt,
+            UrBoxResponse = entity.UrBoxResponse
         };
     }
 }

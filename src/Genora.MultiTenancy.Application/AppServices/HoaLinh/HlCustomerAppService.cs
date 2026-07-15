@@ -119,7 +119,49 @@ public class HlCustomerAppService : ApplicationService, IHlCustomerAppService
         var customers = await AsyncExecuter.ToListAsync(
             queryable.Where(x => x.PhoneNumber == normalized).OrderBy(x => x.CreationTime), ct);
 
-        return customers.Select(MapEntityToDto).ToList();
+        var dtos = customers.Select(MapEntityToDto).ToList();
+        await EnrichBonusAmountAsync(dtos, ct);
+        return dtos;
+    }
+
+    public async Task EnrichBonusAmountAsync(List<HlCustomerDto> customers, CancellationToken ct = default)
+    {
+        if (customers == null || customers.Count == 0) return;
+
+        // Lấy các mã KH đủ điều kiện: có custCode + custChannel = "OTC" + isGkhl = true
+        var eligibleCodes = customers
+            .Where(c => !string.IsNullOrWhiteSpace(c.CustCode)
+                        && string.Equals(c.CustChannel, "OTC", StringComparison.OrdinalIgnoreCase)
+                        && c.IsGkhl == true)
+            .Select(c => c.CustCode!)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        // Mặc định BonusAmount = 0 cho tất cả
+        foreach (var c in customers) c.BonusAmount = 0;
+
+        if (eligibleCodes.Count == 0) return;
+
+        // Tra BonusAmount từ dbo.AppCustomers theo CustomerCode
+        var queryable = await _customerRepo.GetQueryableAsync();
+        var rows = await AsyncExecuter.ToListAsync(
+            queryable.Where(x => x.CustomerCode != null && eligibleCodes.Contains(x.CustomerCode))
+                     .Select(x => new { x.CustomerCode, x.BonusAmount }), ct);
+
+        var byCode = rows
+            .GroupBy(x => x.CustomerCode!, StringComparer.OrdinalIgnoreCase)
+            .ToDictionary(g => g.Key, g => g.Sum(x => x.BonusAmount), StringComparer.OrdinalIgnoreCase);
+
+        foreach (var c in customers)
+        {
+            if (!string.IsNullOrWhiteSpace(c.CustCode)
+                && string.Equals(c.CustChannel, "OTC", StringComparison.OrdinalIgnoreCase)
+                && c.IsGkhl == true
+                && byCode.TryGetValue(c.CustCode!, out var amount))
+            {
+                c.BonusAmount = amount;
+            }
+        }
     }
 
     // ── Helpers ──────────────────────────────────────────────────────────────

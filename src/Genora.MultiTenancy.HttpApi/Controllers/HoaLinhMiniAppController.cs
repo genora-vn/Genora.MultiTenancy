@@ -127,6 +127,10 @@ public class HoaLinhMiniAppController : MultiTenancyController
         // Dù tồn tại hay không bên HL DMS, khách vẫn được lưu và trả về thông tin.
         var customerDto = await _hlCustomerService.UpsertFromHoaLinhAsync(request, existsOnHl ? hlCustomer : null);
 
+        // Gán BonusAmount (điều kiện: custCode + custChannel=OTC + isGkhl=true, ngược lại = 0)
+        var list = new List<HlCustomerDto> { customerDto };
+        await _hlCustomerService.EnrichBonusAmountAsync(list);
+
         return Ok(HlApiResult<HlCustomerDto>.Ok(customerDto));
     }
 
@@ -144,9 +148,13 @@ public class HoaLinhMiniAppController : MultiTenancyController
         var hlResult = await _hlApi.GetCustomerDetailAsync(phone);
         var hlCustomers = (hlResult.Success && hlResult.Data != null) ? hlResult.Data : new List<HlCustomerDto>();
         if (hlCustomers.Count > 0)
+        {
+            // Gán BonusAmount (custCode + custChannel=OTC + isGkhl=true, ngược lại = 0)
+            await _hlCustomerService.EnrichBonusAmountAsync(hlCustomers);
             return Ok(HlApiResult<List<HlCustomerDto>>.Ok(hlCustomers));
+        }
 
-        // 2. Fallback: lấy từ dbo.AppCustomers (cũng trả list — mỗi bản ghi 1 chi nhánh)
+        // 2. Fallback: lấy từ dbo.AppCustomers (cũng trả list — mỗi bản ghi 1 chi nhánh; đã enrich BonusAmount)
         var local = await _hlCustomerService.GetFromAppCustomersAsync(phone);
         return Ok(HlApiResult<List<HlCustomerDto>>.Ok(local));
     }
@@ -496,6 +504,7 @@ public class HoaLinhMiniAppController : MultiTenancyController
                 ProductGroupName = i.ProductGroupName,      // Tên danh mục sản phẩm
                 ProductName = i.ProductName,                // Tên sản phẩm
                 ProductUnit = i.ProductUnit,                // Đơn vị tính
+                ImageUrl = i.ImageUrl,                      // Ảnh sản phẩm
                 ProductPrice = i.Price,                     // Giá sản phẩm
                 Quantity = i.Quantity,                      // Số lượng
                 TotalAmount = i.Amount,                     // Tổng giá trị
@@ -753,7 +762,7 @@ public class HoaLinhMiniAppController : MultiTenancyController
             TotalPointsUsed = totalPointsUsed,
             Note = request.Note,
             DeliveryAddress = request.DeliveryAddress,
-            Status = HlGiftExchangeStatus.Pending
+            Status = HlGiftExchangeStatus.Processing
         };
 
         await _giftRepo.InsertAsync(entity, autoSave: true);

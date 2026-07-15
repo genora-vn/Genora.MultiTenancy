@@ -1,3 +1,4 @@
+using System;
 using System.Threading.Tasks;
 using Genora.MultiTenancy.AppDtos.UrBox;
 using Genora.MultiTenancy.Controllers;
@@ -80,14 +81,20 @@ public class UrBoxMiniAppController : MultiTenancyController
         return Ok(result);
     }
 
-    /// <summary>Lấy chi tiết đơn theo transaction_id</summary>
-    [HttpGet("carts/{transactionId}")]
-    public async Task<IActionResult> GetCartByTransaction(string transactionId)
+    /// <summary>
+    /// Lấy chi tiết đơn đổi quà cho Mini App theo Id bản ghi HL.AppHlGiftExchanges.
+    /// Gộp dữ liệu Genora + UrBox getByTransaction (transaction_id từ InternalNote) + UrBox gift detail (Note + Office theo GiftCode).
+    /// </summary>
+    [HttpGet("carts/{id}")]
+    public async Task<IActionResult> GetCartByTransaction(Guid id)
     {
-        if (string.IsNullOrWhiteSpace(transactionId))
-            return BadRequest("Thiếu mã giao dịch");
+        if (id == Guid.Empty)
+            return BadRequest("Thiếu Id đơn đổi quà");
 
-        var result = await _urBox.GetCartByTransactionAsync(transactionId);
+        var result = await _urBox.GetGiftTransactionDetailAsync(id);
+        if (result == null)
+            return NotFound("Không tìm thấy đơn đổi quà");
+
         return Ok(result);
     }
 

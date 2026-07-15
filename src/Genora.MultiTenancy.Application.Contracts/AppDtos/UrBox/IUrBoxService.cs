@@ -30,6 +30,13 @@ public interface IUrBoxService
     Task<UrBoxResponse<UrBoxCartByTransactionDto>> GetCartByTransactionAsync(string transactionId);
 
     /// <summary>
+    /// Lấy chi tiết đơn đổi quà cho Mini App theo Id bản ghi HL.AppHlGiftExchanges.
+    /// Gộp: dữ liệu Genora + UrBox getByTransaction (transaction_id lấy từ InternalNote)
+    /// + UrBox gift detail (theo GiftCode) để lấy Note + danh sách Office.
+    /// </summary>
+    Task<UrBoxGiftTransactionDetailDto?> GetGiftTransactionDetailAsync(System.Guid giftExchangeId);
+
+    /// <summary>
     /// Đổi quà eVoucher (POST /2.0/cart/cartPayVoucher — yêu cầu Signature).
     /// Lưu lịch sử vào AppHlGiftExchanges. Trả về response gốc từ UrBox.
     /// </summary>

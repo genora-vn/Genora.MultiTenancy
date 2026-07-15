@@ -7,6 +7,7 @@ using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 using Genora.MultiTenancy.AppDtos.UrBox;
+using Genora.MultiTenancy.DomainModels.AppCustomers;
 using Genora.MultiTenancy.DomainModels.AppHlGiftExchanges;
 using Genora.MultiTenancy.Enums;
 using Microsoft.Extensions.Logging;
@@ -27,6 +28,7 @@ public class UrBoxService : IUrBoxService
     private readonly IHttpClientFactory _httpFactory;
     private readonly UrBoxSettings _settings;
     private readonly IRepository<HlGiftExchange, Guid> _giftExchangeRepo;
+    private readonly IRepository<Customer, Guid> _customerRepo;
     private readonly ICurrentTenant _currentTenant;
     private readonly ILogger<UrBoxService> _logger;
 
@@ -45,12 +47,14 @@ public class UrBoxService : IUrBoxService
         IHttpClientFactory httpFactory,
         IOptionsSnapshot<UrBoxSettings> settings,
         IRepository<HlGiftExchange, Guid> giftExchangeRepo,
+        IRepository<Customer, Guid> customerRepo,
         ICurrentTenant currentTenant,
         ILogger<UrBoxService> logger)
     {
         _httpFactory = httpFactory;
         _settings = settings.Value;
         _giftExchangeRepo = giftExchangeRepo;
+        _customerRepo = customerRepo;
         _currentTenant = currentTenant;
         _logger = logger;
     }
@@ -156,6 +160,97 @@ public class UrBoxService : IUrBoxService
         return await SendGetAsync<UrBoxCartByTransactionDto>(url, "CartByTransaction");
     }
 
+    public async Task<UrBoxGiftTransactionDetailDto?> GetGiftTransactionDetailAsync(Guid giftExchangeId)
+    {
+        // 1. Lấy bản ghi lịch sử đổi quà trong Genora
+        var exchange = await _giftExchangeRepo.FindAsync(giftExchangeId);
+        if (exchange == null) return null;
+
+        var result = new UrBoxGiftTransactionDetailDto
+        {
+            Id = exchange.Id,
+            ExchangeCode = exchange.ExchangeCode,
+            CustomerCode = exchange.CustomerCode,
+            CustomerName = exchange.CustomerName,
+            CustomerPhone = exchange.CustomerPhone,
+            Status = (int)exchange.Status,
+            StatusText = GetExchangeStatusText(exchange.Status),
+            PointsRequired = exchange.PointsRequired,
+            Quantity = exchange.Quantity,
+            TotalPointsUsed = exchange.TotalPointsUsed,
+            CreationTime = exchange.CreationTime,
+            GiftName = exchange.GiftName,
+            GiftCode = exchange.GiftCode,
+            GiftImageUrl = exchange.GiftImageUrl,
+            VoucherCode = exchange.UrBoxVoucherCode
+        };
+
+        // 2. Cắt transaction_id từ InternalNote (format: "UrBox transaction_id=xxxx")
+        var transactionId = ExtractTransactionId(exchange.InternalNote);
+        result.TransactionId = transactionId;
+
+        // 3. Gọi UrBox getByTransaction để lấy chi tiết voucher (code/QR/hạn dùng/người nhận)
+        if (!string.IsNullOrWhiteSpace(transactionId))
+        {
+            try
+            {
+                var cartResp = await GetCartByTransactionAsync(transactionId!);
+                var cart = cartResp?.Data;
+                if (cart != null && cartResp!.Status == UrBoxResponseStatus.Success)
+                {
+                    result.MoneyTotal = ParseDecimal(cart.MoneyTotal);
+                    result.DeliveryStatus = cart.PayStatus;
+                    result.ReceiverPhone = cart.Receiver?.Phone;
+                    result.ReceiverEmail = cart.Receiver?.Email;
+                    result.ReceiverAddress = cart.Receiver?.Address;
+
+                    var item = cart.Detail?.FirstOrDefault();
+                    if (item != null)
+                    {
+                        result.VoucherCode = item.Code ?? result.VoucherCode;
+                        result.CodeImage = item.CodeImage;
+                        result.CodeDisplay = item.CodeDisplay;
+                        result.CodeDisplayType = item.CodeDisplayType;
+                        result.Expired = item.Expired;
+                        result.LinkGift = item.Link;
+                        result.DeliveryStatus = item.Delivery ?? result.DeliveryStatus;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "UrBox getByTransaction lỗi cho tx={Tx}", transactionId);
+            }
+        }
+
+        // 4. Gọi UrBox gift detail (theo GiftCode) để lấy Note + danh sách Office + brand
+        if (!string.IsNullOrWhiteSpace(exchange.GiftCode))
+        {
+            try
+            {
+                var detailResp = await GetGiftDetailAsync(exchange.GiftCode!, "vi");
+                var detail = detailResp?.Data;
+                if (detail != null && detailResp!.Status == UrBoxResponseStatus.Success)
+                {
+                    result.Note = detail.Note;
+                    result.Content = detail.Content;
+                    result.ExpireDuration = detail.ExpireDuration;
+                    result.BrandName = detail.Brand;
+                    result.BrandImage = detail.BrandImage;
+                    if (string.IsNullOrWhiteSpace(result.GiftName)) result.GiftName = detail.Title;
+                    if (string.IsNullOrWhiteSpace(result.GiftImageUrl)) result.GiftImageUrl = detail.Image;
+                    if (detail.Office != null) result.Offices = detail.Office;
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "UrBox gift detail lỗi cho giftCode={Code}", exchange.GiftCode);
+            }
+        }
+
+        return result;
+    }
+
     #endregion
 
     #region Redeem eVoucher (POST + Signature)
@@ -219,7 +314,7 @@ public class UrBoxService : IUrBoxService
             GiftImageUrl = firstItem?.GiftImageUrl,
             Quantity = firstItem?.Quantity ?? 1,
             TotalPointsUsed = totalPoints,
-            Status = HlGiftExchangeStatus.Pending,
+            Status = HlGiftExchangeStatus.Processing,
             InternalNote = $"UrBox transaction_id={transactionId}"
         };
 
@@ -229,16 +324,19 @@ public class UrBoxService : IUrBoxService
 
         exchange.UrBoxResponse = Truncate(raw, 4000);
 
-        if (result == null || result.Status != UrBoxResponseStatus.Success)
+        // Thành công KHI: done == 1 && status == 200 (theo yêu cầu)
+        var isSuccess = result != null && result.Done == 1 && result.Status == UrBoxResponseStatus.Success;
+
+        if (!isSuccess)
         {
-            exchange.Status = HlGiftExchangeStatus.Rejected;
+            exchange.Status = HlGiftExchangeStatus.Failed;
             exchange.InternalNote += $" | Lỗi: {result?.Msg ?? "Không parse được response"} (status={result?.Status})";
             await _giftExchangeRepo.InsertAsync(exchange, autoSave: true);
 
-            _logger.LogWarning("UrBox redeem FAILED: tx={Tx} status={Status} msg={Msg}",
-                transactionId, result?.Status, result?.Msg);
+            _logger.LogWarning("UrBox redeem FAILED: tx={Tx} done={Done} status={Status} msg={Msg}",
+                transactionId, result?.Done, result?.Status, result?.Msg);
 
-            // Trả nguyên response UrBox (có msg + status) để Mini App hiển thị
+            // Trả nguyên response UrBox (có msg + status) để Mini App hiển thị. KHÔNG trừ điểm.
             return result ?? new UrBoxResponse<UrBoxRedeemData>
             {
                 Done = 0,
@@ -248,16 +346,53 @@ public class UrBoxService : IUrBoxService
         }
 
         // 6. Thành công → cập nhật voucher code + trạng thái
-        var firstCode = result.Data?.Cart?.CodeLinkGift?.FirstOrDefault();
-        exchange.Status = HlGiftExchangeStatus.Approved;
+        var firstCode = result!.Data?.Cart?.CodeLinkGift?.FirstOrDefault();
+        exchange.Status = HlGiftExchangeStatus.Success;
         exchange.UrBoxVoucherCode = firstCode?.Code;
         exchange.ApprovedAt = DateTime.Now;
         await _giftExchangeRepo.InsertAsync(exchange, autoSave: true);
 
-        _logger.LogInformation("UrBox redeem OK: tx={Tx} cartId={CartId} code={Code}",
-            transactionId, result.Data?.Cart?.Id, firstCode?.Code);
+        // Gán Id bản ghi HL.AppHlGiftExchanges vào response để Mini App gọi carts/{id}
+        if (result.Data != null) result.Data.Id = exchange.Id;
+
+        // 7. Trừ tiền thưởng (BonusAmount) khi đổi quà thành công (done==1 && status==200)
+        await DeductBonusAmountAsync(input.SiteUserId, exchange);
+
+        _logger.LogInformation("UrBox redeem OK: tx={Tx} cartId={CartId} code={Code} exchangeId={ExId}",
+            transactionId, result.Data?.Cart?.Id, firstCode?.Code, exchange.Id);
 
         return result;
+    }
+
+    /// <summary>
+    /// Trừ tiền thưởng (BonusAmount) trong dbo.AppCustomers khi đổi quà UrBox thành công.
+    /// Số tiền trừ = TotalPointsUsed (giá trị tiền của quà). Clamp >= 0. Bọc try/catch — không làm fail luồng đổi quà.
+    /// </summary>
+    private async Task DeductBonusAmountAsync(string customerCode, HlGiftExchange exchange)
+    {
+        if (string.IsNullOrWhiteSpace(customerCode)) return;
+        var amount = (decimal)exchange.TotalPointsUsed;
+        if (amount <= 0) return;
+
+        try
+        {
+            var customer = await _customerRepo.FirstOrDefaultAsync(x => x.CustomerCode == customerCode);
+            if (customer == null)
+            {
+                _logger.LogWarning("UrBox redeem: không tìm thấy KH {Code} để trừ BonusAmount", customerCode);
+                return;
+            }
+
+            customer.BonusAmount = Math.Max(0, customer.BonusAmount - amount);
+            await _customerRepo.UpdateAsync(customer, autoSave: true);
+
+            _logger.LogInformation("UrBox redeem: trừ BonusAmount KH {Code} -{Amount} → còn {Balance}",
+                customerCode, amount, customer.BonusAmount);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "UrBox redeem: lỗi khi trừ BonusAmount KH {Code}", customerCode);
+        }
     }
 
     #endregion
@@ -345,6 +480,30 @@ public class UrBoxService : IUrBoxService
 
     private static string? Truncate(string? s, int max)
         => string.IsNullOrEmpty(s) ? s : (s.Length > max ? s[..max] + "...[truncated]" : s);
+
+    /// <summary>Cắt transaction_id từ InternalNote (format "UrBox transaction_id=xxxx"). Lấy phần sau dấu '='.</summary>
+    private static string? ExtractTransactionId(string? internalNote)
+    {
+        if (string.IsNullOrWhiteSpace(internalNote)) return null;
+        var idx = internalNote.IndexOf('=');
+        if (idx < 0 || idx == internalNote.Length - 1) return null;
+        // Lấy đoạn sau '=' đầu tiên, cắt tới khoảng trắng/dấu '|' nếu InternalNote có thêm ghi chú
+        var after = internalNote[(idx + 1)..].Trim();
+        var stop = after.IndexOfAny(new[] { ' ', '|' });
+        return stop > 0 ? after[..stop] : after;
+    }
+
+    private static decimal? ParseDecimal(string? s)
+        => decimal.TryParse(s, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var v) ? v : (decimal?)null;
+
+    private static string GetExchangeStatusText(HlGiftExchangeStatus status) => status switch
+    {
+        HlGiftExchangeStatus.Failed => "Thất bại",
+        HlGiftExchangeStatus.Success => "Thành công",
+        HlGiftExchangeStatus.Processing => "Đang xử lý",
+        HlGiftExchangeStatus.Used => "Đã sử dụng",
+        _ => "Không xác định"
+    };
 
     #endregion
 }

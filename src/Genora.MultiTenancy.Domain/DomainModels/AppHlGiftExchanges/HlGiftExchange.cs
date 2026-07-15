@@ -55,7 +55,7 @@ public class HlGiftExchange : FullAuditedAggregateRoot<Guid>, IMultiTenant
     public int TotalPointsUsed { get; set; }
 
     /// <summary>Trạng thái xử lý</summary>
-    public HlGiftExchangeStatus Status { get; set; } = HlGiftExchangeStatus.Pending;
+    public HlGiftExchangeStatus Status { get; set; } = HlGiftExchangeStatus.Processing;
 
     /// <summary>Ghi chú từ khách hàng</summary>
     public string? Note { get; set; }

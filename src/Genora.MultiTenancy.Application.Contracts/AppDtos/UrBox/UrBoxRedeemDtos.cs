@@ -120,8 +120,27 @@ public class UrBoxDataBuy
 /// </summary>
 public class UrBoxRedeemData
 {
+    /// <summary>Id bản ghi HL.AppHlGiftExchanges (Genora) — Mini App dùng gọi carts/{id} lấy chi tiết. Gán từ backend, không phải field UrBox.</summary>
+    [JsonPropertyName("id")]
+    public System.Guid? Id { get; set; }
+
+    [JsonPropertyName("pay")]
+    public int? Pay { get; set; }
+
     [JsonPropertyName("transaction_id")]
     public string? TransactionId { get; set; }
+
+    [JsonPropertyName("cart_created")]
+    public string? CartCreated { get; set; }
+
+    [JsonPropertyName("linkCart")]
+    public string? LinkCart { get; set; }
+
+    [JsonPropertyName("linkCombo")]
+    public string? LinkCombo { get; set; }
+
+    [JsonPropertyName("linkShippingInfo")]
+    public string? LinkShippingInfo { get; set; }
 
     [JsonPropertyName("cart")]
     public UrBoxRedeemCart? Cart { get; set; }
@@ -132,6 +151,18 @@ public class UrBoxRedeemCart
     [JsonPropertyName("id")]
     public string? Id { get; set; }
 
+    [JsonPropertyName("cartNo")]
+    public string? CartNo { get; set; }
+
+    [JsonPropertyName("money_total")]
+    public string? MoneyTotal { get; set; }
+
+    [JsonPropertyName("money_ship")]
+    public string? MoneyShip { get; set; }
+
+    [JsonPropertyName("link_gift")]
+    public List<string>? LinkGift { get; set; }
+
     [JsonPropertyName("code_link_gift")]
     public List<UrBoxCodeLinkGift>? CodeLinkGift { get; set; }
 }
@@ -141,12 +172,69 @@ public class UrBoxCodeLinkGift
     [JsonPropertyName("cart_detail_id")]
     public string? CartDetailId { get; set; }
 
-    [JsonPropertyName("code")]
-    public string? Code { get; set; }
+    [JsonPropertyName("code_display")]
+    public string? CodeDisplay { get; set; }
+
+    [JsonPropertyName("code_display_type")]
+    public int? CodeDisplayType { get; set; }
 
     [JsonPropertyName("link")]
     public string? Link { get; set; }
 
+    [JsonPropertyName("code")]
+    public string? Code { get; set; }
+
+    [JsonPropertyName("card_id")]
+    public int? CardId { get; set; }
+
+    [JsonPropertyName("pin")]
+    public string? Pin { get; set; }
+
+    [JsonPropertyName("serial")]
+    public string? Serial { get; set; }
+
+    [JsonPropertyName("priceId")]
+    public string? PriceId { get; set; }
+
+    [JsonPropertyName("gift_id")]
+    public string? GiftId { get; set; }
+
+    [JsonPropertyName("token")]
+    public string? Token { get; set; }
+
     [JsonPropertyName("expired")]
     public string? Expired { get; set; }
+
+    [JsonPropertyName("expired_time")]
+    public long? ExpiredTime { get; set; }
+
+    [JsonPropertyName("code_image")]
+    public string? CodeImage { get; set; }
+
+    [JsonPropertyName("estimateDelivery")]
+    public string? EstimateDelivery { get; set; }
+
+    [JsonPropertyName("ttemail")]
+    public string? TtEmail { get; set; }
+
+    [JsonPropertyName("ttphone")]
+    public string? TtPhone { get; set; }
+
+    [JsonPropertyName("receive_code")]
+    public string? ReceiveCode { get; set; }
+
+    [JsonPropertyName("delivery_note")]
+    public string? DeliveryNote { get; set; }
+
+    [JsonPropertyName("ttaddress")]
+    public string? TtAddress { get; set; }
+
+    [JsonPropertyName("deliveryCode")]
+    public int? DeliveryCode { get; set; }
+
+    [JsonPropertyName("type")]
+    public int? Type { get; set; }
+
+    [JsonPropertyName("price")]
+    public decimal? Price { get; set; }
 }

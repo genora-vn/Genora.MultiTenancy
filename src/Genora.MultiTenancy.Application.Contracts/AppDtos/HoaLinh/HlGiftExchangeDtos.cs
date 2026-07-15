@@ -26,6 +26,9 @@ public class HlGiftExchangeDto
     public string? DeliveryAddress { get; set; }
     public DateTime CreationTime { get; set; }
     public DateTime? ApprovedAt { get; set; }
+
+    /// <summary>Response gốc từ UrBox (JSON) — modal parse để hiển thị voucher/QR/hạn dùng/link nhận quà.</summary>
+    public string? UrBoxResponse { get; set; }
 }
 
 /// <summary>

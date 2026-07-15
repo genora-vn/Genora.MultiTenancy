@@ -26,4 +26,10 @@ public interface IHlCustomerAppService
     /// Dùng cho fallback khi HL DMS không có dữ liệu.
     /// </summary>
     Task<List<HlCustomerDto>> GetFromAppCustomersAsync(string phone, CancellationToken ct = default);
+
+    /// <summary>
+    /// Gán BonusAmount (số dư tiền thưởng từ dbo.AppCustomers) vào các DTO.
+    /// Điều kiện có giá trị: tồn tại custCode + custChannel = "OTC" + isGkhl = true; ngược lại = 0.
+    /// </summary>
+    Task EnrichBonusAmountAsync(List<HlCustomerDto> customers, CancellationToken ct = default);
 }

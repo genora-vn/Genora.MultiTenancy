@@ -13,6 +13,16 @@
         .hl-ge-default { background-color: #e9ecef; color: #495057; }
         .hl-clickable { cursor: pointer; }
         .hl-clickable:hover { background-color: #f0f4ff !important; }
+
+        /* Voucher detail card */
+        .hl-vc-card { border: 1px solid #e5e7eb; border-radius: 10px; padding: 16px; height: 100%; background: #fff; }
+        .hl-vc-title { font-weight: 600; font-size: 15px; color: #1f2937; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid #f0f0f0; }
+        .hl-vc-row { display: flex; justify-content: space-between; gap: 12px; padding: 6px 0; font-size: 14px; border-bottom: 1px dashed #f3f4f6; }
+        .hl-vc-row:last-of-type { border-bottom: none; }
+        .hl-vc-label { color: #6b7280; flex: 0 0 auto; white-space: nowrap; }
+        .hl-vc-value { color: #111827; text-align: right; word-break: break-word; }
+        .hl-vc-qr { text-align: center; margin-top: 12px; }
+        .hl-vc-qr img { max-width: 220px; max-height: 120px; object-fit: contain; border: 1px solid #eee; border-radius: 6px; padding: 6px; background: #fff; }
     </style>
 }
 
@@ -41,10 +51,10 @@
             <div class="col-md-2">
                 <select id="FilterStatus" class="form-select form-select-sm">
                     <option value="">Tất cả trạng thái</option>
-                    <option value="1">Chờ xử lý</option>
-                    <option value="2">Đã duyệt</option>
-                    <option value="3">Từ chối</option>
-                    <option value="4">Hoàn thành</option>
+                    <option value="2">Đang xử lý</option>
+                    <option value="1">Thành công</option>
+                    <option value="3">Đã sử dụng</option>
+                    <option value="0">Thất bại</option>
                 </select>
             </div>
             <div class="col-md-1">
@@ -86,7 +96,7 @@
 
 <!-- Detail Modal -->
 <div class="modal fade" id="GiftDetailModal" tabindex="-1">
-    <div class="modal-dialog modal-lg">
+    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title"><i class="fa fa-gift me-2"></i>Chi tiết yêu cầu đổi quà</h5>

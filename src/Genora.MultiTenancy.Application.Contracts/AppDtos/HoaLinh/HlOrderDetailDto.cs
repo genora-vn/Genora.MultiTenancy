@@ -20,6 +20,7 @@ public class HlOrderDetailDto
     public string? ProductGroupName { get; set; }
     public string? ProductName { get; set; }
     public string? ProductUnit { get; set; }
+    public string? ImageUrl { get; set; }
     public decimal? ProductPrice { get; set; }
     public int? Quantity { get; set; }
     public decimal? GrossValue { get; set; }
