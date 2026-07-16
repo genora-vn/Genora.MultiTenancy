@@ -215,8 +215,9 @@ public class MiniAppController : MultiTenancyController
     public Task<ValidateVgaCodeResultDto> ValidateVgaCodeAsync(
         [FromQuery] string vgaCode,
         [FromQuery] Guid calendarSlotId,
-        [FromQuery] short numberHoles = 18)
-        => _miniAppCalendarSlot.ValidateVgaCodeAsync(vgaCode, calendarSlotId, numberHoles);
+        [FromQuery] short numberHoles = 18,
+        [FromQuery] List<string>? usedVgaCodes = null)
+        => _miniAppCalendarSlot.ValidateVgaCodeAsync(vgaCode, calendarSlotId, numberHoles, usedVgaCodes);
 
     // <summary>
     /// Lấy thông tin user từ Zalo Graph API

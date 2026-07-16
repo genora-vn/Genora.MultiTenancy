@@ -523,7 +523,11 @@ public class MiniAppBookingAppService : ApplicationService, IMiniAppBookingAppSe
             booking.NumberOfGolfers = input.NumberOfGolfers;
             booking.NumberHole = input.NumberHoles;
             booking.PricePerGolfer = recalculatedPricePerGolfer;
-            booking.TotalAmount = recalculatedPricePerGolfer * input.NumberOfGolfers;
+            // TotalAmount = tổng giá thực tế từng người chơi (Member/MemberGuest/Visitor giá khác nhau).
+            // Fallback: nếu không có players thì dùng giá booking × số người.
+            booking.TotalAmount = (input.Players != null && input.Players.Any())
+                ? input.Players.Sum(p => p.PricePerPlayer ?? recalculatedPricePerGolfer)
+                : recalculatedPricePerGolfer * input.NumberOfGolfers;
             booking.Utility = (input.Utilities != null && input.Utilities.Count > 0)
                 ? string.Join(",", input.Utilities)
                 : string.Empty;
@@ -1207,18 +1211,22 @@ public class MiniAppBookingAppService : ApplicationService, IMiniAppBookingAppSe
 
         foreach (var p in players)
         {
+            // Giá riêng từng người chơi: ưu tiên PricePerPlayer truyền vào (Member=2tr, MemberGuest=1.8tr...).
+            // Chỉ fallback về giá booking khi player không gửi giá.
+            var playerPrice = p.PricePerPlayer ?? pricePerGolfer;
+
             var player = new BookingPlayer(
                 GuidGenerator.Create(),
                 bookingId,
                 p.CustomerId,
                 p.PlayerName,
-                pricePerGolfer,
+                playerPrice,
                 p.VgaCode,
                 p.Notes
             );
 
             player.VgaCode = p.VgaCode;
-            player.PricePerPlayer = pricePerGolfer;
+            player.PricePerPlayer = playerPrice;
 
             await _playerRepo.InsertAsync(player, autoSave: true);
         }

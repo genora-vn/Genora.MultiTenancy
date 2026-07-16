@@ -707,15 +707,38 @@ namespace Genora.MultiTenancy.AppServices.AppCalendarSlots
         /// Validate VGA Code: kiểm tra trong AppCustomers có tồn tại VgaCode = mã nhập vào.
         /// Nếu hợp lệ → trả về giá theo loại khách hàng từ AppCalendarSlotPrices + giá gốc từ AppCustomerTypes.
         /// </summary>
-        public async Task<ValidateVgaCodeResultDto> ValidateVgaCodeAsync(string vgaCode, Guid calendarSlotId, short numberHoles)
+        public async Task<ValidateVgaCodeResultDto> ValidateVgaCodeAsync(
+            string vgaCode,
+            Guid calendarSlotId,
+            short numberHoles,
+            List<string>? usedVgaCodes = null)
         {
-            var invalidResult = new ValidateVgaCodeResultDto { IsValid = false };
+            var invalidResult = new ValidateVgaCodeResultDto
+            {
+                IsValid = false,
+                Message = "Mã hội viên không hợp lệ"
+            };
 
             if (string.IsNullOrWhiteSpace(vgaCode))
                 return invalidResult;
 
+            var normalizedCode = vgaCode.Trim();
+
+            // 0) Chặn trùng: mỗi mã VGA chỉ áp cho 1 người chơi trong cùng booking.
+            //    usedVgaCodes = các mã đã nhập cho những người chơi khác trong booking hiện tại.
+            if (usedVgaCodes != null &&
+                usedVgaCodes.Any(c => !string.IsNullOrWhiteSpace(c)
+                    && string.Equals(c.Trim(), normalizedCode, StringComparison.OrdinalIgnoreCase)))
+            {
+                return new ValidateVgaCodeResultDto
+                {
+                    IsValid = false,
+                    Message = "Mã hội viên không hợp lệ hoặc đã bị trùng"
+                };
+            }
+
             // 1) Tìm customer có VgaCode khớp
-            var customer = await _customerRepo.FirstOrDefaultAsync(c => c.VgaCode == vgaCode.Trim());
+            var customer = await _customerRepo.FirstOrDefaultAsync(c => c.VgaCode == normalizedCode);
             if (customer == null || !customer.CustomerTypeId.HasValue)
                 return invalidResult;
 
@@ -764,10 +787,12 @@ namespace Genora.MultiTenancy.AppServices.AppCalendarSlots
             return new ValidateVgaCodeResultDto
             {
                 IsValid = true,
+                CustomerId = customer.Id,
                 CustomerTypeCode = customerType.Code,
                 CustomerTypeName = customerType.Name,
                 PricePerGolfer = pricePerGolfer,
-                OriginalPrice = originalPrice
+                OriginalPrice = originalPrice,
+                Message = "Mã hội viên hợp lệ"
             };
         }
 

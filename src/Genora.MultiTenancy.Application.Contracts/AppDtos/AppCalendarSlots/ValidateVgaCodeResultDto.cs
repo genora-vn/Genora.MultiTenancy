@@ -30,4 +30,14 @@ public class ValidateVgaCodeResultDto
     /// Giá gốc theo loại khách hàng (lấy từ AppCustomerTypes.OriginalPrice*)
     /// </summary>
     public decimal? OriginalPrice { get; set; }
+
+    /// <summary>
+    /// Id khách hàng sở hữu mã VGA (dùng để front-end/server chặn 1 mã áp cho nhiều người trong cùng booking).
+    /// </summary>
+    public System.Guid? CustomerId { get; set; }
+
+    /// <summary>
+    /// Thông báo trả về (dùng khi mã không hợp lệ hoặc đã bị trùng trong cùng booking).
+    /// </summary>
+    public string? Message { get; set; }
 }
