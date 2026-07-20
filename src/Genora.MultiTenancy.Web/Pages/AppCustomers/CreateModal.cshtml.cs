@@ -23,7 +23,7 @@ public class CreateModalModel : MultiTenancyPageModel
     public List<SelectListItem> CustomerSourceItems { get; set; } = new();
 
     private readonly IAppCustomerService _customerService;
-    private readonly IAppCustomerTypeService _customerTypeService;
+    private readonly IMiniAppCustomerTypeService _customerTypeService;
     private readonly IProvinceLookupAppService _provinceLookup;
     private readonly IStringLocalizer<MultiTenancyResource> _l;
 
@@ -31,7 +31,7 @@ public class CreateModalModel : MultiTenancyPageModel
 
     public CreateModalModel(
         IAppCustomerService customerService,
-        IAppCustomerTypeService customerTypeService,
+        IMiniAppCustomerTypeService customerTypeService,
         IProvinceLookupAppService provinceLookup,
         IStringLocalizer<MultiTenancyResource> l)
     {

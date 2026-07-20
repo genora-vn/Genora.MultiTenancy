@@ -18,11 +18,11 @@ public class IndexModel : MultiTenancyPageModel
     public List<SelectListItem> CustomerTypeItems { get; set; } = new();
     public List<SelectListItem> CustomerSourceItems { get; set; } = new();
 
-    private readonly IAppCustomerTypeService _customerTypeService;
+    private readonly IMiniAppCustomerTypeService _customerTypeService;
     private readonly IStringLocalizer<MultiTenancyResource> _l;
 
     public IndexModel(
-        IAppCustomerTypeService customerTypeService,
+        IMiniAppCustomerTypeService customerTypeService,
         IStringLocalizer<MultiTenancyResource> l)
     {
         _customerTypeService = customerTypeService;

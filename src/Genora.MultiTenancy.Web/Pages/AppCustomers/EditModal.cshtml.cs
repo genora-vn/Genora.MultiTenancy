@@ -28,7 +28,7 @@ public class EditModalModel : MultiTenancyPageModel
     public List<SelectListItem> CustomerSourceItems { get; set; } = new();
 
     private readonly IAppCustomerService _customerService;
-    private readonly IAppCustomerTypeService _customerTypeService;
+    private readonly IMiniAppCustomerTypeService _customerTypeService;
     private readonly IAppMembershipTierService _membershipTierService;
     private readonly IProvinceLookupAppService _provinceLookup;
     private readonly IStringLocalizer<MultiTenancyResource> _l;
@@ -37,7 +37,7 @@ public class EditModalModel : MultiTenancyPageModel
 
     public EditModalModel(
         IAppCustomerService customerService,
-        IAppCustomerTypeService customerTypeService,
+        IMiniAppCustomerTypeService customerTypeService,
         IAppMembershipTierService membershipTierService,
         IProvinceLookupAppService provinceLookup,
         IStringLocalizer<MultiTenancyResource> l)
