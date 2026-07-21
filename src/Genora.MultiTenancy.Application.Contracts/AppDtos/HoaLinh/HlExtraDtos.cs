@@ -10,6 +10,7 @@ public class HlBrandDto
     public bool? IsActive { get; set; }
     public string? ImageUrl { get; set; }
     public int? NoOfProduct { get; set; }
+    public int? Seq { get; set; }
 }
 
 /// <summary>

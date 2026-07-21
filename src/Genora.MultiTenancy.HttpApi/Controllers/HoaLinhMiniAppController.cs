@@ -167,19 +167,26 @@ public class HoaLinhMiniAppController : MultiTenancyController
     /// Lấy danh sách danh mục sản phẩm (Brands)
     /// </summary>
     [HttpGet("brands")]
-    public async Task<IActionResult> GetBrands([FromQuery] int page = 1, [FromQuery] int limit = 50)
+    public async Task<IActionResult> GetBrands(
+        [FromQuery] int page = 1,
+        [FromQuery] int limit = 50)
     {
         var result = await _hlApi.GetBrandsAsync(page, limit);
 
-        // Chỉ trả về thương hiệu đang hoạt động (isActive = true)
+        // Chỉ trả về thương hiệu đang hoạt động và có Seq > 0
         if (result.Success && result.Data?.Data != null)
         {
-            result.Data.Data = result.Data.Data.Where(x => x.IsActive == true).ToList();
+            result.Data.Data = result.Data.Data
+                .Where(x => x.IsActive == true && x.Seq > 0)
+                .OrderBy(x => x.Seq)
+                .ToList();
+
             result.Data.TotalRecords = result.Data.Data.Count;
         }
 
         return Ok(result);
     }
+
 
     /// <summary>
     /// Lấy sản phẩm theo danh mục (brand_code) — chỉ sản phẩm đang hoạt động
