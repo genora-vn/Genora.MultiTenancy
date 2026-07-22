@@ -94,6 +94,7 @@ public class MultiTenancyApplicationModule : AbpModule
         context.Services.AddTransient<IZaloTokenProvider, ZaloTokenProvider>();
         context.Services.AddTransient<IZaloApiClient, ZaloApiClient>();
         context.Services.AddTransient<IZaloOAuthClient, ZaloOAuthClient>();
+        context.Services.AddScoped<IMiniAppZaloNewsService, MiniAppZaloNewsService>();
 
         // Salon Beauty services
         context.Services.AddScoped<ISalonBeautyCustomerAppService, SalonBeautyCustomerAppService>();

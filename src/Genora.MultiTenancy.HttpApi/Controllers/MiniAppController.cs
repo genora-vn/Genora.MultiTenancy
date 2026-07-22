@@ -60,6 +60,7 @@ public class MiniAppController : MultiTenancyController
     private readonly IMiniAppProPaymentAppService _miniProPayment;
     private readonly MiniAppCaddieAppService      _miniCaddie;
     private readonly IMiniAppCaddiePaymentAppService _miniCaddiePayment;
+    private readonly IMiniAppZaloNewsService      _zaloNews;
 
     public MiniAppController(IZaloApiClient zaloApiClient,
                              IMiniAppBookingAppService miniBooking,
@@ -83,9 +84,11 @@ public class MiniAppController : MultiTenancyController
                              IMiniAppProOrderService miniProOrder,
                              IMiniAppProPaymentAppService miniProPayment,
                              MiniAppCaddieAppService miniCaddie,
-                             IMiniAppCaddiePaymentAppService miniCaddiePayment)
+                             IMiniAppCaddiePaymentAppService miniCaddiePayment,
+                             IMiniAppZaloNewsService zaloNews)
     {
         _zaloApiClient = zaloApiClient;
+        _zaloNews = zaloNews;
         _miniBooking = miniBooking;
         _miniAppSetting = miniAppSetting;
         _miniAppCustomerType = miniAppCustomerType;
@@ -563,4 +566,36 @@ public class MiniAppController : MultiTenancyController
     [AllowAnonymous]
     public Task<CheckTransactionResult> CheckCaddieTransactionAsync(string orderId)
         => _miniCaddiePayment.CheckTransactionAsync(orderId);
+
+    #region News (Zalo OA Articles)
+
+    /// <summary>
+    /// Lấy danh sách tin tức (bài viết Zalo OA) của tenant hiện tại.
+    /// Access token lấy từ ZaloAuth active theo tenant (fallback test token nếu cấu hình).
+    /// GET /api/mini-app/news?offset=0&amp;limit=10&amp;type=normal
+    /// </summary>
+    [HttpGet("news")]
+    [AllowAnonymous]
+    public async Task<IActionResult> GetNews([FromQuery] int offset = 0, [FromQuery] int limit = 10, [FromQuery] string type = "normal", CancellationToken ct = default)
+    {
+        var result = await _zaloNews.GetArticleListAsync(offset, limit, type, ct);
+        return Ok(result);
+    }
+
+    /// <summary>
+    /// Lấy chi tiết 1 tin tức (bài viết Zalo OA) theo id.
+    /// GET /api/mini-app/news/{articleId}
+    /// </summary>
+    [HttpGet("news/{articleId}")]
+    [AllowAnonymous]
+    public async Task<IActionResult> GetNewsDetail(string articleId, CancellationToken ct)
+    {
+        if (string.IsNullOrWhiteSpace(articleId))
+            return BadRequest("Thiếu mã bài viết");
+
+        var result = await _zaloNews.GetArticleDetailAsync(articleId, ct);
+        return Ok(result);
+    }
+
+    #endregion
 }

@@ -43,6 +43,7 @@ public class HoaLinhMiniAppController : MultiTenancyController
     private readonly IHlPaymentService _paymentService;
     private readonly IHlCustomerAppService _hlCustomerService;
     private readonly IHlPointAppService _hlPointService;
+    private readonly IMiniAppZaloNewsService _zaloNews;
 
     public HoaLinhMiniAppController(
         IHlApiClientService hlApi,
@@ -53,7 +54,8 @@ public class HoaLinhMiniAppController : MultiTenancyController
         IZaloApiClient zaloApiClient,
         IHlPaymentService paymentService,
         IHlCustomerAppService hlCustomerService,
-        IHlPointAppService hlPointService)
+        IHlPointAppService hlPointService,
+        IMiniAppZaloNewsService zaloNews)
     {
         _hlApi = hlApi;
         _orderRepo = orderRepo;
@@ -64,6 +66,7 @@ public class HoaLinhMiniAppController : MultiTenancyController
         _paymentService = paymentService;
         _hlCustomerService = hlCustomerService;
         _hlPointService = hlPointService;
+        _zaloNews = zaloNews;
     }
 
     #region Auth
@@ -832,7 +835,7 @@ public class HoaLinhMiniAppController : MultiTenancyController
     [HttpGet("news")]
     public async Task<IActionResult> GetNews([FromQuery] int offset = 0, [FromQuery] int limit = 10, [FromQuery] string type = "normal", CancellationToken ct = default)
     {
-        var result = await _zaloApiClient.GetArticleListAsync(offset, limit, type, ct);
+        var result = await _zaloNews.GetArticleListAsync(offset, limit, type, ct);
         return Ok(result);
     }
 
@@ -845,7 +848,7 @@ public class HoaLinhMiniAppController : MultiTenancyController
         if (string.IsNullOrWhiteSpace(articleId))
             return BadRequest(HlApiResult<object>.Fail("Thiếu mã bài viết"));
 
-        var result = await _zaloApiClient.GetArticleDetailAsync(articleId, ct);
+        var result = await _zaloNews.GetArticleDetailAsync(articleId, ct);
         return Ok(result);
     }
 
