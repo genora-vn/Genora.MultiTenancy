@@ -39,6 +39,20 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Remove="Keys\public_key.pem" />
+    <None Remove="Keys\urbox_private_key.pem" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="Keys\public_key.pem">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Keys\urbox_private_key.pem">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="AspNetCore.HealthChecks.UI" Version="9.0.0" />
     <PackageReference Include="AspNetCore.HealthChecks.UI.Client" Version="9.0.0" />
     <PackageReference Include="AspNetCore.HealthChecks.UI.InMemory.Storage" Version="9.0.0" />
