@@ -82,3 +82,19 @@ public class HlProductGroupDto
     public string? ImageAvatarUrl { get; set; }
     public string? ImageUrl { get; set; }
 }
+
+/// <summary>
+/// DTO hình thức thanh toán khả dụng cho Mini App hiển thị.
+/// Đọc từ ABP Setting toggle (Thanh toán tại quầy / Chuyển khoản).
+/// </summary>
+public class HlPaymentMethodDto
+{
+    /// <summary>Mã hình thức: COUNTER | BANK_TRANSFER</summary>
+    public string Code { get; set; } = string.Empty;
+
+    /// <summary>Tên hiển thị tiếng Việt</summary>
+    public string Name { get; set; } = string.Empty;
+
+    /// <summary>Có đang bật hay không (luôn true trong danh sách trả về)</summary>
+    public bool IsEnabled { get; set; }
+}

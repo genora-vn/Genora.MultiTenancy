@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Genora.MultiTenancy.AppDtos.AppPayments;
@@ -21,6 +22,11 @@ public interface IHlPaymentService
 {
     Task<PrepareOrderResult> PrepareOrderAsync(PrepareHlOrderInput input);
     Task<CheckTransactionResult> CheckTransactionAsync(string orderId);
+
+    /// <summary>
+    /// Lấy danh sách hình thức thanh toán khả dụng cho Mini App (đọc ABP Setting toggle per-tenant).
+    /// </summary>
+    Task<List<HlPaymentMethodDto>> GetPaymentMethodsAsync();
 }
 
 public class HlPaymentService : IHlPaymentService
@@ -160,7 +166,56 @@ public class HlPaymentService : IHlPaymentService
         };
     }
 
+    public async Task<List<HlPaymentMethodDto>> GetPaymentMethodsAsync()
+    {
+        var (payAtCounter, payBankTransfer) = await GetPaymentToggleAsync();
+
+        var methods = new List<HlPaymentMethodDto>();
+
+        if (payAtCounter)
+        {
+            methods.Add(new HlPaymentMethodDto
+            {
+                Code = "COUNTER",
+                Name = "Thanh toán tại quầy",
+                IsEnabled = true
+            });
+        }
+
+        if (payBankTransfer)
+        {
+            methods.Add(new HlPaymentMethodDto
+            {
+                Code = "BANK_TRANSFER",
+                Name = "Thanh toán chuyển khoản",
+                IsEnabled = true
+            });
+        }
+
+        return methods;
+    }
+
     // ── Helpers ──────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Đọc 2 cờ bật/tắt hình thức thanh toán từ ABP Setting (fallback true nếu null/parse fail).
+    /// Tham khảo MiniAppCalendarSlotService.GetPaymentToggleAsync.
+    /// </summary>
+    private async Task<(bool payAtCounter, bool payBankTransfer)> GetPaymentToggleAsync()
+    {
+        var pcRaw = await _settings.GetOrNullAsync(ZaloPaymentSettingNames.IsPayAtCounterEnabled);
+        var pbRaw = await _settings.GetOrNullAsync(ZaloPaymentSettingNames.IsPayBankTransferEnabled);
+
+        var payAtCounter = string.IsNullOrWhiteSpace(pcRaw)
+            ? true
+            : bool.TryParse(pcRaw, out var pc) ? pc : true;
+
+        var payBankTransfer = string.IsNullOrWhiteSpace(pbRaw)
+            ? true
+            : bool.TryParse(pbRaw, out var pb) ? pb : true;
+
+        return (payAtCounter, payBankTransfer);
+    }
 
     private static string ExtractOrderCode(string orderId)
     {

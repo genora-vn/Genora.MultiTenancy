@@ -20,6 +20,7 @@ using Volo.Abp;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Linq;
 using Volo.Abp.MultiTenancy;
+using Volo.Abp.Settings;
 
 namespace Genora.MultiTenancy.HttpApi.Controllers;
 
@@ -898,6 +899,17 @@ public class HoaLinhMiniAppController : MultiTenancyController
     {
         var result = await _paymentService.CheckTransactionAsync(orderId);
         return Ok(HlApiResult<CheckTransactionResult>.Ok(result));
+    }
+
+    /// <summary>
+    /// Lấy danh sách hình thức thanh toán khả dụng cho Mini App hiển thị.
+    /// Logic đọc ABP Setting per-tenant nằm trong HlPaymentService.
+    /// </summary>
+    [HttpGet("payment/methods")]
+    public async Task<IActionResult> GetPaymentMethods()
+    {
+        var methods = await _paymentService.GetPaymentMethodsAsync();
+        return Ok(HlApiResult<List<HlPaymentMethodDto>>.Ok(methods));
     }
 
     #endregion
