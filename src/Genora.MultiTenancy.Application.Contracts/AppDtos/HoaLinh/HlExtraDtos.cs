@@ -29,6 +29,8 @@ public class HlProductByBrandDto
     public bool? IsActive { get; set; }
     public string? ImageAvatarUrl { get; set; }
     public string? ImageUrl { get; set; }
+    public double? DiscPercent { get; set; }
+    public bool? IsCombo { get; set; }
 }
 
 /// <summary>
@@ -81,6 +83,8 @@ public class HlProductGroupDto
     public bool? IsActive { get; set; }
     public string? ImageAvatarUrl { get; set; }
     public string? ImageUrl { get; set; }
+    public double? DiscPercent { get; set; }
+    public bool? IsCombo { get; set; }
 }
 
 /// <summary>

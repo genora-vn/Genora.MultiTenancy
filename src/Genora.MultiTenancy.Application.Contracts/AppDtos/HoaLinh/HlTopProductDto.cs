@@ -13,4 +13,5 @@ public class HlTopProductDto
     public int? Rank { get; set; }
     public string? ImageAvatarUrl { get; set; }
     public decimal? ProductPrice { get; set; }
+    public double? DiscPercent { get; set; }
 }

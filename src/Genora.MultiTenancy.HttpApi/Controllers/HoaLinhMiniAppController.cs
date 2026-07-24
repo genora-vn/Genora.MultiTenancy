@@ -359,18 +359,21 @@ public class HoaLinhMiniAppController : MultiTenancyController
         var genoraOrders = await _asyncExecuter.ToListAsync(
             genoraQuery.OrderByDescending(x => x.CreationTime));
 
-        // 3. Sync status: nếu DMS có zalo_order_number = OrderCode Genora → cập nhật status Genora
-        //    Các mã order Genora đã được DMS ghi nhận (để loại khỏi danh sách hoalinh, tránh nhân đôi)
-        var matchedGenoraCodes = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        // 3. Ưu tiên nguồn dữ liệu theo ZaloOrderNumber:
+        //    - DMS trả về đơn có ZaloOrderNumber != null → đây là đơn Genora đã đồng bộ lên DMS.
+        //      Ưu tiên lấy dữ liệu từ API DMS (nguồn chuẩn), KHÔNG lấy bản Genora DB nữa.
+        //    - ZaloOrderNumber null/rỗng → đơn thuần DMS (không liên quan Genora).
+        //    Các mã OrderCode Genora đã được DMS ghi nhận → loại khỏi danh sách Genora để tránh nhân đôi.
+        var dmsSyncedGenoraCodes = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         foreach (var hlOrder in hlOrders)
         {
             if (string.IsNullOrWhiteSpace(hlOrder.ZaloOrderNumber)) continue;
+            dmsSyncedGenoraCodes.Add(hlOrder.ZaloOrderNumber!);
+
+            // Vẫn đồng bộ trạng thái về Genora DB để giữ dữ liệu nhất quán (không dùng để hiển thị).
             var matchedOrder = genoraOrders.FirstOrDefault(x => x.OrderCode == hlOrder.ZaloOrderNumber);
             if (matchedOrder == null) continue;
 
-            matchedGenoraCodes.Add(hlOrder.ZaloOrderNumber!);
-
-            // Map DMS statusCode → Genora DeliveryStatus
             var newDeliveryStatus = MapHlStatusToDeliveryStatus(hlOrder.OrderStatusCode);
             if (matchedOrder.DeliveryStatus != newDeliveryStatus)
             {
@@ -382,48 +385,52 @@ public class HoaLinhMiniAppController : MultiTenancyController
             }
         }
 
-        // 4a. Đơn Genora (Source=genora)
-        var genoraResult = genoraOrders.Select(o => new
-        {
-            Source = "genora",
-            Id = (object)o.Id,
-            o.OrderCode,
-            o.CustomerCode,
-            o.CustomerName,
-            o.BranchName,
-            o.DeliveryAddress,
-            o.TotalAmount,
-            DeliveryStatus = (int)o.DeliveryStatus,
-            DeliveryStatusText = GetDeliveryStatusText(o.DeliveryStatus),
-            PaymentStatus = (int)o.PaymentStatus,
-            PaymentStatusText = GetPaymentStatusText(o.PaymentStatus),
-            OrderDate = o.CreationTime.ToString("yyyy-MM-dd"),
-            o.Note,
-            o.ReceiverName
-        });
-
-        // 4b. Đơn thuần DMS Hoa Linh (Source=hoalinh) — loại các đơn đã map với Genora để tránh nhân đôi
-        var hlOnlyResult = hlOrders
-            .Where(h => string.IsNullOrWhiteSpace(h.ZaloOrderNumber)
-                        || !matchedGenoraCodes.Contains(h.ZaloOrderNumber!))
-            .Select(h => new
+        // 4a. Đơn Genora (Source=genora) — CHỈ giữ các đơn CHƯA được DMS ghi nhận qua ZaloOrderNumber.
+        //     Nếu DMS đã có ZaloOrderNumber trỏ về đơn này → ưu tiên bản DMS ở bước 4b, bỏ bản Genora.
+        var genoraResult = genoraOrders
+            .Where(o => !dmsSyncedGenoraCodes.Contains(o.OrderCode ?? string.Empty))
+            .Select(o => new
             {
-                Source = "hoalinh",
-                Id = (object?)null,
-                OrderCode = h.OrderNumber,
-                h.CustomerCode,
-                h.CustomerName,
-                BranchName = h.DistributorName,
-                h.DeliveryAddress,
-                TotalAmount = h.TotalAmount ?? 0,
-                DeliveryStatus = h.OrderStatusCode ?? 0,
-                DeliveryStatusText = h.OrderStatus ?? "Không xác định",
-                PaymentStatus = 0,
-                PaymentStatusText = "",
-                OrderDate = h.OrderDate ?? "",
-                Note = (string?)null,
-                ReceiverName = h.DsrName
+                Source = "genora",
+                Id = (object)o.Id,
+                o.OrderCode,
+                o.CustomerCode,
+                o.CustomerName,
+                o.BranchName,
+                o.DeliveryAddress,
+                o.TotalAmount,
+                DeliveryStatus = (int)o.DeliveryStatus,
+                DeliveryStatusText = GetDeliveryStatusText(o.DeliveryStatus),
+                PaymentStatus = (int)o.PaymentStatus,
+                PaymentStatusText = GetPaymentStatusText(o.PaymentStatus),
+                OrderDate = o.CreationTime.ToString("yyyy-MM-dd"),
+                o.Note,
+                o.ReceiverName,
+                ZaloOrderNumber = o.OrderCode
             });
+
+        // 4b. Đơn DMS Hoa Linh (Source=hoalinh) — hiển thị TẤT CẢ đơn API trả về:
+        //     ZaloOrderNumber != null → ưu tiên dữ liệu API (đã loại bản Genora tương ứng ở 4a);
+        //     ZaloOrderNumber null → đơn thuần DMS.
+        var hlOnlyResult = hlOrders.Select(h => new
+        {
+            Source = "hoalinh",
+            Id = (object?)null,
+            OrderCode = h.OrderNumber,
+            h.CustomerCode,
+            h.CustomerName,
+            BranchName = h.DistributorName,
+            h.DeliveryAddress,
+            TotalAmount = h.TotalAmount ?? 0,
+            DeliveryStatus = h.OrderStatusCode ?? 0,
+            DeliveryStatusText = h.OrderStatus ?? "Không xác định",
+            PaymentStatus = 0,
+            PaymentStatusText = "",
+            OrderDate = h.OrderDate ?? "",
+            Note = (string?)null,
+            ReceiverName = h.DsrName,
+            h.ZaloOrderNumber
+        });
 
         // 5. Gộp 2 nguồn, sắp xếp theo ngày giảm dần
         var combined = genoraResult.Cast<object>()

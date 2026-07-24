@@ -137,9 +137,9 @@
                 var payMethod = { 1: 'Tiền mặt (COD)', 2: 'Chuyển khoản' };
                 var info = '<div class="row mb-3"><div class="col-md-6"><table class="table table-sm table-borderless">' +
                     '<tr><td class="text-muted">Mã đơn:</td><td><strong>' + (o.orderCode || '') + '</strong> <span class="badge hl-badge-genora">Genora</span></td></tr>' +
-                    '<tr><td class="text-muted">Khách hàng:</td><td>' + (o.customerName || '') + '</td></tr>' +
+                    '<tr><td class="text-muted">Khách hàng:</td><td><strong>' + (o.customerCode || '') + '</strong> / ' + (o.customerName || '') + '</td></tr>' +
                     '<tr><td class="text-muted">SĐT:</td><td>' + (o.customerPhone || '') + '</td></tr>' +
-                    '<tr><td class="text-muted">Chi nhánh:</td><td>' + (o.branchName || '') + '</td></tr>' +
+                    '<tr><td class="text-muted">Chi nhánh:</td><td><strong>' + (o.branchCode || '') + '</strong> / ' + (o.branchName || '') + '</td></tr>' +
                     '<tr><td class="text-muted">Địa chỉ giao:</td><td>' + (o.deliveryAddress || '') + '</td></tr>' +
                     '<tr><td class="text-muted">Người nhận:</td><td>' + (o.receiverName || '') + ' - ' + (o.receiverPhone || '') + '</td></tr>' +
                     '</table></div><div class="col-md-6"><table class="table table-sm table-borderless">' +
