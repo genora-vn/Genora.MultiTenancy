@@ -337,6 +337,7 @@ public class MultiTenancyDbContext :
 
             b.Property(x => x.PricePerPlayer).HasColumnType("decimal(18,2)");
             b.Property(x => x.VgaCode).HasMaxLength(50);
+            b.Property(x => x.CaddieName).HasMaxLength(255);
         });
 
         // ===== AppBookings =====

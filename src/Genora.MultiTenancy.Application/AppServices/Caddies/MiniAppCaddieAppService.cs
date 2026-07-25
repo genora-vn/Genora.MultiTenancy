@@ -240,7 +240,7 @@ public class MiniAppCaddieAppService : ApplicationService
     /// <summary>
     /// POST đặt caddie (hỗ trợ book 1 hoặc nhiều caddy)
     /// </summary>
-    public async Task<MiniAppCaddieBookingHistoryDto> CreateBookingAsync(MiniAppCreateCaddieBookingDto input)
+    public async Task<MiniAppCreatedCaddieBookingDto> CreateBookingAsync(MiniAppCreateCaddieBookingDto input)
     {
         // Look up customer from DB
         if (input.CustomerId == Guid.Empty)
@@ -330,7 +330,16 @@ public class MiniAppCaddieAppService : ApplicationService
 
         await _bookingRepo.InsertAsync(booking, autoSave: true);
 
+        // Map CaddieId → AppCaddie (đã load ở vòng validate) để lấy tên/ảnh/rating cho response
+        var caddieMap = new Dictionary<Guid, AppCaddie>();
+        foreach (var item in caddieItems)
+        {
+            if (!caddieMap.ContainsKey(item.CaddieId))
+                caddieMap[item.CaddieId] = await _caddieRepo.GetAsync(item.CaddieId);
+        }
+
         // Create booking details for each caddy + lock schedule slots
+        var caddieItemsResult = new List<MiniAppCreatedCaddieItemDto>();
         foreach (var (caddieId, schedule, note) in caddieSchedules)
         {
             var detail = new AppCaddieBookingDetail(
@@ -345,14 +354,26 @@ public class MiniAppCaddieAppService : ApplicationService
             schedule.SlotStatus = (byte)CaddieSlotStatus.Booked;
             schedule.BookingId = booking.Id;
             await _scheduleRepo.UpdateAsync(schedule, autoSave: true);
+
+            var caddie = caddieMap[caddieId];
+            caddieItemsResult.Add(new MiniAppCreatedCaddieItemDto
+            {
+                CaddieBookingDetailId = detail.Id,
+                CaddieId = caddieId,
+                CaddieName = caddie.CaddieName,
+                CaddieCode = caddie.CaddieCode,
+                CaddieAvatar = ResolveAvatarUrl(caddie.Avatar),
+                RatingAvg = caddie.RatingAvg,
+                ScheduleId = schedule.Id,
+                Note = note
+            });
         }
 
-        return new MiniAppCaddieBookingHistoryDto
+        // Trả về đầy đủ danh sách caddie đã book để Mini App gắn vào từng người chơi khi tạo booking golf
+        return new MiniAppCreatedCaddieBookingDto
         {
-            Id = booking.Id,
+            CaddieBookingId = booking.Id,
             BookingCode = booking.BookingCode,
-            CaddieName = firstCaddie.CaddieName,
-            CaddieAvatar = ResolveAvatarUrl(firstCaddie.Avatar),
             BookingDate = booking.BookingDate,
             StartTime = booking.StartTime,
             NumberOfHoles = booking.NumberOfHoles,
@@ -360,7 +381,9 @@ public class MiniAppCaddieAppService : ApplicationService
             StatusText = "Mới",
             PaymentStatus = booking.PaymentStatus,
             PaymentStatusText = "Chưa thanh toán",
-            HasRating = false
+            TotalCaddieFee = booking.TotalCaddieFee,
+            PaymentMethod = booking.PaymentMethod,
+            Caddies = caddieItemsResult
         };
     }
 

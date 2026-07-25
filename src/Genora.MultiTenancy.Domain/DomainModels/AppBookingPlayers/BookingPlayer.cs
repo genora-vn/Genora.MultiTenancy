@@ -31,6 +31,23 @@ public class BookingPlayer : FullAuditedAggregateRoot<Guid>, IMultiTenant
     [StringLength(500)]
     public string? Notes { get; set; }
 
+    /// <summary>
+    /// Caddie được đặt cho người chơi này (soft reference tới AppCaddies, không FK để tránh ràng buộc cross-tenant).
+    /// Mini App gọi API đặt Caddie trước, sau đó truyền CaddieId vào từng người chơi khi tạo booking golf.
+    /// </summary>
+    public Guid? CaddieId { get; set; }
+
+    /// <summary>
+    /// Trỏ về AppCaddieBooking (header) đã tạo từ API đặt Caddie — liên kết booking golf với booking Caddie.
+    /// </summary>
+    public Guid? CaddieBookingId { get; set; }
+
+    /// <summary>
+    /// Tên Caddie (denormalize để tiện hiển thị, tránh join sang AppCaddies).
+    /// </summary>
+    [StringLength(255)]
+    public string? CaddieName { get; set; }
+
     protected BookingPlayer() { }
 
     public BookingPlayer(Guid id, Guid bookingId, Guid? customerId, string playerName, decimal? pricePerPlayer, string? vgaCode, string notes = "") : base(id)

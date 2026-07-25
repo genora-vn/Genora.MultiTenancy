@@ -215,6 +215,11 @@ public class MiniAppBookingAppService : ApplicationService, IMiniAppBookingAppSe
                 player.VgaCode = p.VgaCode;
                 player.PricePerPlayer = p.PricePerGolfer;
 
+                // Caddie đã đặt cho người chơi này (Mini App gọi API đặt Caddie trước, truyền CaddieId vào đây)
+                player.CaddieId = p.CaddieId;
+                player.CaddieBookingId = p.CaddieBookingId;
+                player.CaddieName = p.CaddieName;
+
                 await _playerRepo.InsertAsync(player, autoSave: true);
             }
         }
@@ -1227,6 +1232,11 @@ public class MiniAppBookingAppService : ApplicationService, IMiniAppBookingAppSe
 
             player.VgaCode = p.VgaCode;
             player.PricePerPlayer = playerPrice;
+
+            // Giữ thông tin Caddie đã đặt cho từng người chơi khi cập nhật booking
+            player.CaddieId = p.CaddieId;
+            player.CaddieBookingId = p.CaddieBookingId;
+            player.CaddieName = p.CaddieName;
 
             await _playerRepo.InsertAsync(player, autoSave: true);
         }

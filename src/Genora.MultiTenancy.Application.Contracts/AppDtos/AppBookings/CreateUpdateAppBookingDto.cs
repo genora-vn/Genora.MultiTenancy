@@ -18,6 +18,16 @@ public class CreateUpdateBookingPlayerDto
     public string? Notes { get; set; }
     public decimal? PricePerPlayer { get; set; }
     public string? VgaCode { get; set; }
+
+    /// <summary>Caddie đã đặt cho người chơi này</summary>
+    public Guid? CaddieId { get; set; }
+
+    /// <summary>Id booking Caddie (AppCaddieBooking) liên kết</summary>
+    public Guid? CaddieBookingId { get; set; }
+
+    /// <summary>Tên Caddie (denormalize)</summary>
+    [StringLength(255)]
+    public string? CaddieName { get; set; }
 }
 
 public class CreateUpdateAppBookingDto

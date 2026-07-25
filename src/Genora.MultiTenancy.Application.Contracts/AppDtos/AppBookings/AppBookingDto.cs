@@ -16,6 +16,9 @@ public class AppBookingPlayerDto : EntityDto<Guid>
     public string? Notes { get; set; }
     public decimal? PricePerPlayer { get; set; }
     public string? VgaCode { get; set; }
+    public Guid? CaddieId { get; set; }
+    public Guid? CaddieBookingId { get; set; }
+    public string? CaddieName { get; set; }
 }
 public class BookingFilter
 {

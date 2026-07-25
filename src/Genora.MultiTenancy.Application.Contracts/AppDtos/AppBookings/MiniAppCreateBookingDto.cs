@@ -17,6 +17,16 @@ public class MiniAppBookingPlayerInput
     public string? Notes { get; set; }
     [StringLength(100)]
     public string? VgaCode { get; set; }
+
+    /// <summary>Caddie đã đặt cho người chơi này (Id trả về từ API đặt Caddie /api/mini-app/caddie/booking)</summary>
+    public Guid? CaddieId { get; set; }
+
+    /// <summary>Id booking Caddie (AppCaddieBooking) trả về từ API đặt Caddie — liên kết booking golf với booking Caddie</summary>
+    public Guid? CaddieBookingId { get; set; }
+
+    /// <summary>Tên Caddie (tùy chọn — nếu Mini App không truyền, server sẽ tự tra từ CaddieId)</summary>
+    [StringLength(255)]
+    public string? CaddieName { get; set; }
 }
 
 public class MiniAppCreateBookingDto

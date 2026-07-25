@@ -482,10 +482,10 @@ public class MiniAppController : MultiTenancyController
     /// </summary>
     [HttpPost("caddie/booking")]
     [AllowAnonymous]
-    public async Task<MiniAppCaddieBookingResponse> CreateCaddieBooking([FromBody] MiniAppCreateCaddieBookingDto input)
+    public async Task<MiniAppCreatedCaddieBookingResponse> CreateCaddieBooking([FromBody] MiniAppCreateCaddieBookingDto input)
     {
         var result = await _miniCaddie.CreateBookingAsync(input);
-        return new MiniAppCaddieBookingResponse { Error = 0, Message = "Đặt caddy thành công", Data = result };
+        return new MiniAppCreatedCaddieBookingResponse { Error = 0, Message = "Đặt caddy thành công", Data = result };
     }
 
     /// <summary>

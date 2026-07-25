@@ -179,6 +179,49 @@ public class MiniAppCaddieBookingHistoryResponse : ZaloBaseResponse
     public List<MiniAppCaddieBookingHistoryDto>? Data { get; set; }
 }
 
+/// <summary>
+/// Kết quả tạo booking Caddie — trả về đầy đủ danh sách caddie đã book.
+/// Mini App dùng CaddieBookingId + Caddies[].CaddieId để truyền vào từng người chơi khi tạo booking golf.
+/// </summary>
+public class MiniAppCreatedCaddieBookingDto
+{
+    /// <summary>Id của AppCaddieBooking (header) — truyền vào player.CaddieBookingId khi booking golf</summary>
+    public Guid CaddieBookingId { get; set; }
+    public string BookingCode { get; set; } = null!;
+    public DateTime BookingDate { get; set; }
+    public TimeSpan StartTime { get; set; }
+    public int? NumberOfHoles { get; set; }
+    public byte Status { get; set; }
+    public string? StatusText { get; set; }
+    public byte PaymentStatus { get; set; }
+    public string? PaymentStatusText { get; set; }
+    public decimal TotalCaddieFee { get; set; }
+    public byte PaymentMethod { get; set; }
+
+    /// <summary>Danh sách caddie đã book trong booking này</summary>
+    public List<MiniAppCreatedCaddieItemDto> Caddies { get; set; } = new();
+}
+
+/// <summary>1 caddie đã book — Mini App truyền CaddieId vào player.CaddieId khi booking golf</summary>
+public class MiniAppCreatedCaddieItemDto
+{
+    /// <summary>Id AppCaddieBookingDetail (dòng chi tiết caddie trong booking)</summary>
+    public Guid CaddieBookingDetailId { get; set; }
+    public Guid CaddieId { get; set; }
+    public string CaddieName { get; set; } = null!;
+    public string? CaddieCode { get; set; }
+    public string? CaddieAvatar { get; set; }
+    public decimal RatingAvg { get; set; }
+    public Guid ScheduleId { get; set; }
+    public string? Note { get; set; }
+}
+
+/// <summary>POST /api/mini-app/caddie/booking — response tạo booking (danh sách caddie đã book)</summary>
+public class MiniAppCreatedCaddieBookingResponse : ZaloBaseResponse
+{
+    public MiniAppCreatedCaddieBookingDto? Data { get; set; }
+}
+
 /// <summary>GET /api/mini-app/caddie/booking/{id}</summary>
 public class MiniAppCaddieBookingDetailResponse : ZaloBaseResponse
 {
