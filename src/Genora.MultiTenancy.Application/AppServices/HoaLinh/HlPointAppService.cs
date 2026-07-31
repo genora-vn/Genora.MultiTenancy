@@ -7,6 +7,8 @@ using Genora.MultiTenancy.DomainModels.AppHlPoints;
 using Genora.MultiTenancy.Enums;
 using Genora.MultiTenancy.Helpers;
 using Genora.MultiTenancy.HoaLinh;
+using Genora.MultiTenancy.Localization;
+using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System;
@@ -42,6 +44,7 @@ public class HlPointAppService : ApplicationService, IHlPointAppService
     private readonly HlLoyaltyOptions _loyaltyOptions;
     private readonly ILogger<HlPointAppService> _logger;
     private readonly IBackgroundJobManager _jobManager;
+    IStringLocalizer<MultiTenancyResource> l;
 
     public HlPointAppService(
         IRepository<HlPointBatch, Guid> batchRepo,
@@ -52,7 +55,8 @@ public class HlPointAppService : ApplicationService, IHlPointAppService
         ICurrentTenant currentTenant,
         IOptionsSnapshot<HlLoyaltyOptions> loyaltyOptions,
         ILogger<HlPointAppService> logger,
-        IBackgroundJobManager jobManager)
+        IBackgroundJobManager jobManager,
+        IStringLocalizer<MultiTenancyResource> l)
     {
         _batchRepo = batchRepo;
         _txnRepo = txnRepo;
@@ -63,6 +67,7 @@ public class HlPointAppService : ApplicationService, IHlPointAppService
         _loyaltyOptions = loyaltyOptions.Value;
         _logger = logger;
         _jobManager = jobManager;
+        this.l = l;
     }
 
     public async Task<HlPointBatchDto> RedeemFromCampaignAsync(HlRedeemPointInput input, CancellationToken ct = default)
@@ -187,7 +192,7 @@ public class HlPointAppService : ApplicationService, IHlPointAppService
                     {
                         TenantId = _currentTenant.Id,
                         TemplateKey = "RedeemPoint",
-                        Phone = PhoneHelper.NormalizePhoneTo84(batch.CustomerPhone),
+                        Phone = PhoneHelper.NormalizePhoneTo84(l, batch.CustomerPhone),
                         TrackingId = batch.BatchCode,
                         TemplateData = new
                         {

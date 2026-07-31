@@ -15,9 +15,11 @@ using Genora.MultiTenancy.DomainModels.AppHlOrders;
 using Genora.MultiTenancy.Enums;
 using Genora.MultiTenancy.Features.AppEmails;
 using Genora.MultiTenancy.Helpers;
+using Genora.MultiTenancy.Localization;
 using Genora.MultiTenancy.SignalR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
@@ -59,6 +61,7 @@ public class HoaLinhMiniAppController : MultiTenancyController
     private readonly ILogger<HoaLinhMiniAppController> _logger;
     private readonly IAppEmailSenderService _appEmailSenderService;
     private readonly ISettingProvider _settingProvider;
+    IStringLocalizer<MultiTenancyResource> l;
 
     public HoaLinhMiniAppController(
         IHlApiClientService hlApi,
@@ -75,7 +78,8 @@ public class HoaLinhMiniAppController : MultiTenancyController
         IRepository<Customer, Guid> customerRepo,
         ILogger<HoaLinhMiniAppController> logger,
         IAppEmailSenderService appEmailSenderService,
-        ISettingProvider settingProvider)
+        ISettingProvider settingProvider,
+        IStringLocalizer<MultiTenancyResource> l)
     {
         _hlApi = hlApi;
         _orderRepo = orderRepo;
@@ -92,6 +96,7 @@ public class HoaLinhMiniAppController : MultiTenancyController
         _logger = logger;
         _appEmailSenderService = appEmailSenderService;
         _settingProvider = settingProvider;
+        this.l = l;
     }
 
     #region Auth
@@ -367,7 +372,7 @@ public class HoaLinhMiniAppController : MultiTenancyController
                     {
                         TenantId = _currentTenant.Id,
                         TemplateKey = "OrderSuccess",
-                        Phone = PhoneHelper.NormalizePhoneTo84(request.CustomerPhone),
+                        Phone = PhoneHelper.NormalizePhoneTo84(l, request.CustomerPhone),
                         TrackingId = request.CustomerCode,
                         TemplateData = new
                         {

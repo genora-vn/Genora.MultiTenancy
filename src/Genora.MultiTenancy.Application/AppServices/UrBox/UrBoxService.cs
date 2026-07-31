@@ -5,6 +5,8 @@ using Genora.MultiTenancy.DomainModels.AppCustomers;
 using Genora.MultiTenancy.DomainModels.AppHlGiftExchanges;
 using Genora.MultiTenancy.Enums;
 using Genora.MultiTenancy.Helpers;
+using Genora.MultiTenancy.Localization;
+using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System;
@@ -37,6 +39,7 @@ public class UrBoxService : IUrBoxService
     private readonly ICurrentTenant _currentTenant;
     private readonly ILogger<UrBoxService> _logger;
     private readonly IBackgroundJobManager _jobManager;
+    IStringLocalizer<MultiTenancyResource> l;
 
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
@@ -56,7 +59,8 @@ public class UrBoxService : IUrBoxService
         IRepository<Customer, Guid> customerRepo,
         ICurrentTenant currentTenant,
         ILogger<UrBoxService> logger,
-        IBackgroundJobManager jobManager)
+        IBackgroundJobManager jobManager,
+        IStringLocalizer<MultiTenancyResource> l)
     {
         _httpFactory = httpFactory;
         _settings = settings.Value;
@@ -65,6 +69,7 @@ public class UrBoxService : IUrBoxService
         _currentTenant = currentTenant;
         _logger = logger;
         _jobManager = jobManager;
+        this.l = l;
     }
 
     #region Brands (GET + query string)
@@ -388,7 +393,7 @@ public class UrBoxService : IUrBoxService
                     {
                         TenantId = _currentTenant.Id,
                         TemplateKey = "ExchangeGift",
-                        Phone = PhoneHelper.NormalizePhoneTo84(exchange.CustomerPhone),
+                        Phone = PhoneHelper.NormalizePhoneTo84(l, exchange.CustomerPhone),
                         TrackingId = exchange.CustomerCode,
                         TemplateData = new
                         {
