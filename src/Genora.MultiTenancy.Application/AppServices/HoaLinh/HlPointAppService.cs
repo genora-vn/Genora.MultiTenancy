@@ -187,7 +187,7 @@ public class HlPointAppService : ApplicationService, IHlPointAppService
                     {
                         TenantId = _currentTenant.Id,
                         TemplateKey = "RedeemPoint",
-                        Phone = batch.CustomerPhone,
+                        Phone = PhoneHelper.NormalizePhoneTo84(batch.CustomerPhone),
                         TrackingId = batch.BatchCode,
                         TemplateData = new
                         {

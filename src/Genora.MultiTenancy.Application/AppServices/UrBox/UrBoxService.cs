@@ -4,6 +4,7 @@ using Genora.MultiTenancy.AppServices.AppZaloAuths;
 using Genora.MultiTenancy.DomainModels.AppCustomers;
 using Genora.MultiTenancy.DomainModels.AppHlGiftExchanges;
 using Genora.MultiTenancy.Enums;
+using Genora.MultiTenancy.Helpers;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System;
@@ -387,7 +388,7 @@ public class UrBoxService : IUrBoxService
                     {
                         TenantId = _currentTenant.Id,
                         TemplateKey = "ExchangeGift",
-                        Phone = exchange.CustomerPhone,
+                        Phone = PhoneHelper.NormalizePhoneTo84(exchange.CustomerPhone),
                         TrackingId = exchange.CustomerCode,
                         TemplateData = new
                         {

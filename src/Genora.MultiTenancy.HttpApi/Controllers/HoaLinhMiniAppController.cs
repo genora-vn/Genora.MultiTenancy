@@ -367,7 +367,7 @@ public class HoaLinhMiniAppController : MultiTenancyController
                     {
                         TenantId = _currentTenant.Id,
                         TemplateKey = "OrderSuccess",
-                        Phone = request.CustomerPhone,
+                        Phone = PhoneHelper.NormalizePhoneTo84(request.CustomerPhone),
                         TrackingId = request.CustomerCode,
                         TemplateData = new
                         {
