@@ -73,6 +73,15 @@ public class ZaloZnsModel : AbpPageModel
         [Display(Name = "ServiceReview TemplateId")]
         public string? ServiceReview { get; set; }
 
+        [Display(Name = "OrderSuccess TemplateId")]
+        public string? OrderSuccess { get; set; }
+
+        [Display(Name = "RedeemPoint TemplateId")]
+        public string? RedeemPoint { get; set; }
+
+        [Display(Name = "ExchangeGift TemplateId")]
+        public string? ExchangeGift { get; set; }
+
         // ── Checkout SDK — Payment Config ────────────────────────────────────
         /// <summary>
         /// Private Key HMAC SHA256 từ Zalo Developer Portal.
@@ -121,6 +130,10 @@ public class ZaloZnsModel : AbpPageModel
         Input.BookingChanged   = await _settingProvider.GetOrNullAsync(AppServices.AppZaloAuths.ZaloSettingNames.ZbsBookingChanged);
         Input.ServiceReview    = await _settingProvider.GetOrNullAsync(AppServices.AppZaloAuths.ZaloSettingNames.ZbsServiceReview);
 
+        Input.OrderSuccess = await _settingProvider.GetOrNullAsync(AppServices.AppZaloAuths.ZaloSettingNames.ZbsOrderSuccess);
+        Input.RedeemPoint = await _settingProvider.GetOrNullAsync(AppServices.AppZaloAuths.ZaloSettingNames.ZbsRedeemPoint);
+        Input.ExchangeGift = await _settingProvider.GetOrNullAsync(AppServices.AppZaloAuths.ZaloSettingNames.ZbsExchangeGift);
+
         // ── Payment settings ─────────────────────────────────────────────────
         // Private Key không load ra UI (encrypted) — chỉ hiển thị placeholder
         Input.PaymentPrivateKey  = null;
@@ -166,6 +179,10 @@ public class ZaloZnsModel : AbpPageModel
         await SetAsync(AppServices.AppZaloAuths.ZaloSettingNames.ZbsBookingReminder,  Input.BookingReminder);
         await SetAsync(AppServices.AppZaloAuths.ZaloSettingNames.ZbsBookingChanged,   Input.BookingChanged);
         await SetAsync(AppServices.AppZaloAuths.ZaloSettingNames.ZbsServiceReview,    Input.ServiceReview);
+
+        await SetAsync(AppServices.AppZaloAuths.ZaloSettingNames.ZbsOrderSuccess, Input.OrderSuccess);
+        await SetAsync(AppServices.AppZaloAuths.ZaloSettingNames.ZbsRedeemPoint, Input.RedeemPoint);
+        await SetAsync(AppServices.AppZaloAuths.ZaloSettingNames.ZbsExchangeGift, Input.ExchangeGift);
 
         // ── Payment settings ─────────────────────────────────────────────────
         // Private Key: chỉ lưu nếu user nhập giá trị mới (không ghi đè bằng chuỗi rỗng)

@@ -530,6 +530,8 @@
     "UpgradeSettings:EmailTemplates:Subject:BookingNew": "Subject - New booking",
     "UpgradeSettings:EmailTemplates:Subject:BookingChange": "Subject - Booking change",
     "UpgradeSettings:EmailTemplates:Subject:BookingCancel": "Subject - Booking cancel",
+    "UpgradeSettings:EmailTemplates:Subject:OrderProduct": "Subject - Orders",
+
     "UpgradeSettings:ZaloZns:Title": "ZNS/ZBS (Zalo) settings",
     "UpgradeSettings:ZaloZns:AppConfig:Title": "Zalo app configuration",
     "UpgradeSettings:ZaloZns:Templates:Title": "ZNS/ZBS template configuration",
@@ -545,6 +547,11 @@
     "UpgradeSettings:ZaloZns:Template:BookingReminder": "Booking reminder TemplateId",
     "UpgradeSettings:ZaloZns:Template:BookingChanged": "Booking changed TemplateId",
     "UpgradeSettings:ZaloZns:Template:ServiceReview": "Service review TemplateId",
+
+    "UpgradeSettings:ZaloZns:Template:OrderSuccess": "Order success TemplateId",
+    "UpgradeSettings:ZaloZns:Template:RedeemPoint": "Redeem point TemplateId",
+    "UpgradeSettings:ZaloZns:Template:ExchangeGift": "Exchange gift TemplateId",
+
     "FeatureGroup:MiniAppHomePage": "Homepage Configuration",
     "Feature:MiniAppHomePage": "Enable Homepage Configuration",
     "Feature:MiniAppHomePageDesc": "Enable Homepage Configuration Management Function (edit, sort, configure feature widgets, update status)",

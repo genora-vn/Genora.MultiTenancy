@@ -18,4 +18,10 @@ public static class AppEmailSettingNames
     public const string BookingCancel_CcEmails = "Genora.AppEmails.BookingCancelRequest.CcEmails";
     public const string BookingCancel_BccEmails = "Genora.AppEmails.BookingCancelRequest.BccEmails";
     public const string BookingCancel_SubjectTemplate = "Genora.AppEmails.BookingCancelRequest.SubjectTemplate";
+
+    // ===== Order Product Request =====
+    public const string OrderProduct_ToEmails = "Genora.AppEmails.OrderProductRequest.ToEmails";
+    public const string OrderProduct_CcEmails = "Genora.AppEmails.OrderProductRequest.CcEmails";
+    public const string OrderProduct_BccEmails = "Genora.AppEmails.OrderProductRequest.BccEmails";
+    public const string OrderProduct_SubjectTemplate = "Genora.AppEmails.OrderProductRequest.SubjectTemplate";
 }

@@ -1,22 +1,31 @@
+using DocumentFormat.OpenXml.Drawing.Charts;
+using Genora.MultiTenancy.AppDtos.AppEmails;
+using Genora.MultiTenancy.AppDtos.AppPayments;
+using Genora.MultiTenancy.AppDtos.AppZaloAuths;
+using Genora.MultiTenancy.AppDtos.HoaLinh;
+using Genora.MultiTenancy.AppServices.AppEmails;
+using Genora.MultiTenancy.AppServices.AppPayments;
+using Genora.MultiTenancy.AppServices.AppZaloAuths;
+using Genora.MultiTenancy.AppServices.HoaLinh;
+using Genora.MultiTenancy.Controllers;
+using Genora.MultiTenancy.DomainModels.AppBookings;
+using Genora.MultiTenancy.DomainModels.AppCustomers;
+using Genora.MultiTenancy.DomainModels.AppHlGiftExchanges;
+using Genora.MultiTenancy.DomainModels.AppHlOrders;
+using Genora.MultiTenancy.Enums;
+using Genora.MultiTenancy.Features.AppEmails;
+using Genora.MultiTenancy.Helpers;
+using Genora.MultiTenancy.SignalR;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Genora.MultiTenancy.AppDtos.AppZaloAuths;
-using Genora.MultiTenancy.AppDtos.AppPayments;
-using Genora.MultiTenancy.AppDtos.HoaLinh;
-using Genora.MultiTenancy.AppServices.AppPayments;
-using Genora.MultiTenancy.AppServices.AppZaloAuths;
-using Genora.MultiTenancy.AppServices.HoaLinh;
-using Genora.MultiTenancy.Controllers;
-using Genora.MultiTenancy.DomainModels.AppHlGiftExchanges;
-using Genora.MultiTenancy.DomainModels.AppHlOrders;
-using Genora.MultiTenancy.Enums;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
 using Volo.Abp;
+using Volo.Abp.BackgroundJobs;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Linq;
 using Volo.Abp.MultiTenancy;
@@ -45,6 +54,11 @@ public class HoaLinhMiniAppController : MultiTenancyController
     private readonly IHlCustomerAppService _hlCustomerService;
     private readonly IHlPointAppService _hlPointService;
     private readonly IMiniAppZaloNewsService _zaloNews;
+    private readonly IBackgroundJobManager _jobManager;
+    private readonly IRepository<Customer, Guid> _customerRepo;
+    private readonly ILogger<HoaLinhMiniAppController> _logger;
+    private readonly IAppEmailSenderService _appEmailSenderService;
+    private readonly ISettingProvider _settingProvider;
 
     public HoaLinhMiniAppController(
         IHlApiClientService hlApi,
@@ -56,7 +70,12 @@ public class HoaLinhMiniAppController : MultiTenancyController
         IHlPaymentService paymentService,
         IHlCustomerAppService hlCustomerService,
         IHlPointAppService hlPointService,
-        IMiniAppZaloNewsService zaloNews)
+        IMiniAppZaloNewsService zaloNews,
+        IBackgroundJobManager jobManager,
+        IRepository<Customer, Guid> customerRepo,
+        ILogger<HoaLinhMiniAppController> logger,
+        IAppEmailSenderService appEmailSenderService,
+        ISettingProvider settingProvider)
     {
         _hlApi = hlApi;
         _orderRepo = orderRepo;
@@ -68,6 +87,11 @@ public class HoaLinhMiniAppController : MultiTenancyController
         _hlCustomerService = hlCustomerService;
         _hlPointService = hlPointService;
         _zaloNews = zaloNews;
+        _jobManager = jobManager;
+        _customerRepo = customerRepo;
+        _logger = logger;
+        _appEmailSenderService = appEmailSenderService;
+        _settingProvider = settingProvider;
     }
 
     #region Auth
@@ -276,7 +300,7 @@ public class HoaLinhMiniAppController : MultiTenancyController
     #region Orders
 
     /// <summary>
-    /// Tạo đơn hàng từ Mini App → lưu DB Genora + push sang API Hoa Linh
+    /// Tạo đơn hàng từ Mini App → lưu DB Genora + push sang API Hoa Linh + gửi ZBS + gửi Email
     /// </summary>
     [HttpPost("orders")]
     public async Task<IActionResult> CreateOrder([FromBody] HlCreateOrderRequest request)
@@ -332,6 +356,129 @@ public class HoaLinhMiniAppController : MultiTenancyController
         order.TotalAmount = subTotal - request.DiscountAmount - request.SystemDiscount;
 
         await _orderRepo.InsertAsync(order, autoSave: true);
+
+        // ✅ 1. Gửi ZBS “Đặt hàng thành công”
+        if (!string.IsNullOrWhiteSpace(request.CustomerPhone))
+        {
+            try
+            {
+                await _jobManager.EnqueueAsync(
+                    new ZbsSendJobArgs
+                    {
+                        TenantId = _currentTenant.Id,
+                        TemplateKey = "OrderSuccess",
+                        Phone = request.CustomerPhone,
+                        TrackingId = request.CustomerCode,
+                        TemplateData = new
+                        {
+                            order_code = order.OrderCode,
+                            customer_name = request.CustomerName,
+                            customer_code = request.CustomerCode,
+                            order_date = DateTime.UtcNow.ToString("dd/MM/yyyy"),
+                            total_amount = order.TotalAmount,
+                            payment_method = EnumExtension.HLPaymentMethodToDisplayText(order.PaymentMethod),
+                            order_status = EnumExtension.HLOrderStatusToDisplayText(order.DeliveryStatus)
+                        }
+                    },
+                    priority: BackgroundJobPriority.Normal
+                );
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(
+                    ex,
+                    "[ZBS] Enqueue OrderSuccess failed. OrderId={OrderId}, OrderCode={OrderCode}, TenantId={TenantId}",
+                    order.Id,
+                    order.OrderCode,
+                    _currentTenant.Id
+                );
+            }
+        }
+
+        // ✅ 2. Gửi Email thông báo đơn hàng mới
+        try
+        {
+            var totalDiscount = order.DiscountAmount + order.SystemDiscount;
+
+            // 2.1 Chuẩn bị dữ liệu Model cho Email
+            var emailModel = new HlOrderCreatedEmailModelDto
+            {
+                OrderCode = order.OrderCode,
+                CustomerName = order.CustomerName ?? string.Empty,
+                CustomerCode = order.CustomerCode ?? string.Empty,
+                CustomerPhone = order.CustomerPhone ?? string.Empty,
+                BranchName = order.BranchName ?? string.Empty,
+                ReceiverName = order.ReceiverName ?? string.Empty,
+                ReceiverPhone = order.ReceiverPhone ?? string.Empty,
+                DeliveryAddress = order.DeliveryAddress ?? string.Empty,
+                CreationTimeText = order.CreationTime.ToString("dd/MM/yyyy"),
+                SubTotal = order.SubTotal,
+                SubTotalText = MoneyText(order.SubTotal),
+                DiscountAmount = order.DiscountAmount,
+                SystemDiscount = order.SystemDiscount,
+                DiscountText = totalDiscount > 0 ? MoneyText(totalDiscount) : "0",
+                TotalAmount = order.TotalAmount,
+                GrandTotalText = MoneyText(order.TotalAmount),
+                OrderStatusText = GetDeliveryStatusText(order.DeliveryStatus),
+                PaymentStatusText = GetPaymentStatusText(order.PaymentStatus),
+                PaymentMethodText = EnumExtension.HLPaymentMethodToDisplayText(order.PaymentMethod),
+                DeliveryStatusText = EnumExtension.HLOrderStatusToDisplayText(order.DeliveryStatus),
+                ShippingAddress = order.DeliveryAddress ?? string.Empty,
+                Note = order.Note ?? string.Empty,
+                TotalItemsCount = order.Items.Count, // ✅ Thêm số lượng món để hiển thị tiêu đề
+                Items = order.Items.Select(x => new HlOrderItemEmailDto
+                {
+                    BrandName = x.BrandName,
+                    ProductCode = x.ProductCode,
+                    ProductName = x.ProductName,
+                    Price = x.Price,
+                    UnitPriceText = MoneyText(x.Price),
+                    Quantity = x.Quantity,
+                    Amount = x.Amount,
+                    TotalPriceText = MoneyText(x.Amount),
+                    ProductUnit = x.ProductUnit
+                }).ToList()
+            };
+
+            // 2.2 Lấy cấu hình Email recipient & Subject từ SettingProvider
+            var toEmailsRaw = await _settingProvider.GetOrNullAsync(AppEmailSettingNames.OrderProduct_ToEmails);
+            var ccEmailsRaw = await _settingProvider.GetOrNullAsync(AppEmailSettingNames.OrderProduct_CcEmails);
+            var bccEmailsRaw = await _settingProvider.GetOrNullAsync(AppEmailSettingNames.OrderProduct_BccEmails);
+            var subjectTemplate = await _settingProvider.GetOrNullAsync(AppEmailSettingNames.OrderProduct_SubjectTemplate);
+
+            var toEmails = EmailHelper.NormalizeEmailList(toEmailsRaw);
+            if (string.IsNullOrWhiteSpace(toEmails))
+            {
+                toEmails = "ngocanh.mn@hoalinhpharma.com.vn"; // Fallback email mặc định nhận thông báo đơn hàng
+            }
+
+            var cc = string.IsNullOrWhiteSpace(ccEmailsRaw) ? null : EmailHelper.NormalizeEmailList(ccEmailsRaw);
+            var bcc = string.IsNullOrWhiteSpace(bccEmailsRaw) ? null : EmailHelper.NormalizeEmailList(bccEmailsRaw);
+
+            var subject = (subjectTemplate ?? "Đơn hàng mới [{OrderCode}]").Replace("{OrderCode}", order.OrderCode);
+
+            // 2.3 Đưa email vào Background Job gửi đi
+            await _appEmailSenderService.EnqueueTemplateAsync(
+                templateName: AppEmailTemplateNames.OrderProductRequest,
+                model: emailModel,
+                toEmails: toEmails,
+                subject: subject,
+                cc: cc,
+                bcc: bcc,
+                bookingId: order.Id,
+                bookingCode: order.OrderCode
+            );
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(
+                ex,
+                "[OrderEmail] Failed to enqueue order created email. OrderId={OrderId}, OrderCode={OrderCode}, TenantId={TenantId}",
+                order.Id,
+                order.OrderCode,
+                _currentTenant.Id
+            );
+        }
 
         return Ok(HlApiResult<object>.Ok(new
         {
@@ -488,6 +635,11 @@ public class HoaLinhMiniAppController : MultiTenancyController
             Enums.HlOrderPaymentStatus.Debt => "Công nợ",
             _ => "Không xác định"
         };
+    }
+
+    private static string MoneyText(decimal? value)
+    {
+        return value.HasValue ? $"{value.Value:N0}" : "0";
     }
 
     /// <summary>

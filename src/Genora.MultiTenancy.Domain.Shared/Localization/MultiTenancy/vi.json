@@ -585,6 +585,8 @@
     "UpgradeSettings:EmailTemplates:Subject:BookingNew": "Tiêu đề Đặt chỗ mới",
     "UpgradeSettings:EmailTemplates:Subject:BookingChange": "Tiêu đề Thay đổi đặt chỗ",
     "UpgradeSettings:EmailTemplates:Subject:BookingCancel": "Tiêu đề Hủy đặt chỗ",
+    "UpgradeSettings:EmailTemplates:Subject:OrderProduct": "Tiêu đề Đặt hàng",
+
     "UpgradeSettings:ZaloZns:Title": "Cấu hình ZNS/ZBS (Zalo)",
     "UpgradeSettings:ZaloZns:AppConfig:Title": "Cấu hình ứng dụng Zalo",
     "UpgradeSettings:ZaloZns:Templates:Title": "Cấu hình template ZNS/ZBS",
@@ -600,6 +602,11 @@
     "UpgradeSettings:ZaloZns:Template:BookingReminder": "Nhắc lịch chơi TemplateId",
     "UpgradeSettings:ZaloZns:Template:BookingChanged": "Cập nhật booking TemplateId",
     "UpgradeSettings:ZaloZns:Template:ServiceReview": "Đánh giá chất lượng dịch vụ TemplateId",
+
+    "UpgradeSettings:ZaloZns:Template:OrderSuccess": "Đặt hàng thành công TemplateId",
+    "UpgradeSettings:ZaloZns:Template:RedeemPoint": "Đổi điểm TemplateId",
+    "UpgradeSettings:ZaloZns:Template:ExchangeGift": "Đổi quà TemplateId",
+
     "FeatureGroup:MiniAppHomePage": "Cấu hình Trang chủ",
     "Feature:MiniAppHomePage": "Bật cấu hình Trang chủ",
     "Feature:MiniAppHomePageDesc": "Cho phép sử dụng chức năng quản lý cấu hình Trang chủ (sửa, sắp xếp, cấu hình widget tính năng, cập nhật trạng thái)",

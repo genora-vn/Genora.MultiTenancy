@@ -45,6 +45,7 @@ public class EmailTemplatesModel : AbpPageModel
         public EmailTemplateBlock BookingNewRequest { get; set; } = new();
         public EmailTemplateBlock BookingChangeRequest { get; set; } = new();
         public EmailTemplateBlock BookingCancelRequest { get; set; } = new();
+        public EmailTemplateBlock OrderProductRequest { get; set; } = new();
     }
 
     public async Task OnGetAsync()
@@ -61,6 +62,7 @@ public class EmailTemplatesModel : AbpPageModel
         Input.BookingNewRequest.SubjectTemplate = await _settingProvider.GetOrNullAsync(AppEmailSettingNames.BookingNew_SubjectTemplate);
         Input.BookingChangeRequest.SubjectTemplate = await _settingProvider.GetOrNullAsync(AppEmailSettingNames.BookingChange_SubjectTemplate);
         Input.BookingCancelRequest.SubjectTemplate = await _settingProvider.GetOrNullAsync(AppEmailSettingNames.BookingCancel_SubjectTemplate);
+        Input.OrderProductRequest.SubjectTemplate = await _settingProvider.GetOrNullAsync(AppEmailSettingNames.OrderProduct_SubjectTemplate);
     }
 
     public async Task<IActionResult> OnPostAsync()
@@ -96,6 +98,12 @@ public class EmailTemplatesModel : AbpPageModel
         await SetAsync(AppEmailSettingNames.BookingCancel_CcEmails, cc);
         await SetAsync(AppEmailSettingNames.BookingCancel_BccEmails, bcc);
         await SetAsync(AppEmailSettingNames.BookingCancel_SubjectTemplate, Input.BookingCancelRequest.SubjectTemplate);
+
+        // Order Product
+        await SetAsync(AppEmailSettingNames.OrderProduct_ToEmails, to);
+        await SetAsync(AppEmailSettingNames.OrderProduct_CcEmails, cc);
+        await SetAsync(AppEmailSettingNames.OrderProduct_BccEmails, bcc);
+        await SetAsync(AppEmailSettingNames.OrderProduct_SubjectTemplate, Input.OrderProductRequest.SubjectTemplate);
 
         Alerts.Success("Đã lưu cấu hình template Email.");
         return RedirectToPage();

@@ -40,6 +40,15 @@ public class ZaloSettingDefinitionProvider : SettingDefinitionProvider
                 .WithProviders(GlobalSettingValueProvider.ProviderName, TenantSettingValueProvider.ProviderName),
 
             new SettingDefinition(ZaloSettingNames.ZbsServiceReview, "", isVisibleToClients: true)
+                .WithProviders(GlobalSettingValueProvider.ProviderName, TenantSettingValueProvider.ProviderName),
+
+            new SettingDefinition(ZaloSettingNames.ZbsOrderSuccess, "", isVisibleToClients: true)
+                .WithProviders(GlobalSettingValueProvider.ProviderName, TenantSettingValueProvider.ProviderName),
+
+            new SettingDefinition(ZaloSettingNames.ZbsRedeemPoint, "", isVisibleToClients: true)
+                .WithProviders(GlobalSettingValueProvider.ProviderName, TenantSettingValueProvider.ProviderName),
+
+            new SettingDefinition(ZaloSettingNames.ZbsExchangeGift, "", isVisibleToClients: true)
                 .WithProviders(GlobalSettingValueProvider.ProviderName, TenantSettingValueProvider.ProviderName)
         );
     }

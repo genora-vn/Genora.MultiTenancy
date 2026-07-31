@@ -1,18 +1,23 @@
+using DocumentFormat.OpenXml.Drawing.Charts;
+using DocumentFormat.OpenXml.Office2016.Excel;
+using Genora.MultiTenancy.AppDtos.HoaLinh;
+using Genora.MultiTenancy.AppServices.AppZaloAuths;
+using Genora.MultiTenancy.DomainModels.AppCustomers;
+using Genora.MultiTenancy.DomainModels.AppHlPoints;
+using Genora.MultiTenancy.Enums;
+using Genora.MultiTenancy.Helpers;
+using Genora.MultiTenancy.HoaLinh;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Genora.MultiTenancy.AppDtos.HoaLinh;
-using Genora.MultiTenancy.DomainModels.AppCustomers;
-using Genora.MultiTenancy.DomainModels.AppHlPoints;
-using Genora.MultiTenancy.Enums;
-using Genora.MultiTenancy.HoaLinh;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using Volo.Abp;
 using Volo.Abp.Application.Services;
+using Volo.Abp.BackgroundJobs;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.MultiTenancy;
 using Volo.Abp.Uow;
@@ -36,6 +41,7 @@ public class HlPointAppService : ApplicationService, IHlPointAppService
     private readonly ICurrentTenant _currentTenant;
     private readonly HlLoyaltyOptions _loyaltyOptions;
     private readonly ILogger<HlPointAppService> _logger;
+    private readonly IBackgroundJobManager _jobManager;
 
     public HlPointAppService(
         IRepository<HlPointBatch, Guid> batchRepo,
@@ -45,7 +51,8 @@ public class HlPointAppService : ApplicationService, IHlPointAppService
         IUnitOfWorkManager uowManager,
         ICurrentTenant currentTenant,
         IOptionsSnapshot<HlLoyaltyOptions> loyaltyOptions,
-        ILogger<HlPointAppService> logger)
+        ILogger<HlPointAppService> logger,
+        IBackgroundJobManager jobManager)
     {
         _batchRepo = batchRepo;
         _txnRepo = txnRepo;
@@ -55,6 +62,7 @@ public class HlPointAppService : ApplicationService, IHlPointAppService
         _currentTenant = currentTenant;
         _loyaltyOptions = loyaltyOptions.Value;
         _logger = logger;
+        _jobManager = jobManager;
     }
 
     public async Task<HlPointBatchDto> RedeemFromCampaignAsync(HlRedeemPointInput input, CancellationToken ct = default)
@@ -168,6 +176,39 @@ public class HlPointAppService : ApplicationService, IHlPointAppService
         await _txnRepo.InsertAsync(txn, autoSave: false, cancellationToken: ct);
 
         await uow.CompleteAsync(ct);
+
+        // ✅ gửi ZBS “Đổi thưởng thành công”
+        if (!string.IsNullOrWhiteSpace(batch.CustomerPhone))
+        {
+            try
+            {
+                await _jobManager.EnqueueAsync(
+                    new ZbsSendJobArgs
+                    {
+                        TenantId = _currentTenant.Id,
+                        TemplateKey = "RedeemPoint",
+                        Phone = batch.CustomerPhone,
+                        TrackingId = batch.BatchCode,
+                        TemplateData = new
+                        {
+                            batch_code = batch.BatchCode,
+                            customer_name = batch.CustomerName,
+                            customer_code = batch.CustomerCode,
+                            membership_tier = batch.MembershipTier,
+                            campaign_name = batch.CampaignName,
+                            voucher_value = batch.VoucherValue,
+                            exchanged_at = batch.ExchangedAt,
+                            expire_date = batch.ExpireDate,
+                        }
+                    },
+                    priority: BackgroundJobPriority.Normal
+                );
+            }
+            catch
+            {
+                // không throw để không block luồng đăng ký
+            }
+        }
 
         _logger.LogInformation("HL redeem: {Cust} campaign={Camp} unit={Unit} value={Val}",
             input.CustomerCode, campaign.CampaignCode, unit, convertedValue);

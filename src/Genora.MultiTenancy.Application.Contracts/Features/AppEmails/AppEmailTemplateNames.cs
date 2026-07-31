@@ -4,4 +4,5 @@ public static class AppEmailTemplateNames
     public const string BookingNewRequest = "Genora.Booking.NewRequest";
     public const string BookingChangeRequest = "Genora.Booking.ChangeRequest";
     public const string BookingCancelRequest = "Genora.Booking.CancelRequest";
+    public const string OrderProductRequest = "Genora.Booking.OrderProductRequest";
 }

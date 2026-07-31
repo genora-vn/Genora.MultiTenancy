@@ -1,3 +1,11 @@
+using DocumentFormat.OpenXml.Office2016.Excel;
+using Genora.MultiTenancy.AppDtos.UrBox;
+using Genora.MultiTenancy.AppServices.AppZaloAuths;
+using Genora.MultiTenancy.DomainModels.AppCustomers;
+using Genora.MultiTenancy.DomainModels.AppHlGiftExchanges;
+using Genora.MultiTenancy.Enums;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -6,12 +14,8 @@ using System.Net.Http;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
-using Genora.MultiTenancy.AppDtos.UrBox;
-using Genora.MultiTenancy.DomainModels.AppCustomers;
-using Genora.MultiTenancy.DomainModels.AppHlGiftExchanges;
-using Genora.MultiTenancy.Enums;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
+using Volo.Abp.BackgroundJobs;
+using Volo.Abp.Domain.Entities;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.MultiTenancy;
 
@@ -31,6 +35,7 @@ public class UrBoxService : IUrBoxService
     private readonly IRepository<Customer, Guid> _customerRepo;
     private readonly ICurrentTenant _currentTenant;
     private readonly ILogger<UrBoxService> _logger;
+    private readonly IBackgroundJobManager _jobManager;
 
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
@@ -49,7 +54,8 @@ public class UrBoxService : IUrBoxService
         IRepository<HlGiftExchange, Guid> giftExchangeRepo,
         IRepository<Customer, Guid> customerRepo,
         ICurrentTenant currentTenant,
-        ILogger<UrBoxService> logger)
+        ILogger<UrBoxService> logger,
+        IBackgroundJobManager jobManager)
     {
         _httpFactory = httpFactory;
         _settings = settings.Value;
@@ -57,6 +63,7 @@ public class UrBoxService : IUrBoxService
         _customerRepo = customerRepo;
         _currentTenant = currentTenant;
         _logger = logger;
+        _jobManager = jobManager;
     }
 
     #region Brands (GET + query string)
@@ -357,6 +364,51 @@ public class UrBoxService : IUrBoxService
 
         // 7. Trừ tiền thưởng (BonusAmount) khi đổi quà thành công (done==1 && status==200)
         await DeductBonusAmountAsync(input.SiteUserId, exchange);
+
+        // ✅ gửi ZBS “Đổi quà thành công”
+        if (!string.IsNullOrWhiteSpace(exchange.CustomerPhone))
+        {
+            try
+            {
+                var customer = await _customerRepo.FirstOrDefaultAsync(x => x.CustomerCode == exchange.CustomerCode);
+                var cartResp = await GetCartByTransactionAsync(transactionId!);
+                var cart = cartResp?.Data;
+                string? expired = "";
+                if (cart != null && cartResp!.Status == UrBoxResponseStatus.Success)
+                {
+                    var item = cart.Detail?.FirstOrDefault();
+                    if (item != null)
+                    {
+                        expired = item?.Expired;
+                    }
+                }
+                await _jobManager.EnqueueAsync(
+                    new ZbsSendJobArgs
+                    {
+                        TenantId = _currentTenant.Id,
+                        TemplateKey = "ExchangeGift",
+                        Phone = exchange.CustomerPhone,
+                        TrackingId = exchange.CustomerCode,
+                        TemplateData = new
+                        {
+                            exchange_code = exchangeCode,
+                            customer_name = exchange.CustomerName,
+                            customer_code = exchange.CustomerCode,
+                            membership_tier = customer?.MembershipTier?.Name,
+                            gift_name = exchange.GiftName,
+                            quantity = exchange.Quantity,
+                            total_value = exchange.TotalPointsUsed,
+                            expiry_date = expired
+                        }
+                    },
+                    priority: BackgroundJobPriority.Normal
+                );
+            }
+            catch
+            {
+                // không throw để không block luồng đăng ký
+            }
+        }
 
         _logger.LogInformation("UrBox redeem OK: tx={Tx} cartId={CartId} code={Code} exchangeId={ExId}",
             transactionId, result.Data?.Cart?.Id, firstCode?.Code, exchange.Id);

@@ -34,5 +34,14 @@ public class AppEmailTemplateDefinitionProvider : TemplateDefinitionProvider
                     isInlineLocalized: true
                 )
         );
+
+        context.Add(
+            new TemplateDefinition(AppEmailTemplateNames.OrderProductRequest)
+                .WithScribanEngine()
+                .WithVirtualFilePath(
+                    "/AppServices/AppEmails/Templates/OrderProductRequest.tpl",
+                    isInlineLocalized: true
+                )
+        );
     }
 }

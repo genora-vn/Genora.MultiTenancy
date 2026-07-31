@@ -27,6 +27,10 @@ public class ZaloZbsTemplateResolver : IZaloZbsTemplateResolver
             "BookingReminder" => await _sp.GetOrNullAsync(ZaloSettingNames.ZbsBookingReminder),
             "BookingChanged" => await _sp.GetOrNullAsync(ZaloSettingNames.ZbsBookingChanged),
             "ServiceReview" => await _sp.GetOrNullAsync(ZaloSettingNames.ZbsServiceReview),
+
+            "OrderSuccess" => await _sp.GetOrNullAsync(ZaloSettingNames.ZbsOrderSuccess),
+            "RedeemPoint" => await _sp.GetOrNullAsync(ZaloSettingNames.ZbsRedeemPoint),
+            "ExchangeGift" => await _sp.GetOrNullAsync(ZaloSettingNames.ZbsExchangeGift),
             _ => null
         };
     }

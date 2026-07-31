@@ -14,4 +14,9 @@ public static class ZaloSettingNames
     public const string ZbsBookingReminder = "Genora.Zalo.Zbs.Templates.BookingReminder";
     public const string ZbsBookingChanged = "Genora.Zalo.Zbs.Templates.BookingChanged";
     public const string ZbsServiceReview = "Genora.Zalo.Zbs.Templates.ServiceReview";
+
+    // Hoa Linh ZBS
+    public const string ZbsOrderSuccess = "Genora.Zalo.Zbs.Templates.OrderSuccess";
+    public const string ZbsRedeemPoint = "Genora.Zalo.Zbs.Templates.RedeemPoint";
+    public const string ZbsExchangeGift = "Genora.Zalo.Zbs.Templates.ExchangeGift";
 }

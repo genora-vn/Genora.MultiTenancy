@@ -112,5 +112,41 @@ public class AppEmailSettingDefinitionProvider : SettingDefinitionProvider
                 TenantSettingValueProvider.ProviderName
             )
         );
+
+        // ===== Order Product Request =====
+        context.Add(
+           new SettingDefinition(
+               AppEmailSettingNames.OrderProduct_ToEmails,
+               defaultValue: "",
+               isVisibleToClients: false
+           ).WithProviders(
+               GlobalSettingValueProvider.ProviderName,
+               TenantSettingValueProvider.ProviderName
+           ),
+           new SettingDefinition(
+               AppEmailSettingNames.OrderProduct_CcEmails,
+               defaultValue: "",
+               isVisibleToClients: false
+           ).WithProviders(
+               GlobalSettingValueProvider.ProviderName,
+               TenantSettingValueProvider.ProviderName
+           ),
+           new SettingDefinition(
+               AppEmailSettingNames.OrderProduct_BccEmails,
+               defaultValue: "",
+               isVisibleToClients: false
+           ).WithProviders(
+               GlobalSettingValueProvider.ProviderName,
+               TenantSettingValueProvider.ProviderName
+           ),
+           new SettingDefinition(
+               AppEmailSettingNames.OrderProduct_SubjectTemplate,
+               defaultValue: "",
+               isVisibleToClients: false
+           ).WithProviders(
+               GlobalSettingValueProvider.ProviderName,
+               TenantSettingValueProvider.ProviderName
+           )
+       );
     }
 }
