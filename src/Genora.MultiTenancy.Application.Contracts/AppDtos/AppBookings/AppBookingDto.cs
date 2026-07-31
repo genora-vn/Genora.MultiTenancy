@@ -18,6 +18,7 @@ public class AppBookingPlayerDto : EntityDto<Guid>
     public string? VgaCode { get; set; }
     public Guid? CaddieId { get; set; }
     public Guid? CaddieBookingId { get; set; }
+    public Guid? AppCaddieBookingDetailId { get; set; }
     public string? CaddieName { get; set; }
 }
 public class BookingFilter
@@ -53,6 +54,7 @@ public class AppBookingDto : FullAuditedEntityDto<Guid>
 
     public decimal? PricePerGolfer { get; set; }
     public decimal TotalAmount { get; set; }
+    public decimal? TotalCaddieFee { get; set; }
     public string? FrameTimes { get; set; }
     public short? NumberHoles { get; set; }
     public string? Utilities { get; set; }

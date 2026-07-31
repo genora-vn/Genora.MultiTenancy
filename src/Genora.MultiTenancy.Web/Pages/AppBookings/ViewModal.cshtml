@@ -91,9 +91,28 @@
             <div class="col-md-4 mb-2">
                 <strong>@L["BookingPaymentMethod"]:</strong> @Model.PaymentMethodText
             </div>
-            <div class="col-md-4 mb-2">
-                <strong>@L["TotalAmount"]:</strong> @Model.TotalAmountText
-            </div>
+            @{
+                var hasCaddieFee = Model.Booking.TotalCaddieFee.HasValue && Model.Booking.TotalCaddieFee.Value > 0;
+            }
+            @if (hasCaddieFee)
+            {
+                <div class="col-md-4 mb-2">
+                    <strong>Tổng phí Caddy:</strong> @Model.TotalCaddieFeeText
+                </div>
+                <div class="col-md-4 mb-2">
+                    <strong>Tổng tiền Booking:</strong> @Model.TotalBookingText
+                </div>
+                <div class="col-md-4 mb-2">
+                    <strong>@L["TotalAmount"]:</strong> @Model.TotalAmountText
+                </div>
+            }
+            else
+            {
+                @* Không có phí Caddie (tenant khác) — chỉ hiển thị Tổng tiền như cũ *@
+                <div class="col-md-4 mb-2">
+                    <strong>@L["TotalAmount"]:</strong> @Model.TotalAmountText
+                </div>
+            }
             <div class="col-md-4 mb-2">
                 <strong>@L["BookingSource"]:</strong> @Model.SourceText
             </div>
@@ -107,12 +126,17 @@
 
             @if (Model.Booking.Players != null && Model.Booking.Players.Count > 0)
             {
+                var showCaddieColumn = Model.Booking.Players.Any(p => !string.IsNullOrWhiteSpace(p.CaddieName));
                 <div class="table-responsive">
                     <table class="table table-sm table-bordered align-middle mb-0">
                         <thead class="table-light">
                             <tr>
-                                <th style="width: 30%">@L["PlayerName"]</th>
-                                <th style="width: 20%">@L["VGA"]</th>
+                                <th style="width: 25%">@L["PlayerName"]</th>
+                                @if (showCaddieColumn)
+                                {
+                                    <th style="width: 20%">Caddy</th>
+                                }
+                                <th style="width: 15%">@L["VGA"]</th>
                                 <th style="width: 20%">@L["Price"]</th>
                                 <th>@L["Notes"]</th>
                             </tr>
@@ -122,6 +146,10 @@
                             {
                                 <tr>
                                     <td>@p.PlayerName</td>
+                                    @if (showCaddieColumn)
+                                    {
+                                        <td>@(string.IsNullOrWhiteSpace(p.CaddieName) ? "—" : p.CaddieName)</td>
+                                    }
                                     <td>@p.VgaCode</td>
                                     <td class="text-end">@((p.PricePerPlayer ?? 0m).ToString("N0"))</td>
                                     <td>@p.Notes</td>

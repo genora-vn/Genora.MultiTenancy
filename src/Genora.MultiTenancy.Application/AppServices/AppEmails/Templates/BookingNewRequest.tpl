@@ -93,6 +93,16 @@
                     <td>Tổng giá trị đặt chỗ</td>
                     <td><b>{{ model.TotalAmountText }}</b></td>
                 </tr>
+                {{ if model.HasCaddieFee }}
+                <tr>
+                    <td>Tổng phí đặt Caddie</td>
+                    <td><b>{{ model.TotalCaddieFeeText }}</b></td>
+                </tr>
+                <tr>
+                    <td>Tổng cộng</td>
+                    <td><b>{{ model.GrandTotalText }}</b></td>
+                </tr>
+                {{ end }}
                 <tr>
                     <td>Phương thức thanh toán</td>
                     <td>{{ model.PaymentMethod }}</td>

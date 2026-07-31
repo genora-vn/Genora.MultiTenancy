@@ -22,8 +22,11 @@ public class CreateUpdateBookingPlayerDto
     /// <summary>Caddie đã đặt cho người chơi này</summary>
     public Guid? CaddieId { get; set; }
 
-    /// <summary>Id booking Caddie (AppCaddieBooking) liên kết</summary>
+    /// <summary>Id booking Caddie (AppCaddieBooking - HEADER) liên kết</summary>
     public Guid? CaddieBookingId { get; set; }
+
+    /// <summary>Id dòng chi tiết Caddie (AppCaddieBookingDetail) gán cho người chơi</summary>
+    public Guid? AppCaddieBookingDetailId { get; set; }
 
     /// <summary>Tên Caddie (denormalize)</summary>
     [StringLength(255)]
@@ -56,6 +59,9 @@ public class CreateUpdateAppBookingDto
 
     [Range(0, double.MaxValue)]
     public decimal TotalAmount { get; set; }
+
+    /// <summary>Tổng phí thuê Caddie đi kèm (VNĐ, được phép null). Đã cộng vào TotalAmount.</summary>
+    public decimal? TotalCaddieFee { get; set; }
 
     [Required]
     public PaymentMethod? PaymentMethod { get; set; }

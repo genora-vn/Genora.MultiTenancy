@@ -113,57 +113,59 @@
     <div class="row g-3">
         <!-- Left: Main Content -->
         <div class="col-lg-8">
-            <!-- Chi tiết đánh giá Caddy -->
+            <!-- Chi tiết đánh giá Caddy (theo từng Caddie) -->
             <div class="card mb-3" style="border:1px solid rgba(192,199,212,0.2);border-radius:16px;">
-                <div class="card-header" style="border-bottom:1px solid rgba(192,199,212,0.15);padding:16px 24px;background:transparent;">
+                <div class="card-header d-flex align-items-center justify-content-between" style="border-bottom:1px solid rgba(192,199,212,0.15);padding:16px 24px;background:transparent;">
                     <h5 style="font-weight:700;margin:0;">Chi tiết đánh giá Caddy</h5>
+                    @if (Model.CaddieRatings.Any())
+                    {
+                        <span style="font-size:11px;font-weight:700;color:var(--caddie-primary);background:var(--caddie-surface-container-high);padding:3px 10px;border-radius:20px;">@Model.CaddieRatings.Count đánh giá</span>
+                    }
                 </div>
                 <div class="card-body p-4">
-                    @if (Model.RatingDetails.Any())
+                    @if (Model.CaddieRatings.Any())
                     {
-                        <div style="display:grid;grid-template-columns:1fr;gap:20px;">
-                            @foreach (var skill in Model.RatingDetails)
-                            {
-                                <div class="d-flex align-items-center justify-content-between">
-                                    <span style="font-weight:500;color:var(--caddie-on-surface);">@skill.SkillName</span>
+                        foreach (var rating in Model.CaddieRatings)
+                        {
+                            <div style="border:1px solid rgba(192,199,212,0.2);border-radius:12px;padding:16px;margin-bottom:16px;">
+                                <div class="d-flex align-items-center justify-content-between mb-3" style="border-bottom:1px solid rgba(192,199,212,0.15);padding-bottom:10px;">
+                                    <span style="font-weight:700;color:var(--caddie-on-surface);"><i class="fa fa-user-tie me-1" style="color:var(--caddie-primary);"></i>@(rating.CaddieName ?? "—")</span>
                                     <span>
                                         @for (int i = 1; i <= 5; i++)
                                         {
-                                            if (i <= skill.Score)
-                                            {
-                                                <i class="fa fa-star" style="color:#f59e0b;font-size:16px;"></i>
-                                            }
-                                            else
-                                            {
-                                                <i class="fa fa-star" style="color:#e2e8f0;font-size:16px;"></i>
-                                            }
+                                            <i class="fa fa-star" style="color:@(i <= rating.OverallRating ? "#f59e0b" : "#e2e8f0");font-size:14px;"></i>
                                         }
                                     </span>
                                 </div>
-                            }
-                        </div>
+                                @if (rating.Details.Any())
+                                {
+                                    <div style="display:grid;grid-template-columns:1fr;gap:14px;margin-bottom:@(string.IsNullOrEmpty(rating.Comment) ? "0" : "14px");">
+                                        @foreach (var skill in rating.Details)
+                                        {
+                                            <div class="d-flex align-items-center justify-content-between">
+                                                <span style="font-weight:500;color:var(--caddie-on-surface);font-size:14px;">@skill.SkillName</span>
+                                                <span>
+                                                    @for (int i = 1; i <= 5; i++)
+                                                    {
+                                                        <i class="fa fa-star" style="color:@(i <= skill.Score ? "#f59e0b" : "#e2e8f0");font-size:15px;"></i>
+                                                    }
+                                                </span>
+                                            </div>
+                                        }
+                                    </div>
+                                }
+                                @if (!string.IsNullOrEmpty(rating.Comment))
+                                {
+                                    <div style="background:var(--caddie-surface-container-low);border-left:4px solid var(--caddie-primary);padding:12px 16px;border-radius:0 8px 8px 0;">
+                                        <p style="font-style:italic;color:var(--caddie-on-surface);line-height:1.6;margin:0;font-size:0.9rem;">@rating.Comment</p>
+                                    </div>
+                                }
+                            </div>
+                        }
                     }
                     else
                     {
                         <p style="color:var(--caddie-outline);margin:0;font-style:italic;">Chưa có đánh giá cho booking này.</p>
-                    }
-                </div>
-            </div>
-
-            <!-- Đánh giá từ khách hàng -->
-            <div class="card mb-3" style="border:1px solid rgba(192,199,212,0.2);border-radius:16px;">
-                <div class="card-body p-4">
-                    <h5 style="font-weight:700;margin-bottom:16px;">Đánh giá từ khách hàng</h5>
-                    @if (!string.IsNullOrEmpty(Model.RatingComment))
-                    {
-                        <div style="background:var(--caddie-surface-container-low);border-left:4px solid var(--caddie-primary);padding:20px 24px;border-radius:0 12px 12px 0;">
-                            <span style="color:rgba(0,94,164,0.3);font-size:2rem;line-height:1;display:block;margin-bottom:8px;font-family:serif;">"</span>
-                            <p style="font-style:italic;color:var(--caddie-on-surface);line-height:1.7;margin:0;font-size:0.95rem;">@Model.RatingComment</p>
-                        </div>
-                    }
-                    else
-                    {
-                        <p style="color:var(--caddie-outline);margin:0;font-style:italic;">Chưa có nhận xét từ khách hàng.</p>
                     }
                 </div>
             </div>
@@ -208,60 +210,71 @@
                 </div>
             </div>
 
-            <!-- Thông tin Caddy -->
+            <!-- Thông tin Caddy (hỗ trợ nhiều Caddie) -->
             <div class="card mb-3" style="border:1px solid rgba(192,199,212,0.2);border-radius:16px;">
                 <div class="card-body p-4">
-                    <h5 style="font-weight:700;margin-bottom:16px;">Thông tin Caddy</h5>
-                    <div class="d-flex align-items-center gap-3 mb-3">
-                        @if (!string.IsNullOrEmpty(Model.CaddieAvatar))
-                        {
-                            <div style="position:relative;">
-                                <img src="@Model.CaddieAvatar" style="width:52px;height:52px;border-radius:12px;object-fit:cover;box-shadow:0 2px 8px rgba(0,0,0,0.1);" onerror="this.style.display='none';this.parentElement.querySelector('.caddie-initials-fallback').style.display='flex';" />
-                                <div class="caddie-initials-fallback d-none align-items-center justify-content-center" style="width:52px;height:52px;background:var(--caddie-surface-container-high);color:var(--caddie-on-surface);font-weight:700;border-radius:12px;">@caddyInitials</div>
-                                <span style="position:absolute;bottom:-3px;right:-3px;width:12px;height:12px;background:#22c55e;border:2px solid #fff;border-radius:50%;"></span>
-                            </div>
-                        }
-                        else
-                        {
-                            <div class="d-flex align-items-center justify-content-center" style="width:52px;height:52px;background:var(--caddie-surface-container-high);color:var(--caddie-on-surface);font-weight:700;border-radius:12px;">@caddyInitials</div>
-                        }
-                        <div>
-                            <div style="font-weight:700;">@(Model.Booking.CaddieName ?? "—")</div>
-                            <div style="font-size:12px;color:var(--caddie-on-surface-variant);">Mã Caddy: <span style="color:var(--caddie-on-surface);">@(Model.Booking.CaddieCode ?? "—")</span></div>
-                            <div class="caddie-phone-hover" style="font-size:12px;color:var(--caddie-on-surface-variant);cursor:pointer;" title="Hover để xem số đầy đủ"
-                                 data-masked="SĐT: @(Model.CaddiePhoneMasked ?? "—")" data-full="SĐT: @(Model.CaddiePhone ?? "—")">
-                                SĐT: @(Model.CaddiePhoneMasked ?? "—")
-                            </div>
-                        </div>
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <h5 style="font-weight:700;margin:0;">Thông tin Caddy</h5>
+                        <span style="font-size:11px;font-weight:700;color:var(--caddie-primary);background:var(--caddie-surface-container-high);padding:3px 10px;border-radius:20px;">@Model.Caddies.Count Caddy</span>
                     </div>
-                    <!-- Caddie rating stars -->
-                    <div style="border-top:1px solid rgba(192,199,212,0.2);padding-top:12px;margin-bottom:12px;">
-                        <div style="font-size:10px;font-weight:700;color:var(--caddie-on-surface-variant);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px;">Đánh giá sao</div>
-                        <div class="d-flex align-items-center gap-2">
-                            <span>
-                                @{
-                                    var caddieStars = (int)Math.Floor(Model.CaddieRatingAvg);
-                                }
-                                @for (int i = 1; i <= 5; i++)
-                                {
-                                    if (i <= caddieStars)
+
+                    @if (!Model.Caddies.Any())
+                    {
+                        <p style="color:var(--caddie-outline);margin:0;font-style:italic;">Chưa có Caddy nào trong booking.</p>
+                    }
+                    else
+                    {
+                        var canChangeCaddy = Model.CanEdit && Model.Booking.Status != 3 && Model.Booking.Status != 4;
+                        foreach (var c in Model.Caddies)
+                        {
+                            var cInitials = string.Join("", (c.CaddieName ?? "?").Split(' ').Select(n => n.FirstOrDefault())).ToUpper();
+                            if (cInitials.Length > 2) cInitials = cInitials[..2];
+                            var cStars = (int)Math.Floor(c.RatingAvg);
+                            <div class="caddie-info-block" style="border:1px solid rgba(192,199,212,0.2);border-radius:12px;padding:14px;margin-bottom:12px;">
+                                <div class="d-flex align-items-center gap-3 mb-2">
+                                    @if (!string.IsNullOrEmpty(c.Avatar))
                                     {
-                                        <i class="fa fa-star" style="color:#f59e0b;font-size:14px;"></i>
+                                        <div style="position:relative;">
+                                            <img src="@c.Avatar" style="width:48px;height:48px;border-radius:12px;object-fit:cover;box-shadow:0 2px 8px rgba(0,0,0,0.1);" onerror="this.style.display='none';this.parentElement.querySelector('.caddie-initials-fallback').style.display='flex';" />
+                                            <div class="caddie-initials-fallback d-none align-items-center justify-content-center" style="width:48px;height:48px;background:var(--caddie-surface-container-high);color:var(--caddie-on-surface);font-weight:700;border-radius:12px;">@cInitials</div>
+                                        </div>
                                     }
                                     else
                                     {
-                                        <i class="fa fa-star" style="color:#cbd5e1;font-size:14px;"></i>
+                                        <div class="d-flex align-items-center justify-content-center" style="width:48px;height:48px;background:var(--caddie-surface-container-high);color:var(--caddie-on-surface);font-weight:700;border-radius:12px;">@cInitials</div>
                                     }
+                                    <div class="flex-grow-1">
+                                        <div style="font-weight:700;">@(c.CaddieName ?? "—")</div>
+                                        <div style="font-size:12px;color:var(--caddie-on-surface-variant);">Mã: <span style="color:var(--caddie-on-surface);">@(c.CaddieCode ?? "—")</span></div>
+                                        <div class="caddie-phone-hover" style="font-size:12px;color:var(--caddie-on-surface-variant);cursor:pointer;" title="Hover để xem số đầy đủ"
+                                             data-masked="SĐT: @(c.PhoneMasked ?? "—")" data-full="SĐT: @(c.Phone ?? "—")">
+                                            SĐT: @(c.PhoneMasked ?? "—")
+                                        </div>
+                                    </div>
+                                    <div class="text-end">
+                                        <div class="d-flex align-items-center gap-1 justify-content-end">
+                                            @for (int i = 1; i <= 5; i++)
+                                            {
+                                                <i class="fa fa-star" style="color:@(i <= cStars ? "#f59e0b" : "#cbd5e1");font-size:12px;"></i>
+                                            }
+                                        </div>
+                                        <strong style="font-size:13px;">@c.RatingAvg.ToString("0.0")</strong>
+                                    </div>
+                                </div>
+                                @if (!string.IsNullOrWhiteSpace(c.Note))
+                                {
+                                    <div style="font-size:12px;color:var(--caddie-on-surface-variant);background:var(--caddie-surface-container-low);border-radius:8px;padding:8px 10px;margin-bottom:8px;">
+                                        <i class="fa fa-sticky-note me-1"></i>@c.Note
+                                    </div>
                                 }
-                            </span>
-                            <strong style="font-size:14px;">@Model.CaddieRatingAvg.ToString("0.0")</strong>
-                        </div>
-                    </div>
-                    @if (Model.CanEdit && Model.Booking.Status != 3 && Model.Booking.Status != 4)
-                    {
-                        <button class="btn btn-light w-100 mt-2" style="font-weight:700;font-size:12px;border-radius:8px;" id="btnChangeCaddy">
-                            <i class="fa fa-sync me-1"></i> Thay đổi Caddy
-                        </button>
+                                @if (canChangeCaddy)
+                                {
+                                    <button class="btn btn-light w-100 btn-change-caddy" data-old-caddie-id="@c.CaddieId" style="font-weight:700;font-size:12px;border-radius:8px;">
+                                        <i class="fa fa-sync me-1"></i> Thay đổi Caddy này
+                                    </button>
+                                }
+                            </div>
+                        }
                     }
                 </div>
             </div>

@@ -348,6 +348,8 @@ public class MultiTenancyDbContext :
 
             b.Property(x => x.NumberHole).HasMaxLength(20);
 
+            b.Property(x => x.TotalCaddieFee).HasColumnType("decimal(18,2)");
+
             b.Property(x => x.Utility).HasMaxLength(20).HasColumnName("Ultility");
 
             b.Property(x => x.IsExportInvoice);

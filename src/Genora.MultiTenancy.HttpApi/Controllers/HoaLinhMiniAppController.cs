@@ -227,9 +227,20 @@ public class HoaLinhMiniAppController : MultiTenancyController
     /// Lấy danh sách sản phẩm
     /// </summary>
     [HttpGet("product-group")]
-    public async Task<IActionResult> GetProductGroups([FromQuery] int page = 1, [FromQuery] int limit = 20)
+    public async Task<IActionResult> GetProductGroups([FromQuery] int page = 1, [FromQuery] int limit = 20, [FromQuery] short? isCombo = 0)
     {
-        var result = await _hlApi.GetProductGroupsAsync(page, limit);
+        var result = await _hlApi.GetProductGroupsAsync(page, limit, isCombo);
+        return Ok(result);
+    }
+
+    /// <summary>
+    /// Lấy danh sách sản phẩm combo (mỗi combo gồm nhiều dòng sản phẩm)
+    /// GET /api/mini-app/hl/product-combos?page={page}&amp;limit={limit}
+    /// </summary>
+    [HttpGet("product-combos")]
+    public async Task<IActionResult> GetProductCombos([FromQuery] int page = 1, [FromQuery] int limit = 50)
+    {
+        var result = await _hlApi.GetProductCombosAsync(page, limit);
         return Ok(result);
     }
 
@@ -830,6 +841,38 @@ public class HoaLinhMiniAppController : MultiTenancyController
         });
 
         return Ok(HlApiResult<object>.Ok(result));
+    }
+
+    /// <summary>
+    /// Cập nhật trạng thái quà đã sử dụng (HlGiftExchangeStatus.Used = 3).
+    /// POST /api/mini-app/hl/gift-exchange/{id}/mark-used
+    /// Body (tùy chọn): { customerCode } — nếu truyền sẽ guard đúng chủ quà.
+    /// </summary>
+    [HttpPost("gift-exchange/{id}/mark-used")]
+    public async Task<IActionResult> MarkGiftExchangeUsed(Guid id, [FromBody] HlMarkGiftUsedRequest? request = null)
+    {
+        var gift = await _giftRepo.FindAsync(id);
+        if (gift == null)
+            return Ok(HlApiResult<object>.Fail("Không tìm thấy yêu cầu đổi quà"));
+
+        // Guard chủ quà (nếu client truyền customerCode)
+        if (request != null && !string.IsNullOrWhiteSpace(request.CustomerCode)
+            && !string.Equals(gift.CustomerCode, request.CustomerCode, StringComparison.OrdinalIgnoreCase))
+            return Ok(HlApiResult<object>.Fail("Bạn không có quyền cập nhật quà này"));
+
+        // Chỉ quà đã đổi thành công mới được đánh dấu đã sử dụng
+        if (gift.Status != HlGiftExchangeStatus.Success && gift.Status != HlGiftExchangeStatus.Used)
+            return Ok(HlApiResult<object>.Fail("Chỉ quà đã đổi thành công mới được đánh dấu đã sử dụng"));
+
+        if (gift.Status == HlGiftExchangeStatus.Used)
+            return Ok(HlApiResult<object>.Ok(new { gift.Id, Status = (int)gift.Status, StatusText = gift.Status.ToString() }, "Quà đã ở trạng thái đã sử dụng"));
+
+        gift.Status = HlGiftExchangeStatus.Used;
+        await _giftRepo.UpdateAsync(gift, autoSave: true);
+
+        return Ok(HlApiResult<object>.Ok(
+            new { gift.Id, gift.ExchangeCode, Status = (int)gift.Status, StatusText = gift.Status.ToString() },
+            "Đã cập nhật quà đã sử dụng"));
     }
 
     #endregion

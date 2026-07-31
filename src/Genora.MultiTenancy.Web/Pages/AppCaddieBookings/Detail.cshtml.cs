@@ -23,20 +23,39 @@ public class DetailModel : MultiTenancyPageModel
     public bool CanEdit { get; set; }
     public bool CanDelete { get; set; }
 
-    // Extra data for detail page
-    public string? CaddieAvatar { get; set; }
-    public string? CaddiePhone { get; set; }
-    public string? CaddiePhoneMasked { get; set; }
-    public decimal CaddieRatingAvg { get; set; }
+    // Danh sách Caddie đã book trong booking (hỗ trợ nhiều Caddie)
+    public List<BookingCaddieInfo> Caddies { get; set; } = new();
+    // Đánh giá theo từng Caddie (1 booking nhiều Caddie → nhiều đánh giá)
+    public List<CaddieRatingInfo> CaddieRatings { get; set; } = new();
+
     public string? CustomerAvatar { get; set; }
     public string? CustomerCode { get; set; }
-    public List<CaddieRatingDetailDto> RatingDetails { get; set; } = new();
-    public string? RatingComment { get; set; }
-    public Guid? RatingId { get; set; }
+
+    public class BookingCaddieInfo
+    {
+        public Guid CaddieId { get; set; }
+        public string? CaddieName { get; set; }
+        public string? CaddieCode { get; set; }
+        public string? Avatar { get; set; }
+        public string? Phone { get; set; }
+        public string? PhoneMasked { get; set; }
+        public decimal RatingAvg { get; set; }
+        public string? Note { get; set; }
+    }
+
+    public class CaddieRatingInfo
+    {
+        public Guid CaddieId { get; set; }
+        public string? CaddieName { get; set; }
+        public int OverallRating { get; set; }
+        public string? Comment { get; set; }
+        public List<CaddieRatingDetailDto> Details { get; set; } = new();
+    }
 
     private readonly CaddieBookingAppService _bookingService;
     private readonly IAuthorizationService _authorizationService;
     private readonly IRepository<AppCaddie, Guid> _caddieRepo;
+    private readonly IRepository<AppCaddieBookingDetail, Guid> _bookingDetailRepo;
     private readonly IRepository<Customer, Guid> _customerRepo;
     private readonly IRepository<AppCaddieRating, Guid> _ratingRepo;
     private readonly IRepository<AppCaddieRatingDetail, Guid> _ratingDetailRepo;
@@ -47,6 +66,7 @@ public class DetailModel : MultiTenancyPageModel
         CaddieBookingAppService bookingService,
         IAuthorizationService authorizationService,
         IRepository<AppCaddie, Guid> caddieRepo,
+        IRepository<AppCaddieBookingDetail, Guid> bookingDetailRepo,
         IRepository<Customer, Guid> customerRepo,
         IRepository<AppCaddieRating, Guid> ratingRepo,
         IRepository<AppCaddieRatingDetail, Guid> ratingDetailRepo,
@@ -56,6 +76,7 @@ public class DetailModel : MultiTenancyPageModel
         _bookingService = bookingService;
         _authorizationService = authorizationService;
         _caddieRepo = caddieRepo;
+        _bookingDetailRepo = bookingDetailRepo;
         _customerRepo = customerRepo;
         _ratingRepo = ratingRepo;
         _ratingDetailRepo = ratingDetailRepo;
@@ -75,16 +96,34 @@ public class DetailModel : MultiTenancyPageModel
             ? (await _authorizationService.AuthorizeAsync(User, MultiTenancyPermissions.AppCaddieBookings.Delete)).Succeeded
             : (await _authorizationService.AuthorizeAsync(User, MultiTenancyPermissions.HostAppCaddieBookings.Delete)).Succeeded;
 
-        // Load caddie extra info
+        // Load danh sách Caddie đã book trong booking (từ AppCaddieBookingDetails)
         try
         {
-            var caddie = await _caddieRepo.GetAsync(Booking.CaddieId);
-            CaddieAvatar = caddie.Avatar;
-            CaddiePhone = caddie.Phone;
-            CaddiePhoneMasked = MaskPhone(caddie.Phone);
-            CaddieRatingAvg = caddie.RatingAvg;
+            var detailQuery = (await _bookingDetailRepo.GetQueryableAsync())
+                .Where(d => d.CaddieBookingId == Id);
+            var bookingDetails = await _asyncExecuter.ToListAsync(detailQuery);
+
+            var caddieIds = bookingDetails.Select(d => d.CaddieId).Distinct().ToList();
+            var caddieList = await _asyncExecuter.ToListAsync(
+                (await _caddieRepo.GetQueryableAsync()).Where(c => caddieIds.Contains(c.Id)));
+
+            Caddies = bookingDetails.Select(d =>
+            {
+                var caddie = caddieList.FirstOrDefault(c => c.Id == d.CaddieId);
+                return new BookingCaddieInfo
+                {
+                    CaddieId = d.CaddieId,
+                    CaddieName = caddie?.CaddieName,
+                    CaddieCode = caddie?.CaddieCode,
+                    Avatar = caddie?.Avatar,
+                    Phone = caddie?.Phone,
+                    PhoneMasked = MaskPhone(caddie?.Phone),
+                    RatingAvg = caddie?.RatingAvg ?? 0,
+                    Note = d.Note
+                };
+            }).ToList();
         }
-        catch { /* caddie may not exist */ }
+        catch { /* details may not exist */ }
 
         // Load customer avatar
         try
@@ -95,31 +134,39 @@ public class DetailModel : MultiTenancyPageModel
         }
         catch { /* customer may not exist */ }
 
-        // Load rating for this booking
+        // Load đánh giá theo từng Caddie (1 booking nhiều Caddie → nhiều đánh giá)
         try
         {
             var ratingQuery = (await _ratingRepo.GetQueryableAsync())
                 .Where(x => x.BookingId == Id);
-            var rating = await _asyncExecuter.FirstOrDefaultAsync(ratingQuery);
-            if (rating != null)
+            var ratings = await _asyncExecuter.ToListAsync(ratingQuery);
+
+            if (ratings.Any())
             {
-                RatingId = rating.Id;
-                RatingComment = rating.Comment;
+                var ratingIds = ratings.Select(r => r.Id).ToList();
+                var allDetails = await _asyncExecuter.ToListAsync(
+                    (await _ratingDetailRepo.GetQueryableAsync()).Where(x => ratingIds.Contains(x.RatingId)));
 
-                var detailQuery = (await _ratingDetailRepo.GetQueryableAsync())
-                    .Where(x => x.RatingId == rating.Id);
-                var details = await _asyncExecuter.ToListAsync(detailQuery);
+                var skillIds = allDetails.Select(x => x.SkillId).Distinct().ToList();
+                var skills = await _asyncExecuter.ToListAsync(
+                    (await _skillRepo.GetQueryableAsync()).Where(x => skillIds.Contains(x.Id)));
 
-                var skillIds = details.Select(x => x.SkillId).ToList();
-                var skillQuery = (await _skillRepo.GetQueryableAsync())
-                    .Where(x => skillIds.Contains(x.Id));
-                var skills = await _asyncExecuter.ToListAsync(skillQuery);
-
-                RatingDetails = details.Select(d => new CaddieRatingDetailDto
+                CaddieRatings = ratings.Select(r =>
                 {
-                    SkillId = d.SkillId,
-                    SkillName = skills.FirstOrDefault(s => s.Id == d.SkillId)?.SkillName,
-                    Score = d.Score
+                    var caddie = Caddies.FirstOrDefault(c => c.CaddieId == r.CaddieId);
+                    return new CaddieRatingInfo
+                    {
+                        CaddieId = r.CaddieId,
+                        CaddieName = caddie?.CaddieName,
+                        OverallRating = r.OverallRating,
+                        Comment = r.Comment,
+                        Details = allDetails.Where(d => d.RatingId == r.Id).Select(d => new CaddieRatingDetailDto
+                        {
+                            SkillId = d.SkillId,
+                            SkillName = skills.FirstOrDefault(s => s.Id == d.SkillId)?.SkillName,
+                            Score = d.Score
+                        }).ToList()
+                    };
                 }).ToList();
             }
         }

@@ -73,3 +73,11 @@ public class HlCreateGiftExchangeRequest
     public string? Note { get; set; }
     public string? DeliveryAddress { get; set; }
 }
+
+/// <summary>
+/// Request đánh dấu quà đã sử dụng (mini app gọi). customerCode tùy chọn — nếu truyền sẽ guard đúng chủ quà.
+/// </summary>
+public class HlMarkGiftUsedRequest
+{
+    public string? CustomerCode { get; set; }
+}

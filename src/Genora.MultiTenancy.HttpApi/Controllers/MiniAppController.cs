@@ -476,16 +476,30 @@ public class MiniAppController : MultiTenancyController
     }
 
     /// <summary>
-    /// POST đặt caddie
+    /// POST đặt caddie (UPSERT: có caddieBookingId → cập nhật, không có → tạo mới)
     /// POST /api/mini-app/caddie/booking
-    /// Body: { customerId, caddieId, bookingDate, startTime, numberOfHoles, note }
+    /// Body: { caddieBookingId?, customerId, caddies:[{caddieId, note}], bookingDate, startTime, numberOfHoles, paymentMethod, note }
     /// </summary>
     [HttpPost("caddie/booking")]
     [AllowAnonymous]
     public async Task<MiniAppCreatedCaddieBookingResponse> CreateCaddieBooking([FromBody] MiniAppCreateCaddieBookingDto input)
     {
         var result = await _miniCaddie.CreateBookingAsync(input);
-        return new MiniAppCreatedCaddieBookingResponse { Error = 0, Message = "Đặt caddy thành công", Data = result };
+        var isUpdate = input.CaddieBookingId.HasValue && input.CaddieBookingId.Value != Guid.Empty;
+        return new MiniAppCreatedCaddieBookingResponse { Error = 0, Message = isUpdate ? "Cập nhật đặt caddy thành công" : "Đặt caddy thành công", Data = result };
+    }
+
+    /// <summary>
+    /// POST hủy gán 1 Caddie khỏi booking (gỡ khỏi người chơi). Hết Caddie → booking Caddie chuyển trạng thái hủy.
+    /// POST /api/mini-app/caddie/booking/unassign-caddie
+    /// Body: { caddieBookingId, caddieId }
+    /// </summary>
+    [HttpPost("caddie/booking/unassign-caddie")]
+    [AllowAnonymous]
+    public async Task<MiniAppCreatedCaddieBookingResponse> UnassignCaddie([FromBody] MiniAppUnassignCaddieDto input)
+    {
+        var result = await _miniCaddie.UnassignCaddieAsync(input.CaddieBookingId, input.CaddieId);
+        return new MiniAppCreatedCaddieBookingResponse { Error = 0, Message = "Đã hủy gán Caddie", Data = result };
     }
 
     /// <summary>

@@ -245,7 +245,29 @@
                 { title: l('BookingNumberOfGolfers'), data: "numberOfGolfers" },
 
                 {
+                    title: 'Tổng phí Caddy',
+                    data: "totalCaddieFee",
+                    render: function (fee) {
+                        if (fee == null || Number(fee) === 0) return '';
+                        return Number(fee).toLocaleString('vi-VN');
+                    }
+                },
+
+                {
+                    // Tổng giá trị booking = TotalAmount trừ phí Caddie (giữ nguyên giá trị booking, không gồm phí)
                     title: l('BookingTotalPrice'),
+                    data: "totalAmount",
+                    render: function (amount, type, row) {
+                        if (amount == null) return '';
+                        var fee = Number(row.totalCaddieFee || 0);
+                        var bookingOnly = Number(amount) - fee;
+                        return bookingOnly.toLocaleString('vi-VN');
+                    }
+                },
+
+                {
+                    // Tổng cộng = Tổng giá trị booking + Phí đặt Caddie (chính là TotalAmount đã lưu)
+                    title: 'Tổng cộng',
                     data: "totalAmount",
                     render: function (amount) {
                         if (amount == null) return '';

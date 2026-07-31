@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+
 namespace Genora.MultiTenancy.AppDtos.HoaLinh;
 
 /// <summary>
@@ -85,6 +87,19 @@ public class HlProductGroupDto
     public string? ImageUrl { get; set; }
     public double? DiscPercent { get; set; }
     public bool? IsCombo { get; set; }
+    public List<string>? ProductCombo { get; set; }
+}
+
+/// <summary>
+/// DTO 1 dòng sản phẩm trong combo từ API Hoa Linh DMS (GET /api/ProductCombo).
+/// Mỗi combo (combo_code) gồm nhiều dòng sản phẩm.
+/// </summary>
+public class HlProductComboDto
+{
+    public string? ComboCode { get; set; }
+    public string? ProductCode { get; set; }
+    public string? ProductName { get; set; }
+    public int? Quantity { get; set; }
 }
 
 /// <summary>

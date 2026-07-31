@@ -87,9 +87,15 @@
 
             <hr />
 
-            <!-- Khu vực cho Admin cập nhật -->
-            <div class="mb-3 d-inline-flex" style="width: 98%; gap: 10px">
-                <div class="col-md-3">
+            @{
+                var hasCaddieFee = Model.Booking.TotalCaddieFee.HasValue && Model.Booking.TotalCaddieFee.Value > 0;
+            }
+            @* Phí đặt Caddy — luôn giữ hidden để preserve khi post (kể cả khi ẩn UI). *@
+            <input type="hidden" asp-for="Booking.TotalCaddieFee" id="Booking_TotalCaddieFee" data-val="false" />
+
+            <!-- Khu vực cho Admin cập nhật — dùng Bootstrap row để tự xuống dòng, KHÔNG scroll ngang -->
+            <div class="row g-3 mb-3">
+                <div class="col-md-3 col-sm-6">
                     @* ✅ Hidden numeric thật *@
                     <input type="hidden" asp-for="Booking.NumberOfGolfers" id="Booking_NumberOfGolfers" />
 
@@ -106,7 +112,7 @@
                            readonly />
                 </div>
 
-                <div class="col-md-3">
+                <div class="col-md-3 col-sm-6">
                     <label asp-for="Booking.Status" class="form-label">@L["BookingStatus"]</label>
                     <select asp-for="Booking.Status"
                             asp-items="Model.StatusItems"
@@ -114,8 +120,7 @@
                     </select>
                 </div>
 
-
-                <div class="col-md-3">
+                <div class="col-md-3 col-sm-6">
                     <label asp-for="Booking.PaymentMethod" class="form-label">@L["BookingPaymentMethod"]</label>
                     <select asp-for="Booking.PaymentMethod"
                             asp-items="Model.PaymentMethodItems"
@@ -123,12 +128,25 @@
                     </select>
                 </div>
 
-                <div class="col-md-3">
-                    @* ✅ Hidden numeric thật để binder *@
+                @* Phí đặt Caddy — chỉ hiện khi booking có phí (Blue Diamond). *@
+                <div class="col-md-3 col-sm-6" id="CaddieFeeGroup" style="@(hasCaddieFee ? "" : "display:none;")">
+                    <label class="form-label" for="Booking_TotalCaddieFee_Display">Tổng phí Caddy</label>
+                    <input type="text"
+                           id="Booking_TotalCaddieFee_Display"
+                           class="form-control money-display"
+                           data-val="false"
+                           value="@((Model.Booking.TotalCaddieFee ?? 0m).ToString("0"))"
+                           inputmode="numeric"
+                           autocomplete="off"
+                           readonly />
+                </div>
+
+                <div class="col-md-3 col-sm-6">
+                    @* ✅ Hidden numeric thật để binder — đây là Tổng tiền Booking (chưa gồm phí Caddie) *@
                     <input type="hidden" asp-for="Booking.TotalAmount" id="Booking_TotalAmount" />
 
                     @* ✅ Display input text format VN *@
-                    <label class="form-label" for="Booking_TotalAmount_Display">@L["TotalAmount"]</label>
+                    <label class="form-label" for="Booking_TotalAmount_Display">Tổng tiền Booking</label>
                     <input type="text"
                            id="Booking_TotalAmount_Display"
                            class="form-control money-display"
@@ -138,6 +156,19 @@
                            value="@(Model.Booking.TotalAmount.ToString("0"))"
                            inputmode="numeric"
                            autocomplete="off" />
+                </div>
+
+                @* Tổng tiền = Tổng tiền Booking + Phí đặt Caddy — chỉ hiện khi có phí Caddie *@
+                <div class="col-md-3 col-sm-6" id="GrandTotalGroup" style="@(hasCaddieFee ? "" : "display:none;")">
+                    <label class="form-label" for="Booking_GrandTotal_Display">Tổng tiền</label>
+                    <input type="text"
+                           id="Booking_GrandTotal_Display"
+                           class="form-control money-display"
+                           data-val="false"
+                           value="@((Model.Booking.TotalAmount + (Model.Booking.TotalCaddieFee ?? 0m)).ToString("0"))"
+                           inputmode="numeric"
+                           autocomplete="off"
+                           readonly />
                 </div>
             </div>
 
@@ -153,19 +184,27 @@
                 </button>
             </div>
 
+            @{
+                // Cột Tên Caddie chỉ hiện khi có player gắn Caddie (tenant Blue Diamond); tenant khác ẩn để không ảnh hưởng.
+                var showCaddieCol = Model.Booking.Players != null && Model.Booking.Players.Exists(p => !string.IsNullOrWhiteSpace(p.CaddieName));
+            }
             <div class="table-responsive">
                 <table class="table table-sm table-bordered align-middle mb-0">
                     <thead class="table-light">
                         <tr>
-                            <th style="width: 30%">@L["PlayerName"]</th>
-                            <th style="width: 20%">@L["VGA"]</th>
+                            <th style="width: 25%">@L["PlayerName"]</th>
+                            @if (showCaddieCol)
+                            {
+                                <th style="width: 18%">Tên Caddie</th>
+                            }
+                            <th style="width: 17%">@L["VGA"]</th>
                             <th style="width: 20%">@L["Price"]</th>
                             <th>@L["Notes"]</th>
                             <th style="width: 60px" class="text-center">@L["Actions"]</th>
                         </tr>
                     </thead>
 
-                    <tbody id="booking-players-body" data-next-index="@Model.Booking.Players.Count">
+                    <tbody id="booking-players-body" data-next-index="@Model.Booking.Players.Count" data-show-caddie="@showCaddieCol.ToString().ToLower()">
                         @if (Model.Booking.Players != null && Model.Booking.Players.Count > 0)
                         {
                             for (var i = 0; i < Model.Booking.Players.Count; i++)
@@ -174,8 +213,18 @@
                                 <tr>
                                     <td>
                                         <input type="hidden" asp-for="Booking.Players[i].CustomerId" />
+                                        @* Preserve thông tin Caddie đã gán cho người chơi (không mất khi update) *@
+                                        <input type="hidden" asp-for="Booking.Players[i].CaddieId" />
+                                        <input type="hidden" asp-for="Booking.Players[i].CaddieBookingId" />
+                                        <input type="hidden" asp-for="Booking.Players[i].CaddieName" />
                                         <input class="form-control" type="text" asp-for="Booking.Players[i].PlayerName" />
                                     </td>
+                                    @if (showCaddieCol)
+                                    {
+                                        <td>
+                                            <input class="form-control" type="text" value="@Model.Booking.Players[i].CaddieName" data-val="false" readonly />
+                                        </td>
+                                    }
                                     <td>
                                         <input class="form-control" asp-for="Booking.Players[i].VgaCode" />
                                     </td>
@@ -259,7 +308,14 @@
         // ===== Money helpers vi-VN =====
         function normalizeMoney(raw) {
             if (!raw) return '';
-            return String(raw).replace(/[^\d]/g, '');
+            // Cắt phần thập phân trước (vd "2000000.00" -> "2000000") rồi mới lọc chữ số,
+            // tránh biến 2.000.000,00 hoặc 2000000.00 thành số lớn gấp 100 lần.
+            var s = String(raw).trim();
+            // Nếu là số kiểu invariant "2000000.00" (dấu chấm là decimal separator)
+            if (/^\d+\.\d+$/.test(s)) {
+                s = s.split('.')[0];
+            }
+            return s.replace(/[^\d]/g, '');
         }
         function formatMoneyVN(raw) {
             var n = parseInt(normalizeMoney(raw), 10);
@@ -305,9 +361,18 @@
                 if (!isNaN(n)) total += n;
             });
 
-            // set to hidden + display
+            // set to hidden + display (Tổng tiền Booking — chưa gồm phí Caddie)
             $('#Booking_TotalAmount').val(String(total));
             $('#Booking_TotalAmount_Display').val(formatMoneyVN(String(total)));
+
+            // Cập nhật Tổng tiền = Tổng tiền Booking + Phí đặt Caddy (nếu có).
+            // Đọc phí Caddie từ DISPLAY field (đã format số nguyên, không có phần thập phân .00)
+            // để tránh bug parse "2000000.00" / "2.000.000,00" thành 200000000 (×100).
+            var caddieFee = parseInt(normalizeMoney($('#Booking_TotalCaddieFee_Display').val() || '0'), 10);
+            if (isNaN(caddieFee)) caddieFee = 0;
+            // Sync lại hidden field (dùng khi POST) bằng giá trị sạch
+            $('#Booking_TotalCaddieFee').val(String(caddieFee));
+            $('#Booking_GrandTotal_Display').val(formatMoneyVN(String(total + caddieFee)));
         }
 
         function recalcNumberOfGolfersFromPlayers() {
@@ -389,6 +454,11 @@
 
             var index = getNextIndex();
             var hidId = 'Booking_Players_' + index + '__PricePerPlayer';
+            var showCaddie = $tbody.attr('data-show-caddie') === 'true';
+
+            var caddieCell = showCaddie
+                ? '  <td><input class="form-control" type="text" value="" data-val="false" readonly /></td>'
+                : '';
 
             var rowHtml = ''
                 + '<tr>'
@@ -396,6 +466,7 @@
                 + '    <input type="hidden" name="Booking.Players[' + index + '].CustomerId" value="" />'
                 + '    <input class="form-control" name="Booking.Players[' + index + '].PlayerName" value="" />'
                 + '  </td>'
+                + caddieCell
                 + '  <td>'
                 + '    <input class="form-control" name="Booking.Players[' + index + '].VgaCode" value="" />'
                 + '  </td>'

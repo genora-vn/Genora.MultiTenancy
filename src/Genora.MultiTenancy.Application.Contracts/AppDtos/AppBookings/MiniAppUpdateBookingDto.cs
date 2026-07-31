@@ -20,6 +20,17 @@ public class MiniAppUpdateBookingDto
 
     public decimal? PricePerGolfer { get; set; }
 
+    /// <summary>Tổng phí thuê Caddie đi kèm (VNĐ, được phép null). Đã cộng vào TotalAmount.</summary>
+    public decimal? TotalCaddieFee { get; set; }
+
+    /// <summary>
+    /// [UNIFIED FLOW - tùy chọn] Danh sách Caddie sau khi sửa (thêm/bớt). Khi có giá trị → server reconcile:
+    /// tạo/tái dùng AppCaddieBooking, thêm detail Caddie mới, gỡ detail bị bỏ, tính lại TotalCaddieFee
+    /// (= số caddie × GolfCourse.CaddieFee), cập nhật AppBookings + gán CaddieId/CaddieName vào đúng người chơi.
+    /// Khi null → giữ nguyên logic cũ (mini app khác + luồng đặt Caddie riêng KHÔNG bị ảnh hưởng).
+    /// </summary>
+    public List<MiniAppInlineCaddieInput>? CaddieAssignments { get; set; }
+
     public List<int>? Utilities { get; set; } = new();
 
     public short? NumberHoles { get; set; } = 18;

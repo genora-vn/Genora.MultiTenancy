@@ -15,6 +15,8 @@ public class CaddieBookingDto : EntityDto<Guid>
     public Guid CaddieId { get; set; }
     public string? CaddieName { get; set; }
     public string? CaddieCode { get; set; }
+    /// <summary>Tên tất cả Caddie trong booking, nối chuỗi. Ví dụ: "Nguyễn Bảo Nam, Đàm Thùy Trang".</summary>
+    public string? CaddieNames { get; set; }
     public DateTime BookingDate { get; set; }
     public TimeSpan StartTime { get; set; }
     public int? NumberOfHoles { get; set; }

@@ -49,16 +49,34 @@ $(function () {
         new bootstrap.Modal(document.getElementById('statusModal')).show();
     });
 
-    // ── Change Caddy Button ─────────────────────────────────────────
-    $('#btnChangeCaddy').click(function () {
+    // Caddie đang được đổi (oldCaddieId)
+    var changingOldCaddieId = null;
+
+    // Tất cả CaddieId đã book trong booking này (để loại khỏi dropdown chọn Caddy mới)
+    function getBookedCaddieIds() {
+        var ids = [];
+        $('.btn-change-caddy').each(function () {
+            var id = $(this).data('old-caddie-id');
+            if (id) ids.push(String(id).toLowerCase());
+        });
+        return ids;
+    }
+
+    // ── Change Caddy Button (mỗi Caddie 1 nút) ──────────────────────
+    $(document).on('click', '.btn-change-caddy', function () {
+        changingOldCaddieId = $(this).data('old-caddie-id');
+        var bookedIds = getBookedCaddieIds(); // gồm cả các caddie đã book → loại hết
+
         caddieService.getList({ maxResultCount: 100, status: 1 }).then(function (res) {
             var $select = $('#modalNewCaddieId');
             $select.find('option:not(:first)').remove();
             res.items.forEach(function (c) {
-                if (c.id !== currentCaddieId) {
+                // Loại các Caddie đã được book trong booking này (kể cả caddie đang đổi)
+                if (bookedIds.indexOf(String(c.id).toLowerCase()) === -1) {
                     $select.append('<option value="' + c.id + '">' + c.caddieName + ' (' + c.caddieCode + ')</option>');
                 }
             });
+            $('#modalChangeCaddyNote').val('');
             new bootstrap.Modal(document.getElementById('changeCaddyModal')).show();
         });
     });
@@ -72,7 +90,7 @@ $(function () {
             return;
         }
 
-        bookingService.changeCaddy(bookingId, newCaddieId, note).then(function () {
+        bookingService.changeCaddy(bookingId, newCaddieId, note, changingOldCaddieId).then(function () {
             bootstrap.Modal.getInstance(document.getElementById('changeCaddyModal')).hide();
             abp.notify.success('Đã thay đổi Caddy thành công');
             window.location.reload();

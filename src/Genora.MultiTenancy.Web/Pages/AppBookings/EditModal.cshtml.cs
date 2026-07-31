@@ -61,20 +61,24 @@ public class EditModalModel : PageModel
             NumberOfGolfers = dto.NumberOfGolfers,
             PricePerGolfer = dto.PricePerGolfer,
             TotalAmount = dto.TotalAmount,
+            TotalCaddieFee = dto.TotalCaddieFee,
             PaymentMethod = dto.PaymentMethod,
             Status = dto.Status,
             Source = dto.Source,
             Utilities = dto.Utilities,
             IsExportInvoice = dto.IsExportInvoice,
             NumberHoles = dto.NumberHoles,
-            // ⭐ Map Players sang DTO để cho phép sửa
+            // ⭐ Map Players sang DTO để cho phép sửa (giữ thông tin Caddie)
             Players = dto.Players?.ConvertAll(p => new CreateUpdateBookingPlayerDto
             {
                 CustomerId = p.CustomerId,
                 PlayerName = p.PlayerName,
                 VgaCode = p.VgaCode,
                 PricePerPlayer = p.PricePerPlayer,
-                Notes = p.Notes
+                Notes = p.Notes,
+                CaddieId = p.CaddieId,
+                CaddieBookingId = p.CaddieBookingId,
+                CaddieName = p.CaddieName
             }) ?? new List<CreateUpdateBookingPlayerDto>()
         };
 

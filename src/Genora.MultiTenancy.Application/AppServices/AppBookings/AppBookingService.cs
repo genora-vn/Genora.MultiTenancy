@@ -71,6 +71,11 @@ public class AppBookingService :
 
     private readonly IBackgroundJobManager _jobManager;
 
+    // Caddie repos — dùng để hủy booking Caddie liên đới khi admin đổi trạng thái booking golf sang Hủy
+    private readonly IRepository<DomainModels.AppCaddie.AppCaddieBooking, Guid> _caddieBookingRepo;
+    private readonly IRepository<DomainModels.AppCaddie.AppCaddieBookingDetail, Guid> _caddieBookingDetailRepo;
+    private readonly IRepository<DomainModels.AppCaddie.AppCaddieSchedule, Guid> _caddieScheduleRepo;
+
     private const string ZaloDateFormat = "dd/MM/yyyy";
 
     public AppBookingService(
@@ -92,9 +97,15 @@ public class AppBookingService :
         IBackgroundJobManager jobManager,
         ILogger<AppBookingService> logger,
         IRepository<DomainModels.AppPromotionTypes.PromotionType, Guid> promotionTypeRepository,
-        IRepository<CalendarSlotPrice, Guid> calendarSlotPriceRepository)
+        IRepository<CalendarSlotPrice, Guid> calendarSlotPriceRepository,
+        IRepository<DomainModels.AppCaddie.AppCaddieBooking, Guid> caddieBookingRepo,
+        IRepository<DomainModels.AppCaddie.AppCaddieBookingDetail, Guid> caddieBookingDetailRepo,
+        IRepository<DomainModels.AppCaddie.AppCaddieSchedule, Guid> caddieScheduleRepo)
         : base(repository, currentTenant, featureChecker)
     {
+        _caddieBookingRepo = caddieBookingRepo;
+        _caddieBookingDetailRepo = caddieBookingDetailRepo;
+        _caddieScheduleRepo = caddieScheduleRepo;
         _customerRepository = customerRepository;
         _golfCourseRepository = golfCourseRepository;
         _playerRepository = playerRepository;
@@ -298,6 +309,7 @@ public class AppBookingService :
                 NumberOfGolfers = b.NumberOfGolfers,
                 PricePerGolfer = b.PricePerGolfer,
                 TotalAmount = b.TotalAmount,
+                TotalCaddieFee = b.TotalCaddieFee,
 
                 IsExportInvoice = b.IsExportInvoice,
                 CompanyName = b.CompanyName,
@@ -370,6 +382,7 @@ public class AppBookingService :
             NumberOfGolfers = booking.NumberOfGolfers,
             PricePerGolfer = booking.PricePerGolfer,
             TotalAmount = booking.TotalAmount,
+            TotalCaddieFee = booking.TotalCaddieFee,
 
             PaymentMethod = booking.PaymentMethod,
             Status = booking.Status,
@@ -397,7 +410,11 @@ public class AppBookingService :
                 PlayerName = p.PlayerName,
                 PricePerPlayer = p.PricePerPlayer,
                 VgaCode = p.VgaCode,
-                Notes = p.Notes
+                Notes = p.Notes,
+                CaddieId = p.CaddieId,
+                CaddieBookingId = p.CaddieBookingId,
+                AppCaddieBookingDetailId = p.AppCaddieBookingDetailId,
+                CaddieName = p.CaddieName
             }).ToList()
         };
 
@@ -434,6 +451,10 @@ public class AppBookingService :
             input.Status,
             input.Source
         );
+
+        // Phí thuê Caddie (nếu có) — cộng vào tổng tiền thanh toán booking
+        entity.TotalCaddieFee = input.TotalCaddieFee;
+        entity.TotalAmount += input.TotalCaddieFee ?? 0m;
 
         entity = await Repository.InsertAsync(entity, autoSave: true);
 
@@ -633,7 +654,9 @@ public class AppBookingService :
         entity.PlayDate = input.PlayDate;
         entity.NumberOfGolfers = input.NumberOfGolfers;
         entity.PricePerGolfer = input.PricePerGolfer;
-        entity.TotalAmount = input.TotalAmount;
+        // Phí thuê Caddie (nếu có) — cộng vào tổng tiền thanh toán booking
+        entity.TotalCaddieFee = input.TotalCaddieFee;
+        entity.TotalAmount = input.TotalAmount + (input.TotalCaddieFee ?? 0m);
         entity.PaymentMethod = input.PaymentMethod;
         entity.Status = input.Status;
         entity.Source = input.Source;
@@ -641,6 +664,13 @@ public class AppBookingService :
         entity = await Repository.UpdateAsync(entity, autoSave: true);
 
         await SavePlayersAsync(entity.Id, input.Players);
+
+        // Nếu admin đổi trạng thái sang Hủy (hoàn tiền / không hoàn tiền) → hủy booking Caddie liên đới
+        if (input.Status == BookingStatus.CancelledRefund || input.Status == BookingStatus.CancelledNoRefund)
+        {
+            await CancelLinkedCaddieBookingsAsync(entity.Id);
+        }
+
         await CurrentUnitOfWork.SaveChangesAsync();
 
         var newPlayers = await _playerRepository.GetListAsync(p => p.BookingId == id);
@@ -895,6 +925,11 @@ public class AppBookingService :
 
                     TotalAmountText = MoneyText(emailTotalAmount),
 
+                    // Phí đặt Caddie — chỉ hiển thị khi booking có phí (Blue Diamond); tenant khác ẩn
+                    HasCaddieFee = entity.TotalCaddieFee.HasValue && entity.TotalCaddieFee.Value > 0,
+                    TotalCaddieFeeText = MoneyText(entity.TotalCaddieFee ?? 0m),
+                    GrandTotalText = MoneyText(emailTotalAmount + (entity.TotalCaddieFee ?? 0m)),
+
                     OtherRequestsText = otherRequestsText,
                     InvoiceInfoText = invoiceInfoText,
 
@@ -979,6 +1014,43 @@ public class AppBookingService :
         return prefix + seqPart;
     }
 
+    /// <summary>
+    /// Khi admin đổi trạng thái booking golf sang Hủy → hủy các AppCaddieBooking liên đới:
+    /// tìm qua AppBookingPlayers.CaddieBookingId (header, distinct), set Status=Cancelled + nhả lịch Caddie.
+    /// GIỮ NGUYÊN AppCaddieBookings.TotalCaddieFee (lịch sử). No-op nếu booking không có liên kết Caddie.
+    /// </summary>
+    private async Task CancelLinkedCaddieBookingsAsync(Guid golfBookingId)
+    {
+        var linkedPlayers = await _playerRepository.GetListAsync(p => p.BookingId == golfBookingId && p.CaddieBookingId != null);
+        if (linkedPlayers.Count == 0) return;
+
+        var caddieBookingIds = linkedPlayers.Select(p => p.CaddieBookingId!.Value).Distinct().ToList();
+        foreach (var cbId in caddieBookingIds)
+        {
+            var caddieBooking = await _caddieBookingRepo.FindAsync(cbId);
+            if (caddieBooking == null || caddieBooking.Status == 4) continue; // 4 = Cancelled
+
+            // Nhả toàn bộ lịch Caddie của booking này
+            var details = await _caddieBookingDetailRepo.GetListAsync(d => d.CaddieBookingId == cbId);
+            foreach (var d in details)
+            {
+                if (d.ScheduleId == null || d.ScheduleId.Value == Guid.Empty) continue;
+                try
+                {
+                    var schedule = await _caddieScheduleRepo.GetAsync(d.ScheduleId.Value);
+                    schedule.SlotStatus = 1; // Available
+                    schedule.BookingId = null;
+                    await _caddieScheduleRepo.UpdateAsync(schedule, autoSave: true);
+                }
+                catch { /* schedule may not exist */ }
+            }
+
+            caddieBooking.Status = 4; // Cancelled — giữ nguyên TotalCaddieFee
+            caddieBooking.CancelReason = "Đã hủy do hủy booking golf liên kết (admin)";
+            await _caddieBookingRepo.UpdateAsync(caddieBooking, autoSave: true);
+        }
+    }
+
     private async Task SavePlayersAsync(Guid bookingId, List<CreateUpdateBookingPlayerDto> players)
     {
         await _playerRepository.DeleteAsync(p => p.BookingId == bookingId);
@@ -996,6 +1068,12 @@ public class AppBookingService :
                 p.VgaCode,
                 p.Notes
             );
+
+            // Giữ thông tin Caddie đã gán cho từng người chơi (Blue Diamond); tenant khác = null
+            player.CaddieId = p.CaddieId;
+            player.CaddieBookingId = p.CaddieBookingId;
+            player.AppCaddieBookingDetailId = p.AppCaddieBookingDetailId;
+            player.CaddieName = p.CaddieName;
 
             await _playerRepository.InsertAsync(player, autoSave: true);
         }

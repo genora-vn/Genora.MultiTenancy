@@ -39,6 +39,8 @@ public class ViewModalModel : PageModel
     public string StatusText { get; set; } = "";
     public string PaymentMethodText { get; set; } = "";
     public string TotalAmountText { get; set; } = "";
+    public string TotalBookingText { get; set; } = "";
+    public string TotalCaddieFeeText { get; set; } = "";
     public string SourceText { get; set; } = "";
 
     public async Task OnGetAsync()
@@ -49,8 +51,14 @@ public class ViewModalModel : PageModel
         PaymentMethodText = Booking.PaymentMethod.HasValue ? _l[$"PaymentMethod:{Booking.PaymentMethod.Value}"] : "N/A";
         SourceText = _l[$"BookingSource:{Booking.Source}"];
 
+        var viCulture = new System.Globalization.CultureInfo("vi-VN");
+        var caddieFee = Booking.TotalCaddieFee ?? 0m;
         var totalFromPlayers = Booking.Players?.Sum(p => p.PricePerPlayer ?? 0m) ?? 0m;
-        TotalAmountText = totalFromPlayers.ToString("N0", new System.Globalization.CultureInfo("vi-VN"));
+        // Tổng tiền Booking = tổng giá người chơi (chưa gồm phí Caddie)
+        TotalBookingText = totalFromPlayers.ToString("N0", viCulture);
+        // Tổng tiền = tổng giá người chơi + phí thuê Caddie
+        TotalAmountText = (totalFromPlayers + caddieFee).ToString("N0", viCulture);
+        TotalCaddieFeeText = caddieFee.ToString("N0", viCulture);
 
         var ids = ParseUtilityIds(Booking.Utilities);
 

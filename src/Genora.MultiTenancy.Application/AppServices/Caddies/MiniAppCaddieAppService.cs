@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Genora.MultiTenancy.AppDtos.Caddies;
+using Genora.MultiTenancy.DomainModels.AppBookingPlayers;
+using Genora.MultiTenancy.DomainModels.AppBookings;
 using Genora.MultiTenancy.DomainModels.AppCaddie;
 using Genora.MultiTenancy.DomainModels.AppCustomers;
 using Genora.MultiTenancy.DomainModels.AppGolfCourses;
@@ -33,6 +35,8 @@ public class MiniAppCaddieAppService : ApplicationService
     private readonly IRepository<AppCaddieSkill, Guid> _skillRepo;
     private readonly IRepository<Customer, Guid> _customerRepo;
     private readonly IRepository<GolfCourse, Guid> _golfCourseRepo;
+    private readonly IRepository<Booking, Guid> _golfBookingRepo;
+    private readonly IRepository<BookingPlayer, Guid> _bookingPlayerRepo;
     private readonly IGuidGenerator _guidGenerator;
     private readonly ICurrentUser _currentUser;
     private readonly IConfiguration _configuration;
@@ -50,6 +54,8 @@ public class MiniAppCaddieAppService : ApplicationService
         IRepository<AppCaddieSkill, Guid> skillRepo,
         IRepository<Customer, Guid> customerRepo,
         IRepository<GolfCourse, Guid> golfCourseRepo,
+        IRepository<Booking, Guid> golfBookingRepo,
+        IRepository<BookingPlayer, Guid> bookingPlayerRepo,
         IGuidGenerator guidGenerator,
         ICurrentUser currentUser,
         IConfiguration configuration)
@@ -66,6 +72,8 @@ public class MiniAppCaddieAppService : ApplicationService
         _skillRepo = skillRepo;
         _customerRepo = customerRepo;
         _golfCourseRepo = golfCourseRepo;
+        _golfBookingRepo = golfBookingRepo;
+        _bookingPlayerRepo = bookingPlayerRepo;
         _guidGenerator = guidGenerator;
         _currentUser = currentUser;
         _configuration = configuration;
@@ -240,6 +248,11 @@ public class MiniAppCaddieAppService : ApplicationService
     /// <summary>
     /// POST đặt caddie (hỗ trợ book 1 hoặc nhiều caddy)
     /// </summary>
+    /// <summary>
+    /// UPSERT booking Caddie: nếu input.CaddieBookingId có giá trị → cập nhật (reconcile danh sách caddie),
+    /// ngược lại → tạo booking mới. Hỗ trợ khách thêm/bớt caddie theo danh sách người chơi.
+    /// TotalCaddieFee được server tự tính lại = số caddie × GolfCourse.CaddieFee.
+    /// </summary>
     public async Task<MiniAppCreatedCaddieBookingDto> CreateBookingAsync(MiniAppCreateCaddieBookingDto input)
     {
         // Look up customer from DB
@@ -263,27 +276,85 @@ public class MiniAppCaddieAppService : ApplicationService
         if (input.BookingDate.Date < DateTime.Today)
             throw new AbpValidationException("Ngày chơi không được nhỏ hơn ngày hiện tại.");
 
-        // Validate all caddies and find schedule slots
-        var caddieSchedules = new List<(Guid CaddieId, AppCaddieSchedule Schedule, string? Note)>();
+        var isUpdate = input.CaddieBookingId.HasValue && input.CaddieBookingId.Value != Guid.Empty;
+
+        // ── Load hoặc tạo mới booking header ──────────────────────────────
+        AppCaddieBooking booking;
+        List<AppCaddieBookingDetail> existingDetails = new();
+
+        if (isUpdate)
+        {
+            booking = await _bookingRepo.FindAsync(input.CaddieBookingId!.Value)
+                ?? throw new AbpValidationException("Không tìm thấy booking Caddie cần cập nhật.");
+
+            if (booking.Status == (byte)CaddieBookingStatus.Completed || booking.Status == (byte)CaddieBookingStatus.Cancelled)
+                throw new AbpValidationException("Không thể cập nhật booking Caddie đã hoàn thành hoặc đã hủy.");
+
+            existingDetails = await AsyncExecuter.ToListAsync(
+                (await _bookingDetailRepo.GetQueryableAsync())
+                    .Where(d => d.CaddieBookingId == booking.Id));
+        }
+        else
+        {
+            var bookingCode = $"CB-{DateTime.Now:yyyyMMdd}-{Guid.NewGuid().ToString()[..4].ToUpper()}";
+            booking = new AppCaddieBooking
+            {
+                BookingCode = bookingCode,
+                CustomerId = input.CustomerId,
+                CustomerName = customerName,
+                Phone = phone,
+                GolfCourseId = Guid.Empty, // set sau khi biết caddie đầu tiên
+                BookingDate = input.BookingDate.Date,
+                StartTime = input.StartTime,
+                NumberOfHoles = input.NumberOfHoles,
+                Note = input.Note,
+                TotalCaddieFee = 0m,
+                PaymentMethod = input.PaymentMethod,
+                Status = (byte)CaddieBookingStatus.New,
+                PaymentStatus = (byte)CaddiePaymentStatus.Unpaid,
+                CheckinStatus = (byte)CaddieCheckinStatus.NotCheckedIn
+            };
+            await _bookingRepo.InsertAsync(booking, autoSave: true);
+        }
+
+        // ── Validate + resolve schedule cho các caddie MỚI (chưa có detail) ──
+        var existingCaddieIds = existingDetails.Select(d => d.CaddieId).ToHashSet();
+        var targetCaddieIds = caddieItems.Select(c => c.CaddieId).ToHashSet();
+
+        var caddieMap = new Dictionary<Guid, AppCaddie>();
+        var newCaddieSchedules = new List<(Guid CaddieId, AppCaddieSchedule Schedule, string? Note)>();
         AppCaddie? firstCaddie = null;
 
         foreach (var item in caddieItems)
         {
             var caddie = await _caddieRepo.GetAsync(item.CaddieId);
+            caddieMap[item.CaddieId] = caddie;
+            if (firstCaddie == null) firstCaddie = caddie;
+
+            // Caddie đã có trong booking rồi → giữ nguyên, chỉ cập nhật note nếu đổi
+            if (existingCaddieIds.Contains(item.CaddieId))
+            {
+                var existed = existingDetails.First(d => d.CaddieId == item.CaddieId);
+                if (existed.Note != item.Note)
+                {
+                    existed.Note = item.Note;
+                    await _bookingDetailRepo.UpdateAsync(existed, autoSave: true);
+                }
+                continue;
+            }
+
             if (caddie.Status != (byte)CaddieStatus.Active)
                 throw new AbpValidationException($"Caddie {caddie.CaddieName} không khả dụng.");
 
-            if (firstCaddie == null) firstCaddie = caddie;
-
             // Schedule Conflict Detection: check for existing bookings that overlap this time slot
-            var existingBookingDetails = await AsyncExecuter.ToListAsync(
+            var conflictDetails = await AsyncExecuter.ToListAsync(
                 (await _bookingDetailRepo.GetQueryableAsync())
-                    .Where(d => d.CaddieId == item.CaddieId));
-            var existingBookingIds = existingBookingDetails.Select(d => d.CaddieBookingId).Distinct().ToList();
-            if (existingBookingIds.Any())
+                    .Where(d => d.CaddieId == item.CaddieId && d.CaddieBookingId != booking.Id));
+            var conflictBookingIds = conflictDetails.Select(d => d.CaddieBookingId).Distinct().ToList();
+            if (conflictBookingIds.Any())
             {
                 var conflictQuery = (await _bookingRepo.GetQueryableAsync())
-                    .Where(b => existingBookingIds.Contains(b.Id)
+                    .Where(b => conflictBookingIds.Contains(b.Id)
                         && b.BookingDate == input.BookingDate.Date
                         && b.Status != (byte)CaddieBookingStatus.Cancelled
                         && b.StartTime == input.StartTime);
@@ -303,73 +374,69 @@ public class MiniAppCaddieAppService : ApplicationService
             if (schedule == null)
                 throw new AbpValidationException($"Caddie {caddie.CaddieName} không có lịch trống vào thời gian này.");
 
-            caddieSchedules.Add((item.CaddieId, schedule, item.Note));
+            newCaddieSchedules.Add((item.CaddieId, schedule, item.Note));
         }
 
-        // Generate booking code
-        var bookingCode = $"CB-{DateTime.Now:yyyyMMdd}-{Guid.NewGuid().ToString()[..4].ToUpper()}";
-
-        // Create booking (without CaddieId/ScheduleId — those are in details)
-        var booking = new AppCaddieBooking
+        // ── Xóa các caddie KHÔNG còn trong danh sách (khi update) + nhả schedule ──
+        foreach (var removed in existingDetails.Where(d => !targetCaddieIds.Contains(d.CaddieId)).ToList())
         {
-            BookingCode = bookingCode,
-            CustomerId = input.CustomerId,
-            CustomerName = customerName,
-            Phone = phone,
-            GolfCourseId = firstCaddie!.GolfCourseId ?? Guid.Empty,
-            BookingDate = input.BookingDate.Date,
-            StartTime = input.StartTime,
-            NumberOfHoles = input.NumberOfHoles,
-            Note = input.Note,
-            TotalCaddieFee = input.TotalCaddieFee,
-            PaymentMethod = input.PaymentMethod,
-            Status = (byte)CaddieBookingStatus.New,
-            PaymentStatus = (byte)CaddiePaymentStatus.Unpaid,
-            CheckinStatus = (byte)CaddieCheckinStatus.NotCheckedIn
-        };
-
-        await _bookingRepo.InsertAsync(booking, autoSave: true);
-
-        // Map CaddieId → AppCaddie (đã load ở vòng validate) để lấy tên/ảnh/rating cho response
-        var caddieMap = new Dictionary<Guid, AppCaddie>();
-        foreach (var item in caddieItems)
-        {
-            if (!caddieMap.ContainsKey(item.CaddieId))
-                caddieMap[item.CaddieId] = await _caddieRepo.GetAsync(item.CaddieId);
+            await ReleaseScheduleSlotAsync(removed.ScheduleId);
+            await _bookingDetailRepo.DeleteAsync(removed, autoSave: true);
+            existingDetails.Remove(removed);
         }
 
-        // Create booking details for each caddy + lock schedule slots
-        var caddieItemsResult = new List<MiniAppCreatedCaddieItemDto>();
-        foreach (var (caddieId, schedule, note) in caddieSchedules)
+        // ── Thêm detail cho các caddie mới + khóa schedule ──────────────────
+        foreach (var (caddieId, schedule, note) in newCaddieSchedules)
         {
-            var detail = new AppCaddieBookingDetail(
-                _guidGenerator.Create(),
-                booking.Id,
-                caddieId,
-                schedule.Id);
-            detail.Note = note;
+            var detail = new AppCaddieBookingDetail(_guidGenerator.Create(), booking.Id, caddieId, schedule.Id)
+            {
+                Note = note
+            };
             await _bookingDetailRepo.InsertAsync(detail, autoSave: true);
+            existingDetails.Add(detail);
 
-            // Lock schedule slot
             schedule.SlotStatus = (byte)CaddieSlotStatus.Booked;
             schedule.BookingId = booking.Id;
             await _scheduleRepo.UpdateAsync(schedule, autoSave: true);
+        }
 
-            var caddie = caddieMap[caddieId];
+        // ── Cập nhật header: GolfCourse, giờ chơi, phí Caddie (server tự tính) ──
+        booking.GolfCourseId = firstCaddie!.GolfCourseId ?? booking.GolfCourseId;
+        booking.BookingDate = input.BookingDate.Date;
+        booking.StartTime = input.StartTime;
+        booking.NumberOfHoles = input.NumberOfHoles;
+        if (!string.IsNullOrWhiteSpace(input.Note)) booking.Note = input.Note;
+        booking.PaymentMethod = input.PaymentMethod;
+
+        var totalCaddieFee = await ComputeCaddieFeeAsync(booking.GolfCourseId, existingDetails.Count);
+        booking.TotalCaddieFee = totalCaddieFee;
+        await _bookingRepo.UpdateAsync(booking, autoSave: true);
+
+        // ── Đồng bộ phí Caddie sang booking golf liên kết (nếu có) ──────────
+        await SyncGolfBookingCaddieFeeAsync(booking.Id, totalCaddieFee);
+
+        // ── Build response: toàn bộ caddie hiện có trong booking ────────────
+        var caddieItemsResult = new List<MiniAppCreatedCaddieItemDto>();
+        foreach (var detail in existingDetails)
+        {
+            if (!caddieMap.TryGetValue(detail.CaddieId, out var caddie))
+            {
+                caddie = await _caddieRepo.GetAsync(detail.CaddieId);
+                caddieMap[detail.CaddieId] = caddie;
+            }
             caddieItemsResult.Add(new MiniAppCreatedCaddieItemDto
             {
                 CaddieBookingDetailId = detail.Id,
-                CaddieId = caddieId,
+                CaddieId = detail.CaddieId,
                 CaddieName = caddie.CaddieName,
                 CaddieCode = caddie.CaddieCode,
                 CaddieAvatar = ResolveAvatarUrl(caddie.Avatar),
                 RatingAvg = caddie.RatingAvg,
-                ScheduleId = schedule.Id,
-                Note = note
+                ScheduleId = detail.ScheduleId,
+                Note = detail.Note
             });
         }
 
-        // Trả về đầy đủ danh sách caddie đã book để Mini App gắn vào từng người chơi khi tạo booking golf
         return new MiniAppCreatedCaddieBookingDto
         {
             CaddieBookingId = booking.Id,
@@ -388,6 +455,139 @@ public class MiniAppCaddieAppService : ApplicationService
     }
 
     /// <summary>
+    /// Hủy gán 1 Caddie khỏi booking: xóa AppCaddieBookingDetail + nhả schedule + gỡ liên kết trong AppBookingPlayers.
+    /// Nếu hết Caddie → booking Caddie chuyển trạng thái Cancelled, TotalCaddieFee=0.
+    /// Luôn cập nhật lại TotalCaddieFee (AppCaddieBookings) + đồng bộ booking golf (AppBookings.TotalAmount).
+    /// </summary>
+    public async Task<MiniAppCreatedCaddieBookingDto> UnassignCaddieAsync(Guid caddieBookingId, Guid caddieId)
+    {
+        var booking = await _bookingRepo.FindAsync(caddieBookingId)
+            ?? throw new AbpValidationException("Không tìm thấy booking Caddie.");
+
+        if (booking.Status == (byte)CaddieBookingStatus.Completed)
+            throw new AbpValidationException("Không thể hủy Caddie của booking đã hoàn thành.");
+
+        var details = await AsyncExecuter.ToListAsync(
+            (await _bookingDetailRepo.GetQueryableAsync())
+                .Where(d => d.CaddieBookingId == caddieBookingId));
+
+        var target = details.FirstOrDefault(d => d.CaddieId == caddieId)
+            ?? throw new AbpValidationException("Caddie không có trong booking này.");
+
+        // Xóa detail + nhả schedule
+        await ReleaseScheduleSlotAsync(target.ScheduleId);
+        await _bookingDetailRepo.DeleteAsync(target, autoSave: true);
+        details.Remove(target);
+
+        // Gỡ liên kết Caddie này khỏi các người chơi golf (AppBookingPlayers)
+        var linkedPlayers = await _bookingPlayerRepo.GetListAsync(
+            p => p.CaddieBookingId == caddieBookingId && p.CaddieId == caddieId);
+        foreach (var p in linkedPlayers)
+        {
+            p.CaddieId = null;
+            p.CaddieName = null;
+            p.CaddieBookingId = null;
+            await _bookingPlayerRepo.UpdateAsync(p, autoSave: true);
+        }
+
+        if (details.Count == 0)
+        {
+            // Hết Caddie → hủy booking Caddie
+            booking.Status = (byte)CaddieBookingStatus.Cancelled;
+            booking.CancelReason = "Đã hủy toàn bộ Caddie";
+            booking.TotalCaddieFee = 0m;
+            await _bookingRepo.UpdateAsync(booking, autoSave: true);
+            await SyncGolfBookingCaddieFeeAsync(caddieBookingId, 0m);
+        }
+        else
+        {
+            // Còn Caddie → tính lại phí
+            var newFee = await ComputeCaddieFeeAsync(booking.GolfCourseId, details.Count);
+            booking.TotalCaddieFee = newFee;
+            await _bookingRepo.UpdateAsync(booking, autoSave: true);
+            await SyncGolfBookingCaddieFeeAsync(caddieBookingId, newFee);
+        }
+
+        // Build response
+        var caddieItemsResult = new List<MiniAppCreatedCaddieItemDto>();
+        foreach (var detail in details)
+        {
+            var caddie = await _caddieRepo.GetAsync(detail.CaddieId);
+            caddieItemsResult.Add(new MiniAppCreatedCaddieItemDto
+            {
+                CaddieBookingDetailId = detail.Id,
+                CaddieId = detail.CaddieId,
+                CaddieName = caddie.CaddieName,
+                CaddieCode = caddie.CaddieCode,
+                CaddieAvatar = ResolveAvatarUrl(caddie.Avatar),
+                RatingAvg = caddie.RatingAvg,
+                ScheduleId = detail.ScheduleId,
+                Note = detail.Note
+            });
+        }
+
+        return new MiniAppCreatedCaddieBookingDto
+        {
+            CaddieBookingId = booking.Id,
+            BookingCode = booking.BookingCode,
+            BookingDate = booking.BookingDate,
+            StartTime = booking.StartTime,
+            NumberOfHoles = booking.NumberOfHoles,
+            Status = booking.Status,
+            StatusText = booking.Status == (byte)CaddieBookingStatus.Cancelled ? "Đã hủy" : "Mới",
+            PaymentStatus = booking.PaymentStatus,
+            PaymentStatusText = booking.PaymentStatus == (byte)CaddiePaymentStatus.Paid ? "Đã thanh toán" : "Chưa thanh toán",
+            TotalCaddieFee = booking.TotalCaddieFee,
+            PaymentMethod = booking.PaymentMethod,
+            Caddies = caddieItemsResult
+        };
+    }
+
+    /// <summary>Nhả 1 slot lịch Caddie về trạng thái Available (bỏ khóa booking). No-op nếu scheduleId null/rỗng.</summary>
+    private async Task ReleaseScheduleSlotAsync(Guid? scheduleId)
+    {
+        if (scheduleId == null || scheduleId.Value == Guid.Empty) return;
+        try
+        {
+            var schedule = await _scheduleRepo.GetAsync(scheduleId.Value);
+            schedule.SlotStatus = (byte)CaddieSlotStatus.Available;
+            schedule.BookingId = null;
+            await _scheduleRepo.UpdateAsync(schedule, autoSave: true);
+        }
+        catch { /* Schedule may not exist */ }
+    }
+
+    /// <summary>Tính tổng phí Caddie = số caddie × đơn giá GolfCourse.CaddieFee.</summary>
+    private async Task<decimal> ComputeCaddieFeeAsync(Guid golfCourseId, int caddieCount)
+    {
+        if (caddieCount <= 0 || golfCourseId == Guid.Empty) return 0m;
+        var golfCourse = await _golfCourseRepo.FindAsync(golfCourseId);
+        var unitFee = golfCourse?.CaddieFee ?? 0m;
+        return unitFee * caddieCount;
+    }
+
+    /// <summary>Đồng bộ TotalCaddieFee sang tất cả booking golf (AppBookings) có liên kết CaddieBookingId; cập nhật lại TotalAmount.</summary>
+    private async Task SyncGolfBookingCaddieFeeAsync(Guid caddieBookingId, decimal newCaddieFee)
+    {
+        // Tìm các booking golf liên kết qua AppBookingPlayers.CaddieBookingId
+        var linkedPlayers = await _bookingPlayerRepo.GetListAsync(p => p.CaddieBookingId == caddieBookingId);
+        var golfBookingIds = linkedPlayers.Select(p => p.BookingId).Distinct().ToList();
+
+        foreach (var golfBookingId in golfBookingIds)
+        {
+            var golfBooking = await _golfBookingRepo.FindAsync(golfBookingId);
+            if (golfBooking == null) continue;
+
+            // TotalAmount = tổng giá người chơi + phí Caddie mới (thay phí cũ)
+            var playersTotal = (await _bookingPlayerRepo.GetListAsync(p => p.BookingId == golfBookingId))
+                .Sum(p => p.PricePerPlayer ?? 0m);
+            golfBooking.TotalCaddieFee = newCaddieFee > 0 ? newCaddieFee : (decimal?)null;
+            golfBooking.TotalAmount = playersTotal + newCaddieFee;
+            await _golfBookingRepo.UpdateAsync(golfBooking, autoSave: true);
+        }
+    }
+
+    /// <summary>
     /// GET lịch sử booking của customer
     /// </summary>
     public async Task<List<MiniAppCaddieBookingHistoryDto>> GetBookingHistoryAsync(Guid customerId)
@@ -400,18 +600,17 @@ public class MiniAppCaddieAppService : ApplicationService
         if (!bookings.Any())
             return new List<MiniAppCaddieBookingHistoryDto>();
 
-        // Load caddie info from booking details
+        // Load caddie info from booking details (giữ Note để trả về từng caddie)
         var bookingIds = bookings.Select(x => x.Id).ToList();
         var allDetails = await AsyncExecuter.ToListAsync(
             (await _bookingDetailRepo.GetQueryableAsync())
                 .Where(d => bookingIds.Contains(d.CaddieBookingId))
-                .Select(d => new { d.CaddieBookingId, d.CaddieId }));
+                .Select(d => new { d.CaddieBookingId, d.CaddieId, d.Note }));
 
         var caddieIds = allDetails.Select(d => d.CaddieId).Distinct().ToList();
-        var caddieQuery = (await _caddieRepo.GetQueryableAsync())
-            .Where(x => caddieIds.Contains(x.Id))
-            .Select(x => new { x.Id, x.CaddieName, x.CaddieCode, x.Avatar, x.RatingAvg });
-        var caddies = await AsyncExecuter.ToListAsync(caddieQuery);
+        var caddies = await AsyncExecuter.ToListAsync(
+            (await _caddieRepo.GetQueryableAsync())
+                .Where(x => caddieIds.Contains(x.Id)));
 
         // Check which bookings have ratings
         var ratingQuery = (await _ratingRepo.GetQueryableAsync())
@@ -421,16 +620,41 @@ public class MiniAppCaddieAppService : ApplicationService
 
         return bookings.Select(x =>
         {
-            var firstDetail = allDetails.FirstOrDefault(d => d.CaddieBookingId == x.Id);
-            var caddie = firstDetail != null ? caddies.FirstOrDefault(c => c.Id == firstDetail.CaddieId) : null;
+            var bookingDetails = allDetails.Where(d => d.CaddieBookingId == x.Id).ToList();
+
+            // Danh sách tất cả Caddie trong booking (match shape của API detail)
+            var caddieList = bookingDetails.Select(d =>
+            {
+                var caddie = caddies.FirstOrDefault(c => c.Id == d.CaddieId);
+                return new MiniAppBookingCaddieDetailDto
+                {
+                    CaddieId = d.CaddieId,
+                    CaddieName = caddie?.CaddieName ?? "—",
+                    CaddieCode = caddie?.CaddieCode,
+                    CaddieAvatar = ResolveAvatarUrl(caddie?.Avatar),
+                    RatingAvg = caddie?.RatingAvg ?? 0,
+                    Phone = caddie?.Phone,
+                    Gender = caddie?.Gender,
+                    GenderText = caddie?.Gender switch
+                    {
+                        (byte)CaddieGender.Male => "Nam",
+                        (byte)CaddieGender.Female => "Nữ",
+                        _ => null
+                    },
+                    Note = d.Note
+                };
+            }).ToList();
+
+            // Caddie đầu tiên — giữ các field phẳng cho tương thích ngược (client cũ)
+            var first = caddieList.FirstOrDefault();
             return new MiniAppCaddieBookingHistoryDto
             {
                 Id = x.Id,
                 BookingCode = x.BookingCode,
-                CaddieName = caddie?.CaddieName ?? "—",
-                CaddieCode = caddie?.CaddieCode,
-                CaddieAvatar = ResolveAvatarUrl(caddie?.Avatar),
-                CaddieRatingAvg = caddie?.RatingAvg ?? 0,
+                CaddieName = first?.CaddieName ?? "—",
+                CaddieCode = first?.CaddieCode,
+                CaddieAvatar = first?.CaddieAvatar,
+                CaddieRatingAvg = first?.RatingAvg ?? 0,
                 BookingDate = x.BookingDate,
                 StartTime = x.StartTime,
                 NumberOfHoles = x.NumberOfHoles,
@@ -452,7 +676,8 @@ public class MiniAppCaddieAppService : ApplicationService
                 },
                 TotalCaddieFee = x.TotalCaddieFee,
                 PaymentMethod = x.PaymentMethod,
-                HasRating = ratedBookingIds.Contains(x.Id)
+                HasRating = ratedBookingIds.Contains(x.Id),
+                Caddies = caddieList
             };
         }).ToList();
     }
@@ -558,7 +783,8 @@ public class MiniAppCaddieAppService : ApplicationService
     }
 
     /// <summary>
-    /// POST đánh giá caddie
+    /// POST đánh giá caddie — hỗ trợ đánh giá NHIỀU Caddie trong 1 booking (mỗi Caddie 1 đánh giá).
+    /// Tương thích ngược: nếu client cũ gửi 1 đánh giá phẳng (CaddieId/OverallRating/SkillRatings) thì vẫn nhận.
     /// </summary>
     public async Task CreateRatingAsync(MiniAppCreateCaddieRatingDto input)
     {
@@ -579,46 +805,77 @@ public class MiniAppCaddieAppService : ApplicationService
         if (booking.Status != (byte)CaddieBookingStatus.Completed)
             throw new AbpValidationException("Chỉ booking đã hoàn thành mới được đánh giá.");
 
-        // Check if already rated
-        var existingQuery = (await _ratingRepo.GetQueryableAsync())
-            .Where(x => x.BookingId == input.BookingId);
-        var existingCount = await AsyncExecuter.CountAsync(existingQuery);
-        if (existingCount > 0)
-            throw new AbpValidationException("Booking này đã được đánh giá.");
+        // Gom danh sách đánh giá: ưu tiên Ratings[]; fallback single-caddie phẳng (client cũ)
+        var ratingItems = (input.Ratings != null && input.Ratings.Any())
+            ? input.Ratings
+            : new List<MiniAppCaddieRatingItemDto>();
 
-        // Validate rating
-        if (input.OverallRating < 1 || input.OverallRating > 5)
-            throw new AbpValidationException("Đánh giá phải từ 1 đến 5 sao.");
-
-        // Get primary caddie from booking details
-        var bookingDetailQuery = (await _bookingDetailRepo.GetQueryableAsync())
-            .Where(d => d.CaddieBookingId == input.BookingId);
-        var primaryDetail = await AsyncExecuter.FirstOrDefaultAsync(bookingDetailQuery);
-        var caddieId = primaryDetail?.CaddieId ?? Guid.Empty;
-
-        // Create rating
-        var rating = new AppCaddieRating
+        if (ratingItems.Count == 0 && input.OverallRating.HasValue)
         {
-            BookingId = input.BookingId,
-            CustomerId = input.CustomerId,
-            CaddieId = caddieId,
-            OverallRating = input.OverallRating,
-            Comment = input.Comment,
-            ApprovalStatus = (byte)CaddieRatingApprovalStatus.Pending
-        };
+            // Backward-compat: lấy caddie phẳng, nếu không có CaddieId thì lấy caddie đầu tiên của booking
+            var flatCaddieId = input.CaddieId ?? Guid.Empty;
+            if (flatCaddieId == Guid.Empty)
+            {
+                var primaryDetail = await AsyncExecuter.FirstOrDefaultAsync(
+                    (await _bookingDetailRepo.GetQueryableAsync()).Where(d => d.CaddieBookingId == input.BookingId));
+                flatCaddieId = primaryDetail?.CaddieId ?? Guid.Empty;
+            }
+            ratingItems = new List<MiniAppCaddieRatingItemDto>
+            {
+                new() { CaddieId = flatCaddieId, OverallRating = input.OverallRating.Value, Comment = input.Comment, SkillRatings = input.SkillRatings ?? new() }
+            };
+        }
 
-        await _ratingRepo.InsertAsync(rating, autoSave: true);
+        if (ratingItems.Count == 0)
+            throw new AbpValidationException("Vui lòng gửi ít nhất 1 đánh giá Caddie.");
 
-        // Create rating details (skill ratings)
-        if (input.SkillRatings?.Any() == true)
+        // Các Caddie đã đánh giá trước đó cho booking này → tránh đánh giá trùng
+        var alreadyRatedCaddieIds = (await AsyncExecuter.ToListAsync(
+                (await _ratingRepo.GetQueryableAsync())
+                    .Where(x => x.BookingId == input.BookingId)
+                    .Select(x => x.CaddieId)))
+            .ToHashSet();
+
+        // Các Caddie hợp lệ thuộc booking này
+        var validCaddieIds = (await AsyncExecuter.ToListAsync(
+                (await _bookingDetailRepo.GetQueryableAsync())
+                    .Where(d => d.CaddieBookingId == input.BookingId)
+                    .Select(d => d.CaddieId)))
+            .ToHashSet();
+
+        foreach (var item in ratingItems.GroupBy(r => r.CaddieId).Select(g => g.First()))
         {
-            var details = input.SkillRatings
-                .Where(s => s.Score >= 1 && s.Score <= 5)
-                .Select(s => new AppCaddieRatingDetail(_guidGenerator.Create(), rating.Id, s.SkillId, s.Score))
-                .ToList();
+            if (item.CaddieId == Guid.Empty)
+                throw new AbpValidationException("CaddieId không hợp lệ trong danh sách đánh giá.");
+            if (item.OverallRating < 1 || item.OverallRating > 5)
+                throw new AbpValidationException("Đánh giá phải từ 1 đến 5 sao.");
+            if (validCaddieIds.Count > 0 && !validCaddieIds.Contains(item.CaddieId))
+                throw new AbpValidationException("Caddie không thuộc booking này.");
+            if (alreadyRatedCaddieIds.Contains(item.CaddieId))
+                continue; // đã đánh giá caddie này rồi → bỏ qua
 
-            if (details.Any())
-                await _ratingDetailRepo.InsertManyAsync(details, autoSave: true);
+            var rating = new AppCaddieRating
+            {
+                BookingId = input.BookingId,
+                CustomerId = input.CustomerId,
+                CaddieId = item.CaddieId,
+                OverallRating = item.OverallRating,
+                Comment = item.Comment,
+                ApprovalStatus = (byte)CaddieRatingApprovalStatus.Pending
+            };
+            await _ratingRepo.InsertAsync(rating, autoSave: true);
+
+            if (item.SkillRatings?.Any() == true)
+            {
+                var details = item.SkillRatings
+                    .Where(s => s.Score >= 1 && s.Score <= 5)
+                    .Select(s => new AppCaddieRatingDetail(_guidGenerator.Create(), rating.Id, s.SkillId, s.Score))
+                    .ToList();
+                if (details.Any())
+                    await _ratingDetailRepo.InsertManyAsync(details, autoSave: true);
+            }
+
+            alreadyRatedCaddieIds.Add(item.CaddieId);
         }
     }
 

@@ -21,8 +21,11 @@ public class MiniAppBookingPlayerInput
     /// <summary>Caddie đã đặt cho người chơi này (Id trả về từ API đặt Caddie /api/mini-app/caddie/booking)</summary>
     public Guid? CaddieId { get; set; }
 
-    /// <summary>Id booking Caddie (AppCaddieBooking) trả về từ API đặt Caddie — liên kết booking golf với booking Caddie</summary>
+    /// <summary>Id booking Caddie (AppCaddieBooking - HEADER) trả về từ API đặt Caddie — liên kết booking golf với booking Caddie</summary>
     public Guid? CaddieBookingId { get; set; }
+
+    /// <summary>Id dòng chi tiết Caddie (AppCaddieBookingDetail) gán cho người chơi này</summary>
+    public Guid? AppCaddieBookingDetailId { get; set; }
 
     /// <summary>Tên Caddie (tùy chọn — nếu Mini App không truyền, server sẽ tự tra từ CaddieId)</summary>
     [StringLength(255)]
@@ -63,6 +66,17 @@ public class MiniAppCreateBookingDto
     [Range(0, double.MaxValue)]
     public decimal TotalAmount { get; set; }
 
+    /// <summary>Tổng phí thuê Caddie đi kèm (VNĐ, được phép null). Sẽ được cộng vào TotalAmount.</summary>
+    public decimal? TotalCaddieFee { get; set; }
+
+    /// <summary>
+    /// [UNIFIED FLOW - tùy chọn] Danh sách Caddie cần đặt KÈM booking golf trong CÙNG 1 transaction.
+    /// Khi có giá trị → server tự tạo AppCaddieBooking + AppCaddieBookingDetails, tự tính TotalCaddieFee
+    /// (= số caddie × GolfCourse.CaddieFee), gán vào booking golf + gán CaddieId/CaddieName vào đúng người chơi.
+    /// Khi null/rỗng → giữ nguyên logic cũ (mini app khác + luồng đặt Caddie riêng KHÔNG bị ảnh hưởng).
+    /// </summary>
+    public List<MiniAppInlineCaddieInput>? CaddieAssignments { get; set; }
+
     /// <summary>Phương thức thanh toán: 1: COD, 2: Online, 3: BankTransfer</summary>
     [Required]
     public PaymentMethod PaymentMethod { get; set; }
@@ -91,4 +105,25 @@ public class MiniAppCreateBookingDto
 
     [StringLength(256)]
     public string? InvoiceEmail { get; set; }
+}
+
+/// <summary>
+/// [UNIFIED FLOW] 1 Caddie cần đặt kèm booking golf, gán cho 1 người chơi cụ thể.
+/// Server sẽ tự tạo AppCaddieBookingDetail và gán CaddieId/CaddieName vào đúng người chơi theo PlayerIndex.
+/// </summary>
+public class MiniAppInlineCaddieInput
+{
+    /// <summary>Id Caddie cần đặt (bắt buộc).</summary>
+    [Required]
+    public Guid CaddieId { get; set; }
+
+    /// <summary>
+    /// Vị trí (index, 0-based) của người chơi trong danh sách Players được gán Caddie này.
+    /// Nếu null → không gán vào người chơi cụ thể nào (chỉ tạo booking Caddie).
+    /// </summary>
+    public int? PlayerIndex { get; set; }
+
+    /// <summary>Ghi chú cho dòng Caddie (vd "Gán cho Tan Dang Anh").</summary>
+    [StringLength(500)]
+    public string? Note { get; set; }
 }

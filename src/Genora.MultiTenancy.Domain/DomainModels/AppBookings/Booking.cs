@@ -38,6 +38,12 @@ public class Booking : FullAuditedAggregateRoot<Guid>, IMultiTenant
     public decimal? PricePerGolfer { get; set; }
     public decimal TotalAmount { get; set; }
 
+    /// <summary>
+    /// Tổng phí thuê Caddie đi kèm booking golf (VNĐ). Null nếu booking không đặt Caddie.
+    /// Đồng bộ với AppCaddieBookings.TotalCaddieFee; đã được cộng vào TotalAmount.
+    /// </summary>
+    public decimal? TotalCaddieFee { get; set; }
+
     public short? NumberHole { get; set; }
 
     [StringLength(20)]

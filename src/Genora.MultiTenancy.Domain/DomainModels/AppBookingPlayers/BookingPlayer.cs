@@ -38,9 +38,16 @@ public class BookingPlayer : FullAuditedAggregateRoot<Guid>, IMultiTenant
     public Guid? CaddieId { get; set; }
 
     /// <summary>
-    /// Trỏ về AppCaddieBooking (header) đã tạo từ API đặt Caddie — liên kết booking golf với booking Caddie.
+    /// Trỏ về AppCaddieBooking (HEADER) — liên kết booking golf với booking Caddie.
+    /// LƯU Ý: đây là Id của bảng AppCaddieBookings (không phải AppCaddieBookingDetails).
     /// </summary>
     public Guid? CaddieBookingId { get; set; }
+
+    /// <summary>
+    /// Trỏ về AppCaddieBookingDetail (DÒNG chi tiết Caddie cụ thể gán cho người chơi này).
+    /// Là Id của bảng AppCaddieBookingDetails — dùng để cập nhật/gỡ đúng dòng khi đổi/hủy Caddie.
+    /// </summary>
+    public Guid? AppCaddieBookingDetailId { get; set; }
 
     /// <summary>
     /// Tên Caddie (denormalize để tiện hiển thị, tránh join sang AppCaddies).

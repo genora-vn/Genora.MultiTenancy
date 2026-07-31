@@ -49,6 +49,12 @@ public class MiniAppCaddieReviewDto
 
 public class MiniAppCreateCaddieBookingDto
 {
+    /// <summary>
+    /// Id booking Caddie (AppCaddieBooking) — nếu truyền vào thì hiểu là UPDATE (reconcile danh sách caddie),
+    /// nếu null/Empty thì INSERT booking mới. Dùng khi khách thêm/bớt caddie theo danh sách người chơi.
+    /// </summary>
+    public Guid? CaddieBookingId { get; set; }
+
     public Guid CustomerId { get; set; }
     /// <summary>Danh sách caddie cần book (1 hoặc nhiều)</summary>
     public List<MiniAppBookingCaddieItemDto> Caddies { get; set; } = new();
@@ -68,10 +74,32 @@ public class MiniAppBookingCaddieItemDto
     public string? Note { get; set; }
 }
 
+/// <summary>Body hủy gán 1 Caddie khỏi booking</summary>
+public class MiniAppUnassignCaddieDto
+{
+    public Guid CaddieBookingId { get; set; }
+    public Guid CaddieId { get; set; }
+}
+
 public class MiniAppCreateCaddieRatingDto
 {
     public Guid CustomerId { get; set; }
     public Guid BookingId { get; set; }
+
+    /// <summary>Danh sách đánh giá theo từng Caddie (1 booking có thể nhiều Caddie).</summary>
+    public List<MiniAppCaddieRatingItemDto> Ratings { get; set; } = new();
+
+    // ── Backward-compat (client cũ gửi đánh giá 1 Caddie phẳng) — tùy chọn ──
+    public Guid? CaddieId { get; set; }
+    public int? OverallRating { get; set; }
+    public string? Comment { get; set; }
+    public List<MiniAppSkillRatingDto>? SkillRatings { get; set; }
+}
+
+/// <summary>1 đánh giá cho 1 Caddie trong booking.</summary>
+public class MiniAppCaddieRatingItemDto
+{
+    public Guid CaddieId { get; set; }
     public int OverallRating { get; set; }
     public string? Comment { get; set; }
     public List<MiniAppSkillRatingDto> SkillRatings { get; set; } = new();
@@ -101,6 +129,9 @@ public class MiniAppCaddieBookingHistoryDto
     public decimal TotalCaddieFee { get; set; }
     public byte PaymentMethod { get; set; }
     public bool HasRating { get; set; }
+
+    /// <summary>Danh sách tất cả Caddie đã book trong booking (1 booking có thể nhiều Caddie).</summary>
+    public List<MiniAppBookingCaddieDetailDto> Caddies { get; set; } = new();
 }
 
 /// <summary>Chi tiết lịch đặt caddie cho Mini App</summary>
@@ -212,7 +243,7 @@ public class MiniAppCreatedCaddieItemDto
     public string? CaddieCode { get; set; }
     public string? CaddieAvatar { get; set; }
     public decimal RatingAvg { get; set; }
-    public Guid ScheduleId { get; set; }
+    public Guid? ScheduleId { get; set; }
     public string? Note { get; set; }
 }
 

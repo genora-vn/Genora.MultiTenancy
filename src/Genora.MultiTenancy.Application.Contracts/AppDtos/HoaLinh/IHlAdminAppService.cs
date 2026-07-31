@@ -21,7 +21,7 @@ public interface IHlAdminAppService : IApplicationService
     Task<HlApiResult<List<HlProductByBrandDto>>> GetProductsByBrandAsync(string brandCode);
 
     // Product Groups
-    Task<HlApiResult<HlPagedResponse<HlProductGroupDto>>> GetProductGroupsAsync(int page, int limit);
+    Task<HlApiResult<HlPagedResponse<HlProductGroupDto>>> GetProductGroupsAsync(int page, int limit, short? isCombo);
     Task<HlApiResult<List<HlProductGroupDto>>> GetProductGroupDetailAsync(string code);
 
     // Customers

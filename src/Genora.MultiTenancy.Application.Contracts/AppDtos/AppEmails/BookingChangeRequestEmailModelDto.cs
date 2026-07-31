@@ -35,6 +35,14 @@ public class BookingChangeRequestEmailModelDto
 
     public string PricePerGolferText { get; set; } = "";
     public string TotalAmountText { get; set; } = "";
+
+    /// <summary>Có phí đặt Caddie hay không — điều khiển ẩn/hiện dòng phí Caddie + Tổng cộng trong email.</summary>
+    public bool HasCaddieFee { get; set; }
+    /// <summary>Tổng phí đặt Caddie (đã format). Chỉ hiển thị khi HasCaddieFee = true.</summary>
+    public string TotalCaddieFeeText { get; set; } = "";
+    /// <summary>Tổng cộng = Tổng giá trị booking + Tổng phí Caddie (đã format). Chỉ hiển thị khi HasCaddieFee = true.</summary>
+    public string GrandTotalText { get; set; } = "";
+
     public string OtherRequestsText { get; set; } = "";
     public string InvoiceInfoText { get; set; } = "";
 

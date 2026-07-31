@@ -1,13 +1,16 @@
+using Genora.MultiTenancy.AppDtos.HoaLinh;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Serialization.Metadata;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-using Genora.MultiTenancy.AppDtos.HoaLinh;
-using Microsoft.Extensions.Logging;
 using Volo.Abp.MultiTenancy;
 
 namespace Genora.MultiTenancy.AppServices.HoaLinh;
@@ -23,6 +26,26 @@ public class HlApiClientService : IHlApiClientService
         PropertyNameCaseInsensitive = true,
         PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower
     };
+
+    private class ProductGroupResolver : DefaultJsonTypeInfoResolver
+    {
+        public override JsonTypeInfo GetTypeInfo(Type type, JsonSerializerOptions options)
+        {
+            var info = base.GetTypeInfo(type, options);
+
+            if (type == typeof(HlProductGroupDto))
+            {
+                var prop = info.Properties.FirstOrDefault(x => x.Name == "ProductCombo");
+                if (prop != null)
+                {
+                    prop.Name = "productcombo";
+                }
+            }
+
+            return info;
+        }
+    }
+
 
     public HlApiClientService(
         IHttpClientFactory httpFactory,
@@ -156,9 +179,9 @@ public class HlApiClientService : IHlApiClientService
 
     #region Product Groups
 
-    public async Task<HlApiResult<HlPagedResponse<HlProductGroupDto>>> GetProductGroupsAsync(int page = 1, int limit = 50)
+    public async Task<HlApiResult<HlPagedResponse<HlProductGroupDto>>> GetProductGroupsAsync(int page = 1, int limit = 50, short? isCombo = 0)
     {
-        var url = $"/api/ProductGroup?page={page}&limit={limit}";
+        var url = $"/api/ProductGroup?page={page}&limit={limit}&is_combo={isCombo}";
         return await GetAsync<HlPagedResponse<HlProductGroupDto>>(url, "ProductGroup");
     }
 
@@ -206,6 +229,12 @@ public class HlApiClientService : IHlApiClientService
     {
         var url = $"/api/MasterOrderStatus?page={page}&limit={limit}";
         return await GetAsync<HlPagedResponse<HlMasterOrderStatusDto>>(url, "MasterData");
+    }
+
+    public async Task<HlApiResult<List<HlProductComboDto>>> GetProductCombosAsync(int page = 1, int limit = 50)
+    {
+        var url = $"/api/ProductCombo?page={page}&limit={limit}";
+        return await GetAsync<List<HlProductComboDto>>(url, "Product");
     }
 
     #endregion
@@ -275,6 +304,14 @@ public class HlApiClientService : IHlApiClientService
     /// </summary>
     private T? DeserializeSmartResponse<T>(string json)
     {
+        if (json.Contains("\"productcombo\"", StringComparison.OrdinalIgnoreCase))
+        {
+            json = Regex.Replace(
+                json,
+                "\"productcombo\"\\s*:",
+                "\"product_combo\":",
+                RegexOptions.IgnoreCase);
+        }
         var isArray = json.StartsWith("[");
         var targetType = typeof(T);
 

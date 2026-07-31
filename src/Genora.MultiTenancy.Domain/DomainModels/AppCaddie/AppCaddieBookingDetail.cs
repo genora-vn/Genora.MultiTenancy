@@ -15,7 +15,11 @@ public class AppCaddieBookingDetail : CreationAuditedEntity<Guid>, IMultiTenant
 
     public Guid CaddieId { get; set; }
 
-    public Guid ScheduleId { get; set; }
+    /// <summary>
+    /// Slot lịch Caddie (AppCaddieSchedules). Nullable: luồng "book Caddie kèm golf" có thể tạo detail
+    /// khi Caddie chưa có lịch trống (không bắt buộc gán slot). Null = chưa gán slot lịch.
+    /// </summary>
+    public Guid? ScheduleId { get; set; }
 
     /// <summary>
     /// Per-caddy status within the booking (1=Active, 2=Cancelled)
@@ -31,11 +35,11 @@ public class AppCaddieBookingDetail : CreationAuditedEntity<Guid>, IMultiTenant
 
     protected AppCaddieBookingDetail() { }
 
-    public AppCaddieBookingDetail(Guid id, Guid caddieBookingId, Guid caddieId, Guid scheduleId)
+    public AppCaddieBookingDetail(Guid id, Guid caddieBookingId, Guid caddieId, Guid? scheduleId)
         : base(id)
     {
         CaddieBookingId = caddieBookingId;
         CaddieId = caddieId;
-        ScheduleId = scheduleId;
+        ScheduleId = scheduleId == Guid.Empty ? null : scheduleId;
     }
 }

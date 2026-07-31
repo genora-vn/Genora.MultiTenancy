@@ -76,12 +76,24 @@ $(function () {
                 },
                 {
                     title: 'Caddy',
-                    data: 'caddieName',
-                    render: function (data) {
-                        var initials = (data || '?').split(' ').map(function(n) { return n[0]; }).join('').substring(0, 2).toUpperCase();
+                    data: 'caddieNames',
+                    render: function (data, type, row) {
+                        var names = data || row.caddieName || '';
+                        if (!names) return '<span style="font-size:13px;color:var(--caddie-on-surface-variant);">—</span>';
+                        var first = names.split(',')[0].trim();
+                        var initials = (first || '?').split(' ').map(function(n) { return n[0]; }).join('').substring(0, 2).toUpperCase();
                         return '<div class="d-flex align-items-center gap-2">' +
-                            '<span class="d-inline-flex align-items-center justify-content-center rounded-circle" style="width:28px;height:28px;background:var(--caddie-surface-container-high);color:var(--caddie-primary);font-size:10px;font-weight:700;">' + initials + '</span>' +
-                            '<span style="font-size:13px;">' + (data || '—') + '</span></div>';
+                            '<span class="d-inline-flex align-items-center justify-content-center rounded-circle" style="width:28px;height:28px;background:var(--caddie-surface-container-high);color:var(--caddie-primary);font-size:10px;font-weight:700;flex-shrink:0;">' + initials + '</span>' +
+                            '<span style="font-size:13px;">' + names + '</span></div>';
+                    }
+                },
+                {
+                    title: 'Tổng phí Caddy',
+                    data: 'totalCaddieFee',
+                    className: 'text-end',
+                    render: function (data) {
+                        var v = Number(data || 0);
+                        return '<span style="font-weight:600;">' + v.toLocaleString('vi-VN') + 'đ</span>';
                     }
                 },
                 {

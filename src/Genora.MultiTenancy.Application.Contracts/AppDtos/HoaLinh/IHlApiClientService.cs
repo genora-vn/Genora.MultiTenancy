@@ -62,6 +62,12 @@ public interface IHlApiClientService
     /// </summary>
     Task<HlApiResult<List<HlProductDto>>> GetProductDetailAsync(string productCode);
 
+    /// <summary>
+    /// Lấy danh sách sản phẩm combo (mỗi combo gồm nhiều dòng sản phẩm)
+    /// GET /api/ProductCombo?page={page}&limit={limit}
+    /// </summary>
+    Task<HlApiResult<List<HlProductComboDto>>> GetProductCombosAsync(int page = 1, int limit = 50);
+
     #endregion
 
     #region Orders
@@ -130,7 +136,7 @@ public interface IHlApiClientService
     /// Lấy danh sách nhóm sản phẩm
     /// GET /api/ProductGroup?page={page}&limit={limit}
     /// </summary>
-    Task<HlApiResult<HlPagedResponse<HlProductGroupDto>>> GetProductGroupsAsync(int page = 1, int limit = 50);
+    Task<HlApiResult<HlPagedResponse<HlProductGroupDto>>> GetProductGroupsAsync(int page = 1, int limit = 500, short? isCombo = 0);
 
     /// <summary>
     /// Lấy chi tiết nhóm sản phẩm

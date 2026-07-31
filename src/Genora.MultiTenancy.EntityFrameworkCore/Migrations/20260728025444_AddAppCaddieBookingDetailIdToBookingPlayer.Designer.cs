@@ -4,6 +4,7 @@ using Genora.MultiTenancy.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Volo.Abp.EntityFrameworkCore;
 
@@ -12,9 +13,11 @@ using Volo.Abp.EntityFrameworkCore;
 namespace Genora.MultiTenancy.Migrations
 {
     [DbContext(typeof(MultiTenancyDbContext))]
-    partial class MultiTenancyDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260728025444_AddAppCaddieBookingDetailIdToBookingPlayer")]
+    partial class AddAppCaddieBookingDetailIdToBookingPlayer
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -673,7 +676,7 @@ namespace Genora.MultiTenancy.Migrations
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
 
-                    b.Property<Guid?>("ScheduleId")
+                    b.Property<Guid>("ScheduleId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<byte>("Status")
@@ -7825,7 +7828,8 @@ namespace Genora.MultiTenancy.Migrations
                     b.HasOne("Genora.MultiTenancy.DomainModels.AppCaddie.AppCaddieSchedule", "Schedule")
                         .WithMany()
                         .HasForeignKey("ScheduleId")
-                        .OnDelete(DeleteBehavior.Restrict);
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
 
                     b.Navigation("Caddie");
 

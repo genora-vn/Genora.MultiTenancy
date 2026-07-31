@@ -216,10 +216,11 @@ public static class MultiTenancyDbContextModelCreatingExtensionsCaddie
                 .IsRequired()
                 .OnDelete(DeleteBehavior.Restrict);
 
+            // ScheduleId nullable: luồng "book Caddie kèm golf" có thể tạo detail khi Caddie chưa có slot lịch trống.
             b.HasOne(x => x.Schedule)
                 .WithMany()
                 .HasForeignKey(x => x.ScheduleId)
-                .IsRequired()
+                .IsRequired(false)
                 .OnDelete(DeleteBehavior.Restrict);
 
             b.HasIndex(x => new { x.TenantId, x.CaddieBookingId })

@@ -26,6 +26,8 @@ namespace Genora.MultiTenancy.AppDtos.AppBookings
         public decimal? PricePerGolfer { get; set; }
         public decimal OriginalTotalAmount { get; set; }
         public decimal TotalAmount { get; set; }
+        /// <summary>Tổng phí thuê Caddie (nếu có). Null nếu booking không đặt Caddie / mini app không dùng module Caddie.</summary>
+        public decimal? TotalCaddieFee { get; set; }
         public string? FrameTimes { get; set; }
         public int? NumberHoles { get; set; }
         public List<int>? Utilities { get; set; }
@@ -35,6 +37,9 @@ namespace Genora.MultiTenancy.AppDtos.AppBookings
         public BookingSource Source { get; set; }
         public string VNDayOfWeek { get; set; }
         public List<AppBookingPlayerDto> Players { get; set; } = new();
+
+        /// <summary>Danh sách Caddie đã book kèm booking golf (từ AppBookingPlayers). Rỗng nếu không có.</summary>
+        public List<MiniAppBookingGolfCaddieDto> Caddies { get; set; } = new();
 
         public string? CompanyName { get; set; }
         public string? TaxCode { get; set; }

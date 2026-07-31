@@ -402,10 +402,10 @@ public class HlAdminAppService : ApplicationService, IHlAdminAppService
 
     #region Product Groups
 
-    public async Task<HlApiResult<HlPagedResponse<HlProductGroupDto>>> GetProductGroupsAsync(int page, int limit)
+    public async Task<HlApiResult<HlPagedResponse<HlProductGroupDto>>> GetProductGroupsAsync(int page, int limit, short? isCombo)
     {
         await CheckPermissionAsync(MultiTenancyPermissions.AppHlProducts.Default, MultiTenancyPermissions.HostAppHlProducts.Default);
-        return await _hlApi.GetProductGroupsAsync(page, limit);
+        return await _hlApi.GetProductGroupsAsync(page, limit, isCombo);
     }
 
     public async Task<HlApiResult<List<HlProductGroupDto>>> GetProductGroupDetailAsync(string code)
