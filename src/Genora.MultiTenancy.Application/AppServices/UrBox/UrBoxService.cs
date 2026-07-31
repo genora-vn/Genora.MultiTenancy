@@ -400,7 +400,7 @@ public class UrBoxService : IUrBoxService
                             exchange_code = exchangeCode,
                             customer_name = exchange.CustomerName,
                             customer_code = exchange.CustomerCode,
-                            membership_tier = customer?.MembershipTier?.Name,
+                            membership_tier = input.Rank,
                             gift_name = exchange.GiftName,
                             quantity = exchange.Quantity,
                             total_value = exchange.TotalPointsUsed,

@@ -202,8 +202,8 @@ public class HlPointAppService : ApplicationService, IHlPointAppService
                             membership_tier = batch.MembershipTier,
                             campaign_name = batch.CampaignName,
                             voucher_value = batch.VoucherValue,
-                            exchanged_at = batch.ExchangedAt,
-                            expire_date = batch.ExpireDate,
+                            exchanged_at = batch.ExchangedAt.ToString("dd/MM/yyyy"),
+                            expire_date = batch.ExpireDate.ToString("dd/MM/yyyy"),
                         }
                     },
                     priority: BackgroundJobPriority.Normal

@@ -19,6 +19,8 @@ public class UrBoxRedeemInput
     /// <summary>Tên khách hàng (lưu lịch sử đổi quà)</summary>
     public string? CustomerName { get; set; }
 
+    public string? Rank { get; set; }
+
     /// <summary>Danh sách quà cần đổi (priceId + quantity)</summary>
     [Required]
     public List<UrBoxRedeemItem> Items { get; set; } = new();
