@@ -1,23 +1,32 @@
-﻿using Genora.MultiTenancy.AppDtos.AppFnbOrders;
+﻿using Genora.MultiTenancy.AppDtos.AppEmails;
+using Genora.MultiTenancy.AppDtos.AppFnbOrders;
+using Genora.MultiTenancy.AppServices.AppEmails;
+using Genora.MultiTenancy.AppServices.AppZaloAuths;
 using Genora.MultiTenancy.DomainModels.AppCustomers;
 using Genora.MultiTenancy.DomainModels.AppFnbCategories;
 using Genora.MultiTenancy.DomainModels.AppFnbItems;
 using Genora.MultiTenancy.DomainModels.AppFnbOrderActivity;
 using Genora.MultiTenancy.DomainModels.AppFnbOrders;
 using Genora.MultiTenancy.Enums;
+using Genora.MultiTenancy.Features.AppEmails;
 using Genora.MultiTenancy.Helpers;
+using Genora.MultiTenancy.Localization;
 using Genora.MultiTenancy.Realtime;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
 using Volo.Abp;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Application.Services;
+using Volo.Abp.BackgroundJobs;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.MultiTenancy;
+using Volo.Abp.Settings;
 using Volo.Abp.Validation;
 
 namespace Genora.MultiTenancy.AppServices.AppFnbOrders;
@@ -33,6 +42,10 @@ public class MiniAppFnbOrderService : ApplicationService, IMiniAppFnbOrderServic
     private readonly ICurrentTenant _currentTenant;
     private readonly IFnbOrderRealtimeNotifier _notifier;
     private readonly IConfiguration _configuration;
+    private readonly IAppEmailSenderService _appEmailSenderService; // Service gửi mail template qua queue
+    private readonly ISettingProvider _settingProvider;
+    private readonly IStringLocalizer<MultiTenancyResource> _l;
+    private readonly IBackgroundJobManager _jobManager;
 
     public MiniAppFnbOrderService(
         IRepository<FnbOrder, Guid> orderRepository,
@@ -43,7 +56,11 @@ public class MiniAppFnbOrderService : ApplicationService, IMiniAppFnbOrderServic
         ICurrentTenant currentTenant,
         IFnbOrderRealtimeNotifier notifier,
         IRepository<FnbOrderActivity, Guid> orderActivityRepository,
-        IConfiguration configuration)
+        IConfiguration configuration,
+        IAppEmailSenderService appEmailSenderService,
+        ISettingProvider settingProvider,
+        IStringLocalizer<MultiTenancyResource> l,
+        IBackgroundJobManager jobManager)
     {
         _orderRepository = orderRepository;
         _orderItemRepository = orderItemRepository;
@@ -54,6 +71,31 @@ public class MiniAppFnbOrderService : ApplicationService, IMiniAppFnbOrderServic
         _notifier = notifier;
         _orderActivityRepository = orderActivityRepository;
         _configuration = configuration;
+        _appEmailSenderService = appEmailSenderService;
+        _settingProvider = settingProvider;
+        _l = l;
+        _jobManager = jobManager;
+    }
+
+    private string NA() => _l["Common:NA"].Value;
+
+    private string CurrencySuffix() => _l["Common:CurrencySuffix"].Value;
+
+    private string F(string code, params object[] args)
+    {
+        var template = _l[code].Value;
+        if (string.IsNullOrWhiteSpace(template)) template = code;
+
+        if (args == null || args.Length == 0) return template;
+
+        try { return string.Format(CultureInfo.CurrentCulture, template, args); }
+        catch { return template; }
+    }
+
+    private string MoneyText(decimal? v)
+    {
+        if (!v.HasValue) return NA();
+        return string.Format(CultureInfo.CurrentCulture, "{0:N0} {1}", v.Value, CurrencySuffix()).Trim();
     }
 
     public async Task<MiniAppFnbOrderDetailDto> CreateAsync(CreateFnbOrderDto input)
@@ -151,8 +193,6 @@ public class MiniAppFnbOrderService : ApplicationService, IMiniAppFnbOrderServic
             );
 
             await _notifier.OrderCreatedAsync(order.Id);
-
-            return await GetAsync(order.Id);
         }
         catch (Exception ex)
         {
@@ -165,7 +205,202 @@ public class MiniAppFnbOrderService : ApplicationService, IMiniAppFnbOrderServic
 
             throw;
         }
+
+        // Lấy chi tiết đơn hàng vừa tạo
+        var orderDetail = await GetAsync(order.Id);
+        try
+        {
+            var orderData = orderDetail.Data;
+
+            // === GỬI ZBS CHO QUẢN TRỊ VIÊN THÔNG BÁO ĐƠN HÀNG MỚI ===
+            var itemsSummary = string.Join(", ", orderData.Items?.Select(x => $"{x.ItemName}") ?? Array.Empty<string>());
+
+            var zbsTemplateData = new
+            {
+                customer_name = string.IsNullOrWhiteSpace(orderData.CustomerName) ? "Khách vãng lai" : orderData.CustomerName,
+                order_code = orderData.OrderCode,
+                bag_tag = orderData.BagTag,
+                order_time = orderData.CreationTime.ToString("HH:mm dd/MM/yyyy", CultureInfo.InvariantCulture),
+                item_count = orderData.ItemCount,
+                item_list = itemsSummary,
+                transfer_amount = orderData.TotalAmount > 0 ? Convert.ToInt64(orderData.TotalAmount) : 0,
+                bank_transfer_note = $"Thanh toán đặt Fnb Mã đơn {orderData.OrderCode}"
+            };
+
+            try
+            {
+                // Lấy SĐT Admin FnB từ SettingProvider
+                var adminPhone = await _settingProvider.GetOrNullAsync(ZaloSettingNames.ZbsFnbOrderPhoneNumber);
+
+                if (!string.IsNullOrWhiteSpace(adminPhone))
+                {
+                    await _jobManager.EnqueueAsync(
+                        new ZbsSendJobArgs
+                        {
+                            TenantId = _currentTenant.Id,
+                            TemplateKey = "FnbOrder", // Hoặc Key template ZBS thông báo cho Admin
+                            Phone = adminPhone,
+                            TrackingId = $"ADMIN_{order.Id}",
+                            TemplateData = zbsTemplateData
+                        },
+                        priority: BackgroundJobPriority.Normal
+                    );
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.LogWarning(
+                    ex,
+                    "[ZBS] Enqueue FnbOrder admin notification failed. OrderId={OrderId}, OrderCode={OrderCode}, TenantId={TenantId}",
+                    order.Id,
+                    order.OrderCode,
+                    _currentTenant.Id
+                );
+            }
+
+            // === GỬI EMAIL THÔNG BÁO ĐƠN HÀNG MỚI ===
+            // Build Model cho Email Template
+            var model = new FnbOrderNewRequestEmailModelDto
+            {
+                OrderCode = orderData.OrderCode ?? string.Empty,
+                BagTag = orderData.BagTag ?? string.Empty,
+                CustomerName = string.IsNullOrWhiteSpace(orderData.CustomerName) ? "Khách vãng lai" : orderData.CustomerName,
+                CustomerPhone = orderData.CustomerPhoneMasked ?? "N/A",
+
+                // Service Status
+                ServiceStatus = (int)orderData.ServiceStatus,
+                ServiceStatusText = GetServiceStatusText(orderData.ServiceStatus),
+
+                // Payment Status & Method
+                PaymentStatus = (int)orderData.PaymentStatus,
+                PaymentStatusText = GetPaymentStatusText(orderData.PaymentStatus),
+                PaymentMethodText = GetPaymentMethodText(orderData.PaymentMethod),
+
+                // Notes & Cancel Info
+                Note = orderData.Note,
+                CancelReason = orderData.CancelReason,
+                CancelNote = orderData.CancelNote,
+
+                // Time & Amount
+                CreationTimeText = orderData.CreationTime.ToString("dd/MM/yyyy HH:mm", CultureInfo.InvariantCulture),
+                TotalAmountText = MoneyText(orderData.TotalAmount),
+
+                // Items
+                Items = orderData.Items?.Select(x => new FnbOrderItemEmailItemDto
+                {
+                    ItemName = x.ItemName,
+                    PriceText = MoneyText(x.Price),
+                    Quantity = x.Quantity,
+                    AmountText = MoneyText(x.LineTotal),
+                    Note = x.Note
+                }).ToList() ?? new List<FnbOrderItemEmailItemDto>()
+            };
+
+            // Lấy cấu hình email
+            var cfg = await EmailHelper.GetEmailConfigAsync(
+                _settingProvider,
+                AppEmailSettingNames.FnbOrderNew_ToEmails,
+                AppEmailSettingNames.FnbOrderNew_CcEmails,
+                AppEmailSettingNames.FnbOrderNew_BccEmails,
+                AppEmailSettingNames.FnbOrderNew_SubjectTemplate,
+                order.OrderCode,
+                fallbackTo: "tandv@baygolf.vn"
+            );
+
+            // FIX LỖI 1: Replace trực tiếp OrderCode vào tiêu đề email
+            var subject = cfg.Subject?
+                .Replace("{OrderCode}", order.OrderCode)
+                .Replace("{0}", order.OrderCode);
+
+            // FIX LỖI 2: Truyền bọc dictionary { "model": model, ... } hoặc truyền object trực tiếp
+            // Nếu service của bạn cần biến root là 'model', hãy bọc nó vào Dictionary:
+            var templateData = new Dictionary<string, object>
+            {
+                { "model", model },
+                // Fallback root properties để template đọc kiểu nào cũng nhận:
+                { "order_code", model.OrderCode },
+                { "OrderCode", model.OrderCode },
+                { "bag_tag", model.BagTag },
+                { "BagTag", model.BagTag },
+                { "customer_name", model.CustomerName },
+                { "CustomerName", model.CustomerName },
+                { "customer_phone", model.CustomerPhone },
+                { "CustomerPhone", model.CustomerPhone },
+                { "creation_time_text", model.CreationTimeText },
+                { "CreationTimeText", model.CreationTimeText },
+                { "total_amount_text", model.TotalAmountText },
+                { "TotalAmountText", model.TotalAmountText },
+                { "items", model.Items },
+                { "Items", model.Items },
+                { "service_status", model.ServiceStatus },
+                { "ServiceStatus", model.ServiceStatus },
+                { "service_status_text", model.ServiceStatusText },
+                { "ServiceStatusText", model.ServiceStatusText },
+                { "payment_status", model.PaymentStatus },
+                { "PaymentStatus", model.PaymentStatus },
+                { "payment_status_text", model.PaymentStatusText },
+                { "PaymentStatusText", model.PaymentStatusText },
+                { "payment_method_text", model.PaymentMethodText },
+                { "PaymentMethodText", model.PaymentMethodText },
+                { "note", model.Note },
+                { "Note", model.Note }
+            };
+
+            // Đưa job gửi mail vào queue
+            await _appEmailSenderService.EnqueueTemplateAsync(
+                templateName: AppEmailTemplateNames.FnbOrderNewRequest,
+                model: templateData, // Truyền dictionary bọc an toàn
+                toEmails: cfg.To,
+                subject: subject,
+                cc: cfg.Cc,
+                bcc: cfg.Bcc,
+                bookingId: order.Id,
+                bookingCode: order.OrderCode
+            );
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(
+                ex,
+                "[FnbOrderEmail] Failed to enqueue order created email. OrderId={OrderId}, OrderCode={OrderCode}, TenantId={TenantId}",
+                order.Id,
+                order.OrderCode,
+                _currentTenant.Id
+            );
+        }
+
+        return orderDetail;
     }
+
+    #region Email Helpers & Formatter
+
+    private static string GetServiceStatusText(FnbServiceStatus status) => status switch
+    {
+        FnbServiceStatus.Created => "Mới tạo",
+        FnbServiceStatus.Preparing => "Đang chuẩn bị",
+        FnbServiceStatus.Delivering => "Đang giao",
+        FnbServiceStatus.Served => "Đã phục vụ",
+        FnbServiceStatus.Cancelled => "Đã hủy",
+        _ => "Chờ xử lý"
+    };
+
+    private static string GetPaymentStatusText(FnbPaymentStatus status) => status switch
+    {
+        FnbPaymentStatus.Unpaid => "Chưa thanh toán",
+        FnbPaymentStatus.Paid => "Đã thanh toán",
+        FnbPaymentStatus.Failed => "Thanh toán thất bại",
+        _ => "Chưa rõ"
+    };
+
+    private static string GetPaymentMethodText(PaymentMethod? method) => method switch
+    {
+        PaymentMethod.COD => "Thanh toán khi nhận hàng (COD)",
+        PaymentMethod.Online => "Thanh toán trực tuyến",
+        PaymentMethod.BankTransfer => "Chuyển khoản ngân hàng",
+        _ => "Khác"
+    };
+
+    #endregion
 
     public async Task<MiniAppFnbOrderListDto> GetListAsync(GetMiniAppFnbOrderListInput input)
     {
@@ -439,6 +674,7 @@ public class MiniAppFnbOrderService : ApplicationService, IMiniAppFnbOrderServic
                 BagTag = order.BagTag,
                 CustomerId = order.CustomerId,
                 CustomerName = order.CustomerName,
+                CustomerPhone = order.CustomerPhone,
                 CustomerPhoneMasked = MaskPhone(order.CustomerPhone),
                 TotalAmount = order.TotalAmount,
                 ServiceStatus = order.ServiceStatus,

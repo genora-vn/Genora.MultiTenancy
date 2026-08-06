@@ -43,5 +43,32 @@ public class AppEmailTemplateDefinitionProvider : TemplateDefinitionProvider
                     isInlineLocalized: true
                 )
         );
+
+        context.Add(
+            new TemplateDefinition(AppEmailTemplateNames.FnbOrderNewRequest)
+                .WithScribanEngine()
+                .WithVirtualFilePath(
+                    "/AppServices/AppEmails/Templates/FnbOrderNewRequest.tpl",
+                    isInlineLocalized: true
+                )
+        );
+
+        context.Add(
+            new TemplateDefinition(AppEmailTemplateNames.ProshopOrderNewRequest)
+                .WithScribanEngine()
+                .WithVirtualFilePath(
+                    "/AppServices/AppEmails/Templates/ProshopOrderNewRequest.tpl",
+                    isInlineLocalized: true
+                )
+        );
+
+        context.Add(
+            new TemplateDefinition(AppEmailTemplateNames.CaddieBookingNewRequest)
+                .WithScribanEngine()
+                .WithVirtualFilePath(
+                    "/AppServices/AppEmails/Templates/CaddieBookingNewRequest.tpl",
+                    isInlineLocalized: true
+                )
+        );
     }
 }

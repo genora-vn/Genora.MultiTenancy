@@ -46,6 +46,10 @@ public class EmailTemplatesModel : AbpPageModel
         public EmailTemplateBlock BookingChangeRequest { get; set; } = new();
         public EmailTemplateBlock BookingCancelRequest { get; set; } = new();
         public EmailTemplateBlock OrderProductRequest { get; set; } = new();
+
+        public EmailTemplateBlock FnbOrderNewRequest { get; set; } = new();
+        public EmailTemplateBlock ProshopOrderNewRequest { get; set; } = new();
+        public EmailTemplateBlock CaddieBookingNewRequest { get; set; } = new();
     }
 
     public async Task OnGetAsync()
@@ -63,6 +67,10 @@ public class EmailTemplatesModel : AbpPageModel
         Input.BookingChangeRequest.SubjectTemplate = await _settingProvider.GetOrNullAsync(AppEmailSettingNames.BookingChange_SubjectTemplate);
         Input.BookingCancelRequest.SubjectTemplate = await _settingProvider.GetOrNullAsync(AppEmailSettingNames.BookingCancel_SubjectTemplate);
         Input.OrderProductRequest.SubjectTemplate = await _settingProvider.GetOrNullAsync(AppEmailSettingNames.OrderProduct_SubjectTemplate);
+
+        Input.FnbOrderNewRequest.SubjectTemplate = await _settingProvider.GetOrNullAsync(AppEmailSettingNames.FnbOrderNew_SubjectTemplate);
+        Input.ProshopOrderNewRequest.SubjectTemplate = await _settingProvider.GetOrNullAsync(AppEmailSettingNames.ProshopOrderNew_SubjectTemplate);
+        Input.CaddieBookingNewRequest.SubjectTemplate = await _settingProvider.GetOrNullAsync(AppEmailSettingNames.CaddieBookingNew_SubjectTemplate);
     }
 
     public async Task<IActionResult> OnPostAsync()
@@ -99,11 +107,29 @@ public class EmailTemplatesModel : AbpPageModel
         await SetAsync(AppEmailSettingNames.BookingCancel_BccEmails, bcc);
         await SetAsync(AppEmailSettingNames.BookingCancel_SubjectTemplate, Input.BookingCancelRequest.SubjectTemplate);
 
-        // Order Product
+        // Order Hoa Linh Product
         await SetAsync(AppEmailSettingNames.OrderProduct_ToEmails, to);
         await SetAsync(AppEmailSettingNames.OrderProduct_CcEmails, cc);
         await SetAsync(AppEmailSettingNames.OrderProduct_BccEmails, bcc);
         await SetAsync(AppEmailSettingNames.OrderProduct_SubjectTemplate, Input.OrderProductRequest.SubjectTemplate);
+
+        // Order Fnb
+        await SetAsync(AppEmailSettingNames.FnbOrderNew_ToEmails, to);
+        await SetAsync(AppEmailSettingNames.FnbOrderNew_CcEmails, cc);
+        await SetAsync(AppEmailSettingNames.FnbOrderNew_BccEmails, bcc);
+        await SetAsync(AppEmailSettingNames.FnbOrderNew_SubjectTemplate, Input.FnbOrderNewRequest.SubjectTemplate);
+
+        // Order Golf Product
+        await SetAsync(AppEmailSettingNames.ProshopOrderNew_ToEmails, to);
+        await SetAsync(AppEmailSettingNames.ProshopOrderNew_CcEmails, cc);
+        await SetAsync(AppEmailSettingNames.ProshopOrderNew_BccEmails, bcc);
+        await SetAsync(AppEmailSettingNames.ProshopOrderNew_SubjectTemplate, Input.ProshopOrderNewRequest.SubjectTemplate);
+
+        // Book Caddie
+        await SetAsync(AppEmailSettingNames.CaddieBookingNew_ToEmails, to);
+        await SetAsync(AppEmailSettingNames.CaddieBookingNew_CcEmails, cc);
+        await SetAsync(AppEmailSettingNames.CaddieBookingNew_BccEmails, bcc);
+        await SetAsync(AppEmailSettingNames.CaddieBookingNew_SubjectTemplate, Input.CaddieBookingNewRequest.SubjectTemplate);
 
         Alerts.Success("Đã lưu cấu hình template Email.");
         return RedirectToPage();

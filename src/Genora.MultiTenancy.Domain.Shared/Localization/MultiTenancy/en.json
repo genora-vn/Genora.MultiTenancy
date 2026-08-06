@@ -532,6 +532,10 @@
     "UpgradeSettings:EmailTemplates:Subject:BookingCancel": "Subject - Booking cancel",
     "UpgradeSettings:EmailTemplates:Subject:OrderProduct": "Subject - Orders",
 
+    "UpgradeSettings:EmailTemplates:Subject:FnbOrderNew": "Subject - Fnb new booking",
+    "UpgradeSettings:EmailTemplates:Subject:ProshopOrderNew": "Subject - Proshop new booking",
+    "UpgradeSettings:EmailTemplates:Subject:CaddieBookingNew": "Subject - Caddie new booking",
+
     "UpgradeSettings:ZaloZns:Title": "ZNS/ZBS (Zalo) settings",
     "UpgradeSettings:ZaloZns:AppConfig:Title": "Zalo app configuration",
     "UpgradeSettings:ZaloZns:Templates:Title": "ZNS/ZBS template configuration",
@@ -541,6 +545,7 @@
     "UpgradeSettings:ZaloZns:MiniAppId": "MiniAppId",
     "UpgradeSettings:ZaloZns:OaId": "OA Id",
     "UpgradeSettings:ZaloZns:ZbsEnabled": "Enable ZNS/ZBS sending",
+
     "UpgradeSettings:ZaloZns:Template:RegisterSuccess": "Register success TemplateId",
     "UpgradeSettings:ZaloZns:Template:BookingCreated": "Booking created TemplateId",
     "UpgradeSettings:ZaloZns:Template:BookingCancelled": "Booking cancelled TemplateId",
@@ -548,9 +553,31 @@
     "UpgradeSettings:ZaloZns:Template:BookingChanged": "Booking changed TemplateId",
     "UpgradeSettings:ZaloZns:Template:ServiceReview": "Service review TemplateId",
 
+    "UpgradeSettings:ZaloZns:Template:FnbOrder": "FnB Order TemplateId",
+    "UpgradeSettings:ZaloZns:Template:ProshopOrder": "ProShop Order TemplateId",
+    "UpgradeSettings:ZaloZns:Template:CaddieBooking": "Caddie Booking TemplateId",
+
+    "UpgradeSettings:ZaloZns:Template:FnbBookingPhoneNumber": "FnB Admin Phone",
+    "UpgradeSettings:ZaloZns:Template:ProshopOrderPhoneNumber": "ProShop Admin Phone",
+    "UpgradeSettings:ZaloZns:Template:CaddieBookingPhoneNumber": "Caddie Admin Phone",
+    "UpgradeSettings:ZaloZns:Template:GolfBookingPhoneNumber": "Golf Booking Admin Phone",
+
     "UpgradeSettings:ZaloZns:Template:OrderSuccess": "Order success TemplateId",
     "UpgradeSettings:ZaloZns:Template:RedeemPoint": "Redeem point TemplateId",
     "UpgradeSettings:ZaloZns:Template:ExchangeGift": "Exchange gift TemplateId",
+
+    "UpgradeSettings:ZaloZns:Payment:Title": "Checkout SDK — Payment Configuration",
+    "UpgradeSettings:ZaloZns:Payment:PrivateKey": "Private Key (HMAC SHA256)",
+    "UpgradeSettings:ZaloZns:Payment:PrivateKeyPlaceholder": "Enter Private Key from Zalo Developer Portal",
+    "UpgradeSettings:ZaloZns:Payment:PrivateKeyHint": "Leave blank if unchanged. Value will be encrypted on save.",
+    "UpgradeSettings:ZaloZns:Payment:BankInfoNote": "Bank account information (displayed when customer selects Bank Transfer)",
+    "UpgradeSettings:ZaloZns:Payment:BankName": "Bank Name",
+    "UpgradeSettings:ZaloZns:Payment:BankAccountNumber": "Account Number",
+    "UpgradeSettings:ZaloZns:Payment:BankAccountOwner": "Account Holder",
+    "UpgradeSettings:ZaloZns:Payment:BankBranch": "Branch",
+    "UpgradeSettings:ZaloZns:Payment:MethodsNote": "Payment methods displayed on Mini App",
+    "UpgradeSettings:ZaloZns:Payment:IsPayAtCounterEnabled": "Pay at counter",
+    "UpgradeSettings:ZaloZns:Payment:IsPayBankTransferEnabled": "Pay via bank transfer",
 
     "FeatureGroup:MiniAppHomePage": "Homepage Configuration",
     "Feature:MiniAppHomePage": "Enable Homepage Configuration",

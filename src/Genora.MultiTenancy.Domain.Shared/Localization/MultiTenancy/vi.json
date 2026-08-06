@@ -587,6 +587,10 @@
     "UpgradeSettings:EmailTemplates:Subject:BookingCancel": "Tiêu đề Hủy đặt chỗ",
     "UpgradeSettings:EmailTemplates:Subject:OrderProduct": "Tiêu đề Đặt hàng",
 
+    "UpgradeSettings:EmailTemplates:Subject:FnbOrderNew": "Tiêu đề Đặt món",
+    "UpgradeSettings:EmailTemplates:Subject:ProshopOrderNew": "Tiêu đề Đặt sản phẩm",
+    "UpgradeSettings:EmailTemplates:Subject:CaddieBookingNew": "Tiêu đề Đặt Caddie",
+
     "UpgradeSettings:ZaloZns:Title": "Cấu hình ZNS/ZBS (Zalo)",
     "UpgradeSettings:ZaloZns:AppConfig:Title": "Cấu hình ứng dụng Zalo",
     "UpgradeSettings:ZaloZns:Templates:Title": "Cấu hình template ZNS/ZBS",
@@ -596,6 +600,7 @@
     "UpgradeSettings:ZaloZns:MiniAppId": "MiniAppId",
     "UpgradeSettings:ZaloZns:OaId": "OaId",
     "UpgradeSettings:ZaloZns:ZbsEnabled": "Bật gửi ZNS/ZBS",
+
     "UpgradeSettings:ZaloZns:Template:RegisterSuccess": "Đăng ký thành công TemplateId",
     "UpgradeSettings:ZaloZns:Template:BookingCreated": "Tạo booking TemplateId",
     "UpgradeSettings:ZaloZns:Template:BookingCancelled": "Hủy booking TemplateId",
@@ -603,9 +608,31 @@
     "UpgradeSettings:ZaloZns:Template:BookingChanged": "Cập nhật booking TemplateId",
     "UpgradeSettings:ZaloZns:Template:ServiceReview": "Đánh giá chất lượng dịch vụ TemplateId",
 
+    "UpgradeSettings:ZaloZns:Template:FnbOrder": "Đặt món FnB TemplateId",
+    "UpgradeSettings:ZaloZns:Template:ProshopOrder": "Đặt ProShop TemplateId",
+    "UpgradeSettings:ZaloZns:Template:CaddieBooking": "Đặt Caddie TemplateId",
+
+    "UpgradeSettings:ZaloZns:Template:FnbBookingPhoneNumber": "SĐT Admin FnB",
+    "UpgradeSettings:ZaloZns:Template:ProshopOrderPhoneNumber": "SĐT Admin ProShop",
+    "UpgradeSettings:ZaloZns:Template:CaddieBookingPhoneNumber": "SĐT Admin Caddie",
+    "UpgradeSettings:ZaloZns:Template:GolfBookingPhoneNumber": "SĐT Admin Golf Booking",
+
     "UpgradeSettings:ZaloZns:Template:OrderSuccess": "Đặt hàng thành công TemplateId",
     "UpgradeSettings:ZaloZns:Template:RedeemPoint": "Đổi điểm TemplateId",
     "UpgradeSettings:ZaloZns:Template:ExchangeGift": "Đổi quà TemplateId",
+
+    "UpgradeSettings:ZaloZns:Payment:Title": "Checkout SDK — Cấu hình thanh toán",
+    "UpgradeSettings:ZaloZns:Payment:PrivateKey": "Private Key (HMAC SHA256)",
+    "UpgradeSettings:ZaloZns:Payment:PrivateKeyPlaceholder": "Nhập Private Key từ Zalo Developer Portal",
+    "UpgradeSettings:ZaloZns:Payment:PrivateKeyHint": "Để trống nếu không muốn thay đổi. Giá trị được mã hoá khi lưu.",
+    "UpgradeSettings:ZaloZns:Payment:BankInfoNote": "Thông tin tài khoản ngân hàng (hiển thị khi khách chọn Chuyển khoản)",
+    "UpgradeSettings:ZaloZns:Payment:BankName": "Tên ngân hàng",
+    "UpgradeSettings:ZaloZns:Payment:BankAccountNumber": "Số tài khoản",
+    "UpgradeSettings:ZaloZns:Payment:BankAccountOwner": "Chủ tài khoản",
+    "UpgradeSettings:ZaloZns:Payment:BankBranch": "Chi nhánh",
+    "UpgradeSettings:ZaloZns:Payment:MethodsNote": "Hình thức thanh toán hiển thị trên Mini App",
+    "UpgradeSettings:ZaloZns:Payment:IsPayAtCounterEnabled": "Thanh toán tại quầy",
+    "UpgradeSettings:ZaloZns:Payment:IsPayBankTransferEnabled": "Thanh toán chuyển khoản",
 
     "FeatureGroup:MiniAppHomePage": "Cấu hình Trang chủ",
     "Feature:MiniAppHomePage": "Bật cấu hình Trang chủ",

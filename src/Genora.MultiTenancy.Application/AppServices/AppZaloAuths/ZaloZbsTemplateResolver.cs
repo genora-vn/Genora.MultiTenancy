@@ -31,7 +31,11 @@ public class ZaloZbsTemplateResolver : IZaloZbsTemplateResolver
             "OrderSuccess" => await _sp.GetOrNullAsync(ZaloSettingNames.ZbsOrderSuccess),
             "RedeemPoint" => await _sp.GetOrNullAsync(ZaloSettingNames.ZbsRedeemPoint),
             "ExchangeGift" => await _sp.GetOrNullAsync(ZaloSettingNames.ZbsExchangeGift),
-            _ => null
+
+            "FnbOrder" => await _sp.GetOrNullAsync(ZaloSettingNames.ZbsFnbOrder),
+            "ProshopOrder" => await _sp.GetOrNullAsync(ZaloSettingNames.ZbsProshopOrder),
+            "CaddieBooking" => await _sp.GetOrNullAsync(ZaloSettingNames.ZbsCaddieBooking),
+    _ => null
         };
     }
 }

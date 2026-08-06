@@ -148,5 +148,113 @@ public class AppEmailSettingDefinitionProvider : SettingDefinitionProvider
                TenantSettingValueProvider.ProviderName
            )
        );
+
+        // ===== Order FnB Request =====
+        context.Add(
+           new SettingDefinition(
+               AppEmailSettingNames.FnbOrderNew_ToEmails,
+               defaultValue: "",
+               isVisibleToClients: false
+           ).WithProviders(
+               GlobalSettingValueProvider.ProviderName,
+               TenantSettingValueProvider.ProviderName
+           ),
+           new SettingDefinition(
+               AppEmailSettingNames.FnbOrderNew_CcEmails,
+               defaultValue: "",
+               isVisibleToClients: false
+           ).WithProviders(
+               GlobalSettingValueProvider.ProviderName,
+               TenantSettingValueProvider.ProviderName
+           ),
+           new SettingDefinition(
+               AppEmailSettingNames.FnbOrderNew_BccEmails,
+               defaultValue: "",
+               isVisibleToClients: false
+           ).WithProviders(
+               GlobalSettingValueProvider.ProviderName,
+               TenantSettingValueProvider.ProviderName
+           ),
+           new SettingDefinition(
+               AppEmailSettingNames.FnbOrderNew_SubjectTemplate,
+               defaultValue: "",
+               isVisibleToClients: false
+           ).WithProviders(
+               GlobalSettingValueProvider.ProviderName,
+               TenantSettingValueProvider.ProviderName
+           )
+       );
+
+        // ===== Order Proshop Request =====
+        context.Add(
+           new SettingDefinition(
+               AppEmailSettingNames.ProshopOrderNew_ToEmails,
+               defaultValue: "",
+               isVisibleToClients: false
+           ).WithProviders(
+               GlobalSettingValueProvider.ProviderName,
+               TenantSettingValueProvider.ProviderName
+           ),
+           new SettingDefinition(
+               AppEmailSettingNames.ProshopOrderNew_CcEmails,
+               defaultValue: "",
+               isVisibleToClients: false
+           ).WithProviders(
+               GlobalSettingValueProvider.ProviderName,
+               TenantSettingValueProvider.ProviderName
+           ),
+           new SettingDefinition(
+               AppEmailSettingNames.ProshopOrderNew_BccEmails,
+               defaultValue: "",
+               isVisibleToClients: false
+           ).WithProviders(
+               GlobalSettingValueProvider.ProviderName,
+               TenantSettingValueProvider.ProviderName
+           ),
+           new SettingDefinition(
+               AppEmailSettingNames.ProshopOrderNew_SubjectTemplate,
+               defaultValue: "",
+               isVisibleToClients: false
+           ).WithProviders(
+               GlobalSettingValueProvider.ProviderName,
+               TenantSettingValueProvider.ProviderName
+           )
+       );
+
+        // ===== Booking Caddie Request =====
+        context.Add(
+           new SettingDefinition(
+               AppEmailSettingNames.CaddieBookingNew_ToEmails,
+               defaultValue: "",
+               isVisibleToClients: false
+           ).WithProviders(
+               GlobalSettingValueProvider.ProviderName,
+               TenantSettingValueProvider.ProviderName
+           ),
+           new SettingDefinition(
+               AppEmailSettingNames.CaddieBookingNew_CcEmails,
+               defaultValue: "",
+               isVisibleToClients: false
+           ).WithProviders(
+               GlobalSettingValueProvider.ProviderName,
+               TenantSettingValueProvider.ProviderName
+           ),
+           new SettingDefinition(
+               AppEmailSettingNames.CaddieBookingNew_BccEmails,
+               defaultValue: "",
+               isVisibleToClients: false
+           ).WithProviders(
+               GlobalSettingValueProvider.ProviderName,
+               TenantSettingValueProvider.ProviderName
+           ),
+           new SettingDefinition(
+               AppEmailSettingNames.CaddieBookingNew_SubjectTemplate,
+               defaultValue: "",
+               isVisibleToClients: false
+           ).WithProviders(
+               GlobalSettingValueProvider.ProviderName,
+               TenantSettingValueProvider.ProviderName
+           )
+       );
     }
 }

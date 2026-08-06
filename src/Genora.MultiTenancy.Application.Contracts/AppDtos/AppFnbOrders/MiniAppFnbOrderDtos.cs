@@ -28,6 +28,7 @@ public class MiniAppFnbOrderData
     public string BagTag { get; set; } = null!;
     public Guid? CustomerId { get; set; }
     public string? CustomerName { get; set; }
+    public string? CustomerPhone { get; set; }
     public string? CustomerPhoneMasked { get; set; }
     public decimal TotalAmount { get; set; }
     public FnbServiceStatus ServiceStatus { get; set; }

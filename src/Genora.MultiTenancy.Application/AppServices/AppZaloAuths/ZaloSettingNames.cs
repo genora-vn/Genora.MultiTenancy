@@ -19,4 +19,15 @@ public static class ZaloSettingNames
     public const string ZbsOrderSuccess = "Genora.Zalo.Zbs.Templates.OrderSuccess";
     public const string ZbsRedeemPoint = "Genora.Zalo.Zbs.Templates.RedeemPoint";
     public const string ZbsExchangeGift = "Genora.Zalo.Zbs.Templates.ExchangeGift";
+
+    // Golf ZBS
+    public const string ZbsFnbOrder = "Genora.Zalo.Zbs.Templates.FnbOrder";
+    public const string ZbsProshopOrder = "Genora.Zalo.Zbs.Templates.ProshopOrder";
+    public const string ZbsCaddieBooking = "Genora.Zalo.Zbs.Templates.CaddieBooking";
+
+    public const string ZbsGolfBookingPhoneNumber = "Genora.Zalo.Zbs.Templates.GolfBookingPhoneNumber";
+    public const string ZbsFnbOrderPhoneNumber = "Genora.Zalo.Zbs.Templates.FnbBookingPhoneNumber";
+    public const string ZbsProshopOrderPhoneNumber = "Genora.Zalo.Zbs.Templates.ProshopOrderPhoneNumber";
+    public const string ZbsCaddieBookingPhoneNumber = "Genora.Zalo.Zbs.Templates.CaddieBookingPhoneNumber";
+
 }

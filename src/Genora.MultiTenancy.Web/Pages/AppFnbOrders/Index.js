@@ -170,7 +170,6 @@
                     title: l('TotalAmount'),
                     data: "totalAmount",
                     render: function (data) {
-                        console.log('Rendering totalAmount:', data);
                         return '<span class="fnb-price kitchen-payment-grand">' + fnb.formatCurrency(data) + '<span class="vnd-symbol">đ</span></span>';
                     }
                 },

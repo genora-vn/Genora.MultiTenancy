@@ -49,6 +49,27 @@ public class ZaloSettingDefinitionProvider : SettingDefinitionProvider
                 .WithProviders(GlobalSettingValueProvider.ProviderName, TenantSettingValueProvider.ProviderName),
 
             new SettingDefinition(ZaloSettingNames.ZbsExchangeGift, "", isVisibleToClients: true)
+                .WithProviders(GlobalSettingValueProvider.ProviderName, TenantSettingValueProvider.ProviderName),
+
+            new SettingDefinition(ZaloSettingNames.ZbsFnbOrder, "", isVisibleToClients: true)
+                .WithProviders(GlobalSettingValueProvider.ProviderName, TenantSettingValueProvider.ProviderName),
+
+            new SettingDefinition(ZaloSettingNames.ZbsProshopOrder, "", isVisibleToClients: true)
+                .WithProviders(GlobalSettingValueProvider.ProviderName, TenantSettingValueProvider.ProviderName),
+
+            new SettingDefinition(ZaloSettingNames.ZbsCaddieBooking, "", isVisibleToClients: true)
+                .WithProviders(GlobalSettingValueProvider.ProviderName, TenantSettingValueProvider.ProviderName),
+
+            new SettingDefinition(ZaloSettingNames.ZbsGolfBookingPhoneNumber, "", isVisibleToClients: true)
+                .WithProviders(GlobalSettingValueProvider.ProviderName, TenantSettingValueProvider.ProviderName),
+
+            new SettingDefinition(ZaloSettingNames.ZbsFnbOrderPhoneNumber, "", isVisibleToClients: true)
+                .WithProviders(GlobalSettingValueProvider.ProviderName, TenantSettingValueProvider.ProviderName),
+
+            new SettingDefinition(ZaloSettingNames.ZbsProshopOrderPhoneNumber, "", isVisibleToClients: true)
+                .WithProviders(GlobalSettingValueProvider.ProviderName, TenantSettingValueProvider.ProviderName),
+
+            new SettingDefinition(ZaloSettingNames.ZbsCaddieBookingPhoneNumber, "", isVisibleToClients: true)
                 .WithProviders(GlobalSettingValueProvider.ProviderName, TenantSettingValueProvider.ProviderName)
         );
     }

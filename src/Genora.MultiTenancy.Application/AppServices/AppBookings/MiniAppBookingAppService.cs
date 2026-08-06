@@ -631,8 +631,35 @@ public class MiniAppBookingAppService : ApplicationService, IMiniAppBookingAppSe
                             tee_off_date = booking.PlayDate.ToString("dd/MM/yyyy", CultureInfo.InvariantCulture),
                             tee_off_time = $"{calendarSlot.TimeFrom:hh\\:mm}",
                             number_of_player = booking.NumberOfGolfers,
-                            total_price = booking.TotalAmount,
-                            bank_transfer_note = "Thanh toán booking. Mã booking " + booking.BookingCode
+                            total_price = booking.TotalAmount > 0 ? Convert.ToInt32(booking.TotalAmount) : 0,
+                            bank_transfer_note = $"Thanh toán booking Mã booking {StringHelper.NormalizeBankTransferNote(booking.BookingCode)}"
+                        }
+                    },
+                    priority: BackgroundJobPriority.Normal
+                );
+            }
+
+            // Gửi thông báo cho Admin
+            var adminPhone = await _settingProvider.GetOrNullAsync(ZaloSettingNames.ZbsGolfBookingPhoneNumber);
+
+            if (!string.IsNullOrWhiteSpace(adminPhone))
+            {
+                await _jobManager.EnqueueAsync(
+                    new ZbsSendJobArgs
+                    {
+                        TenantId = CurrentTenant.Id,
+                        TemplateKey = "BookingCreated",
+                        Phone = adminPhone,
+                        TrackingId = $"ADMIN_{booking.Id.ToString()}",
+                        TemplateData = new
+                        {
+                            customer_name = customer.FullName,
+                            booking_id = booking.BookingCode,
+                            tee_off_date = booking.PlayDate.ToString("dd/MM/yyyy", CultureInfo.InvariantCulture),
+                            tee_off_time = $"{calendarSlot.TimeFrom:hh\\:mm}",
+                            number_of_player = booking.NumberOfGolfers,
+                            total_price = booking.TotalAmount > 0 ? Convert.ToInt32(booking.TotalAmount) : 0,
+                            bank_transfer_note = $"Thanh toán booking Mã booking {StringHelper.NormalizeBankTransferNote(booking.BookingCode)}"
                         }
                     },
                     priority: BackgroundJobPriority.Normal

@@ -1,22 +1,30 @@
+using Genora.MultiTenancy.AppDtos.AppEmails;
 using Genora.MultiTenancy.AppDtos.AppProOrders;
+using Genora.MultiTenancy.AppServices.AppEmails;
+using Genora.MultiTenancy.AppServices.AppZaloAuths;
 using Genora.MultiTenancy.DomainModels.AppProCategories;
 using Genora.MultiTenancy.DomainModels.AppProItems;
 using Genora.MultiTenancy.DomainModels.AppProOrderActivity;
 using Genora.MultiTenancy.DomainModels.AppProOrders;
 using Genora.MultiTenancy.Enums;
+using Genora.MultiTenancy.Features.AppEmails;
 using Genora.MultiTenancy.Helpers;
 using Genora.MultiTenancy.Realtime;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Linq.Dynamic.Core;
 using System.Threading.Tasks;
 using Volo.Abp;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Application.Services;
+using Volo.Abp.BackgroundJobs;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.MultiTenancy;
+using Volo.Abp.Settings;
 
 namespace Genora.MultiTenancy.AppServices.AppProOrders;
 
@@ -30,6 +38,9 @@ public class MiniAppProOrderService : ApplicationService, IMiniAppProOrderServic
     private readonly ICurrentTenant _currentTenant;
     private readonly IProOrderRealtimeNotifier _notifier;
     private readonly IConfiguration _configuration;
+    private readonly ISettingProvider _settingProvider;
+    private readonly IAppEmailSenderService _appEmailSenderService;
+    private readonly IBackgroundJobManager _jobManager;
 
     public MiniAppProOrderService(
         IRepository<ProOrder, Guid> orderRepository,
@@ -39,16 +50,22 @@ public class MiniAppProOrderService : ApplicationService, IMiniAppProOrderServic
         IRepository<ProCategory, Guid> proCategoryRepository,
         ICurrentTenant currentTenant,
         IProOrderRealtimeNotifier notifier,
-        IConfiguration configuration)
+        IConfiguration configuration,
+        ISettingProvider settingProvider,
+        IAppEmailSenderService appEmailSenderService,
+        IBackgroundJobManager jobManager)
     {
-        _orderRepository       = orderRepository;
-        _orderItemRepository   = orderItemRepository;
-        _activityRepository    = activityRepository;
-        _proItemRepository     = proItemRepository;
+        _orderRepository = orderRepository;
+        _orderItemRepository = orderItemRepository;
+        _activityRepository = activityRepository;
+        _proItemRepository = proItemRepository;
         _proCategoryRepository = proCategoryRepository;
-        _currentTenant         = currentTenant;
-        _notifier              = notifier;
-        _configuration         = configuration;
+        _currentTenant = currentTenant;
+        _notifier = notifier;
+        _configuration = configuration;
+        _settingProvider = settingProvider;
+        _appEmailSenderService = appEmailSenderService;
+        _jobManager = jobManager;
     }
 
     public async Task<MiniAppProOrderDetailDto> CreateAsync(CreateProOrderDto input)
@@ -59,14 +76,14 @@ public class MiniAppProOrderService : ApplicationService, IMiniAppProOrderServic
         var orderCode = await GenerateOrderCodeAsync();
         var order = new ProOrder(GuidGenerator.Create(), orderCode, input.BagTag.Trim(), _currentTenant.Id)
         {
-            CustomerId    = input.CustomerId,
-            CustomerName  = input.CustomerName?.Trim(),
+            CustomerId = input.CustomerId,
+            CustomerName = input.CustomerName?.Trim(),
             CustomerPhone = input.CustomerPhone?.Trim(),
-            Note          = input.Note,
+            Note = input.Note,
             PaymentMethod = input.PaymentMethod,
-            ServiceStatus = ProServiceStatus.Created,
-            PaymentStatus = ProPaymentStatus.Unpaid,
-            TotalAmount   = 0
+            ServiceStatus = ProServiceStatus.Created, // Value = 1
+            PaymentStatus = ProPaymentStatus.Unpaid,  // Value = 1
+            TotalAmount = 0
         };
 
         var itemRepo = LazyServiceProvider.LazyGetRequiredService<IRepository<ProItem, Guid>>();
@@ -82,8 +99,8 @@ public class MiniAppProOrderService : ApplicationService, IMiniAppProOrderServic
                 GuidGenerator.Create(), order.Id, proItem.Name, proItem.Price, itemInput.Quantity)
             {
                 TenantId = _currentTenant.Id,
-                ItemId = null, // FK cross-tenant: dùng ItemName để lookup ảnh
-                Note   = itemInput.Note
+                ItemId = null,
+                Note = itemInput.Note
             });
         }
 
@@ -98,11 +115,205 @@ public class MiniAppProOrderService : ApplicationService, IMiniAppProOrderServic
             "Đơn hàng được tạo từ Mini App",
             $"Mã túi: {order.BagTag} | {orderItems.Count} sản phẩm | {order.TotalAmount:N0} VND");
 
-        // Broadcast SignalR — staff nhận notify realtime
         try { await _notifier.OrderCreatedAsync(order.Id); }
-        catch { /* SignalR broadcast không được làm thất bại luồng đặt hàng */ }
+        catch { /* Broadcast realtime không chặn luồng chính */ }
 
-        return await GetAsync(order.Id);
+        var orderDetail = await GetAsync(order.Id);
+        try
+        {
+            if (orderDetail?.Data != null)
+            {
+                var orderData = orderDetail.Data;
+
+                // === GỬI ZBS CHO QUẢN TRỊ VIÊN THÔNG BÁO ĐƠN HÀNG MỚI ===
+                var itemsSummary = string.Join(", ", orderData.Items?.Select(x => $"{x.ItemName}") ?? Array.Empty<string>());
+
+                var zbsTemplateData = new
+                {
+                    customer_name = string.IsNullOrWhiteSpace(orderData.CustomerName) ? "Khách vãng lai" : orderData.CustomerName,
+                    order_code = orderData.OrderCode,
+                    bag_tag = orderData.BagTag,
+                    order_time = orderData.CreationTime.ToString("HH:mm dd/MM/yyyy", CultureInfo.InvariantCulture),
+                    item_count = orderData.ItemCount,
+                    proshop_list = itemsSummary,
+                    transfer_amount = orderData.TotalAmount > 0 ? Convert.ToInt32(orderData.TotalAmount) : 0,
+                    bank_transfer_note = $"Thanh toán đặt Proshop Mã đơn {orderData.OrderCode}"
+                };
+
+                try
+                {
+                    // Lấy SĐT Admin FnB từ SettingProvider
+                    var adminPhone = await _settingProvider.GetOrNullAsync(ZaloSettingNames.ZbsProshopOrderPhoneNumber);
+
+                    if (!string.IsNullOrWhiteSpace(adminPhone))
+                    {
+                        await _jobManager.EnqueueAsync(
+                            new ZbsSendJobArgs
+                            {
+                                TenantId = _currentTenant.Id,
+                                TemplateKey = "ProshopOrder", // Hoặc Key template ZBS thông báo cho Admin
+                                Phone = adminPhone,
+                                TrackingId = $"ADMIN_{order.Id}",
+                                TemplateData = zbsTemplateData
+                            },
+                            priority: BackgroundJobPriority.Normal
+                        );
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Logger.LogWarning(
+                        ex,
+                        "[ZBS] Enqueue FnbOrder admin notification failed. OrderId={OrderId}, OrderCode={OrderCode}, TenantId={TenantId}",
+                        order.Id,
+                        order.OrderCode,
+                        _currentTenant.Id
+                    );
+                }
+
+                // === GỬI EMAIL THÔNG BÁO ĐƠN HÀNG PROSHOP MỚI ===
+                var emailModel = new ProOrderNewRequestEmailModelDto
+                {
+                    OrderCode = orderData.OrderCode ?? string.Empty,
+                    BagTag = orderData.BagTag ?? string.Empty,
+                    CustomerName = string.IsNullOrWhiteSpace(orderData.CustomerName) ? "Khách vãng lai" : orderData.CustomerName,
+                    CustomerPhone = orderData.CustomerPhoneMasked ?? "N/A",
+
+                    ServiceStatus = (int)orderData.ServiceStatus,
+                    ServiceStatusText = GetProServiceStatusText(orderData.ServiceStatus),
+
+                    PaymentStatus = (int)orderData.PaymentStatus,
+                    PaymentStatusText = GetProPaymentStatusText(orderData.PaymentStatus),
+                    PaymentMethodText = GetProPaymentMethodText(orderData.PaymentMethod),
+
+                    Note = orderData.Note,
+                    CancelReason = null,
+                    CancelNote = orderData.CancelNote,
+
+                    CreationTimeText = orderData.CreationTime.ToString("dd/MM/yyyy HH:mm", CultureInfo.InvariantCulture),
+                    TotalAmountText = MoneyText(orderData.TotalAmount),
+
+                    Items = orderData.Items?.Select(x => new ProOrderItemEmailItemDto
+                    {
+                        ItemName = x.ItemName,
+                        PriceText = MoneyText(x.Price),
+                        Quantity = x.Quantity,
+                        AmountText = MoneyText(x.LineTotal),
+                        Note = x.Note
+                    }).ToList() ?? new List<ProOrderItemEmailItemDto>()
+                };
+
+                var cfg = await EmailHelper.GetEmailConfigAsync(
+                    _settingProvider,
+                    AppEmailSettingNames.ProshopOrderNew_ToEmails,
+                    AppEmailSettingNames.ProshopOrderNew_CcEmails,
+                    AppEmailSettingNames.ProshopOrderNew_BccEmails,
+                    AppEmailSettingNames.ProshopOrderNew_SubjectTemplate,
+                    order.OrderCode,
+                    fallbackTo: "tandv@baygolf.vn"
+                );
+
+                var subject = cfg.Subject?
+                    .Replace("{OrderCode}", order.OrderCode)
+                    .Replace("{0}", order.OrderCode);
+
+                var templateData = new Dictionary<string, object>
+                    {
+                        { "model", emailModel },
+                        { "order_code", emailModel.OrderCode },
+                        { "OrderCode", emailModel.OrderCode },
+                        { "bag_tag", emailModel.BagTag },
+                        { "BagTag", emailModel.BagTag },
+                        { "customer_name", emailModel.CustomerName },
+                        { "CustomerName", emailModel.CustomerName },
+                        { "customer_phone", emailModel.CustomerPhone },
+                        { "CustomerPhone", emailModel.CustomerPhone },
+                        { "creation_time_text", emailModel.CreationTimeText },
+                        { "CreationTimeText", emailModel.CreationTimeText },
+                        { "total_amount_text", emailModel.TotalAmountText },
+                        { "TotalAmountText", emailModel.TotalAmountText },
+                        { "items", emailModel.Items },
+                        { "Items", emailModel.Items },
+                        { "service_status", emailModel.ServiceStatus },
+                        { "ServiceStatus", emailModel.ServiceStatus },
+                        { "service_status_text", emailModel.ServiceStatusText },
+                        { "ServiceStatusText", emailModel.ServiceStatusText },
+                        { "payment_status", emailModel.PaymentStatus },
+                        { "PaymentStatus", emailModel.PaymentStatus },
+                        { "payment_status_text", emailModel.PaymentStatusText },
+                        { "PaymentStatusText", emailModel.PaymentStatusText },
+                        { "payment_method_text", emailModel.PaymentMethodText },
+                        { "PaymentMethodText", emailModel.PaymentMethodText },
+                        { "note", emailModel.Note },
+                        { "Note", emailModel.Note }
+                    };
+
+                await _appEmailSenderService.EnqueueTemplateAsync(
+                    templateName: AppEmailTemplateNames.ProshopOrderNewRequest,
+                    model: templateData,
+                    toEmails: cfg.To,
+                    subject: subject,
+                    cc: cfg.Cc,
+                    bcc: cfg.Bcc,
+                    bookingId: order.Id,
+                    bookingCode: order.OrderCode
+                );
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(
+                ex,
+                "[ProOrderEmail] Failed to enqueue order created email. OrderId={OrderId}, OrderCode={OrderCode}, TenantId={TenantId}",
+                order.Id,
+                order.OrderCode,
+                _currentTenant.Id
+            );
+        }
+
+        return orderDetail;
+    }
+
+    // ── Helper Methods hiển thị TextEnum ──────────────────────────────────────────
+
+    private static string GetProServiceStatusText(ProServiceStatus status)
+    {
+        return status switch
+        {
+            ProServiceStatus.Created => "Đơn mới",         // 1
+            ProServiceStatus.Processing => "Đang xử lý",       // 2
+            ProServiceStatus.Ready => "Sẵn sàng giao",   // 3
+            ProServiceStatus.Delivered => "Đã giao",         // 4
+            ProServiceStatus.Cancelled => "Đã hủy",          // 5
+            _ => "Đơn mới"
+        };
+    }
+
+    private static string GetProPaymentStatusText(ProPaymentStatus status)
+    {
+        return status switch
+        {
+            ProPaymentStatus.Unpaid => "Chưa thanh toán",     // 1
+            ProPaymentStatus.Paid => "Đã thanh toán",       // 2
+            ProPaymentStatus.Failed => "Thanh toán thất bại", // 3
+            _ => "Chưa thanh toán"
+        };
+    }
+
+    private static string GetProPaymentMethodText(PaymentMethod? method)
+    {
+        return method switch
+        {
+            PaymentMethod.COD => "Thanh toán khi nhận hàng (COD)",
+            PaymentMethod.Online => "Thanh toán trực tuyến",
+            PaymentMethod.BankTransfer => "Chuyển khoản ngân hàng",
+            _ => "Khác"
+        };
+    }
+
+    private static string MoneyText(decimal amount)
+    {
+        return string.Format(CultureInfo.GetCultureInfo("vi-VN"), "{0:N0} VNĐ", amount);
     }
 
     public async Task<MiniAppProOrderListDto> GetListAsync(GetMiniAppProOrderListInput input)

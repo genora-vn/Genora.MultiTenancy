@@ -1,4 +1,5 @@
-﻿using Genora.MultiTenancy.AppDtos.AppBookings;
+﻿using DocumentFormat.OpenXml.Drawing.Charts;
+using Genora.MultiTenancy.AppDtos.AppBookings;
 using Genora.MultiTenancy.AppDtos.AppEmails;
 using Genora.MultiTenancy.AppServices.AppEmails;
 using Genora.MultiTenancy.AppServices.AppZaloAuths;
@@ -480,7 +481,33 @@ public class AppBookingService :
                             tee_off_time = $"{calendarSlot.TimeFrom:hh\\:mm}",
                             number_of_player = entity.NumberOfGolfers,
                             total_price = entity.TotalAmount,
-                            bank_transfer_note = "Thanh toán booking. Mã booking " + entity.BookingCode
+                            bank_transfer_note = $"Thanh toán booking Mã booking {StringHelper.NormalizeBankTransferNote(entity.BookingCode)}"
+                        }
+                    },
+                    priority: BackgroundJobPriority.Normal
+                );
+            }
+            // Gửi thông báo cho Admin
+            var adminPhone = await _settingProvider.GetOrNullAsync(ZaloSettingNames.ZbsGolfBookingPhoneNumber);
+
+            if (!string.IsNullOrWhiteSpace(adminPhone))
+            {
+                await _jobManager.EnqueueAsync(
+                    new ZbsSendJobArgs
+                    {
+                        TenantId = CurrentTenant.Id,
+                        TemplateKey = "BookingCreated",
+                        Phone = adminPhone,
+                        TrackingId = $"ADMIN_{entity.Id.ToString()}",
+                        TemplateData = new
+                        {
+                            customer_name = customer.FullName,
+                            booking_id = entity.BookingCode,
+                            tee_off_date = entity.PlayDate.ToString(ZaloDateFormat, CultureInfo.InvariantCulture),
+                            tee_off_time = $"{calendarSlot.TimeFrom:hh\\:mm}",
+                            number_of_player = entity.NumberOfGolfers,
+                            total_price = entity.TotalAmount,
+                            bank_transfer_note = $"Thanh toán booking Mã booking {StringHelper.NormalizeBankTransferNote(entity.BookingCode)}"
                         }
                     },
                     priority: BackgroundJobPriority.Normal

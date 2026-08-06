@@ -1,21 +1,30 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+using Genora.MultiTenancy.AppDtos.AppEmails;
 using Genora.MultiTenancy.AppDtos.Caddies;
+using Genora.MultiTenancy.AppServices.AppEmails;
+using Genora.MultiTenancy.AppServices.AppZaloAuths;
 using Genora.MultiTenancy.DomainModels.AppBookingPlayers;
 using Genora.MultiTenancy.DomainModels.AppBookings;
 using Genora.MultiTenancy.DomainModels.AppCaddie;
 using Genora.MultiTenancy.DomainModels.AppCustomers;
 using Genora.MultiTenancy.DomainModels.AppGolfCourses;
 using Genora.MultiTenancy.Enums;
+using Genora.MultiTenancy.Features.AppEmails;
 using Genora.MultiTenancy.Helpers;
 using Genora.MultiTenancy.Localization;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
+using System;
+using System.Collections.Generic;
+using System.Globalization;
+using System.Linq;
+using System.Threading.Tasks;
 using Volo.Abp;
 using Volo.Abp.Application.Services;
+using Volo.Abp.BackgroundJobs;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Guids;
+using Volo.Abp.MultiTenancy;
+using Volo.Abp.Settings;
 using Volo.Abp.Users;
 using Volo.Abp.Validation;
 
@@ -40,6 +49,10 @@ public class MiniAppCaddieAppService : ApplicationService
     private readonly IGuidGenerator _guidGenerator;
     private readonly ICurrentUser _currentUser;
     private readonly IConfiguration _configuration;
+    private readonly ICurrentTenant _currentTenant;
+    private readonly ISettingProvider _settingProvider;
+    private readonly IAppEmailSenderService _appEmailSenderService;
+    private readonly IBackgroundJobManager _jobManager;
 
     public MiniAppCaddieAppService(
         IRepository<AppCaddie, Guid> caddieRepo,
@@ -58,7 +71,11 @@ public class MiniAppCaddieAppService : ApplicationService
         IRepository<BookingPlayer, Guid> bookingPlayerRepo,
         IGuidGenerator guidGenerator,
         ICurrentUser currentUser,
-        IConfiguration configuration)
+        IConfiguration configuration,
+        ICurrentTenant currentTenant,
+        ISettingProvider settingProvider,
+        IAppEmailSenderService appEmailSenderService,
+        IBackgroundJobManager jobManager)
     {
         _caddieRepo = caddieRepo;
         _caddieLanguageRepo = caddieLanguageRepo;
@@ -77,7 +94,11 @@ public class MiniAppCaddieAppService : ApplicationService
         _guidGenerator = guidGenerator;
         _currentUser = currentUser;
         _configuration = configuration;
+        _currentTenant = currentTenant;
+        _settingProvider = settingProvider;
+        _appEmailSenderService = appEmailSenderService;
         LocalizationResource = typeof(MultiTenancyResource);
+        _jobManager = jobManager;
     }
 
     /// <summary>
@@ -255,7 +276,6 @@ public class MiniAppCaddieAppService : ApplicationService
     /// </summary>
     public async Task<MiniAppCreatedCaddieBookingDto> CreateBookingAsync(MiniAppCreateCaddieBookingDto input)
     {
-        // Look up customer from DB
         if (input.CustomerId == Guid.Empty)
             throw new AbpValidationException("CustomerId không hợp lệ.");
 
@@ -266,19 +286,16 @@ public class MiniAppCaddieAppService : ApplicationService
         var customerName = customer.FullName;
         var phone = customer.PhoneNumber;
 
-        // Validate caddies input
         if (input.Caddies == null || !input.Caddies.Any())
             throw new AbpValidationException("Vui lòng chọn ít nhất 1 Caddie.");
 
         var caddieItems = input.Caddies.GroupBy(c => c.CaddieId).Select(g => g.First()).ToList();
 
-        // Validate booking date
         if (input.BookingDate.Date < DateTime.Today)
             throw new AbpValidationException("Ngày chơi không được nhỏ hơn ngày hiện tại.");
 
         var isUpdate = input.CaddieBookingId.HasValue && input.CaddieBookingId.Value != Guid.Empty;
 
-        // ── Load hoặc tạo mới booking header ──────────────────────────────
         AppCaddieBooking booking;
         List<AppCaddieBookingDetail> existingDetails = new();
 
@@ -296,14 +313,14 @@ public class MiniAppCaddieAppService : ApplicationService
         }
         else
         {
-            var bookingCode = $"CB-{DateTime.Now:yyyyMMdd}-{Guid.NewGuid().ToString()[..4].ToUpper()}";
+            var bookingCode = $"CB{DateTime.Now:yyyyMMdd}{Guid.NewGuid().ToString()[..4].ToUpper()}";
             booking = new AppCaddieBooking
             {
                 BookingCode = bookingCode,
                 CustomerId = input.CustomerId,
                 CustomerName = customerName,
                 Phone = phone,
-                GolfCourseId = Guid.Empty, // set sau khi biết caddie đầu tiên
+                GolfCourseId = Guid.Empty,
                 BookingDate = input.BookingDate.Date,
                 StartTime = input.StartTime,
                 NumberOfHoles = input.NumberOfHoles,
@@ -317,7 +334,6 @@ public class MiniAppCaddieAppService : ApplicationService
             await _bookingRepo.InsertAsync(booking, autoSave: true);
         }
 
-        // ── Validate + resolve schedule cho các caddie MỚI (chưa có detail) ──
         var existingCaddieIds = existingDetails.Select(d => d.CaddieId).ToHashSet();
         var targetCaddieIds = caddieItems.Select(c => c.CaddieId).ToHashSet();
 
@@ -331,7 +347,6 @@ public class MiniAppCaddieAppService : ApplicationService
             caddieMap[item.CaddieId] = caddie;
             if (firstCaddie == null) firstCaddie = caddie;
 
-            // Caddie đã có trong booking rồi → giữ nguyên, chỉ cập nhật note nếu đổi
             if (existingCaddieIds.Contains(item.CaddieId))
             {
                 var existed = existingDetails.First(d => d.CaddieId == item.CaddieId);
@@ -346,7 +361,6 @@ public class MiniAppCaddieAppService : ApplicationService
             if (caddie.Status != (byte)CaddieStatus.Active)
                 throw new AbpValidationException($"Caddie {caddie.CaddieName} không khả dụng.");
 
-            // Schedule Conflict Detection: check for existing bookings that overlap this time slot
             var conflictDetails = await AsyncExecuter.ToListAsync(
                 (await _bookingDetailRepo.GetQueryableAsync())
                     .Where(d => d.CaddieId == item.CaddieId && d.CaddieBookingId != booking.Id));
@@ -377,7 +391,6 @@ public class MiniAppCaddieAppService : ApplicationService
             newCaddieSchedules.Add((item.CaddieId, schedule, item.Note));
         }
 
-        // ── Xóa các caddie KHÔNG còn trong danh sách (khi update) + nhả schedule ──
         foreach (var removed in existingDetails.Where(d => !targetCaddieIds.Contains(d.CaddieId)).ToList())
         {
             await ReleaseScheduleSlotAsync(removed.ScheduleId);
@@ -385,7 +398,6 @@ public class MiniAppCaddieAppService : ApplicationService
             existingDetails.Remove(removed);
         }
 
-        // ── Thêm detail cho các caddie mới + khóa schedule ──────────────────
         foreach (var (caddieId, schedule, note) in newCaddieSchedules)
         {
             var detail = new AppCaddieBookingDetail(_guidGenerator.Create(), booking.Id, caddieId, schedule.Id)
@@ -400,7 +412,6 @@ public class MiniAppCaddieAppService : ApplicationService
             await _scheduleRepo.UpdateAsync(schedule, autoSave: true);
         }
 
-        // ── Cập nhật header: GolfCourse, giờ chơi, phí Caddie (server tự tính) ──
         booking.GolfCourseId = firstCaddie!.GolfCourseId ?? booking.GolfCourseId;
         booking.BookingDate = input.BookingDate.Date;
         booking.StartTime = input.StartTime;
@@ -412,10 +423,8 @@ public class MiniAppCaddieAppService : ApplicationService
         booking.TotalCaddieFee = totalCaddieFee;
         await _bookingRepo.UpdateAsync(booking, autoSave: true);
 
-        // ── Đồng bộ phí Caddie sang booking golf liên kết (nếu có) ──────────
         await SyncGolfBookingCaddieFeeAsync(booking.Id, totalCaddieFee);
 
-        // ── Build response: toàn bộ caddie hiện có trong booking ────────────
         var caddieItemsResult = new List<MiniAppCreatedCaddieItemDto>();
         foreach (var detail in existingDetails)
         {
@@ -437,6 +446,174 @@ public class MiniAppCaddieAppService : ApplicationService
             });
         }
 
+        // === GỬI THÔNG BÁO ZBS (ZALO NOTIFICATION SERVICE) CADDIE BOOKING ===
+        try
+        {
+            // 1. Chuẩn bị dữ liệu danh sách Caddie
+            var caddieNames = caddieItemsResult
+                .Select(x => x.CaddieName)
+                .Where(x => !string.IsNullOrWhiteSpace(x))
+                .ToList();
+
+            var caddieListText = string.Join(", ", caddieNames);
+            var numberOfCaddie = caddieItemsResult.Count;
+
+            var zbsTemplateData = new
+            {
+                customer_name = string.IsNullOrWhiteSpace(customerName) ? "Khách hàng" : customerName,
+                booking_code = booking.BookingCode,
+                play_date = booking.BookingDate.ToString("dd/MM/yyyy", CultureInfo.InvariantCulture),
+                start_time = booking.StartTime.ToString(@"hh\:mm"),
+                number_of_holes = booking.NumberOfHoles,                
+                number_of_caddie = numberOfCaddie,               
+                caddie_list = caddieListText,
+                transfer_amount = booking.TotalCaddieFee > 0 ? Convert.ToInt32(booking.TotalCaddieFee) : 0,
+                bank_transfer_note = $"Thanh toán đặt Caddie Mã đơn {booking.BookingCode}"
+            };
+
+            // 23. Gửi ZBS cho Admin Caddie (Lấy SĐT Admin từ SettingProvider)
+            var adminPhone = await _settingProvider.GetOrNullAsync(ZaloSettingNames.ZbsCaddieBookingPhoneNumber);
+            if (!string.IsNullOrWhiteSpace(adminPhone))
+            {
+                await _jobManager.EnqueueAsync(
+                    new ZbsSendJobArgs
+                    {
+                        TenantId = _currentTenant.Id,
+                        TemplateKey = "CaddieBooking", // Key template gửi cho Admin
+                        Phone = adminPhone,
+                        TrackingId = $"ADMIN_{booking.Id}",
+                        TemplateData = zbsTemplateData
+                    },
+                    priority: BackgroundJobPriority.Normal
+                );
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogWarning(
+                ex,
+                "[ZBS] Enqueue CaddieBooking notification failed. BookingId={BookingId}, BookingCode={BookingCode}, TenantId={TenantId}",
+                booking.Id,
+                booking.BookingCode,
+                _currentTenant.Id
+            );
+        }
+
+        // === GỬI EMAIL THÔNG BÁO ĐẶT CADDIE MỚI ===
+        try
+        {
+            var golfCourse = await _golfCourseRepo.FindAsync(booking.GolfCourseId);
+
+            var emailModel = new CaddieBookingNewRequestEmailModelDto
+            {
+                BookingCode = booking.BookingCode ?? string.Empty,
+                CustomerName = string.IsNullOrWhiteSpace(booking.CustomerName) ? "Khách hàng" : booking.CustomerName,
+                CustomerPhone = booking.Phone ?? "N/A",
+                GolfCourseName = golfCourse?.Name ?? "Sân Golf",
+
+                BookingDateText = booking.BookingDate.ToString("dd/MM/yyyy", CultureInfo.InvariantCulture),
+                StartTimeText = booking.StartTime.ToString(@"hh\:mm"),
+                NumberOfHoles = booking.NumberOfHoles,
+
+                Status = (int)booking.Status,
+                StatusText = GetCaddieBookingStatusText(booking.Status),
+
+                PaymentStatus = (int)booking.PaymentStatus,
+                PaymentStatusText = GetCaddiePaymentStatusText(booking.PaymentStatus),
+                PaymentMethodText = GetCaddiePaymentMethodText(booking.PaymentMethod),
+
+                CheckinStatus = (int)booking.CheckinStatus,
+                CheckinStatusText = GetCaddieCheckinStatusText(booking.CheckinStatus),
+                CheckinTimeText = booking.CheckinTime?.ToString("dd/MM/yyyy HH:mm", CultureInfo.InvariantCulture) ?? "Chưa check-in",
+
+                Note = booking.Note,
+                CancelReason = booking.CancelReason,
+
+                CreationTimeText = booking.CreationTime.ToString("dd/MM/yyyy HH:mm", CultureInfo.InvariantCulture),
+                TotalCaddieFeeText = MoneyText(booking.TotalCaddieFee),
+
+                Caddies = caddieItemsResult.Select(x => new CaddieEmailItemDto
+                {
+                    CaddieCode = x.CaddieCode ?? string.Empty,
+                    CaddieName = x.CaddieName ?? string.Empty,
+                    GenderText = caddieMap.TryGetValue(x.CaddieId, out var cd) ? (cd.Gender == (byte)CaddieGender.Female ? "Nữ" : "Nam") : "N/A",
+                    Note = x.Note
+                }).ToList()
+            };
+
+            var cfg = await EmailHelper.GetEmailConfigAsync(
+                _settingProvider,
+                AppEmailSettingNames.CaddieBookingNew_ToEmails,
+                AppEmailSettingNames.CaddieBookingNew_CcEmails,
+                AppEmailSettingNames.CaddieBookingNew_BccEmails,
+                AppEmailSettingNames.CaddieBookingNew_SubjectTemplate,
+                booking.BookingCode,
+                fallbackTo: "tandv@baygolf.vn"
+            );
+
+            var subject = cfg.Subject?
+                .Replace("{BookingCode}", booking.BookingCode)
+                .Replace("{0}", booking.BookingCode);
+
+            var templateData = new Dictionary<string, object>
+            {
+                { "model", emailModel },
+                { "booking_code", emailModel.BookingCode },
+                { "BookingCode", emailModel.BookingCode },
+                { "customer_name", emailModel.CustomerName },
+                { "CustomerName", emailModel.CustomerName },
+                { "customer_phone", emailModel.CustomerPhone },
+                { "CustomerPhone", emailModel.CustomerPhone },
+                { "golf_course_name", emailModel.GolfCourseName },
+                { "GolfCourseName", emailModel.GolfCourseName },
+                { "booking_date_text", emailModel.BookingDateText },
+                { "BookingDateText", emailModel.BookingDateText },
+                { "start_time_text", emailModel.StartTimeText },
+                { "StartTimeText", emailModel.StartTimeText },
+                { "number_of_holes", emailModel.NumberOfHoles },
+                { "NumberOfHoles", emailModel.NumberOfHoles },
+                { "creation_time_text", emailModel.CreationTimeText },
+                { "CreationTimeText", emailModel.CreationTimeText },
+                { "total_caddie_fee_text", emailModel.TotalCaddieFeeText },
+                { "TotalCaddieFeeText", emailModel.TotalCaddieFeeText },
+                { "caddies", emailModel.Caddies },
+                { "Caddies", emailModel.Caddies },
+                { "status", emailModel.Status },
+                { "Status", emailModel.Status },
+                { "status_text", emailModel.StatusText },
+                { "StatusText", emailModel.StatusText },
+                { "payment_status", emailModel.PaymentStatus },
+                { "PaymentStatus", emailModel.PaymentStatus },
+                { "payment_status_text", emailModel.PaymentStatusText },
+                { "PaymentStatusText", emailModel.PaymentStatusText },
+                { "payment_method_text", emailModel.PaymentMethodText },
+                { "PaymentMethodText", emailModel.PaymentMethodText },
+                { "note", emailModel.Note },
+                { "Note", emailModel.Note }
+            };
+
+            await _appEmailSenderService.EnqueueTemplateAsync(
+                templateName: AppEmailTemplateNames.CaddieBookingNewRequest,
+                model: templateData,
+                toEmails: cfg.To,
+                subject: subject,
+                cc: cfg.Cc,
+                bcc: cfg.Bcc,
+                bookingId: booking.Id,
+                bookingCode: booking.BookingCode
+            );
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(
+                ex,
+                "[CaddieBookingEmail] Failed to enqueue booking created email. BookingId={BookingId}, BookingCode={BookingCode}, TenantId={TenantId}",
+                booking.Id,
+                booking.BookingCode,
+                _currentTenant.Id
+            );
+        }
+
         return new MiniAppCreatedCaddieBookingDto
         {
             CaddieBookingId = booking.Id,
@@ -445,13 +622,63 @@ public class MiniAppCaddieAppService : ApplicationService
             StartTime = booking.StartTime,
             NumberOfHoles = booking.NumberOfHoles,
             Status = booking.Status,
-            StatusText = "Mới",
+            StatusText = GetCaddieBookingStatusText(booking.Status),
             PaymentStatus = booking.PaymentStatus,
-            PaymentStatusText = "Chưa thanh toán",
+            PaymentStatusText = GetCaddiePaymentStatusText(booking.PaymentStatus),
             TotalCaddieFee = booking.TotalCaddieFee,
             PaymentMethod = booking.PaymentMethod,
             Caddies = caddieItemsResult
         };
+    }
+
+    // ── Status Helper Methods ──────────────────────────────────────────────
+
+    private static string GetCaddieBookingStatusText(byte status)
+    {
+        return status switch
+        {
+            (byte)CaddieBookingStatus.New => "Mới",
+            (byte)CaddieBookingStatus.Confirmed => "Đã xác nhận",
+            (byte)CaddieBookingStatus.Completed => "Hoàn thành",
+            (byte)CaddieBookingStatus.Cancelled => "Đã hủy",
+            _ => "Khác"
+        };
+    }
+
+    private static string GetCaddiePaymentStatusText(byte status)
+    {
+        return status switch
+        {
+            (byte)CaddiePaymentStatus.Unpaid => "Chưa thanh toán",
+            (byte)CaddiePaymentStatus.Paid => "Đã thanh toán",
+            _ => "Chưa thanh toán"
+        };
+    }
+
+    private static string GetCaddieCheckinStatusText(byte status)
+    {
+        return status switch
+        {
+            (byte)CaddieCheckinStatus.NotCheckedIn => "Chưa check-in",
+            (byte)CaddieCheckinStatus.CheckedIn => "Đã check-in",
+            _ => "Chưa check-in"
+        };
+    }
+
+    private static string GetCaddiePaymentMethodText(int method)
+    {
+        return method switch
+        {
+            0 => "Thanh toán tại quầy",
+            1 => "Thanh toán online",
+            2 => "Chuyển khoản ngân hàng",
+            _ => "Thanh toán tại quầy"
+        };
+    }
+
+    private static string MoneyText(decimal amount)
+    {
+        return string.Format(CultureInfo.GetCultureInfo("vi-VN"), "{0:N0} VNĐ", amount);
     }
 
     /// <summary>

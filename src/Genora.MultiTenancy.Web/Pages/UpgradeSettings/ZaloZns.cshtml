@@ -9,7 +9,7 @@
         <form method="post" asp-page="/UpgradeSettings/ZaloZns">
             <abp-card-body>
                 <abp-row>
-                    <abp-column size-md="_6" class="bor">
+                    <abp-column size-md="_4" class="bor">
                         <div class="p-2 bg-body-tertiary">
                             <abp-card-header class="mb-3 p-0"
                                              title="@L["UpgradeSettings:ZaloZns:AppConfig:Title"].Value">
@@ -24,7 +24,7 @@
                         </div>
                     </abp-column>
 
-                    <abp-column size-md="_6">
+                    <abp-column size-md="_8">
                         <div class="p-2 bg-body-tertiary">
                             <abp-card-header class="mb-3 p-0"
                                              title="@L["UpgradeSettings:ZaloZns:Templates:Title"].Value">
@@ -32,33 +32,31 @@
                             </abp-card-header>
 
                             <abp-row>
-                                <abp-column size-md="_6">
+                                <abp-column size-md="_3">
                                     <abp-input asp-for="Input.RegisterSuccess" label="@L["UpgradeSettings:ZaloZns:Template:RegisterSuccess"].Value" />
-                                    <abp-input asp-for="Input.BookingCreated" label="@L["UpgradeSettings:ZaloZns:Template:BookingCreated"].Value" />
-                                </abp-column>
-
-                                <abp-column size-md="_6">
-                                    <abp-input asp-for="Input.BookingCancelled" label="@L["UpgradeSettings:ZaloZns:Template:BookingCancelled"].Value" />
-                                    <abp-input asp-for="Input.BookingReminder" label="@L["UpgradeSettings:ZaloZns:Template:BookingReminder"].Value" />
-                                </abp-column>
-
-                                <abp-column size-md="_6">
                                     <abp-input asp-for="Input.BookingChanged" label="@L["UpgradeSettings:ZaloZns:Template:BookingChanged"].Value" />
-                                </abp-column>
-
-                                <abp-column size-md="_6">
+                                    <abp-input asp-for="Input.BookingCancelled" label="@L["UpgradeSettings:ZaloZns:Template:BookingCancelled"].Value" />
+                                    <abp-input asp-for="Input.BookingCreated" label="@L["UpgradeSettings:ZaloZns:Template:BookingCreated"].Value" />
+                                    <abp-input asp-for="Input.BookingReminder" label="@L["UpgradeSettings:ZaloZns:Template:BookingReminder"].Value" />
                                     <abp-input asp-for="Input.ServiceReview" label="@L["UpgradeSettings:ZaloZns:Template:ServiceReview"].Value" />
                                 </abp-column>
 
-                                <abp-column size-md="_6">
+                                <abp-column size-md="_3">
+                                    <abp-input asp-for="Input.FnbOrder" label="@L["UpgradeSettings:ZaloZns:Template:FnbOrder"].Value" />
+                                    <abp-input asp-for="Input.ProshopOrder" label="@L["UpgradeSettings:ZaloZns:Template:ProshopOrder"].Value" />
+                                    <abp-input asp-for="Input.CaddieBooking" label="@L["UpgradeSettings:ZaloZns:Template:CaddieBooking"].Value" />
+                                </abp-column>
+
+                                <abp-column size-md="_3">
+                                    <abp-input asp-for="Input.FnbBookingPhoneNumber" label="@L["UpgradeSettings:ZaloZns:Template:FnbBookingPhoneNumber"].Value" />
+                                    <abp-input asp-for="Input.ProshopOrderPhoneNumber" label="@L["UpgradeSettings:ZaloZns:Template:ProshopOrderPhoneNumber"].Value" />
+                                    <abp-input asp-for="Input.CaddieBookingPhoneNumber" label="@L["UpgradeSettings:ZaloZns:Template:CaddieBookingPhoneNumber"].Value" />
+                                    <abp-input asp-for="Input.GolfBookingPhoneNumber" label="@L["UpgradeSettings:ZaloZns:Template:GolfBookingPhoneNumber"].Value" />
+                                </abp-column>
+
+                                <abp-column size-md="_3">
                                     <abp-input asp-for="Input.OrderSuccess" label="@L["UpgradeSettings:ZaloZns:Template:OrderSuccess"].Value" />
-                                </abp-column>
-
-                                <abp-column size-md="_6">
                                     <abp-input asp-for="Input.RedeemPoint" label="@L["UpgradeSettings:ZaloZns:Template:RedeemPoint"].Value" />
-                                </abp-column>
-
-                                <abp-column size-md="_6">
                                     <abp-input asp-for="Input.ExchangeGift" label="@L["UpgradeSettings:ZaloZns:Template:ExchangeGift"].Value" />
                                 </abp-column>
                             </abp-row>
@@ -73,41 +71,41 @@
                     <abp-column size-md="_12">
                         <div class="p-2 bg-body-tertiary">
                             <abp-card-header class="mb-3 p-0">
-                                Checkout SDK — Cấu hình thanh toán
+                                @L["UpgradeSettings:ZaloZns:Payment:Title"].Value
                             </abp-card-header>
                             <abp-row>
                                 <abp-column size-md="_6">
                                     <div class="mb-3">
-                                        <label class="form-label">Private Key (HMAC SHA256)</label>
+                                        <label class="form-label">@L["UpgradeSettings:ZaloZns:Payment:PrivateKey"].Value</label>
                                         <input asp-for="Input.PaymentPrivateKey"
                                                type="password"
                                                class="form-control"
-                                               placeholder="Nhập Private Key từ Zalo Developer Portal" />
+                                               placeholder="@L["UpgradeSettings:ZaloZns:Payment:PrivateKeyPlaceholder"].Value" />
                                         <div class="form-text text-muted">
-                                            Để trống nếu không muốn thay đổi. Giá trị được mã hoá khi lưu.
+                                            @L["UpgradeSettings:ZaloZns:Payment:PrivateKeyHint"].Value
                                         </div>
                                     </div>
                                 </abp-column>
                             </abp-row>
                             <hr />
-                            <p class="text-muted small mb-2">Thông tin tài khoản ngân hàng (hiển thị khi khách chọn Chuyển khoản)</p>
+                            <p class="text-muted small mb-2">@L["UpgradeSettings:ZaloZns:Payment:BankInfoNote"].Value</p>
                             <abp-row>
                                 <abp-column size-md="_3">
-                                    <abp-input asp-for="Input.BankName" label="Tên ngân hàng" />
+                                    <abp-input asp-for="Input.BankName" label="@L["UpgradeSettings:ZaloZns:Payment:BankName"].Value" />
                                 </abp-column>
                                 <abp-column size-md="_3">
-                                    <abp-input asp-for="Input.BankAccountNumber" label="Số tài khoản" />
+                                    <abp-input asp-for="Input.BankAccountNumber" label="@L["UpgradeSettings:ZaloZns:Payment:BankAccountNumber"].Value" />
                                 </abp-column>
                                 <abp-column size-md="_3">
-                                    <abp-input asp-for="Input.BankAccountOwner" label="Chủ tài khoản" />
+                                    <abp-input asp-for="Input.BankAccountOwner" label="@L["UpgradeSettings:ZaloZns:Payment:BankAccountOwner"].Value" />
                                 </abp-column>
                                 <abp-column size-md="_3">
-                                    <abp-input asp-for="Input.BankBranch" label="Chi nhánh" />
+                                    <abp-input asp-for="Input.BankBranch" label="@L["UpgradeSettings:ZaloZns:Payment:BankBranch"].Value" />
                                 </abp-column>
                             </abp-row>
 
                             <hr />
-                            <p class="text-muted small mb-2">Hình thức thanh toán hiển thị trên Mini App</p>
+                            <p class="text-muted small mb-2">@L["UpgradeSettings:ZaloZns:Payment:MethodsNote"].Value</p>
                             <abp-row>
                                 <abp-column size-md="_6">
                                     <div class="form-check form-switch mb-2">
@@ -117,7 +115,7 @@
                                                id="IsPayAtCounterEnabled"
                                                asp-for="Input.IsPayAtCounterEnabled" />
                                         <label class="form-check-label" for="IsPayAtCounterEnabled">
-                                            Thanh toán tại quầy
+                                            @L["UpgradeSettings:ZaloZns:Payment:IsPayAtCounterEnabled"].Value
                                         </label>
                                     </div>
                                 </abp-column>
@@ -129,7 +127,7 @@
                                                id="IsPayBankTransferEnabled"
                                                asp-for="Input.IsPayBankTransferEnabled" />
                                         <label class="form-check-label" for="IsPayBankTransferEnabled">
-                                            Thanh toán chuyển khoản
+                                            @L["UpgradeSettings:ZaloZns:Payment:IsPayBankTransferEnabled"].Value
                                         </label>
                                     </div>
                                 </abp-column>

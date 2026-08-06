@@ -24,4 +24,22 @@ public static class AppEmailSettingNames
     public const string OrderProduct_CcEmails = "Genora.AppEmails.OrderProductRequest.CcEmails";
     public const string OrderProduct_BccEmails = "Genora.AppEmails.OrderProductRequest.BccEmails";
     public const string OrderProduct_SubjectTemplate = "Genora.AppEmails.OrderProductRequest.SubjectTemplate";
+    
+    // ===== Order Fnb Request =====
+    public const string FnbOrderNew_ToEmails = "Genora.AppEmails.FnbOrderNewRequest.ToEmails";
+    public const string FnbOrderNew_CcEmails = "Genora.AppEmails.FnbOrderNewRequest.CcEmails";
+    public const string FnbOrderNew_BccEmails = "Genora.AppEmails.FnbOrderNewRequest.BccEmails";
+    public const string FnbOrderNew_SubjectTemplate = "Genora.AppEmails.FnbOrderNewRequest.SubjectTemplate";
+
+    // ===== Order Proshop Request =====
+    public const string ProshopOrderNew_ToEmails = "Genora.AppEmails.ProshopOrderNewRequest.ToEmails";
+    public const string ProshopOrderNew_CcEmails = "Genora.AppEmails.ProshopOrderNewRequest.CcEmails";
+    public const string ProshopOrderNew_BccEmails = "Genora.AppEmails.ProshopOrderNewRequest.BccEmails";
+    public const string ProshopOrderNew_SubjectTemplate = "Genora.AppEmails.ProshopOrderNewRequest.SubjectTemplate";
+
+    // ===== Order Caddie Request =====
+    public const string CaddieBookingNew_ToEmails = "Genora.AppEmails.CaddieBookingNewRequest.ToEmails";
+    public const string CaddieBookingNew_CcEmails = "Genora.AppEmails.CaddieBookingNewRequest.CcEmails";
+    public const string CaddieBookingNew_BccEmails = "Genora.AppEmails.CaddieBookingNewRequest.BccEmails";
+    public const string CaddieBookingNew_SubjectTemplate = "Genora.AppEmails.CaddieBookingNewRequest.SubjectTemplate";
 }
