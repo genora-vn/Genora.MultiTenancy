@@ -7,6 +7,13 @@ namespace Genora.MultiTenancy.AppDtos.Caddies;
 
 public class CreateUpdateCaddieDto
 {
+    /// <summary>
+    /// Mã Caddy — cho phép nhập tùy ý khi tạo mới. Bỏ trống → server tự sinh (CD-XXX).
+    /// Khi cập nhật: bỏ qua (không cho sửa mã đã lưu).
+    /// </summary>
+    [StringLength(50)]
+    public string? CaddieCode { get; set; }
+
     [Required]
     [StringLength(255)]
     public string CaddieName { get; set; } = null!;

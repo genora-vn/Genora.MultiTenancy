@@ -198,7 +198,20 @@ public class CaddieAppService : FeatureProtectedCrudAppService<
         await AuthorizationService.CheckAsync(
             P(MultiTenancyPermissions.AppCaddies.Create, MultiTenancyPermissions.HostAppCaddies.Create));
 
-        var code = await GenerateCaddieCodeAsync();
+        // Mã Caddy: ưu tiên mã người dùng nhập; bỏ trống → tự sinh (CD-XXX).
+        string code;
+        if (!string.IsNullOrWhiteSpace(input.CaddieCode))
+        {
+            code = input.CaddieCode.Trim();
+            var isDuplicate = await AsyncExecuter.AnyAsync(
+                (await _caddieRepo.GetQueryableAsync()).Where(x => x.CaddieCode == code));
+            if (isDuplicate)
+                throw new Volo.Abp.UserFriendlyException($"Mã Caddy '{code}' đã tồn tại. Vui lòng nhập mã khác.");
+        }
+        else
+        {
+            code = await GenerateCaddieCodeAsync();
+        }
 
         // Handle avatar upload
         var avatarUrl = await ResolveAvatarAsync(input.AvatarFile, null);

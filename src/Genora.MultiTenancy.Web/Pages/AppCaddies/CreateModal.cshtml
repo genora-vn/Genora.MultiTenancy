@@ -34,7 +34,8 @@
                 <!-- Mã Caddy -->
                 <div class="col-md-6">
                     <label class="caddie-form-label">Mã Caddy</label>
-                    <input type="text" class="form-control caddie-form-control" value="@Model.GeneratedCode" disabled placeholder="CD-XXX (Tự động)" />
+                    <input type="text" asp-for="Caddie.CaddieCode" class="form-control caddie-form-control" value="@Model.GeneratedCode" placeholder="CD-XXX (bỏ trống để tự động sinh)" autocomplete="off" />
+                    <small class="text-muted">Có thể nhập mã tùy ý. Bỏ trống → hệ thống tự sinh.</small>
                 </div>
                 <!-- Tên Caddy -->
                 <div class="col-md-6">
