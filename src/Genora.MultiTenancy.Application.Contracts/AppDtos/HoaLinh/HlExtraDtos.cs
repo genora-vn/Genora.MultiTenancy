@@ -33,6 +33,7 @@ public class HlProductByBrandDto
     public string? ImageUrl { get; set; }
     public double? DiscPercent { get; set; }
     public bool? IsCombo { get; set; }
+    public int? Seq { get; set; }
 }
 
 /// <summary>
