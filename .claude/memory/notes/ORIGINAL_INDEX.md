@@ -1,0 +1,117 @@
+# MEMORY INDEX
+
+## Feedback (quy tắc làm việc)
+- [ABP WithDetailsAsync load navigation props](feedback_abp_with_details.md) — GetAsync không eager-load Items, dùng WithDetailsAsync
+- [SignalR broadcast trong try/catch rỗng](feedback_signalr_try_catch.md) — lỗi broadcast không fail luồng đặt hàng
+- [ABP ILogger không có LogWarning extension](feedback_abp_ilogger.md) — dùng Logger.LogException hoặc catch rỗng
+- [genora.excel.download dùng fetch+Blob](feedback_excel_download.md) — window.location.href không trigger download; fetch+Blob+a.click()
+- [MARS + autoSave — insert parent trước, child sau](feedback_mars_autosave_pattern.md) — không cascade insert / SaveChanges một lần
+- [ABP Tenant/Host dual permission pattern](feedback_abp_dual_permission_pattern.md) — inject ICurrentTenant + helper P(), không [Authorize] cứng
+- [ABP Permission group — gom vào group có sẵn](feedback_abp_permission_group_pattern.md) — không tạo group riêng cho tính năng nhỏ
+- [HL Payment dùng ZaloPaymentSettingNames constants](feedback_hl_payment_setting_names.md) — string cứng gây Undefined setting
+- [ABP DataTables custom ajax cho List&lt;T&gt;](feedback_datatables_custom_ajax.md) — createAjax chỉ cho PagedResultDto; array thuần dùng custom ajax
+- [ABP Permission Tenant RequireFeatures trên root + mọi child](feedback_permission_require_features.md) — thiếu 1 level là permission vẫn hiện; menu check feature trước
+- [Money input vi-VN — patchMoneyValidator()](feedback_money_input_validation.md) — override $.validator number/range strip dấu chấm trước validate
+- [Cập nhật memory bắt buộc trước handoff](feedback_memory_update_before_handoff.md) — lưu memory + MEMORY.md trước task tiếp
+- [Disabled select phải kèm hidden input](feedback_disabled_select_hidden_input.md) — `<select disabled>` không POST value; thêm hidden + override server
+- [Email template Scriban `!= empty` → `!= null`](email_template_fixes.md) — Scriban không support `empty`; pass actual object không null
+- [EF migrations body rỗng khi Web lock dll](feedback_ef_migration_dll_lock.md) — kill Web process + clean bin/obj trước migrations add
+- [Salon phone regex — đầu 0 hoặc 84](feedback_salon_phone_regex_0_or_84.md) — pattern `^(0\d{9,10}|84\d{9,10})$` maxlength 13; sửa DTO+cshtml+JS+server
+- [Application layer không dùng EF Core — AsyncExecuter](feedback_no_ef_in_application_layer.md) — Count/ToList/FirstOrDefault qua AsyncExecuter; Entity<Guid> dùng constructor
+- [ABP internal AppService — multi complex param + null validation](feedback_appservice_multi_complex_param.md) — [RemoteService(false)] khi >1 complex param; [DisableValidation]+default=null khi param reference nhận null
+- [HL dual permission + JSON array parse + DTO không JsonPropertyName](feedback_hl_dual_permission_and_json_parse.md) — Host 403 fix P(); array→DeserializeSmartResponse wrap; DTO dựa SnakeCaseLower policy
+
+## Project — Golf core & MiniApp
+- [MiniAppProOrderService thiếu SignalR notifier](project_miniapp_notifier.md) — luồng Mini App phải inject + gọi notifier
+- [UI Filter pattern chuẩn (FnbOrders)](project_ui_filter_pattern.md) — label+input div.mb-3, auto-refresh, flatpickr, fnb-page wrapper
+- [Excel Export pattern cho Orders](project_excel_export_pattern.md) — Interface→Service(ClosedXML)→Controller→JS button
+- [ProPaymentStatus enum](project_pro_payment_status.md) — Unpaid=1, Paid=2, Failed=3
+- [MiniApp Cancel Booking API](project_miniapp_cancel_booking.md) — POST /api/mini-app/cancel-booking/{id}, guard CustomerId, ZBS+Email try/catch
+- [ABP Multi-tenant DB routing — IMultiTenant bắt buộc](project_multitenant_db_routing.md) — thiếu → route host DB, FK fail khi tenant separate DB
+- [MiniApp ItemId=null + fallback by name](project_miniapp_itemid_null_pattern.md) — set ItemId=null tránh FK cross-tenant, lookup ảnh by ItemName
+- [PaymentConfiguration feature](project_payment_configuration.md) — entity riêng thay GolfCourse.PaymentQr*, gom permission MiniAppSetting, GetActiveAsync
+- [MiniApp ProOrder — lookup ProItem enrich items](project_miniapp_proorder_item_lookup.md) — inject ProItem+ProCategory, BuildItemDictAsync key Id+"name:{name}"
+- [fnb-shared.js formatCurrency đã có "đ"](project_fnb_shared_format_currency.md) — trả "525.000đ", không append thêm "đ"
+- [GolfCourse Member config](project_golfcourse_member_config.md) — IsMemberSupported + MaxMemberGuest, dùng booking policy
+- [MiniApp Member/MemberGuest pricing](project_member_guest_pricing_pattern.md) — VisitorPrice từ VIS, MemberGuestPrice từ MBG, OriginalTotalAmount từ CustomerType
+- [Booking TotalAmount từ AppBookingPlayers](project_booking_total_amount_pattern.md) — sum PricePerPlayer, không dùng booking.TotalAmount
+- [AppHomePageConfigs update POST explicit controller](project_app_homepageconfigs_post_update_endpoints.md) — update APIs POST HttpApi, service RemoteService(false)
+- [Prod antiforgery SSL incident](project_prod_antiforgery_ssl_incident.md) — prod terminate TLS ở proxy; SecurePolicy=Always gây lỗi login
+- [Calendar Slot Pricing API PlayerNumber](project_calendar_slot_pricing_api.md) — tính lại giá theo playerNumber; CustomerTypePrice khi !IsMemberSupported
+- [CalendarSlot SlotAvailable init + reset](project_calendar_slot_available_init.md) — tạo mới=MaxSlots; update trừ golfer booking active qua ResolveSlotAvailableAsync
+- [SerilogCommandInterceptor tạm tắt](project_serilog_interceptor_toggle.md) — DI register, AddInterceptors comment trong OnConfiguring
+- [CustomerSource enum + HoaLinh=5](project_customer_source_enum.md) — ZaloMiniApp=1, Manual=2, Extent=3, Other=4, HoaLinh=5; gán theo entry point
+- [EditModal Customer — disable Phone khi ZaloMiniApp](project_customer_phone_readonly_miniapp.md) — phone là key đồng bộ Mini App
+- [Order status modal — disable submit khi chưa đổi](project_order_status_modal_submit_disable.md) — hidden Current... + so sánh string radio enum-name
+- [Orders Index — slim action column](project_orders_action_column_slim.md) — nút update status trong cột status; dropdown View/Detail/Quick/Cancel
+- [BookingNewRequest email — TotalAmount sum(PricePerPlayer)](project_booking_email_total_amount.md) — CreateFromMiniAppAsync sum players khi mix Member/Guest
+- [VietQR deeplink HTTPS thay vietqr://](project_vietqr_deeplink_https.md) — vietqr:// lỗi -1403 Zalo; dùng https://dl.vietqr.io/pay
+- [CalendarSlot Visitor price fallback](project_calendar_slot_visitor_price_fallback.md) — chưa login lookup VIS row explicit, không .Max()
+- [CalendarSlot filter deal vs tee time](project_calendar_slot_deal_filter.md) — PromotionType!=null lấy slot tương lai; null chỉ hôm nay còn giờ
+- [PromotionPolicy entity tách GolfCourse](project_promotion_policy_feature.md) — AppPromotionPolicies chính sách hoãn hủy theo (GolfCourse,PromotionType)
+- [CustomerType OriginalPrice theo loại ngày](project_customer_type_original_price_by_special_date.md) — 3 cột giá; resolve Holiday>MemberDay>Weekend>Weekday theo PlayDate
+- [MiniApp Booking Detail chính sách hoãn hủy](project_miniapp_booking_detail_policy_fields.md) — thêm PolicyTitle/Hours/Content từ AppPromotionPolicies
+- [Payment toggles + News Edit lazy load](project_payment_toggles_and_news_edit_lazy_load.md) — IsPayAtCounter/BankTransfer settings; News OnGetContentAsync lazy contentHtml
+- [ProOrder.CustomerId soft reference](project_proorder_customer_soft_reference.md) — dùng chung golf+salon; migration 20260525102341 drop FK
+- [Validate VGA Code API](project_validate_vga_code_api.md) — GET validate-vga-code recalc Member pricing người chơi cùng; dedup usedVgaCodes 1 mã/1 người; fix update-bookings lưu đúng PricePerPlayer từng người
+- [AppCustomers page CustomerType permission leak](project_appcustomers_page_customertype_permission_leak.md) — trang Quản lý KH throw AbpAuthorizationException vì load dropdown qua AppCustomerTypeService [Authorize]; đổi sang IMiniAppCustomerTypeService
+
+## Project — Salon Beauty
+- [Salon Stylist UI](project_salon_stylist_ui.md) — Index+Create+Edit+inline toggle IsShowOnApp
+- [Salon Stylist UI updated + avatar upload](project_salon_stylist_ui_updated.md) — stylist-page.css, badge colors, FileReader base64, prefix stylist-*
+- [Salon Booking UI](project_salon_booking_ui.md) — Index+Create+Edit+Detail, dual permission, API /api/app/salon-beauty/bookings/*
+- [Salon Booking MiniApp MARS fix](project_salon_booking_mars_fix.md) — cascade insert child IdentityConflict; insert parent trước + child qua repo
+- [Salon Location + TimeSlot UI](project_salon_location_timeslot_ui.md) — Location CRUD + TimeSlot group-by-stylist + FullCalendar On/Full/Off
+- [Salon Stylist+Booking LocationId + enum Role/Level](project_salon_stylist_booking_locationid.md) — migration 20260520052000; cascade Location→Stylist
+- [Salon Location slot config + TimeSlot capacity](project_salon_location_slot_config.md) — SlotDuration/BufferTime/MaxCapacity; auto-generate; migration 20260520100420
+- [Salon TimeSlot modal fix server-side render](project_salon_timeslot_modal_fix.md) — render LocationItems server + data-locations + inline script; flatpickr d/m/Y
+- [Salon TimeSlot UI polish](project_salon_timeslot_ui_polish.md) — capacity-hint current/max; close modal BS5; FC v6 override color .fc-event-*
+- [Salon TimeSlot PeakHour + Booking TimeSlotId](project_salon_timeslot_peakhour_booking_timeslot.md) — PeakHour=3 đỏ; TimeSlotId driving WorkDate/Time/Location; BookedCount auto-flip
+- [Salon Booking Create/Edit modal fixes](project_salon_booking_create_edit_modal_fixes.md) — AddNewCustomer abp.ModalManager chain; Edit preselect promise chain
+- [MiniApp Salon Location+TimeSlot+Stylist filter](project_miniapp_salon_location_timeslot_api.md) — business-establishments+tee-times từ DB; Stylist filter LocationId
+- [Salon Deposit + Loyalty Config](project_salon_deposit_loyalty.md) — DEP{date}{seq} 2-step approval ACID _uowManager.Begin; ledger; ExchangeRate per-tenant
+- [Salon Beauty MiniApp payment endpoints](project_salon_beauty_miniapp_payment_endpoints.md) — clone Pro/Fnb; SalonBeautyPaymentMethod; orderId={BookingCode}_{ts}
+- [Salon Customer Detail redesign](project_salon_customer_detail_redesign.md) — KPI cards, tier NEW/REGULAR/VIP/DIAMOND, GetPurchaseHistory+DepositLedger
+- [Salon Booking History + Change Stylist](project_salon_booking_history_change_stylist.md) — /SalonBeautyBookings/History; ChangeStylistAsync validate cùng Location
+- [Salon Booking ZBS BookingCreated + ServiceReview](project_salon_zbs_booking_and_service_review.md) — enqueue ZBS Create + UpdateStatus=Completed; param customer_name/booking_code
+
+## Project — Docs & Caddie
+- [Online docs site /Documents](project_app_documents_feature.md) — entity host-shared, FeatureName + Tenant/HostPermissionName, URL slug, seed 9 module
+- [Document seeder expanded 11 sections](project_app_documents_full_pages_seeder.md) — partial class, section salon-location-schedule + customer-booking-salon
+- [Caddie SRS 5 module](project_caddie_module_srs.md) — Quản lý/Đặt/Lịch/Kỹ năng/Đánh giá; enums+workflow+FK
+- [Caddie DB Design 10 tables](project_caddie_module_db_design.md) — caddies/languages/skills/bookings/schedules/ratings/rating_details
+- [Caddie Phase 1 foundation](project_caddie_module_phase1_complete.md) — 9 enums, 9 entities, EF+migration, 6 permission pairs, menu order 48; GolfCourse.HasNightShift
+- [Caddie Phase 2 UI design specs](project_caddie_module_phase2_ui_design.md) — List/Create/Edit/Detail/Schedule/Review specs
+- [Caddie Phase 2 progress](project_caddie_module_phase2_progress.md) — DTOs+3 AppServices+Pages done; Schedule/Skill/Language/Booking/Rating pending
+- [Caddie COMPLETE Phase 1-7](project_caddie_module_complete.md) — 9 enums, 9 entities, 6 AppServices, 6 page groups, MiniApp APIs
+- [Caddie UI fixes + MiniApp Controller](project_caddie_ui_fixes_miniapp_apis.md) — Select2 tags, Avatar base64, GolfCourseId null, /api/mini-app/caddie/*
+- [Caddie UI fixes June 03](project_caddie_ui_fixes_june03.md) — Select2 multiple height 38px, flatpickr d/m/Y, error handling
+- [Caddie Avatar refactor file upload](project_caddie_avatar_refactor.md) — bỏ base64, IRemoteStreamContent qua ManageImageService, FeatureProtectedCrud, 15MB
+- [Caddie GolfCourseId NOT NULL fallback](project_caddie_golfcourseid_fallback.md) — ResolveGolfCourseIdAsync fallback lấy sân duy nhất
+- [Caddie UI Redesign Phase 2](project_caddie_module_phase2_ui_redesign.md) — Booking/Rating redesign+Detail, Schedule Calendar Month/Day+auto-generate+Excel
+- [Caddie FINAL Complete](project_caddie_module_final_complete.md) — UI Polish, MiniApp 6 endpoints, Excel import/export, Calendar 3 views
+- [Caddie UI fixes June 05](project_caddie_ui_fixes_june05.md) — floor renderStars, BookingRatingAvg, rating tab, review modal 2-col
+- [Caddie fixes June 05 batch 2+3](project_caddie_fixes_june05_batch2.md) — MiniApp bỏ headers; ComputedRating decimal; progress bar; avatar initials
+- [Caddie CaddieFee + BookingDetails](project_caddie_caddiefee_bookingdetails.md) — GolfCourse.CaddieFee, AppCaddieBookingDetail 1-N multi-caddy, /caddie/languages
+- [Caddie import + Email Cc/Bcc + Feature toggle](project_caddie_email_feature_fixes_june16.md) — fix dup key import, MailMessage Cc/Bcc, AllowEmailSettings/Template
+- [Caddie booking gắn vào người chơi golf](project_caddie_booking_linked_to_golf_players.md) — AppBookingPlayers thêm CaddieId/CaddieBookingId/CaddieName; caddie booking trả list caddie đã book; migration 20260724091716
+- [Caddie fee + multi-caddie admin + upsert/unassign](project_caddie_fee_upsert_unassign.md) — Booking.TotalCaddieFee cộng TotalAmount (migration 20260725062150); admin list+detail nhiều Caddie; API upsert (CaddieBookingId?) + unassign-caddie tự tính phy=count×GolfCourse.CaddieFee
+
+## Project — Hoa Linh module
+- [HL BRD Overview](project_hoalinh_brd_overview.md) — Mini App (8 module) + Admin Portal (10) + API DMS sync; Dược phẩm Hoa Linh
+- [HL Data Integration Pattern](project_hoalinh_data_integration_pattern.md) — 10 nhóm dữ liệu, Pull/Push, prefix AppHl, SyncLog
+- [HL Phase 1 Foundation](project_hoalinh_phase1_complete.md) — 4 enums, 4 entities (schema HL), feature AllowHoaLinhModule, 7 permission pairs, menu order 50
+- [HL Phase 2 API Client](project_hoalinh_phase2_complete.md) — IHlApiClientService, HttpClient "HoaLinhDms", X-API-Key, log AppHlApiLogs
+- [HL Phase 3 Admin Portal UI](project_hoalinh_phase3_complete.md) — 6 pages + Dashboard + HlAdminAppService read-only real-time
+- [HL Phase 4 CRUD Orders+GiftExchanges](project_hoalinh_phase4_complete.md) — HlOrderAppService + HlGiftExchangeAppService; đọc DB Genora
+- [HL Phase 5 Mini App APIs](project_hoalinh_phase5_complete.md) — HoaLinhMiniAppController 13 endpoints
+- [HL Phase 7 Dashboard + Data-level auth](project_hoalinh_phase7_complete.md) — HlDataAccessService user→dsr_code, AppSettings HoaLinh.UserDsrCode.{userId}
+- [HL UI update batches (June 25–29)](project_hoalinh_ui_update3_june26.md) — Dashboard/Brands/Products/Customers/Orders/GiftExchanges/Salemans; Payment APIs (DecodePhone/PrepareOrder VietQR/CheckTransaction); Customer 360; pagination; ApiLogs→Serilog
+- MiniApp brands + brands/{code}/products filter isActive==true (controller HoaLinhMiniApp, sau khi lấy từ HL DMS)
+- MiniApp best-seller-products/{customerCode}: HlTopProductDto + GetTopProductsAsync (GET /api/TopCustomerProductsWithDetails/{customerCode}) → GET api/mini-app/hl/best-seller-products/{customerCode}
+- [UrBox eVoucher integration](project_urbox_integration.md) — IUrBoxService (tra cứu GET, cartPayVoucher POST+Signature RSA-SHA256 .NET9); DTOs [JsonPropertyName]; api/mini-app/urbox; redeem lưu HlGiftExchange; UrBoxResponseStatus 21x/22x/30x/40x/60x
+- [Zalo OA Articles — news list+detail](project_zalo_oa_articles.md) — GetArticleList/DetailAsync vào ZaloApiClient (GET openapi.zalo.me, token ZaloAuth fallback Zalo:TestAccessToken); GET api/mini-app/hl/news + news/{id}; copy sang MiniAppController (api/mini-app/news); refactor IMiniAppZaloNewsService + cache per-tenant IDistributedCache (Zalo:NewsCacheMinutes=5)
+- [HL Customer registration upsert AppCustomers](project_hl_customer_registration.md) — HlCustomerAppService upsert theo phone; HL DMS→CustCode+HoaLinh(5), chưa có→HLKH{D6}+ZaloMiniApp; POST auth + GET auth/{phone}; GetCustomer trả LIST
+- [HL Campaign detail + admin Customers merge/filter nguồn](project_hl_campaign_detail_and_admin_customer_merge.md) — GET campaigns + campaigns/{custCode}; HlCampaignDto có campaignPeriod/displayType/accumulatedSales/accumulatedPoints/membershipTier/voucherCode/voucherName/voucherType/voucherValue (SnakeCaseLower auto-map); merge custCode↔CustomerCode ưu tiên API+enrich; filter source; UI cột Nguồn
+- [HL Loyalty đổi điểm/tiền + ledger FIFO + worker hết hạn + tiêu điểm đổi quà](project_hl_loyalty_points_redeem.md) — HlPointBatch (lô +1 năm FIFO) + HlPointTransaction (sổ cái) + Customer.BonusAmount; MiniApp loyalty/redeem+balance+history; admin "Lịch sử điểm thưởng"; HlPointExpireWorker mỗi giờ; gift-exchange gọi SpendAsync trừ điểm FIFO; tỉ lệ HlLoyaltyOptions (PointRate/AmountRate); migration 20260709064009
+- [HL GiftExchange status enum mới + UrBox redeem trừ BonusAmount + modal voucher](project_urbox_integration.md) — HlGiftExchangeStatus đổi 0=Failed/1=Success/2=Processing/3=Used; UrBoxRedeemData/Cart/CodeLinkGift full fields; CreateOrderEvoucherAsync success khi done==1&&status==200 → trừ Customer.BonusAmount (DeductBonusAmountAsync); admin GiftExchanges filter status mới + modal xl parse urBoxResponse (voucher/QR/hạn/hotline/link_gift mở tab mới), bỏ ngày duyệt/địa chỉ/ghi chú
