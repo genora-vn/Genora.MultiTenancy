@@ -19,16 +19,24 @@
 
 ## Bàn giao hiện tại
 
-**Ngày:** 2026-08-18
-**Người giao:** (phiên chuẩn hóa memory)
+**Ngày:** 2026-08-21
+**Trạng thái:** ⏸️ TẠM DỪNG module Hoa Linh Gamification (HLG). Sẽ quay lại làm tiếp bộ Admin Razor UI.
 
 **Việc vừa hoàn thành:**
-- Chuẩn hóa toàn bộ project memory vào `.claude/` (migrate 108 note từ user-level).
-- Tạo cấu trúc curated: MEMORY / RULES / PROJECT_STATE / ACTIVE_CONTEXT / TASK_LOG / LOAD_CONTEXT + architecture/ + handover/.
+- Mini-app backend HLG: HOÀN TẤT 100% (Phase 0-6, ~24 endpoint theo contract, build sạch). Đã gửi CURL cho anh test (bỏ header `__tenant`).
+- Sample data seeder (`HlgDataSeedContributor`) + permission provider (`HlgManagement`/`HlgManagementHost`).
+- Bắt đầu Admin Razor UI: xong **Rewards admin CrudAppService** (`HlgRewardAdminAppService` + DTOs + interface, build 0 errors).
 
-**Việc còn dở / cần chú ý:**
-- Chưa có: chưa phát hiện task code nào đang treo giữa chừng.
-- Lưu ý: yêu cầu ban đầu có nhắc "mini app Hoa Linh Gamification" — tính năng này CHƯA được xây. Nếu cần, xem `../architecture/module-hoalinh.md` để hiểu bối cảnh loyalty/points trước khi bắt đầu.
+**Việc còn dở / nơi tiếp tục khi quay lại** (chi tiết đầy đủ ở `../ACTIVE_CONTEXT.md` mục "HLG — ĐIỂM DỪNG"):
+- Việc kế tiếp NGAY: viết Razor Pages cho nhóm Rewards (Index + Create/Edit modal + index.js) theo pattern `Web/Pages/SalonBeautyStylists/*`.
+- ⚠️ CHẶN: chưa xác minh đường dẫn JS proxy runtime của HLG admin service (dự kiến `genora.multiTenancy.appServices.hlg.admin.hlgRewardAdmin`). Cần mở `{{BASE_URL}}/Abp/ServiceProxyScript` khi chạy app để xác minh — build KHÔNG bắt được lỗi path này.
+- Thứ tự làm admin UI: Rewards → Knowledge → Ranking → Games+Questions (nested, phức tạp nhất) → Users. Sau đó: Menu contributor (order 49) + menu localization keys.
+- Bổ sung localization keys còn thiếu: `Hlg:RewardNameRequired`, `Hlg:RewardPointCostInvalid`, `Hlg:RewardTypeInvalid`.
+
+**Việc runtime chưa chạy (không phải code):**
+- Áp migration `AddHlgKnowledge` + `AddHlgGames` + `AddHlgRewards` + `AddHlgRanking` (review SQL script tại `Migrations/Scripts/` trước — DB config trỏ server dùng chung từ xa).
+- Tạo tenant "Hoa Linh Miền Nam Gamification" + bật feature `Hlg.Management`; re-seed host admin để nhận permission `HostAppHlg*`.
 
 **Điểm bảo mật cần xử lý:**
 - `~\.claude\settings.json` (user-level) chứa `ANTHROPIC_AUTH_TOKEN` plaintext — nên rotate.
+- `DbMigrator/appsettings.json` chứa mật khẩu `sa` + Seq API key plaintext (DB dùng chung từ xa 103.157.218.187).

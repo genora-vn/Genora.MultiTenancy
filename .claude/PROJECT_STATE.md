@@ -61,3 +61,4 @@
 | Caddie | ✅ Phase 1-7 | multi-caddie mới nhất |
 | Hoa Linh | ✅ Phase 1-7 | loyalty + UrBox + Zalo OA |
 | Documents | ✅ Xong | seeder 11 section |
+| Hoa Linh Gamification (HLG) | 🔨 Đang build | mini app MỚI, schema HLG, tenant riêng. Phase 0-1 xong (Auth+Profile). Xem `architecture/module-hlg.md` |

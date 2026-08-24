@@ -1606,6 +1606,130 @@ public class MultiTenancyPermissionDefinitionProvider : PermissionDefinitionProv
         hlApiLogsHostRoot.MultiTenancySide = MultiTenancySides.Host;
 
         #endregion
+
+        #region Hoa Linh Gamification (HLG)
+
+        // ========== TENANT GROUP ==========
+        var hlgGroup = context.AddGroup("HlgManagement", L("PermissionGroup:HlgManagement"));
+
+        // HLG USERS (TENANT) - Read
+        var hlgUsersTenantRoot = hlgGroup.AddPermission(AppHlgUsers.Default, L("Permission:AppHlgUsers"));
+        hlgUsersTenantRoot.MultiTenancySide = MultiTenancySides.Tenant;
+        hlgUsersTenantRoot.RequireFeatures(Features.AppHlgFeatures.AppHlgFeatures.Management);
+
+        // HLG KNOWLEDGE (TENANT) - CRUD
+        var hlgKnowledgeTenantRoot = hlgGroup.AddPermission(AppHlgKnowledge.Default, L("Permission:AppHlgKnowledge"));
+        hlgKnowledgeTenantRoot.MultiTenancySide = MultiTenancySides.Tenant;
+        hlgKnowledgeTenantRoot.RequireFeatures(Features.AppHlgFeatures.AppHlgFeatures.Management);
+
+        var hlgKnowledgeTenantCreate = hlgKnowledgeTenantRoot.AddChild(AppHlgKnowledge.Create, L("Permission:AppHlgKnowledge.Create"));
+        hlgKnowledgeTenantCreate.MultiTenancySide = MultiTenancySides.Tenant;
+        hlgKnowledgeTenantCreate.RequireFeatures(Features.AppHlgFeatures.AppHlgFeatures.Management);
+
+        var hlgKnowledgeTenantEdit = hlgKnowledgeTenantRoot.AddChild(AppHlgKnowledge.Edit, L("Permission:AppHlgKnowledge.Edit"));
+        hlgKnowledgeTenantEdit.MultiTenancySide = MultiTenancySides.Tenant;
+        hlgKnowledgeTenantEdit.RequireFeatures(Features.AppHlgFeatures.AppHlgFeatures.Management);
+
+        var hlgKnowledgeTenantDelete = hlgKnowledgeTenantRoot.AddChild(AppHlgKnowledge.Delete, L("Permission:AppHlgKnowledge.Delete"));
+        hlgKnowledgeTenantDelete.MultiTenancySide = MultiTenancySides.Tenant;
+        hlgKnowledgeTenantDelete.RequireFeatures(Features.AppHlgFeatures.AppHlgFeatures.Management);
+
+        // HLG GAMES (TENANT) - CRUD
+        var hlgGamesTenantRoot = hlgGroup.AddPermission(AppHlgGames.Default, L("Permission:AppHlgGames"));
+        hlgGamesTenantRoot.MultiTenancySide = MultiTenancySides.Tenant;
+        hlgGamesTenantRoot.RequireFeatures(Features.AppHlgFeatures.AppHlgFeatures.Management);
+
+        var hlgGamesTenantCreate = hlgGamesTenantRoot.AddChild(AppHlgGames.Create, L("Permission:AppHlgGames.Create"));
+        hlgGamesTenantCreate.MultiTenancySide = MultiTenancySides.Tenant;
+        hlgGamesTenantCreate.RequireFeatures(Features.AppHlgFeatures.AppHlgFeatures.Management);
+
+        var hlgGamesTenantEdit = hlgGamesTenantRoot.AddChild(AppHlgGames.Edit, L("Permission:AppHlgGames.Edit"));
+        hlgGamesTenantEdit.MultiTenancySide = MultiTenancySides.Tenant;
+        hlgGamesTenantEdit.RequireFeatures(Features.AppHlgFeatures.AppHlgFeatures.Management);
+
+        var hlgGamesTenantDelete = hlgGamesTenantRoot.AddChild(AppHlgGames.Delete, L("Permission:AppHlgGames.Delete"));
+        hlgGamesTenantDelete.MultiTenancySide = MultiTenancySides.Tenant;
+        hlgGamesTenantDelete.RequireFeatures(Features.AppHlgFeatures.AppHlgFeatures.Management);
+
+        // HLG REWARDS (TENANT) - CRUD
+        var hlgRewardsTenantRoot = hlgGroup.AddPermission(AppHlgRewards.Default, L("Permission:AppHlgRewards"));
+        hlgRewardsTenantRoot.MultiTenancySide = MultiTenancySides.Tenant;
+        hlgRewardsTenantRoot.RequireFeatures(Features.AppHlgFeatures.AppHlgFeatures.Management);
+
+        var hlgRewardsTenantCreate = hlgRewardsTenantRoot.AddChild(AppHlgRewards.Create, L("Permission:AppHlgRewards.Create"));
+        hlgRewardsTenantCreate.MultiTenancySide = MultiTenancySides.Tenant;
+        hlgRewardsTenantCreate.RequireFeatures(Features.AppHlgFeatures.AppHlgFeatures.Management);
+
+        var hlgRewardsTenantEdit = hlgRewardsTenantRoot.AddChild(AppHlgRewards.Edit, L("Permission:AppHlgRewards.Edit"));
+        hlgRewardsTenantEdit.MultiTenancySide = MultiTenancySides.Tenant;
+        hlgRewardsTenantEdit.RequireFeatures(Features.AppHlgFeatures.AppHlgFeatures.Management);
+
+        var hlgRewardsTenantDelete = hlgRewardsTenantRoot.AddChild(AppHlgRewards.Delete, L("Permission:AppHlgRewards.Delete"));
+        hlgRewardsTenantDelete.MultiTenancySide = MultiTenancySides.Tenant;
+        hlgRewardsTenantDelete.RequireFeatures(Features.AppHlgFeatures.AppHlgFeatures.Management);
+
+        // HLG RANKING (TENANT) - CRUD
+        var hlgRankingTenantRoot = hlgGroup.AddPermission(AppHlgRanking.Default, L("Permission:AppHlgRanking"));
+        hlgRankingTenantRoot.MultiTenancySide = MultiTenancySides.Tenant;
+        hlgRankingTenantRoot.RequireFeatures(Features.AppHlgFeatures.AppHlgFeatures.Management);
+
+        var hlgRankingTenantCreate = hlgRankingTenantRoot.AddChild(AppHlgRanking.Create, L("Permission:AppHlgRanking.Create"));
+        hlgRankingTenantCreate.MultiTenancySide = MultiTenancySides.Tenant;
+        hlgRankingTenantCreate.RequireFeatures(Features.AppHlgFeatures.AppHlgFeatures.Management);
+
+        var hlgRankingTenantEdit = hlgRankingTenantRoot.AddChild(AppHlgRanking.Edit, L("Permission:AppHlgRanking.Edit"));
+        hlgRankingTenantEdit.MultiTenancySide = MultiTenancySides.Tenant;
+        hlgRankingTenantEdit.RequireFeatures(Features.AppHlgFeatures.AppHlgFeatures.Management);
+
+        var hlgRankingTenantDelete = hlgRankingTenantRoot.AddChild(AppHlgRanking.Delete, L("Permission:AppHlgRanking.Delete"));
+        hlgRankingTenantDelete.MultiTenancySide = MultiTenancySides.Tenant;
+        hlgRankingTenantDelete.RequireFeatures(Features.AppHlgFeatures.AppHlgFeatures.Management);
+
+        // HLG DASHBOARD (TENANT)
+        var hlgDashboardTenantRoot = hlgGroup.AddPermission(AppHlgDashboard.Default, L("Permission:AppHlgDashboard"));
+        hlgDashboardTenantRoot.MultiTenancySide = MultiTenancySides.Tenant;
+        hlgDashboardTenantRoot.RequireFeatures(Features.AppHlgFeatures.AppHlgFeatures.Management);
+
+        // ========== HOST GROUP ==========
+        var hlgGroupHost = context.AddGroup("HlgManagementHost", L("PermissionGroup:HlgManagementHost"));
+
+        // HLG USERS (HOST)
+        var hlgUsersHostRoot = hlgGroupHost.AddPermission(HostAppHlgUsers.Default, L("Permission:AppHlgUsers"));
+        hlgUsersHostRoot.MultiTenancySide = MultiTenancySides.Host;
+
+        // HLG KNOWLEDGE (HOST)
+        var hlgKnowledgeHostRoot = hlgGroupHost.AddPermission(HostAppHlgKnowledge.Default, L("Permission:AppHlgKnowledge"));
+        hlgKnowledgeHostRoot.MultiTenancySide = MultiTenancySides.Host;
+        hlgKnowledgeHostRoot.AddChild(HostAppHlgKnowledge.Create, L("Permission:AppHlgKnowledge.Create")).MultiTenancySide = MultiTenancySides.Host;
+        hlgKnowledgeHostRoot.AddChild(HostAppHlgKnowledge.Edit, L("Permission:AppHlgKnowledge.Edit")).MultiTenancySide = MultiTenancySides.Host;
+        hlgKnowledgeHostRoot.AddChild(HostAppHlgKnowledge.Delete, L("Permission:AppHlgKnowledge.Delete")).MultiTenancySide = MultiTenancySides.Host;
+
+        // HLG GAMES (HOST)
+        var hlgGamesHostRoot = hlgGroupHost.AddPermission(HostAppHlgGames.Default, L("Permission:AppHlgGames"));
+        hlgGamesHostRoot.MultiTenancySide = MultiTenancySides.Host;
+        hlgGamesHostRoot.AddChild(HostAppHlgGames.Create, L("Permission:AppHlgGames.Create")).MultiTenancySide = MultiTenancySides.Host;
+        hlgGamesHostRoot.AddChild(HostAppHlgGames.Edit, L("Permission:AppHlgGames.Edit")).MultiTenancySide = MultiTenancySides.Host;
+        hlgGamesHostRoot.AddChild(HostAppHlgGames.Delete, L("Permission:AppHlgGames.Delete")).MultiTenancySide = MultiTenancySides.Host;
+
+        // HLG REWARDS (HOST)
+        var hlgRewardsHostRoot = hlgGroupHost.AddPermission(HostAppHlgRewards.Default, L("Permission:AppHlgRewards"));
+        hlgRewardsHostRoot.MultiTenancySide = MultiTenancySides.Host;
+        hlgRewardsHostRoot.AddChild(HostAppHlgRewards.Create, L("Permission:AppHlgRewards.Create")).MultiTenancySide = MultiTenancySides.Host;
+        hlgRewardsHostRoot.AddChild(HostAppHlgRewards.Edit, L("Permission:AppHlgRewards.Edit")).MultiTenancySide = MultiTenancySides.Host;
+        hlgRewardsHostRoot.AddChild(HostAppHlgRewards.Delete, L("Permission:AppHlgRewards.Delete")).MultiTenancySide = MultiTenancySides.Host;
+
+        // HLG RANKING (HOST)
+        var hlgRankingHostRoot = hlgGroupHost.AddPermission(HostAppHlgRanking.Default, L("Permission:AppHlgRanking"));
+        hlgRankingHostRoot.MultiTenancySide = MultiTenancySides.Host;
+        hlgRankingHostRoot.AddChild(HostAppHlgRanking.Create, L("Permission:AppHlgRanking.Create")).MultiTenancySide = MultiTenancySides.Host;
+        hlgRankingHostRoot.AddChild(HostAppHlgRanking.Edit, L("Permission:AppHlgRanking.Edit")).MultiTenancySide = MultiTenancySides.Host;
+        hlgRankingHostRoot.AddChild(HostAppHlgRanking.Delete, L("Permission:AppHlgRanking.Delete")).MultiTenancySide = MultiTenancySides.Host;
+
+        // HLG DASHBOARD (HOST)
+        var hlgDashboardHostRoot = hlgGroupHost.AddPermission(HostAppHlgDashboard.Default, L("Permission:AppHlgDashboard"));
+        hlgDashboardHostRoot.MultiTenancySide = MultiTenancySides.Host;
+
+        #endregion
     }
 
     private static LocalizableString L(string name)

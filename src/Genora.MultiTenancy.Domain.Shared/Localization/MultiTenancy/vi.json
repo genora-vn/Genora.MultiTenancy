@@ -1631,6 +1631,10 @@
     "Feature:HoaLinh": "Bật Module Hoa Linh",
     "Feature:HoaLinhDesc": "Bật tính năng Hoa Linh Dealer Portal & Mini App",
 
+    "FeatureGroup:Hlg": "Module Hoa Linh Gamification",
+    "Feature:Hlg": "Bật Module Hoa Linh Gamification",
+    "Feature:HlgDesc": "Bật tính năng Hoa Linh Gamification Mini App (game, kiến thức, xếp hạng, đổi quà)",
+
     "PermissionGroup:HoaLinhManagement": "Quản lý Hoa Linh",
     "PermissionGroup:HoaLinhManagementHost": "Quản lý Hoa Linh (Host)",
 
@@ -1647,6 +1651,28 @@
     "Permission:AppHlGiftExchange.Delete": "Xóa yêu cầu đổi quà",
     "Permission:AppHlDashboard": "Xem tổng quan",
     "Permission:AppHlApiLogs": "Xem nhật ký API",
+
+    "PermissionGroup:HlgManagement": "Hoa Linh Gamification",
+    "PermissionGroup:HlgManagementHost": "Hoa Linh Gamification (Host)",
+
+    "Permission:AppHlgUsers": "Xem người chơi",
+    "Permission:AppHlgKnowledge": "Xem kiến thức",
+    "Permission:AppHlgKnowledge.Create": "Tạo kiến thức",
+    "Permission:AppHlgKnowledge.Edit": "Sửa kiến thức",
+    "Permission:AppHlgKnowledge.Delete": "Xóa kiến thức",
+    "Permission:AppHlgGames": "Xem game",
+    "Permission:AppHlgGames.Create": "Tạo game",
+    "Permission:AppHlgGames.Edit": "Sửa game",
+    "Permission:AppHlgGames.Delete": "Xóa game",
+    "Permission:AppHlgRewards": "Xem quà thưởng",
+    "Permission:AppHlgRewards.Create": "Tạo quà thưởng",
+    "Permission:AppHlgRewards.Edit": "Sửa quà thưởng",
+    "Permission:AppHlgRewards.Delete": "Xóa quà thưởng",
+    "Permission:AppHlgRanking": "Xem xếp hạng",
+    "Permission:AppHlgRanking.Create": "Tạo sự kiện xếp hạng",
+    "Permission:AppHlgRanking.Edit": "Sửa sự kiện xếp hạng",
+    "Permission:AppHlgRanking.Delete": "Xóa sự kiện xếp hạng",
+    "Permission:AppHlgDashboard": "Xem tổng quan",
 
     "Menu:HoaLinh": "Hoa Linh",
     "Menu:AppHlProducts": "Sản phẩm",

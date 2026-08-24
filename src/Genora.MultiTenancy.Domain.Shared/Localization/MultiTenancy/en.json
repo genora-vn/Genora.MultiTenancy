@@ -1229,6 +1229,10 @@
     "Feature:HoaLinh": "Enable Hoa Linh Module",
     "Feature:HoaLinhDesc": "Enable Hoa Linh Dealer Portal & Mini App features",
 
+    "FeatureGroup:Hlg": "Hoa Linh Gamification Module",
+    "Feature:Hlg": "Enable Hoa Linh Gamification Module",
+    "Feature:HlgDesc": "Enable Hoa Linh Gamification Mini App features (games, knowledge, ranking, rewards)",
+
     "PermissionGroup:HoaLinhManagement": "Hoa Linh Management",
     "PermissionGroup:HoaLinhManagementHost": "Hoa Linh Management (Host)",
 
@@ -1245,6 +1249,28 @@
     "Permission:AppHlGiftExchange.Delete": "Delete Gift Exchange",
     "Permission:AppHlDashboard": "View Dashboard",
     "Permission:AppHlApiLogs": "View API Logs",
+
+    "PermissionGroup:HlgManagement": "Hoa Linh Gamification",
+    "PermissionGroup:HlgManagementHost": "Hoa Linh Gamification (Host)",
+
+    "Permission:AppHlgUsers": "View Players",
+    "Permission:AppHlgKnowledge": "View Knowledge",
+    "Permission:AppHlgKnowledge.Create": "Create Knowledge",
+    "Permission:AppHlgKnowledge.Edit": "Edit Knowledge",
+    "Permission:AppHlgKnowledge.Delete": "Delete Knowledge",
+    "Permission:AppHlgGames": "View Games",
+    "Permission:AppHlgGames.Create": "Create Games",
+    "Permission:AppHlgGames.Edit": "Edit Games",
+    "Permission:AppHlgGames.Delete": "Delete Games",
+    "Permission:AppHlgRewards": "View Rewards",
+    "Permission:AppHlgRewards.Create": "Create Rewards",
+    "Permission:AppHlgRewards.Edit": "Edit Rewards",
+    "Permission:AppHlgRewards.Delete": "Delete Rewards",
+    "Permission:AppHlgRanking": "View Ranking",
+    "Permission:AppHlgRanking.Create": "Create Ranking",
+    "Permission:AppHlgRanking.Edit": "Edit Ranking",
+    "Permission:AppHlgRanking.Delete": "Delete Ranking",
+    "Permission:AppHlgDashboard": "View Dashboard",
 
     "Menu:HoaLinh": "Hoa Linh",
     "Menu:AppHlProducts": "Products",

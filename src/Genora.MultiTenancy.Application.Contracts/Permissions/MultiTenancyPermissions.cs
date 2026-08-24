@@ -776,6 +776,100 @@ public static class MultiTenancyPermissions
 
     #endregion
 
+    #region Hoa Linh Gamification (HLG)
+
+    // ===== Người chơi (players) — Read =====
+    public static class AppHlgUsers
+    {
+        public const string Default = GroupName + ".AppHlgUsers";
+    }
+
+    public static class HostAppHlgUsers
+    {
+        public const string Default = GroupName + ".HostAppHlgUsers";
+    }
+
+    // ===== Knowledge base (danh mục + bài học) — CRUD =====
+    public static class AppHlgKnowledge
+    {
+        public const string Default = GroupName + ".AppHlgKnowledge";
+        public const string Create = Default + ".Create";
+        public const string Edit = Default + ".Edit";
+        public const string Delete = Default + ".Delete";
+    }
+
+    public static class HostAppHlgKnowledge
+    {
+        public const string Default = GroupName + ".HostAppHlgKnowledge";
+        public const string Create = Default + ".Create";
+        public const string Edit = Default + ".Edit";
+        public const string Delete = Default + ".Delete";
+    }
+
+    // ===== Games (game + câu hỏi) — CRUD =====
+    public static class AppHlgGames
+    {
+        public const string Default = GroupName + ".AppHlgGames";
+        public const string Create = Default + ".Create";
+        public const string Edit = Default + ".Edit";
+        public const string Delete = Default + ".Delete";
+    }
+
+    public static class HostAppHlgGames
+    {
+        public const string Default = GroupName + ".HostAppHlgGames";
+        public const string Create = Default + ".Create";
+        public const string Edit = Default + ".Edit";
+        public const string Delete = Default + ".Delete";
+    }
+
+    // ===== Rewards (quà + lịch sử đổi quà) — CRUD =====
+    public static class AppHlgRewards
+    {
+        public const string Default = GroupName + ".AppHlgRewards";
+        public const string Create = Default + ".Create";
+        public const string Edit = Default + ".Edit";
+        public const string Delete = Default + ".Delete";
+    }
+
+    public static class HostAppHlgRewards
+    {
+        public const string Default = GroupName + ".HostAppHlgRewards";
+        public const string Create = Default + ".Create";
+        public const string Edit = Default + ".Edit";
+        public const string Delete = Default + ".Delete";
+    }
+
+    // ===== Ranking (sự kiện xếp hạng) — CRUD =====
+    public static class AppHlgRanking
+    {
+        public const string Default = GroupName + ".AppHlgRanking";
+        public const string Create = Default + ".Create";
+        public const string Edit = Default + ".Edit";
+        public const string Delete = Default + ".Delete";
+    }
+
+    public static class HostAppHlgRanking
+    {
+        public const string Default = GroupName + ".HostAppHlgRanking";
+        public const string Create = Default + ".Create";
+        public const string Edit = Default + ".Edit";
+        public const string Delete = Default + ".Delete";
+    }
+
+    // ===== Dashboard =====
+    public static class AppHlgDashboard
+    {
+        public const string Default = GroupName + ".AppHlgDashboard";
+    }
+
+    public static class HostAppHlgDashboard
+    {
+        public const string Default = GroupName + ".HostAppHlgDashboard";
+    }
+
+    #endregion
+
     //Add your own permission names. Example:
     //public const string MyPermission1 = GroupName + ".MyPermission1";
 }
