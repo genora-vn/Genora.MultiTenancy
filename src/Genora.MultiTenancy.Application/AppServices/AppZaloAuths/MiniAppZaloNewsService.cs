@@ -76,9 +76,35 @@ public class MiniAppZaloNewsService : ApplicationService, IMiniAppZaloNewsServic
         var result = await _zaloApiClient.GetArticleDetailAsync(id, ct);
 
         if (result != null && result.Error == 0)
+        {
+            // Với block ảnh (type=image/photo), gán URL ảnh vào Content để Mini App (đang đọc
+            // chung trường content cho mọi type) hiển thị được ảnh mà không phải sửa client.
+            NormalizeImageBlocks(result.Data);
             await SafeSetAsync(() => _detailCache.SetAsync(cacheKey, result, CacheOptions(), token: ct));
+        }
 
         return result ?? new ZaloArticleDetailResponse { Error = -1, Message = "Không lấy được chi tiết tin tức" };
+    }
+
+    /// <summary>
+    /// Với các block type=image/photo mà Content rỗng, gán Content = Url (URL ảnh).
+    /// Giữ nguyên block text (Content là HTML). Cho phép Mini App dùng chung trường content.
+    /// </summary>
+    private static void NormalizeImageBlocks(ZaloArticleDetail? data)
+    {
+        if (data?.Body == null) return;
+
+        foreach (var block in data.Body)
+        {
+            var type = block?.Type?.Trim().ToLowerInvariant();
+            if (block != null
+                && (type == "image" || type == "photo")
+                && string.IsNullOrWhiteSpace(block.Content)
+                && !string.IsNullOrWhiteSpace(block.Url))
+            {
+                block.Content = block.Url;
+            }
+        }
     }
 
     private string TenantKey() => _currentTenant.Id?.ToString() ?? "host";

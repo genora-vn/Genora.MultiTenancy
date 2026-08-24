@@ -134,12 +134,25 @@ public class ZaloArticleCover
     public string? Status { get; set; }
 }
 
-/// <summary>Khối nội dung bài viết (type=text/image/...)</summary>
+/// <summary>
+/// Khối nội dung bài viết Zalo OA.
+/// - type = "text": dùng trường <see cref="Content"/> (HTML nội dung).
+/// - type = "image": dùng trường <see cref="Url"/> (URL ảnh) và <see cref="Caption"/> (chú thích ảnh).
+/// </summary>
 public class ZaloArticleBodyBlock
 {
     [JsonPropertyName("type")]
     public string? Type { get; set; }
 
+    /// <summary>Nội dung HTML — chỉ có khi type = "text".</summary>
     [JsonPropertyName("content")]
     public string? Content { get; set; }
+
+    /// <summary>URL ảnh — chỉ có khi type = "image".</summary>
+    [JsonPropertyName("url")]
+    public string? Url { get; set; }
+
+    /// <summary>Chú thích ảnh — chỉ có khi type = "image".</summary>
+    [JsonPropertyName("caption")]
+    public string? Caption { get; set; }
 }
