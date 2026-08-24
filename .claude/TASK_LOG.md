@@ -12,6 +12,8 @@
 
 | Mốc | Module | Nội dung | Note gốc |
 |-----|--------|----------|----------|
+| 2026-08-21 | Zalo OA | GetNewsDetail: map `content = url` khi type=image/photo (trong `MiniAppZaloNewsService.GetArticleDetailAsync` → `NormalizeImageBlocks`, chạy TRƯỚC khi cache) để Mini App đọc chung trường content, không phải sửa client. Áp cho cả 2 controller dùng chung service. Build 0 errors. LƯU Ý: bản cache detail cũ (chưa map) còn hiệu lực tới khi hết TTL `Zalo:NewsCacheMinutes`. | `MiniAppZaloNewsService.cs` |
+| 2026-08-21 | Zalo OA | Fix API GetNewsDetail (MiniAppController): bổ sung `url` + `caption` vào `ZaloArticleBodyBlock` (ZaloArticleDtos.cs) để nhận ảnh khi type="image"; type="text" vẫn đọc `content`. Khớp response `/v2.0/article/getdetail`. Build 0 errors. | `ZaloArticleDtos.cs` |
 | 2026-07-25 | Caddie | Fee + multi-caddie admin + upsert/unassign (migration 20260725062150) | `project_caddie_fee_upsert_unassign` |
 | 2026-07-24 | Caddie | Booking gắn vào golf players (migration 20260724091716) | `project_caddie_booking_linked_to_golf_players` |
 | 2026-07-09 | Hoa Linh | Loyalty đổi điểm/tiền + ledger FIFO + worker hết hạn (migration 20260709064009) | `project_hl_loyalty_points_redeem` |
