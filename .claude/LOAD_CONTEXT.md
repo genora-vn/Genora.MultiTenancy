@@ -21,11 +21,15 @@
 4. Nếu chạy host: `dotnet run --project src/Genora.MultiTenancy.Web`.
 
 ## Bước 3 — Xác định task đang làm dở
-1. Đọc `ACTIVE_CONTEXT.md` mục "Việc vừa làm".
-2. Đối chiếu với `git status` (file đang sửa) và `git log` (commit dở).
-3. Tìm note mới nhất trong `memory/notes/project/` KHÔNG có hậu tố `complete`.
-4. Grep `TODO`/`FIXME` trong module liên quan.
-5. Nếu vẫn không rõ → hỏi người bàn giao (xem `handover/HANDOFF.md`).
+1. Đọc `ACTIVE_CONTEXT.md` mục "Việc vừa làm" **VÀ mục "⛔ Task tạm dừng (parked branches)"**.
+2. **Kiểm tra parked branches:** memory trong `.claude/` là branch-local, nên task đang tạm dừng trên
+   feature branch CHƯA merge sẽ KHÔNG hiện trên `dev`. Chạy `git branch -a` + đọc bảng parked ở
+   `ACTIVE_CONTEXT.md`. Muốn xem chi tiết một task parked: `git switch <branch>` rồi đọc
+   `.claude/handover/HANDOFF.md` + `.claude/architecture/` của nhánh đó.
+3. Đối chiếu với `git status` (file đang sửa) và `git log` (commit dở).
+4. Tìm note mới nhất trong `memory/notes/project/` KHÔNG có hậu tố `complete`.
+5. Grep `TODO`/`FIXME` trong module liên quan.
+6. Nếu vẫn không rõ → hỏi người bàn giao (xem `handover/HANDOFF.md`).
 
 ## Bước 4 — Trong lúc làm việc
 - Tuân thủ `RULES.md`. Khi phát hiện quy tắc/lesson mới → thêm note vào `memory/notes/feedback/` và cập nhật `RULES.md` + `MEMORY.md`.

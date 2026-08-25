@@ -7,6 +7,17 @@
 - **Ngày:** 2026-08-18
 - **Việc vừa làm:** Chuẩn hóa toàn bộ project memory vào `.claude/` trong repo (migrate 108 note từ user-level).
 
+## ⛔ Task tạm dừng (parked branches) — CẦN BIẾT khi khởi động phiên
+> Đây là các feature branch CHƯA merge vào `dev`, đang tạm dừng để ưu tiên việc khác.
+> Memory chi tiết của mỗi task nằm TRÊN chính nhánh đó (single source of truth), KHÔNG copy về đây.
+> Muốn xem chi tiết: `git switch <branch>` rồi đọc `.claude/handover/HANDOFF.md` + `.claude/architecture/`.
+
+| Nhánh | HEAD commit | Trạng thái | Chi tiết ở nhánh đó |
+|-------|-------------|-----------|---------------------|
+| `feature/hoalinh-gamification` | `b507697` | ⏸️ Parked — Admin cho Mini App "Hoa Linh Gamification" (16 entity `AppHlg/*`, 5 migration `2026081x/2026082x`, `HoaLinhGamificationController`, SignalR `HlgLiveFeedHub/Notifier`). Đi sau `dev` 2 commit (`463aae4`, `fa3b41f`). | `handover/HANDOFF.md`, `architecture/module-hlg.md`, `PROJECT_STATE.md` |
+
+> Task hiện hành (nhánh `feature/hoalinh-25years`): Admin cho Mini App "Dược Phẩm Hoa Linh 25 Năm" — độc lập với gamification, hầu như không đụng nhau.
+
 ## Trạng thái các mốc gần đây (suy ra từ note mới nhất)
 Theo mốc thời gian trên tên note, các đợt làm việc gần nhất tập trung vào:
 - **Caddie multi-caddie** (mới nhất, migration 20260725062150): booking gắn nhiều Caddie vào từng golf player, phí Caddie cộng vào TotalAmount, API upsert/unassign.

@@ -35,6 +35,7 @@
 
 ## Quy trình / Handoff (BẮT BUỘC)
 - **Cập nhật memory trước khi handoff.** Lưu note chi tiết + cập nhật `MEMORY.md` index TRƯỚC khi chuyển sang task tiếp theo. → `feedback_memory_update_before_handoff.md`
+- **Parked branch phải đăng ký con trỏ trên `dev`.** Memory trong `.claude/` là branch-local → task đang tạm dừng trên feature branch CHƯA merge sẽ vô hình từ các nhánh khác. Khi tạm dừng (park) một feature branch: (1) giữ memory chi tiết TRÊN chính nhánh đó (single source of truth: `HANDOFF.md` + `architecture/` + `PROJECT_STATE.md`); (2) thêm 1 dòng vào bảng "⛔ Task tạm dừng (parked branches)" trong `ACTIVE_CONTEXT.md` **trên `dev`** (nhánh | HEAD commit | trạng thái 1 dòng | trỏ tới chi tiết). KHÔNG copy full memory của nhánh parked về `dev` (gây sai lệch "đã xong" + conflict khi merge thật).
 
 ---
 Ngoài ra, các quy tắc ở CLAUDE.md gốc vẫn áp dụng: ưu tiên AppService thay vì logic ở Controller;
