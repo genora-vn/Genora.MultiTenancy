@@ -16,6 +16,7 @@ using Genora.MultiTenancy.Features.AppSpecialDates;
 using Genora.MultiTenancy.Features.AppPaymentConfigurationFeatures;
 using Genora.MultiTenancy.Features.AppZaloAuths;
 using Genora.MultiTenancy.Features.AppZaloLogs;
+using Genora.MultiTenancy.Features.AppHl25Features;
 using Genora.MultiTenancy.Features.Caddie;
 using Genora.MultiTenancy.Localization;
 using Volo.Abp.Authorization.Permissions;
@@ -1604,6 +1605,92 @@ public class MultiTenancyPermissionDefinitionProvider : PermissionDefinitionProv
         // HL API LOGS (HOST)
         var hlApiLogsHostRoot = hlGroupHost.AddPermission(HostAppHlApiLogs.Default, L("Permission:AppHlApiLogs"));
         hlApiLogsHostRoot.MultiTenancySide = MultiTenancySides.Host;
+
+        #endregion
+
+        #region Cấu hình quyền cho module "Dược Phẩm Hoa Linh 25 Năm" (hl25)
+
+        // =====================
+        // TENANT (bị ràng Feature Hl25.Management trên root + MỌI child — tránh leak)
+        // =====================
+        var hl25Group = context.AddGroup("MiniAppHl25", L("PermissionGroup:MiniAppHl25"));
+
+        // 1. Cài đặt Mini App
+        var hl25SettingsTenant = hl25Group.AddPermission(AppHl25Settings.Default, L("Permission:AppHl25Settings"));
+        hl25SettingsTenant.MultiTenancySide = MultiTenancySides.Tenant;
+        hl25SettingsTenant.RequireFeatures(AppHl25Features.Management);
+        var hl25SettingsEdit = hl25SettingsTenant.AddChild(AppHl25Settings.Edit, L("Permission:AppHl25Settings.Edit"));
+        hl25SettingsEdit.MultiTenancySide = MultiTenancySides.Tenant;
+        hl25SettingsEdit.RequireFeatures(AppHl25Features.Management);
+
+        // 2. Quản lý Frame
+        var hl25FramesTenant = hl25Group.AddPermission(AppHl25Frames.Default, L("Permission:AppHl25Frames"));
+        hl25FramesTenant.MultiTenancySide = MultiTenancySides.Tenant;
+        hl25FramesTenant.RequireFeatures(AppHl25Features.Management);
+        var hl25FramesCreate = hl25FramesTenant.AddChild(AppHl25Frames.Create, L("Permission:AppHl25Frames.Create"));
+        hl25FramesCreate.MultiTenancySide = MultiTenancySides.Tenant;
+        hl25FramesCreate.RequireFeatures(AppHl25Features.Management);
+        var hl25FramesEdit = hl25FramesTenant.AddChild(AppHl25Frames.Edit, L("Permission:AppHl25Frames.Edit"));
+        hl25FramesEdit.MultiTenancySide = MultiTenancySides.Tenant;
+        hl25FramesEdit.RequireFeatures(AppHl25Features.Management);
+        var hl25FramesDelete = hl25FramesTenant.AddChild(AppHl25Frames.Delete, L("Permission:AppHl25Frames.Delete"));
+        hl25FramesDelete.MultiTenancySide = MultiTenancySides.Tenant;
+        hl25FramesDelete.RequireFeatures(AppHl25Features.Management);
+
+        // 3. Quản lý Vòng quay
+        var hl25WheelTenant = hl25Group.AddPermission(AppHl25Wheel.Default, L("Permission:AppHl25Wheel"));
+        hl25WheelTenant.MultiTenancySide = MultiTenancySides.Tenant;
+        hl25WheelTenant.RequireFeatures(AppHl25Features.Management);
+        var hl25WheelCreate = hl25WheelTenant.AddChild(AppHl25Wheel.Create, L("Permission:AppHl25Wheel.Create"));
+        hl25WheelCreate.MultiTenancySide = MultiTenancySides.Tenant;
+        hl25WheelCreate.RequireFeatures(AppHl25Features.Management);
+        var hl25WheelEdit = hl25WheelTenant.AddChild(AppHl25Wheel.Edit, L("Permission:AppHl25Wheel.Edit"));
+        hl25WheelEdit.MultiTenancySide = MultiTenancySides.Tenant;
+        hl25WheelEdit.RequireFeatures(AppHl25Features.Management);
+        var hl25WheelDelete = hl25WheelTenant.AddChild(AppHl25Wheel.Delete, L("Permission:AppHl25Wheel.Delete"));
+        hl25WheelDelete.MultiTenancySide = MultiTenancySides.Tenant;
+        hl25WheelDelete.RequireFeatures(AppHl25Features.Management);
+
+        // 4. Quản lý Người dùng
+        var hl25ParticipantsTenant = hl25Group.AddPermission(AppHl25Participants.Default, L("Permission:AppHl25Participants"));
+        hl25ParticipantsTenant.MultiTenancySide = MultiTenancySides.Tenant;
+        hl25ParticipantsTenant.RequireFeatures(AppHl25Features.Management);
+        var hl25ParticipantsEdit = hl25ParticipantsTenant.AddChild(AppHl25Participants.Edit, L("Permission:AppHl25Participants.Edit"));
+        hl25ParticipantsEdit.MultiTenancySide = MultiTenancySides.Tenant;
+        hl25ParticipantsEdit.RequireFeatures(AppHl25Features.Management);
+
+        // 5. Báo cáo
+        var hl25ReportsTenant = hl25Group.AddPermission(AppHl25Reports.Default, L("Permission:AppHl25Reports"));
+        hl25ReportsTenant.MultiTenancySide = MultiTenancySides.Tenant;
+        hl25ReportsTenant.RequireFeatures(AppHl25Features.Management);
+
+        // =====================
+        // HOST (không ràng Feature)
+        // =====================
+        var hl25GroupHost = context.AddGroup("MiniAppHl25Host", L("PermissionGroup:MiniAppHl25Host"));
+
+        var hl25SettingsHost = hl25GroupHost.AddPermission(HostAppHl25Settings.Default, L("Permission:AppHl25Settings"));
+        hl25SettingsHost.MultiTenancySide = MultiTenancySides.Host;
+        hl25SettingsHost.AddChild(HostAppHl25Settings.Edit, L("Permission:AppHl25Settings.Edit")).MultiTenancySide = MultiTenancySides.Host;
+
+        var hl25FramesHost = hl25GroupHost.AddPermission(HostAppHl25Frames.Default, L("Permission:AppHl25Frames"));
+        hl25FramesHost.MultiTenancySide = MultiTenancySides.Host;
+        hl25FramesHost.AddChild(HostAppHl25Frames.Create, L("Permission:AppHl25Frames.Create")).MultiTenancySide = MultiTenancySides.Host;
+        hl25FramesHost.AddChild(HostAppHl25Frames.Edit, L("Permission:AppHl25Frames.Edit")).MultiTenancySide = MultiTenancySides.Host;
+        hl25FramesHost.AddChild(HostAppHl25Frames.Delete, L("Permission:AppHl25Frames.Delete")).MultiTenancySide = MultiTenancySides.Host;
+
+        var hl25WheelHost = hl25GroupHost.AddPermission(HostAppHl25Wheel.Default, L("Permission:AppHl25Wheel"));
+        hl25WheelHost.MultiTenancySide = MultiTenancySides.Host;
+        hl25WheelHost.AddChild(HostAppHl25Wheel.Create, L("Permission:AppHl25Wheel.Create")).MultiTenancySide = MultiTenancySides.Host;
+        hl25WheelHost.AddChild(HostAppHl25Wheel.Edit, L("Permission:AppHl25Wheel.Edit")).MultiTenancySide = MultiTenancySides.Host;
+        hl25WheelHost.AddChild(HostAppHl25Wheel.Delete, L("Permission:AppHl25Wheel.Delete")).MultiTenancySide = MultiTenancySides.Host;
+
+        var hl25ParticipantsHost = hl25GroupHost.AddPermission(HostAppHl25Participants.Default, L("Permission:AppHl25Participants"));
+        hl25ParticipantsHost.MultiTenancySide = MultiTenancySides.Host;
+        hl25ParticipantsHost.AddChild(HostAppHl25Participants.Edit, L("Permission:AppHl25Participants.Edit")).MultiTenancySide = MultiTenancySides.Host;
+
+        var hl25ReportsHost = hl25GroupHost.AddPermission(HostAppHl25Reports.Default, L("Permission:AppHl25Reports"));
+        hl25ReportsHost.MultiTenancySide = MultiTenancySides.Host;
 
         #endregion
     }

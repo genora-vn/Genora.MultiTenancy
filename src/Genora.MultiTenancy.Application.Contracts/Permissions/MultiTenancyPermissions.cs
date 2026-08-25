@@ -776,6 +776,93 @@ public static class MultiTenancyPermissions
 
     #endregion
 
+    #region Permission cho module "Dược Phẩm Hoa Linh 25 Năm" (hl25)
+
+    // ===== TENANT (bị ràng Feature Hl25.Management) =====
+
+    /// <summary>Cài đặt Mini App (cấu hình chung, thể lệ, banner...).</summary>
+    public static class AppHl25Settings
+    {
+        public const string Default = GroupName + ".AppHl25Settings";
+        public const string Create = Default + ".Create";
+        public const string Edit = Default + ".Edit";
+        public const string Delete = Default + ".Delete";
+    }
+
+    /// <summary>Quản lý Frame (chiến dịch, mẫu frame, lịch sử tạo ảnh).</summary>
+    public static class AppHl25Frames
+    {
+        public const string Default = GroupName + ".AppHl25Frames";
+        public const string Create = Default + ".Create";
+        public const string Edit = Default + ".Edit";
+        public const string Delete = Default + ".Delete";
+    }
+
+    /// <summary>Quản lý Vòng quay (cấu hình, ô quay, kho quà, lịch sử lượt/quay).</summary>
+    public static class AppHl25Wheel
+    {
+        public const string Default = GroupName + ".AppHl25Wheel";
+        public const string Create = Default + ".Create";
+        public const string Edit = Default + ".Edit";
+        public const string Delete = Default + ".Delete";
+    }
+
+    /// <summary>Quản lý Người dùng tham gia.</summary>
+    public static class AppHl25Participants
+    {
+        public const string Default = GroupName + ".AppHl25Participants";
+        public const string Create = Default + ".Create";
+        public const string Edit = Default + ".Edit";
+        public const string Delete = Default + ".Delete";
+    }
+
+    /// <summary>Báo cáo thống kê.</summary>
+    public static class AppHl25Reports
+    {
+        public const string Default = GroupName + ".AppHl25Reports";
+    }
+
+    // ===== HOST (không ràng Feature) =====
+
+    public static class HostAppHl25Settings
+    {
+        public const string Default = GroupName + ".HostAppHl25Settings";
+        public const string Create = Default + ".Create";
+        public const string Edit = Default + ".Edit";
+        public const string Delete = Default + ".Delete";
+    }
+
+    public static class HostAppHl25Frames
+    {
+        public const string Default = GroupName + ".HostAppHl25Frames";
+        public const string Create = Default + ".Create";
+        public const string Edit = Default + ".Edit";
+        public const string Delete = Default + ".Delete";
+    }
+
+    public static class HostAppHl25Wheel
+    {
+        public const string Default = GroupName + ".HostAppHl25Wheel";
+        public const string Create = Default + ".Create";
+        public const string Edit = Default + ".Edit";
+        public const string Delete = Default + ".Delete";
+    }
+
+    public static class HostAppHl25Participants
+    {
+        public const string Default = GroupName + ".HostAppHl25Participants";
+        public const string Create = Default + ".Create";
+        public const string Edit = Default + ".Edit";
+        public const string Delete = Default + ".Delete";
+    }
+
+    public static class HostAppHl25Reports
+    {
+        public const string Default = GroupName + ".HostAppHl25Reports";
+    }
+
+    #endregion
+
     //Add your own permission names. Example:
     //public const string MyPermission1 = GroupName + ".MyPermission1";
 }

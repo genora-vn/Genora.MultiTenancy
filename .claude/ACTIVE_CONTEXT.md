@@ -4,8 +4,16 @@
 > Cập nhật ở CUỐI mỗi phiên (xem [handover/HANDOFF.md](handover/HANDOFF.md)).
 
 ## Cập nhật gần nhất
-- **Ngày:** 2026-08-18
-- **Việc vừa làm:** Chuẩn hóa toàn bộ project memory vào `.claude/` trong repo (migrate 108 note từ user-level).
+- **Ngày:** 2026-08-25
+- **Nhánh:** `feature/hoalinh-25years`
+- **Việc đang làm:** Xây hệ thống Admin cho Zalo Mini App "Dược Phẩm Hoa Linh 25 Năm" (schema DB `hl25`).
+  - ✅ **Thiết kế xong** (Bước 1-5): trích xuất UI Figma, thiết kế 10 entity schema `hl25`, xác định điểm tái sử dụng (Summernote / `IManageImageService` / Zalo OA-ZNS-Log), lập kế hoạch 8 Phase.
+  - 📄 **Tài liệu kiến trúc:** [`docs/HOALINH25_ADMIN_SCHEMA.md`](docs/HOALINH25_ADMIN_SCHEMA.md).
+  - ✅ **Quyết định nghiệp vụ đã chốt (2026-08-25):** (1) KHÔNG quản lý Points ở hl25 (thuộc gamification); (2) WheelConfig singleton/tenant; (3) trần 2 lượt quay/người — mỗi chu kỳ "Tạo thiệp → Chia sẻ thành công" = +1 lượt, tối đa 2 chu kỳ; (4) trao thưởng 2 bước (Won → Admin Delivered).
+  - ✅ **P0 (Foundation) XONG:** 6 enum (`Enums/Hl25Enums.cs`) + `Hl25/Hl25Consts.cs` (MaxSpinTurnsPerUser=2, 5MB, phone regex); Feature `Hl25.Management` (`AppHl25Features` + provider); Permission dual 5 nhóm Tenant + 5 Host (`MultiTenancyPermissions` + provider block `MiniAppHl25`/`MiniAppHl25Host`); menu group `MenuGroup.Hl25` (order 51); localization vi/en. Build Web 0 errors.
+  - ✅ **P1 (Entities + DB) XONG:** 10 entity (`Domain/DomainModels/AppHl25/`) + `MultiTenancyDbContextModelCreatingExtensionsHl25.cs` (`ConfigureHl25Module`) + 10 DbSet + gọi trong DbContext. Migration **`20260825160252_AddHl25Module`** (10 bảng, 23 index, 5 FK, schema `hl25`) — đã verify không rỗng. Build EF 0 errors. **CHƯA chạy `dotnet ef database update`.**
+  - ⏳ **Tiếp theo:** P2 (Cài đặt Mini App — Summernote + upload Logo/Banner) hoặc P4 (Vòng quay). Xem thứ tự đề xuất trong tài liệu.
+- **Việc vừa làm trước đó:** Đăng ký con trỏ parked-branch cho `feature/hoalinh-gamification` (commit `d33be8a` trên dev).
 
 ## ⛔ Task tạm dừng (parked branches) — CẦN BIẾT khi khởi động phiên
 > Đây là các feature branch CHƯA merge vào `dev`, đang tạm dừng để ưu tiên việc khác.

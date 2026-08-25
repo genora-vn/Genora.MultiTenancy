@@ -33,6 +33,7 @@ using Genora.MultiTenancy.DomainModels.AppCaddie;
 using Genora.MultiTenancy.DomainModels.AppHlApiLogs;
 using Genora.MultiTenancy.DomainModels.AppHlGiftExchanges;
 using Genora.MultiTenancy.DomainModels.AppHlOrders;
+using Genora.MultiTenancy.DomainModels.AppHl25;
 using Genora.MultiTenancy.DomainModels.AppHlPoints;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Hosting;
@@ -157,6 +158,18 @@ public class MultiTenancyDbContext :
     public DbSet<HlPointBatch> AppHlPointBatches { get; set; }
     public DbSet<HlPointTransaction> AppHlPointTransactions { get; set; }
 
+    // Hoa Linh 25 Năm (hl25)
+    public DbSet<Hl25AppConfig> AppHl25AppConfig { get; set; }
+    public DbSet<Hl25FrameCampaign> AppHl25FrameCampaigns { get; set; }
+    public DbSet<Hl25FrameTemplate> AppHl25FrameTemplates { get; set; }
+    public DbSet<Hl25FrameCreation> AppHl25FrameCreations { get; set; }
+    public DbSet<Hl25WheelConfig> AppHl25WheelConfig { get; set; }
+    public DbSet<Hl25WheelSlot> AppHl25WheelSlots { get; set; }
+    public DbSet<Hl25Gift> AppHl25Gifts { get; set; }
+    public DbSet<Hl25SpinTurnLog> AppHl25SpinTurnLogs { get; set; }
+    public DbSet<Hl25SpinLog> AppHl25SpinLogs { get; set; }
+    public DbSet<Hl25Participant> AppHl25Participants { get; set; }
+
     // Tenant Management
     public DbSet<Tenant> Tenants { get; set; }
     public DbSet<TenantConnectionString> TenantConnectionStrings { get; set; }
@@ -223,6 +236,7 @@ public class MultiTenancyDbContext :
         builder.ConfigureSalonBeautyModule();
         builder.ConfigureCaddieModule();
         builder.ConfigureHoaLinhModule();
+        builder.ConfigureHl25Module();
 
         builder.Entity<ZaloAuth>(b =>
         {

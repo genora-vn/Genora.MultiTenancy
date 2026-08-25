@@ -1656,6 +1656,34 @@
     "Menu:AppHlGiftExchange": "Đổi quà",
     "Menu:AppHlPointHistory": "Lịch sử điểm thưởng",
     "Menu:AppHlDashboard": "Tổng quan",
-    "Menu:AppHlApiLogs": "Nhật ký API"
+    "Menu:AppHlApiLogs": "Nhật ký API",
+
+    "FeatureGroup:Hl25": "Module Hoa Linh 25 Năm",
+    "Feature:Hl25": "Bật Module Hoa Linh 25 Năm",
+    "Feature:Hl25Desc": "Bật tính năng Admin cho Zalo Mini App \"Dược Phẩm Hoa Linh 25 Năm\"",
+
+    "PermissionGroup:MiniAppHl25": "Quản lý Hoa Linh 25 Năm",
+    "PermissionGroup:MiniAppHl25Host": "Quản lý Hoa Linh 25 Năm (Host)",
+
+    "Permission:AppHl25Settings": "Xem cài đặt Mini App",
+    "Permission:AppHl25Settings.Edit": "Sửa cài đặt Mini App",
+    "Permission:AppHl25Frames": "Xem quản lý Frame",
+    "Permission:AppHl25Frames.Create": "Tạo chiến dịch/mẫu Frame",
+    "Permission:AppHl25Frames.Edit": "Sửa chiến dịch/mẫu Frame",
+    "Permission:AppHl25Frames.Delete": "Xóa chiến dịch/mẫu Frame",
+    "Permission:AppHl25Wheel": "Xem quản lý Vòng quay",
+    "Permission:AppHl25Wheel.Create": "Tạo cấu hình/quà Vòng quay",
+    "Permission:AppHl25Wheel.Edit": "Sửa cấu hình/quà Vòng quay",
+    "Permission:AppHl25Wheel.Delete": "Xóa cấu hình/quà Vòng quay",
+    "Permission:AppHl25Participants": "Xem người dùng tham gia",
+    "Permission:AppHl25Participants.Edit": "Sửa người dùng tham gia",
+    "Permission:AppHl25Reports": "Xem báo cáo thống kê",
+
+    "Menu:Hl25": "Hoa Linh 25 Năm",
+    "Menu:Hl25Settings": "Cài đặt Mini App",
+    "Menu:Hl25Frames": "Quản lý Frame",
+    "Menu:Hl25Wheel": "Vòng quay may mắn",
+    "Menu:Hl25Participants": "Người dùng",
+    "Menu:Hl25Reports": "Báo cáo thống kê"
   }
 }

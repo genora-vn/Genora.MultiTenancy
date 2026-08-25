@@ -1254,6 +1254,34 @@
     "Menu:AppHlGiftExchange": "Gift Exchange",
     "Menu:AppHlPointHistory": "Reward Point History",
     "Menu:AppHlDashboard": "Dashboard",
-    "Menu:AppHlApiLogs": "API Logs"
+    "Menu:AppHlApiLogs": "API Logs",
+
+    "FeatureGroup:Hl25": "Hoa Linh 25th Anniversary Module",
+    "Feature:Hl25": "Enable Hoa Linh 25th Anniversary Module",
+    "Feature:Hl25Desc": "Enable Admin features for Zalo Mini App \"Hoa Linh Pharma 25th Anniversary\"",
+
+    "PermissionGroup:MiniAppHl25": "Hoa Linh 25th Management",
+    "PermissionGroup:MiniAppHl25Host": "Hoa Linh 25th Management (Host)",
+
+    "Permission:AppHl25Settings": "View Mini App Settings",
+    "Permission:AppHl25Settings.Edit": "Edit Mini App Settings",
+    "Permission:AppHl25Frames": "View Frame Management",
+    "Permission:AppHl25Frames.Create": "Create Frame Campaign/Template",
+    "Permission:AppHl25Frames.Edit": "Edit Frame Campaign/Template",
+    "Permission:AppHl25Frames.Delete": "Delete Frame Campaign/Template",
+    "Permission:AppHl25Wheel": "View Lucky Wheel Management",
+    "Permission:AppHl25Wheel.Create": "Create Wheel Config/Gift",
+    "Permission:AppHl25Wheel.Edit": "Edit Wheel Config/Gift",
+    "Permission:AppHl25Wheel.Delete": "Delete Wheel Config/Gift",
+    "Permission:AppHl25Participants": "View Participants",
+    "Permission:AppHl25Participants.Edit": "Edit Participants",
+    "Permission:AppHl25Reports": "View Reports",
+
+    "Menu:Hl25": "Hoa Linh 25th",
+    "Menu:Hl25Settings": "Mini App Settings",
+    "Menu:Hl25Frames": "Frame Management",
+    "Menu:Hl25Wheel": "Lucky Wheel",
+    "Menu:Hl25Participants": "Participants",
+    "Menu:Hl25Reports": "Reports"
   }
 }
