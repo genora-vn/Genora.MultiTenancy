@@ -17,6 +17,7 @@ using Genora.MultiTenancy.Features.AppZaloAuths;
 using Genora.MultiTenancy.Features.AppZaloLogs;
 using Genora.MultiTenancy.Features.SalonBeauty;
 using Genora.MultiTenancy.Features.AppHoaLinhFeatures;
+using Genora.MultiTenancy.Features.AppHl25Features;
 using Genora.MultiTenancy.Localization;
 using Genora.MultiTenancy.Permissions;
 using Microsoft.Extensions.DependencyInjection;
@@ -2167,6 +2168,96 @@ public class MultiTenancyMenuContributor : IMenuContributor
             }
 
             context.Menu.AddItem(groupHl);
+        }
+
+        // ── HOA LINH 25 NĂM (hl25) ────────────────────────────────────────
+        var canSeeHl25 =
+            await feature.IsEnabledAsync(AppHl25Features.Management) &&
+            (
+                await perms.IsGrantedAsync(MultiTenancyPermissions.AppHl25Settings.Default) ||
+                await perms.IsGrantedAsync(MultiTenancyPermissions.AppHl25Frames.Default) ||
+                await perms.IsGrantedAsync(MultiTenancyPermissions.AppHl25Wheel.Default) ||
+                await perms.IsGrantedAsync(MultiTenancyPermissions.AppHl25Participants.Default) ||
+                await perms.IsGrantedAsync(MultiTenancyPermissions.AppHl25Reports.Default)
+            );
+
+        var canSeeHl25Host =
+            await perms.IsGrantedAsync(MultiTenancyPermissions.HostAppHl25Settings.Default) ||
+            await perms.IsGrantedAsync(MultiTenancyPermissions.HostAppHl25Frames.Default) ||
+            await perms.IsGrantedAsync(MultiTenancyPermissions.HostAppHl25Wheel.Default) ||
+            await perms.IsGrantedAsync(MultiTenancyPermissions.HostAppHl25Participants.Default) ||
+            await perms.IsGrantedAsync(MultiTenancyPermissions.HostAppHl25Reports.Default);
+
+        if (canSeeHl25 || canSeeHl25Host)
+        {
+            var groupHl25 = new ApplicationMenuItem(
+                name: "MenuGroup.Hl25",
+                displayName: l["Menu:Hl25"],
+                icon: "fa fa-award",
+                order: 51
+            );
+
+            if (await perms.IsGrantedAsync(MultiTenancyPermissions.AppHl25Settings.Default) ||
+                await perms.IsGrantedAsync(MultiTenancyPermissions.HostAppHl25Settings.Default))
+            {
+                groupHl25.AddItem(new ApplicationMenuItem(
+                    name: "AppHl25Settings",
+                    displayName: l["Menu:Hl25Settings"],
+                    url: "/Hl25/Settings",
+                    icon: "fa fa-gear",
+                    order: 1
+                ));
+            }
+
+            if (await perms.IsGrantedAsync(MultiTenancyPermissions.AppHl25Frames.Default) ||
+                await perms.IsGrantedAsync(MultiTenancyPermissions.HostAppHl25Frames.Default))
+            {
+                groupHl25.AddItem(new ApplicationMenuItem(
+                    name: "AppHl25Frames",
+                    displayName: l["Menu:Hl25Frames"],
+                    url: "/Hl25/Frames",
+                    icon: "fa fa-image",
+                    order: 2
+                ));
+            }
+
+            if (await perms.IsGrantedAsync(MultiTenancyPermissions.AppHl25Wheel.Default) ||
+                await perms.IsGrantedAsync(MultiTenancyPermissions.HostAppHl25Wheel.Default))
+            {
+                groupHl25.AddItem(new ApplicationMenuItem(
+                    name: "AppHl25Wheel",
+                    displayName: l["Menu:Hl25Wheel"],
+                    url: "/Hl25/Wheel",
+                    icon: "fa fa-circle-notch",
+                    order: 3
+                ));
+            }
+
+            if (await perms.IsGrantedAsync(MultiTenancyPermissions.AppHl25Participants.Default) ||
+                await perms.IsGrantedAsync(MultiTenancyPermissions.HostAppHl25Participants.Default))
+            {
+                groupHl25.AddItem(new ApplicationMenuItem(
+                    name: "AppHl25Participants",
+                    displayName: l["Menu:Hl25Participants"],
+                    url: "/Hl25/Participants",
+                    icon: "fa fa-users",
+                    order: 4
+                ));
+            }
+
+            if (await perms.IsGrantedAsync(MultiTenancyPermissions.AppHl25Reports.Default) ||
+                await perms.IsGrantedAsync(MultiTenancyPermissions.HostAppHl25Reports.Default))
+            {
+                groupHl25.AddItem(new ApplicationMenuItem(
+                    name: "AppHl25Reports",
+                    displayName: l["Menu:Hl25Reports"],
+                    url: "/Hl25/Reports",
+                    icon: "fa fa-chart-pie",
+                    order: 5
+                ));
+            }
+
+            context.Menu.AddItem(groupHl25);
         }
 
         foreach (var rootItem in context.Menu.Items)

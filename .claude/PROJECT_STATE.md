@@ -51,14 +51,15 @@
 - Online docs `/Documents`: entity host-shared, FeatureName + Tenant/HostPermissionName, URL slug, seeder 11 section.
 - Note: `project_app_documents_*`.
 
-## Module: Hoa Linh 25 Năm (hl25) — ĐANG PHÁT TRIỂN P0+P1 XONG (nhánh `feature/hoalinh-25years`)
+## Module: Hoa Linh 25 Năm (hl25) — ĐANG PHÁT TRIỂN P0+P1+P2 XONG (nhánh `feature/hoalinh-25years`)
 - Admin cho Zalo Mini App "Dược Phẩm Hoa Linh 25 Năm" (chương trình kỷ niệm 25 năm: tạo thiệp ghép ảnh + chia sẻ + vòng quay may mắn). Schema DB riêng `hl25`.
 - **Thiết kế (Bước 1-5):** UI Figma, 10 entity, 8 Phase plan. Tài liệu: `docs/HOALINH25_ADMIN_SCHEMA.md`.
 - **Quyết định chốt:** bỏ Points (thuộc gamification), Wheel singleton/tenant, trần 2 lượt quay (mỗi chu kỳ "Tạo thiệp→Chia sẻ" = +1, tối đa 2), trao thưởng 2 bước.
 - **Tái dùng:** Summernote (HTML editor), `IManageImageService` (upload ảnh, tự chặn 5MB), Zalo OA/ZNS/Log dùng chung.
 - **✅ P0 (Foundation):** 6 enum (`Enums/Hl25Enums.cs`) + `Hl25/Hl25Consts.cs`; Feature `Hl25.Management`; Permission dual 5 nhóm Tenant+Host (group `MiniAppHl25`/`MiniAppHl25Host`); menu `MenuGroup.Hl25` (order 51); localization vi/en.
-- **✅ P1 (Entities + DB):** 10 entity `Domain/DomainModels/AppHl25/` (`Hl25AppConfig`; Frame `Campaign/Template/Creation`; Wheel `Config/Slot/Gift/SpinTurnLog/SpinLog`; `Participant`) + `ConfigureHl25Module` + 10 DbSet. Migration **`20260825160252_AddHl25Module`** (10 bảng, 23 index, 5 FK). Build Web+EF 0 errors. **CHƯA `database update`.**
-- **Còn lại:** P2 Cài đặt → P4 Vòng quay → P3 Frame → P5 Người dùng → P6 Báo cáo → P7 MiniApp API.
+- **✅ P1 (Entities + DB):** 10 entity `Domain/DomainModels/AppHl25/` (`Hl25AppConfig`; Frame `Campaign/Template/Creation`; Wheel `Config/Slot/Gift/SpinTurnLog/SpinLog`; `Participant`) + `ConfigureHl25Module` + 10 DbSet. Migration **`20260825160252_AddHl25Module`** (10 bảng, 23 index, 5 FK). Build Web+EF 0 errors. **CHƯA `database update`.** (commit `2ffacb7`)
+- **✅ P2 (Cài đặt Mini App):** DTO `Hl25AppConfigDto`/`CreateUpdateHl25AppConfigDto` + `IHl25AppConfigAppService`; `Hl25AppConfigAppService` singleton/tenant (GetAsync tự tạo mặc định / UpdateAsync / UploadAssetAsync validate 5MB) + AutoMapper; trang `Web/Pages/Hl25/Settings` (Summernote cho Thể lệ/Luật chơi/TVC, upload Logo/Banner, link `/AppZaloAuths`+`/AppZaloLogs`). Build 0 errors. CHƯA commit.
+- **Còn lại:** P4 Vòng quay → P3 Frame → P5 Người dùng → P6 Báo cáo → P7 MiniApp API.
 
 ---
 

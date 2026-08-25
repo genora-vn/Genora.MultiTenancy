@@ -1,0 +1,134 @@
+@page
+@using Genora.MultiTenancy.Localization
+@using Microsoft.Extensions.Localization
+@model Genora.MultiTenancy.Web.Pages.Hl25.SettingsModel
+@inject IStringLocalizer<MultiTenancyResource> L
+
+@section styles {
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/summernote@0.8.18/dist/summernote-lite.min.css" />
+}
+
+@section scripts {
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://cdn.jsdelivr.net/npm/summernote@0.8.18/dist/summernote-lite.min.js"></script>
+    <script src="~/Pages/Hl25/Settings.js" asp-append-version="true"></script>
+}
+
+<div class="mb-4">
+    <h4><i class="fa fa-gear me-2"></i>@L["Menu:Hl25Settings"] — @L["Menu:Hl25"]</h4>
+    <p class="text-muted mb-0">Cấu hình chung Mini App "Dược Phẩm Hoa Linh 25 Năm": logo, banner, TVC, thể lệ &amp; luật chơi.</p>
+</div>
+
+<form method="post" enctype="multipart/form-data" id="Hl25SettingsForm">
+    <div class="row g-3">
+        <div class="col-lg-8">
+            <div class="card mb-3">
+                <div class="card-header py-2"><i class="fa fa-circle-info me-1"></i> Thông tin chương trình</div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="form-label">Tên chương trình</label>
+                        <input asp-for="Input.ProgramName" class="form-control" maxlength="256" />
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Thời gian bắt đầu</label>
+                            <input asp-for="Input.StartTime" class="form-control flatpickr-datetime" />
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Thời gian kết thúc</label>
+                            <input asp-for="Input.EndTime" class="form-control flatpickr-datetime" />
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Phạm vi</label>
+                            <input asp-for="Input.Scope" class="form-control" maxlength="256" placeholder="VD: Toàn quốc" />
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Đơn vị tổ chức (ĐVTC)</label>
+                            <input asp-for="Input.OrganizerName" class="form-control" maxlength="256" placeholder="VD: Dược phẩm Hoa Linh" />
+                        </div>
+                    </div>
+                    <div class="form-check form-switch">
+                        <input asp-for="Input.IsActive" class="form-check-input" type="checkbox" role="switch" />
+                        <label class="form-check-label" asp-for="Input.IsActive">Kích hoạt chương trình</label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card mb-3">
+                <div class="card-header py-2"><i class="fa fa-scroll me-1"></i> Thể lệ chương trình</div>
+                <div class="card-body">
+                    <textarea asp-for="Input.RulesHtml" class="html-editor"></textarea>
+                </div>
+            </div>
+
+            <div class="card mb-3">
+                <div class="card-header py-2"><i class="fa fa-gamepad me-1"></i> Luật chơi</div>
+                <div class="card-body">
+                    <textarea asp-for="Input.GamePlayHtml" class="html-editor"></textarea>
+                </div>
+            </div>
+
+            <div class="card mb-3">
+                <div class="card-header py-2"><i class="fa fa-film me-1"></i> TVC</div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="form-label">Link video TVC</label>
+                        <input asp-for="Input.TvcUrl" class="form-control" maxlength="1024" placeholder="https://..." />
+                    </div>
+                    <label class="form-label">Nội dung TVC (HTML)</label>
+                    <textarea asp-for="Input.TvcHtml" class="html-editor"></textarea>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card mb-3">
+                <div class="card-header py-2"><i class="fa fa-image me-1"></i> Logo</div>
+                <div class="card-body text-center">
+                    <img id="LogoPreview" src="@(string.IsNullOrEmpty(Model.Input.LogoUrl) ? "" : Model.Input.LogoUrl)"
+                         class="img-fluid mb-2 @(string.IsNullOrEmpty(Model.Input.LogoUrl) ? "d-none" : "")"
+                         style="max-height:120px;" alt="Logo" />
+                    <input asp-for="Input.LogoUrl" type="hidden" />
+                    <input asp-for="LogoFile" type="file" accept="image/*" class="form-control asset-input" data-preview="#LogoPreview" />
+                    <small class="text-muted">JPG/PNG, tối đa 5MB.</small>
+                </div>
+            </div>
+
+            <div class="card mb-3">
+                <div class="card-header py-2"><i class="fa fa-panorama me-1"></i> Banner</div>
+                <div class="card-body text-center">
+                    <img id="BannerPreview" src="@(string.IsNullOrEmpty(Model.Input.BannerUrl) ? "" : Model.Input.BannerUrl)"
+                         class="img-fluid mb-2 @(string.IsNullOrEmpty(Model.Input.BannerUrl) ? "d-none" : "")"
+                         style="max-height:120px;" alt="Banner" />
+                    <input asp-for="Input.BannerUrl" type="hidden" />
+                    <input asp-for="BannerFile" type="file" accept="image/*" class="form-control asset-input" data-preview="#BannerPreview" />
+                    <small class="text-muted">JPG/PNG, tối đa 5MB.</small>
+                </div>
+            </div>
+
+            <div class="card mb-3">
+                <div class="card-header py-2"><i class="fa fa-plug me-1"></i> Tích hợp Zalo</div>
+                <div class="card-body">
+                    <p class="text-muted small mb-2">Cấu hình Zalo OA, ZNS/ZBS và Nhật ký Zalo dùng chung toàn hệ thống.</p>
+                    <a href="/AppZaloAuths" class="btn btn-outline-secondary btn-sm w-100 mb-2">
+                        <i class="fa fa-gear me-1"></i> Cấu hình Zalo OA &amp; ZNS
+                    </a>
+                    <a href="/AppZaloLogs" class="btn btn-outline-secondary btn-sm w-100">
+                        <i class="fa fa-list me-1"></i> Nhật ký Zalo
+                    </a>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-body">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fa fa-save me-1"></i> Lưu cấu hình
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>

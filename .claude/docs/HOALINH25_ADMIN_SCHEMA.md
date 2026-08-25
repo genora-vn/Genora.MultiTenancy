@@ -425,7 +425,8 @@ Zalo OA/ZNS/Log: TÁI DÙNG (ZaloAuth / ZaloLog / ZaloSettingNames) — không t
 
 ### Tiến độ triển khai
 - **✅ P0 — Foundation:** 6 enum (`Enums/Hl25Enums.cs`) + `Hl25/Hl25Consts.cs`; Feature `Hl25.Management` (`AppHl25Features` + provider); Permission dual 5 nhóm Tenant + 5 Host (group `MiniAppHl25` / `MiniAppHl25Host`); menu `MenuGroup.Hl25` (order 51); localization vi/en. Build Web 0 errors.
-- **✅ P1 — Entities + DB:** 10 entity (`Domain/DomainModels/AppHl25/`) + `MultiTenancyDbContextModelCreatingExtensionsHl25.cs` (`ConfigureHl25Module`) + 10 DbSet. Migration **`20260825160252_AddHl25Module`** (10 bảng, 23 index, 5 FK). Build EF 0 errors. ⚠️ **CHƯA chạy `dotnet ef database update`** (chờ khi cần áp DB).
-- **⏳ Kế tiếp:** P2 (Cài đặt Mini App) → P4 (Vòng quay) → P3 (Frame) → P5 (Người dùng) → P6 (Báo cáo) → P7 (MiniApp API).
+- **✅ P1 — Entities + DB:** 10 entity (`Domain/DomainModels/AppHl25/`) + `MultiTenancyDbContextModelCreatingExtensionsHl25.cs` (`ConfigureHl25Module`) + 10 DbSet. Migration **`20260825160252_AddHl25Module`** (10 bảng, 23 index, 5 FK). Build EF 0 errors. ⚠️ **CHƯA chạy `dotnet ef database update`** (chờ khi cần áp DB). Đã commit `2ffacb7`.
+- **✅ P2 — Cài đặt Mini App:** DTO `Hl25AppConfigDto`/`CreateUpdateHl25AppConfigDto` + `IHl25AppConfigAppService`; `Hl25AppConfigAppService` (singleton/tenant: `GetAsync` tự tạo mặc định / `UpdateAsync` / `UploadAssetAsync` validate 5MB) + AutoMapper; trang `Web/Pages/Hl25/Settings` (`.cshtml`+`.cshtml.cs`+`.js`) — Summernote cho Thể lệ/Luật chơi/TVC, upload Logo/Banner (preview + chặn 5MB client), link `/AppZaloAuths` + `/AppZaloLogs`. Build Application + Web 0 errors. Chưa commit.
+- **⏳ Kế tiếp:** P4 (Vòng quay) → P3 (Frame) → P5 (Người dùng) → P6 (Báo cáo) → P7 (MiniApp API).
 
 

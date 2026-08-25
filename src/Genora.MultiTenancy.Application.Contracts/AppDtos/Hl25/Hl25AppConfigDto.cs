@@ -1,0 +1,23 @@
+using System;
+using Volo.Abp.Application.Dtos;
+
+namespace Genora.MultiTenancy.AppDtos.Hl25;
+
+/// <summary>
+/// DTO đọc cấu hình chung Mini App "Dược Phẩm Hoa Linh 25 Năm".
+/// </summary>
+public class Hl25AppConfigDto : AuditedEntityDto<Guid>
+{
+    public string? ProgramName { get; set; }
+    public string? LogoUrl { get; set; }
+    public string? BannerUrl { get; set; }
+    public string? TvcUrl { get; set; }
+    public string? TvcHtml { get; set; }
+    public string? RulesHtml { get; set; }
+    public string? GamePlayHtml { get; set; }
+    public DateTime? StartTime { get; set; }
+    public DateTime? EndTime { get; set; }
+    public string? Scope { get; set; }
+    public string? OrganizerName { get; set; }
+    public bool IsActive { get; set; }
+}

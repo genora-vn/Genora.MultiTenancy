@@ -21,6 +21,7 @@ using Genora.MultiTenancy.AppDtos.AppPromotionTypes;
 using Genora.MultiTenancy.AppDtos.AppPromotionPolicies;
 using Genora.MultiTenancy.AppDtos.AppSettings;
 using Genora.MultiTenancy.AppDtos.AppSpecialDates;
+using Genora.MultiTenancy.AppDtos.Hl25;
 using Genora.MultiTenancy.AppDtos.ZaloAuths;
 using Genora.MultiTenancy.Apps.AppSettings;
 using Genora.MultiTenancy.AuditLogs;
@@ -38,6 +39,7 @@ using Genora.MultiTenancy.DomainModels.AppProCategories;
 using Genora.MultiTenancy.DomainModels.AppProItems;
 using Genora.MultiTenancy.DomainModels.AppProOrders;
 using Genora.MultiTenancy.DomainModels.AppGolfCourses;
+using Genora.MultiTenancy.DomainModels.AppHl25;
 using Genora.MultiTenancy.DomainModels.AppHomePageConfigs;
 using Genora.MultiTenancy.DomainModels.AppMembershipTiers;
 using Genora.MultiTenancy.DomainModels.AppNews;
@@ -119,6 +121,13 @@ public class MultiTenancyApplicationAutoMapperProfile : Profile
             .ForMember(x => x.Id, opt => opt.Ignore());
 
         CreateMap<ZaloLog, AppZaloLogDto>();
+        #endregion
+
+        #region Hoa Linh 25 Năm (hl25) auto mapper profile
+        CreateMap<Hl25AppConfig, Hl25AppConfigDto>();
+        CreateMap<CreateUpdateHl25AppConfigDto, Hl25AppConfig>()
+            .ForMember(x => x.Id, opt => opt.Ignore())
+            .ForMember(x => x.TenantId, opt => opt.Ignore());
         #endregion
 
         #region MiniAppCustomer auto mapper profile
