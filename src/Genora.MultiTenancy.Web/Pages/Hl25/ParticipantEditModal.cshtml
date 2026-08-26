@@ -1,0 +1,59 @@
+@page
+@using Genora.MultiTenancy.Localization
+@using Microsoft.Extensions.Localization
+@using Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.TagHelpers.Modal
+@model Genora.MultiTenancy.Web.Pages.Hl25.ParticipantEditModalModel
+@inject IStringLocalizer<MultiTenancyResource> L
+@{
+    Layout = null;
+}
+<form abp-model="Participant" asp-page="/Hl25/ParticipantEditModal" id="EditHl25Participant">
+    <input asp-for="Id" type="hidden" />
+    <abp-modal>
+        <abp-modal-header title="Sửa thông tin người tham gia"></abp-modal-header>
+        <abp-modal-body>
+            <div class="alert alert-info py-2 small mb-3">
+                <i class="fa fa-circle-info me-1"></i> @Model.DisplaySpinInfo
+            </div>
+            <div class="mb-3">
+                <abp-input asp-for="Participant.FullName" label="Họ và tên" />
+            </div>
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <abp-input asp-for="Participant.PhoneNumber" label="Số điện thoại" placeholder="VD: 0912345678" />
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label asp-for="Participant.BirthDate" class="form-label">Ngày sinh</label>
+                    <input asp-for="Participant.BirthDate" type="date" class="form-control" />
+                </div>
+            </div>
+            <div class="mb-3">
+                <abp-select asp-for="Participant.Gender" label="Giới tính">
+                    <abp-select-item value="0" text="Không xác định" />
+                    <abp-select-item value="1" text="Nam" />
+                    <abp-select-item value="2" text="Nữ" />
+                    <abp-select-item value="3" text="Khác" />
+                </abp-select>
+            </div>
+            <div class="mb-3">
+                <label asp-for="Participant.ReceiveAddress" class="form-label">Địa chỉ nhận quà</label>
+                <textarea asp-for="Participant.ReceiveAddress" class="form-control" rows="2"></textarea>
+            </div>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-check form-switch">
+                        <input asp-for="Participant.IsFollowingOa" class="form-check-input" type="checkbox" role="switch" />
+                        <label class="form-check-label" asp-for="Participant.IsFollowingOa">Đã Follow OA</label>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-check form-switch">
+                        <input asp-for="Participant.HasConsent" class="form-check-input" type="checkbox" role="switch" />
+                        <label class="form-check-label" asp-for="Participant.HasConsent">Đồng ý chia sẻ thông tin</label>
+                    </div>
+                </div>
+            </div>
+        </abp-modal-body>
+        <abp-modal-footer buttons="@(AbpModalButtons.Cancel | AbpModalButtons.Save)"></abp-modal-footer>
+    </abp-modal>
+</form>

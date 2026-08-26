@@ -1,0 +1,30 @@
+@page
+@using Genora.MultiTenancy.Localization
+@using Microsoft.Extensions.Localization
+@using Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.TagHelpers.Modal
+@model Genora.MultiTenancy.Web.Pages.Hl25.ParticipantGrantModalModel
+@inject IStringLocalizer<MultiTenancyResource> L
+@{
+    Layout = null;
+}
+<form asp-page="/Hl25/ParticipantGrantModal" id="GrantHl25SpinTurn">
+    <input asp-for="Id" type="hidden" />
+    <abp-modal>
+        <abp-modal-header title="Cộng lượt quay thủ công"></abp-modal-header>
+        <abp-modal-body>
+            <div class="alert alert-info py-2 small mb-3">
+                <i class="fa fa-user me-1"></i> @Model.ParticipantInfo
+            </div>
+            <div class="mb-3">
+                <label asp-for="Turns" class="form-label">Số lượt cấp thêm <span class="text-danger">*</span></label>
+                <input asp-for="Turns" type="number" min="1" max="100" class="form-control" />
+                <small class="text-muted">Lượt cấp thủ công không bị giới hạn bởi trần tự động (2 lượt).</small>
+            </div>
+            <div class="mb-3">
+                <label asp-for="Note" class="form-label">Ghi chú</label>
+                <textarea asp-for="Note" class="form-control" rows="2" placeholder="Lý do cấp lượt..."></textarea>
+            </div>
+        </abp-modal-body>
+        <abp-modal-footer buttons="@(AbpModalButtons.Cancel | AbpModalButtons.Save)"></abp-modal-footer>
+    </abp-modal>
+</form>

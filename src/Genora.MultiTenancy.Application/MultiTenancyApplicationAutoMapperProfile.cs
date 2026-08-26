@@ -152,6 +152,8 @@ public class MultiTenancyApplicationAutoMapperProfile : Profile
             .ForMember(x => x.ParticipantName, opt => opt.Ignore())
             .ForMember(x => x.ParticipantPhone, opt => opt.Ignore())
             .ForMember(x => x.CampaignName, opt => opt.Ignore());
+
+        CreateMap<Hl25Participant, Hl25ParticipantDto>();
         #endregion
 
         #region MiniAppCustomer auto mapper profile

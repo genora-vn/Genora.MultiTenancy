@@ -1,0 +1,66 @@
+@page
+@using Genora.MultiTenancy.Localization
+@using Genora.MultiTenancy.Permissions
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.Extensions.Localization
+@model Genora.MultiTenancy.Web.Pages.Hl25.ParticipantsModel
+@inject IStringLocalizer<MultiTenancyResource> L
+@inject IAuthorizationService AuthorizationService
+@inject Volo.Abp.MultiTenancy.ICurrentTenant CurrentTenant
+
+@section styles {
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
+}
+
+@section scripts {
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <abp-script src="/Pages/Hl25/Participants.js" />
+}
+
+<div class="mb-4">
+    <h4><i class="fa fa-users me-2"></i>@L["Menu:Hl25Participants"] — @L["Menu:Hl25"]</h4>
+    <p class="text-muted mb-0">Danh sách người dùng tham gia chương trình: thông tin, follow OA, consent, địa chỉ nhận quà.</p>
+</div>
+
+<abp-card>
+    <abp-card-header>
+        <abp-row>
+            <abp-column size-md="_10">
+                <div class="row g-2">
+                    <div class="col-md-3">
+                        <input type="text" id="FilterText" class="form-control form-control-sm" placeholder="Tìm tên / SĐT..." />
+                    </div>
+                    <div class="col-md-2">
+                        <select id="FilterFollowOa" class="form-select form-select-sm">
+                            <option value="">Follow OA: Tất cả</option>
+                            <option value="true">Đã follow</option>
+                            <option value="false">Chưa follow</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <select id="FilterConsent" class="form-select form-select-sm">
+                            <option value="">Consent: Tất cả</option>
+                            <option value="true">Đã đồng ý</option>
+                            <option value="false">Chưa đồng ý</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <input type="text" id="FilterJoinedFrom" class="form-control form-control-sm" placeholder="Từ ngày" />
+                    </div>
+                    <div class="col-md-2">
+                        <input type="text" id="FilterJoinedTo" class="form-control form-control-sm" placeholder="Đến ngày" />
+                    </div>
+                    <div class="col-md-1">
+                        <button type="button" id="ApplyFilterBtn" class="btn btn-sm btn-primary w-100">Lọc</button>
+                    </div>
+                </div>
+            </abp-column>
+            <abp-column size-md="_2" class="text-end">
+                <abp-button id="ExportParticipantsBtn" text="Xuất Excel" icon="file-excel" button-type="Outline_Success" size="Small" />
+            </abp-column>
+        </abp-row>
+    </abp-card-header>
+    <abp-card-body>
+        <abp-table striped-rows="true" id="ParticipantsTable"></abp-table>
+    </abp-card-body>
+</abp-card>
