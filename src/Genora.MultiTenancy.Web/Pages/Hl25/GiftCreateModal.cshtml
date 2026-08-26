@@ -1,0 +1,38 @@
+@page
+@using Genora.MultiTenancy.Localization
+@using Microsoft.Extensions.Localization
+@using Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.TagHelpers.Modal
+@model Genora.MultiTenancy.Web.Pages.Hl25.GiftCreateModalModel
+@inject IStringLocalizer<MultiTenancyResource> L
+@{
+    Layout = null;
+}
+<form abp-model="Gift" asp-page="/Hl25/GiftCreateModal" id="CreateHl25Gift">
+    <abp-modal>
+        <abp-modal-header title="Thêm quà tặng"></abp-modal-header>
+        <abp-modal-body>
+            <div class="mb-3">
+                <abp-input asp-for="Gift.Name" label="Tên quà" placeholder="VD: Combo 04 sản phẩm" />
+            </div>
+            <div class="mb-3">
+                <abp-input asp-for="Gift.ImageUrl" label="Ảnh quà (URL)" placeholder="https://..." />
+            </div>
+            <div class="mb-3">
+                <label asp-for="Gift.Description" class="form-label">Mô tả</label>
+                <textarea asp-for="Gift.Description" class="form-control" rows="3" placeholder="Mô tả quà tặng..."></textarea>
+            </div>
+            <div class="row">
+                <div class="col-md-4 mb-3">
+                    <abp-input asp-for="Gift.TotalQuantity" label="Tổng số lượng" type="number" />
+                </div>
+                <div class="col-md-4 mb-3">
+                    <abp-input asp-for="Gift.RemainingQuantity" label="Còn lại" type="number" />
+                </div>
+                <div class="col-md-4 mb-3">
+                    <abp-input asp-for="Gift.Value" label="Giá trị (VNĐ)" type="number" />
+                </div>
+            </div>
+        </abp-modal-body>
+        <abp-modal-footer buttons="@(AbpModalButtons.Cancel | AbpModalButtons.Save)"></abp-modal-footer>
+    </abp-modal>
+</form>

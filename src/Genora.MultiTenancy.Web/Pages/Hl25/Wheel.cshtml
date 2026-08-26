@@ -1,0 +1,170 @@
+@page
+@using Genora.MultiTenancy.Localization
+@using Genora.MultiTenancy.Permissions
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.Extensions.Localization
+@model Genora.MultiTenancy.Web.Pages.Hl25.WheelModel
+@inject IStringLocalizer<MultiTenancyResource> L
+@inject IAuthorizationService AuthorizationService
+@inject Volo.Abp.MultiTenancy.ICurrentTenant CurrentTenant
+
+@{
+    var canEdit = CurrentTenant.IsAvailable
+        ? await AuthorizationService.IsGrantedAsync(MultiTenancyPermissions.AppHl25Wheel.Edit)
+        : await AuthorizationService.IsGrantedAsync(MultiTenancyPermissions.HostAppHl25Wheel.Edit);
+    var canCreate = CurrentTenant.IsAvailable
+        ? await AuthorizationService.IsGrantedAsync(MultiTenancyPermissions.AppHl25Wheel.Create)
+        : await AuthorizationService.IsGrantedAsync(MultiTenancyPermissions.HostAppHl25Wheel.Create);
+}
+
+@section styles {
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
+}
+
+@section scripts {
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <abp-script src="/Pages/Hl25/Wheel.js" />
+}
+
+<div class="mb-4">
+    <h4><i class="fa fa-circle-notch me-2"></i>@L["Menu:Hl25Wheel"] — @L["Menu:Hl25"]</h4>
+    <p class="text-muted mb-0">Quản lý cấu hình vòng quay, kho quà, lịch sử nhận lượt và lịch sử lượt quay.</p>
+</div>
+
+<ul class="nav nav-tabs mb-3" id="wheelTab" role="tablist">
+    <li class="nav-item" role="presentation">
+        <button class="nav-link active" id="tab-gifts" data-bs-toggle="tab" data-bs-target="#pane-gifts" type="button" role="tab">
+            <i class="fa fa-gift me-1"></i> Kho quà
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="tab-config" data-bs-toggle="tab" data-bs-target="#pane-config" type="button" role="tab">
+            <i class="fa fa-sliders me-1"></i> Cấu hình vòng quay
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="tab-turns" data-bs-toggle="tab" data-bs-target="#pane-turns" type="button" role="tab">
+            <i class="fa fa-plus-circle me-1"></i> Lịch sử nhận lượt
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="tab-spins" data-bs-toggle="tab" data-bs-target="#pane-spins" type="button" role="tab">
+            <i class="fa fa-history me-1"></i> Lịch sử lượt quay
+        </button>
+    </li>
+</ul>
+
+<div class="tab-content">
+    @* ===== TAB 1: Kho quà ===== *@
+    <div class="tab-pane fade show active" id="pane-gifts" role="tabpanel">
+        <abp-card>
+            <abp-card-header>
+                <abp-row>
+                    <abp-column size-md="_6"><abp-card-title>Kho quà tặng</abp-card-title></abp-column>
+                    <abp-column size-md="_6" class="text-end">
+                        @if (canCreate)
+                        {
+                            <abp-button id="NewGiftButton" text="Thêm quà" icon="plus" button-type="Outline_Primary" />
+                        }
+                    </abp-column>
+                </abp-row>
+            </abp-card-header>
+            <abp-card-body>
+                <abp-table striped-rows="true" id="GiftsTable"></abp-table>
+            </abp-card-body>
+        </abp-card>
+    </div>
+
+    @* ===== TAB 2: Cấu hình vòng quay ===== *@
+    <div class="tab-pane fade" id="pane-config" role="tabpanel">
+        <form id="WheelConfigForm">
+            <div class="row g-3">
+                <div class="col-lg-5">
+                    <div class="card mb-3">
+                        <div class="card-header py-2"><i class="fa fa-palette me-1"></i> Giao diện</div>
+                        <div class="card-body">
+                            <div class="mb-2">
+                                <label class="form-label">Tiêu đề</label>
+                                <input type="text" class="form-control" id="wcTitle" maxlength="256" />
+                            </div>
+                            <div class="mb-2">
+                                <label class="form-label">Phụ đề</label>
+                                <input type="text" class="form-control" id="wcSubTitle" maxlength="512" />
+                            </div>
+                            <div class="row">
+                                <div class="col-6 mb-2">
+                                    <label class="form-label">Màu chủ đạo</label>
+                                    <input type="color" class="form-control form-control-color" id="wcPrimaryColor" value="#e30613" />
+                                </div>
+                                <div class="col-6 mb-2">
+                                    <label class="form-label">Màu phụ</label>
+                                    <input type="color" class="form-control form-control-color" id="wcSecondaryColor" value="#ffd200" />
+                                </div>
+                            </div>
+                            <div class="form-check form-switch mt-2">
+                                <input class="form-check-input" type="checkbox" role="switch" id="wcIsActive" checked />
+                                <label class="form-check-label" for="wcIsActive">Kích hoạt vòng quay</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-7">
+                    <div class="card mb-3">
+                        <div class="card-header py-2 d-flex justify-content-between align-items-center">
+                            <span><i class="fa fa-clone me-1"></i> Ô quay &amp; tỷ lệ trúng</span>
+                            <span class="badge bg-secondary" id="wcTotalRate">Tổng: 0%</span>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-sm align-middle" id="SlotsTable">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th style="width:35%">Nhãn ô</th>
+                                            <th style="width:30%">Quà</th>
+                                            <th style="width:20%">Tỷ lệ (%)</th>
+                                            <th style="width:15%"></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="SlotsBody"></tbody>
+                                </table>
+                            </div>
+                            @if (canEdit)
+                            {
+                                <button type="button" class="btn btn-outline-secondary btn-sm" id="AddSlotButton">
+                                    <i class="fa fa-plus me-1"></i> Thêm ô
+                                </button>
+                            }
+                            <div class="alert alert-warning py-2 mt-2 mb-0 small">
+                                <i class="fa fa-triangle-exclamation me-1"></i> Tổng tỷ lệ trúng của các ô phải bằng <strong>100%</strong>.
+                            </div>
+                        </div>
+                    </div>
+                    @if (canEdit)
+                    {
+                        <button type="submit" class="btn btn-primary"><i class="fa fa-save me-1"></i> Lưu cấu hình</button>
+                    }
+                </div>
+            </div>
+        </form>
+    </div>
+
+    @* ===== TAB 3: Lịch sử nhận lượt ===== *@
+    <div class="tab-pane fade" id="pane-turns" role="tabpanel">
+        <abp-card>
+            <abp-card-header><abp-card-title>Lịch sử nhận lượt quay</abp-card-title></abp-card-header>
+            <abp-card-body>
+                <abp-table striped-rows="true" id="TurnLogsTable"></abp-table>
+            </abp-card-body>
+        </abp-card>
+    </div>
+
+    @* ===== TAB 4: Lịch sử lượt quay ===== *@
+    <div class="tab-pane fade" id="pane-spins" role="tabpanel">
+        <abp-card>
+            <abp-card-header><abp-card-title>Lịch sử lượt quay</abp-card-title></abp-card-header>
+            <abp-card-body>
+                <abp-table striped-rows="true" id="SpinLogsTable"></abp-table>
+            </abp-card-body>
+        </abp-card>
+    </div>
+</div>

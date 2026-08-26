@@ -1,0 +1,47 @@
+@page
+@using Genora.MultiTenancy.Localization
+@using Genora.MultiTenancy.Enums
+@using Microsoft.Extensions.Localization
+@using Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.TagHelpers.Modal
+@model Genora.MultiTenancy.Web.Pages.Hl25.GiftEditModalModel
+@inject IStringLocalizer<MultiTenancyResource> L
+@{
+    Layout = null;
+}
+<form abp-model="Gift" asp-page="/Hl25/GiftEditModal" id="EditHl25Gift">
+    <input asp-for="Id" type="hidden" />
+    <abp-modal>
+        <abp-modal-header title="Sửa quà tặng"></abp-modal-header>
+        <abp-modal-body>
+            <div class="mb-3">
+                <abp-input asp-for="Gift.Name" label="Tên quà" />
+            </div>
+            <div class="mb-3">
+                <abp-input asp-for="Gift.ImageUrl" label="Ảnh quà (URL)" placeholder="https://..." />
+            </div>
+            <div class="mb-3">
+                <label asp-for="Gift.Description" class="form-label">Mô tả</label>
+                <textarea asp-for="Gift.Description" class="form-control" rows="3"></textarea>
+            </div>
+            <div class="row">
+                <div class="col-md-4 mb-3">
+                    <abp-input asp-for="Gift.TotalQuantity" label="Tổng số lượng" type="number" />
+                </div>
+                <div class="col-md-4 mb-3">
+                    <abp-input asp-for="Gift.RemainingQuantity" label="Còn lại" type="number" />
+                </div>
+                <div class="col-md-4 mb-3">
+                    <abp-input asp-for="Gift.Value" label="Giá trị (VNĐ)" type="number" />
+                </div>
+            </div>
+            <div class="mb-3">
+                <abp-select asp-for="Gift.Status" label="Trạng thái">
+                    <abp-select-item value="0" text="Còn hàng" />
+                    <abp-select-item value="1" text="Hết hàng" />
+                    <abp-select-item value="2" text="Vô hiệu hóa" />
+                </abp-select>
+            </div>
+        </abp-modal-body>
+        <abp-modal-footer buttons="@(AbpModalButtons.Cancel | AbpModalButtons.Save)"></abp-modal-footer>
+    </abp-modal>
+</form>

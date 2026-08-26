@@ -128,6 +128,20 @@ public class MultiTenancyApplicationAutoMapperProfile : Profile
         CreateMap<CreateUpdateHl25AppConfigDto, Hl25AppConfig>()
             .ForMember(x => x.Id, opt => opt.Ignore())
             .ForMember(x => x.TenantId, opt => opt.Ignore());
+
+        CreateMap<Hl25Gift, Hl25GiftDto>();
+
+        CreateMap<Hl25WheelConfig, Hl25WheelConfigDto>()
+            .ForMember(x => x.Slots, opt => opt.Ignore());
+        CreateMap<Hl25WheelSlot, Hl25WheelSlotDto>();
+
+        CreateMap<Hl25SpinTurnLog, Hl25SpinTurnLogDto>()
+            .ForMember(x => x.ParticipantName, opt => opt.Ignore())
+            .ForMember(x => x.ParticipantPhone, opt => opt.Ignore());
+
+        CreateMap<Hl25SpinLog, Hl25SpinLogDto>()
+            .ForMember(x => x.ParticipantName, opt => opt.Ignore())
+            .ForMember(x => x.ParticipantPhone, opt => opt.Ignore());
         #endregion
 
         #region MiniAppCustomer auto mapper profile
