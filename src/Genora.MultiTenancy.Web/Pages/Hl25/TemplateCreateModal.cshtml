@@ -1,0 +1,69 @@
+@page
+@using Genora.MultiTenancy.Localization
+@using Microsoft.Extensions.Localization
+@using Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.TagHelpers.Modal
+@model Genora.MultiTenancy.Web.Pages.Hl25.TemplateCreateModalModel
+@inject IStringLocalizer<MultiTenancyResource> L
+@{
+    Layout = null;
+}
+<form abp-model="Template" asp-page="/Hl25/TemplateCreateModal" id="CreateHl25Template">
+    <abp-modal>
+        <abp-modal-header title="Thêm mẫu frame"></abp-modal-header>
+        <abp-modal-body>
+            <div class="mb-3">
+                <label asp-for="Template.CampaignId" class="form-label">Chiến dịch <span class="text-danger">*</span></label>
+                <select asp-for="Template.CampaignId" asp-items="Model.CampaignItems" class="form-select">
+                    <option value="">— Chọn chiến dịch —</option>
+                </select>
+            </div>
+            <div class="mb-3">
+                <abp-input asp-for="Template.Name" label="Tên mẫu" placeholder="VD: Mẫu nền hoa sen" />
+            </div>
+            <div class="mb-3">
+                <label asp-for="ImageFile" class="form-label">Ảnh mẫu frame (PNG khung trong suốt) <span class="text-danger">*</span></label>
+                <input asp-for="ImageFile" type="file" accept="image/png,image/jpeg" class="form-control" id="TemplateImageFile" />
+                <small class="text-muted">PNG/JPG, tối đa 5MB.</small>
+                <div class="mt-2">
+                    <img id="TemplateImagePreview" src="" class="img-fluid d-none" style="max-height:120px;border:1px solid #eee;border-radius:6px;" />
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <abp-input asp-for="Template.DisplayOrder" label="Thứ tự hiển thị" type="number" />
+                </div>
+                <div class="col-md-6 mb-3 d-flex align-items-end">
+                    <div class="form-check form-switch">
+                        <input asp-for="Template.IsActive" class="form-check-input" type="checkbox" role="switch" />
+                        <label class="form-check-label" asp-for="Template.IsActive">Kích hoạt</label>
+                    </div>
+                </div>
+            </div>
+        </abp-modal-body>
+        <abp-modal-footer buttons="@(AbpModalButtons.Cancel | AbpModalButtons.Save)"></abp-modal-footer>
+    </abp-modal>
+</form>
+<script>
+    (function () {
+        var MAX = 5 * 1024 * 1024;
+        var svc = genora.multiTenancy.appServices.hl25.hl25FrameTemplate;
+        $('#TemplateImageFile').on('change', function () {
+            var file = this.files && this.files[0];
+            if (!file) return;
+            if (file.size > MAX) {
+                abp.message.warn('Ảnh vượt quá 5MB.');
+                this.value = '';
+                return;
+            }
+            var reader = new FileReader();
+            reader.onload = function (e) {
+                $('#TemplateImagePreview').attr('src', e.target.result).removeClass('d-none');
+            };
+            reader.readAsDataURL(file);
+            // Upload ngay để lấy URL.
+            svc.uploadTemplateImageByFile(file).then(function (url) {
+                $('#TemplateImageUrl').val(url);
+            });
+        });
+    })();
+</script>

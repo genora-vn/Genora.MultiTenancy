@@ -1,0 +1,50 @@
+@page
+@using Genora.MultiTenancy.Localization
+@using Microsoft.Extensions.Localization
+@using Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.TagHelpers.Modal
+@model Genora.MultiTenancy.Web.Pages.Hl25.CampaignEditModalModel
+@inject IStringLocalizer<MultiTenancyResource> L
+@{
+    Layout = null;
+}
+<form abp-model="Campaign" asp-page="/Hl25/CampaignEditModal" id="EditHl25Campaign">
+    <input asp-for="Id" type="hidden" />
+    <abp-modal>
+        <abp-modal-header title="Sửa chiến dịch"></abp-modal-header>
+        <abp-modal-body>
+            <div class="mb-3">
+                <abp-input asp-for="Campaign.Name" label="Tên chiến dịch" />
+            </div>
+            <div class="mb-3">
+                <label asp-for="Campaign.Description" class="form-label">Mô tả</label>
+                <textarea asp-for="Campaign.Description" class="form-control" rows="3"></textarea>
+            </div>
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label asp-for="Campaign.StartTime" class="form-label">Thời gian bắt đầu</label>
+                    <input asp-for="Campaign.StartTime" class="form-control flatpickr-dt" />
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label asp-for="Campaign.EndTime" class="form-label">Thời gian kết thúc</label>
+                    <input asp-for="Campaign.EndTime" class="form-control flatpickr-dt" />
+                </div>
+            </div>
+            <div class="mb-3">
+                <abp-select asp-for="Campaign.Status" label="Trạng thái">
+                    <abp-select-item value="0" text="Nháp" />
+                    <abp-select-item value="1" text="Đang chạy" />
+                    <abp-select-item value="2" text="Tạm dừng" />
+                    <abp-select-item value="3" text="Đã kết thúc" />
+                </abp-select>
+            </div>
+        </abp-modal-body>
+        <abp-modal-footer buttons="@(AbpModalButtons.Cancel | AbpModalButtons.Save)"></abp-modal-footer>
+    </abp-modal>
+</form>
+<script>
+    (function () {
+        if (window.flatpickr) {
+            flatpickr('#EditHl25Campaign .flatpickr-dt', { enableTime: true, dateFormat: 'Y-m-d H:i', time_24hr: true });
+        }
+    })();
+</script>

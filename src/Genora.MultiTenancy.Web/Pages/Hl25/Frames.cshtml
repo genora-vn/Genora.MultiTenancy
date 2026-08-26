@@ -1,0 +1,106 @@
+@page
+@using Genora.MultiTenancy.Localization
+@using Genora.MultiTenancy.Permissions
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.Extensions.Localization
+@model Genora.MultiTenancy.Web.Pages.Hl25.FramesModel
+@inject IStringLocalizer<MultiTenancyResource> L
+@inject IAuthorizationService AuthorizationService
+@inject Volo.Abp.MultiTenancy.ICurrentTenant CurrentTenant
+
+@{
+    var canCreate = CurrentTenant.IsAvailable
+        ? await AuthorizationService.IsGrantedAsync(MultiTenancyPermissions.AppHl25Frames.Create)
+        : await AuthorizationService.IsGrantedAsync(MultiTenancyPermissions.HostAppHl25Frames.Create);
+}
+
+@section styles {
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
+}
+
+@section scripts {
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <abp-script src="/Pages/Hl25/Frames.js" />
+}
+
+<div class="mb-4">
+    <h4><i class="fa fa-image me-2"></i>@L["Menu:Hl25Frames"] — @L["Menu:Hl25"]</h4>
+    <p class="text-muted mb-0">Quản lý chiến dịch ghép ảnh, mẫu frame và lịch sử tạo ảnh của người dùng.</p>
+</div>
+
+<ul class="nav nav-tabs mb-3" id="framesTab" role="tablist">
+    <li class="nav-item" role="presentation">
+        <button class="nav-link active" id="tab-campaigns" data-bs-toggle="tab" data-bs-target="#pane-campaigns" type="button" role="tab">
+            <i class="fa fa-bullhorn me-1"></i> Chiến dịch
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="tab-templates" data-bs-toggle="tab" data-bs-target="#pane-templates" type="button" role="tab">
+            <i class="fa fa-clone me-1"></i> Mẫu Frame
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="tab-creations" data-bs-toggle="tab" data-bs-target="#pane-creations" type="button" role="tab">
+            <i class="fa fa-images me-1"></i> Lịch sử tạo ảnh
+        </button>
+    </li>
+</ul>
+
+<div class="tab-content">
+    @* ===== TAB 1: Chiến dịch ===== *@
+    <div class="tab-pane fade show active" id="pane-campaigns" role="tabpanel">
+        <abp-card>
+            <abp-card-header>
+                <abp-row>
+                    <abp-column size-md="_6"><abp-card-title>Chiến dịch ghép ảnh</abp-card-title></abp-column>
+                    <abp-column size-md="_6" class="text-end">
+                        @if (canCreate)
+                        {
+                            <abp-button id="NewCampaignButton" text="Thêm chiến dịch" icon="plus" button-type="Outline_Primary" />
+                        }
+                    </abp-column>
+                </abp-row>
+            </abp-card-header>
+            <abp-card-body>
+                <abp-table striped-rows="true" id="CampaignsTable"></abp-table>
+            </abp-card-body>
+        </abp-card>
+    </div>
+
+    @* ===== TAB 2: Mẫu Frame ===== *@
+    <div class="tab-pane fade" id="pane-templates" role="tabpanel">
+        <abp-card>
+            <abp-card-header>
+                <abp-row>
+                    <abp-column size-md="_8">
+                        <div class="d-flex align-items-center gap-2">
+                            <label class="form-label mb-0 text-nowrap">Chiến dịch:</label>
+                            <select id="TemplateCampaignFilter" class="form-select form-select-sm" style="max-width:320px;">
+                                <option value="">— Tất cả —</option>
+                            </select>
+                        </div>
+                    </abp-column>
+                    <abp-column size-md="_4" class="text-end">
+                        @if (canCreate)
+                        {
+                            <abp-button id="NewTemplateButton" text="Thêm mẫu" icon="plus" button-type="Outline_Primary" />
+                        }
+                    </abp-column>
+                </abp-row>
+            </abp-card-header>
+            <abp-card-body>
+                <abp-table striped-rows="true" id="TemplatesTable"></abp-table>
+            </abp-card-body>
+        </abp-card>
+    </div>
+
+    @* ===== TAB 3: Lịch sử tạo ảnh ===== *@
+    <div class="tab-pane fade" id="pane-creations" role="tabpanel">
+        <abp-card>
+            <abp-card-header><abp-card-title>Lịch sử tạo ảnh</abp-card-title></abp-card-header>
+            <abp-card-body>
+                <abp-table striped-rows="true" id="CreationsTable"></abp-table>
+            </abp-card-body>
+        </abp-card>
+    </div>
+</div>

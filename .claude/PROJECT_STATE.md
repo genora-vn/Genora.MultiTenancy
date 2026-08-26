@@ -51,7 +51,7 @@
 - Online docs `/Documents`: entity host-shared, FeatureName + Tenant/HostPermissionName, URL slug, seeder 11 section.
 - Note: `project_app_documents_*`.
 
-## Module: Hoa Linh 25 Năm (hl25) — ĐANG PHÁT TRIỂN P0+P1+P2+P4 XONG (nhánh `feature/hoalinh-25years`)
+## Module: Hoa Linh 25 Năm (hl25) — ĐANG PHÁT TRIỂN P0+P1+P2+P3+P4 XONG (nhánh `feature/hoalinh-25years`)
 - Admin cho Zalo Mini App "Dược Phẩm Hoa Linh 25 Năm" (chương trình kỷ niệm 25 năm: tạo thiệp ghép ảnh + chia sẻ + vòng quay may mắn). Schema DB riêng `hl25`.
 - **Thiết kế (Bước 1-5):** UI Figma, 10 entity, 8 Phase plan. Tài liệu: `docs/HOALINH25_ADMIN_SCHEMA.md`.
 - **Quyết định chốt:** bỏ Points (thuộc gamification), Wheel singleton/tenant, trần 2 lượt quay (mỗi chu kỳ "Tạo thiệp→Chia sẻ" = +1, tối đa 2), trao thưởng 2 bước.
@@ -59,8 +59,9 @@
 - **✅ P0 (Foundation):** 6 enum (`Enums/Hl25Enums.cs`) + `Hl25/Hl25Consts.cs`; Feature `Hl25.Management`; Permission dual 5 nhóm Tenant+Host (group `MiniAppHl25`/`MiniAppHl25Host`); menu `MenuGroup.Hl25` (order 51); localization vi/en.
 - **✅ P1 (Entities + DB):** 10 entity `Domain/DomainModels/AppHl25/` (`Hl25AppConfig`; Frame `Campaign/Template/Creation`; Wheel `Config/Slot/Gift/SpinTurnLog/SpinLog`; `Participant`) + `ConfigureHl25Module` + 10 DbSet. Migration **`20260825160252_AddHl25Module`** (10 bảng, 23 index, 5 FK). Build Web+EF 0 errors. **CHƯA `database update`.** (commit `2ffacb7`)
 - **✅ P2 (Cài đặt Mini App) — commit `a3b08cc`:** DTO `Hl25AppConfigDto`/`CreateUpdateHl25AppConfigDto` + `IHl25AppConfigAppService`; `Hl25AppConfigAppService` singleton/tenant (GetAsync tự tạo mặc định / UpdateAsync / UploadAssetAsync validate 5MB) + AutoMapper; trang `Web/Pages/Hl25/Settings` (Summernote cho Thể lệ/Luật chơi/TVC, upload Logo/Banner, link `/AppZaloAuths`+`/AppZaloLogs`).
-- **✅ P4 (Vòng quay may mắn):** 4 AppService — `Hl25GiftAppService` (CRUD kho quà + upload 5MB + tự OutOfStock), `Hl25WheelConfigAppService` (singleton/tenant get/update cấu hình+slots, validate tổng WinRate=100), `Hl25SpinTurnLogAppService` (list read-only), `Hl25SpinLogAppService` (list + `UpdateRewardStatusAsync` 2 bước Won→Delivered) + AutoMapper. Trang `Web/Pages/Hl25/Wheel` 4 tab + Gift modals + `Wheel.js`. Build 0 errors. CHƯA commit.
-- **Còn lại:** P3 Frame → P5 Người dùng → P6 Báo cáo → P7 MiniApp API.
+- **✅ P4 (Vòng quay may mắn) — commit `c1791fa`:** 4 AppService — `Hl25GiftAppService` (CRUD kho quà + upload 5MB + tự OutOfStock), `Hl25WheelConfigAppService` (singleton/tenant get/update cấu hình+slots, validate tổng WinRate=100), `Hl25SpinTurnLogAppService` (list read-only), `Hl25SpinLogAppService` (list + `UpdateRewardStatusAsync` 2 bước Won→Delivered) + AutoMapper. Trang `Web/Pages/Hl25/Wheel` 4 tab + Gift modals + `Wheel.js`.
+- **✅ P3 (Quản lý Frame):** 3 AppService — `Hl25FrameCampaignAppService` (CRUD chiến dịch + đếm TemplateCount), `Hl25FrameTemplateAppService` (CRUD mẫu frame + `UploadTemplateImageAsync` 5MB, lọc theo campaign), `Hl25FrameCreationAppService` (list read-only, join Participant+Campaign) + AutoMapper. Trang `Web/Pages/Hl25/Frames` 3 tab (Chiến dịch, Mẫu Frame + lọc chiến dịch + upload `IFormFile` server-side, Lịch sử tạo ảnh) + Campaign/Template Create/Edit modals + `Frames.js`. Build 0 errors. CHƯA commit.
+- **Còn lại:** P5 Người dùng → P6 Báo cáo → P7 MiniApp API.
 
 ---
 
