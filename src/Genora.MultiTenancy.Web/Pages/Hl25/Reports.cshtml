@@ -1,0 +1,121 @@
+@page
+@using Genora.MultiTenancy.Localization
+@using Microsoft.Extensions.Localization
+@model Genora.MultiTenancy.Web.Pages.Hl25.ReportsModel
+@inject IStringLocalizer<MultiTenancyResource> L
+
+@section styles {
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
+    <style>
+        .hl25-kpi { border: none; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,.06); }
+        .hl25-kpi .val { font-size: 1.8rem; font-weight: 700; }
+    </style>
+}
+
+@section scripts {
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+    <abp-script src="/Pages/Hl25/Reports.js" />
+}
+
+<div class="mb-4">
+    <h4><i class="fa fa-chart-pie me-2"></i>@L["Menu:Hl25Reports"] — @L["Menu:Hl25"]</h4>
+    <p class="text-muted mb-0">Thống kê lượt tham gia đổi Frame, Vòng quay may mắn và cơ cấu giải theo quà tặng.</p>
+</div>
+
+<div class="card mb-3">
+    <div class="card-body py-2">
+        <div class="row g-2 align-items-center">
+            <div class="col-auto"><label class="form-label mb-0">Từ ngày</label></div>
+            <div class="col-md-2"><input type="text" id="ReportFrom" class="form-control form-control-sm" /></div>
+            <div class="col-auto"><label class="form-label mb-0">Đến ngày</label></div>
+            <div class="col-md-2"><input type="text" id="ReportTo" class="form-control form-control-sm" /></div>
+            <div class="col-auto">
+                <button type="button" id="ApplyReportFilter" class="btn btn-sm btn-primary">Áp dụng</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@* ===== Báo cáo 1: Frame ===== *@
+<div class="card mb-3">
+    <div class="card-header py-2"><i class="fa fa-image me-1"></i> Thống kê tạo thiệp (Frame)</div>
+    <div class="card-body">
+        <div class="row g-3 mb-3">
+            <div class="col-md-4">
+                <div class="card hl25-kpi"><div class="card-body text-center py-3">
+                    <div class="text-muted small">Tổng lượt tạo thiệp</div>
+                    <div class="val text-primary" id="FrameTotalCreations">-</div>
+                </div></div>
+            </div>
+            <div class="col-md-4">
+                <div class="card hl25-kpi"><div class="card-body text-center py-3">
+                    <div class="text-muted small">Tổng lượt chia sẻ</div>
+                    <div class="val text-success" id="FrameTotalShared">-</div>
+                </div></div>
+            </div>
+            <div class="col-md-4">
+                <div class="card hl25-kpi"><div class="card-body text-center py-3">
+                    <div class="text-muted small">Số người tham gia</div>
+                    <div class="val text-info" id="FrameUniqueParticipants">-</div>
+                </div></div>
+            </div>
+        </div>
+        <canvas id="FrameChart" height="80"></canvas>
+    </div>
+</div>
+
+@* ===== Báo cáo 2: Vòng quay tham gia ===== *@
+<div class="card mb-3">
+    <div class="card-header py-2"><i class="fa fa-circle-notch me-1"></i> Thống kê tham gia Vòng quay</div>
+    <div class="card-body">
+        <div class="row g-3">
+            <div class="col-md-3">
+                <div class="card hl25-kpi"><div class="card-body text-center py-3">
+                    <div class="text-muted small">Số người đã quay</div>
+                    <div class="val text-primary" id="WheelUniqueSpinners">-</div>
+                </div></div>
+            </div>
+            <div class="col-md-3">
+                <div class="card hl25-kpi"><div class="card-body text-center py-3">
+                    <div class="text-muted small">Tổng lượt quay</div>
+                    <div class="val text-warning" id="WheelTotalSpins">-</div>
+                </div></div>
+            </div>
+            <div class="col-md-3">
+                <div class="card hl25-kpi"><div class="card-body text-center py-3">
+                    <div class="text-muted small">Tổng lượt đã cấp</div>
+                    <div class="val text-info" id="WheelTotalTurnsGranted">-</div>
+                </div></div>
+            </div>
+            <div class="col-md-3">
+                <div class="card hl25-kpi"><div class="card-body text-center py-3">
+                    <div class="text-muted small">Số lượt trúng quà</div>
+                    <div class="val text-success" id="WheelTotalWins">-</div>
+                </div></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@* ===== Báo cáo 3: Vòng quay theo quà ===== *@
+<div class="card mb-3">
+    <div class="card-header py-2"><i class="fa fa-gift me-1"></i> Vòng quay theo Quà tặng (cơ cấu giải &amp; tồn kho)</div>
+    <div class="card-body p-0">
+        <table class="table table-sm table-hover mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>Quà tặng</th>
+                    <th class="text-end">Tổng SL</th>
+                    <th class="text-end">Còn lại</th>
+                    <th class="text-end">Đã trúng</th>
+                    <th class="text-end">Đã trao</th>
+                    <th class="text-end">Tỷ lệ trúng</th>
+                </tr>
+            </thead>
+            <tbody id="GiftStatsBody">
+                <tr><td colspan="6" class="text-center text-muted py-3">Đang tải...</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
