@@ -217,9 +217,22 @@ public class UrBoxService : IUrBoxService
                     result.ReceiverEmail = cart.Receiver?.Email;
                     result.ReceiverAddress = cart.Receiver?.Address;
 
-                    var item = cart.Detail?.FirstOrDefault();
-                    if (item != null)
+                    // Map TẤT CẢ voucher trong giao dịch (mỗi giao dịch có thể đổi số lượng > 1).
+                    if (cart.Detail != null && cart.Detail.Count > 0)
                     {
+                        result.Vouchers = cart.Detail.Select(d => new UrBoxVoucherDetailDto
+                        {
+                            Code = d.Code,
+                            CodeImage = d.CodeImage,
+                            CodeDisplay = d.CodeDisplay,
+                            CodeDisplayType = d.CodeDisplayType,
+                            Expired = d.Expired,
+                            Link = d.Link,
+                            Delivery = d.Delivery
+                        }).ToList();
+
+                        // Giữ field voucher ĐẦU TIÊN để tương thích ngược với client cũ.
+                        var item = cart.Detail.First();
                         result.VoucherCode = item.Code ?? result.VoucherCode;
                         result.CodeImage = item.CodeImage;
                         result.CodeDisplay = item.CodeDisplay;
@@ -307,8 +320,10 @@ public class UrBoxService : IUrBoxService
         var privateKeyPath = ResolvePrivateKeyPath();
         var (signature, canonicalJson) = UrBoxSignatureHelper.GenerateSignature(signaturePayload, privateKeyPath);
 
-        // 3. Tính tổng điểm sử dụng (lưu lịch sử)
-        var totalPoints = input.Items.Sum(i => i.PointsRequired * (i.Quantity > 0 ? i.Quantity : 1));
+        // 3. Tính tổng điểm sử dụng (lưu lịch sử).
+        // LƯU Ý: FE đã tính PointsRequired = đơn giá * số lượng rồi, nên backend KHÔNG nhân lại số lượng
+        // (nếu nhân lại sẽ bị gấp đôi). Chỉ cộng dồn các item. → PointsRequired == TotalPointsUsed.
+        var totalPoints = input.Items.Sum(i => i.PointsRequired);
         var firstItem = input.Items.FirstOrDefault();
 
         // 4. Tạo bản ghi lịch sử đổi quà (Pending)
@@ -317,7 +332,7 @@ public class UrBoxService : IUrBoxService
             Guid.NewGuid(),
             exchangeCode,
             firstItem?.GiftName ?? "UrBox eVoucher",
-            firstItem?.PointsRequired ?? 0,
+            totalPoints, // PointsRequired == TotalPointsUsed (FE đã nhân số lượng, không nhân lại)
             _currentTenant.Id)
         {
             CustomerCode = input.SiteUserId,
