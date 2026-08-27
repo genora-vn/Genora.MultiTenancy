@@ -353,7 +353,8 @@ public class UrBoxService : IUrBoxService
         var raw = await SendRawPostAsync(_settings.CartPayVoucherPath, requestData, signature, "CartPayVoucher");
         var result = Deserialize<UrBoxRedeemData>(raw);
 
-        exchange.UrBoxResponse = Truncate(raw, 4000);
+        //exchange.UrBoxResponse = Truncate(raw, 4000);
+        exchange.UrBoxResponse = raw;
 
         // Thành công KHI: done == 1 && status == 200 (theo yêu cầu)
         var isSuccess = result != null && result.Done == 1 && result.Status == UrBoxResponseStatus.Success;
