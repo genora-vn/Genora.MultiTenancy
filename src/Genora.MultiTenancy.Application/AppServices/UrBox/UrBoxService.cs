@@ -198,29 +198,28 @@ public class UrBoxService : IUrBoxService
             VoucherCode = exchange.UrBoxVoucherCode
         };
 
-        // 2. Cắt transaction_id từ InternalNote (format: "UrBox transaction_id=xxxx")
+        // 2. Cắt transaction_id từ InternalNote (format: "UrBox transaction_id=xxxx") — giữ để trả về model.
         var transactionId = ExtractTransactionId(exchange.InternalNote);
         result.TransactionId = transactionId;
 
-        // 3. Gọi UrBox getByTransaction để lấy chi tiết voucher (code/QR/hạn dùng/người nhận)
-        if (!string.IsNullOrWhiteSpace(transactionId))
+        // 3. Lấy chi tiết voucher TỪ UrBoxResponse đã lưu lúc đổi quà (response cartPayVoucher).
+        //    API getByTransaction bên đối tác NGƯNG hoạt động → KHÔNG gọi API nữa, đọc từ DB.
+        //    UrBoxResponse là JSON của cartPayVoucher: data.cart.code_link_gift[] chứa đủ code/QR/hạn dùng/link.
+        if (!string.IsNullOrWhiteSpace(exchange.UrBoxResponse))
         {
             try
             {
-                var cartResp = await GetCartByTransactionAsync(transactionId!);
-                var cart = cartResp?.Data;
-                if (cart != null && cartResp!.Status == UrBoxResponseStatus.Success)
+                var payResp = Deserialize<UrBoxRedeemData>(exchange.UrBoxResponse);
+                var cart = payResp?.Data?.Cart;
+                if (cart != null && payResp!.Status == UrBoxResponseStatus.Success)
                 {
                     result.MoneyTotal = ParseDecimal(cart.MoneyTotal);
-                    result.DeliveryStatus = cart.PayStatus;
-                    result.ReceiverPhone = cart.Receiver?.Phone;
-                    result.ReceiverEmail = cart.Receiver?.Email;
-                    result.ReceiverAddress = cart.Receiver?.Address;
 
                     // Map TẤT CẢ voucher trong giao dịch (mỗi giao dịch có thể đổi số lượng > 1).
-                    if (cart.Detail != null && cart.Detail.Count > 0)
+                    var codes = cart.CodeLinkGift;
+                    if (codes != null && codes.Count > 0)
                     {
-                        result.Vouchers = cart.Detail.Select(d => new UrBoxVoucherDetailDto
+                        result.Vouchers = codes.Select(d => new UrBoxVoucherDetailDto
                         {
                             Code = d.Code,
                             CodeImage = d.CodeImage,
@@ -228,24 +227,28 @@ public class UrBoxService : IUrBoxService
                             CodeDisplayType = d.CodeDisplayType,
                             Expired = d.Expired,
                             Link = d.Link,
-                            Delivery = d.Delivery
+                            Delivery = d.DeliveryCode?.ToString()
                         }).ToList();
 
                         // Giữ field voucher ĐẦU TIÊN để tương thích ngược với client cũ.
-                        var item = cart.Detail.First();
+                        var item = codes.First();
                         result.VoucherCode = item.Code ?? result.VoucherCode;
                         result.CodeImage = item.CodeImage;
                         result.CodeDisplay = item.CodeDisplay;
                         result.CodeDisplayType = item.CodeDisplayType;
                         result.Expired = item.Expired;
                         result.LinkGift = item.Link;
-                        result.DeliveryStatus = item.Delivery ?? result.DeliveryStatus;
+
+                        // Người nhận: cartPayVoucher trả ttphone/ttemail/ttaddress trong từng code_link_gift.
+                        result.ReceiverPhone = item.TtPhone ?? result.ReceiverPhone;
+                        result.ReceiverEmail = item.TtEmail ?? result.ReceiverEmail;
+                        result.ReceiverAddress = item.TtAddress ?? result.ReceiverAddress;
                     }
                 }
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "UrBox getByTransaction lỗi cho tx={Tx}", transactionId);
+                _logger.LogWarning(ex, "UrBox parse UrBoxResponse lỗi cho exchangeId={Id}", exchange.Id);
             }
         }
 
@@ -391,18 +394,8 @@ public class UrBoxService : IUrBoxService
         {
             try
             {
-                var customer = await _customerRepo.FirstOrDefaultAsync(x => x.CustomerCode == exchange.CustomerCode);
-                var cartResp = await GetCartByTransactionAsync(transactionId!);
-                var cart = cartResp?.Data;
-                string? expired = "";
-                if (cart != null && cartResp!.Status == UrBoxResponseStatus.Success)
-                {
-                    var item = cart.Detail?.FirstOrDefault();
-                    if (item != null)
-                    {
-                        expired = item?.Expired;
-                    }
-                }
+                // Lấy hạn dùng TỪ response cartPayVoucher (firstCode) — KHÔNG gọi API getByTransaction (đã ngưng).
+                string? expired = firstCode?.Expired;
                 await _jobManager.EnqueueAsync(
                     new ZbsSendJobArgs
                     {
