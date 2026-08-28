@@ -26,29 +26,53 @@
         return new Intl.NumberFormat('vi-VN').format(n) + 'đ';
     }
 
-    // Parse response gốc UrBox (lưu ở urBoxResponse) → object voucher đầu tiên
+    // Parse response gốc UrBox (lưu ở urBoxResponse) → DANH SÁCH voucher + lý do thất bại
+    // Mỗi giao dịch có thể đổi số lượng > 1 nên trả về mảng vouchers (code_link_gift[]).
     function parseUrBox(item) {
-        var out = { code: item.urBoxVoucherCode || null, name: item.giftName || null, price: null,
-                    codeImage: null, expired: null, expiredTime: null, linkGift: null, serial: null,
-                    codeDisplay: null, cartNo: null, moneyTotal: null };
+        var out = {
+            vouchers: [],          // danh sách voucher đã đổi
+            name: item.giftName || null,
+            cartNo: null,
+            moneyTotal: null,
+            failReason: null       // lý do thất bại (msg từ UrBox khi done != 1)
+        };
         if (!item.urBoxResponse) return out;
         try {
             var r = JSON.parse(item.urBoxResponse);
+
+            // Lý do thất bại: khi done != 1 (hoặc status != 200) → lấy msg gốc từ UrBox.
+            var done = r.done;
+            var status = r.status;
+            if ((done != null && done !== 1) || (status != null && status !== 200)) {
+                out.failReason = r.msg || null;
+            }
+
             var data = r.data || {};
             var cart = data.cart || {};
             out.cartNo = cart.cartNo || cart.id || null;
             out.moneyTotal = cart.money_total || null;
-            if (cart.link_gift && cart.link_gift.length) out.linkGift = cart.link_gift[0];
-            var g = (cart.code_link_gift && cart.code_link_gift.length) ? cart.code_link_gift[0] : null;
-            if (g) {
-                out.code = g.code || out.code;
-                out.price = g.price != null ? g.price : out.price;
-                out.codeImage = g.code_image || null;
-                out.expired = g.expired || null;
-                out.expiredTime = g.expired_time || null;
-                out.serial = g.serial || null;
-                out.codeDisplay = g.code_display || null;
-                if (!out.linkGift) out.linkGift = g.link || null;
+
+            var linkList = cart.link_gift || [];
+            var codes = cart.code_link_gift || [];
+            codes.forEach(function (g, idx) {
+                out.vouchers.push({
+                    code: g.code || null,
+                    price: g.price != null ? g.price : null,
+                    codeImage: g.code_image || null,
+                    expired: g.expired || null,
+                    expiredTime: g.expired_time || null,
+                    serial: g.serial || null,
+                    codeDisplay: g.code_display || null,
+                    giftTitle: g.gift_title || null,
+                    // Link riêng từng quà: ưu tiên g.link, fallback link_gift[idx]
+                    linkGift: g.link || (linkList[idx] || null)
+                });
+            });
+
+            // Fallback: chưa redeem xong nhưng đã có mã voucher lưu ở entity.
+            if (out.vouchers.length === 0 && item.urBoxVoucherCode) {
+                out.vouchers.push({ code: item.urBoxVoucherCode, price: null, codeImage: null,
+                                    expired: null, serial: null, codeDisplay: null, linkGift: null });
             }
         } catch (e) { /* ignore parse error */ }
         return out;
@@ -123,6 +147,11 @@
             var v = parseUrBox(item);
             var date = item.creationTime ? new Date(item.creationTime).toLocaleString('vi-VN') : '-';
 
+            // Lý do thất bại: chỉ hiển thị khi trạng thái Thất bại (0) và parse được msg từ UrBoxResponse.
+            var failRow = (item.status === 0 && v.failReason)
+                ? infoRow('Lý do thất bại', '<span class="text-danger">' + v.failReason + '</span>')
+                : '';
+
             var left =
                 '<div class="hl-vc-card">' +
                 '<div class="hl-vc-title"><i class="fa fa-receipt me-2"></i>Thông tin đơn</div>' +
@@ -132,33 +161,56 @@
                 infoRow('SĐT', item.customerPhone) +
                 infoRow('Ngày tạo', date) +
                 infoRow('Trạng thái', getStatusBadge(item.status)) +
+                failRow +
                 infoRow('Tổng điểm/tiền', '<strong class="text-danger">' + fmtMoney(item.totalPointsUsed) + '</strong>') +
                 '</div>';
 
-            var qrBlock = v.codeImage
-                ? '<div class="hl-vc-qr"><img src="' + v.codeImage + '" alt="Mã voucher" /></div>'
-                : '';
+            // Render TỪNG voucher (giao dịch có thể đổi số lượng > 1). Mỗi voucher là 1 block riêng.
+            var vouchers = v.vouchers || [];
+            var voucherCount = vouchers.length;
 
-            var linkBtn = v.linkGift
-                ? '<a href="' + v.linkGift + '" target="_blank" rel="noopener" class="btn btn-primary btn-sm w-100 mt-2">' +
-                  '<i class="fa fa-external-link-alt me-1"></i>Xem chi tiết quà (UrBox)</a>'
-                : '';
+            function renderVoucherBlock(g, idx) {
+                var qrBlock = g.codeImage
+                    ? '<div class="hl-vc-qr"><img src="' + g.codeImage + '" alt="Mã voucher" /></div>'
+                    : '';
+                var linkBtn = g.linkGift
+                    ? '<a href="' + g.linkGift + '" target="_blank" rel="noopener" class="btn btn-primary btn-sm w-100 mt-2">' +
+                      '<i class="fa fa-external-link-alt me-1"></i>Xem chi tiết quà (UrBox)</a>'
+                    : '';
+                var header = voucherCount > 1
+                    ? '<div class="hl-vc-item-head">Voucher #' + (idx + 1) + '</div>'
+                    : '';
+                return '<div class="hl-vc-item">' +
+                    header +
+                    infoRow('Tên voucher', '<strong>' + (g.giftTitle || v.name || item.giftName || '-') + '</strong>') +
+                    infoRow('Mã voucher', g.code ? '<code>' + g.code + '</code>' : '-') +
+                    infoRow('Serial', g.serial) +
+                    infoRow('Số tiền', fmtMoney(g.price != null ? g.price : v.moneyTotal)) +
+                    infoRow('Hạn sử dụng', g.expired) +
+                    infoRow('Hiệu lực', g.codeDisplay) +
+                    qrBlock +
+                    linkBtn +
+                    '</div>';
+            }
 
+            var voucherBody;
+            if (voucherCount === 0) {
+                voucherBody = '<div class="text-muted text-center py-3">Chưa có voucher</div>';
+            } else {
+                voucherBody = '<div class="hl-vc-list">' +
+                    vouchers.map(renderVoucherBlock).join('') +
+                    '</div>';
+            }
+
+            var countLabel = voucherCount > 0 ? ' (' + voucherCount + ' voucher)' : '';
             var right =
                 '<div class="hl-vc-card">' +
-                '<div class="hl-vc-title"><i class="fa fa-gift me-2"></i>Voucher UrBox</div>' +
-                infoRow('Tên voucher', '<strong>' + (v.name || item.giftName || '-') + '</strong>') +
-                infoRow('Mã voucher', v.code ? '<code>' + v.code + '</code>' : '-') +
-                infoRow('Serial', v.serial) +
-                infoRow('Số tiền', fmtMoney(v.price != null ? v.price : v.moneyTotal)) +
-                infoRow('Hạn sử dụng', v.expired) +
-                infoRow('Hiệu lực', v.codeDisplay) +
+                '<div class="hl-vc-title"><i class="fa fa-gift me-2"></i>Voucher UrBox' + countLabel + '</div>' +
+                voucherBody +
                 infoRow('Hotline', HOTLINE) +
-                qrBlock +
-                linkBtn +
                 '</div>';
 
-            $('#GiftDetailBody').html('<div class="row g-3"><div class="col-md-6">' + left + '</div><div class="col-md-6">' + right + '</div></div>');
+            $('#GiftDetailBody').html('<div class="row g-3"><div class="col-md-6 mb-3">' + left + '</div><div class="col-md-6 mb-3">' + right + '</div></div>');
 
             // Duyệt/từ chối chỉ khi Đang xử lý (2)
             if (item.status === 2) $('#GiftDetailFooter').show();

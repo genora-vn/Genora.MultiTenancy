@@ -52,6 +52,8 @@ public class HlGiftExchangeAppService : ApplicationService, IHlGiftExchangeAppSe
             .WhereIf(!string.IsNullOrWhiteSpace(input.Filter),
                 x => x.ExchangeCode.Contains(input.Filter!) ||
                      x.CustomerName!.Contains(input.Filter!) ||
+                     x.CustomerCode!.Contains(input.Filter!) ||
+                     x.CustomerPhone!.Contains(input.Filter!) ||
                      x.GiftName.Contains(input.Filter!))
             .WhereIf(input.Status.HasValue, x => x.Status == input.Status);
 
