@@ -23,6 +23,10 @@ public class EditModalModel : MultiTenancyPageModel
 
     [BindProperty]
     public CreateUpdateAppCustomerDto Customer { get; set; }
+
+    /// <summary>Tổng tiền thưởng (chỉ hiển thị, không cho sửa — không nằm trong CreateUpdate DTO).</summary>
+    public decimal BonusAmount { get; set; }
+
     public List<SelectListItem> GenderItems { get; set; }
     public List<SelectListItem> CustomerTypeItems { get; set; }
     public List<SelectListItem> CustomerSourceItems { get; set; } = new();
@@ -53,6 +57,7 @@ public class EditModalModel : MultiTenancyPageModel
     {
         var dto = await _customerService.GetAsync(Id);
         Customer = ObjectMapper.Map<AppCustomerDto, CreateUpdateAppCustomerDto>(dto);
+        BonusAmount = dto.BonusAmount;
         if (Customer.MembershipTierId.HasValue)
         {
             var memberShip = await _membershipTierService.GetAsync(Customer.MembershipTierId.Value);

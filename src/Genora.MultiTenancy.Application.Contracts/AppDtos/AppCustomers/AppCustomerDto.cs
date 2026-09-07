@@ -44,6 +44,8 @@ public class AppCustomerDto : AuditedEntityDto<Guid>
     public bool IsFollower { get; set; }
 
     public decimal BonusPoint { get; set; }
+    /// <summary>Tổng tiền thưởng (chỉ hiển thị, không cho sửa ở modal).</summary>
+    public decimal BonusAmount { get; set; }
     public Guid? MembershipTierId { get; set; }
     public string? MembershipTierName { get; set; }
 

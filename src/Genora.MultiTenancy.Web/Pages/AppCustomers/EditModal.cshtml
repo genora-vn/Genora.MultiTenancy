@@ -34,6 +34,7 @@
 
     var isFollower = Model.Customer?.IsFollower == true;
     var isFromMiniApp = Model.Customer?.CustomerSource == Genora.MultiTenancy.Enums.CustomerSource.ZaloMiniApp;
+    var bonusAmountText = Model.BonusAmount.ToString("#,##0", new System.Globalization.CultureInfo("vi-VN"));
 }
 
 <form asp-page="/AppCustomers/EditModal" method="post" id="EditCustomerForm">
@@ -172,15 +173,22 @@
                 </div>
             </div>
             <div class="row g-3">
-                <div class="col-md-6">
+                <div class="col-md-4">
                     <abp-input asp-for="Customer.MembershipTierName"
                                label="@L["MembershipTier"]"
                                type="text" readonly="true" class="readonly-gray" />
                 </div>
-                <div class="col-md-6">
+                <div class="col-md-4">
                     <abp-input asp-for="Customer.BonusPoint"
                                label="@L["BonusPoint"]"
                                type="number" readonly="true" class="readonly-gray" />
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">@L["BonusAmount"]</label>
+                    <input type="text"
+                           class="form-control readonly-gray"
+                           value="@bonusAmountText VNĐ"
+                           readonly />
                 </div>
             </div>
 
