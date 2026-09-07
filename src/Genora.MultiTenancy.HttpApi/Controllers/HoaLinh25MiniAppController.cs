@@ -153,4 +153,98 @@ public class HoaLinh25MiniAppController : MultiTenancyController
             return Ok(Hl25ApiResult<System.Collections.Generic.List<Hl25MyGiftDto>>.Fail(ex.Code ?? "error", ex.Message));
         }
     }
+
+    // ===== (Delta 2026-09) Frame — public read =====
+
+    /// <summary>Danh sách chiến dịch ghép ảnh đang hoạt động.</summary>
+    [HttpGet("frames/campaigns")]
+    public async Task<IActionResult> GetFrameCampaigns()
+    {
+        try
+        {
+            var data = await _service.GetFrameCampaignsAsync();
+            return Ok(Hl25ApiResult<System.Collections.Generic.List<Hl25FrameCampaignPublicDto>>.Ok(data));
+        }
+        catch (UserFriendlyException ex)
+        {
+            return Ok(Hl25ApiResult<System.Collections.Generic.List<Hl25FrameCampaignPublicDto>>.Fail(ex.Code ?? "error", ex.Message));
+        }
+    }
+
+    /// <summary>Danh sách mẫu frame (khung ảnh) để người dùng ướm ảnh. Lọc theo chiến dịch nếu truyền campaignId.</summary>
+    [HttpGet("frames/templates")]
+    public async Task<IActionResult> GetFrameTemplates([FromQuery] System.Guid? campaignId)
+    {
+        try
+        {
+            var data = await _service.GetFrameTemplatesAsync(campaignId);
+            return Ok(Hl25ApiResult<System.Collections.Generic.List<Hl25FrameTemplatePublicDto>>.Ok(data));
+        }
+        catch (UserFriendlyException ex)
+        {
+            return Ok(Hl25ApiResult<System.Collections.Generic.List<Hl25FrameTemplatePublicDto>>.Fail(ex.Code ?? "error", ex.Message));
+        }
+    }
+
+    /// <summary>Lịch sử tạo ảnh của người chơi.</summary>
+    [HttpGet("me/frames")]
+    public async Task<IActionResult> GetMyFrameCreations([FromQuery] string zaloUserId)
+    {
+        try
+        {
+            var data = await _service.GetMyFrameCreationsAsync(zaloUserId);
+            return Ok(Hl25ApiResult<System.Collections.Generic.List<Hl25FrameCreationPublicDto>>.Ok(data));
+        }
+        catch (UserFriendlyException ex)
+        {
+            return Ok(Hl25ApiResult<System.Collections.Generic.List<Hl25FrameCreationPublicDto>>.Fail(ex.Code ?? "error", ex.Message));
+        }
+    }
+
+    // ===== (Delta 2026-09) Wheel — public read =====
+
+    /// <summary>Danh sách kho quà tặng (FE hiển thị thông tin quà khi trúng).</summary>
+    [HttpGet("gifts")]
+    public async Task<IActionResult> GetGifts()
+    {
+        try
+        {
+            var data = await _service.GetGiftsAsync();
+            return Ok(Hl25ApiResult<System.Collections.Generic.List<Hl25GiftPublicDto>>.Ok(data));
+        }
+        catch (UserFriendlyException ex)
+        {
+            return Ok(Hl25ApiResult<System.Collections.Generic.List<Hl25GiftPublicDto>>.Fail(ex.Code ?? "error", ex.Message));
+        }
+    }
+
+    /// <summary>Lịch sử NHẬN lượt quay của người chơi.</summary>
+    [HttpGet("me/spin-turns")]
+    public async Task<IActionResult> GetMySpinTurnLogs([FromQuery] string zaloUserId)
+    {
+        try
+        {
+            var data = await _service.GetMySpinTurnLogsAsync(zaloUserId);
+            return Ok(Hl25ApiResult<System.Collections.Generic.List<Hl25SpinTurnLogPublicDto>>.Ok(data));
+        }
+        catch (UserFriendlyException ex)
+        {
+            return Ok(Hl25ApiResult<System.Collections.Generic.List<Hl25SpinTurnLogPublicDto>>.Fail(ex.Code ?? "error", ex.Message));
+        }
+    }
+
+    /// <summary>Lịch sử lượt quay ĐÃ THỰC HIỆN của người chơi.</summary>
+    [HttpGet("me/spins")]
+    public async Task<IActionResult> GetMySpinLogs([FromQuery] string zaloUserId)
+    {
+        try
+        {
+            var data = await _service.GetMySpinLogsAsync(zaloUserId);
+            return Ok(Hl25ApiResult<System.Collections.Generic.List<Hl25SpinLogPublicDto>>.Ok(data));
+        }
+        catch (UserFriendlyException ex)
+        {
+            return Ok(Hl25ApiResult<System.Collections.Generic.List<Hl25SpinLogPublicDto>>.Fail(ex.Code ?? "error", ex.Message));
+        }
+    }
 }

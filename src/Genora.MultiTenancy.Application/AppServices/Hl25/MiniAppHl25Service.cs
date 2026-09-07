@@ -27,6 +27,8 @@ public class MiniAppHl25Service : ApplicationService, IMiniAppHl25Service
 {
     private readonly IRepository<Hl25AppConfig, Guid> _configRepository;
     private readonly IRepository<Hl25Participant, Guid> _participantRepository;
+    private readonly IRepository<Hl25FrameCampaign, Guid> _frameCampaignRepository;
+    private readonly IRepository<Hl25FrameTemplate, Guid> _frameTemplateRepository;
     private readonly IRepository<Hl25FrameCreation, Guid> _frameCreationRepository;
     private readonly IRepository<Hl25SpinTurnLog, Guid> _spinTurnLogRepository;
     private readonly IRepository<Hl25WheelConfig, Guid> _wheelConfigRepository;
@@ -38,6 +40,8 @@ public class MiniAppHl25Service : ApplicationService, IMiniAppHl25Service
     public MiniAppHl25Service(
         IRepository<Hl25AppConfig, Guid> configRepository,
         IRepository<Hl25Participant, Guid> participantRepository,
+        IRepository<Hl25FrameCampaign, Guid> frameCampaignRepository,
+        IRepository<Hl25FrameTemplate, Guid> frameTemplateRepository,
         IRepository<Hl25FrameCreation, Guid> frameCreationRepository,
         IRepository<Hl25SpinTurnLog, Guid> spinTurnLogRepository,
         IRepository<Hl25WheelConfig, Guid> wheelConfigRepository,
@@ -48,6 +52,8 @@ public class MiniAppHl25Service : ApplicationService, IMiniAppHl25Service
     {
         _configRepository = configRepository;
         _participantRepository = participantRepository;
+        _frameCampaignRepository = frameCampaignRepository;
+        _frameTemplateRepository = frameTemplateRepository;
         _frameCreationRepository = frameCreationRepository;
         _spinTurnLogRepository = spinTurnLogRepository;
         _wheelConfigRepository = wheelConfigRepository;
@@ -125,7 +131,7 @@ public class MiniAppHl25Service : ApplicationService, IMiniAppHl25Service
     {
         ValidateZaloUserId(zaloUserId);
         var participant = await FindByZaloUserIdAsync(zaloUserId)
-            ?? throw new UserFriendlyException("Người dùng chưa đăng ký chương trình.");
+            ?? throw new UserFriendlyException(Hl25ErrorCodes.ParticipantNotFound, "Người dùng chưa đăng ký chương trình.");
         return MapMe(participant);
     }
 
@@ -133,7 +139,7 @@ public class MiniAppHl25Service : ApplicationService, IMiniAppHl25Service
     {
         ValidateZaloUserId(request.ZaloUserId);
         var participant = await FindByZaloUserIdAsync(request.ZaloUserId)
-            ?? throw new UserFriendlyException("Người dùng chưa đăng ký chương trình.");
+            ?? throw new UserFriendlyException(Hl25ErrorCodes.ParticipantNotFound, "Người dùng chưa đăng ký chương trình.");
 
         participant.FullName = request.FullName;
         participant.PhoneNumber = request.PhoneNumber;
@@ -150,13 +156,13 @@ public class MiniAppHl25Service : ApplicationService, IMiniAppHl25Service
     {
         ValidateZaloUserId(request.ZaloUserId);
         if (string.IsNullOrWhiteSpace(request.ResultImageUrl))
-            throw new UserFriendlyException("Thiếu ảnh thiệp.");
+            throw new UserFriendlyException(Hl25ErrorCodes.FrameImageRequired, "Thiếu ảnh thiệp.");
 
         if (request.WishMessage != null && request.WishMessage.Length > Hl25Consts.MaxWishLength)
-            throw new UserFriendlyException($"Lời chúc tối đa {Hl25Consts.MaxWishLength} ký tự.");
+            throw new UserFriendlyException(Hl25ErrorCodes.WishTooLong, $"Lời chúc tối đa {Hl25Consts.MaxWishLength} ký tự.");
 
         var participant = await FindByZaloUserIdAsync(request.ZaloUserId)
-            ?? throw new UserFriendlyException("Người dùng chưa đăng ký chương trình.");
+            ?? throw new UserFriendlyException(Hl25ErrorCodes.ParticipantNotFound, "Người dùng chưa đăng ký chương trình.");
 
         var creation = new Hl25FrameCreation(GuidGenerator.Create(), participant.Id, request.ResultImageUrl, CurrentTenant.Id)
         {
@@ -182,13 +188,13 @@ public class MiniAppHl25Service : ApplicationService, IMiniAppHl25Service
         using var uow = _uowManager.Begin(requiresNew: true, isTransactional: true);
 
         var participant = await FindByZaloUserIdAsync(request.ZaloUserId)
-            ?? throw new UserFriendlyException("Người dùng chưa đăng ký chương trình.");
+            ?? throw new UserFriendlyException(Hl25ErrorCodes.ParticipantNotFound, "Người dùng chưa đăng ký chương trình.");
 
         var creation = await _frameCreationRepository.FindAsync(request.FrameCreationId)
-            ?? throw new UserFriendlyException("Không tìm thấy thiệp.");
+            ?? throw new UserFriendlyException(Hl25ErrorCodes.FrameNotFound, "Không tìm thấy thiệp.");
 
         if (creation.ParticipantId != participant.Id)
-            throw new UserFriendlyException("Thiệp không thuộc về người dùng này.");
+            throw new UserFriendlyException(Hl25ErrorCodes.FrameNotOwned, "Thiệp không thuộc về người dùng này.");
 
         // Chu kỳ đã hoàn tất trước đó (đã chia sẻ) → không cộng lượt lần nữa.
         if (creation.SharePlatform != Hl25SharePlatform.None)
@@ -290,23 +296,23 @@ public class MiniAppHl25Service : ApplicationService, IMiniAppHl25Service
         using var uow = _uowManager.Begin(requiresNew: true, isTransactional: true);
 
         var participant = await FindByZaloUserIdAsync(request.ZaloUserId)
-            ?? throw new UserFriendlyException("Người dùng chưa đăng ký chương trình.");
+            ?? throw new UserFriendlyException(Hl25ErrorCodes.ParticipantNotFound, "Người dùng chưa đăng ký chương trình.");
 
         // Kiểm tra lượt còn lại TRONG transaction (validate-then-write).
         if (participant.RemainingSpinTurns <= 0)
-            throw new UserFriendlyException("Bạn đã hết lượt quay.");
+            throw new UserFriendlyException(Hl25ErrorCodes.NoSpinTurns, "Bạn đã hết lượt quay.");
 
         var wheelQueryable = await _wheelConfigRepository.GetQueryableAsync();
         var config = await AsyncExecuter.FirstOrDefaultAsync(wheelQueryable)
-            ?? throw new UserFriendlyException("Vòng quay chưa được cấu hình.");
+            ?? throw new UserFriendlyException(Hl25ErrorCodes.WheelNotConfigured, "Vòng quay chưa được cấu hình.");
         if (!config.IsActive)
-            throw new UserFriendlyException("Vòng quay đang tạm dừng.");
+            throw new UserFriendlyException(Hl25ErrorCodes.WheelInactive, "Vòng quay đang tạm dừng.");
 
         var slotQueryable = await _wheelSlotRepository.GetQueryableAsync();
         var slots = await AsyncExecuter.ToListAsync(
             slotQueryable.Where(x => x.WheelConfigId == config.Id).OrderBy(x => x.DisplayOrder));
         if (slots.Count == 0)
-            throw new UserFriendlyException("Vòng quay chưa có ô quay.");
+            throw new UserFriendlyException(Hl25ErrorCodes.WheelNoSlots, "Vòng quay chưa có ô quay.");
 
         // Delta 2026-09 — mỗi người TỐI ĐA TRÚNG 1 LẦN trong toàn chương trình.
         // Nếu đã trúng trước đó (TotalGiftsWon >= 1) thì lượt này ép KHÔNG trúng
@@ -386,7 +392,7 @@ public class MiniAppHl25Service : ApplicationService, IMiniAppHl25Service
     {
         ValidateZaloUserId(zaloUserId);
         var participant = await FindByZaloUserIdAsync(zaloUserId)
-            ?? throw new UserFriendlyException("Người dùng chưa đăng ký chương trình.");
+            ?? throw new UserFriendlyException(Hl25ErrorCodes.ParticipantNotFound, "Người dùng chưa đăng ký chương trình.");
 
         var spinQueryable = await _spinLogRepository.GetQueryableAsync();
         var giftQueryable = await _giftRepository.GetQueryableAsync();
@@ -412,6 +418,155 @@ public class MiniAppHl25Service : ApplicationService, IMiniAppHl25Service
         }).ToList();
     }
 
+    // ===== (Delta 2026-09) Frame — public read =====
+    public async Task<List<Hl25FrameCampaignPublicDto>> GetFrameCampaignsAsync()
+    {
+        var campaignQueryable = await _frameCampaignRepository.GetQueryableAsync();
+        var templateQueryable = await _frameTemplateRepository.GetQueryableAsync();
+
+        // Chỉ lấy chiến dịch đang hoạt động (Active).
+        var campaigns = await AsyncExecuter.ToListAsync(
+            campaignQueryable.Where(x => x.Status == Hl25CampaignStatus.Active)
+                             .OrderByDescending(x => x.StartTime));
+
+        // Đếm số mẫu frame đang bật theo từng chiến dịch.
+        var activeTemplates = await AsyncExecuter.ToListAsync(
+            templateQueryable.Where(x => x.IsActive));
+        var countByCampaign = activeTemplates
+            .GroupBy(x => x.CampaignId)
+            .ToDictionary(g => g.Key, g => g.Count());
+
+        return campaigns.Select(c => new Hl25FrameCampaignPublicDto
+        {
+            Id = c.Id,
+            Name = c.Name,
+            Description = c.Description,
+            StartTime = c.StartTime,
+            EndTime = c.EndTime,
+            Status = c.Status,
+            TemplateCount = countByCampaign.TryGetValue(c.Id, out var n) ? n : 0
+        }).ToList();
+    }
+
+    public async Task<List<Hl25FrameTemplatePublicDto>> GetFrameTemplatesAsync(Guid? campaignId)
+    {
+        var queryable = await _frameTemplateRepository.GetQueryableAsync();
+        var query = queryable.Where(x => x.IsActive);
+
+        if (campaignId.HasValue)
+            query = query.Where(x => x.CampaignId == campaignId.Value);
+
+        var templates = await AsyncExecuter.ToListAsync(
+            query.OrderBy(x => x.DisplayOrder));
+
+        return templates.Select(t => new Hl25FrameTemplatePublicDto
+        {
+            Id = t.Id,
+            CampaignId = t.CampaignId,
+            Name = t.Name,
+            ImageUrl = t.ImageUrl,
+            ThumbnailUrl = t.ThumbnailUrl,
+            DisplayOrder = t.DisplayOrder
+        }).ToList();
+    }
+
+    public async Task<List<Hl25FrameCreationPublicDto>> GetMyFrameCreationsAsync(string zaloUserId)
+    {
+        ValidateZaloUserId(zaloUserId);
+        var participant = await FindByZaloUserIdAsync(zaloUserId)
+            ?? throw new UserFriendlyException(Hl25ErrorCodes.ParticipantNotFound, "Người dùng chưa đăng ký chương trình.");
+
+        var queryable = await _frameCreationRepository.GetQueryableAsync();
+        var creations = await AsyncExecuter.ToListAsync(
+            queryable.Where(x => x.ParticipantId == participant.Id)
+                     .OrderByDescending(x => x.CreatedTime));
+
+        return creations.Select(c => new Hl25FrameCreationPublicDto
+        {
+            Id = c.Id,
+            CampaignId = c.CampaignId,
+            TemplateId = c.TemplateId,
+            ResultImageUrl = c.ResultImageUrl,
+            WishMessage = c.WishMessage,
+            ShareLink = c.ShareLink,
+            SharePlatform = c.SharePlatform,
+            ShareTime = c.ShareTime,
+            CreatedTime = c.CreatedTime
+        }).ToList();
+    }
+
+    // ===== (Delta 2026-09) Wheel — public read =====
+    public async Task<List<Hl25GiftPublicDto>> GetGiftsAsync()
+    {
+        var queryable = await _giftRepository.GetQueryableAsync();
+        // Ẩn quà bị vô hiệu hóa (Disabled) — chỉ trả Available + OutOfStock để FE hiển thị cơ cấu giải.
+        var gifts = await AsyncExecuter.ToListAsync(
+            queryable.Where(x => x.Status != Hl25GiftStatus.Disabled)
+                     .OrderBy(x => x.Name));
+
+        return gifts.Select(g => new Hl25GiftPublicDto
+        {
+            Id = g.Id,
+            Name = g.Name,
+            ImageUrl = g.ImageUrl,
+            Description = g.Description,
+            Value = g.Value,
+            Status = g.Status
+        }).ToList();
+    }
+
+    public async Task<List<Hl25SpinTurnLogPublicDto>> GetMySpinTurnLogsAsync(string zaloUserId)
+    {
+        ValidateZaloUserId(zaloUserId);
+        var participant = await FindByZaloUserIdAsync(zaloUserId)
+            ?? throw new UserFriendlyException(Hl25ErrorCodes.ParticipantNotFound, "Người dùng chưa đăng ký chương trình.");
+
+        var queryable = await _spinTurnLogRepository.GetQueryableAsync();
+        var logs = await AsyncExecuter.ToListAsync(
+            queryable.Where(x => x.ParticipantId == participant.Id)
+                     .OrderByDescending(x => x.GrantedTime));
+
+        return logs.Select(l => new Hl25SpinTurnLogPublicDto
+        {
+            Id = l.Id,
+            Source = l.Source,
+            TurnsAdded = l.TurnsAdded,
+            Note = l.Note,
+            GrantedTime = l.GrantedTime
+        }).ToList();
+    }
+
+    public async Task<List<Hl25SpinLogPublicDto>> GetMySpinLogsAsync(string zaloUserId)
+    {
+        ValidateZaloUserId(zaloUserId);
+        var participant = await FindByZaloUserIdAsync(zaloUserId)
+            ?? throw new UserFriendlyException(Hl25ErrorCodes.ParticipantNotFound, "Người dùng chưa đăng ký chương trình.");
+
+        var spinQueryable = await _spinLogRepository.GetQueryableAsync();
+        var giftQueryable = await _giftRepository.GetQueryableAsync();
+
+        var query = from s in spinQueryable
+                    where s.ParticipantId == participant.Id
+                    join g in giftQueryable on s.GiftId equals g.Id into gg
+                    from g in gg.DefaultIfEmpty()
+                    orderby s.SpinTime descending
+                    select new { s, g };
+
+        var rows = await AsyncExecuter.ToListAsync(query);
+
+        return rows.Select(x => new Hl25SpinLogPublicDto
+        {
+            Id = x.s.Id,
+            GiftId = x.s.GiftId,
+            GiftName = x.s.GiftNameSnapshot ?? x.g?.Name,
+            GiftImageUrl = x.g?.ImageUrl,
+            SpinTime = x.s.SpinTime,
+            RewardStatus = x.s.RewardStatus,
+            DeliveredTime = x.s.DeliveredTime,
+            Won = x.s.RewardStatus == Hl25RewardStatus.Won || x.s.RewardStatus == Hl25RewardStatus.Delivered
+        }).ToList();
+    }
+
     // ===== Helpers =====
     private async Task<Hl25Participant?> FindByZaloUserIdAsync(string zaloUserId)
     {
@@ -423,7 +578,7 @@ public class MiniAppHl25Service : ApplicationService, IMiniAppHl25Service
     private static void ValidateZaloUserId(string zaloUserId)
     {
         if (string.IsNullOrWhiteSpace(zaloUserId))
-            throw new UserFriendlyException("Thiếu ZaloUserId.");
+            throw new UserFriendlyException(Hl25ErrorCodes.MissingZaloUserId, "Thiếu ZaloUserId.");
     }
 
     /// <summary>

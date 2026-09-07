@@ -14,6 +14,7 @@
   - **Đã rà soát (2026-09-07):** Vòng quay/Gift Admin OK (cơ cấu 5 loại quà nhập qua CRUD, không cần code). Report OK (TotalWins không đếm nhầm lượt ép trượt).
   - ✅ **Báo cáo phân bổ nhóm tuổi (P6) — XONG:** `GetAgeGroupStatsAsync` (query Participant group theo `AgeGroup`, lọc `JoinedTime`, đủ 4 nhóm kể cả 0 người + tỷ lệ %) + DTO `Hl25AgeGroupStatsDto`/`Row` + interface. UI Reports thêm card doughnut Chart.js + bảng + tfoot tổng. Build 0 errors.
   - ✅ **CURL API (T1) — đã gửi bộ đầy đủ 9 endpoint** theo thiết kế mới (AgeGroup thay BirthDate, cờ FE spin, config tinh giản) trong hội thoại.
+  - ✅ **Bổ sung 7 MiniApp read API + chuẩn hóa mã lỗi (2026-09-07):** Frame (`GET frames/campaigns`, `GET frames/templates?campaignId=`, `GET me/frames?zaloUserId=`); Wheel (`GET gifts`, `GET me/spin-turns?zaloUserId=`, `GET me/spins?zaloUserId=`). DTO public riêng + `Hl25ErrorCodes` (Domain.Shared) gắn mã cho MỌI throw. File Postman `C:\Users\DPC\Downloads\hl25_curl.json` cập nhật 15 request + mô tả tiếng Việt có dấu + bảng mã lỗi. Build HttpApi 0 errors (Web build lỗi do app đang chạy khóa DLL — không phải lỗi code).
   - **Chưa đụng:** Frame (P3), Report (P6 — trừ gợi ý nhóm tuổi). **CHƯA push** (SSH key môi trường chưa cấu hình). **CHƯA `dotnet ef database update`.**
 
 ### Việc cũ (P0-P7 module hl25 — nhánh `feature/hoalinh-25years` trước đây)

@@ -410,6 +410,13 @@ Zalo OA/ZNS/Log: TÁI DÙNG (ZaloAuth / ZaloLog / ZaloSettingNames) — không t
   - `GET /api/hl25/me/gifts` — lịch sử nhận quà.
 - Internal AppService nhiều param phức tạp → cân nhắc `[RemoteService(false)]` + `[DisableValidation]` (RULES.md).
 
+**Delta 2026-09 — bổ sung 7 API read (public) phục vụ FE ghép API:**
+- **Frame:** `GET frames/campaigns` (chiến dịch Active + `templateCount`); `GET frames/templates?campaignId=` (mẫu frame đang bật để ướm ảnh); `GET me/frames?zaloUserId=` (lịch sử tạo ảnh của người chơi).
+- **Wheel:** `GET gifts` (kho quà — ẩn Disabled); `GET me/spin-turns?zaloUserId=` (lịch sử NHẬN lượt); `GET me/spins?zaloUserId=` (lịch sử lượt quay đã thực hiện, cả trúng/trượt).
+- DTO public riêng (`Hl25FrameCampaignPublicDto`/`Hl25FrameTemplatePublicDto`/`Hl25FrameCreationPublicDto`/`Hl25GiftPublicDto`/`Hl25SpinTurnLogPublicDto`/`Hl25SpinLogPublicDto`).
+
+**Delta 2026-09 — chuẩn hóa mã lỗi:** `Hl25ErrorCodes` (Domain.Shared) — mọi `UserFriendlyException` trong MiniApp service gắn mã: `MissingZaloUserId`, `ParticipantNotFound`, `FrameImageRequired`, `WishTooLong`, `FrameNotFound`, `FrameNotOwned`, `NoSpinTurns`, `WheelNotConfigured`, `WheelInactive`, `WheelNoSlots`, `ProgramInactive`, `Unknown`. FE đọc `error` trong `Hl25ApiResult` để hiển thị thông báo.
+
 ---
 
 ## 7. KẾ HOẠCH TRIỂN KHAI THEO PHASE (chờ xác nhận)

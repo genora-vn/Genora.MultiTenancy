@@ -183,3 +183,86 @@ public class Hl25MyGiftDto
     public Genora.MultiTenancy.Enums.Hl25RewardStatus RewardStatus { get; set; }
     public DateTime? DeliveredTime { get; set; }
 }
+
+// ===== (Delta 2026-09) Frame — Chiến dịch / Mẫu Frame / Lịch sử tạo ảnh =====
+
+/// <summary>Chiến dịch ghép ảnh (public — FE hiển thị danh sách đợt ghép ảnh).</summary>
+public class Hl25FrameCampaignPublicDto
+{
+    public Guid Id { get; set; }
+    public string Name { get; set; } = null!;
+    public string? Description { get; set; }
+    public DateTime? StartTime { get; set; }
+    public DateTime? EndTime { get; set; }
+    /// <summary>Trạng thái chiến dịch (0=Draft,1=Active,2=Paused,3=Ended).</summary>
+    public Genora.MultiTenancy.Enums.Hl25CampaignStatus Status { get; set; }
+    /// <summary>Số mẫu frame đang bật thuộc chiến dịch.</summary>
+    public int TemplateCount { get; set; }
+}
+
+/// <summary>Mẫu frame/khung ảnh (public — FE cho người dùng chọn ảnh local ướm vào khung).</summary>
+public class Hl25FrameTemplatePublicDto
+{
+    public Guid Id { get; set; }
+    public Guid CampaignId { get; set; }
+    public string Name { get; set; } = null!;
+    /// <summary>Ảnh khung frame (PNG khung trong suốt) — FE ghép ảnh người dùng vào.</summary>
+    public string ImageUrl { get; set; } = null!;
+    public string? ThumbnailUrl { get; set; }
+    public int DisplayOrder { get; set; }
+}
+
+/// <summary>Một dòng lịch sử tạo ảnh của người chơi (public).</summary>
+public class Hl25FrameCreationPublicDto
+{
+    public Guid Id { get; set; }
+    public Guid? CampaignId { get; set; }
+    public Guid? TemplateId { get; set; }
+    public string ResultImageUrl { get; set; } = null!;
+    public string? WishMessage { get; set; }
+    public string? ShareLink { get; set; }
+    /// <summary>Nền tảng chia sẻ (0=None,1=Zalo,2=Facebook).</summary>
+    public Genora.MultiTenancy.Enums.Hl25SharePlatform SharePlatform { get; set; }
+    public DateTime? ShareTime { get; set; }
+    public DateTime CreatedTime { get; set; }
+}
+
+// ===== (Delta 2026-09) Wheel — Kho quà / Lịch sử nhận lượt / Lịch sử lượt quay =====
+
+/// <summary>Quà tặng trong kho (public — FE hiển thị thông tin quà khi trúng).</summary>
+public class Hl25GiftPublicDto
+{
+    public Guid Id { get; set; }
+    public string Name { get; set; } = null!;
+    public string? ImageUrl { get; set; }
+    public string? Description { get; set; }
+    public decimal? Value { get; set; }
+    /// <summary>Trạng thái (0=Available,1=OutOfStock,2=Disabled).</summary>
+    public Genora.MultiTenancy.Enums.Hl25GiftStatus Status { get; set; }
+}
+
+/// <summary>Một dòng lịch sử NHẬN lượt quay của người chơi (public).</summary>
+public class Hl25SpinTurnLogPublicDto
+{
+    public Guid Id { get; set; }
+    /// <summary>Nguồn cộng lượt (1=ShareZalo,2=ShareFacebook,3=AdminGrant,4=Other).</summary>
+    public Genora.MultiTenancy.Enums.Hl25SpinTurnSource Source { get; set; }
+    public int TurnsAdded { get; set; }
+    public string? Note { get; set; }
+    public DateTime GrantedTime { get; set; }
+}
+
+/// <summary>Một dòng lịch sử lượt quay ĐÃ THỰC HIỆN của người chơi (public).</summary>
+public class Hl25SpinLogPublicDto
+{
+    public Guid Id { get; set; }
+    public Guid? GiftId { get; set; }
+    public string? GiftName { get; set; }
+    public string? GiftImageUrl { get; set; }
+    public DateTime SpinTime { get; set; }
+    /// <summary>Trạng thái trao thưởng (0=Pending,1=Won,2=NotWon,3=Delivered,4=Cancelled).</summary>
+    public Genora.MultiTenancy.Enums.Hl25RewardStatus RewardStatus { get; set; }
+    public DateTime? DeliveredTime { get; set; }
+    /// <summary>Có trúng quà không (RewardStatus là Won hoặc Delivered).</summary>
+    public bool Won { get; set; }
+}
