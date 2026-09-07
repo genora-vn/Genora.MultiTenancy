@@ -79,7 +79,7 @@ public class Hl25ParticipantAppService : ApplicationService, IHl25ParticipantApp
         var entity = await _repository.GetAsync(id);
         entity.FullName = input.FullName;
         entity.PhoneNumber = input.PhoneNumber;
-        entity.BirthDate = input.BirthDate;
+        entity.AgeGroup = input.AgeGroup;
         entity.Gender = input.Gender;
         entity.ReceiveAddress = input.ReceiveAddress;
         entity.IsFollowingOa = input.IsFollowingOa;

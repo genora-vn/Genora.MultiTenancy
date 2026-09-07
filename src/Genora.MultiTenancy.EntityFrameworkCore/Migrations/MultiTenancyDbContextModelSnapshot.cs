@@ -2772,8 +2772,8 @@ namespace Genora.MultiTenancy.Migrations
                         .HasColumnName("TenantId");
 
                     b.Property<string>("WishMessage")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
+                        .HasMaxLength(250)
+                        .HasColumnType("nvarchar(250)");
 
                     b.HasKey("Id");
 
@@ -2968,8 +2968,8 @@ namespace Genora.MultiTenancy.Migrations
                         .HasMaxLength(1024)
                         .HasColumnType("nvarchar(1024)");
 
-                    b.Property<DateTime?>("BirthDate")
-                        .HasColumnType("datetime2");
+                    b.Property<byte>("AgeGroup")
+                        .HasColumnType("tinyint");
 
                     b.Property<string>("ConcurrencyStamp")
                         .IsConcurrencyToken()

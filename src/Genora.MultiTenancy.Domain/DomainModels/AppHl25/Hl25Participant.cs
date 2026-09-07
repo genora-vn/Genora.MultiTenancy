@@ -28,8 +28,8 @@ public class Hl25Participant : FullAuditedAggregateRoot<Guid>, IMultiTenant
     [StringLength(Hl25.Hl25Consts.MaxPhoneLength)]
     public string? PhoneNumber { get; set; }
 
-    /// <summary>Ngày sinh.</summary>
-    public DateTime? BirthDate { get; set; }
+    /// <summary>Nhóm tuổi (Delta 2026-09: màn "Thông tin nhận quà" dùng nhóm tuổi thay ngày sinh).</summary>
+    public Hl25AgeGroup AgeGroup { get; set; } = Hl25AgeGroup.Unknown;
 
     /// <summary>Giới tính.</summary>
     public Hl25Gender Gender { get; set; } = Hl25Gender.Unknown;

@@ -23,8 +23,12 @@
                     <abp-input asp-for="Participant.PhoneNumber" label="Số điện thoại" placeholder="VD: 0912345678" />
                 </div>
                 <div class="col-md-6 mb-3">
-                    <label asp-for="Participant.BirthDate" class="form-label">Ngày sinh</label>
-                    <input asp-for="Participant.BirthDate" type="date" class="form-control" />
+                    <abp-select asp-for="Participant.AgeGroup" label="Nhóm tuổi">
+                        <abp-select-item value="0" text="Không xác định" />
+                        <abp-select-item value="1" text="18 - 25" />
+                        <abp-select-item value="2" text="26 - 35" />
+                        <abp-select-item value="3" text="36 - 44" />
+                    </abp-select>
                 </div>
             </div>
             <div class="mb-3">

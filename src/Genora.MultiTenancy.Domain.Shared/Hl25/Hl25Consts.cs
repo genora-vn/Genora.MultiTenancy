@@ -8,8 +8,8 @@ public static class Hl25Consts
     /// <summary>Giới hạn dung lượng ảnh thiệp upload: 5MB. (ManageImageService KHÔNG tự chặn size → phải tự validate.)</summary>
     public const long MaxCardImageSizeBytes = 5 * 1024 * 1024;
 
-    /// <summary>Độ dài tối đa của lời chúc (ký tự).</summary>
-    public const int MaxWishLength = 500;
+    /// <summary>Độ dài tối đa của lời chúc (ký tự). Delta 2026-09: counter "x/250" trên màn Tạo thiệp.</summary>
+    public const int MaxWishLength = 250;
 
     /// <summary>Thư mục con lưu ảnh của module (dùng cho IManageImageService.UploadImageAsync).</summary>
     public const string DefaultImageSubFolder = "hl25";

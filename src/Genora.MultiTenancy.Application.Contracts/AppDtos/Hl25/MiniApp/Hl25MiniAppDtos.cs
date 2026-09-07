@@ -56,7 +56,7 @@ public class Hl25UpdateProfileRequest
     public string ZaloUserId { get; set; } = null!;
     public string? FullName { get; set; }
     public string? PhoneNumber { get; set; }
-    public DateTime? BirthDate { get; set; }
+    public Genora.MultiTenancy.Enums.Hl25AgeGroup AgeGroup { get; set; }
     public Genora.MultiTenancy.Enums.Hl25Gender Gender { get; set; }
     public string? ReceiveAddress { get; set; }
 }
@@ -68,7 +68,7 @@ public class Hl25MeDto
     public string? ZaloUserId { get; set; }
     public string? FullName { get; set; }
     public string? PhoneNumber { get; set; }
-    public DateTime? BirthDate { get; set; }
+    public Genora.MultiTenancy.Enums.Hl25AgeGroup AgeGroup { get; set; }
     public Genora.MultiTenancy.Enums.Hl25Gender Gender { get; set; }
     public string? ReceiveAddress { get; set; }
     public string? AvatarUrl { get; set; }
@@ -159,6 +159,20 @@ public class Hl25SpinResultDto
     public string? GiftName { get; set; }
     public string? GiftImageUrl { get; set; }
     public int RemainingSpinTurns { get; set; }
+
+    // ===== Cờ FE (Delta 2026-09) — giúp FE quyết định nút trên màn kết quả =====
+
+    /// <summary>Còn có thể chia sẻ để nhận thêm lượt không (EarnedCycles &lt; MaxSpinTurnsPerUser). FE hiện nút "Chia sẻ để thêm lượt".</summary>
+    public bool CanShareForMoreTurn { get; set; }
+
+    /// <summary>Số chu kỳ "Tạo thiệp → Chia sẻ" đã hoàn tất (0-2).</summary>
+    public int EarnedCycles { get; set; }
+
+    /// <summary>Tổng số quà đã trúng (dùng cho luật "tối đa trúng 1 lần").</summary>
+    public int TotalGiftsWon { get; set; }
+
+    /// <summary>Người dùng đã từng trúng quà trước lượt hiện tại (TotalGiftsWon &gt; 0 trước khi quay). Lượt này sẽ bị ép trượt.</summary>
+    public bool HasWonBefore { get; set; }
 }
 
 // ===== Lịch sử nhận quà =====

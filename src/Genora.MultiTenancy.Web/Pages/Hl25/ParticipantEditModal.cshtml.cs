@@ -30,7 +30,7 @@ public class ParticipantEditModalModel : MultiTenancyPageModel
         {
             FullName = dto.FullName,
             PhoneNumber = dto.PhoneNumber,
-            BirthDate = dto.BirthDate,
+            AgeGroup = dto.AgeGroup,
             Gender = dto.Gender,
             ReceiveAddress = dto.ReceiveAddress,
             IsFollowingOa = dto.IsFollowingOa,

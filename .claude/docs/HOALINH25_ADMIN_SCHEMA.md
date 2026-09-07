@@ -1,9 +1,35 @@
 # HỆ THỐNG QUẢN TRỊ (ADMIN) — ZALO MINI APP "DƯỢC PHẨM HOA LINH 25 NĂM"
 
-> Tài liệu thiết kế kiến trúc & CSDL. Nhánh: `feature/hoalinh-25years`. Schema DB: **`hl25`**.
+> Tài liệu thiết kế kiến trúc & CSDL. Nhánh: `feature/dev-hoalinh-25years`. Schema DB: **`hl25`**.
 > Nền tảng: ABP Framework (.NET 9, DDD), Multi-Tenancy.
-> Trạng thái: **THIẾT KẾ — CHỜ XÁC NHẬN** (chưa viết code production).
-> Cập nhật: 2026-08-25.
+> Trạng thái: **ĐÃ IMPLEMENT P0-P7 + đang cập nhật theo Figma mới (Delta 2026-09)**.
+> Cập nhật: 2026-09-07.
+
+---
+
+## 0. DELTA 2026-09 (cập nhật theo Figma FE mới)
+
+> Đợt cập nhật sau khi FE Figma (`ffnEUAhIsN0V7CpM3kCFLu`, node `2:248`) được điều chỉnh + làm rõ
+> luồng vòng quay. Đối chiếu với bản đã implement (P0-P7). Migration `20260825160252_AddHl25Module`
+> **CHƯA apply ở đâu** → sửa entity + migration cũ **in-place** (không tạo migration chồng).
+
+| # | Delta | Loại | Migration |
+|---|-------|------|-----------|
+| 1 | **Mỗi người tối đa TRÚNG 1 lần** trong toàn chương trình. Lần 1 trúng → lần 2 (nếu có) ép trượt; Lần 1 trượt → lần 2 quay ngẫu nhiên theo WinRate. | Logic `SpinAsync` | ❌ (dùng `TotalGiftsWon` sẵn có) |
+| 2 | Màn kết quả quay có 3 biến thể nút (Figma): **Lần 1** = "Chia sẻ để thêm lượt" + "Quà tặng nhận được"; **Lần 2 / hết chu kỳ** = chỉ "Quà tặng nhận được" (→ trang cảm ơn); **Có sẵn 2 lượt** = "Tiếp tục quay" + "Quà tặng nhận được". FE quyết định nút theo state → API bổ sung cờ. | DTO `Hl25SpinResultDto` | ❌ |
+| 5 | Màn "Thông tin nhận quà" dùng **NHÓM TUỔI** (18-25 / 26-35 / 36-44) thay cho ngày sinh. | **Schema** | ✅ in-place: `BirthDate` → `AgeGroup` |
+| 6 | Lời chúc tối đa **250 ký tự** (counter "x/250" trên màn Tạo thiệp), không phải 500. | Consts + `StringLength` | ✅ in-place: `WishMessage` maxLength 500 → 250 |
+| 3 | Cơ cấu 5 loại quà (1 combo 4 SP × 1000 người + 4 SP lẻ × 500 người). | Data (Admin CRUD `Hl25Gift` sẵn có) | ❌ |
+| 4 | Tinh giản trang Cài đặt Mini App (P2) theo lưu ý ảnh cố định. | Review — **HOÃN** ("làm sau") | — |
+
+**Luồng vòng quay (nguồn chân lý — mô tả nghiệp vụ đã chốt):**
+- **Lần 1 (sau khi có lượt đầu):** quay → hiện kết quả (trúng/không) + nút "Chia sẻ để thêm lượt" + "Quà tặng nhận được".
+  - Trúng lần 1 → **lần 2 ép KHÔNG trúng**. Không trúng lần 1 → **lần 2 quay ngẫu nhiên**.
+  - Nếu chỉ quay 1 lần rồi bấm "Quà tặng nhận được" → ra trang cảm ơn.
+- **Lần 2:** quay → hiện kết quả + chỉ nút "Quà tặng nhận được" → trang cảm ơn.
+- **Người có sẵn 2 lượt:** lượt 1 quay → kết quả + "Tiếp tục quay" + "Quà tặng nhận được"; lượt 2 quay → kết quả + "Quà tặng nhận được" → trang cảm ơn.
+
+**Phạm vi KHÔNG đụng đợt này:** Settings (P2), Frame (P3), Report (P6). Frame nền quiz trong canvas Figma là rác lẫn, bỏ qua (hl25 độc lập gamification — xác nhận qua ảnh `hl25.png`).
 
 ---
 
@@ -115,11 +141,14 @@ public enum Hl25SharePlatform : byte { None = 0, Zalo = 1, Facebook = 2 }
 
 // Giới tính người tham gia
 public enum Hl25Gender : byte { Unknown = 0, Male = 1, Female = 2, Other = 3 }
+
+// Nhóm tuổi người tham gia (Delta 2026-09 — màn "Thông tin nhận quà" dùng nhóm tuổi thay ngày sinh)
+public enum Hl25AgeGroup : byte { Unknown = 0, Age18To25 = 1, Age26To35 = 2, Age36To44 = 3 }
 ```
 
 Constants: `Hl25Consts`:
 - `MaxCardImageSizeBytes = 5 * 1024 * 1024` (giới hạn 5MB ảnh thiệp — tự validate).
-- `MaxWishLength = 500` (lời chúc).
+- `MaxWishLength = 250` (lời chúc — Delta 2026-09: counter "x/250" trên màn Tạo thiệp).
 - `DefaultImageSubFolder = "hl25"`.
 - **`MaxSpinTurnsPerUser = 2`** (đã chốt): trần lượt quay/người.
 - **Quy tắc cộng lượt (đã chốt):** mỗi chu kỳ **"Tạo thiệp → Chia sẻ thành công" = +1 lượt**. Người dùng được làm tối đa **2 chu kỳ** → tối đa **2 lượt**. Tạo thiệp mà chưa chia sẻ KHÔNG cộng lượt.
@@ -297,7 +326,7 @@ Người tham gia chương trình.
 | `ZaloUserId` | `string(64)` | ✓ | ID người dùng Zalo (định danh Mini App) |
 | `FullName` | `string(256)` | ✓ | Họ và tên |
 | `PhoneNumber` | `string(13)` | ✓ | SĐT (regex `^(0\d{9,10}\|84\d{9,10})$` — theo RULES.md) |
-| `BirthDate` | `DateTime?` | ✓ | Ngày sinh |
+| `AgeGroup` | `Hl25AgeGroup (byte)` | ✗ | Nhóm tuổi: Unknown/18-25/26-35/36-44 (Delta 2026-09 — thay `BirthDate`) |
 | `Gender` | `Hl25Gender (byte)` | ✗ | Unknown/Male/Female/Other |
 | `ReceiveAddress` | `string(1024)` | ✓ | Địa chỉ nhận quà |
 | `JoinedTime` | `DateTime` | ✗ | Ngày tham gia |
@@ -362,6 +391,7 @@ Zalo OA/ZNS/Log: TÁI DÙNG (ZaloAuth / ZaloLog / ZaloSettingNames) — không t
 - **`Hl25ParticipantDto`** / **`CreateUpdateHl25ParticipantDto`** (Admin sửa được địa chỉ/tên); `GetHl25ParticipantListInput` (lọc `IsFollowingOa`,`HasConsent`, khoảng `JoinedTime`, keyword tên/SĐT).
 - **`IHl25ParticipantAppService : ICrudAppService`** + `ExportExcelAsync` + `GrantSpinTurnAsync(participantId, turns, note)` (cộng lượt thủ công → ghi `Hl25SpinTurnLog` source=AdminGrant).
 - **Phone regex** `^(0\d{9,10}|84\d{9,10})$`, maxlength 13 — đồng bộ DTO + cshtml + JS + server (RULES.md).
+- **Delta 2026-09:** DTO người dùng dùng `AgeGroup` (`Hl25AgeGroup`) thay `BirthDate` (đồng bộ `Hl25ParticipantDto`/`CreateUpdateHl25ParticipantDto`/`Hl25MeDto`/`Hl25UpdateProfileRequest` + Excel exporter + Edit modal).
 
 ### 6.5 Nhóm 5 — Báo cáo
 - **`IHl25ReportAppService`** (không CRUD):
@@ -378,7 +408,7 @@ Zalo OA/ZNS/Log: TÁI DÙNG (ZaloAuth / ZaloLog / ZaloSettingNames) — không t
   - `POST /api/hl25/frames` — tạo thiệp (upload ảnh + lời chúc), trả `ShareLink`. **Chưa cộng lượt.**
   - `POST /api/hl25/frames/{id}/share` — xác nhận chia sẻ (Zalo/FB) thành công → **hoàn tất 1 chu kỳ, +1 lượt** (nếu `EarnedCycles < 2`). Transaction: tăng `RemainingSpinTurns`+`TotalSpinTurns`+`EarnedCycles`, ghi `Hl25SpinTurnLog`, set `Hl25FrameCreation.SharePlatform/ShareTime`.
   - `GET /api/hl25/wheel` — cấu hình vòng quay + số lượt còn lại.
-  - `POST /api/hl25/wheel/spin` — thực hiện quay (transaction ACID).
+  - `POST /api/hl25/wheel/spin` — thực hiện quay (transaction ACID). **Delta 2026-09 — trần TRÚNG 1 lần/người:** nếu `participant.TotalGiftsWon >= 1` thì ép `RewardStatus = NotWon` (bỏ nhánh trúng), không trừ kho quà. `Hl25SpinResultDto` trả thêm cờ FE: `CanShareForMoreTurn` (= `EarnedCycles < MaxSpinTurnsPerUser`), `EarnedCycles`, `TotalGiftsWon`, `HasWonBefore` để FE quyết định nút trên màn kết quả (Chia sẻ thêm lượt / Tiếp tục quay / Quà tặng nhận được).
   - `GET /api/hl25/me/gifts` — lịch sử nhận quà.
 - Internal AppService nhiều param phức tạp → cân nhắc `[RemoteService(false)]` + `[DisableValidation]` (RULES.md).
 

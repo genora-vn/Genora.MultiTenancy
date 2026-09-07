@@ -18,7 +18,7 @@ public class Hl25ParticipantExcelExporter : ITransientDependency
 
         ws.Cell(1, 1).Value = "Họ và tên";
         ws.Cell(1, 2).Value = "Số điện thoại";
-        ws.Cell(1, 3).Value = "Ngày sinh";
+        ws.Cell(1, 3).Value = "Nhóm tuổi";
         ws.Cell(1, 4).Value = "Giới tính";
         ws.Cell(1, 5).Value = "Địa chỉ nhận quà";
         ws.Cell(1, 6).Value = "Ngày tham gia";
@@ -38,7 +38,7 @@ public class Hl25ParticipantExcelExporter : ITransientDependency
             var item = items[i];
             ws.Cell(row, 1).Value = item.FullName ?? "";
             ws.Cell(row, 2).Value = item.PhoneNumber ?? "";
-            ws.Cell(row, 3).Value = item.BirthDate?.ToString("dd/MM/yyyy") ?? "";
+            ws.Cell(row, 3).Value = AgeGroupText(item.AgeGroup);
             ws.Cell(row, 4).Value = GenderText(item.Gender);
             ws.Cell(row, 5).Value = item.ReceiveAddress ?? "";
             ws.Cell(row, 6).Value = item.JoinedTime.ToString("dd/MM/yyyy HH:mm");
@@ -64,6 +64,14 @@ public class Hl25ParticipantExcelExporter : ITransientDependency
         Hl25Gender.Male => "Nam",
         Hl25Gender.Female => "Nữ",
         Hl25Gender.Other => "Khác",
+        _ => "Không xác định"
+    };
+
+    private static string AgeGroupText(Hl25AgeGroup ageGroup) => ageGroup switch
+    {
+        Hl25AgeGroup.Age18To25 => "18 - 25",
+        Hl25AgeGroup.Age26To35 => "26 - 35",
+        Hl25AgeGroup.Age36To44 => "36 - 44",
         _ => "Không xác định"
     };
 }

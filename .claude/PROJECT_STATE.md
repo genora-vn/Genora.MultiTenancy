@@ -51,8 +51,9 @@
 - Online docs `/Documents`: entity host-shared, FeatureName + Tenant/HostPermissionName, URL slug, seeder 11 section.
 - Note: `project_app_documents_*`.
 
-## Module: Hoa Linh 25 Năm (hl25) — ✅ HOÀN THÀNH P0-P7 (nhánh `feature/hoalinh-25years`)
+## Module: Hoa Linh 25 Năm (hl25) — ✅ HOÀN THÀNH P0-P7 + 🔄 DELTA 2026-09 (nhánh `feature/dev-hoalinh-25years`)
 - Admin cho Zalo Mini App "Dược Phẩm Hoa Linh 25 Năm" (chương trình kỷ niệm 25 năm: tạo thiệp ghép ảnh + chia sẻ + vòng quay may mắn). Schema DB riêng `hl25`.
+- **🔄 Delta 2026-09 (cập nhật theo Figma FE mới):** (1) mỗi người **tối đa TRÚNG 1 lần** (SpinAsync chặn `TotalGiftsWon>=1→NotWon`); (2) `Hl25SpinResultDto` thêm cờ FE cho 3 màn kết quả; (3) **nhóm tuổi** `Hl25AgeGroup` thay `BirthDate`; (4) `MaxWishLength` 500→250. Migration `20260825160252` CHƯA apply → sửa in-place. Không đụng P2/P3/P6. Chi tiết: `docs/HOALINH25_ADMIN_SCHEMA.md` mục 0.
 - **Thiết kế (Bước 1-5):** UI Figma, 10 entity, 8 Phase plan. Tài liệu: `docs/HOALINH25_ADMIN_SCHEMA.md`.
 - **Quyết định chốt:** bỏ Points (thuộc gamification), Wheel singleton/tenant, trần 2 lượt quay (mỗi chu kỳ "Tạo thiệp→Chia sẻ" = +1, tối đa 2), trao thưởng 2 bước.
 - **Tái dùng:** Summernote (HTML editor), `IManageImageService` (upload ảnh, tự chặn 5MB), Zalo OA/ZNS/Log dùng chung.

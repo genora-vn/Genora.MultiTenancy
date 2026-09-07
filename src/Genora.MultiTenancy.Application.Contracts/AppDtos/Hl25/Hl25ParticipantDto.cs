@@ -10,7 +10,7 @@ public class Hl25ParticipantDto : AuditedEntityDto<Guid>
     public string? ZaloUserId { get; set; }
     public string? FullName { get; set; }
     public string? PhoneNumber { get; set; }
-    public DateTime? BirthDate { get; set; }
+    public Hl25AgeGroup AgeGroup { get; set; }
     public Hl25Gender Gender { get; set; }
     public string? ReceiveAddress { get; set; }
     public DateTime JoinedTime { get; set; }

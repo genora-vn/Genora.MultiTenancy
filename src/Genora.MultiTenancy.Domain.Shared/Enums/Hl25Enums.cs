@@ -101,3 +101,22 @@ public enum Hl25Gender : byte
     /// <summary>Khác.</summary>
     Other = 3
 }
+
+/// <summary>
+/// Nhóm tuổi người tham gia (Hl25Participant).
+/// Delta 2026-09: màn "Thông tin nhận quà" (Figma FE) dùng nhóm tuổi thay ngày sinh.
+/// </summary>
+public enum Hl25AgeGroup : byte
+{
+    /// <summary>Không xác định.</summary>
+    Unknown = 0,
+
+    /// <summary>18 - 25 tuổi.</summary>
+    Age18To25 = 1,
+
+    /// <summary>26 - 35 tuổi.</summary>
+    Age26To35 = 2,
+
+    /// <summary>36 - 44 tuổi.</summary>
+    Age36To44 = 3
+}

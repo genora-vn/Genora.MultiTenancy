@@ -15,7 +15,7 @@ public class CreateUpdateHl25ParticipantDto
     [RegularExpression(Hl25Consts.PhoneRegex, ErrorMessage = "Số điện thoại không hợp lệ (bắt đầu bằng 0 hoặc 84).")]
     public string? PhoneNumber { get; set; }
 
-    public DateTime? BirthDate { get; set; }
+    public Hl25AgeGroup AgeGroup { get; set; } = Hl25AgeGroup.Unknown;
 
     public Hl25Gender Gender { get; set; } = Hl25Gender.Unknown;
 

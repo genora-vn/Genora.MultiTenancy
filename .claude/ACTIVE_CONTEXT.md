@@ -4,9 +4,15 @@
 > Cập nhật ở CUỐI mỗi phiên (xem [handover/HANDOFF.md](handover/HANDOFF.md)).
 
 ## Cập nhật gần nhất
-- **Ngày:** 2026-08-25
-- **Nhánh:** `feature/hoalinh-25years`
-- **Việc đang làm:** Xây hệ thống Admin cho Zalo Mini App "Dược Phẩm Hoa Linh 25 Năm" (schema DB `hl25`).
+- **Ngày:** 2026-09-07
+- **Nhánh:** `feature/dev-hoalinh-25years` (đã merge dev + hotfix/20260826)
+- **Việc đang làm:** Cập nhật module hl25 theo **Figma FE mới (Delta 2026-09)** — đối chiếu thiết kế cập nhật với bản đã implement P0-P7.
+  - 📌 **Delta chốt (2026-09-07):** (1) mỗi người **tối đa TRÚNG 1 lần** (lần 1 trúng→lần 2 ép trượt; lần 1 trượt→lần 2 random) — dùng `TotalGiftsWon` sẵn có, KHÔNG migration; (2) `Hl25SpinResultDto` thêm cờ FE (`CanShareForMoreTurn`/`EarnedCycles`/`TotalGiftsWon`/`HasWonBefore`) cho 3 màn kết quả; (3) **nhóm tuổi** (`Hl25AgeGroup` 18-25/26-35/36-44) thay `BirthDate` — sửa entity + migration in-place; (4) lời chúc `MaxWishLength` 500→250. Migration `20260825160252_AddHl25Module` **CHƯA apply** → sửa in-place.
+  - 📄 **Chi tiết:** [`docs/HOALINH25_ADMIN_SCHEMA.md`](docs/HOALINH25_ADMIN_SCHEMA.md) mục 0 "Delta 2026-09".
+  - **Phạm vi KHÔNG đụng:** Settings (P2), Frame (P3), Report (P6).
+
+### Việc cũ (P0-P7 module hl25 — nhánh `feature/hoalinh-25years` trước đây)
+> Xây hệ thống Admin cho Zalo Mini App "Dược Phẩm Hoa Linh 25 Năm" (schema DB `hl25`).
   - ✅ **Thiết kế xong** (Bước 1-5): trích xuất UI Figma, thiết kế 10 entity schema `hl25`, xác định điểm tái sử dụng (Summernote / `IManageImageService` / Zalo OA-ZNS-Log), lập kế hoạch 8 Phase.
   - 📄 **Tài liệu kiến trúc:** [`docs/HOALINH25_ADMIN_SCHEMA.md`](docs/HOALINH25_ADMIN_SCHEMA.md).
   - ✅ **Quyết định nghiệp vụ đã chốt (2026-08-25):** (1) KHÔNG quản lý Points ở hl25 (thuộc gamification); (2) WheelConfig singleton/tenant; (3) trần 2 lượt quay/người — mỗi chu kỳ "Tạo thiệp → Chia sẻ thành công" = +1 lượt, tối đa 2 chu kỳ; (4) trao thưởng 2 bước (Won → Admin Delivered).

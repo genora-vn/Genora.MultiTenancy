@@ -142,7 +142,7 @@ public class MiniAppHl25Service : ApplicationService, IMiniAppHl25Service
 
         participant.FullName = request.FullName;
         participant.PhoneNumber = request.PhoneNumber;
-        participant.BirthDate = request.BirthDate;
+        participant.AgeGroup = request.AgeGroup;
         participant.Gender = request.Gender;
         participant.ReceiveAddress = request.ReceiveAddress;
 
@@ -313,6 +313,11 @@ public class MiniAppHl25Service : ApplicationService, IMiniAppHl25Service
         if (slots.Count == 0)
             throw new UserFriendlyException("Vòng quay chưa có ô quay.");
 
+        // Delta 2026-09 — mỗi người TỐI ĐA TRÚNG 1 LẦN trong toàn chương trình.
+        // Nếu đã trúng trước đó (TotalGiftsWon >= 1) thì lượt này ép KHÔNG trúng
+        // (lần 1 trúng → lần 2 ép trượt; lần 1 trượt → lần 2 quay ngẫu nhiên bình thường).
+        var hasWonBefore = participant.TotalGiftsWon >= 1;
+
         // Chọn ô theo tỷ lệ WinRate (weighted random).
         var selected = PickSlotByWinRate(slots);
 
@@ -328,7 +333,8 @@ public class MiniAppHl25Service : ApplicationService, IMiniAppHl25Service
         bool won = false;
         Hl25Gift? gift = null;
 
-        if (selected.GiftId.HasValue)
+        // Chỉ xét trúng khi CHƯA từng trúng lần nào (trần trúng 1 lần/người).
+        if (!hasWonBefore && selected.GiftId.HasValue)
         {
             gift = await _giftRepository.FindAsync(selected.GiftId.Value);
             // Trúng chỉ khi quà còn hàng + đang bật.
@@ -348,12 +354,13 @@ public class MiniAppHl25Service : ApplicationService, IMiniAppHl25Service
             else
             {
                 // Ô có quà nhưng hết kho → coi như không trúng.
+                gift = null;
                 spinLog.RewardStatus = Hl25RewardStatus.NotWon;
             }
         }
         else
         {
-            // Ô "Chúc may mắn".
+            // Ô "Chúc may mắn" HOẶC đã trúng trước đó (ép trượt).
             spinLog.RewardStatus = Hl25RewardStatus.NotWon;
         }
 
@@ -370,7 +377,12 @@ public class MiniAppHl25Service : ApplicationService, IMiniAppHl25Service
             GiftId = won ? gift!.Id : null,
             GiftName = won ? gift!.Name : null,
             GiftImageUrl = won ? gift!.ImageUrl : null,
-            RemainingSpinTurns = participant.RemainingSpinTurns
+            RemainingSpinTurns = participant.RemainingSpinTurns,
+            // Cờ FE (Delta 2026-09) cho 3 màn kết quả.
+            CanShareForMoreTurn = participant.EarnedCycles < Hl25Consts.MaxSpinTurnsPerUser,
+            EarnedCycles = participant.EarnedCycles,
+            TotalGiftsWon = participant.TotalGiftsWon,
+            HasWonBefore = hasWonBefore
         };
     }
 
@@ -445,7 +457,7 @@ public class MiniAppHl25Service : ApplicationService, IMiniAppHl25Service
         ZaloUserId = p.ZaloUserId,
         FullName = p.FullName,
         PhoneNumber = p.PhoneNumber,
-        BirthDate = p.BirthDate,
+        AgeGroup = p.AgeGroup,
         Gender = p.Gender,
         ReceiveAddress = p.ReceiveAddress,
         AvatarUrl = p.AvatarUrl,
