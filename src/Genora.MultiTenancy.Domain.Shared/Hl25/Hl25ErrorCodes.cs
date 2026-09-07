@@ -40,6 +40,15 @@ public static class Hl25ErrorCodes
     /// <summary>Chương trình chưa được kích hoạt / chưa cấu hình.</summary>
     public const string ProgramInactive = "Hl25:ProgramInactive";
 
+    /// <summary>Thiếu file ảnh khi upload.</summary>
+    public const string ImageRequired = "Hl25:ImageRequired";
+
+    /// <summary>File ảnh vượt quá dung lượng cho phép (5MB).</summary>
+    public const string ImageTooLarge = "Hl25:ImageTooLarge";
+
+    /// <summary>Upload ảnh thất bại (sai định dạng, lỗi lưu trữ...).</summary>
+    public const string UploadFailed = "Hl25:UploadFailed";
+
     /// <summary>Lỗi không xác định.</summary>
     public const string Unknown = "Hl25:Unknown";
 }

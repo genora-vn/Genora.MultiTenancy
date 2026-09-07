@@ -1,15 +1,18 @@
+using Genora.MultiTenancy.AppDtos.AppImages;
 using Genora.MultiTenancy.AppDtos.Hl25.MiniApp;
 using Genora.MultiTenancy.DomainModels.AppHl25;
 using Genora.MultiTenancy.Enums;
 using Genora.MultiTenancy.Hl25;
 using Genora.MultiTenancy.Localization;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Volo.Abp;
 using Volo.Abp.Application.Services;
+using Volo.Abp.Content;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Uow;
 using Volo.Abp.Validation;
@@ -36,6 +39,8 @@ public class MiniAppHl25Service : ApplicationService, IMiniAppHl25Service
     private readonly IRepository<Hl25Gift, Guid> _giftRepository;
     private readonly IRepository<Hl25SpinLog, Guid> _spinLogRepository;
     private readonly IUnitOfWorkManager _uowManager;
+    private readonly IManageImageService _manageImageService;
+    private readonly IHttpContextAccessor _httpContextAccessor;
 
     public MiniAppHl25Service(
         IRepository<Hl25AppConfig, Guid> configRepository,
@@ -48,7 +53,9 @@ public class MiniAppHl25Service : ApplicationService, IMiniAppHl25Service
         IRepository<Hl25WheelSlot, Guid> wheelSlotRepository,
         IRepository<Hl25Gift, Guid> giftRepository,
         IRepository<Hl25SpinLog, Guid> spinLogRepository,
-        IUnitOfWorkManager uowManager)
+        IUnitOfWorkManager uowManager,
+        IManageImageService manageImageService,
+        IHttpContextAccessor httpContextAccessor)
     {
         _configRepository = configRepository;
         _participantRepository = participantRepository;
@@ -61,6 +68,8 @@ public class MiniAppHl25Service : ApplicationService, IMiniAppHl25Service
         _giftRepository = giftRepository;
         _spinLogRepository = spinLogRepository;
         _uowManager = uowManager;
+        _manageImageService = manageImageService;
+        _httpContextAccessor = httpContextAccessor;
         LocalizationResource = typeof(MultiTenancyResource);
     }
 
@@ -464,8 +473,8 @@ public class MiniAppHl25Service : ApplicationService, IMiniAppHl25Service
             Id = t.Id,
             CampaignId = t.CampaignId,
             Name = t.Name,
-            ImageUrl = t.ImageUrl,
-            ThumbnailUrl = t.ThumbnailUrl,
+            ImageUrl = ToFullUrl(t.ImageUrl)!,
+            ThumbnailUrl = ToFullUrl(t.ThumbnailUrl),
             DisplayOrder = t.DisplayOrder
         }).ToList();
     }
@@ -486,7 +495,7 @@ public class MiniAppHl25Service : ApplicationService, IMiniAppHl25Service
             Id = c.Id,
             CampaignId = c.CampaignId,
             TemplateId = c.TemplateId,
-            ResultImageUrl = c.ResultImageUrl,
+            ResultImageUrl = ToFullUrl(c.ResultImageUrl)!,
             WishMessage = c.WishMessage,
             ShareLink = c.ShareLink,
             SharePlatform = c.SharePlatform,
@@ -508,7 +517,7 @@ public class MiniAppHl25Service : ApplicationService, IMiniAppHl25Service
         {
             Id = g.Id,
             Name = g.Name,
-            ImageUrl = g.ImageUrl,
+            ImageUrl = ToFullUrl(g.ImageUrl),
             Description = g.Description,
             Value = g.Value,
             Status = g.Status
@@ -559,12 +568,42 @@ public class MiniAppHl25Service : ApplicationService, IMiniAppHl25Service
             Id = x.s.Id,
             GiftId = x.s.GiftId,
             GiftName = x.s.GiftNameSnapshot ?? x.g?.Name,
-            GiftImageUrl = x.g?.ImageUrl,
+            GiftImageUrl = ToFullUrl(x.g?.ImageUrl),
             SpinTime = x.s.SpinTime,
             RewardStatus = x.s.RewardStatus,
             DeliveredTime = x.s.DeliveredTime,
             Won = x.s.RewardStatus == Hl25RewardStatus.Won || x.s.RewardStatus == Hl25RewardStatus.Delivered
         }).ToList();
+    }
+
+    // ===== (Delta 2026-09) Upload ảnh =====
+    public async Task<Hl25UploadImageResultDto> UploadImageAsync(IRemoteStreamContent file)
+    {
+        if (file == null || (file.ContentLength ?? 0) == 0)
+            throw new UserFriendlyException(Hl25ErrorCodes.ImageRequired, "Thiếu file ảnh.");
+
+        // Tự validate 5MB (ManageImageService KHÔNG chặn size).
+        var length = file.ContentLength ?? file.GetStream().Length;
+        if (length > Hl25Consts.MaxCardImageSizeBytes)
+            throw new UserFriendlyException(Hl25ErrorCodes.ImageTooLarge,
+                $"Ảnh vượt quá dung lượng cho phép ({Hl25Consts.MaxCardImageSizeBytes / (1024 * 1024)}MB).");
+
+        try
+        {
+            var relativePath = await _manageImageService.UploadImageAsync(
+                file, CurrentTenant.Id?.ToString() ?? "host", Hl25Consts.DefaultImageSubFolder);
+
+            return new Hl25UploadImageResultDto { Url = ToFullUrl(relativePath)! };
+        }
+        catch (UserFriendlyException)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            throw new UserFriendlyException(Hl25ErrorCodes.UploadFailed, "Upload ảnh thất bại.")
+                .WithData("Detail", ex.Message);
+        }
     }
 
     // ===== Helpers =====
@@ -573,6 +612,27 @@ public class MiniAppHl25Service : ApplicationService, IMiniAppHl25Service
         var queryable = await _participantRepository.GetQueryableAsync();
         return await AsyncExecuter.FirstOrDefaultAsync(
             queryable.Where(x => x.ZaloUserId == zaloUserId));
+    }
+
+    /// <summary>
+    /// Dựng URL đầy đủ (scheme + host + path) từ path tương đối lưu trong DB (VD "/uploads/hl25/host/abc.png").
+    /// Idempotent: nếu đã là URL tuyệt đối (http/https) thì giữ nguyên (VD avatar Zalo). Null → null.
+    /// </summary>
+    private string? ToFullUrl(string? path)
+    {
+        if (string.IsNullOrWhiteSpace(path))
+            return path;
+
+        if (path.StartsWith("http://", StringComparison.OrdinalIgnoreCase) ||
+            path.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+            return path;
+
+        var request = _httpContextAccessor.HttpContext?.Request;
+        if (request == null)
+            return path; // không có HTTP context (VD test) → trả nguyên path tương đối.
+
+        var baseUrl = $"{request.Scheme}://{request.Host.Value}";
+        return path.StartsWith("/") ? baseUrl + path : baseUrl + "/" + path;
     }
 
     private static void ValidateZaloUserId(string zaloUserId)

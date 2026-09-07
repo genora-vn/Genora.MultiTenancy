@@ -1,6 +1,7 @@
 using Genora.MultiTenancy.AppDtos.Hl25.MiniApp;
 using Genora.MultiTenancy.Controllers;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System.Threading.Tasks;
 using Volo.Abp;
@@ -245,6 +246,28 @@ public class HoaLinh25MiniAppController : MultiTenancyController
         catch (UserFriendlyException ex)
         {
             return Ok(Hl25ApiResult<System.Collections.Generic.List<Hl25SpinLogPublicDto>>.Fail(ex.Code ?? "error", ex.Message));
+        }
+    }
+
+    // ===== (Delta 2026-09) Upload ảnh =====
+
+    /// <summary>Upload ảnh (ảnh thiệp / ảnh người dùng) lên server, trả về URL đầy đủ (endpoint + path).</summary>
+    [HttpPost("upload-image")]
+    public async Task<IActionResult> UploadImage([FromForm] IFormFile file)
+    {
+        try
+        {
+            if (file == null || file.Length == 0)
+                return Ok(Hl25ApiResult<Hl25UploadImageResultDto>.Fail("Hl25:ImageRequired", "Thiếu file ảnh."));
+
+            await using var stream = file.OpenReadStream();
+            var content = new Volo.Abp.Content.RemoteStreamContent(stream, file.FileName, file.ContentType, file.Length);
+            var data = await _service.UploadImageAsync(content);
+            return Ok(Hl25ApiResult<Hl25UploadImageResultDto>.Ok(data));
+        }
+        catch (UserFriendlyException ex)
+        {
+            return Ok(Hl25ApiResult<Hl25UploadImageResultDto>.Fail(ex.Code ?? "error", ex.Message));
         }
     }
 }

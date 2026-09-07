@@ -60,4 +60,9 @@ public interface IMiniAppHl25Service : IApplicationService
 
     /// <summary>Lịch sử lượt quay ĐÃ THỰC HIỆN của người chơi (theo ZaloUserId).</summary>
     Task<List<Hl25SpinLogPublicDto>> GetMySpinLogsAsync(string zaloUserId);
+
+    // ===== (Delta 2026-09) Upload ảnh =====
+
+    /// <summary>Upload ảnh (ảnh thiệp / ảnh người dùng) lên server, trả về URL đầy đủ (endpoint + path).</summary>
+    Task<Hl25UploadImageResultDto> UploadImageAsync(Volo.Abp.Content.IRemoteStreamContent file);
 }

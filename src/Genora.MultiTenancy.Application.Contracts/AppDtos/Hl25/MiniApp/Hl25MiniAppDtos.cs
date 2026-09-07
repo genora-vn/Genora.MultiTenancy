@@ -184,6 +184,15 @@ public class Hl25MyGiftDto
     public DateTime? DeliveredTime { get; set; }
 }
 
+// ===== (Delta 2026-09) Upload ảnh =====
+
+/// <summary>Kết quả upload ảnh — trả về URL đầy đủ (endpoint + path).</summary>
+public class Hl25UploadImageResultDto
+{
+    /// <summary>Đường dẫn đầy đủ tới ảnh (VD https://host/uploads/hl25/host/abc.png).</summary>
+    public string Url { get; set; } = null!;
+}
+
 // ===== (Delta 2026-09) Frame — Chiến dịch / Mẫu Frame / Lịch sử tạo ảnh =====
 
 /// <summary>Chiến dịch ghép ảnh (public — FE hiển thị danh sách đợt ghép ảnh).</summary>

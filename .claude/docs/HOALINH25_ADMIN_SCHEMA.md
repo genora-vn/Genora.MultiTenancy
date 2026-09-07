@@ -415,7 +415,15 @@ Zalo OA/ZNS/Log: TÁI DÙNG (ZaloAuth / ZaloLog / ZaloSettingNames) — không t
 - **Wheel:** `GET gifts` (kho quà — ẩn Disabled); `GET me/spin-turns?zaloUserId=` (lịch sử NHẬN lượt); `GET me/spins?zaloUserId=` (lịch sử lượt quay đã thực hiện, cả trúng/trượt).
 - DTO public riêng (`Hl25FrameCampaignPublicDto`/`Hl25FrameTemplatePublicDto`/`Hl25FrameCreationPublicDto`/`Hl25GiftPublicDto`/`Hl25SpinTurnLogPublicDto`/`Hl25SpinLogPublicDto`).
 
-**Delta 2026-09 — chuẩn hóa mã lỗi:** `Hl25ErrorCodes` (Domain.Shared) — mọi `UserFriendlyException` trong MiniApp service gắn mã: `MissingZaloUserId`, `ParticipantNotFound`, `FrameImageRequired`, `WishTooLong`, `FrameNotFound`, `FrameNotOwned`, `NoSpinTurns`, `WheelNotConfigured`, `WheelInactive`, `WheelNoSlots`, `ProgramInactive`, `Unknown`. FE đọc `error` trong `Hl25ApiResult` để hiển thị thông báo.
+**Delta 2026-09 — chuẩn hóa mã lỗi:** `Hl25ErrorCodes` (Domain.Shared) — mọi `UserFriendlyException` trong MiniApp service gắn mã: `MissingZaloUserId`, `ParticipantNotFound`, `FrameImageRequired`, `WishTooLong`, `FrameNotFound`, `FrameNotOwned`, `NoSpinTurns`, `WheelNotConfigured`, `WheelInactive`, `WheelNoSlots`, `ProgramInactive`, `ImageRequired`, `ImageTooLarge`, `UploadFailed`, `Unknown`. FE đọc `error` trong `Hl25ApiResult` để hiển thị thông báo.
+
+**Delta 2026-09 — Upload ảnh + Full URL:**
+- `POST upload-image` (multipart/form-data, field `file`) → upload ảnh thiệp/ảnh người dùng qua `IManageImageService` (validate 5MB) → trả `{ url }` là **URL đầy đủ** (scheme+host+path). DTO `Hl25UploadImageResultDto`. FE thay `Hl25Api.uploadImage()` mock bằng endpoint này.
+- **Full URL cho mọi ảnh:** helper `ToFullUrl` (idempotent — giữ nguyên URL tuyệt đối như avatar Zalo, prepend `scheme://host` cho path tương đối `/uploads/...`) áp cho `frames/templates` (imageUrl/thumbnailUrl), `gifts` (imageUrl), `me/frames` (resultImageUrl), `me/spins` + `me/gifts` (giftImageUrl). Dùng `IHttpContextAccessor` lấy base URL từ request hiện tại.
+
+**Mapping enum (xác nhận với FE 2026-09-07):**
+- `ageGroup`: **CHỈ 4 giá trị** — `0=Không xác định, 1=(18-25), 2=(26-35), 3=(36-44)`. (FE dùng 6 giá trị Under18/Over45 là SAI.)
+- `gender`: `0=Không xác định, 1=Nam, 2=Nữ, 3=Khác`. (FE thiếu `Other=3`.)
 
 ---
 
