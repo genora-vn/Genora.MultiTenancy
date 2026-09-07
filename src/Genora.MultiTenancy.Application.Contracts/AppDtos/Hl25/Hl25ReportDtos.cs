@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Genora.MultiTenancy.Enums;
 
 namespace Genora.MultiTenancy.AppDtos.Hl25;
 
@@ -97,4 +98,32 @@ public class Hl25WheelGiftStatsDto
 
     /// <summary>Chi tiết theo từng quà.</summary>
     public List<Hl25WheelGiftStatsRowDto> Rows { get; set; } = new();
+}
+
+// ===== Báo cáo 4: Phân bổ nhóm tuổi (Delta 2026-09) =====
+
+/// <summary>Một dòng phân bổ người tham gia theo nhóm tuổi.</summary>
+public class Hl25AgeGroupStatsRowDto
+{
+    /// <summary>Nhóm tuổi.</summary>
+    public Hl25AgeGroup AgeGroup { get; set; }
+
+    /// <summary>Nhãn hiển thị (VD "18 - 25").</summary>
+    public string Label { get; set; } = null!;
+
+    /// <summary>Số người thuộc nhóm tuổi này.</summary>
+    public int Count { get; set; }
+
+    /// <summary>Tỷ lệ (%) trên tổng số người tham gia.</summary>
+    public decimal Percent { get; set; }
+}
+
+/// <summary>Kết quả báo cáo phân bổ nhóm tuổi người tham gia.</summary>
+public class Hl25AgeGroupStatsDto
+{
+    /// <summary>Tổng số người tham gia (trong khoảng lọc).</summary>
+    public int TotalParticipants { get; set; }
+
+    /// <summary>Chi tiết theo từng nhóm tuổi.</summary>
+    public List<Hl25AgeGroupStatsRowDto> Rows { get; set; } = new();
 }

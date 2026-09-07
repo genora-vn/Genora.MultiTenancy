@@ -395,7 +395,8 @@ Zalo OA/ZNS/Log: TÁI DÙNG (ZaloAuth / ZaloLog / ZaloSettingNames) — không t
   - `GetFrameStatsAsync(GetFrameStatsInput)` → theo thời gian/chiến dịch (số lượt tạo, số người, số chia sẻ).
   - `GetWheelParticipationStatsAsync(input)` → số người tham gia + tổng lượt quay + tổng lượt cấp.
   - `GetWheelGiftStatsAsync(input)` → theo quà: đã trao / tỷ lệ / tồn kho còn lại.
-- DTO kết quả: `Hl25FrameStatsDto`, `Hl25WheelParticipationStatsDto`, `Hl25WheelGiftStatsDto` (list dòng + tổng). Query bằng `AsyncExecuter` (không EF trực tiếp).
+  - `GetAgeGroupStatsAsync(input)` → **(Delta 2026-09)** phân bổ người tham gia theo nhóm tuổi (18-25/26-35/36-44/không xác định) + tỷ lệ %. Lọc theo `JoinedTime`.
+- DTO kết quả: `Hl25FrameStatsDto`, `Hl25WheelParticipationStatsDto`, `Hl25WheelGiftStatsDto`, `Hl25AgeGroupStatsDto` (list dòng + tổng). Query bằng `AsyncExecuter` (không EF trực tiếp). UI: card doughnut chart Chart.js + bảng.
 
 ### 6.6 MiniApp Controller (API cho FE Zalo)
 - **`HoaLinh25MiniAppController`** (`src/…HttpApi/Controllers/`) — endpoints tiêu dùng bởi FE (tham chiếu `HoaLinhMiniAppController`):

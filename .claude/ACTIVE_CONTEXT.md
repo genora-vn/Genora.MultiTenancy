@@ -11,7 +11,9 @@
   - 📄 **Chi tiết:** [`docs/HOALINH25_ADMIN_SCHEMA.md`](docs/HOALINH25_ADMIN_SCHEMA.md) mục 0 "Delta 2026-09".
   - ✅ **Đã commit `d20232b`:** 4 delta trên (trúng 1 lần/người, cờ FE, nhóm tuổi, lời chúc 250) + migration in-place + tài liệu/memory.
   - ✅ **P2 tinh giản mạnh (tiếp theo, chưa commit):** BỎ 5 field `LogoUrl`/`BannerUrl`/`TvcUrl`/`TvcHtml`/`GamePlayHtml` khỏi `Hl25AppConfig` (ảnh/nội dung cố định trong FE — lưu ý #4). Giữ `ProgramName`/`RulesHtml`(Thể lệ)/`StartTime`/`EndTime`/`Scope`/`OrganizerName`/`IsActive`. Đồng bộ entity+2 Admin DTO+MiniApp DTO/GetConfig+DbContext ext+Settings page(.cshtml/.cs/.js)+migration in-place (bỏ 5 cột). Build Web 0 errors.
-  - **Đã rà soát (2026-09-07):** Vòng quay/Gift Admin OK (cơ cấu 5 loại quà nhập qua CRUD, không cần code). Report OK (TotalWins không đếm nhầm lượt ép trượt). Đề xuất tùy chọn: báo cáo phân bố theo nhóm tuổi (chưa làm).
+  - **Đã rà soát (2026-09-07):** Vòng quay/Gift Admin OK (cơ cấu 5 loại quà nhập qua CRUD, không cần code). Report OK (TotalWins không đếm nhầm lượt ép trượt).
+  - ✅ **Báo cáo phân bổ nhóm tuổi (P6) — XONG:** `GetAgeGroupStatsAsync` (query Participant group theo `AgeGroup`, lọc `JoinedTime`, đủ 4 nhóm kể cả 0 người + tỷ lệ %) + DTO `Hl25AgeGroupStatsDto`/`Row` + interface. UI Reports thêm card doughnut Chart.js + bảng + tfoot tổng. Build 0 errors.
+  - ✅ **CURL API (T1) — đã gửi bộ đầy đủ 9 endpoint** theo thiết kế mới (AgeGroup thay BirthDate, cờ FE spin, config tinh giản) trong hội thoại.
   - **Chưa đụng:** Frame (P3), Report (P6 — trừ gợi ý nhóm tuổi). **CHƯA push** (SSH key môi trường chưa cấu hình). **CHƯA `dotnet ef database update`.**
 
 ### Việc cũ (P0-P7 module hl25 — nhánh `feature/hoalinh-25years` trước đây)

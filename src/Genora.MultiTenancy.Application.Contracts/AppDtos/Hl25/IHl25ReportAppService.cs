@@ -16,4 +16,7 @@ public interface IHl25ReportAppService : IApplicationService
 
     /// <summary>Thống kê Vòng quay theo Quà tặng (cơ cấu giải đã trao, tỷ lệ, tồn kho).</summary>
     Task<Hl25WheelGiftStatsDto> GetWheelGiftStatsAsync(Hl25ReportInput input);
+
+    /// <summary>Thống kê phân bổ người tham gia theo nhóm tuổi (Delta 2026-09).</summary>
+    Task<Hl25AgeGroupStatsDto> GetAgeGroupStatsAsync(Hl25ReportInput input);
 }

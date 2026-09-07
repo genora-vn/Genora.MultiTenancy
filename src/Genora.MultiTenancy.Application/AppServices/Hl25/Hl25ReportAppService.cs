@@ -171,6 +171,62 @@ public class Hl25ReportAppService : ApplicationService, IHl25ReportAppService
         };
     }
 
+    // ===== Báo cáo 4: Phân bổ nhóm tuổi (Delta 2026-09) =====
+    public async Task<Hl25AgeGroupStatsDto> GetAgeGroupStatsAsync(Hl25ReportInput input)
+    {
+        await CheckViewPolicyAsync();
+
+        var participantQueryable = await _participantRepository.GetQueryableAsync();
+        var query = participantQueryable;
+
+        if (input.FromDate.HasValue)
+            query = query.Where(x => x.JoinedTime >= input.FromDate.Value);
+        if (input.ToDate.HasValue)
+            query = query.Where(x => x.JoinedTime <= input.ToDate.Value);
+
+        var participants = await AsyncExecuter.ToListAsync(query);
+        var total = participants.Count;
+
+        var countByGroup = participants
+            .GroupBy(x => x.AgeGroup)
+            .ToDictionary(g => g.Key, g => g.Count());
+
+        // Liệt kê đủ 4 nhóm tuổi (kể cả nhóm 0 người) theo thứ tự enum.
+        var groups = new[]
+        {
+            Hl25AgeGroup.Age18To25,
+            Hl25AgeGroup.Age26To35,
+            Hl25AgeGroup.Age36To44,
+            Hl25AgeGroup.Unknown
+        };
+
+        var rows = groups.Select(g =>
+        {
+            var count = countByGroup.TryGetValue(g, out var c) ? c : 0;
+            return new Hl25AgeGroupStatsRowDto
+            {
+                AgeGroup = g,
+                Label = AgeGroupLabel(g),
+                Count = count,
+                Percent = total > 0 ? Math.Round((decimal)count * 100 / total, 2) : 0
+            };
+        }).ToList();
+
+        return new Hl25AgeGroupStatsDto
+        {
+            TotalParticipants = total,
+            Rows = rows
+        };
+    }
+
+    private static string AgeGroupLabel(Hl25AgeGroup ageGroup) => ageGroup switch
+    {
+        Hl25AgeGroup.Age18To25 => "18 - 25",
+        Hl25AgeGroup.Age26To35 => "26 - 35",
+        Hl25AgeGroup.Age36To44 => "36 - 44",
+        _ => "Không xác định"
+    };
+
     // ===== Helpers =====
     private async Task EnsureFeatureAsync()
     {

@@ -2,6 +2,7 @@ $(function () {
     var service = genora.multiTenancy.appServices.hl25.hl25Report;
 
     var frameChart = null;
+    var ageGroupChart = null;
 
     function getInput() {
         return {
@@ -81,11 +82,50 @@ $(function () {
         });
     }
 
+    // ===== Báo cáo 4: Phân bổ nhóm tuổi =====
+    function loadAgeGroupStats(input) {
+        service.getAgeGroupStats(input).then(function (r) {
+            $('#AgeGroupTotal').text(fmtNumber(r.totalParticipants));
+
+            var tbody = $('#AgeGroupBody');
+            tbody.empty();
+            var rows = r.rows || [];
+            rows.forEach(function (x) {
+                tbody.append(
+                    '<tr>' +
+                    '<td>' + x.label + '</td>' +
+                    '<td class="text-end">' + fmtNumber(x.count) + '</td>' +
+                    '<td class="text-end">' + x.percent + '%</td>' +
+                    '</tr>'
+                );
+            });
+
+            var labels = rows.map(function (x) { return x.label; });
+            var counts = rows.map(function (x) { return x.count; });
+            var colors = ['#0d6efd', '#198754', '#ffc107', '#adb5bd'];
+
+            var ctx = document.getElementById('AgeGroupChart').getContext('2d');
+            if (ageGroupChart) ageGroupChart.destroy();
+            ageGroupChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: labels,
+                    datasets: [{ data: counts, backgroundColor: colors }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: { legend: { position: 'bottom' } }
+                }
+            });
+        });
+    }
+
     function loadAll() {
         var input = getInput();
         loadFrameStats(input);
         loadWheelParticipation(input);
         loadWheelGiftStats(input);
+        loadAgeGroupStats(input);
     }
 
     if (window.flatpickr) {

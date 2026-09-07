@@ -119,3 +119,36 @@
         </table>
     </div>
 </div>
+
+@* ===== Báo cáo 4: Phân bổ nhóm tuổi ===== *@
+<div class="card mb-3">
+    <div class="card-header py-2"><i class="fa fa-users me-1"></i> Phân bổ người tham gia theo nhóm tuổi</div>
+    <div class="card-body">
+        <div class="row g-3 align-items-center">
+            <div class="col-md-5">
+                <canvas id="AgeGroupChart" height="180"></canvas>
+            </div>
+            <div class="col-md-7">
+                <table class="table table-sm table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Nhóm tuổi</th>
+                            <th class="text-end">Số người</th>
+                            <th class="text-end">Tỷ lệ</th>
+                        </tr>
+                    </thead>
+                    <tbody id="AgeGroupBody">
+                        <tr><td colspan="3" class="text-center text-muted py-3">Đang tải...</td></tr>
+                    </tbody>
+                    <tfoot class="table-light">
+                        <tr>
+                            <th>Tổng số người tham gia</th>
+                            <th class="text-end" id="AgeGroupTotal">-</th>
+                            <th class="text-end">100%</th>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
