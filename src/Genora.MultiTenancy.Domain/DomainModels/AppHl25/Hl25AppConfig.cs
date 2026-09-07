@@ -8,8 +8,9 @@ namespace Genora.MultiTenancy.DomainModels.AppHl25;
 
 /// <summary>
 /// Cấu hình chung Mini App "Dược Phẩm Hoa Linh 25 Năm" (singleton theo tenant).
-/// Các trường HTML (RulesHtml, GamePlayHtml, TvcHtml) sử dụng Summernote ở Admin.
-/// Cấu hình Zalo OA/ZNS TÁI DÙNG module Zalo có sẵn, KHÔNG lưu ở đây.
+/// Delta 2026-09 (tinh giản mạnh — lưu ý #4 ảnh thiết kế cố định): chỉ giữ Thể lệ (RulesHtml) +
+/// thời gian + phạm vi/ĐVTC + bật/tắt. Đã BỎ LogoUrl/BannerUrl/TvcUrl/TvcHtml/GamePlayHtml
+/// (ảnh/nội dung đã cố định trong FE). Cấu hình Zalo OA/ZNS TÁI DÙNG module Zalo có sẵn.
 /// </summary>
 [Table("AppHl25AppConfig", Schema = "hl25")]
 public class Hl25AppConfig : FullAuditedAggregateRoot<Guid>, IMultiTenant
@@ -20,26 +21,8 @@ public class Hl25AppConfig : FullAuditedAggregateRoot<Guid>, IMultiTenant
     [StringLength(256)]
     public string? ProgramName { get; set; }
 
-    /// <summary>Logo (URL, upload qua ManageImageService).</summary>
-    [StringLength(1024)]
-    public string? LogoUrl { get; set; }
-
-    /// <summary>Banner trang chủ (URL).</summary>
-    [StringLength(1024)]
-    public string? BannerUrl { get; set; }
-
-    /// <summary>Link video TVC.</summary>
-    [StringLength(1024)]
-    public string? TvcUrl { get; set; }
-
-    /// <summary>Nội dung TVC (HTML — Summernote).</summary>
-    public string? TvcHtml { get; set; }
-
     /// <summary>Thể lệ chương trình (HTML — Summernote).</summary>
     public string? RulesHtml { get; set; }
-
-    /// <summary>Luật chơi (HTML — Summernote).</summary>
-    public string? GamePlayHtml { get; set; }
 
     /// <summary>Thời gian bắt đầu.</summary>
     public DateTime? StartTime { get; set; }

@@ -21,9 +21,6 @@ public static class MultiTenancyDbContextModelCreatingExtensionsHl25
             b.ConfigureByConvention();
 
             b.Property(x => x.ProgramName).HasMaxLength(256);
-            b.Property(x => x.LogoUrl).HasMaxLength(1024);
-            b.Property(x => x.BannerUrl).HasMaxLength(1024);
-            b.Property(x => x.TvcUrl).HasMaxLength(1024);
             b.Property(x => x.Scope).HasMaxLength(256);
             b.Property(x => x.OrganizerName).HasMaxLength(256);
 

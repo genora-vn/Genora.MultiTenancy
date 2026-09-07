@@ -20,7 +20,7 @@
 | 5 | Màn "Thông tin nhận quà" dùng **NHÓM TUỔI** (18-25 / 26-35 / 36-44) thay cho ngày sinh. | **Schema** | ✅ in-place: `BirthDate` → `AgeGroup` |
 | 6 | Lời chúc tối đa **250 ký tự** (counter "x/250" trên màn Tạo thiệp), không phải 500. | Consts + `StringLength` | ✅ in-place: `WishMessage` maxLength 500 → 250 |
 | 3 | Cơ cấu 5 loại quà (1 combo 4 SP × 1000 người + 4 SP lẻ × 500 người). | Data (Admin CRUD `Hl25Gift` sẵn có) | ❌ |
-| 4 | Tinh giản trang Cài đặt Mini App (P2) theo lưu ý ảnh cố định. | Review — **HOÃN** ("làm sau") | — |
+| 4 | **Tinh giản mạnh trang Cài đặt Mini App (P2)** theo lưu ý #4 (ảnh/nội dung cố định trong FE): BỎ 5 field `LogoUrl`/`BannerUrl`/`TvcUrl`/`TvcHtml`/`GamePlayHtml`. GIỮ `ProgramName`/`RulesHtml` (Thể lệ)/`StartTime`/`EndTime`/`Scope`/`OrganizerName`/`IsActive`. | **Schema** | ✅ in-place: bỏ 5 cột `AppHl25AppConfig` |
 
 **Luồng vòng quay (nguồn chân lý — mô tả nghiệp vụ đã chốt):**
 - **Lần 1 (sau khi có lượt đầu):** quay → hiện kết quả (trúng/không) + nút "Chia sẻ để thêm lượt" + "Quà tặng nhận được".
@@ -167,20 +167,17 @@ Cấu hình chung của chương trình. 1 bản ghi / tenant (singleton theo te
 | Field | Kiểu | Null | Mô tả |
 |-------|------|------|-------|
 | `ProgramName` | `string(256)` | ✗ | Tên chương trình |
-| `LogoUrl` | `string(1024)` | ✓ | Logo (upload qua ManageImageService) |
-| `BannerUrl` | `string(1024)` | ✓ | Banner trang chủ |
-| `TvcUrl` | `string(1024)` | ✓ | Link video TVC |
-| `TvcHtml` | `string(max)` | ✓ | Nội dung TVC (HTML — Summernote) |
 | `RulesHtml` | `string(max)` | ✓ | Thể lệ chương trình (HTML — Summernote) |
-| `GamePlayHtml` | `string(max)` | ✓ | Luật chơi (HTML — Summernote) |
 | `StartTime` | `DateTime` | ✓ | Thời gian bắt đầu |
 | `EndTime` | `DateTime` | ✓ | Thời gian kết thúc |
 | `Scope` | `string(256)` | ✓ | Phạm vi (VD "Toàn quốc") |
 | `OrganizerName` | `string(256)` | ✓ | ĐVTC (VD "Dược phẩm Hoa Linh") |
 | `IsActive` | `bool` | ✗ | Bật/tắt chương trình |
 
+> **Delta 2026-09 (tinh giản mạnh — lưu ý #4):** đã BỎ `LogoUrl`, `BannerUrl`, `TvcUrl`, `TvcHtml`, `GamePlayHtml` (ảnh/nội dung đã cố định trong thiết kế FE — không cấu hình động). Trang Settings chỉ còn Thông tin chương trình + Thời gian + Thể lệ + link tích hợp Zalo.
+
 - **Index:** `IX_AppHl25AppConfig_TenantId` (`TenantId`).
-- **FK:** không. **Tái dùng:** trường HTML → Summernote; ảnh → `IManageImageService`.
+- **FK:** không. **Tái dùng:** Thể lệ (RulesHtml) → Summernote.
 - **Zalo OA/ZNS:** KHÔNG tạo entity mới — Admin trỏ tới cấu hình Zalo dùng chung (`ZaloAuth` + `ZaloSettingNames`); Nhật ký Zalo đọc từ `AppZaloLog`.
 
 ### 5.2 Nhóm 2 — Quản lý Frame

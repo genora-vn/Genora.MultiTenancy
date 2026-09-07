@@ -70,12 +70,7 @@ public class MiniAppHl25Service : ApplicationService, IMiniAppHl25Service
         return new Hl25MiniAppConfigDto
         {
             ProgramName = config.ProgramName,
-            LogoUrl = config.LogoUrl,
-            BannerUrl = config.BannerUrl,
-            TvcUrl = config.TvcUrl,
-            TvcHtml = config.TvcHtml,
             RulesHtml = config.RulesHtml,
-            GamePlayHtml = config.GamePlayHtml,
             StartTime = config.StartTime,
             EndTime = config.EndTime,
             Scope = config.Scope,

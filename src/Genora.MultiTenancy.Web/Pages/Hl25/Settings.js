@@ -1,5 +1,5 @@
 $(function () {
-    // Init Summernote cho các trường HTML (Thể lệ / Luật chơi / TVC).
+    // Init Summernote cho Thể lệ chương trình (RulesHtml).
     $('.html-editor').each(function () {
         var $editor = $(this);
         if ($editor.next('.note-editor').length) {
@@ -28,30 +28,4 @@ $(function () {
             time_24hr: true
         });
     }
-
-    var MAX_BYTES = 5 * 1024 * 1024;
-
-    // Preview + validate 5MB cho input ảnh (logo/banner).
-    $('.asset-input').on('change', function () {
-        var input = this;
-        var previewSelector = $(input).data('preview');
-        var file = input.files && input.files[0];
-        if (!file) {
-            return;
-        }
-
-        if (file.size > MAX_BYTES) {
-            abp.message.warn('Ảnh vượt quá giới hạn 5MB. Vui lòng chọn ảnh nhỏ hơn.');
-            input.value = '';
-            return;
-        }
-
-        if (previewSelector) {
-            var reader = new FileReader();
-            reader.onload = function (e) {
-                $(previewSelector).attr('src', e.target.result).removeClass('d-none');
-            };
-            reader.readAsDataURL(file);
-        }
-    });
 });

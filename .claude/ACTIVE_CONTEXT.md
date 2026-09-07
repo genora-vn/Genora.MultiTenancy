@@ -9,7 +9,10 @@
 - **Việc đang làm:** Cập nhật module hl25 theo **Figma FE mới (Delta 2026-09)** — đối chiếu thiết kế cập nhật với bản đã implement P0-P7.
   - 📌 **Delta chốt (2026-09-07):** (1) mỗi người **tối đa TRÚNG 1 lần** (lần 1 trúng→lần 2 ép trượt; lần 1 trượt→lần 2 random) — dùng `TotalGiftsWon` sẵn có, KHÔNG migration; (2) `Hl25SpinResultDto` thêm cờ FE (`CanShareForMoreTurn`/`EarnedCycles`/`TotalGiftsWon`/`HasWonBefore`) cho 3 màn kết quả; (3) **nhóm tuổi** (`Hl25AgeGroup` 18-25/26-35/36-44) thay `BirthDate` — sửa entity + migration in-place; (4) lời chúc `MaxWishLength` 500→250. Migration `20260825160252_AddHl25Module` **CHƯA apply** → sửa in-place.
   - 📄 **Chi tiết:** [`docs/HOALINH25_ADMIN_SCHEMA.md`](docs/HOALINH25_ADMIN_SCHEMA.md) mục 0 "Delta 2026-09".
-  - **Phạm vi KHÔNG đụng:** Settings (P2), Frame (P3), Report (P6).
+  - ✅ **Đã commit `d20232b`:** 4 delta trên (trúng 1 lần/người, cờ FE, nhóm tuổi, lời chúc 250) + migration in-place + tài liệu/memory.
+  - ✅ **P2 tinh giản mạnh (tiếp theo, chưa commit):** BỎ 5 field `LogoUrl`/`BannerUrl`/`TvcUrl`/`TvcHtml`/`GamePlayHtml` khỏi `Hl25AppConfig` (ảnh/nội dung cố định trong FE — lưu ý #4). Giữ `ProgramName`/`RulesHtml`(Thể lệ)/`StartTime`/`EndTime`/`Scope`/`OrganizerName`/`IsActive`. Đồng bộ entity+2 Admin DTO+MiniApp DTO/GetConfig+DbContext ext+Settings page(.cshtml/.cs/.js)+migration in-place (bỏ 5 cột). Build Web 0 errors.
+  - **Đã rà soát (2026-09-07):** Vòng quay/Gift Admin OK (cơ cấu 5 loại quà nhập qua CRUD, không cần code). Report OK (TotalWins không đếm nhầm lượt ép trượt). Đề xuất tùy chọn: báo cáo phân bố theo nhóm tuổi (chưa làm).
+  - **Chưa đụng:** Frame (P3), Report (P6 — trừ gợi ý nhóm tuổi). **CHƯA push** (SSH key môi trường chưa cấu hình). **CHƯA `dotnet ef database update`.**
 
 ### Việc cũ (P0-P7 module hl25 — nhánh `feature/hoalinh-25years` trước đây)
 > Xây hệ thống Admin cho Zalo Mini App "Dược Phẩm Hoa Linh 25 Năm" (schema DB `hl25`).

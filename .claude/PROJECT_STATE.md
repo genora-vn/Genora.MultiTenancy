@@ -53,7 +53,8 @@
 
 ## Module: Hoa Linh 25 Năm (hl25) — ✅ HOÀN THÀNH P0-P7 + 🔄 DELTA 2026-09 (nhánh `feature/dev-hoalinh-25years`)
 - Admin cho Zalo Mini App "Dược Phẩm Hoa Linh 25 Năm" (chương trình kỷ niệm 25 năm: tạo thiệp ghép ảnh + chia sẻ + vòng quay may mắn). Schema DB riêng `hl25`.
-- **🔄 Delta 2026-09 (cập nhật theo Figma FE mới):** (1) mỗi người **tối đa TRÚNG 1 lần** (SpinAsync chặn `TotalGiftsWon>=1→NotWon`); (2) `Hl25SpinResultDto` thêm cờ FE cho 3 màn kết quả; (3) **nhóm tuổi** `Hl25AgeGroup` thay `BirthDate`; (4) `MaxWishLength` 500→250. Migration `20260825160252` CHƯA apply → sửa in-place. Không đụng P2/P3/P6. Chi tiết: `docs/HOALINH25_ADMIN_SCHEMA.md` mục 0.
+- **🔄 Delta 2026-09 (cập nhật theo Figma FE mới):** (1) mỗi người **tối đa TRÚNG 1 lần** (SpinAsync chặn `TotalGiftsWon>=1→NotWon`); (2) `Hl25SpinResultDto` thêm cờ FE cho 3 màn kết quả; (3) **nhóm tuổi** `Hl25AgeGroup` thay `BirthDate`; (4) `MaxWishLength` 500→250. Migration `20260825160252` CHƯA apply → sửa in-place. Chi tiết: `docs/HOALINH25_ADMIN_SCHEMA.md` mục 0. (commit `d20232b`)
+- **🔄 P2 tinh giản mạnh (2026-09-07):** BỎ 5 field `LogoUrl`/`BannerUrl`/`TvcUrl`/`TvcHtml`/`GamePlayHtml` khỏi `Hl25AppConfig` (ảnh/nội dung cố định trong FE — lưu ý #4). Giữ `ProgramName`/`RulesHtml`/`StartTime`/`EndTime`/`Scope`/`OrganizerName`/`IsActive`. Đồng bộ entity+DTO+MiniApp+DbContext ext+Settings page+migration in-place. Build 0 errors. Đã rà soát Vòng quay/Gift + Report: OK, không cần sửa (cơ cấu 5 loại quà nhập qua CRUD).
 - **Thiết kế (Bước 1-5):** UI Figma, 10 entity, 8 Phase plan. Tài liệu: `docs/HOALINH25_ADMIN_SCHEMA.md`.
 - **Quyết định chốt:** bỏ Points (thuộc gamification), Wheel singleton/tenant, trần 2 lượt quay (mỗi chu kỳ "Tạo thiệp→Chia sẻ" = +1, tối đa 2), trao thưởng 2 bước.
 - **Tái dùng:** Summernote (HTML editor), `IManageImageService` (upload ảnh, tự chặn 5MB), Zalo OA/ZNS/Log dùng chung.
