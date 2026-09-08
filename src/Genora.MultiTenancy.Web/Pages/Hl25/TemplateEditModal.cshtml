@@ -38,8 +38,9 @@
                 <div class="col-md-6 mb-3">
                     <abp-input asp-for="Template.DisplayOrder" label="Thứ tự hiển thị" type="number" />
                 </div>
-                <div class="col-md-6 mb-3 d-flex align-items-end">
-                    <div class="form-check form-switch">
+                <div class="col-md-6 mb-3">
+                    <label asp-for="Template.CampaignId" class="form-label">Trạng thái</label>
+                    <div class="form-check form-switch pt-2">
                         <input asp-for="Template.IsActive" class="form-check-input" type="checkbox" role="switch" />
                         <label class="form-check-label" asp-for="Template.IsActive">Kích hoạt</label>
                     </div>
