@@ -21,6 +21,17 @@ public class Hl25AppConfig : FullAuditedAggregateRoot<Guid>, IMultiTenant
     [StringLength(256)]
     public string? ProgramName { get; set; }
 
+    /// <summary>Giới thiệu chương trình (HTML — Summernote).</summary>
+    public string? IntroductionHtml { get; set; }
+
+    /// <summary>Hình thức tham gia (VD "Tạo thiệp - Chia sẻ - Tham gia vòng quay may mắn").</summary>
+    [StringLength(512)]
+    public string? Format { get; set; }
+
+    /// <summary>Thời gian trao quà dự kiến (VD "Trong vòng 45 ngày kể từ ngày chương trình kết thúc").</summary>
+    [StringLength(512)]
+    public string? GiftDeliveryTime { get; set; }
+
     /// <summary>Thể lệ chương trình (HTML — Summernote).</summary>
     public string? RulesHtml { get; set; }
 

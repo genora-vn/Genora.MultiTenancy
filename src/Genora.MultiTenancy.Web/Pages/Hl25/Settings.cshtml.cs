@@ -28,6 +28,9 @@ public class SettingsModel : AbpPageModel
         Input = new Hl25SettingsViewModel
         {
             ProgramName = dto.ProgramName,
+            IntroductionHtml = dto.IntroductionHtml,
+            Format = dto.Format,
+            GiftDeliveryTime = dto.GiftDeliveryTime,
             RulesHtml = dto.RulesHtml,
             StartTime = dto.StartTime,
             EndTime = dto.EndTime,
@@ -42,6 +45,9 @@ public class SettingsModel : AbpPageModel
         await _appConfigService.UpdateAsync(new CreateUpdateHl25AppConfigDto
         {
             ProgramName = Input.ProgramName,
+            IntroductionHtml = Input.IntroductionHtml,
+            Format = Input.Format,
+            GiftDeliveryTime = Input.GiftDeliveryTime,
             RulesHtml = Input.RulesHtml,
             StartTime = Input.StartTime,
             EndTime = Input.EndTime,
@@ -56,6 +62,9 @@ public class SettingsModel : AbpPageModel
     public class Hl25SettingsViewModel
     {
         public string? ProgramName { get; set; }
+        public string? IntroductionHtml { get; set; }
+        public string? Format { get; set; }
+        public string? GiftDeliveryTime { get; set; }
         public string? RulesHtml { get; set; }
         public DateTime? StartTime { get; set; }
         public DateTime? EndTime { get; set; }

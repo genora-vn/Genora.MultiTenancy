@@ -1281,10 +1281,30 @@
     "Permission:AppHl25Reports": "View Reports",
 
     "Menu:Hl25": "Hoa Linh 25th",
-    "Menu:Hl25Settings": "Mini App Settings",
+    "Menu:Hl25Settings": "Program Configuration",
     "Menu:Hl25Frames": "Frame Management",
     "Menu:Hl25Wheel": "Lucky Wheel",
     "Menu:Hl25Participants": "Participants",
-    "Menu:Hl25Reports": "Reports"
+    "Menu:Hl25Reports": "Reports",
+
+    "Hl25Settings:PageTitle": "Program Configuration",
+    "Hl25Settings:PageSubtitle": "Configure the \"Hoa Linh Pharma 25th Anniversary\" program: program information, introduction, time & rules.",
+    "Hl25Settings:ProgramInfo": "Program Information",
+    "Hl25Settings:ProgramName": "Program Name",
+    "Hl25Settings:StartTime": "Start Time",
+    "Hl25Settings:EndTime": "End Time",
+    "Hl25Settings:Scope": "Scope",
+    "Hl25Settings:ScopePlaceholder": "E.g.: Nationwide",
+    "Hl25Settings:OrganizerName": "Organizer",
+    "Hl25Settings:OrganizerPlaceholder": "E.g.: Hoa Linh Pharma",
+    "Hl25Settings:Format": "Format",
+    "Hl25Settings:FormatPlaceholder": "E.g.: Create card - Share - Join lucky wheel",
+    "Hl25Settings:GiftDeliveryTime": "Expected Gift Delivery Time",
+    "Hl25Settings:GiftDeliveryTimePlaceholder": "E.g.: Within 45 days from the program end date",
+    "Hl25Settings:IsActive": "Activate Program",
+    "Hl25Settings:Introduction": "Program Introduction",
+    "Hl25Settings:Rules": "Program Rules",
+    "Hl25Settings:Save": "Save Configuration",
+    "Hl25Settings:SaveSuccess": "Program configuration saved."
   }
 }

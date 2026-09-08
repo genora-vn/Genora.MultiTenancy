@@ -21,6 +21,8 @@ public static class MultiTenancyDbContextModelCreatingExtensionsHl25
             b.ConfigureByConvention();
 
             b.Property(x => x.ProgramName).HasMaxLength(256);
+            b.Property(x => x.Format).HasMaxLength(512);
+            b.Property(x => x.GiftDeliveryTime).HasMaxLength(512);
             b.Property(x => x.Scope).HasMaxLength(256);
             b.Property(x => x.OrganizerName).HasMaxLength(256);
 
@@ -68,7 +70,7 @@ public static class MultiTenancyDbContextModelCreatingExtensionsHl25
             b.ConfigureByConvention();
 
             b.Property(x => x.ResultImageUrl).IsRequired().HasMaxLength(1024);
-            b.Property(x => x.WishMessage).HasMaxLength(500);
+            b.Property(x => x.WishMessage).HasMaxLength(250);
             b.Property(x => x.ShareLink).HasMaxLength(1024);
             b.Property(x => x.SharePlatform).HasConversion<byte>();
 

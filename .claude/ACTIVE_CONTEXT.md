@@ -4,8 +4,10 @@
 > Cập nhật ở CUỐI mỗi phiên (xem [handover/HANDOFF.md](handover/HANDOFF.md)).
 
 ## Cập nhật gần nhất
-- **Ngày:** 2026-09-07
+- **Ngày:** 2026-09-08
 - **Nhánh:** `feature/dev-hoalinh-25years` (đã merge dev + hotfix/20260826)
+- **Việc mới nhất (2026-09-08) — Trang Cấu hình chương trình (/Hl25/Settings):** đổi menu "Cài đặt Mini App" → **"Cấu hình chương trình"** (title+subtitle+localization vi/en `Hl25Settings:*`); thêm 3 field `IntroductionHtml` (Summernote), `Format`, `GiftDeliveryTime` vào `Hl25AppConfig` (+DTO Admin/MiniApp + `GetConfigAsync` + DbContext ext); **migration MỚI `20260908054652_AddHl25ProgramInfoFields`** (3 AddColumn — DB đã apply P0-P7). Bỏ group "Tích hợp Zalo" khỏi trang. Layout UX (nút Lưu sticky, card-header, form gọn) + toolbar Summernote đầy đủ (font/size/color/table/hr). Config API trả 3 field mới. **Fix drift snapshot/Fluent API** (sót Tvc*, WishMessage 500→250) để migration sạch. Build EF+Web 0 errors. File Postman config API cập nhật. **CHƯA commit + CHƯA `database update`.**
+
 - **Việc đang làm:** Cập nhật module hl25 theo **Figma FE mới (Delta 2026-09)** — đối chiếu thiết kế cập nhật với bản đã implement P0-P7.
   - 📌 **Delta chốt (2026-09-07):** (1) mỗi người **tối đa TRÚNG 1 lần** (lần 1 trúng→lần 2 ép trượt; lần 1 trượt→lần 2 random) — dùng `TotalGiftsWon` sẵn có, KHÔNG migration; (2) `Hl25SpinResultDto` thêm cờ FE (`CanShareForMoreTurn`/`EarnedCycles`/`TotalGiftsWon`/`HasWonBefore`) cho 3 màn kết quả; (3) **nhóm tuổi** (`Hl25AgeGroup` 18-25/26-35/36-44) thay `BirthDate` — sửa entity + migration in-place; (4) lời chúc `MaxWishLength` 500→250. Migration `20260825160252_AddHl25Module` **CHƯA apply** → sửa in-place.
   - 📄 **Chi tiết:** [`docs/HOALINH25_ADMIN_SCHEMA.md`](docs/HOALINH25_ADMIN_SCHEMA.md) mục 0 "Delta 2026-09".

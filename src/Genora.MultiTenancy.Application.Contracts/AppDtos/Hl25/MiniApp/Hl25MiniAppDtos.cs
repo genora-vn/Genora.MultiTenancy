@@ -24,6 +24,9 @@ public class Hl25ApiResult<T>
 public class Hl25MiniAppConfigDto
 {
     public string? ProgramName { get; set; }
+    public string? IntroductionHtml { get; set; }
+    public string? Format { get; set; }
+    public string? GiftDeliveryTime { get; set; }
     public string? RulesHtml { get; set; }
     public DateTime? StartTime { get; set; }
     public DateTime? EndTime { get; set; }

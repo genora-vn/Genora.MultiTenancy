@@ -9,6 +9,9 @@ namespace Genora.MultiTenancy.AppDtos.Hl25;
 public class Hl25AppConfigDto : AuditedEntityDto<Guid>
 {
     public string? ProgramName { get; set; }
+    public string? IntroductionHtml { get; set; }
+    public string? Format { get; set; }
+    public string? GiftDeliveryTime { get; set; }
     public string? RulesHtml { get; set; }
     public DateTime? StartTime { get; set; }
     public DateTime? EndTime { get; set; }

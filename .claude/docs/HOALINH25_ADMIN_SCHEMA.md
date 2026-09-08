@@ -167,6 +167,9 @@ Cấu hình chung của chương trình. 1 bản ghi / tenant (singleton theo te
 | Field | Kiểu | Null | Mô tả |
 |-------|------|------|-------|
 | `ProgramName` | `string(256)` | ✗ | Tên chương trình |
+| `IntroductionHtml` | `string(max)` | ✓ | Giới thiệu chương trình (HTML — Summernote) — Delta 2026-09-08 |
+| `Format` | `string(512)` | ✓ | Hình thức (VD "Tạo thiệp - Chia sẻ - Tham gia vòng quay may mắn") — Delta 2026-09-08 |
+| `GiftDeliveryTime` | `string(512)` | ✓ | Thời gian trao quà dự kiến (VD "Trong vòng 45 ngày kể từ ngày kết thúc") — Delta 2026-09-08 |
 | `RulesHtml` | `string(max)` | ✓ | Thể lệ chương trình (HTML — Summernote) |
 | `StartTime` | `DateTime` | ✓ | Thời gian bắt đầu |
 | `EndTime` | `DateTime` | ✓ | Thời gian kết thúc |
@@ -174,11 +177,12 @@ Cấu hình chung của chương trình. 1 bản ghi / tenant (singleton theo te
 | `OrganizerName` | `string(256)` | ✓ | ĐVTC (VD "Dược phẩm Hoa Linh") |
 | `IsActive` | `bool` | ✗ | Bật/tắt chương trình |
 
-> **Delta 2026-09 (tinh giản mạnh — lưu ý #4):** đã BỎ `LogoUrl`, `BannerUrl`, `TvcUrl`, `TvcHtml`, `GamePlayHtml` (ảnh/nội dung đã cố định trong thiết kế FE — không cấu hình động). Trang Settings chỉ còn Thông tin chương trình + Thời gian + Thể lệ + link tích hợp Zalo.
+> **Delta 2026-09 (tinh giản mạnh — lưu ý #4):** đã BỎ `LogoUrl`, `BannerUrl`, `TvcUrl`, `TvcHtml`, `GamePlayHtml` (ảnh/nội dung đã cố định trong thiết kế FE — không cấu hình động).
+> **Delta 2026-09-08 (trang Cấu hình chương trình):** thêm `IntroductionHtml` (Summernote), `Format`, `GiftDeliveryTime`. Migration **`20260908054652_AddHl25ProgramInfoFields`** (3 AddColumn — DB đã apply P0-P7 nên tạo migration MỚI, không sửa in-place). Bỏ group "Tích hợp Zalo" khỏi trang Settings. Menu "Cài đặt Mini App" → **"Cấu hình chương trình"**. Localization vi/en đầy đủ (prefix `Hl25Settings:*`).
 
 - **Index:** `IX_AppHl25AppConfig_TenantId` (`TenantId`).
-- **FK:** không. **Tái dùng:** Thể lệ (RulesHtml) → Summernote.
-- **Zalo OA/ZNS:** KHÔNG tạo entity mới — Admin trỏ tới cấu hình Zalo dùng chung (`ZaloAuth` + `ZaloSettingNames`); Nhật ký Zalo đọc từ `AppZaloLog`.
+- **FK:** không. **Tái dùng:** Giới thiệu + Thể lệ (HTML) → Summernote (toolbar đầy đủ: font/size/color/table/hr...).
+- **Lưu ý drift migration (đã fix 2026-09-08):** snapshot + Fluent API từng lệch DB thật (sót `TvcHtml`/`TvcUrl`, `WishMessage HasMaxLength(500)` ≠ DB 250). Đã sửa snapshot + Fluent API về khớp DB trước khi scaffold migration mới → migration sạch chỉ 3 AddColumn.
 
 ### 5.2 Nhóm 2 — Quản lý Frame
 

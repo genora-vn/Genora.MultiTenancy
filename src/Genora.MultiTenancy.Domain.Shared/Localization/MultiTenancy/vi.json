@@ -1682,10 +1682,30 @@
     "Permission:AppHl25Reports": "Xem báo cáo thống kê",
 
     "Menu:Hl25": "Hoa Linh 25 Năm",
-    "Menu:Hl25Settings": "Cài đặt Mini App",
+    "Menu:Hl25Settings": "Cấu hình chương trình",
     "Menu:Hl25Frames": "Quản lý Frame",
     "Menu:Hl25Wheel": "Vòng quay may mắn",
     "Menu:Hl25Participants": "Người dùng",
-    "Menu:Hl25Reports": "Báo cáo thống kê"
+    "Menu:Hl25Reports": "Báo cáo thống kê",
+
+    "Hl25Settings:PageTitle": "Cấu hình chương trình",
+    "Hl25Settings:PageSubtitle": "Cấu hình chương trình \"Dược Phẩm Hoa Linh 25 Năm\": Thông tin chương trình, giới thiệu thời gian & thể lệ.",
+    "Hl25Settings:ProgramInfo": "Thông tin chương trình",
+    "Hl25Settings:ProgramName": "Tên chương trình",
+    "Hl25Settings:StartTime": "Thời gian bắt đầu",
+    "Hl25Settings:EndTime": "Thời gian kết thúc",
+    "Hl25Settings:Scope": "Phạm vi",
+    "Hl25Settings:ScopePlaceholder": "VD: Toàn quốc",
+    "Hl25Settings:OrganizerName": "Đơn vị tổ chức (ĐVTC)",
+    "Hl25Settings:OrganizerPlaceholder": "VD: Dược phẩm Hoa Linh",
+    "Hl25Settings:Format": "Hình thức",
+    "Hl25Settings:FormatPlaceholder": "VD: Tạo thiệp - Chia sẻ - Tham gia vòng quay may mắn",
+    "Hl25Settings:GiftDeliveryTime": "Thời gian trao quà dự kiến",
+    "Hl25Settings:GiftDeliveryTimePlaceholder": "VD: Trong vòng 45 ngày kể từ ngày chương trình kết thúc",
+    "Hl25Settings:IsActive": "Kích hoạt chương trình",
+    "Hl25Settings:Introduction": "Giới thiệu chương trình",
+    "Hl25Settings:Rules": "Thể lệ chương trình",
+    "Hl25Settings:Save": "Lưu cấu hình",
+    "Hl25Settings:SaveSuccess": "Đã lưu cấu hình chương trình."
   }
 }

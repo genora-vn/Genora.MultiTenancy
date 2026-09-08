@@ -12,6 +12,14 @@ public class CreateUpdateHl25AppConfigDto
     [StringLength(256)]
     public string? ProgramName { get; set; }
 
+    public string? IntroductionHtml { get; set; }
+
+    [StringLength(512)]
+    public string? Format { get; set; }
+
+    [StringLength(512)]
+    public string? GiftDeliveryTime { get; set; }
+
     public string? RulesHtml { get; set; }
 
     public DateTime? StartTime { get; set; }

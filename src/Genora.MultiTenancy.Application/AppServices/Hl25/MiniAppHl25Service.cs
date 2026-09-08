@@ -85,6 +85,9 @@ public class MiniAppHl25Service : ApplicationService, IMiniAppHl25Service
         return new Hl25MiniAppConfigDto
         {
             ProgramName = config.ProgramName,
+            IntroductionHtml = config.IntroductionHtml,
+            Format = config.Format,
+            GiftDeliveryTime = config.GiftDeliveryTime,
             RulesHtml = config.RulesHtml,
             StartTime = config.StartTime,
             EndTime = config.EndTime,
