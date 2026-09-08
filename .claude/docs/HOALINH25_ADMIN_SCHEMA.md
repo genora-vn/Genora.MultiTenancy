@@ -387,6 +387,7 @@ Zalo OA/ZNS/Log: TÁI DÙNG (ZaloAuth / ZaloLog / ZaloSettingNames) — không t
 - **`Hl25SpinLogDto`** (đọc-only) / **`GetHl25SpinLogListInput`** (lọc `ParticipantId`,`GiftId`,`RewardStatus`, khoảng `SpinTime`).
 - **`IHl25WheelConfigAppService`**, **`IHl25GiftAppService : ICrudAppService`**, **`IHl25SpinTurnLogAppService`** (list/export), **`IHl25SpinLogAppService`** (list/export + `UpdateRewardStatusAsync(id, status, deliveredTime)` để đánh dấu đã trao).
 - **Trừ kho ACID (RULES.md pattern loyalty):** khi mini-app quay trúng → transaction: trừ `Hl25Gift.RemainingQuantity`, ghi `Hl25SpinLog`, giảm `Participant.RemainingSpinTurns`. Trao thưởng qua Admin là bước 2 (`RewardStatus → Delivered`).
+- **Delta 2026-09-08 (GetWheel mapping quà):** API `GET wheel` mapping mỗi ô (`Hl25MiniAppWheelSlotDto`) với quà đã gán: `slotImageUrl` ưu tiên ảnh riêng của ô, nếu trống lấy ảnh **quà** đã gán; `label` ưu tiên nhãn ô, nếu trống lấy **tên quà**; bổ sung `giftId`/`giftName`/`giftDescription`/`isGift`. Ảnh trả **full URL** (`ToFullUrl`) cho `slotImageUrl`/`backgroundImageUrl`/`pointerImageUrl`. WinRate vẫn KHÔNG trả (bảo mật).
 
 ### 6.4 Nhóm 4 — Người dùng
 - **`Hl25ParticipantDto`** / **`CreateUpdateHl25ParticipantDto`** (Admin sửa được địa chỉ/tên); `GetHl25ParticipantListInput` (lọc `IsFollowingOa`,`HasConsent`, khoảng `JoinedTime`, keyword tên/SĐT).

@@ -278,24 +278,44 @@ public class MiniAppHl25Service : ApplicationService, IMiniAppHl25Service
         var slots = await AsyncExecuter.ToListAsync(
             slotQueryable.Where(x => x.WheelConfigId == config.Id).OrderBy(x => x.DisplayOrder));
 
+        // Nạp thông tin quà đã gán để mapping ảnh/tên/mô tả cho từng ô.
+        var giftIds = slots.Where(x => x.GiftId.HasValue).Select(x => x.GiftId!.Value).Distinct().ToList();
+        var giftMap = new Dictionary<Guid, Hl25Gift>();
+        if (giftIds.Count > 0)
+        {
+            var giftQueryable = await _giftRepository.GetQueryableAsync();
+            var gifts = await AsyncExecuter.ToListAsync(giftQueryable.Where(g => giftIds.Contains(g.Id)));
+            giftMap = gifts.ToDictionary(g => g.Id);
+        }
+
         return new Hl25MiniAppWheelDto
         {
             Title = config.Title,
             SubTitle = config.SubTitle,
             PrimaryColor = config.PrimaryColor,
             SecondaryColor = config.SecondaryColor,
-            BackgroundImageUrl = config.BackgroundImageUrl,
-            PointerImageUrl = config.PointerImageUrl,
+            BackgroundImageUrl = ToFullUrl(config.BackgroundImageUrl),
+            PointerImageUrl = ToFullUrl(config.PointerImageUrl),
             IsActive = config.IsActive,
             RemainingSpinTurns = remaining,
             // KHÔNG trả WinRate (bảo mật tỷ lệ trúng).
-            Slots = slots.Select(s => new Hl25MiniAppWheelSlotDto
+            Slots = slots.Select(s =>
             {
-                Id = s.Id,
-                Label = s.Label,
-                SlotImageUrl = s.SlotImageUrl,
-                DisplayOrder = s.DisplayOrder,
-                ColorHex = s.ColorHex
+                Hl25Gift? gift = s.GiftId.HasValue && giftMap.TryGetValue(s.GiftId.Value, out var g) ? g : null;
+                return new Hl25MiniAppWheelSlotDto
+                {
+                    Id = s.Id,
+                    // Ưu tiên ảnh riêng của ô; nếu trống thì lấy ảnh quà đã gán.
+                    SlotImageUrl = ToFullUrl(!string.IsNullOrWhiteSpace(s.SlotImageUrl) ? s.SlotImageUrl : gift?.ImageUrl),
+                    // Ưu tiên nhãn riêng của ô; nếu trống thì lấy tên quà đã gán.
+                    Label = !string.IsNullOrWhiteSpace(s.Label) ? s.Label : gift?.Name,
+                    DisplayOrder = s.DisplayOrder,
+                    ColorHex = s.ColorHex,
+                    GiftId = s.GiftId,
+                    GiftName = gift?.Name,
+                    GiftDescription = gift?.Description,
+                    IsGift = gift != null
+                };
             }).ToList()
         };
     }

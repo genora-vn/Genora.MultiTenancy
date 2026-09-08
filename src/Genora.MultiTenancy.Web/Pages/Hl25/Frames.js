@@ -9,17 +9,19 @@ $(function () {
         return '<span class="badge ' + cls + '">' + text + '</span>';
     }
 
+    function e(enumName, val) { return l('Enum:' + enumName + ':' + val) || val; }
+
     var campaignStatusMap = {
-        0: badge('Nháp', 'bg-secondary'),
-        1: badge('Đang chạy', 'bg-success'),
-        2: badge('Tạm dừng', 'bg-warning text-dark'),
-        3: badge('Đã kết thúc', 'bg-dark')
+        0: badge(e('Hl25CampaignStatus', 0), 'bg-secondary'),
+        1: badge(e('Hl25CampaignStatus', 1), 'bg-success'),
+        2: badge(e('Hl25CampaignStatus', 2), 'bg-warning text-dark'),
+        3: badge(e('Hl25CampaignStatus', 3), 'bg-dark')
     };
 
     var sharePlatformMap = {
-        0: '<span class="text-muted">Chưa chia sẻ</span>',
-        1: badge('Zalo', 'bg-primary'),
-        2: badge('Facebook', 'bg-info text-dark')
+        0: '<span class="text-muted">' + e('Hl25SharePlatform', 0) + '</span>',
+        1: badge(e('Hl25SharePlatform', 1), 'bg-primary'),
+        2: badge(e('Hl25SharePlatform', 2), 'bg-info text-dark')
     };
 
     function fmtDate(v) {

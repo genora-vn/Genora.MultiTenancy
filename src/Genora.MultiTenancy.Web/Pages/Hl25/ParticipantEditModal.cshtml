@@ -23,20 +23,20 @@
                     <abp-input asp-for="Participant.PhoneNumber" label="Số điện thoại" placeholder="VD: 0912345678" />
                 </div>
                 <div class="col-md-6 mb-3">
-                    <abp-select asp-for="Participant.AgeGroup" label="Nhóm tuổi">
-                        <abp-select-item value="0" text="Không xác định" />
-                        <abp-select-item value="1" text="18 - 25" />
-                        <abp-select-item value="2" text="26 - 35" />
-                        <abp-select-item value="3" text="36 - 44" />
+                    <abp-select asp-for="Participant.AgeGroup" label="@L["Hl25Field:AgeGroup"].Value">
+                        <abp-select-item value="0" text="@L["Enum:Hl25AgeGroup:0"].Value" />
+                        <abp-select-item value="1" text="@L["Enum:Hl25AgeGroup:1"].Value" />
+                        <abp-select-item value="2" text="@L["Enum:Hl25AgeGroup:2"].Value" />
+                        <abp-select-item value="3" text="@L["Enum:Hl25AgeGroup:3"].Value" />
                     </abp-select>
                 </div>
             </div>
             <div class="mb-3">
-                <abp-select asp-for="Participant.Gender" label="Giới tính">
-                    <abp-select-item value="0" text="Không xác định" />
-                    <abp-select-item value="1" text="Nam" />
-                    <abp-select-item value="2" text="Nữ" />
-                    <abp-select-item value="3" text="Khác" />
+                <abp-select asp-for="Participant.Gender" label="@L["Hl25Field:Gender"].Value">
+                    <abp-select-item value="0" text="@L["Enum:Hl25Gender:0"].Value" />
+                    <abp-select-item value="1" text="@L["Enum:Hl25Gender:1"].Value" />
+                    <abp-select-item value="2" text="@L["Enum:Hl25Gender:2"].Value" />
+                    <abp-select-item value="3" text="@L["Enum:Hl25Gender:3"].Value" />
                 </abp-select>
             </div>
             <div class="mb-3">

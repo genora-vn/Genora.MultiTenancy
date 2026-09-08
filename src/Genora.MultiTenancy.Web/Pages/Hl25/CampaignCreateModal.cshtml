@@ -29,11 +29,11 @@
                 </div>
             </div>
             <div class="mb-3">
-                <abp-select asp-for="Campaign.Status" label="Trạng thái">
-                    <abp-select-item value="0" text="Nháp" selected="true" />
-                    <abp-select-item value="1" text="Đang chạy" />
-                    <abp-select-item value="2" text="Tạm dừng" />
-                    <abp-select-item value="3" text="Đã kết thúc" />
+                <abp-select asp-for="Campaign.Status" label="@L["Hl25Field:Status"].Value">
+                    <abp-select-item value="0" text="@L["Enum:Hl25CampaignStatus:0"].Value" selected="true" />
+                    <abp-select-item value="1" text="@L["Enum:Hl25CampaignStatus:1"].Value" />
+                    <abp-select-item value="2" text="@L["Enum:Hl25CampaignStatus:2"].Value" />
+                    <abp-select-item value="3" text="@L["Enum:Hl25CampaignStatus:3"].Value" />
                 </abp-select>
             </div>
         </abp-modal-body>
@@ -43,7 +43,14 @@
 <script>
     (function () {
         if (window.flatpickr) {
-            flatpickr('#CreateHl25Campaign .flatpickr-dt', { enableTime: true, dateFormat: 'Y-m-d H:i', time_24hr: true });
+            flatpickr('#CreateHl25Campaign .flatpickr-dt', {
+                enableTime: true,
+                dateFormat: 'Y-m-d H:i',
+                time_24hr: true,
+                allowInput: true,
+                static: true,
+                minuteIncrement: 1
+            });
         }
     })();
 </script>

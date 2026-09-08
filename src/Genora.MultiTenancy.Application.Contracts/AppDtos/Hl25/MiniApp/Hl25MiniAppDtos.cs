@@ -122,9 +122,19 @@ public class Hl25MiniAppWheelSlotDto
 {
     public Guid Id { get; set; }
     public string? Label { get; set; }
+    /// <summary>Ảnh hiển thị trên ô (full URL). Nếu ô không cấu hình ảnh riêng thì lấy ảnh của quà đã gán.</summary>
     public string? SlotImageUrl { get; set; }
     public int DisplayOrder { get; set; }
     public string? ColorHex { get; set; }
+
+    /// <summary>Quà gán cho ô (null = ô "Chúc may mắn").</summary>
+    public Guid? GiftId { get; set; }
+    /// <summary>Tên quà gán cho ô (mapping từ kho quà).</summary>
+    public string? GiftName { get; set; }
+    /// <summary>Mô tả quà (mapping từ kho quà).</summary>
+    public string? GiftDescription { get; set; }
+    /// <summary>Ô này có phải ô trúng quà không (đã gán quà). false = ô "Chúc may mắn".</summary>
+    public bool IsGift { get; set; }
 }
 
 /// <summary>Cấu hình vòng quay trả cho FE + số lượt còn lại của người chơi.</summary>

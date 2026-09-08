@@ -1706,6 +1706,49 @@
     "Hl25Settings:Introduction": "Giới thiệu chương trình",
     "Hl25Settings:Rules": "Thể lệ chương trình",
     "Hl25Settings:Save": "Lưu cấu hình",
-    "Hl25Settings:SaveSuccess": "Đã lưu cấu hình chương trình."
+    "Hl25Settings:SaveSuccess": "Đã lưu cấu hình chương trình.",
+
+    "Enum:Hl25CampaignStatus:0": "Nháp",
+    "Enum:Hl25CampaignStatus:1": "Đang chạy",
+    "Enum:Hl25CampaignStatus:2": "Tạm dừng",
+    "Enum:Hl25CampaignStatus:3": "Đã kết thúc",
+
+    "Enum:Hl25GiftStatus:0": "Còn hàng",
+    "Enum:Hl25GiftStatus:1": "Hết hàng",
+    "Enum:Hl25GiftStatus:2": "Vô hiệu hóa",
+
+    "Enum:Hl25SharePlatform:0": "Chưa chia sẻ",
+    "Enum:Hl25SharePlatform:1": "Zalo",
+    "Enum:Hl25SharePlatform:2": "Facebook",
+
+    "Enum:Hl25SpinTurnSource:1": "Chia sẻ Zalo",
+    "Enum:Hl25SpinTurnSource:2": "Chia sẻ Facebook",
+    "Enum:Hl25SpinTurnSource:3": "Admin cấp",
+    "Enum:Hl25SpinTurnSource:4": "Khác",
+
+    "Enum:Hl25RewardStatus:0": "Chờ xử lý",
+    "Enum:Hl25RewardStatus:1": "Trúng - chờ trao",
+    "Enum:Hl25RewardStatus:2": "Không trúng",
+    "Enum:Hl25RewardStatus:3": "Đã trao",
+    "Enum:Hl25RewardStatus:4": "Đã hủy",
+
+    "Enum:Hl25Gender:0": "Không xác định",
+    "Enum:Hl25Gender:1": "Nam",
+    "Enum:Hl25Gender:2": "Nữ",
+    "Enum:Hl25Gender:3": "Khác",
+
+    "Enum:Hl25AgeGroup:0": "Không xác định",
+    "Enum:Hl25AgeGroup:1": "18 - 25",
+    "Enum:Hl25AgeGroup:2": "26 - 35",
+    "Enum:Hl25AgeGroup:3": "36 - 44",
+
+    "Hl25Common:ImageUpload": "Tải ảnh lên",
+    "Hl25Common:ImageUrl": "Dán URL ảnh",
+    "Hl25Common:ImageHint": "Tải ảnh từ máy hoặc dán đường dẫn URL.",
+    "Hl25Common:ImageMaxSize": "JPG/PNG, tối đa 5MB.",
+    "Hl25Common:LuckyOther": "— Chúc may mắn —",
+    "Hl25Field:Status": "Trạng thái",
+    "Hl25Field:Gender": "Giới tính",
+    "Hl25Field:AgeGroup": "Nhóm tuổi"
   }
 }

@@ -11,25 +11,27 @@ $(function () {
         return '<span class="badge ' + cls + '">' + text + '</span>';
     }
 
+    function e(enumName, val) { return l('Enum:' + enumName + ':' + val) || val; }
+
     var giftStatusMap = {
-        0: badge('Còn hàng', 'bg-success'),
-        1: badge('Hết hàng', 'bg-secondary'),
-        2: badge('Vô hiệu', 'bg-dark')
+        0: badge(e('Hl25GiftStatus', 0), 'bg-success'),
+        1: badge(e('Hl25GiftStatus', 1), 'bg-secondary'),
+        2: badge(e('Hl25GiftStatus', 2), 'bg-dark')
     };
 
     var spinTurnSourceMap = {
-        1: 'Chia sẻ Zalo',
-        2: 'Chia sẻ Facebook',
-        3: 'Admin cấp',
-        4: 'Khác'
+        1: e('Hl25SpinTurnSource', 1),
+        2: e('Hl25SpinTurnSource', 2),
+        3: e('Hl25SpinTurnSource', 3),
+        4: e('Hl25SpinTurnSource', 4)
     };
 
     var rewardStatusMap = {
-        0: badge('Chờ xử lý', 'bg-secondary'),
-        1: badge('Trúng - chờ trao', 'bg-warning text-dark'),
-        2: badge('Không trúng', 'bg-light text-dark'),
-        3: badge('Đã trao', 'bg-success'),
-        4: badge('Đã hủy', 'bg-danger')
+        0: badge(e('Hl25RewardStatus', 0), 'bg-secondary'),
+        1: badge(e('Hl25RewardStatus', 1), 'bg-warning text-dark'),
+        2: badge(e('Hl25RewardStatus', 2), 'bg-light text-dark'),
+        3: badge(e('Hl25RewardStatus', 3), 'bg-success'),
+        4: badge(e('Hl25RewardStatus', 4), 'bg-danger')
     };
 
     function fmtDate(v) {
