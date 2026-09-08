@@ -27,7 +27,7 @@
 
 <form method="post" id="Hl25SettingsForm">
     <div class="row g-3">
-        <div class="col-lg-8">
+        <div class="col-lg-4">
             <div class="card mb-3">
                 <div class="card-header py-2"><i class="fa fa-circle-info me-1"></i> @L["Hl25Settings:ProgramInfo"]</div>
                 <div class="card-body">
@@ -65,7 +65,20 @@
                     </div>
                 </div>
             </div>
+            <div class="card hl25-sticky-save">
+                <div class="card-body">
+                    <div class="form-check form-switch mb-3">
+                        <input asp-for="Input.IsActive" class="form-check-input" type="checkbox" role="switch" />
+                        <label class="form-check-label fw-semibold" asp-for="Input.IsActive">@L["Hl25Settings:IsActive"]</label>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fa fa-save me-1"></i> @L["Hl25Settings:Save"]
+                    </button>
+                </div>
+            </div>
+        </div>
 
+        <div class="col-lg-8">
             <div class="card mb-3">
                 <div class="card-header py-2"><i class="fa fa-star me-1"></i> @L["Hl25Settings:Introduction"]</div>
                 <div class="card-body">
@@ -77,20 +90,6 @@
                 <div class="card-header py-2"><i class="fa fa-scroll me-1"></i> @L["Hl25Settings:Rules"]</div>
                 <div class="card-body">
                     <textarea asp-for="Input.RulesHtml" class="html-editor"></textarea>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-lg-4">
-            <div class="card hl25-sticky-save">
-                <div class="card-body">
-                    <div class="form-check form-switch mb-3">
-                        <input asp-for="Input.IsActive" class="form-check-input" type="checkbox" role="switch" />
-                        <label class="form-check-label fw-semibold" asp-for="Input.IsActive">@L["Hl25Settings:IsActive"]</label>
-                    </div>
-                    <button type="submit" class="btn btn-primary w-100">
-                        <i class="fa fa-save me-1"></i> @L["Hl25Settings:Save"]
-                    </button>
                 </div>
             </div>
         </div>

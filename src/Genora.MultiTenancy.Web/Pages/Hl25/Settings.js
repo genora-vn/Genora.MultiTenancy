@@ -6,7 +6,7 @@ $(function () {
             return; // đã init
         }
         $editor.summernote({
-            height: 240,
+            height: 190,
             minHeight: 180,
             maxHeight: 600,
             focus: false,

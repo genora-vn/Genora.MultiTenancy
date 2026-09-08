@@ -7,8 +7,16 @@
 @section styles {
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
     <style>
-        .hl25-kpi { border: none; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,.06); }
-        .hl25-kpi .val { font-size: 1.8rem; font-weight: 700; }
+        .hl25-kpi {
+            border: none;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,.06);
+        }
+
+            .hl25-kpi .val {
+                font-size: 1.8rem;
+                font-weight: 700;
+            }
     </style>
 }
 
@@ -43,22 +51,28 @@
     <div class="card-body">
         <div class="row g-3 mb-3">
             <div class="col-md-4">
-                <div class="card hl25-kpi"><div class="card-body text-center py-3">
-                    <div class="text-muted small">Tổng lượt tạo thiệp</div>
-                    <div class="val text-primary" id="FrameTotalCreations">-</div>
-                </div></div>
+                <div class="card hl25-kpi">
+                    <div class="card-body text-center py-3">
+                        <div class="text-muted small">Tổng lượt tạo thiệp</div>
+                        <div class="val text-primary" id="FrameTotalCreations">-</div>
+                    </div>
+                </div>
             </div>
             <div class="col-md-4">
-                <div class="card hl25-kpi"><div class="card-body text-center py-3">
-                    <div class="text-muted small">Tổng lượt chia sẻ</div>
-                    <div class="val text-success" id="FrameTotalShared">-</div>
-                </div></div>
+                <div class="card hl25-kpi">
+                    <div class="card-body text-center py-3">
+                        <div class="text-muted small">Tổng lượt chia sẻ</div>
+                        <div class="val text-success" id="FrameTotalShared">-</div>
+                    </div>
+                </div>
             </div>
             <div class="col-md-4">
-                <div class="card hl25-kpi"><div class="card-body text-center py-3">
-                    <div class="text-muted small">Số người tham gia</div>
-                    <div class="val text-info" id="FrameUniqueParticipants">-</div>
-                </div></div>
+                <div class="card hl25-kpi">
+                    <div class="card-body text-center py-3">
+                        <div class="text-muted small">Số người tham gia</div>
+                        <div class="val text-info" id="FrameUniqueParticipants">-</div>
+                    </div>
+                </div>
             </div>
         </div>
         <canvas id="FrameChart" height="80"></canvas>
@@ -71,83 +85,96 @@
     <div class="card-body">
         <div class="row g-3">
             <div class="col-md-3">
-                <div class="card hl25-kpi"><div class="card-body text-center py-3">
-                    <div class="text-muted small">Số người đã quay</div>
-                    <div class="val text-primary" id="WheelUniqueSpinners">-</div>
-                </div></div>
+                <div class="card hl25-kpi">
+                    <div class="card-body text-center py-3">
+                        <div class="text-muted small">Số người đã quay</div>
+                        <div class="val text-primary" id="WheelUniqueSpinners">-</div>
+                    </div>
+                </div>
             </div>
             <div class="col-md-3">
-                <div class="card hl25-kpi"><div class="card-body text-center py-3">
-                    <div class="text-muted small">Tổng lượt quay</div>
-                    <div class="val text-warning" id="WheelTotalSpins">-</div>
-                </div></div>
+                <div class="card hl25-kpi">
+                    <div class="card-body text-center py-3">
+                        <div class="text-muted small">Tổng lượt quay</div>
+                        <div class="val text-warning" id="WheelTotalSpins">-</div>
+                    </div>
+                </div>
             </div>
             <div class="col-md-3">
-                <div class="card hl25-kpi"><div class="card-body text-center py-3">
-                    <div class="text-muted small">Tổng lượt đã cấp</div>
-                    <div class="val text-info" id="WheelTotalTurnsGranted">-</div>
-                </div></div>
+                <div class="card hl25-kpi">
+                    <div class="card-body text-center py-3">
+                        <div class="text-muted small">Tổng lượt đã cấp</div>
+                        <div class="val text-info" id="WheelTotalTurnsGranted">-</div>
+                    </div>
+                </div>
             </div>
             <div class="col-md-3">
-                <div class="card hl25-kpi"><div class="card-body text-center py-3">
-                    <div class="text-muted small">Số lượt trúng quà</div>
-                    <div class="val text-success" id="WheelTotalWins">-</div>
-                </div></div>
+                <div class="card hl25-kpi">
+                    <div class="card-body text-center py-3">
+                        <div class="text-muted small">Số lượt trúng quà</div>
+                        <div class="val text-success" id="WheelTotalWins">-</div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 </div>
 
-@* ===== Báo cáo 3: Vòng quay theo quà ===== *@
-<div class="card mb-3">
-    <div class="card-header py-2"><i class="fa fa-gift me-1"></i> Vòng quay theo Quà tặng (cơ cấu giải &amp; tồn kho)</div>
-    <div class="card-body p-0">
-        <table class="table table-sm table-hover mb-0">
-            <thead class="table-light">
-                <tr>
-                    <th>Quà tặng</th>
-                    <th class="text-end">Tổng SL</th>
-                    <th class="text-end">Còn lại</th>
-                    <th class="text-end">Đã trúng</th>
-                    <th class="text-end">Đã trao</th>
-                    <th class="text-end">Tỷ lệ trúng</th>
-                </tr>
-            </thead>
-            <tbody id="GiftStatsBody">
-                <tr><td colspan="6" class="text-center text-muted py-3">Đang tải...</td></tr>
-            </tbody>
-        </table>
-    </div>
-</div>
-
-@* ===== Báo cáo 4: Phân bổ nhóm tuổi ===== *@
-<div class="card mb-3">
-    <div class="card-header py-2"><i class="fa fa-users me-1"></i> Phân bổ người tham gia theo nhóm tuổi</div>
-    <div class="card-body">
-        <div class="row g-3 align-items-center">
-            <div class="col-md-5">
-                <canvas id="AgeGroupChart" height="180"></canvas>
-            </div>
-            <div class="col-md-7">
+<div class="row g-3">
+    <div class="col-lg-6">
+        @* ===== Báo cáo 3: Vòng quay theo quà ===== *@
+        <div class="card mb-3">
+            <div class="card-header py-2"><i class="fa fa-gift me-1"></i> Vòng quay theo Quà tặng (cơ cấu giải &amp; tồn kho)</div>
+            <div class="card-body p-0">
                 <table class="table table-sm table-hover mb-0">
                     <thead class="table-light">
                         <tr>
-                            <th>Nhóm tuổi</th>
-                            <th class="text-end">Số người</th>
-                            <th class="text-end">Tỷ lệ</th>
+                            <th>Quà tặng</th>
+                            <th class="text-end">Tổng SL</th>
+                            <th class="text-end">Còn lại</th>
+                            <th class="text-end">Đã trúng</th>
+                            <th class="text-end">Đã trao</th>
+                            <th class="text-end">Tỷ lệ trúng</th>
                         </tr>
                     </thead>
-                    <tbody id="AgeGroupBody">
-                        <tr><td colspan="3" class="text-center text-muted py-3">Đang tải...</td></tr>
+                    <tbody id="GiftStatsBody">
+                        <tr><td colspan="6" class="text-center text-muted py-3">Đang tải...</td></tr>
                     </tbody>
-                    <tfoot class="table-light">
-                        <tr>
-                            <th>Tổng số người tham gia</th>
-                            <th class="text-end" id="AgeGroupTotal">-</th>
-                            <th class="text-end">100%</th>
-                        </tr>
-                    </tfoot>
                 </table>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        @* ===== Báo cáo 4: Phân bổ nhóm tuổi ===== *@
+        <div class="card mb-3 h-auto">
+            <div class="card-header py-2"><i class="fa fa-users me-1"></i> Phân bổ người tham gia theo nhóm tuổi</div>
+            <div class="card-body">
+                <div class="row g-3 align-items-center">
+                    <div class="col-md-5">
+                        <canvas id="AgeGroupChart" height="50"></canvas>
+                    </div>
+                    <div class="col-md-7">
+                        <table class="table table-sm table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Nhóm tuổi</th>
+                                    <th class="text-end">Số người</th>
+                                    <th class="text-end">Tỷ lệ</th>
+                                </tr>
+                            </thead>
+                            <tbody id="AgeGroupBody">
+                                <tr><td colspan="3" class="text-center text-muted py-3">Đang tải...</td></tr>
+                            </tbody>
+                            <tfoot class="table-light">
+                                <tr>
+                                    <th>Tổng số người tham gia</th>
+                                    <th class="text-end" id="AgeGroupTotal">-</th>
+                                    <th class="text-end">100%</th>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
