@@ -1,8 +1,11 @@
+using Genora.MultiTenancy.AppDtos.AppZaloAuths;
 using Genora.MultiTenancy.AppDtos.Hl25.MiniApp;
+using Genora.MultiTenancy.AppServices.AppZaloAuths;
 using Genora.MultiTenancy.Controllers;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using System.Threading;
 using System.Threading.Tasks;
 using Volo.Abp;
 
@@ -21,10 +24,23 @@ namespace Genora.MultiTenancy.HttpApi.Controllers;
 public class HoaLinh25MiniAppController : MultiTenancyController
 {
     private readonly IMiniAppHl25Service _service;
+    private readonly IZaloApiClient _zaloApiClient;
 
-    public HoaLinh25MiniAppController(IMiniAppHl25Service service)
+    public HoaLinh25MiniAppController(IMiniAppHl25Service service, IZaloApiClient zaloApiClient)
     {
         _service = service;
+        _zaloApiClient = zaloApiClient;
+    }
+
+    /// <summary>Giải mã số điện thoại từ Zalo code + accessToken (FE lấy SĐT người dùng).</summary>
+    [HttpPost("decode-phone")]
+    public async Task<IActionResult> DecodePhone([FromBody] ZaloDecodeRequest request, CancellationToken ct)
+    {
+        if (string.IsNullOrWhiteSpace(request.Code) || string.IsNullOrWhiteSpace(request.AccessToken))
+            return BadRequest("Missing code or accessToken");
+
+        var result = await _zaloApiClient.DecodePhoneAsync(request.Code, request.AccessToken, ct);
+        return Ok(result);
     }
 
     /// <summary>Cấu hình + thể lệ chương trình.</summary>
