@@ -2,10 +2,12 @@ using Genora.MultiTenancy.AppDtos.AppImages;
 using Genora.MultiTenancy.AppDtos.Hl25.MiniApp;
 using Genora.MultiTenancy.DomainModels.AppHl25;
 using Genora.MultiTenancy.Enums;
+using Genora.MultiTenancy.Helpers;
 using Genora.MultiTenancy.Hl25;
 using Genora.MultiTenancy.Localization;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Configuration;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -41,6 +43,7 @@ public class MiniAppHl25Service : ApplicationService, IMiniAppHl25Service
     private readonly IUnitOfWorkManager _uowManager;
     private readonly IManageImageService _manageImageService;
     private readonly IHttpContextAccessor _httpContextAccessor;
+    private readonly IConfiguration _configuration;
 
     public MiniAppHl25Service(
         IRepository<Hl25AppConfig, Guid> configRepository,
@@ -55,7 +58,8 @@ public class MiniAppHl25Service : ApplicationService, IMiniAppHl25Service
         IRepository<Hl25SpinLog, Guid> spinLogRepository,
         IUnitOfWorkManager uowManager,
         IManageImageService manageImageService,
-        IHttpContextAccessor httpContextAccessor)
+        IHttpContextAccessor httpContextAccessor,
+        IConfiguration configuration)
     {
         _configRepository = configRepository;
         _participantRepository = participantRepository;
@@ -71,6 +75,7 @@ public class MiniAppHl25Service : ApplicationService, IMiniAppHl25Service
         _manageImageService = manageImageService;
         _httpContextAccessor = httpContextAccessor;
         LocalizationResource = typeof(MultiTenancyResource);
+        _configuration = configuration;
     }
 
     // ===== Cấu hình =====
@@ -496,8 +501,10 @@ public class MiniAppHl25Service : ApplicationService, IMiniAppHl25Service
             Id = t.Id,
             CampaignId = t.CampaignId,
             Name = t.Name,
-            ImageUrl = ToFullUrl(t.ImageUrl)!,
-            ThumbnailUrl = ToFullUrl(t.ThumbnailUrl),
+            //ImageUrl = ToFullUrl(t.ImageUrl)!,
+            //ThumbnailUrl = ToFullUrl(t.ThumbnailUrl),
+            ImageUrl = ImageHelper.NormalizeThumb(_configuration, t.ImageUrl),
+            ThumbnailUrl = ImageHelper.NormalizeThumb(_configuration, t.ThumbnailUrl),
             DisplayOrder = t.DisplayOrder
         }).ToList();
     }
