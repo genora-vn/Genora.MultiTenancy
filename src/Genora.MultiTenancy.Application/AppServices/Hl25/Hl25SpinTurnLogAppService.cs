@@ -43,48 +43,44 @@ public class Hl25SpinTurnLogAppService : ApplicationService, IHl25SpinTurnLogApp
         await CheckViewPolicyAsync();
 
         var logQueryable = await _repository.GetQueryableAsync();
-        var participantQueryable = await _participantRepository.GetQueryableAsync();
-
-        // Join log -> participant để lấy tên/SĐT.
-        var query = from log in logQueryable
-                    join p in participantQueryable on log.ParticipantId equals p.Id into pg
-                    from p in pg.DefaultIfEmpty()
-                    select new { log, p };
+        var query = logQueryable.AsQueryable();
 
         if (input.ParticipantId.HasValue)
-            query = query.Where(x => x.log.ParticipantId == input.ParticipantId.Value);
+            query = query.Where(x => x.ParticipantId == input.ParticipantId.Value);
 
         if (input.Source.HasValue)
-            query = query.Where(x => x.log.Source == input.Source.Value);
-
-        if (!string.IsNullOrWhiteSpace(input.FilterText))
-        {
-            var f = input.FilterText.Trim();
-            query = query.Where(x => x.p != null &&
-                ((x.p.FullName != null && x.p.FullName.Contains(f)) ||
-                 (x.p.PhoneNumber != null && x.p.PhoneNumber.Contains(f))));
-        }
+            query = query.Where(x => x.Source == input.Source.Value);
 
         if (input.GrantedFrom.HasValue)
-            query = query.Where(x => x.log.GrantedTime >= input.GrantedFrom.Value);
+            query = query.Where(x => x.GrantedTime >= input.GrantedFrom.Value);
 
         if (input.GrantedTo.HasValue)
-            query = query.Where(x => x.log.GrantedTime <= input.GrantedTo.Value);
+            query = query.Where(x => x.GrantedTime <= input.GrantedTo.Value);
 
         var totalCount = await AsyncExecuter.CountAsync(query);
 
         var sorting = string.IsNullOrWhiteSpace(input.Sorting)
-            ? "log.GrantedTime DESC"
-            : "log." + input.Sorting;
+            ? "GrantedTime DESC"
+            : input.Sorting;
 
-        var rows = await AsyncExecuter.ToListAsync(
+        var logs = await AsyncExecuter.ToListAsync(
             query.OrderBy(sorting).Skip(input.SkipCount).Take(input.MaxResultCount));
 
-        var items = rows.Select(x =>
+        // Nạp thông tin participant riêng để tránh join phức tạp.
+        var participantIds = logs.Select(x => x.ParticipantId).Distinct().ToList();
+        var participantQueryable = await _participantRepository.GetQueryableAsync();
+        var participants = await AsyncExecuter.ToListAsync(
+            participantQueryable.Where(p => participantIds.Contains(p.Id)));
+        var participantMap = participants.ToDictionary(p => p.Id);
+
+        var items = logs.Select(x =>
         {
-            var dto = ObjectMapper.Map<Hl25SpinTurnLog, Hl25SpinTurnLogDto>(x.log);
-            dto.ParticipantName = x.p?.FullName;
-            dto.ParticipantPhone = x.p?.PhoneNumber;
+            var dto = ObjectMapper.Map<Hl25SpinTurnLog, Hl25SpinTurnLogDto>(x);
+            if (participantMap.TryGetValue(x.ParticipantId, out var p))
+            {
+                dto.ParticipantName = p.FullName;
+                dto.ParticipantPhone = p.PhoneNumber;
+            }
             return dto;
         }).ToList();
 

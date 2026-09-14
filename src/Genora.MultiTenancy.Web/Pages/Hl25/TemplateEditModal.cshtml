@@ -22,17 +22,16 @@
                 <abp-input asp-for="Template.Name" label="Tên mẫu" />
             </div>
             <div class="mb-3">
-                <label class="form-label">Ảnh mẫu frame hiện tại</label>
+                <label class="form-label">Ảnh mẫu frame</label>
                 <div class="mb-2">
                     <img id="TemplateImagePreview"
                          src="@(string.IsNullOrEmpty(Model.Template.ImageUrl) ? "" : Model.Template.ImageUrl)"
                          class="img-fluid @(string.IsNullOrEmpty(Model.Template.ImageUrl) ? "d-none" : "")"
                          style="max-height:120px;border:1px solid #eee;border-radius:6px;" />
                 </div>
-                <label asp-for="ImageFile" class="form-label">Đổi ảnh mẫu (tùy chọn)</label>
-                <input asp-for="ImageFile" type="file" accept="image/png,image/jpeg" class="form-control" id="TemplateImageFile" />
-                <small class="text-muted">PNG/JPG, tối đa 5MB. Để trống nếu giữ ảnh cũ.</small>
-                <input asp-for="Template.ImageUrl" type="hidden" />
+                <input type="file" accept="image/png,image/jpeg" class="form-control mb-2" id="TemplateImageFile" />
+                <abp-input asp-for="Template.ImageUrl" label="Hoặc dán URL ảnh" placeholder="https://..." />
+                <small class="text-muted">PNG/JPG, tối đa 5MB. Chỉ dùng 1 trong 2 cách: chọn file hoặc dán URL.</small>
             </div>
             <div class="row">
                 <div class="col-md-6 mb-3">
@@ -53,6 +52,13 @@
 <script>
     (function () {
         var MAX = 5 * 1024 * 1024;
+        var $url = $('#EditHl25Template #Template_ImageUrl');
+        // Preview khi dán URL.
+        $url.on('input', function () {
+            var v = $(this).val();
+            if (v) { $('#TemplateImagePreview').attr('src', v).removeClass('d-none'); }
+        });
+        // Upload file → preview (giữ URL cũ nếu không upload).
         $('#TemplateImageFile').on('change', function () {
             var file = this.files && this.files[0];
             if (!file) return;

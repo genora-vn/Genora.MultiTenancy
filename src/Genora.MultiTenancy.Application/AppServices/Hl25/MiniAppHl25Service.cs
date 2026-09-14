@@ -181,19 +181,49 @@ public class MiniAppHl25Service : ApplicationService, IMiniAppHl25Service
         var participant = await FindByZaloUserIdAsync(request.ZaloUserId)
             ?? throw new UserFriendlyException(Hl25ErrorCodes.ParticipantNotFound, "Người dùng chưa đăng ký chương trình.");
 
+        // Nghiệp vụ: Tạo thiệp thành công = +1 lượt quay (tối đa 2 lượt/người).
+        bool grantedTurn = false;
+        if (participant.EarnedCycles < Hl25Consts.MaxSpinTurnsPerUser)
+        {
+            participant.EarnedCycles += 1;
+            participant.RemainingSpinTurns += 1;
+            participant.TotalSpinTurns += 1;
+            grantedTurn = true;
+        }
+
         var creation = new Hl25FrameCreation(GuidGenerator.Create(), participant.Id, request.ResultImageUrl, CurrentTenant.Id)
         {
             CampaignId = request.CampaignId,
             TemplateId = request.TemplateId,
             WishMessage = request.WishMessage
         };
-        creation = await _frameCreationRepository.InsertAsync(creation, autoSave: true);
+        creation = await _frameCreationRepository.InsertAsync(creation, autoSave: false);
+
+        if (grantedTurn)
+        {
+            await _participantRepository.UpdateAsync(participant, autoSave: false);
+
+            // Ghi lịch sử nhận lượt: nguồn = Tạo thiệp thành công.
+            var turnLog = new Hl25SpinTurnLog(GuidGenerator.Create(), participant.Id, Hl25SpinTurnSource.Other, 1, CurrentTenant.Id)
+            {
+                FrameCreationId = creation.Id,
+                Note = "Tạo thiệp thành công"
+            };
+            await _spinTurnLogRepository.InsertAsync(turnLog, autoSave: true);
+        }
+        else
+        {
+            await _participantRepository.UpdateAsync(participant, autoSave: true);
+        }
 
         return new Hl25FrameResultDto
         {
             FrameCreationId = creation.Id,
             ResultImageUrl = creation.ResultImageUrl,
-            ShareLink = creation.ShareLink
+            ShareLink = creation.ShareLink,
+            TurnGranted = grantedTurn,
+            RemainingSpinTurns = participant.RemainingSpinTurns,
+            EarnedCycles = participant.EarnedCycles
         };
     }
 

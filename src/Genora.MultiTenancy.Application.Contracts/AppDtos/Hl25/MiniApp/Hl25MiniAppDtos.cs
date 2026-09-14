@@ -96,6 +96,12 @@ public class Hl25FrameResultDto
     public Guid FrameCreationId { get; set; }
     public string ResultImageUrl { get; set; } = null!;
     public string? ShareLink { get; set; }
+    /// <summary>Có được cộng lượt quay không (tạo thiệp thành công = +1 lượt, tối đa 2).</summary>
+    public bool TurnGranted { get; set; }
+    /// <summary>Số lượt quay còn lại sau khi tạo thiệp.</summary>
+    public int RemainingSpinTurns { get; set; }
+    /// <summary>Số chu kỳ đã hoàn tất (0-2).</summary>
+    public int EarnedCycles { get; set; }
 }
 
 /// <summary>Request xác nhận chia sẻ thiệp thành công → cộng lượt (theo chu kỳ).</summary>

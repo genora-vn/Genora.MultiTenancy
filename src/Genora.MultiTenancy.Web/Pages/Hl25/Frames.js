@@ -188,7 +188,8 @@ $(function () {
                     data: 'resultImageUrl',
                     orderable: false,
                     render: function (url) {
-                        return url ? '<img src="' + url + '" style="height:40px;border-radius:4px;" />' : '';
+                        if (!url) return '';
+                        return '<a href="' + url + '" target="_blank" rel="noopener"><img src="' + url + '" style="height:80px;border-radius:4px;" /></a>';
                     }
                 },
                 { title: 'Người tạo', data: 'participantName', render: function (v) { return v || '(chưa cập nhật)'; } },
