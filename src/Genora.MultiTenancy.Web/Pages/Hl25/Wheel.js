@@ -90,6 +90,12 @@ $(function () {
                     }
                 },
                 { title: 'Tên quà', data: 'name' },
+                {
+                    title: l('Hl25Gift:WheelImage'), data: 'wheelImageUrl', orderable: false,
+                    render: function (url) {
+                        return url ? $('<img>').attr({ src: url, alt: l('Hl25Gift:WheelImage'), style: 'height:40px;max-width:64px;object-fit:contain;' }).prop('outerHTML') : '';
+                    }
+                },
                 { title: 'Tổng SL', data: 'totalQuantity' },
                 { title: 'Còn lại', data: 'remainingQuantity' },
                 {
@@ -124,6 +130,9 @@ $(function () {
 
     // ============ TAB 2: Wheel config + slots ============
     var giftOptionsCache = [];
+    var loadedWheelConfig = null;
+
+    function escapeHtml(value) { return $('<div>').text(value || '').html(); }
 
     function loadGiftOptions() {
         return giftService.getList({ maxResultCount: 1000, skipCount: 0 }).then(function (r) {
@@ -138,7 +147,7 @@ $(function () {
         html += '<option value="">— Chúc may mắn —</option>';
         giftOptionsCache.forEach(function (g) {
             var sel = (selectedId === g.id) ? ' selected' : '';
-            html += '<option value="' + g.id + '"' + sel + '>' + g.name + '</option>';
+            html += '<option value="' + g.id + '"' + sel + '>' + escapeHtml(g.name) + '</option>';
         });
         html += '</select>';
         return html;
@@ -148,12 +157,14 @@ $(function () {
         slot = slot || { label: '', giftId: '', winRate: 0 };
         var row = $(
             '<tr>' +
-            '<td><input type="text" class="form-control form-control-sm slot-label" value="' + (slot.label || '') + '" /></td>' +
+            '<td><input type="text" class="form-control form-control-sm slot-label" /></td>' +
             '<td>' + giftSelectHtml(slot.giftId) + '</td>' +
             '<td><input type="number" class="form-control form-control-sm slot-rate" min="0" max="100" step="0.01" value="' + (slot.winRate || 0) + '" /></td>' +
             '<td class="text-end"><button type="button" class="btn btn-sm btn-outline-danger slot-del"><i class="fa fa-trash"></i></button></td>' +
             '</tr>'
         );
+        row.find('.slot-label').val(slot.label || '');
+        row.data('slot', slot);
         $('#SlotsBody').append(row);
         recalcTotal();
     }
@@ -178,6 +189,7 @@ $(function () {
 
     function loadWheelConfig() {
         return wheelService.get().then(function (cfg) {
+            loadedWheelConfig = cfg;
             $('#wcTitle').val(cfg.title || '');
             $('#wcSubTitle').val(cfg.subTitle || '');
             if (cfg.primaryColor) $('#wcPrimaryColor').val(cfg.primaryColor);
@@ -192,13 +204,18 @@ $(function () {
 
     $('#WheelConfigForm').submit(function (e) {
         e.preventDefault();
+        if (!loadedWheelConfig) return;
 
         var slots = [];
         $('#SlotsBody tr').each(function (idx) {
             var $tr = $(this);
+            var original = $tr.data('slot') || {};
             slots.push({
+                id: original.id || null,
                 giftId: $tr.find('.slot-gift').val() || null,
                 label: $tr.find('.slot-label').val(),
+                slotImageUrl: original.slotImageUrl || null,
+                colorHex: original.colorHex || null,
                 winRate: parseFloat($tr.find('.slot-rate').val()) || 0,
                 displayOrder: idx
             });
@@ -207,16 +224,20 @@ $(function () {
         var input = {
             title: $('#wcTitle').val(),
             subTitle: $('#wcSubTitle').val(),
-            primaryColor: $('#wcPrimaryColor').val(),
-            secondaryColor: $('#wcSecondaryColor').val(),
+            primaryColor: loadedWheelConfig.primaryColor,
+            secondaryColor: loadedWheelConfig.secondaryColor,
+            backgroundImageUrl: loadedWheelConfig.backgroundImageUrl,
+            pointerImageUrl: loadedWheelConfig.pointerImageUrl,
             isActive: $('#wcIsActive').prop('checked'),
             slots: slots
         };
 
+        var $submit = $(this).find('[type="submit"]');
+        $submit.prop('disabled', true);
         wheelService.update(input).then(function () {
             abp.notify.success('Đã lưu cấu hình vòng quay.');
-            loadWheelConfig();
-        });
+            return loadWheelConfig();
+        }).always(function () { $submit.prop('disabled', false); });
     });
 
     // ============ TAB 3: Spin turn logs ============
@@ -230,8 +251,8 @@ $(function () {
             order: [[2, 'desc']],
             ajax: abp.libs.datatables.createAjax(turnLogService.getList),
             columnDefs: [
-                { title: 'Người tham gia', data: 'participantName', render: function (v) { return v || '(chưa cập nhật)'; } },
-                { title: 'SĐT', data: 'participantPhone' },
+                { title: 'Người tham gia', data: 'participantName', orderable: false, render: function (v) { return escapeHtml(v || '(chưa cập nhật)'); } },
+                { title: 'SĐT', data: 'participantPhone', orderable: false, render: $.fn.dataTable.render.text() },
                 { title: 'Thời gian', data: 'grantedTime', render: fmtDate },
                 { title: 'Nguồn', data: 'source', render: function (s) { return spinTurnSourceMap[s] || s; } },
                 { title: 'Số lượt +', data: 'turnsAdded' },
@@ -260,8 +281,11 @@ $(function () {
                         items: [
                             {
                                 text: 'Đánh dấu đã trao',
-                                visible: function (data) {
-                                    return canEditReward && data.record.rewardStatus === 1;
+                                confirmMessage: function (data) {
+                                    return l('Hl25Admin:ConfirmDelivery', data.record.participantName || '-', data.record.giftNameSnapshot || '-');
+                                },
+                                visible: function (record) {
+                                    return canEditReward && !!record && record.rewardStatus === 1;
                                 },
                                 action: function (data) {
                                     // 3 = Delivered
@@ -274,9 +298,10 @@ $(function () {
                         ]
                     }
                 },
-                { title: 'Người chơi', data: 'participantName', render: function (v) { return v || '(chưa cập nhật)'; } },
+                { title: 'Người chơi', data: 'participantName', orderable: false, render: function (v) { return escapeHtml(v || '(chưa cập nhật)'); } },
                 { title: 'Thời gian quay', data: 'spinTime', render: fmtDate },
-                { title: 'Quà trúng', data: 'giftNameSnapshot', render: function (v) { return v || '<span class="text-muted">Không trúng</span>'; } },
+                { title: 'Quà trúng', data: 'giftNameSnapshot', render: function (v) { return v ? escapeHtml(v) : '<span class="text-muted">Không trúng</span>'; } },
+                { title: l('Hl25Admin:ReceiverAddress'), data: 'receiverAddressSnapshot', render: $.fn.dataTable.render.text() },
                 {
                     title: 'Trạng thái',
                     data: 'rewardStatus',
@@ -289,10 +314,6 @@ $(function () {
 
     // ============ Lazy-load khi mở tab config ============
     $('#tab-config').on('shown.bs.tab', function () {
-        if (giftOptionsCache.length === 0) {
-            loadGiftOptions().then(loadWheelConfig);
-        } else {
-            loadWheelConfig();
-        }
+        loadGiftOptions().then(loadWheelConfig);
     });
 });

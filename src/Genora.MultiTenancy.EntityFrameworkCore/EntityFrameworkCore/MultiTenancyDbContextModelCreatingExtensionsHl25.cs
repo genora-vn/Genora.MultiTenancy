@@ -134,6 +134,7 @@ public static class MultiTenancyDbContextModelCreatingExtensionsHl25
 
             b.Property(x => x.Name).IsRequired().HasMaxLength(256);
             b.Property(x => x.ImageUrl).HasMaxLength(1024);
+            b.Property(x => x.WheelImageUrl).HasMaxLength(1024);
             b.Property(x => x.Description).HasMaxLength(1000);
             b.Property(x => x.Value).HasColumnType("decimal(18,2)");
             b.Property(x => x.Status).HasConversion<byte>();

@@ -4,6 +4,7 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Volo.Abp.Domain.Entities.Auditing;
 using Volo.Abp.MultiTenancy;
+using Volo.Abp;
 
 namespace Genora.MultiTenancy.DomainModels.AppHl25;
 
@@ -46,6 +47,19 @@ public class Hl25SpinLog : FullAuditedAggregateRoot<Guid>, IMultiTenant
     public virtual Hl25Participant? Participant { get; set; }
 
     protected Hl25SpinLog() { }
+
+    /// <summary>Confirm delivery once; repeated requests preserve the original delivery time.</summary>
+    public void ConfirmDelivery(DateTime deliveredTime)
+    {
+        if (RewardStatus == Hl25RewardStatus.Delivered)
+            return;
+
+        if (RewardStatus != Hl25RewardStatus.Won || !GiftId.HasValue)
+            throw new BusinessException("Hl25:InvalidRewardTransition");
+
+        RewardStatus = Hl25RewardStatus.Delivered;
+        DeliveredTime = deliveredTime;
+    }
 
     public Hl25SpinLog(Guid id, Guid participantId, Guid? tenantId = null) : base(id)
     {

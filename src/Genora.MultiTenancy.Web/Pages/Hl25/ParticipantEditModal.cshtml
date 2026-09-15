@@ -23,21 +23,25 @@
                     <abp-input asp-for="Participant.PhoneNumber" label="Số điện thoại" placeholder="VD: 0912345678" />
                 </div>
                 <div class="col-md-6 mb-3">
-                    <abp-select asp-for="Participant.AgeGroup" label="@L["Hl25Field:AgeGroup"].Value">
-                        <abp-select-item value="0" text="@L["Enum:Hl25AgeGroup:0"].Value" />
-                        <abp-select-item value="1" text="@L["Enum:Hl25AgeGroup:1"].Value" />
-                        <abp-select-item value="2" text="@L["Enum:Hl25AgeGroup:2"].Value" />
-                        <abp-select-item value="3" text="@L["Enum:Hl25AgeGroup:3"].Value" />
-                    </abp-select>
+                    <label asp-for="Participant.AgeGroup" class="form-label">@L["Hl25Field:AgeGroup"]</label>
+                    <select asp-for="Participant.AgeGroup" class="form-select">
+                        <option value="0">@L["Enum:Hl25AgeGroup:0"]</option>
+                        <option value="1">@L["Enum:Hl25AgeGroup:1"]</option>
+                        <option value="2">@L["Enum:Hl25AgeGroup:2"]</option>
+                        <option value="3">@L["Enum:Hl25AgeGroup:3"]</option>
+                    </select>
+                    <span asp-validation-for="Participant.AgeGroup" class="text-danger"></span>
                 </div>
             </div>
             <div class="mb-3">
-                <abp-select asp-for="Participant.Gender" label="@L["Hl25Field:Gender"].Value">
-                    <abp-select-item value="0" text="@L["Enum:Hl25Gender:0"].Value" />
-                    <abp-select-item value="1" text="@L["Enum:Hl25Gender:1"].Value" />
-                    <abp-select-item value="2" text="@L["Enum:Hl25Gender:2"].Value" />
-                    <abp-select-item value="3" text="@L["Enum:Hl25Gender:3"].Value" />
-                </abp-select>
+                <label asp-for="Participant.Gender" class="form-label">@L["Hl25Field:Gender"]</label>
+                    <select asp-for="Participant.Gender" class="form-select">
+                        <option value="0">@L["Enum:Hl25Gender:0"]</option>
+                        <option value="1">@L["Enum:Hl25Gender:1"]</option>
+                        <option value="2">@L["Enum:Hl25Gender:2"]</option>
+                        <option value="3">@L["Enum:Hl25Gender:3"]</option>
+                    </select>
+                    <span asp-validation-for="Participant.Gender" class="text-danger"></span>
             </div>
             <div class="mb-3">
                 <label asp-for="Participant.ReceiveAddress" class="form-label">Địa chỉ nhận quà</label>

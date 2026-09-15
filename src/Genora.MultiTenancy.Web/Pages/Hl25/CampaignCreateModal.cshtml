@@ -29,12 +29,14 @@
                 </div>
             </div>
             <div class="mb-3">
-                <abp-select asp-for="Campaign.Status" label="@L["Hl25Field:Status"].Value">
-                    <abp-select-item value="0" text="@L["Enum:Hl25CampaignStatus:0"].Value" selected="true" />
-                    <abp-select-item value="1" text="@L["Enum:Hl25CampaignStatus:1"].Value" />
-                    <abp-select-item value="2" text="@L["Enum:Hl25CampaignStatus:2"].Value" />
-                    <abp-select-item value="3" text="@L["Enum:Hl25CampaignStatus:3"].Value" />
-                </abp-select>
+                <label asp-for="Campaign.Status" class="form-label">@L["Hl25Field:Status"]</label>
+                    <select asp-for="Campaign.Status" class="form-select">
+                        <option value="0">@L["Enum:Hl25CampaignStatus:0"]</option>
+                        <option value="1">@L["Enum:Hl25CampaignStatus:1"]</option>
+                        <option value="2">@L["Enum:Hl25CampaignStatus:2"]</option>
+                        <option value="3">@L["Enum:Hl25CampaignStatus:3"]</option>
+                    </select>
+                    <span asp-validation-for="Campaign.Status" class="text-danger"></span>
             </div>
         </abp-modal-body>
         <abp-modal-footer buttons="@(AbpModalButtons.Cancel | AbpModalButtons.Save)"></abp-modal-footer>

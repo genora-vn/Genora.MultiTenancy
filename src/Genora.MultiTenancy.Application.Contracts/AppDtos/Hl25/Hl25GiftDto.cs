@@ -9,6 +9,7 @@ public class Hl25GiftDto : AuditedEntityDto<Guid>
 {
     public string Name { get; set; } = null!;
     public string? ImageUrl { get; set; }
+    public string? WheelImageUrl { get; set; }
     public string? Description { get; set; }
     public int TotalQuantity { get; set; }
     public int RemainingQuantity { get; set; }

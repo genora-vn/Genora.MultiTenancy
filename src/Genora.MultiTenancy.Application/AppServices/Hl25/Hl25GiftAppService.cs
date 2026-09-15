@@ -12,6 +12,7 @@ using System.Linq.Dynamic.Core;
 using System.Threading.Tasks;
 using Volo.Abp;
 using Volo.Abp.Application.Dtos;
+using Volo.Abp.Authorization;
 using Volo.Abp.Content;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Features;
@@ -109,7 +110,9 @@ public class Hl25GiftAppService :
 
     public async Task<string> UploadGiftImageAsync(IRemoteStreamContent file)
     {
-        await CheckUpdatePolicyAsync();
+        await EnsureFeatureAsync();
+        if (!await AuthorizationService.IsGrantedAsync(MapPermissionForSide(CreatePolicyName!)))
+            await CheckUpdatePolicyAsync();
 
         if (file == null)
             throw new BusinessException("Hl25:GiftImageRequired");
@@ -126,6 +129,7 @@ public class Hl25GiftAppService :
     {
         entity.Name = input.Name;
         entity.ImageUrl = input.ImageUrl;
+        entity.WheelImageUrl = input.WheelImageUrl;
         entity.Description = input.Description;
         entity.TotalQuantity = input.TotalQuantity;
         entity.RemainingQuantity = input.RemainingQuantity;
@@ -136,6 +140,10 @@ public class Hl25GiftAppService :
     /// <summary>Tự set OutOfStock khi hết hàng (trừ khi bị Disabled thủ công).</summary>
     private static void NormalizeStatus(CreateUpdateHl25GiftDto input)
     {
+        Hl25AdminRules.ValidateStock(input.TotalQuantity, input.RemainingQuantity);
+        if (!Enum.IsDefined(input.Status))
+            throw new BusinessException("Hl25:InvalidGiftStatus");
+
         if (input.Status == Hl25GiftStatus.Disabled)
             return;
 

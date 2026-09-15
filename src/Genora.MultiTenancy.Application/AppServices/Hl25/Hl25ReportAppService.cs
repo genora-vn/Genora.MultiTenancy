@@ -1,6 +1,7 @@
 using Genora.MultiTenancy.AppDtos.Hl25;
 using Genora.MultiTenancy.DomainModels.AppHl25;
 using Genora.MultiTenancy.Enums;
+using Genora.MultiTenancy.Hl25;
 using Genora.MultiTenancy.Features.AppHl25Features;
 using Genora.MultiTenancy.Localization;
 using Genora.MultiTenancy.Permissions;
@@ -50,6 +51,8 @@ public class Hl25ReportAppService : ApplicationService, IHl25ReportAppService
     public async Task<Hl25FrameStatsDto> GetFrameStatsAsync(Hl25ReportInput input)
     {
         await CheckViewPolicyAsync();
+        Hl25AdminRules.ValidateDateRange(input.FromDate, input.ToDate);
+        var toExclusive = input.ToDate?.Date.AddDays(1);
 
         var queryable = await _creationRepository.GetQueryableAsync();
         var query = queryable;
@@ -59,7 +62,7 @@ public class Hl25ReportAppService : ApplicationService, IHl25ReportAppService
         if (input.FromDate.HasValue)
             query = query.Where(x => x.CreatedTime >= input.FromDate.Value);
         if (input.ToDate.HasValue)
-            query = query.Where(x => x.CreatedTime <= input.ToDate.Value);
+            query = query.Where(x => x.CreatedTime < toExclusive.Value);
 
         var items = await AsyncExecuter.ToListAsync(query);
 
@@ -87,13 +90,15 @@ public class Hl25ReportAppService : ApplicationService, IHl25ReportAppService
     public async Task<Hl25WheelParticipationStatsDto> GetWheelParticipationStatsAsync(Hl25ReportInput input)
     {
         await CheckViewPolicyAsync();
+        Hl25AdminRules.ValidateDateRange(input.FromDate, input.ToDate);
+        var toExclusive = input.ToDate?.Date.AddDays(1);
 
         var spinQueryable = await _spinLogRepository.GetQueryableAsync();
         var spinQuery = spinQueryable;
         if (input.FromDate.HasValue)
             spinQuery = spinQuery.Where(x => x.SpinTime >= input.FromDate.Value);
         if (input.ToDate.HasValue)
-            spinQuery = spinQuery.Where(x => x.SpinTime <= input.ToDate.Value);
+            spinQuery = spinQuery.Where(x => x.SpinTime < toExclusive.Value);
 
         var spins = await AsyncExecuter.ToListAsync(spinQuery);
 
@@ -102,9 +107,11 @@ public class Hl25ReportAppService : ApplicationService, IHl25ReportAppService
         if (input.FromDate.HasValue)
             turnQuery = turnQuery.Where(x => x.GrantedTime >= input.FromDate.Value);
         if (input.ToDate.HasValue)
-            turnQuery = turnQuery.Where(x => x.GrantedTime <= input.ToDate.Value);
+            turnQuery = turnQuery.Where(x => x.GrantedTime < toExclusive.Value);
 
         var totalTurnsGranted = await AsyncExecuter.SumAsync(turnQuery.Select(x => x.TurnsAdded));
+        var adminTurnsGranted = await AsyncExecuter.SumAsync(
+            turnQuery.Where(x => x.Source == Hl25SpinTurnSource.AdminGrant).Select(x => x.TurnsAdded));
 
         var participantQueryable = await _participantRepository.GetQueryableAsync();
         var participantsWithRemaining = await AsyncExecuter.CountAsync(
@@ -115,7 +122,10 @@ public class Hl25ReportAppService : ApplicationService, IHl25ReportAppService
             UniqueSpinners = spins.Select(x => x.ParticipantId).Distinct().Count(),
             TotalSpins = spins.Count,
             TotalTurnsGranted = totalTurnsGranted,
-            TotalWins = spins.Count(x => x.RewardStatus != Hl25RewardStatus.NotWon && x.GiftId != null),
+            AdminTurnsGranted = adminTurnsGranted,
+            AutomaticTurnsGranted = totalTurnsGranted - adminTurnsGranted,
+            TotalWins = spins.Count(x => x.GiftId != null &&
+                (x.RewardStatus == Hl25RewardStatus.Won || x.RewardStatus == Hl25RewardStatus.Delivered)),
             ParticipantsWithRemainingTurns = participantsWithRemaining
         };
     }
@@ -124,16 +134,19 @@ public class Hl25ReportAppService : ApplicationService, IHl25ReportAppService
     public async Task<Hl25WheelGiftStatsDto> GetWheelGiftStatsAsync(Hl25ReportInput input)
     {
         await CheckViewPolicyAsync();
+        Hl25AdminRules.ValidateDateRange(input.FromDate, input.ToDate);
+        var toExclusive = input.ToDate?.Date.AddDays(1);
 
         var giftQueryable = await _giftRepository.GetQueryableAsync();
         var gifts = await AsyncExecuter.ToListAsync(giftQueryable);
 
         var spinQueryable = await _spinLogRepository.GetQueryableAsync();
-        var spinQuery = spinQueryable.Where(x => x.GiftId != null);
+        var spinQuery = spinQueryable.Where(x => x.GiftId != null &&
+            (x.RewardStatus == Hl25RewardStatus.Won || x.RewardStatus == Hl25RewardStatus.Delivered));
         if (input.FromDate.HasValue)
             spinQuery = spinQuery.Where(x => x.SpinTime >= input.FromDate.Value);
         if (input.ToDate.HasValue)
-            spinQuery = spinQuery.Where(x => x.SpinTime <= input.ToDate.Value);
+            spinQuery = spinQuery.Where(x => x.SpinTime < toExclusive.Value);
 
         var spins = await AsyncExecuter.ToListAsync(spinQuery);
         var totalWon = spins.Count;
@@ -175,6 +188,8 @@ public class Hl25ReportAppService : ApplicationService, IHl25ReportAppService
     public async Task<Hl25AgeGroupStatsDto> GetAgeGroupStatsAsync(Hl25ReportInput input)
     {
         await CheckViewPolicyAsync();
+        Hl25AdminRules.ValidateDateRange(input.FromDate, input.ToDate);
+        var toExclusive = input.ToDate?.Date.AddDays(1);
 
         var participantQueryable = await _participantRepository.GetQueryableAsync();
         var query = participantQueryable;
@@ -182,7 +197,7 @@ public class Hl25ReportAppService : ApplicationService, IHl25ReportAppService
         if (input.FromDate.HasValue)
             query = query.Where(x => x.JoinedTime >= input.FromDate.Value);
         if (input.ToDate.HasValue)
-            query = query.Where(x => x.JoinedTime <= input.ToDate.Value);
+            query = query.Where(x => x.JoinedTime < toExclusive.Value);
 
         var participants = await AsyncExecuter.ToListAsync(query);
         var total = participants.Count;

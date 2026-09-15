@@ -100,12 +100,13 @@ public class Hl25SpinLogAppService : ApplicationService, IHl25SpinLogAppService
         await CheckEditPolicyAsync();
 
         var entity = await _repository.GetAsync(id);
-        entity.RewardStatus = status;
+        if (status != Hl25RewardStatus.Delivered)
+            throw new BusinessException("Hl25:InvalidRewardTransition");
 
-        // Khi Admin xác nhận đã trao → ghi mốc thời gian.
-        entity.DeliveredTime = status == Hl25RewardStatus.Delivered
-            ? DateTime.Now
-            : null;
+        if (entity.RewardStatus == Hl25RewardStatus.Delivered)
+            return ObjectMapper.Map<Hl25SpinLog, Hl25SpinLogDto>(entity);
+
+        entity.ConfirmDelivery(Clock.Now);
 
         entity = await _repository.UpdateAsync(entity, autoSave: true);
         return ObjectMapper.Map<Hl25SpinLog, Hl25SpinLogDto>(entity);

@@ -18,7 +18,7 @@
             <div class="mb-3">
                 <label asp-for="Turns" class="form-label">Số lượt cấp thêm <span class="text-danger">*</span></label>
                 <input asp-for="Turns" type="number" min="1" max="100" class="form-control" />
-                <small class="text-muted">Lượt cấp thủ công không bị giới hạn bởi trần tự động (2 lượt).</small>
+                <small class="text-muted">@L["Hl25Admin:GrantHint"]</small>
             </div>
             <div class="mb-3">
                 <label asp-for="Note" class="form-label">Ghi chú</label>

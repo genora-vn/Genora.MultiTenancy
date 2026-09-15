@@ -5,6 +5,9 @@
 > Nguồn gốc: migrate từ `~\.claude\projects\D--Genora-...-Genora-MultiTenancy\memory\` (108 file).
 
 ## Điều hướng nhanh
+- **Hoa Linh 25 — UI + ảnh vòng quay 2026-09-14 (mới nhất):** [note UI/images](memory/notes/project/project_hl25_gift_images_ui_fixes_20260914.md). Dropdown explicit vi/en; callback raw row; WheelImageUrl; modal/upload/VNĐ; migration 20260914111213 chưa apply.
+- **Hoa Linh 25 — cập nhật Admin 2026-09-14, trạng thái mới nhất:** [note triển khai](memory/notes/project/project_hl25_admin_update_20260914.md) · [bảng delta + kiểm tra](docs/HOALINH25_ADMIN_UPDATE_20260914.md). Tạo thiệp nhận lượt đầu/chia sẻ lượt hai; 32 tests; không migration mới.
+- **Hoa Linh 25 — baseline và approach 2026-09-14:** [context review](memory/notes/project/project_hl25_context_review_20260914.md). Đối chiếu Git/source; khác biệt quy tắc cấp lượt, trạng thái commit và migration; chưa triển khai chức năng mới.
 - Quy tắc làm việc & lessons learned → [RULES.md](RULES.md)
 - Trạng thái từng module → [PROJECT_STATE.md](PROJECT_STATE.md)
 - Việc đang làm dở → [ACTIVE_CONTEXT.md](ACTIVE_CONTEXT.md)

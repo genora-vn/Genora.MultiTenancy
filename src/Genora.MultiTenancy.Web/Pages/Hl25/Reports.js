@@ -1,4 +1,5 @@
 $(function () {
+    var l = abp.localization.getResource('MultiTenancy');
     var service = genora.multiTenancy.appServices.hl25.hl25Report;
 
     var frameChart = null;
@@ -53,6 +54,7 @@ $(function () {
             $('#WheelUniqueSpinners').text(fmtNumber(r.uniqueSpinners));
             $('#WheelTotalSpins').text(fmtNumber(r.totalSpins));
             $('#WheelTotalTurnsGranted').text(fmtNumber(r.totalTurnsGranted));
+            $('#WheelTurnSources').text(l('Hl25Admin:TurnSources', fmtNumber(r.automaticTurnsGranted), fmtNumber(r.adminTurnsGranted)));
             $('#WheelTotalWins').text(fmtNumber(r.totalWins));
         });
     }
@@ -70,7 +72,7 @@ $(function () {
             rows.forEach(function (x) {
                 tbody.append(
                     '<tr>' +
-                    '<td>' + x.giftName + '</td>' +
+                    '<td>' + $('<div>').text(x.giftName || '').html() + '</td>' +
                     '<td class="text-end">' + fmtNumber(x.totalQuantity) + '</td>' +
                     '<td class="text-end">' + fmtNumber(x.remainingQuantity) + '</td>' +
                     '<td class="text-end">' + fmtNumber(x.wonCount) + '</td>' +
@@ -122,6 +124,10 @@ $(function () {
 
     function loadAll() {
         var input = getInput();
+        if (input.fromDate && input.toDate && input.fromDate > input.toDate) {
+            abp.notify.warn(l('Hl25:InvalidDateRange'));
+            return;
+        }
         loadFrameStats(input);
         loadWheelParticipation(input);
         loadWheelGiftStats(input);

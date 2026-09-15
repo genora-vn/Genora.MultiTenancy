@@ -7,6 +7,7 @@ namespace Genora.MultiTenancy.Hl25;
 /// </summary>
 public static class Hl25ErrorCodes
 {
+    public const string InvalidSharePlatform = "Hl25:InvalidSharePlatform";
     /// <summary>Thiếu ZaloUserId trong request.</summary>
     public const string MissingZaloUserId = "Hl25:MissingZaloUserId";
 

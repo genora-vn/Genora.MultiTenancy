@@ -8,6 +8,7 @@ namespace Genora.MultiTenancy.AppDtos.Hl25;
 public class Hl25ReportInput
 {
     public DateTime? FromDate { get; set; }
+    /// <summary>Inclusive end date; all events during this calendar day are included.</summary>
     public DateTime? ToDate { get; set; }
 
     /// <summary>Lọc theo chiến dịch (dùng cho báo cáo Frame). Null = tất cả.</summary>
@@ -59,7 +60,13 @@ public class Hl25WheelParticipationStatsDto
     /// <summary>Tổng số lượt quay đã cấp (từ SpinTurnLog).</summary>
     public int TotalTurnsGranted { get; set; }
 
-    /// <summary>Số lượt trúng quà (RewardStatus != NotWon).</summary>
+    /// <summary>Lượt tự nhận trong khoảng ngày, không gồm AdminGrant.</summary>
+    public int AutomaticTurnsGranted { get; set; }
+
+    /// <summary>Lượt Admin cấp trong khoảng ngày (có thể vượt trần tự nhận).</summary>
+    public int AdminTurnsGranted { get; set; }
+
+    /// <summary>Số lượt có quà và trạng thái Won hoặc Delivered.</summary>
     public int TotalWins { get; set; }
 
     /// <summary>Số người tham gia có ít nhất 1 lượt còn lại chưa quay.</summary>

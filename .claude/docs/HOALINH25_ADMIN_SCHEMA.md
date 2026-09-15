@@ -1,5 +1,9 @@
 # HỆ THỐNG QUẢN TRỊ (ADMIN) — ZALO MINI APP "DƯỢC PHẨM HOA LINH 25 NĂM"
 
+> **Follow-up 2026-09-14:** kho quà bổ sung WheelImageUrl nullable 1024 cho ảnh trên vòng quay; ImageUrl giữ vai trò ảnh quà trúng. API slots trả wheelImageUrl/giftImageUrl. Migration mới `20260914111213_AddHl25GiftWheelImage` chưa apply. Xem [note UI/images](../memory/notes/project/project_hl25_gift_images_ui_fixes_20260914.md).
+
+> **Cập nhật ưu tiên 2026-09-14:** quy tắc anh chốt là **tạo thiệp nhận lượt đầu, chia sẻ nhận lượt thứ hai** (không phải hai chu kỳ). Đã cập nhật Admin/API, không đổi schema. Xem [bảng delta và validation mới nhất](HOALINH25_ADMIN_UPDATE_20260914.md); các mô tả cũ bên dưới giữ làm lịch sử thiết kế.
+
 > Tài liệu thiết kế kiến trúc & CSDL. Nhánh: `feature/dev-hoalinh-25years`. Schema DB: **`hl25`**.
 > Nền tảng: ABP Framework (.NET 9, DDD), Multi-Tenancy.
 > Trạng thái: **ĐÃ IMPLEMENT P0-P7 + đang cập nhật theo Figma mới (Delta 2026-09)**.

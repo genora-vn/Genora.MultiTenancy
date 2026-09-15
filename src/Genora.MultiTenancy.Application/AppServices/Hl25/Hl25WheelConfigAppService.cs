@@ -21,7 +21,7 @@ namespace Genora.MultiTenancy.AppServices.Hl25;
 
 /// <summary>
 /// AppService cấu hình vòng quay may mắn (singleton theo tenant).
-/// Get/Update cấu hình + slots (thay thế toàn bộ), validate tổng WinRate = 100.
+/// Get/Update cấu hình + slots, giữ Id ô hiện có và validate tổng WinRate = 100.
 /// </summary>
 [Authorize]
 public class Hl25WheelConfigAppService : ApplicationService, IHl25WheelConfigAppService
@@ -62,6 +62,12 @@ public class Hl25WheelConfigAppService : ApplicationService, IHl25WheelConfigApp
 
         var config = await GetOrCreateConfigAsync();
 
+        var existingSlots = await GetSlotsAsync(config.Id);
+        var requestedIds = input.Slots.Where(s => s.Id.HasValue).Select(s => s.Id!.Value).ToList();
+        if (requestedIds.Distinct().Count() != requestedIds.Count ||
+            requestedIds.Any(id => existingSlots.All(s => s.Id != id)))
+            throw new BusinessException("Hl25:InvalidWheelSlot");
+
         // Cập nhật cấu hình
         config.Title = input.Title;
         config.SubTitle = input.SubTitle;
@@ -73,11 +79,11 @@ public class Hl25WheelConfigAppService : ApplicationService, IHl25WheelConfigApp
         config.SlotCount = input.Slots?.Count ?? 0;
         await _configRepository.UpdateAsync(config, autoSave: true);
 
-        // Thay thế toàn bộ slots (xóa cũ, chèn mới) — pattern MARS/autoSave: xử lý child qua repo.
-        var existingSlots = await GetSlotsAsync(config.Id);
-        if (existingSlots.Count > 0)
+        // Giữ Id của ô được chỉnh sửa để lịch sử quay vẫn tham chiếu đúng ô.
+        var removedSlots = existingSlots.Where(s => !requestedIds.Contains(s.Id)).ToList();
+        if (removedSlots.Count > 0)
         {
-            await _slotRepository.DeleteManyAsync(existingSlots, autoSave: true);
+            await _slotRepository.DeleteManyAsync(removedSlots, autoSave: true);
         }
 
         if (input.Slots != null && input.Slots.Count > 0)
@@ -85,18 +91,22 @@ public class Hl25WheelConfigAppService : ApplicationService, IHl25WheelConfigApp
             var newSlots = new List<Hl25WheelSlot>();
             foreach (var s in input.Slots)
             {
-                var slot = new Hl25WheelSlot(GuidGenerator.Create(), config.Id, CurrentTenant.Id)
-                {
-                    GiftId = s.GiftId,
-                    Label = s.Label,
-                    SlotImageUrl = s.SlotImageUrl,
-                    WinRate = s.WinRate,
-                    DisplayOrder = s.DisplayOrder,
-                    ColorHex = s.ColorHex
-                };
-                newSlots.Add(slot);
+                var slot = s.Id.HasValue
+                    ? existingSlots.Single(x => x.Id == s.Id.Value)
+                    : new Hl25WheelSlot(GuidGenerator.Create(), config.Id, CurrentTenant.Id);
+                slot.GiftId = s.GiftId;
+                slot.Label = s.Label;
+                slot.SlotImageUrl = s.SlotImageUrl;
+                slot.WinRate = s.WinRate;
+                slot.DisplayOrder = s.DisplayOrder;
+                slot.ColorHex = s.ColorHex;
+                if (s.Id.HasValue)
+                    await _slotRepository.UpdateAsync(slot, autoSave: true);
+                else
+                    newSlots.Add(slot);
             }
-            await _slotRepository.InsertManyAsync(newSlots, autoSave: true);
+            if (newSlots.Count > 0)
+                await _slotRepository.InsertManyAsync(newSlots, autoSave: true);
         }
 
         var slotsAfter = await GetSlotsAsync(config.Id);
@@ -148,8 +158,8 @@ public class Hl25WheelConfigAppService : ApplicationService, IHl25WheelConfigApp
     /// <summary>Validate tổng WinRate của các ô phải = 100 (nếu có ô).</summary>
     private void ValidateWinRate(List<CreateUpdateHl25WheelSlotDto>? slots)
     {
-        if (slots == null || slots.Count == 0)
-            return;
+        if (slots == null || slots.Count == 0 || slots.Any(s => s == null || s.WinRate < 0 || s.WinRate > 100))
+            throw new BusinessException("Hl25:WheelWinRateInvalid");
 
         var total = slots.Sum(x => x.WinRate);
         if (Math.Abs(total - 100m) > 0.01m)

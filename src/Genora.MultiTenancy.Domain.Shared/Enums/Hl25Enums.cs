@@ -20,8 +20,8 @@ public enum Hl25GiftStatus : byte
 
 /// <summary>
 /// Nguồn cộng lượt quay (Hl25SpinTurnLog).
-/// LƯU Ý NGHIỆP VỤ (đã chốt): 1 lượt quay chỉ được cộng khi HOÀN TẤT 1 chu kỳ "Tạo thiệp + Chia sẻ".
-/// Tạo thiệp đơn thuần KHÔNG cộng lượt; phải chia sẻ thành công mới +1.
+/// Tạo thiệp nhận lượt đầu (Other); chia sẻ nhận lượt thứ hai (ShareZalo/ShareFacebook).
+/// AdminGrant không tính vào trần hai lượt tự nhận.
 /// </summary>
 public enum Hl25SpinTurnSource : byte
 {

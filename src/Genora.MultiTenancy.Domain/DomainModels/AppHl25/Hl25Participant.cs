@@ -14,6 +14,26 @@ namespace Genora.MultiTenancy.DomainModels.AppHl25;
 [Table("AppHl25Participants", Schema = "hl25")]
 public class Hl25Participant : FullAuditedAggregateRoot<Guid>, IMultiTenant
 {
+    /// <summary>First automatic turn only. Admin grants do not change EarnedCycles.</summary>
+    public bool TryGrantFrameTurn() => TryGrantAutomaticTurn(0);
+
+    /// <summary>Second automatic turn only, after a card has granted the first turn.</summary>
+    public bool TryGrantShareTurn() => TryGrantAutomaticTurn(1);
+
+    private bool TryGrantAutomaticTurn(int requiredEarnedTurns)
+    {
+        if (EarnedCycles != requiredEarnedTurns)
+            return false;
+
+        // Compute before assigning so overflow cannot partially modify the aggregate.
+        var remaining = checked(RemainingSpinTurns + 1);
+        var total = checked(TotalSpinTurns + 1);
+        EarnedCycles++;
+        RemainingSpinTurns = remaining;
+        TotalSpinTurns = total;
+        return true;
+    }
+
     public Guid? TenantId { get; set; }
 
     /// <summary>ID người dùng Zalo (định danh trong Mini App).</summary>
@@ -53,12 +73,12 @@ public class Hl25Participant : FullAuditedAggregateRoot<Guid>, IMultiTenant
     /// <summary>Số lượt quay còn lại.</summary>
     public int RemainingSpinTurns { get; set; }
 
-    /// <summary>Tổng lượt đã nhận (tối đa = Hl25Consts.MaxSpinTurnsPerUser).</summary>
+    /// <summary>Tổng lượt đã nhận, gồm lượt tự nhận và lượt Admin cấp.</summary>
     public int TotalSpinTurns { get; set; }
 
     /// <summary>
-    /// Số chu kỳ "Tạo thiệp → Chia sẻ thành công" đã hoàn tất (tối đa 2).
-    /// Dùng để chặn trần lượt quay (mỗi chu kỳ = +1 lượt).
+    /// Số lượt tự nhận: 0 = chưa nhận; 1 = đã nhận lượt tạo thiệp; 2 = đã nhận lượt chia sẻ.
+    /// Giữ tên cột/API để tương thích. Không tính lượt Admin cấp; giữ nguyên dữ liệu đã cấp trước 14/09.
     /// </summary>
     public int EarnedCycles { get; set; }
 

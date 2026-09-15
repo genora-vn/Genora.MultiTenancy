@@ -98,6 +98,7 @@ public class Hl25FrameCampaignAppService :
     public override async Task<Hl25FrameCampaignDto> CreateAsync(CreateUpdateHl25FrameCampaignDto input)
     {
         await CheckCreatePolicyAsync();
+        Genora.MultiTenancy.Hl25.Hl25AdminRules.ValidateDateRange(input.StartTime, input.EndTime);
 
         var entity = new Hl25FrameCampaign(GuidGenerator.Create(), input.Name, CurrentTenant.Id)
         {
@@ -114,6 +115,7 @@ public class Hl25FrameCampaignAppService :
     public override async Task<Hl25FrameCampaignDto> UpdateAsync(Guid id, CreateUpdateHl25FrameCampaignDto input)
     {
         await CheckUpdatePolicyAsync();
+        Genora.MultiTenancy.Hl25.Hl25AdminRules.ValidateDateRange(input.StartTime, input.EndTime);
 
         var entity = await Repository.GetAsync(id);
         entity.Name = input.Name;

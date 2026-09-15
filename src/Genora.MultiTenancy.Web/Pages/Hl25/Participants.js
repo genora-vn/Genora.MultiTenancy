@@ -91,6 +91,7 @@ $(function () {
                 },
                 { title: 'Lượt còn lại', data: 'remainingSpinTurns' },
                 { title: 'Tổng lượt', data: 'totalSpinTurns' },
+                { title: l('Hl25Admin:AutomaticTurns'), data: 'earnedCycles' },
                 { title: 'Quà trúng', data: 'totalGiftsWon' },
                 {
                     title: 'Địa chỉ nhận quà',

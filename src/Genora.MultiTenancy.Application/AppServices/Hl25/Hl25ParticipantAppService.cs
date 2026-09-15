@@ -17,6 +17,7 @@ using Volo.Abp.Authorization;
 using Volo.Abp.Content;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Features;
+using Volo.Abp.Uow;
 
 namespace Genora.MultiTenancy.AppServices.Hl25;
 
@@ -31,17 +32,20 @@ public class Hl25ParticipantAppService : ApplicationService, IHl25ParticipantApp
     private readonly IRepository<Hl25SpinTurnLog, Guid> _spinTurnLogRepository;
     private readonly IFeatureChecker _featureChecker;
     private readonly Hl25ParticipantExcelExporter _excelExporter;
+    private readonly IUnitOfWorkManager _uowManager;
 
     public Hl25ParticipantAppService(
         IRepository<Hl25Participant, Guid> repository,
         IRepository<Hl25SpinTurnLog, Guid> spinTurnLogRepository,
         IFeatureChecker featureChecker,
-        Hl25ParticipantExcelExporter excelExporter)
+        Hl25ParticipantExcelExporter excelExporter,
+        IUnitOfWorkManager uowManager)
     {
         _repository = repository;
         _spinTurnLogRepository = spinTurnLogRepository;
         _featureChecker = featureChecker;
         _excelExporter = excelExporter;
+        _uowManager = uowManager;
         LocalizationResource = typeof(MultiTenancyResource);
     }
 
@@ -100,19 +104,27 @@ public class Hl25ParticipantAppService : ApplicationService, IHl25ParticipantApp
         if (turns <= 0)
             throw new BusinessException("Hl25:GrantTurnsInvalid").WithData("Turns", turns);
 
+        if (note?.Length > 512)
+            throw new BusinessException("Hl25:GrantNoteTooLong");
+
+        using var uow = _uowManager.Begin(requiresNew: true, isTransactional: true);
         var entity = await _repository.GetAsync(id);
+
+        if (turns > int.MaxValue - entity.RemainingSpinTurns || turns > int.MaxValue - entity.TotalSpinTurns)
+            throw new BusinessException("Hl25:GrantTurnsInvalid").WithData("Turns", turns);
 
         // Cộng lượt thủ công (KHÔNG áp trần MaxSpinTurnsPerUser vì đây là Admin cấp).
         entity.RemainingSpinTurns += turns;
         entity.TotalSpinTurns += turns;
-        await _repository.UpdateAsync(entity, autoSave: true);
+        await _repository.UpdateAsync(entity, autoSave: false);
 
         // Ghi sổ nhận lượt.
         var log = new Hl25SpinTurnLog(GuidGenerator.Create(), entity.Id, Hl25SpinTurnSource.AdminGrant, turns, CurrentTenant.Id)
         {
             Note = note
         };
-        await _spinTurnLogRepository.InsertAsync(log, autoSave: true);
+        await _spinTurnLogRepository.InsertAsync(log, autoSave: false);
+        await uow.CompleteAsync();
 
         return ObjectMapper.Map<Hl25Participant, Hl25ParticipantDto>(entity);
     }

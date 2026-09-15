@@ -5,17 +5,9 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Genora.MultiTenancy.Web.Pages.Hl25;
 
-public class GiftCreateModalModel : MultiTenancyPageModel
+public class GiftCreateModalModel : Hl25GiftModalModelBase
 {
-    [BindProperty]
-    public CreateUpdateHl25GiftDto Gift { get; set; } = new();
-
-    private readonly IHl25GiftAppService _giftService;
-
-    public GiftCreateModalModel(IHl25GiftAppService giftService)
-    {
-        _giftService = giftService;
-    }
+    public GiftCreateModalModel(IHl25GiftAppService giftService) : base(giftService) { }
 
     public void OnGet()
     {
@@ -27,7 +19,8 @@ public class GiftCreateModalModel : MultiTenancyPageModel
 
     public async Task<IActionResult> OnPostAsync()
     {
-        await _giftService.CreateAsync(Gift);
+        await PrepareGiftAsync();
+        await GiftService.CreateAsync(Gift);
         return NoContent();
     }
 }

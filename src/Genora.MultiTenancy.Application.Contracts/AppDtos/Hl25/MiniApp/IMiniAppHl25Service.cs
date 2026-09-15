@@ -24,10 +24,10 @@ public interface IMiniAppHl25Service : IApplicationService
     /// <summary>Cập nhật thông tin cá nhân.</summary>
     Task<Hl25MeDto> UpdateProfileAsync(Hl25UpdateProfileRequest request);
 
-    /// <summary>Tạo thiệp (ghi lịch sử tạo ảnh). CHƯA cộng lượt — chờ chia sẻ.</summary>
+    /// <summary>Tạo thiệp và cấp lượt tự nhận đầu tiên; tạo thêm thiệp không cộng lượt.</summary>
     Task<Hl25FrameResultDto> CreateFrameAsync(Hl25CreateFrameRequest request);
 
-    /// <summary>Xác nhận chia sẻ thiệp thành công → hoàn tất 1 chu kỳ, +1 lượt (nếu chưa đạt trần).</summary>
+    /// <summary>Xác nhận chia sẻ thiệp thành công → cấp lượt tự nhận thứ hai, chỉ một lần.</summary>
     Task<Hl25ShareResultDto> ShareFrameAsync(Hl25ShareFrameRequest request);
 
     /// <summary>Lấy cấu hình vòng quay + số lượt còn lại của người chơi.</summary>

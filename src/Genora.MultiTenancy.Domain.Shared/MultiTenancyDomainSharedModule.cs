@@ -74,6 +74,7 @@ public class MultiTenancyDomainSharedModule : AbpModule
             options.MapCodeNamespace("CalendarSlot", typeof(MultiTenancyResource));
             options.MapCodeNamespace("BookingImport", typeof(MultiTenancyResource));
             options.MapCodeNamespace("MultiTenancy", typeof(MultiTenancyResource));
+            options.MapCodeNamespace("Hl25", typeof(MultiTenancyResource));
         });
     }
 }

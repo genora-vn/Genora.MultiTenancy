@@ -1,0 +1,71 @@
+@using Genora.MultiTenancy.Localization
+@using Microsoft.Extensions.Localization
+@model Genora.MultiTenancy.Web.Pages.Hl25.Hl25GiftModalModelBase
+@inject IStringLocalizer<MultiTenancyResource> L
+
+<div class="row g-3">
+    <div class="col-md-8">
+        <abp-input asp-for="Gift.Name" label="@L["Hl25Gift:Name"].Value" />
+    </div>
+    <div class="col-md-4">
+        <label asp-for="Gift.Status" class="form-label">@L["Hl25Field:Status"]</label>
+        <select asp-for="Gift.Status" class="form-select">
+            <option value="0">@L["Enum:Hl25GiftStatus:0"]</option>
+            <option value="1">@L["Enum:Hl25GiftStatus:1"]</option>
+            <option value="2">@L["Enum:Hl25GiftStatus:2"]</option>
+        </select>
+        <span asp-validation-for="Gift.Status" class="text-danger"></span>
+    </div>
+    <div class="col-12">
+        <label asp-for="Gift.Description" class="form-label">@L["Hl25Gift:Description"]</label>
+        <textarea asp-for="Gift.Description" class="form-control" rows="2" maxlength="1000"></textarea>
+        <span asp-validation-for="Gift.Description" class="text-danger"></span>
+    </div>
+    <div class="col-md-6">
+        <div class="border rounded-3 p-3 h-100 hl25-gift-image">
+            <h6 class="mb-1">@L["Hl25Gift:PrizeImage"]</h6>
+            <p class="small text-muted mb-2">@L["Hl25Gift:PrizeImageHint"]</p>
+            <div class="bg-light rounded d-flex align-items-center justify-content-center mb-2" style="height:140px;">
+                <img src="@Model.Gift.ImageUrl" class="hl25-image-preview @(string.IsNullOrWhiteSpace(Model.Gift.ImageUrl) ? "d-none" : "")" alt="@L["Hl25Gift:PrizeImage"]" style="max-height:130px;max-width:100%;object-fit:contain;" />
+                <span class="hl25-image-empty small text-muted @(string.IsNullOrWhiteSpace(Model.Gift.ImageUrl) ? "" : "d-none")">@L["Hl25Gift:NoImage"]</span>
+            </div>
+            <label asp-for="GiftImageFile" class="form-label small">@L["Hl25Gift:ChooseFile"]</label>
+            <input asp-for="GiftImageFile" type="file" accept="image/png,image/jpeg" class="form-control form-control-sm hl25-image-file mb-2" />
+            <label asp-for="Gift.ImageUrl" class="form-label small">@L["Hl25Common:ImageUrl"]</label>
+            <input asp-for="Gift.ImageUrl" class="form-control form-control-sm hl25-image-url" placeholder="https://..." maxlength="1024" />
+            <span asp-validation-for="Gift.ImageUrl" class="text-danger small"></span>
+            <button type="button" class="btn btn-link btn-sm px-0 hl25-image-clear">@L["Hl25Gift:ClearImage"]</button>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="border rounded-3 p-3 h-100 hl25-gift-image">
+            <h6 class="mb-1">@L["Hl25Gift:WheelImage"]</h6>
+            <p class="small text-muted mb-2">@L["Hl25Gift:WheelImageHint"]</p>
+            <div class="bg-light rounded d-flex align-items-center justify-content-center mb-2" style="height:140px;">
+                <img src="@Model.Gift.WheelImageUrl" class="hl25-image-preview @(string.IsNullOrWhiteSpace(Model.Gift.WheelImageUrl) ? "d-none" : "")" alt="@L["Hl25Gift:WheelImage"]" style="max-height:130px;max-width:100%;object-fit:contain;" />
+                <span class="hl25-image-empty small text-muted @(string.IsNullOrWhiteSpace(Model.Gift.WheelImageUrl) ? "" : "d-none")">@L["Hl25Gift:NoImage"]</span>
+            </div>
+            <label asp-for="WheelImageFile" class="form-label small">@L["Hl25Gift:ChooseFile"]</label>
+            <input asp-for="WheelImageFile" type="file" accept="image/png,image/jpeg" class="form-control form-control-sm hl25-image-file mb-2" />
+            <label asp-for="Gift.WheelImageUrl" class="form-label small">@L["Hl25Common:ImageUrl"]</label>
+            <input asp-for="Gift.WheelImageUrl" class="form-control form-control-sm hl25-image-url" placeholder="https://..." maxlength="1024" />
+            <span asp-validation-for="Gift.WheelImageUrl" class="text-danger small"></span>
+            <button type="button" class="btn btn-link btn-sm px-0 hl25-image-clear">@L["Hl25Gift:ClearImage"]</button>
+        </div>
+    </div>
+    <div class="col-12 small text-muted">@L["Hl25Gift:UploadHint"]</div>
+    <div class="col-md-4">
+        <abp-input asp-for="Gift.TotalQuantity" label="@L["Hl25Gift:TotalQuantity"].Value" type="number" min="0" />
+    </div>
+    <div class="col-md-4">
+        <abp-input asp-for="Gift.RemainingQuantity" label="@L["Hl25Gift:RemainingQuantity"].Value" type="number" min="0" />
+    </div>
+    <div class="col-md-4">
+        <label asp-for="GiftValue" class="form-label">@L["Hl25Gift:Value"]</label>
+        <div class="input-group">
+            <input asp-for="GiftValue" type="text" inputmode="decimal" class="form-control hl25-money-input" placeholder="1.000.000" autocomplete="off" maxlength="24" />
+            <span class="input-group-text">₫</span>
+        </div>
+        <span asp-validation-for="GiftValue" class="text-danger"></span>
+    </div>
+</div>

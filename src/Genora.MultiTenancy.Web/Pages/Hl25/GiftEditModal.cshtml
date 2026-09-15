@@ -1,6 +1,5 @@
 @page
 @using Genora.MultiTenancy.Localization
-@using Genora.MultiTenancy.Enums
 @using Microsoft.Extensions.Localization
 @using Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.TagHelpers.Modal
 @model Genora.MultiTenancy.Web.Pages.Hl25.GiftEditModalModel
@@ -8,71 +7,16 @@
 @{
     Layout = null;
 }
-<form abp-model="Gift" asp-page="/Hl25/GiftEditModal" id="EditHl25Gift">
+<form method="post" asp-page="/Hl25/GiftEditModal" id="EditHl25Gift" enctype="multipart/form-data">
     <input asp-for="Id" type="hidden" />
-    <abp-modal>
-        <abp-modal-header title="Sửa quà tặng"></abp-modal-header>
+    <abp-modal size="Large">
+        <abp-modal-header title="@L["Hl25Gift:EditTitle"].Value"></abp-modal-header>
         <abp-modal-body>
-            <div class="mb-3">
-                <abp-input asp-for="Gift.Name" label="Tên quà" />
-            </div>
-            <div class="mb-3">
-                <label class="form-label">Ảnh quà</label>
-                <div class="mb-2">
-                    <img id="GiftImagePreview"
-                         src="@(string.IsNullOrEmpty(Model.Gift.ImageUrl) ? "" : Model.Gift.ImageUrl)"
-                         class="img-fluid @(string.IsNullOrEmpty(Model.Gift.ImageUrl) ? "d-none" : "")"
-                         style="max-height:120px;border:1px solid #eee;border-radius:6px;" />
-                </div>
-                <input type="file" accept="image/png,image/jpeg" class="form-control mb-2" id="GiftImageFile" />
-                <abp-input asp-for="Gift.ImageUrl" label="@L["Hl25Common:ImageUrl"].Value" placeholder="https://..." />
-                <small class="text-muted">@L["Hl25Common:ImageHint"] @L["Hl25Common:ImageMaxSize"]</small>
-            </div>
-            <div class="mb-3">
-                <label asp-for="Gift.Description" class="form-label">Mô tả</label>
-                <textarea asp-for="Gift.Description" class="form-control" rows="3"></textarea>
-            </div>
-            <div class="row">
-                <div class="col-md-4 mb-3">
-                    <abp-input asp-for="Gift.TotalQuantity" label="Tổng số lượng" type="number" />
-                </div>
-                <div class="col-md-4 mb-3">
-                    <abp-input asp-for="Gift.RemainingQuantity" label="Còn lại" type="number" />
-                </div>
-                <div class="col-md-4 mb-3">
-                    <abp-input asp-for="Gift.Value" label="Giá trị (VNĐ)" type="number" />
-                </div>
-            </div>
-            <div class="mb-3">
-                <abp-select asp-for="Gift.Status" label="@L["Hl25Field:Status"].Value">
-                    <abp-select-item value="0" text="@L["Enum:Hl25GiftStatus:0"].Value" />
-                    <abp-select-item value="1" text="@L["Enum:Hl25GiftStatus:1"].Value" />
-                    <abp-select-item value="2" text="@L["Enum:Hl25GiftStatus:2"].Value" />
-                </abp-select>
-            </div>
+            <partial name="_GiftForm" model="Model" />
         </abp-modal-body>
         <abp-modal-footer buttons="@(AbpModalButtons.Cancel | AbpModalButtons.Save)"></abp-modal-footer>
     </abp-modal>
 </form>
 <script>
-    (function () {
-        var MAX = 5 * 1024 * 1024;
-        var svc = genora.multiTenancy.appServices.hl25.hl25Gift;
-        var $url = $('#EditHl25Gift #Gift_ImageUrl');
-        // Preview khi dán URL.
-        $url.on('input', function () {
-            var v = $(this).val();
-            if (v) { $('#GiftImagePreview').attr('src', v).removeClass('d-none'); }
-        });
-        // Upload file → điền URL + preview.
-        $('#GiftImageFile').on('change', function () {
-            var file = this.files && this.files[0];
-            if (!file) return;
-            if (file.size > MAX) { abp.message.warn('Ảnh vượt quá 5MB.'); this.value = ''; return; }
-            var reader = new FileReader();
-            reader.onload = function (e) { $('#GiftImagePreview').attr('src', e.target.result).removeClass('d-none'); };
-            reader.readAsDataURL(file);
-            svc.uploadGiftImageByFile(file).then(function (url) { $url.val(url); });
-        });
-    })();
+    genora.hl25GiftModal.init('#EditHl25Gift');
 </script>

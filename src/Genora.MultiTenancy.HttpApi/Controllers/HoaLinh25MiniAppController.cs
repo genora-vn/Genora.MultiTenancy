@@ -96,7 +96,7 @@ public class HoaLinh25MiniAppController : MultiTenancyController
         }
     }
 
-    /// <summary>Tạo thiệp (chưa cộng lượt — chờ chia sẻ).</summary>
+    /// <summary>Tạo thiệp; chỉ cấp lượt tự nhận đầu tiên. Chia sẻ để nhận lượt thứ hai.</summary>
     [HttpPost("frames")]
     public async Task<IActionResult> CreateFrame([FromBody] Hl25CreateFrameRequest request)
     {
@@ -111,7 +111,7 @@ public class HoaLinh25MiniAppController : MultiTenancyController
         }
     }
 
-    /// <summary>Xác nhận chia sẻ thiệp → cộng lượt (theo chu kỳ, trần 2).</summary>
+    /// <summary>Xác nhận chia sẻ thiệp → nhận lượt thứ hai sau lượt tạo thiệp.</summary>
     [HttpPost("frames/share")]
     public async Task<IActionResult> ShareFrame([FromBody] Hl25ShareFrameRequest request)
     {

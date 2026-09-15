@@ -96,15 +96,15 @@ public class Hl25FrameResultDto
     public Guid FrameCreationId { get; set; }
     public string ResultImageUrl { get; set; } = null!;
     public string? ShareLink { get; set; }
-    /// <summary>Có được cộng lượt quay không (tạo thiệp thành công = +1 lượt, tối đa 2).</summary>
+    /// <summary>Chỉ true khi tạo thiệp cấp lượt tự nhận đầu tiên; tạo thêm thiệp không cộng lượt.</summary>
     public bool TurnGranted { get; set; }
     /// <summary>Số lượt quay còn lại sau khi tạo thiệp.</summary>
     public int RemainingSpinTurns { get; set; }
-    /// <summary>Số chu kỳ đã hoàn tất (0-2).</summary>
+    /// <summary>Số lượt tự nhận (0-2), không tính Admin cấp.</summary>
     public int EarnedCycles { get; set; }
 }
 
-/// <summary>Request xác nhận chia sẻ thiệp thành công → cộng lượt (theo chu kỳ).</summary>
+/// <summary>Request xác nhận chia sẻ thiệp thành công → nhận lượt tự động thứ hai.</summary>
 public class Hl25ShareFrameRequest
 {
     public string ZaloUserId { get; set; } = null!;
@@ -128,8 +128,12 @@ public class Hl25MiniAppWheelSlotDto
 {
     public Guid Id { get; set; }
     public string? Label { get; set; }
-    /// <summary>Ảnh hiển thị trên ô (full URL). Nếu ô không cấu hình ảnh riêng thì lấy ảnh của quà đã gán.</summary>
+    /// <summary>Ảnh hiển thị trên ô (full URL): ảnh riêng ô → WheelImageUrl của quà → ImageUrl cũ.</summary>
     public string? SlotImageUrl { get; set; }
+    /// <summary>Ảnh vòng quay cấu hình tại kho quà (full URL), null nếu chưa cấu hình.</summary>
+    public string? WheelImageUrl { get; set; }
+    /// <summary>Ảnh thông tin quà khi trúng (full URL), độc lập với ảnh vòng quay.</summary>
+    public string? GiftImageUrl { get; set; }
     public int DisplayOrder { get; set; }
     public string? ColorHex { get; set; }
 
@@ -176,10 +180,10 @@ public class Hl25SpinResultDto
 
     // ===== Cờ FE (Delta 2026-09) — giúp FE quyết định nút trên màn kết quả =====
 
-    /// <summary>Còn có thể chia sẻ để nhận thêm lượt không (EarnedCycles &lt; MaxSpinTurnsPerUser). FE hiện nút "Chia sẻ để thêm lượt".</summary>
+    /// <summary>True khi EarnedCycles = 1: đã có lượt tạo thiệp và chưa nhận lượt chia sẻ.</summary>
     public bool CanShareForMoreTurn { get; set; }
 
-    /// <summary>Số chu kỳ "Tạo thiệp → Chia sẻ" đã hoàn tất (0-2).</summary>
+    /// <summary>Số lượt tự nhận (0-2), không tính Admin cấp.</summary>
     public int EarnedCycles { get; set; }
 
     /// <summary>Tổng số quà đã trúng (dùng cho luật "tối đa trúng 1 lần").</summary>

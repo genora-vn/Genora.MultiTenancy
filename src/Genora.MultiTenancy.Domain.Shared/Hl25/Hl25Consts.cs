@@ -15,8 +15,8 @@ public static class Hl25Consts
     public const string DefaultImageSubFolder = "hl25";
 
     /// <summary>
-    /// Trần số lượt quay tối đa mỗi người dùng.
-    /// Quy tắc (đã chốt): mỗi chu kỳ "Tạo thiệp → Chia sẻ thành công" = +1 lượt, tối đa 2 chu kỳ = 2 lượt.
+    /// Trần lượt tự nhận: tạo thiệp nhận lượt đầu, chia sẻ nhận lượt thứ hai.
+    /// Lượt Admin cấp nằm ngoài trần này.
     /// </summary>
     public const int MaxSpinTurnsPerUser = 2;
 

@@ -50,6 +50,7 @@ public class Hl25AppConfigAppService : ApplicationService, IHl25AppConfigAppServ
     public async Task<Hl25AppConfigDto> UpdateAsync(CreateUpdateHl25AppConfigDto input)
     {
         await CheckSettingsEditPolicyAsync();
+        Hl25AdminRules.ValidateDateRange(input.StartTime, input.EndTime);
 
         var entity = await GetOrCreateAsync();
         ObjectMapper.Map(input, entity);

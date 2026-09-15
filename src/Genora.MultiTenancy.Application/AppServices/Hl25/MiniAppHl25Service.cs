@@ -148,7 +148,7 @@ public class MiniAppHl25Service : ApplicationService, IMiniAppHl25Service
     {
         ValidateZaloUserId(zaloUserId);
         var participant = await FindByZaloUserIdAsync(zaloUserId)
-            ?? throw new UserFriendlyException(Hl25ErrorCodes.ParticipantNotFound, "Người dùng chưa đăng ký chương trình.");
+            ?? throw new UserFriendlyException(code: Hl25ErrorCodes.ParticipantNotFound, message: "Người dùng chưa đăng ký chương trình.");
         return MapMe(participant);
     }
 
@@ -156,7 +156,7 @@ public class MiniAppHl25Service : ApplicationService, IMiniAppHl25Service
     {
         ValidateZaloUserId(request.ZaloUserId);
         var participant = await FindByZaloUserIdAsync(request.ZaloUserId)
-            ?? throw new UserFriendlyException(Hl25ErrorCodes.ParticipantNotFound, "Người dùng chưa đăng ký chương trình.");
+            ?? throw new UserFriendlyException(code: Hl25ErrorCodes.ParticipantNotFound, message: "Người dùng chưa đăng ký chương trình.");
 
         participant.FullName = request.FullName;
         participant.PhoneNumber = request.PhoneNumber;
@@ -173,23 +173,17 @@ public class MiniAppHl25Service : ApplicationService, IMiniAppHl25Service
     {
         ValidateZaloUserId(request.ZaloUserId);
         if (string.IsNullOrWhiteSpace(request.ResultImageUrl))
-            throw new UserFriendlyException(Hl25ErrorCodes.FrameImageRequired, "Thiếu ảnh thiệp.");
+            throw new UserFriendlyException(code: Hl25ErrorCodes.FrameImageRequired, message: "Thiếu ảnh thiệp.");
 
         if (request.WishMessage != null && request.WishMessage.Length > Hl25Consts.MaxWishLength)
-            throw new UserFriendlyException(Hl25ErrorCodes.WishTooLong, $"Lời chúc tối đa {Hl25Consts.MaxWishLength} ký tự.");
+            throw new UserFriendlyException(code: Hl25ErrorCodes.WishTooLong, message: $"Lời chúc tối đa {Hl25Consts.MaxWishLength} ký tự.");
 
+        using var uow = _uowManager.Begin(requiresNew: true, isTransactional: true);
         var participant = await FindByZaloUserIdAsync(request.ZaloUserId)
-            ?? throw new UserFriendlyException(Hl25ErrorCodes.ParticipantNotFound, "Người dùng chưa đăng ký chương trình.");
+            ?? throw new UserFriendlyException(code: Hl25ErrorCodes.ParticipantNotFound, message: "Người dùng chưa đăng ký chương trình.");
 
-        // Nghiệp vụ: Tạo thiệp thành công = +1 lượt quay (tối đa 2 lượt/người).
-        bool grantedTurn = false;
-        if (participant.EarnedCycles < Hl25Consts.MaxSpinTurnsPerUser)
-        {
-            participant.EarnedCycles += 1;
-            participant.RemainingSpinTurns += 1;
-            participant.TotalSpinTurns += 1;
-            grantedTurn = true;
-        }
+        // Lượt tự nhận đầu tiên đến từ tạo thiệp; tạo thêm thiệp không cấp lượt thứ hai.
+        var grantedTurn = participant.TryGrantFrameTurn();
 
         var creation = new Hl25FrameCreation(GuidGenerator.Create(), participant.Id, request.ResultImageUrl, CurrentTenant.Id)
         {
@@ -197,7 +191,7 @@ public class MiniAppHl25Service : ApplicationService, IMiniAppHl25Service
             TemplateId = request.TemplateId,
             WishMessage = request.WishMessage
         };
-        creation = await _frameCreationRepository.InsertAsync(creation, autoSave: false);
+        creation = await _frameCreationRepository.InsertAsync(creation, autoSave: true);
 
         if (grantedTurn)
         {
@@ -209,12 +203,10 @@ public class MiniAppHl25Service : ApplicationService, IMiniAppHl25Service
                 FrameCreationId = creation.Id,
                 Note = "Tạo thiệp thành công"
             };
-            await _spinTurnLogRepository.InsertAsync(turnLog, autoSave: true);
+            await _spinTurnLogRepository.InsertAsync(turnLog, autoSave: false);
         }
-        else
-        {
-            await _participantRepository.UpdateAsync(participant, autoSave: true);
-        }
+
+        await uow.CompleteAsync();
 
         return new Hl25FrameResultDto
         {
@@ -227,21 +219,23 @@ public class MiniAppHl25Service : ApplicationService, IMiniAppHl25Service
         };
     }
 
-    // ===== Chia sẻ → cộng lượt theo chu kỳ =====
+    // ===== Chia sẻ → nhận lượt tự động thứ hai =====
     public async Task<Hl25ShareResultDto> ShareFrameAsync(Hl25ShareFrameRequest request)
     {
         ValidateZaloUserId(request.ZaloUserId);
+        if (request.SharePlatform != Hl25SharePlatform.Zalo && request.SharePlatform != Hl25SharePlatform.Facebook)
+            throw new UserFriendlyException(message: "Nền tảng chia sẻ không hợp lệ.", code: Hl25ErrorCodes.InvalidSharePlatform);
 
         using var uow = _uowManager.Begin(requiresNew: true, isTransactional: true);
 
         var participant = await FindByZaloUserIdAsync(request.ZaloUserId)
-            ?? throw new UserFriendlyException(Hl25ErrorCodes.ParticipantNotFound, "Người dùng chưa đăng ký chương trình.");
+            ?? throw new UserFriendlyException(code: Hl25ErrorCodes.ParticipantNotFound, message: "Người dùng chưa đăng ký chương trình.");
 
         var creation = await _frameCreationRepository.FindAsync(request.FrameCreationId)
-            ?? throw new UserFriendlyException(Hl25ErrorCodes.FrameNotFound, "Không tìm thấy thiệp.");
+            ?? throw new UserFriendlyException(code: Hl25ErrorCodes.FrameNotFound, message: "Không tìm thấy thiệp.");
 
         if (creation.ParticipantId != participant.Id)
-            throw new UserFriendlyException(Hl25ErrorCodes.FrameNotOwned, "Thiệp không thuộc về người dùng này.");
+            throw new UserFriendlyException(code: Hl25ErrorCodes.FrameNotOwned, message: "Thiệp không thuộc về người dùng này.");
 
         // Chu kỳ đã hoàn tất trước đó (đã chia sẻ) → không cộng lượt lần nữa.
         if (creation.SharePlatform != Hl25SharePlatform.None)
@@ -261,13 +255,9 @@ public class MiniAppHl25Service : ApplicationService, IMiniAppHl25Service
         creation.ShareTime = DateTime.Now;
         await _frameCreationRepository.UpdateAsync(creation, autoSave: false);
 
-        bool granted = false;
-        // Cộng lượt nếu chưa đạt trần chu kỳ (mỗi chu kỳ Tạo thiệp→Chia sẻ = +1 lượt).
-        if (participant.EarnedCycles < Hl25Consts.MaxSpinTurnsPerUser)
+        var granted = participant.TryGrantShareTurn();
+        if (granted)
         {
-            participant.EarnedCycles += 1;
-            participant.RemainingSpinTurns += 1;
-            participant.TotalSpinTurns += 1;
             await _participantRepository.UpdateAsync(participant, autoSave: false);
 
             var source = request.SharePlatform == Hl25SharePlatform.Facebook
@@ -279,7 +269,6 @@ public class MiniAppHl25Service : ApplicationService, IMiniAppHl25Service
                 Note = "Cộng lượt do chia sẻ thiệp"
             };
             await _spinTurnLogRepository.InsertAsync(turnLog, autoSave: false);
-            granted = true;
         }
 
         await uow.CompleteAsync();
@@ -291,7 +280,7 @@ public class MiniAppHl25Service : ApplicationService, IMiniAppHl25Service
             EarnedCycles = participant.EarnedCycles,
             Message = granted
                 ? "Bạn nhận thêm 1 lượt quay!"
-                : $"Bạn đã đạt tối đa {Hl25Consts.MaxSpinTurnsPerUser} lượt quay."
+                : "Không có lượt quay bổ sung từ lần chia sẻ này."
         };
     }
 
@@ -340,8 +329,11 @@ public class MiniAppHl25Service : ApplicationService, IMiniAppHl25Service
                 return new Hl25MiniAppWheelSlotDto
                 {
                     Id = s.Id,
-                    // Ưu tiên ảnh riêng của ô; nếu trống thì lấy ảnh quà đã gán.
-                    SlotImageUrl = ToFullUrl(!string.IsNullOrWhiteSpace(s.SlotImageUrl) ? s.SlotImageUrl : gift?.ImageUrl),
+                    // Ảnh riêng của ô → ảnh vòng quay tại kho quà → ảnh quà cũ (tương thích dữ liệu cũ).
+                    SlotImageUrl = ToFullUrl(!string.IsNullOrWhiteSpace(s.SlotImageUrl) ? s.SlotImageUrl
+                        : !string.IsNullOrWhiteSpace(gift?.WheelImageUrl) ? gift.WheelImageUrl : gift?.ImageUrl),
+                    WheelImageUrl = ToFullUrl(gift?.WheelImageUrl),
+                    GiftImageUrl = ToFullUrl(gift?.ImageUrl),
                     // Ưu tiên nhãn riêng của ô; nếu trống thì lấy tên quà đã gán.
                     Label = !string.IsNullOrWhiteSpace(s.Label) ? s.Label : gift?.Name,
                     DisplayOrder = s.DisplayOrder,
@@ -363,23 +355,23 @@ public class MiniAppHl25Service : ApplicationService, IMiniAppHl25Service
         using var uow = _uowManager.Begin(requiresNew: true, isTransactional: true);
 
         var participant = await FindByZaloUserIdAsync(request.ZaloUserId)
-            ?? throw new UserFriendlyException(Hl25ErrorCodes.ParticipantNotFound, "Người dùng chưa đăng ký chương trình.");
+            ?? throw new UserFriendlyException(code: Hl25ErrorCodes.ParticipantNotFound, message: "Người dùng chưa đăng ký chương trình.");
 
         // Kiểm tra lượt còn lại TRONG transaction (validate-then-write).
         if (participant.RemainingSpinTurns <= 0)
-            throw new UserFriendlyException(Hl25ErrorCodes.NoSpinTurns, "Bạn đã hết lượt quay.");
+            throw new UserFriendlyException(code: Hl25ErrorCodes.NoSpinTurns, message: "Bạn đã hết lượt quay.");
 
         var wheelQueryable = await _wheelConfigRepository.GetQueryableAsync();
         var config = await AsyncExecuter.FirstOrDefaultAsync(wheelQueryable)
-            ?? throw new UserFriendlyException(Hl25ErrorCodes.WheelNotConfigured, "Vòng quay chưa được cấu hình.");
+            ?? throw new UserFriendlyException(code: Hl25ErrorCodes.WheelNotConfigured, message: "Vòng quay chưa được cấu hình.");
         if (!config.IsActive)
-            throw new UserFriendlyException(Hl25ErrorCodes.WheelInactive, "Vòng quay đang tạm dừng.");
+            throw new UserFriendlyException(code: Hl25ErrorCodes.WheelInactive, message: "Vòng quay đang tạm dừng.");
 
         var slotQueryable = await _wheelSlotRepository.GetQueryableAsync();
         var slots = await AsyncExecuter.ToListAsync(
             slotQueryable.Where(x => x.WheelConfigId == config.Id).OrderBy(x => x.DisplayOrder));
         if (slots.Count == 0)
-            throw new UserFriendlyException(Hl25ErrorCodes.WheelNoSlots, "Vòng quay chưa có ô quay.");
+            throw new UserFriendlyException(code: Hl25ErrorCodes.WheelNoSlots, message: "Vòng quay chưa có ô quay.");
 
         // Delta 2026-09 — mỗi người TỐI ĐA TRÚNG 1 LẦN trong toàn chương trình.
         // Nếu đã trúng trước đó (TotalGiftsWon >= 1) thì lượt này ép KHÔNG trúng
@@ -447,7 +439,7 @@ public class MiniAppHl25Service : ApplicationService, IMiniAppHl25Service
             GiftImageUrl = won ? gift!.ImageUrl : null,
             RemainingSpinTurns = participant.RemainingSpinTurns,
             // Cờ FE (Delta 2026-09) cho 3 màn kết quả.
-            CanShareForMoreTurn = participant.EarnedCycles < Hl25Consts.MaxSpinTurnsPerUser,
+            CanShareForMoreTurn = participant.EarnedCycles == 1,
             EarnedCycles = participant.EarnedCycles,
             TotalGiftsWon = participant.TotalGiftsWon,
             HasWonBefore = hasWonBefore
@@ -459,7 +451,7 @@ public class MiniAppHl25Service : ApplicationService, IMiniAppHl25Service
     {
         ValidateZaloUserId(zaloUserId);
         var participant = await FindByZaloUserIdAsync(zaloUserId)
-            ?? throw new UserFriendlyException(Hl25ErrorCodes.ParticipantNotFound, "Người dùng chưa đăng ký chương trình.");
+            ?? throw new UserFriendlyException(code: Hl25ErrorCodes.ParticipantNotFound, message: "Người dùng chưa đăng ký chương trình.");
 
         var spinQueryable = await _spinLogRepository.GetQueryableAsync();
         var giftQueryable = await _giftRepository.GetQueryableAsync();
@@ -543,7 +535,7 @@ public class MiniAppHl25Service : ApplicationService, IMiniAppHl25Service
     {
         ValidateZaloUserId(zaloUserId);
         var participant = await FindByZaloUserIdAsync(zaloUserId)
-            ?? throw new UserFriendlyException(Hl25ErrorCodes.ParticipantNotFound, "Người dùng chưa đăng ký chương trình.");
+            ?? throw new UserFriendlyException(code: Hl25ErrorCodes.ParticipantNotFound, message: "Người dùng chưa đăng ký chương trình.");
 
         var queryable = await _frameCreationRepository.GetQueryableAsync();
         var creations = await AsyncExecuter.ToListAsync(
@@ -588,7 +580,7 @@ public class MiniAppHl25Service : ApplicationService, IMiniAppHl25Service
     {
         ValidateZaloUserId(zaloUserId);
         var participant = await FindByZaloUserIdAsync(zaloUserId)
-            ?? throw new UserFriendlyException(Hl25ErrorCodes.ParticipantNotFound, "Người dùng chưa đăng ký chương trình.");
+            ?? throw new UserFriendlyException(code: Hl25ErrorCodes.ParticipantNotFound, message: "Người dùng chưa đăng ký chương trình.");
 
         var queryable = await _spinTurnLogRepository.GetQueryableAsync();
         var logs = await AsyncExecuter.ToListAsync(
@@ -609,7 +601,7 @@ public class MiniAppHl25Service : ApplicationService, IMiniAppHl25Service
     {
         ValidateZaloUserId(zaloUserId);
         var participant = await FindByZaloUserIdAsync(zaloUserId)
-            ?? throw new UserFriendlyException(Hl25ErrorCodes.ParticipantNotFound, "Người dùng chưa đăng ký chương trình.");
+            ?? throw new UserFriendlyException(code: Hl25ErrorCodes.ParticipantNotFound, message: "Người dùng chưa đăng ký chương trình.");
 
         var spinQueryable = await _spinLogRepository.GetQueryableAsync();
         var giftQueryable = await _giftRepository.GetQueryableAsync();
@@ -640,13 +632,13 @@ public class MiniAppHl25Service : ApplicationService, IMiniAppHl25Service
     public async Task<Hl25UploadImageResultDto> UploadImageAsync(IRemoteStreamContent file)
     {
         if (file == null || (file.ContentLength ?? 0) == 0)
-            throw new UserFriendlyException(Hl25ErrorCodes.ImageRequired, "Thiếu file ảnh.");
+            throw new UserFriendlyException(code: Hl25ErrorCodes.ImageRequired, message: "Thiếu file ảnh.");
 
         // Tự validate 5MB (ManageImageService KHÔNG chặn size).
         var length = file.ContentLength ?? file.GetStream().Length;
         if (length > Hl25Consts.MaxCardImageSizeBytes)
-            throw new UserFriendlyException(Hl25ErrorCodes.ImageTooLarge,
-                $"Ảnh vượt quá dung lượng cho phép ({Hl25Consts.MaxCardImageSizeBytes / (1024 * 1024)}MB).");
+            throw new UserFriendlyException(code: Hl25ErrorCodes.ImageTooLarge,
+                message: $"Ảnh vượt quá dung lượng cho phép ({Hl25Consts.MaxCardImageSizeBytes / (1024 * 1024)}MB).");
 
         try
         {
@@ -661,7 +653,7 @@ public class MiniAppHl25Service : ApplicationService, IMiniAppHl25Service
         }
         catch (Exception ex)
         {
-            throw new UserFriendlyException(Hl25ErrorCodes.UploadFailed, "Upload ảnh thất bại.")
+            throw new UserFriendlyException(code: Hl25ErrorCodes.UploadFailed, message: "Upload ảnh thất bại.")
                 .WithData("Detail", ex.Message);
         }
     }
@@ -698,7 +690,7 @@ public class MiniAppHl25Service : ApplicationService, IMiniAppHl25Service
     private static void ValidateZaloUserId(string zaloUserId)
     {
         if (string.IsNullOrWhiteSpace(zaloUserId))
-            throw new UserFriendlyException(Hl25ErrorCodes.MissingZaloUserId, "Thiếu ZaloUserId.");
+            throw new UserFriendlyException(code: Hl25ErrorCodes.MissingZaloUserId, message: "Thiếu ZaloUserId.");
     }
 
     /// <summary>

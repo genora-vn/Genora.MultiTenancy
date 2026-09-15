@@ -24,6 +24,10 @@ public class Hl25Gift : FullAuditedAggregateRoot<Guid>, IMultiTenant
     [StringLength(1024)]
     public string? ImageUrl { get; set; }
 
+    /// <summary>Ảnh sản phẩm hiển thị trên bánh vòng quay; ImageUrl dùng cho thông tin quà trúng.</summary>
+    [StringLength(1024)]
+    public string? WheelImageUrl { get; set; }
+
     /// <summary>Mô tả (VD "Combo 04 sản phẩm…").</summary>
     [StringLength(1000)]
     public string? Description { get; set; }

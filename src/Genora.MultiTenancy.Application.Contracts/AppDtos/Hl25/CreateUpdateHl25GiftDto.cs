@@ -13,6 +13,9 @@ public class CreateUpdateHl25GiftDto
     [StringLength(1024)]
     public string? ImageUrl { get; set; }
 
+    [StringLength(1024)]
+    public string? WheelImageUrl { get; set; }
+
     [StringLength(1000)]
     public string? Description { get; set; }
 
