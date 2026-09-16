@@ -134,3 +134,31 @@ public class Hl25AgeGroupStatsDto
     /// <summary>Chi tiết theo từng nhóm tuổi.</summary>
     public List<Hl25AgeGroupStatsRowDto> Rows { get; set; } = new();
 }
+
+// ===== Báo cáo 5: Phân bổ giới tính =====
+
+/// <summary>Một dòng phân bổ người tham gia theo giới tính.</summary>
+public class Hl25GenderStatsRowDto
+{
+    /// <summary>Giới tính.</summary>
+    public Hl25Gender Gender { get; set; }
+
+    /// <summary>Nhãn hiển thị (VD "Nam", "Nữ").</summary>
+    public string Label { get; set; } = null!;
+
+    /// <summary>Số người thuộc giới tính này.</summary>
+    public int Count { get; set; }
+
+    /// <summary>Tỷ lệ (%) trên tổng số người tham gia.</summary>
+    public decimal Percent { get; set; }
+}
+
+/// <summary>Kết quả báo cáo phân bổ giới tính người tham gia.</summary>
+public class Hl25GenderStatsDto
+{
+    /// <summary>Tổng số người tham gia (trong khoảng lọc).</summary>
+    public int TotalParticipants { get; set; }
+
+    /// <summary>Chi tiết theo từng giới tính.</summary>
+    public List<Hl25GenderStatsRowDto> Rows { get; set; } = new();
+}

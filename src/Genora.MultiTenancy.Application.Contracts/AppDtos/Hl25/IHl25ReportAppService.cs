@@ -19,4 +19,7 @@ public interface IHl25ReportAppService : IApplicationService
 
     /// <summary>Thống kê phân bổ người tham gia theo nhóm tuổi (Delta 2026-09).</summary>
     Task<Hl25AgeGroupStatsDto> GetAgeGroupStatsAsync(Hl25ReportInput input);
+
+    /// <summary>Thống kê phân bổ người tham gia theo giới tính.</summary>
+    Task<Hl25GenderStatsDto> GetGenderStatsAsync(Hl25ReportInput input);
 }

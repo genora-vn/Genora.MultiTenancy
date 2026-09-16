@@ -10,6 +10,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Volo.Abp;
@@ -185,7 +186,14 @@ public class MiniAppHl25Service : ApplicationService, IMiniAppHl25Service
         // Lượt tự nhận đầu tiên đến từ tạo thiệp; tạo thêm thiệp không cấp lượt thứ hai.
         var grantedTurn = participant.TryGrantFrameTurn();
 
-        var creation = new Hl25FrameCreation(GuidGenerator.Create(), participant.Id, request.ResultImageUrl, CurrentTenant.Id)
+        // Nếu request.RenameWithTimestamp = true: download ảnh, lưu với tên ZaloUserId_yyyyMMddHHmmss.ext
+        var resultImageUrl = request.ResultImageUrl;
+        if (request.RenameWithTimestamp)
+        {
+            resultImageUrl = await RenameImageWithTimestampAsync(request.ResultImageUrl, request.ZaloUserId);
+        }
+
+        var creation = new Hl25FrameCreation(GuidGenerator.Create(), participant.Id, resultImageUrl, CurrentTenant.Id)
         {
             CampaignId = request.CampaignId,
             TemplateId = request.TemplateId,
@@ -211,7 +219,7 @@ public class MiniAppHl25Service : ApplicationService, IMiniAppHl25Service
         return new Hl25FrameResultDto
         {
             FrameCreationId = creation.Id,
-            ResultImageUrl = creation.ResultImageUrl,
+            ResultImageUrl = ToFullUrl(creation.ResultImageUrl)!,
             ShareLink = creation.ShareLink,
             TurnGranted = grantedTurn,
             RemainingSpinTurns = participant.RemainingSpinTurns,
@@ -730,4 +738,64 @@ public class MiniAppHl25Service : ApplicationService, IMiniAppHl25Service
         EarnedCycles = p.EarnedCycles,
         TotalGiftsWon = p.TotalGiftsWon
     };
+
+    /// <summary>
+    /// Download ảnh từ URL, lưu với tên ZaloUserId_yyyyMMddHHmmss.ext, trả về URL mới.
+    /// Dùng cho tính năng đổi tên ảnh thiệp theo ZaloUserId + timestamp.
+    /// </summary>
+    private async Task<string> RenameImageWithTimestampAsync(string sourceUrl, string zaloUserId)
+    {
+        try
+        {
+            var request = _httpContextAccessor.HttpContext?.Request;
+            if (request == null)
+                return sourceUrl;
+
+            // Parse sourceUrl: có thể là full URL hoặc relative path.
+            string relativePath;
+            if (sourceUrl.StartsWith("http://", StringComparison.OrdinalIgnoreCase) ||
+                sourceUrl.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+            {
+                var uri = new Uri(sourceUrl);
+                relativePath = uri.AbsolutePath;
+            }
+            else
+            {
+                relativePath = sourceUrl;
+            }
+
+            // Đường dẫn vật lý.
+            var wwwrootPath = Path.Combine("wwwroot", relativePath.TrimStart('/'));
+            if (!File.Exists(wwwrootPath))
+                return sourceUrl;
+
+            // Tạo tên mới: ZaloUserId_yyyyMMddHHmmss.ext
+            var ext = Path.GetExtension(wwwrootPath);
+            var timestamp = DateTime.Now.ToString("yyyyMMddHHmmss");
+            var newFileName = $"{zaloUserId}_{timestamp}{ext}";
+            var directory = Path.GetDirectoryName(wwwrootPath)!;
+            var newFilePath = Path.Combine(directory, newFileName);
+
+            // Tránh trùng tên (2 thiệp cùng giây): thêm suffix _1, _2...
+            var counter = 1;
+            while (File.Exists(newFilePath))
+            {
+                newFileName = $"{zaloUserId}_{timestamp}_{counter}{ext}";
+                newFilePath = Path.Combine(directory, newFileName);
+                counter++;
+            }
+
+            // Copy file (không xóa file cũ để tránh lỗi nếu có reference khác).
+            File.Copy(wwwrootPath, newFilePath);
+
+            // Trả về relative URL mới.
+            var newRelativeUrl = $"/uploads/hl25/{(CurrentTenant.Id?.ToString() ?? "host")}/{newFileName}";
+            return newRelativeUrl;
+        }
+        catch (Exception)
+        {
+            // Nếu có lỗi thì giữ nguyên URL gốc.
+            return sourceUrl;
+        }
+    }
 }

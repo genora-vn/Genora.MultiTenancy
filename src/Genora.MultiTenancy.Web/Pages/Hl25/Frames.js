@@ -216,6 +216,22 @@ $(function () {
         })
     );
 
+    // ============ Export Excel Creations ============
+    $('#ExportCreationsExcelBtn').click(function (e) {
+        e.preventDefault();
+        if (!window.genora || !genora.excel) {
+            abp.notify.error('Excel helper chưa được load');
+            return;
+        }
+        genora.excel.download('api/app/hl25-frame-creation-excel/export');
+    });
+
+    // ============ Download All Images ZIP ============
+    $('#DownloadAllImagesBtn').click(function (e) {
+        e.preventDefault();
+        window.location.href = '/api/mini-app/hl25/admin/frame-creations/download-all-images';
+    });
+
     // ============ Campaign filter dropdown ============
     function loadCampaignFilterOptions() {
         campaignService.getList({ maxResultCount: 1000, skipCount: 0 }).then(function (r) {

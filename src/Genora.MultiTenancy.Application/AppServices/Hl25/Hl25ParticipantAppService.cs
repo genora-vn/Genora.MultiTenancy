@@ -30,6 +30,8 @@ public class Hl25ParticipantAppService : ApplicationService, IHl25ParticipantApp
 {
     private readonly IRepository<Hl25Participant, Guid> _repository;
     private readonly IRepository<Hl25SpinTurnLog, Guid> _spinTurnLogRepository;
+    private readonly IRepository<Hl25FrameCreation, Guid> _frameCreationRepository;
+    private readonly IRepository<Hl25SpinLog, Guid> _spinLogRepository;
     private readonly IFeatureChecker _featureChecker;
     private readonly Hl25ParticipantExcelExporter _excelExporter;
     private readonly IUnitOfWorkManager _uowManager;
@@ -37,12 +39,16 @@ public class Hl25ParticipantAppService : ApplicationService, IHl25ParticipantApp
     public Hl25ParticipantAppService(
         IRepository<Hl25Participant, Guid> repository,
         IRepository<Hl25SpinTurnLog, Guid> spinTurnLogRepository,
+        IRepository<Hl25FrameCreation, Guid> frameCreationRepository,
+        IRepository<Hl25SpinLog, Guid> spinLogRepository,
         IFeatureChecker featureChecker,
         Hl25ParticipantExcelExporter excelExporter,
         IUnitOfWorkManager uowManager)
     {
         _repository = repository;
         _spinTurnLogRepository = spinTurnLogRepository;
+        _frameCreationRepository = frameCreationRepository;
+        _spinLogRepository = spinLogRepository;
         _featureChecker = featureChecker;
         _excelExporter = excelExporter;
         _uowManager = uowManager;
@@ -71,9 +77,12 @@ public class Hl25ParticipantAppService : ApplicationService, IHl25ParticipantApp
         var items = await AsyncExecuter.ToListAsync(
             query.OrderBy(sorting).Skip(input.SkipCount).Take(input.MaxResultCount));
 
-        return new PagedResultDto<Hl25ParticipantDto>(
-            totalCount,
-            ObjectMapper.Map<List<Hl25Participant>, List<Hl25ParticipantDto>>(items));
+        var dtos = ObjectMapper.Map<List<Hl25Participant>, List<Hl25ParticipantDto>>(items);
+
+        // Bổ sung: ảnh thiệp + lời chúc mới nhất, lịch sử quay gần đây.
+        await EnrichWithFrameAndSpinDataAsync(dtos);
+
+        return new PagedResultDto<Hl25ParticipantDto>(totalCount, dtos);
     }
 
     public async Task<Hl25ParticipantDto> UpdateAsync(Guid id, CreateUpdateHl25ParticipantDto input)
@@ -142,7 +151,61 @@ public class Hl25ParticipantAppService : ApplicationService, IHl25ParticipantApp
         var items = await AsyncExecuter.ToListAsync(query.OrderBy(sorting));
         var dtos = ObjectMapper.Map<List<Hl25Participant>, List<Hl25ParticipantDto>>(items);
 
+        // Bổ sung dữ liệu thiệp + quay cho Excel export.
+        await EnrichWithFrameAndSpinDataAsync(dtos);
+
         return _excelExporter.Export(dtos);
+    }
+
+    /// <summary>
+    /// Enrich danh sách participant DTO với ảnh thiệp mới nhất, lời chúc, và lịch sử quay gần đây.
+    /// </summary>
+    private async Task EnrichWithFrameAndSpinDataAsync(List<Hl25ParticipantDto> dtos)
+    {
+        if (dtos.Count == 0) return;
+
+        var participantIds = dtos.Select(x => x.Id).Distinct().ToList();
+
+        // 1. Load ảnh thiệp + lời chúc mới nhất từ FrameCreation.
+        var creationQueryable = await _frameCreationRepository.GetQueryableAsync();
+        var latestCreations = await AsyncExecuter.ToListAsync(
+            creationQueryable.Where(c => participantIds.Contains(c.ParticipantId))
+                             .OrderByDescending(c => c.CreatedTime));
+
+        var creationByParticipant = latestCreations
+            .GroupBy(c => c.ParticipantId)
+            .ToDictionary(g => g.Key, g => g.First());
+
+        // 2. Load lịch sử quay gần đây (top 5 mỗi người).
+        var spinQueryable = await _spinLogRepository.GetQueryableAsync();
+        var allSpins = await AsyncExecuter.ToListAsync(
+            spinQueryable.Where(s => participantIds.Contains(s.ParticipantId))
+                         .OrderByDescending(s => s.SpinTime));
+
+        var spinsByParticipant = allSpins
+            .GroupBy(s => s.ParticipantId)
+            .ToDictionary(g => g.Key, g => g.Take(5).ToList());
+
+        // 3. Map vào DTO.
+        foreach (var dto in dtos)
+        {
+            if (creationByParticipant.TryGetValue(dto.Id, out var creation))
+            {
+                dto.LatestFrameImageUrl = creation.ResultImageUrl;
+                dto.LatestWishMessage = creation.WishMessage;
+                dto.LatestFrameTime = creation.CreatedTime;
+            }
+
+            if (spinsByParticipant.TryGetValue(dto.Id, out var spins))
+            {
+                dto.RecentSpinLogs = spins.Select(s => new Hl25ParticipantSpinLogSummary
+                {
+                    SpinTime = s.SpinTime,
+                    GiftName = s.GiftNameSnapshot,
+                    RewardStatus = s.RewardStatus
+                }).ToList();
+            }
+        }
     }
 
     private async Task<IQueryable<Hl25Participant>> BuildQueryAsync(GetHl25ParticipantListInput input)

@@ -1,4 +1,5 @@
 using Genora.MultiTenancy.AppDtos.AppZaloAuths;
+using Genora.MultiTenancy.AppDtos.Hl25;
 using Genora.MultiTenancy.AppDtos.Hl25.MiniApp;
 using Genora.MultiTenancy.AppServices.AppZaloAuths;
 using Genora.MultiTenancy.Controllers;
@@ -285,5 +286,16 @@ public class HoaLinh25MiniAppController : MultiTenancyController
         {
             return Ok(Hl25ApiResult<Hl25UploadImageResultDto>.Fail(ex.Code ?? "error", ex.Message));
         }
+    }
+
+    // ===== Export/Download (Admin) =====
+
+    /// <summary>Download toàn bộ ảnh thiệp đã tạo (ZIP). Yêu cầu đăng nhập + quyền Frames.</summary>
+    [HttpGet("admin/frame-creations/download-all-images")]
+    [Authorize]
+    public async Task<IActionResult> DownloadAllFrameImages([FromServices] IHl25FrameCreationAppService frameService)
+    {
+        var stream = await frameService.DownloadAllImagesAsync();
+        return File(stream.GetStream(), stream.ContentType, stream.FileName);
     }
 }

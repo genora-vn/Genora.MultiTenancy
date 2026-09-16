@@ -88,6 +88,9 @@ public class Hl25CreateFrameRequest
     public Guid? TemplateId { get; set; }
     public string ResultImageUrl { get; set; } = null!;
     public string? WishMessage { get; set; }
+
+    /// <summary>Nếu true: server sẽ download ảnh từ ResultImageUrl, lưu với tên ZaloUserId_yyyyMMddHHmmss.ext rồi cập nhật URL mới.</summary>
+    public bool RenameWithTimestamp { get; set; }
 }
 
 /// <summary>Kết quả tạo thiệp.</summary>

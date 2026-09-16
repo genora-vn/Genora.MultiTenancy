@@ -123,26 +123,36 @@
 
 <div class="row g-3">
     <div class="col-lg-6">
-        @* ===== Báo cáo 3: Vòng quay theo quà ===== *@
-        <div class="card mb-3">
-            <div class="card-header py-2"><i class="fa fa-gift me-1"></i> Vòng quay theo Quà tặng (cơ cấu giải &amp; tồn kho)</div>
-            <div class="px-3 pt-2 text-muted small">@L["Hl25Admin:GiftReportHint"]</div>
-            <div class="card-body p-0">
-                <table class="table table-sm table-hover mb-0">
-                    <thead class="table-light">
-                        <tr>
-                            <th>Quà tặng</th>
-                            <th class="text-end">Tổng SL</th>
-                            <th class="text-end">Còn lại</th>
-                            <th class="text-end">Đã trúng</th>
-                            <th class="text-end">Đã trao</th>
-                            <th class="text-end">Tỷ lệ trúng</th>
-                        </tr>
-                    </thead>
-                    <tbody id="GiftStatsBody">
-                        <tr><td colspan="6" class="text-center text-muted py-3">Đang tải...</td></tr>
-                    </tbody>
-                </table>
+        @* ===== Báo cáo 5: Phân bổ giới tính ===== *@
+        <div class="card mb-3 h-auto">
+            <div class="card-header py-2"><i class="fa fa-venus-mars me-1"></i> Phân bổ người tham gia theo giới tính</div>
+            <div class="card-body">
+                <div class="row g-3 align-items-center">
+                    <div class="col-md-5">
+                        <canvas id="GenderChart" height="50"></canvas>
+                    </div>
+                    <div class="col-md-7">
+                        <table class="table table-sm table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Giới tính</th>
+                                    <th class="text-end">Số người</th>
+                                    <th class="text-end">Tỷ lệ</th>
+                                </tr>
+                            </thead>
+                            <tbody id="GenderBody">
+                                <tr><td colspan="3" class="text-center text-muted py-3">Đang tải...</td></tr>
+                            </tbody>
+                            <tfoot class="table-light">
+                                <tr>
+                                    <th>Tổng số người tham gia</th>
+                                    <th class="text-end" id="GenderTotal">-</th>
+                                    <th class="text-end">100%</th>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -177,6 +187,33 @@
                         </table>
                     </div>
                 </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3">
+    <div class="col-lg-6">
+        @* ===== Báo cáo 3: Vòng quay theo quà ===== *@
+        <div class="card mb-3">
+            <div class="card-header py-2"><i class="fa fa-gift me-1"></i> Vòng quay theo Quà tặng (cơ cấu giải &amp; tồn kho)</div>
+            <div class="px-3 pt-2 text-muted small">@L["Hl25Admin:GiftReportHint"]</div>
+            <div class="card-body p-0">
+                <table class="table table-sm table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Quà tặng</th>
+                            <th class="text-end">Tổng SL</th>
+                            <th class="text-end">Còn lại</th>
+                            <th class="text-end">Đã trúng</th>
+                            <th class="text-end">Đã trao</th>
+                            <th class="text-end">Tỷ lệ trúng</th>
+                        </tr>
+                    </thead>
+                    <tbody id="GiftStatsBody">
+                        <tr><td colspan="6" class="text-center text-muted py-3">Đang tải...</td></tr>
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>

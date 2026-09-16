@@ -17,6 +17,21 @@ $(function () {
         3: 'Khác'
     };
 
+    var ageGroupMap = {
+        0: 'Không xác định',
+        1: '18 - 25',
+        2: '26 - 35',
+        3: '36 - 44'
+    };
+
+    var rewardStatusMap = {
+        0: 'Chờ',
+        1: 'Trúng',
+        2: 'Không trúng',
+        3: 'Đã trao',
+        4: 'Đã hủy'
+    };
+
     function fmtDate(v) {
         if (!v) return '';
         return new Date(v).toLocaleString('vi-VN');
@@ -55,7 +70,7 @@ $(function () {
             paging: true,
             searching: false,
             scrollX: true,
-            order: [[3, 'desc']],
+            order: [[4, 'desc']],
             ajax: abp.libs.datatables.createAjax(service.getList, getFilter),
             columnDefs: [
                 {
@@ -77,7 +92,9 @@ $(function () {
                 },
                 { title: 'Họ tên', data: 'fullName', render: function (v) { return v || '(chưa cập nhật)'; } },
                 { title: 'SĐT', data: 'phoneNumber' },
+                { title: 'ZaloUserId', data: 'zaloUserId', render: function (v) { return v ? '<code>' + v.substring(0, 12) + '...</code>' : ''; } },
                 { title: 'Ngày tham gia', data: 'joinedTime', render: fmtDate },
+                { title: 'Nhóm tuổi', data: 'ageGroup', render: function (g) { return ageGroupMap[g] || g; } },
                 { title: 'Giới tính', data: 'gender', render: function (g) { return genderMap[g] || g; } },
                 {
                     title: 'Follow OA',
@@ -89,10 +106,43 @@ $(function () {
                     data: 'hasConsent',
                     render: function (v) { return v ? badge('Đồng ý', 'bg-success') : badge('Chưa', 'bg-secondary'); }
                 },
-                { title: 'Lượt còn lại', data: 'remainingSpinTurns' },
+                { title: 'Lượt còn', data: 'remainingSpinTurns' },
                 { title: 'Tổng lượt', data: 'totalSpinTurns' },
                 { title: l('Hl25Admin:AutomaticTurns'), data: 'earnedCycles' },
                 { title: 'Quà trúng', data: 'totalGiftsWon' },
+                {
+                    title: 'Ảnh thiệp',
+                    data: 'latestFrameImageUrl',
+                    orderable: false,
+                    render: function (url) {
+                        if (!url) return '';
+                        return '<a href="' + url + '" target="_blank"><img src="' + url + '" style="height:60px;border-radius:4px;" /></a>';
+                    }
+                },
+                {
+                    title: 'Lời chúc',
+                    data: 'latestWishMessage',
+                    render: function (v) {
+                        if (!v) return '';
+                        return v.length > 40 ? v.substring(0, 40) + '…' : v;
+                    }
+                },
+                {
+                    title: 'Lịch sử quay',
+                    data: 'recentSpinLogs',
+                    orderable: false,
+                    render: function (logs) {
+                        if (!logs || logs.length === 0) return '<span class="text-muted">-</span>';
+                        var html = '<ul class="list-unstyled mb-0" style="font-size:0.85em;">';
+                        logs.forEach(function (s) {
+                            var status = rewardStatusMap[s.rewardStatus] || s.rewardStatus;
+                            var gift = s.giftName ? ' - ' + s.giftName : '';
+                            html += '<li>' + fmtDate(s.spinTime) + gift + ' <small class="text-muted">(' + status + ')</small></li>';
+                        });
+                        html += '</ul>';
+                        return html;
+                    }
+                },
                 {
                     title: 'Địa chỉ nhận quà',
                     data: 'receiveAddress',

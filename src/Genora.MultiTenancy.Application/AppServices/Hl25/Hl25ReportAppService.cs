@@ -242,6 +242,64 @@ public class Hl25ReportAppService : ApplicationService, IHl25ReportAppService
         _ => "Không xác định"
     };
 
+    // ===== Báo cáo 5: Phân bổ giới tính =====
+    public async Task<Hl25GenderStatsDto> GetGenderStatsAsync(Hl25ReportInput input)
+    {
+        await CheckViewPolicyAsync();
+        Hl25AdminRules.ValidateDateRange(input.FromDate, input.ToDate);
+        var toExclusive = input.ToDate?.Date.AddDays(1);
+
+        var participantQueryable = await _participantRepository.GetQueryableAsync();
+        var query = participantQueryable;
+
+        if (input.FromDate.HasValue)
+            query = query.Where(x => x.JoinedTime >= input.FromDate.Value);
+        if (input.ToDate.HasValue)
+            query = query.Where(x => x.JoinedTime < toExclusive.Value);
+
+        var participants = await AsyncExecuter.ToListAsync(query);
+        var total = participants.Count;
+
+        var countByGender = participants
+            .GroupBy(x => x.Gender)
+            .ToDictionary(g => g.Key, g => g.Count());
+
+        // Liệt kê đủ 4 giới tính (kể cả nhóm 0 người) theo thứ tự enum.
+        var genders = new[]
+        {
+            Hl25Gender.Unknown,
+            Hl25Gender.Male,
+            Hl25Gender.Female,
+            Hl25Gender.Other
+        };
+
+        var rows = genders.Select(g =>
+        {
+            var count = countByGender.TryGetValue(g, out var c) ? c : 0;
+            return new Hl25GenderStatsRowDto
+            {
+                Gender = g,
+                Label = GenderLabel(g),
+                Count = count,
+                Percent = total > 0 ? Math.Round((decimal)count * 100 / total, 2) : 0
+            };
+        }).ToList();
+
+        return new Hl25GenderStatsDto
+        {
+            TotalParticipants = total,
+            Rows = rows
+        };
+    }
+
+    private static string GenderLabel(Hl25Gender gender) => gender switch
+    {
+        Hl25Gender.Male => "Nam",
+        Hl25Gender.Female => "Nữ",
+        Hl25Gender.Other => "Khác",
+        _ => "Không xác định"
+    };
+
     // ===== Helpers =====
     private async Task EnsureFeatureAsync()
     {

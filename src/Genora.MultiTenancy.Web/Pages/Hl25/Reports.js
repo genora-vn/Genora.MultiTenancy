@@ -4,6 +4,7 @@ $(function () {
 
     var frameChart = null;
     var ageGroupChart = null;
+    var genderChart = null;
 
     function getInput() {
         return {
@@ -122,6 +123,44 @@ $(function () {
         });
     }
 
+    // ===== Báo cáo 5: Phân bổ giới tính =====
+    function loadGenderStats(input) {
+        service.getGenderStats(input).then(function (r) {
+            $('#GenderTotal').text(fmtNumber(r.totalParticipants));
+
+            var tbody = $('#GenderBody');
+            tbody.empty();
+            var rows = r.rows || [];
+            rows.forEach(function (x) {
+                tbody.append(
+                    '<tr>' +
+                    '<td>' + x.label + '</td>' +
+                    '<td class="text-end">' + fmtNumber(x.count) + '</td>' +
+                    '<td class="text-end">' + x.percent + '%</td>' +
+                    '</tr>'
+                );
+            });
+
+            var labels = rows.map(function (x) { return x.label; });
+            var counts = rows.map(function (x) { return x.count; });
+            var colors = ['#0d6efd', '#e91e63', '#ff9800', '#adb5bd'];
+
+            var ctx = document.getElementById('GenderChart').getContext('2d');
+            if (genderChart) genderChart.destroy();
+            genderChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: labels,
+                    datasets: [{ data: counts, backgroundColor: colors }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: { legend: { position: 'bottom' } }
+                }
+            });
+        });
+    }
+
     function loadAll() {
         var input = getInput();
         if (input.fromDate && input.toDate && input.fromDate > input.toDate) {
@@ -132,6 +171,7 @@ $(function () {
         loadWheelParticipation(input);
         loadWheelGiftStats(input);
         loadAgeGroupStats(input);
+        loadGenderStats(input);
     }
 
     if (window.flatpickr) {

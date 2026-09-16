@@ -97,7 +97,15 @@
     @* ===== TAB 3: Lịch sử tạo ảnh ===== *@
     <div class="tab-pane fade" id="pane-creations" role="tabpanel">
         <abp-card>
-            <abp-card-header><abp-card-title>Lịch sử tạo ảnh</abp-card-title></abp-card-header>
+            <abp-card-header>
+                <abp-row>
+                    <abp-column size-md="_6"><abp-card-title>Lịch sử tạo ảnh</abp-card-title></abp-column>
+                    <abp-column size-md="_6" class="text-end">
+                        <abp-button id="ExportCreationsExcelBtn" text="Xuất Excel" icon="file-excel" button-type="Outline_Success" size="Small" />
+                        <abp-button id="DownloadAllImagesBtn" text="Tải ảnh ZIP" icon="file-archive" button-type="Outline_Info" size="Small" />
+                    </abp-column>
+                </abp-row>
+            </abp-card-header>
             <abp-card-body>
                 <abp-table striped-rows="true" id="CreationsTable"></abp-table>
             </abp-card-body>
