@@ -5,6 +5,18 @@
 
 ## Cập nhật gần nhất
 
+### Merge 2026-09-16 — Hoàn tất merge feature/hoalinh-gamification vào feature/dev-hoalinh-gamification
+- **Ngày:** 2026-09-16
+- **Nhánh:** `feature/dev-hoalinh-gamification` (HEAD `53e767f`)
+- **Merge commit:** `53e767f` — merge `feature/hoalinh-gamification` (HEAD `b507697`) vào `feature/dev-hoalinh-gamification`
+- **Conflicts đã fix (4 files):**
+  - `.claude/ACTIVE_CONTEXT.md` — giữ cả HL25 + HLG sections
+  - `MultiTenancyPermissions.cs` — giữ cả HL25 + HLG permission definitions (10 conflict sections)
+  - `MultiTenancyPermissionDefinitionProvider.cs` — giữ cả HL25 + HLG permission providers
+  - `MultiTenancyDbContext.cs` — giữ cả HL25 + HLG DbSet + OnModelCreating
+- **Build:** ✅ Thành công, 0 errors
+- **Trạng thái:** Nhánh `feature/dev-hoalinh-gamification` giờ chứa toàn bộ code HL25 (Hoa Linh 25 Năm) + HLG (Hoa Linh Gamification)
+
 ### HL25 — Hoa Linh 25 Năm (đã hoàn thành P0-P7 + Admin updates)
 - **2026-09-14 — Follow-up UI/kho quà (mới nhất, chưa commit/deploy):** sửa enum dropdown bằng select/option vi/en tường minh; sửa treo lịch sử quay do `visible` nhận raw row nhưng code đọc data.record. Thêm **WheelImageUrl** riêng cho kho quà + modal Large hai ảnh (multipart upload hoặc URL) + tiền VNĐ; API wheel trả wheelImageUrl/giftImageUrl, slotImageUrl fallback. Migration **20260914111213_AddHl25GiftWheelImage** + SQL đã tạo, **chưa apply**. 17 Application + 14 Web + 3 JS tests pass, Web build OutDir riêng pass; host đang giữ DLL cũ, cần migrate/rebuild/restart. Chi tiết: [note UI/images](memory/notes/project/project_hl25_gift_images_ui_fixes_20260914.md).
 - **2026-09-14 — Đã triển khai cập nhật Admin theo approach, chưa commit/deploy:** anh chốt **tạo thiệp nhận lượt đầu; chia sẻ nhận lượt thứ hai**. Đã sửa Domain/MiniApp, transaction tạo thiệp/AdminGrant; guard Won→Delivered idempotent; bảo toàn ID/ảnh cấu hình vòng quay; validate ngày/kho; báo cáo hết ngày cuối + tách lượt Admin; sửa code/message lỗi API. **32 tests pass**, build solution pass; EF không có model change, không tạo/apply migration. Chưa UAT browser/DB thật và tải đồng thời. Chi tiết/delta/checklist: [Admin update 14/09](docs/HOALINH25_ADMIN_UPDATE_20260914.md). Note context review bên dưới phản ánh baseline TRƯỚC sửa.

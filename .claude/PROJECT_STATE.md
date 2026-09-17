@@ -51,26 +51,32 @@
 - Online docs `/Documents`: entity host-shared, FeatureName + Tenant/HostPermissionName, URL slug, seeder 11 section.
 - Note: `project_app_documents_*`.
 
-## Module: Hoa Linh 25 Năm (hl25) — ✅ HOÀN THÀNH P0-P7 + 🔄 DELTA 2026-09 (nhánh `feature/dev-hoalinh-25years`)
-- **✅ Follow-up UI/kho quà 2026-09-14:** dropdown explicit vi/en; fix tab lịch sử quay; ảnh vòng quay riêng WheelImageUrl + modal hai ảnh/upload/VNĐ; API wheel trả wheelImageUrl/giftImageUrl. **Migration mới 20260914111213_AddHl25GiftWheelImage chưa apply** (ghi chú “không migration mới” bên dưới chỉ áp dụng đợt trước). Chi tiết: [UI/images](memory/notes/project/project_hl25_gift_images_ui_fixes_20260914.md). Build temp + 34 tests pass; chưa restart host/commit/deploy.
-- **✅ Admin update 2026-09-14 (chưa commit/deploy):** quy tắc mới nhất **tạo thiệp lượt đầu; chia sẻ lượt hai**; giữ dữ liệu lượt cũ, AdminGrant ngoại lệ. Guard trao quà Won→Delivered; transaction cấp lượt; giữ ID/ảnh wheel; validate ngày/kho; báo cáo hết ngày cuối/tách AdminGrant; sửa error code MiniApp. 32 tests + build pass, EF no model change. Chi tiết: [delta hiện hành](docs/HOALINH25_ADMIN_UPDATE_20260914.md). Các mô tả chu kỳ/migration chưa apply bên dưới là lịch sử, không dùng để ghi đè trạng thái mới.
-- Admin cho Zalo Mini App "Dược Phẩm Hoa Linh 25 Năm" (chương trình kỷ niệm 25 năm: tạo thiệp ghép ảnh + chia sẻ + vòng quay may mắn). Schema DB riêng `hl25`.
-- **🔄 Delta 2026-09 (cập nhật theo Figma FE mới):** (1) mỗi người **tối đa TRÚNG 1 lần** (SpinAsync chặn `TotalGiftsWon>=1→NotWon`); (2) `Hl25SpinResultDto` thêm cờ FE cho 3 màn kết quả; (3) **nhóm tuổi** `Hl25AgeGroup` thay `BirthDate`; (4) `MaxWishLength` 500→250. Migration `20260825160252` CHƯA apply → sửa in-place. Chi tiết: `docs/HOALINH25_ADMIN_SCHEMA.md` mục 0. (commit `d20232b`)
-- **🔄 P2 tinh giản mạnh (2026-09-07):** BỎ 5 field `LogoUrl`/`BannerUrl`/`TvcUrl`/`TvcHtml`/`GamePlayHtml` khỏi `Hl25AppConfig` (ảnh/nội dung cố định trong FE — lưu ý #4). Giữ `ProgramName`/`RulesHtml`/`StartTime`/`EndTime`/`Scope`/`OrganizerName`/`IsActive`. Đồng bộ entity+DTO+MiniApp+DbContext ext+Settings page+migration in-place. Build 0 errors. Đã rà soát Vòng quay/Gift + Report: OK, không cần sửa (cơ cấu 5 loại quà nhập qua CRUD).
-- **✅ Báo cáo phân bổ nhóm tuổi (P6, 2026-09-07):** `GetAgeGroupStatsAsync` (query Participant group theo `AgeGroup`, lọc `JoinedTime`, đủ 4 nhóm + tỷ lệ %) + DTO `Hl25AgeGroupStatsDto` + interface. UI Reports thêm card doughnut Chart.js + bảng. Build 0 errors.
-- **✅ Bổ sung 7 MiniApp read API + chuẩn hóa mã lỗi (2026-09-07):** Frame (`GET frames/campaigns`, `frames/templates?campaignId=`, `me/frames?zaloUserId=`); Wheel (`GET gifts`, `me/spin-turns?zaloUserId=`, `me/spins?zaloUserId=`) + 6 DTO public. `Hl25ErrorCodes` (Domain.Shared, 12 mã) gắn cho MỌI throw trong MiniApp service. Tổng MiniApp API = 15 endpoint. File Postman `hl25_curl.json` (Downloads) cập nhật 15 request + mô tả tiếng Việt có dấu + bảng mã lỗi. Build HttpApi 0 errors.
-- **Thiết kế (Bước 1-5):** UI Figma, 10 entity, 8 Phase plan. Tài liệu: `docs/HOALINH25_ADMIN_SCHEMA.md`.
-- **Quyết định chốt:** bỏ Points (thuộc gamification), Wheel singleton/tenant, trần 2 lượt quay (mỗi chu kỳ "Tạo thiệp→Chia sẻ" = +1, tối đa 2), trao thưởng 2 bước.
-- **Tái dùng:** Summernote (HTML editor), `IManageImageService` (upload ảnh, tự chặn 5MB), Zalo OA/ZNS/Log dùng chung.
-- **✅ P0 (Foundation):** 6 enum (`Enums/Hl25Enums.cs`) + `Hl25/Hl25Consts.cs`; Feature `Hl25.Management`; Permission dual 5 nhóm Tenant+Host (group `MiniAppHl25`/`MiniAppHl25Host`); menu `MenuGroup.Hl25` (order 51); localization vi/en.
-- **✅ P1 (Entities + DB):** 10 entity `Domain/DomainModels/AppHl25/` (`Hl25AppConfig`; Frame `Campaign/Template/Creation`; Wheel `Config/Slot/Gift/SpinTurnLog/SpinLog`; `Participant`) + `ConfigureHl25Module` + 10 DbSet. Migration **`20260825160252_AddHl25Module`** (10 bảng, 23 index, 5 FK). Build Web+EF 0 errors. **CHƯA `database update`.** (commit `2ffacb7`)
-- **✅ P2 (Cài đặt Mini App) — commit `a3b08cc`:** DTO `Hl25AppConfigDto`/`CreateUpdateHl25AppConfigDto` + `IHl25AppConfigAppService`; `Hl25AppConfigAppService` singleton/tenant (GetAsync tự tạo mặc định / UpdateAsync / UploadAssetAsync validate 5MB) + AutoMapper; trang `Web/Pages/Hl25/Settings` (Summernote cho Thể lệ/Luật chơi/TVC, upload Logo/Banner, link `/AppZaloAuths`+`/AppZaloLogs`).
-- **✅ P4 (Vòng quay may mắn) — commit `c1791fa`:** 4 AppService — `Hl25GiftAppService` (CRUD kho quà + upload 5MB + tự OutOfStock), `Hl25WheelConfigAppService` (singleton/tenant get/update cấu hình+slots, validate tổng WinRate=100), `Hl25SpinTurnLogAppService` (list read-only), `Hl25SpinLogAppService` (list + `UpdateRewardStatusAsync` 2 bước Won→Delivered) + AutoMapper. Trang `Web/Pages/Hl25/Wheel` 4 tab + Gift modals + `Wheel.js`.
-- **✅ P3 (Quản lý Frame) — commit `9243043`:** 3 AppService — `Hl25FrameCampaignAppService` (CRUD chiến dịch + đếm TemplateCount), `Hl25FrameTemplateAppService` (CRUD mẫu frame + `UploadTemplateImageAsync` 5MB, lọc theo campaign), `Hl25FrameCreationAppService` (list read-only, join Participant+Campaign) + AutoMapper. Trang `Web/Pages/Hl25/Frames` 3 tab + Campaign/Template Create/Edit modals + `Frames.js`.
-- **✅ P5 (Quản lý Người dùng) — commit `50ea1d7`:** `Hl25ParticipantAppService` (list filter tên/SĐT/FollowOA/Consent/khoảng ngày; `UpdateAsync`; `GrantSpinTurnAsync` cộng lượt thủ công source=AdminGrant, KHÔNG áp trần; `ExportExcelAsync`) + `Hl25ParticipantExcelExporter` (ClosedXML) + AutoMapper + controller `Hl25ParticipantExcelController` (`api/app/hl25-participant-excel/export`). Trang `Web/Pages/Hl25/Participants` (list + filter + Xuất Excel) + Edit modal + Grant spin-turn modal + `Participants.js`.
-- **✅ P6 (Báo cáo Thống kê) — commit `a1a7d54`:** `Hl25ReportAppService` (3 method query AsyncExecuter, dual permission Reports): `GetFrameStatsAsync`, `GetWheelParticipationStatsAsync`, `GetWheelGiftStatsAsync` + DTO `Hl25ReportDtos`. Trang `Web/Pages/Hl25/Reports` (lọc khoảng ngày + Frame KPI+chart Chart.js line, Vòng quay KPI, bảng theo quà) + `Reports.js`.
-- **✅ P7 (MiniApp API):** `HoaLinh25MiniAppController` (`api/mini-app/hl25`, `[AllowAnonymous]`, envelope `Hl25ApiResult<T>`) + `MiniAppHl25Service` (`[AllowAnonymous][RemoteService(false)][DisableValidation]`). 9 endpoint: config / participants register (upsert theo ZaloUserId) / me GET+PUT / frames / frames/share (cộng lượt chu kỳ, trần 2) / wheel (ẩn WinRate) / wheel/spin (**ACID** transaction + weighted random + trừ kho quà) / me/gifts. Build 0 errors. CHƯA commit.
-- **🎉 MODULE HOÀN THÀNH P0-P7.** Còn lại: chạy `dotnet ef database update` khi deploy + FE ghép API.
+## Module: Hoa Linh 25 Năm (hl25) — ✅ HOÀN THÀNH (nhánh `feature/dev-hoalinh-gamification`)
+- **✅ Cập nhật 2026-09-16:**
+  - **Participants page:** bổ sung cột ZaloUserId, AgeGroup, ảnh thiệp, lời chúc, lịch sử quay; full URL cho ảnh thiệp
+  - **Excel export Participants:** 16 cột (STT + 15 cột dữ liệu), full URL cho ảnh thiệp
+  - **Reports page:** thêm chart doughnut phân bổ giới tính (Nam/Nữ/Khác) song song chart nhóm tuổi
+  - **CreateFrame API:** lưu ảnh thiệp với tên `ZaloUserId_yyyyMMddHHmmss.ext` (flag `RenameWithTimestamp`)
+  - **Frame Creations tab:** thêm button "Xuất Excel" và "Tải ảnh ZIP" (download toàn bộ ảnh thiệp)
+- **✅ Cập nhật 2026-09-14:**
+  - **Follow-up UI/kho quà:** dropdown explicit vi/en; fix tab lịch sử quay; ảnh vòng quay riêng WheelImageUrl + modal hai ảnh/upload/VNĐ; API wheel trả wheelImageUrl/giftImageUrl. **Migration 20260914111213_AddHl25GiftWheelImage chưa apply**
+  - **Admin update:** quy tắc **tạo thiệp lượt đầu; chia sẻ lượt hai**; giữ dữ liệu lượt cũ, AdminGrant ngoại lệ. Guard trao quà Won→Delivered; transaction cấp lượt; giữ ID/ảnh wheel; validate ngày/kho; báo cáo hết ngày cuối/tách AdminGrant
+- **✅ Delta 2026-09 (cập nhật theo Figma FE mới):** (1) mỗi người **tối đa TRÚNG 1 lần**; (2) `Hl25SpinResultDto` thêm cờ FE cho 3 màn kết quả; (3) **nhóm tuổi** `Hl25AgeGroup` thay `BirthDate`; (4) `MaxWishLength` 500→250
+- **✅ P2 tinh giản mạnh (2026-09-07):** BỎ 5 field `LogoUrl`/`BannerUrl`/`TvcUrl`/`TvcHtml`/`GamePlayHtml` khỏi `Hl25AppConfig`. Giữ `ProgramName`/`RulesHtml`/`StartTime`/`EndTime`/`Scope`/`OrganizerName`/`IsActive`
+- **✅ Báo cáo phân bổ nhóm tuổi (P6):** `GetAgeGroupStatsAsync` + chart doughnut Chart.js
+- **✅ Bổ sung 7 MiniApp read API + chuẩn hóa mã lỗi:** Frame + Wheel endpoints, `Hl25ErrorCodes` (12 mã)
+- **Thiết kế:** UI Figma, 10 entity, 8 Phase plan. Tài liệu: `docs/HOALINH25_ADMIN_SCHEMA.md`
+- **✅ P0-P7 HOÀN THÀNH:** Foundation, Entities+DB, Settings, Frames, Wheel, Participants, Reports, MiniApp API (17 endpoints)
+- **🎉 MODULE HOÀN THÀNH.** Còn lại: chạy `dotnet ef database update` khi deploy + FE ghép API
+
+## Module: Hoa Linh Gamification (HLG) — 🔨 ĐANG BUILD (đã merge vào `feature/dev-hoalinh-gamification`)
+- **Merge 2026-09-16:** đã merge từ `feature/hoalinh-gamification` (commit `b507697`) vào `feature/dev-hoalinh-gamification`, fix 4 conflict files, build thành công
+- **Backend mini-app HOÀN TẤT 100%** — ~24 endpoint theo contract
+- **Phase 0-6 xong:** Auth+Profile, Knowledge base, Games engine, Rewards & Shipping, Ranking, Live-feed SignalR
+- **Phase 7 (Admin Razor UI) ĐANG DỞ:** đã xong Rewards admin CrudAppService, đang dở Razor Pages
+- **Migration đã sinh:** `AddHlgModule`, `AddHlgKnowledge`, `AddHlgGames`, `AddHlgRewards`, `AddHlgRanking`
+- **Schema:** HLG (tenant riêng)
+- **Xem chi tiết:** `architecture/module-hlg.md`
 
 ---
 
@@ -82,4 +88,4 @@
 | Caddie | ✅ Phase 1-7 | multi-caddie mới nhất |
 | Hoa Linh | ✅ Phase 1-7 | loyalty + UrBox + Zalo OA |
 | Documents | ✅ Xong | seeder 11 section |
-| Hoa Linh Gamification (HLG) | 🔨 Đang build | mini app MỚI, schema HLG, tenant riêng. Phase 0-1 xong (Auth+Profile). Xem `architecture/module-hlg.md` |
+| Hoa Linh Gamification (HLG) | 🔄 Đã merge vào dev | merge 2026-09-16, Phase 0-6 xong, Phase 7 (Admin UI) dở |
