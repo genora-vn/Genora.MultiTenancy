@@ -3,12 +3,13 @@
     var orderService = genora.multiTenancy.appServices.hoaLinh.hlOrder;
     var currentPage = 1, totalPages = 0, totalRecords = 0, allData = [];
 
-    flatpickr('#FilterDateFrom', { dateFormat: 'd/m/Y', allowInput: true });
-    flatpickr('#FilterDateTo', { dateFormat: 'd/m/Y', allowInput: true });
+    var sales = genora.hoaLinhSales;
+    sales.initDates();
+    var salesService = genora.multiTenancy.appServices.hoaLinh.hlSalesExport;
 
     function getPageSize() { return parseInt($('#PageSize').val()) || 20; }
     function formatCurrency(v) { if (!v && v !== 0) return ''; return new Intl.NumberFormat('vi-VN').format(v) + 'đ'; }
-    function parseDateVN(str) { if (!str) return null; var p = str.split('/'); return p.length === 3 ? p[2] + '-' + p[1] + '-' + p[0] : null; }
+
 
     var statusMap = { 1: 'Khởi tạo', 2: 'Đang xử lý', 3: 'Hoàn thành', 4: 'Đã thanh toán', 5: 'Đã hủy', 6: 'Từ chối', 7: 'Đã trả hàng' };
     var deliveryStatusMap = { 1: 'Đơn mới', 2: 'Đang xử lý', 3: 'Đang giao', 4: 'Hoàn thành', 5: 'Đã hủy' };
@@ -27,28 +28,17 @@
         return '<span class="badge ' + cls + '">' + text + '</span>';
     }
 
-    function getFilteredData() {
-        var search = ($('#FilterText').val() || '').toLowerCase();
-        var source = $('#FilterSource').val();
-        var status = $('#FilterStatus').val();
-        var dateFrom = parseDateVN($('#FilterDateFrom').val());
-        var dateTo = parseDateVN($('#FilterDateTo').val());
-        var filtered = allData;
-        if (source === 'genora') filtered = filtered.filter(function (i) { return i._source === 'genora'; });
-        else if (source === 'hoalinh') filtered = filtered.filter(function (i) { return i._source === 'hoalinh'; });
-        if (search) filtered = filtered.filter(function (i) {
-            return (i._orderCode && i._orderCode.toLowerCase().includes(search)) ||
-                (i._customerName && i._customerName.toLowerCase().includes(search)) ||
-                (i._dsrName && i._dsrName.toLowerCase().includes(search));
+    function getFilter() {
+        var dates = sales.dates();
+        if (!dates) return null;
+        return Object.assign(dates, {
+            search: $('#FilterText').val() || null, source: $('#FilterSource').val() || null,
+            status: $('#FilterStatus').val() ? parseInt($('#FilterStatus').val()) : null
         });
-        if (status) { var sc = parseInt(status); filtered = filtered.filter(function (i) { return i._statusCode === sc; }); }
-        if (dateFrom) filtered = filtered.filter(function (i) { return i._orderDate && i._orderDate >= dateFrom; });
-        if (dateTo) filtered = filtered.filter(function (i) { return i._orderDate && i._orderDate <= dateTo; });
-        return filtered;
     }
 
     function renderTable() {
-        var filtered = getFilteredData();
+        var filtered = allData;
         totalRecords = filtered.length;
         var ps = getPageSize();
         totalPages = Math.ceil(totalRecords / ps) || 1;
@@ -95,38 +85,28 @@
     }
 
     function loadData() {
+        var filter = getFilter();
+        if (!filter) return;
         abp.ui.setBusy('#OrderTableContainer');
-        allData = [];
-        var p1 = service.getOrderHeaders(1, 500).then(function (r) {
-            var hlOrders = (r.success && r.data) ? (r.data.data || r.data) : [];
-            if (!Array.isArray(hlOrders)) hlOrders = [];
-            hlOrders.forEach(function (o) {
-                allData.push({
-                    _source: 'hoalinh', _id: o.orderNumber, _orderCode: o.orderNumber,
+        $('#BtnExportExcel').prop('disabled', true);
+        salesService.getOrders(filter).then(function (rows) {
+            allData = rows.map(function (o) {
+                return {
+                    _source: o.source, _id: o.id, _orderCode: o.orderCode,
                     _customerName: o.customerName, _totalAmount: o.totalAmount,
-                    _statusCode: o.orderStatusCode, _statusText: o.orderStatus,
-                    _orderDate: o.orderDate, _dsrName: o.dsrName, _raw: o
-                });
+                    _statusCode: o.statusCode, _statusText: o.statusText,
+                    _orderDate: o.orderDate ? o.orderDate.substring(0, 10) : '', _dsrName: o.salesName,
+                    _raw: { receiverName: o.salesName, deliveryStatus: o.statusCode, paymentStatus: o.paymentStatus }
+                };
             });
-        });
-        var p2 = orderService.getList({ skipCount: 0, maxResultCount: 500 }).then(function (r) {
-            if (r && r.items) {
-                r.items.forEach(function (o) {
-                    allData.push({
-                        _source: 'genora', _id: o.id, _orderCode: o.orderCode,
-                        _customerName: o.customerName, _totalAmount: o.totalAmount,
-                        _statusCode: o.deliveryStatus, _statusText: deliveryStatusMap[o.deliveryStatus] || '',
-                        _orderDate: o.creationTime ? o.creationTime.substring(0, 10) : '',
-                        _dsrName: '', _raw: o
-                    });
-                });
-            }
-        });
-        Promise.all([p1, p2]).then(function () {
-            allData.sort(function (a, b) { return (b._orderDate || '').localeCompare(a._orderDate || ''); });
             currentPage = 1; renderTable();
-        }).catch(function (err) { console.error(err); renderTable(); })
-          .finally(function () { abp.ui.clearBusy('#OrderTableContainer'); });
+        }).catch(function () {
+            allData = []; currentPage = 1; renderTable();
+            abp.notify.error('Không thể tải đầy đủ đơn hàng. Vui lòng thử lại.');
+        }).always(function () {
+            abp.ui.clearBusy('#OrderTableContainer');
+            $('#BtnExportExcel').prop('disabled', false);
+        });
     }
 
     function showDetail(source, id, orderCode) {
@@ -209,9 +189,13 @@
     });
 
     // Events
-    $('#BtnSearch').click(function () { currentPage = 1; renderTable(); });
-    $('#BtnRefresh').click(function () { $('#FilterText').val(''); $('#FilterSource').val(''); $('#FilterStatus').val(''); $('#FilterDateFrom').val(''); $('#FilterDateTo').val(''); loadData(); });
-    $('#FilterText').keypress(function (e) { if (e.which === 13) { currentPage = 1; renderTable(); } });
+    $('#BtnExportExcel').click(function () {
+        var filter = getFilter();
+        if (filter) sales.download('api/app/hl-sales-excel/orders', filter, this);
+    });
+    $('#BtnSearch').click(function () { loadData(); });
+    $('#BtnRefresh').click(function () { $('#FilterText').val(''); $('#FilterSource').val(''); $('#FilterStatus').val(''); sales.clearDates(); loadData(); });
+    $('#FilterText').keypress(function (e) { if (e.which === 13) { loadData(); } });
     $('#PageSize').change(function () { currentPage = 1; renderTable(); });
     $(document).on('click', '#Pagination .page-link', function (e) { e.preventDefault(); var p = parseInt($(this).data('page')); if (p >= 1 && p <= totalPages && p !== currentPage) { currentPage = p; renderTable(); } });
     $(document).on('click', '#HlOrdersTable tbody tr.hl-clickable', function (e) {

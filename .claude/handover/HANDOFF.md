@@ -19,6 +19,11 @@
 
 ## Bàn giao hiện tại
 
+### Cập nhật Hoa Linh Sales 2026-09-17
+Nhánh `feature/hoalinh-sales`: đã sửa filters/Excel cho 3 trang Sales, Web build + 14 Application/8 JS tests pass; chưa commit/deploy hoặc UAT runtime. Không migration mới. Chi tiết và bước kiểm tra tiếp theo: [note](../memory/notes/project/project_hl_sales_admin_filters_excel_20260917.md). Điểm dừng HLG bên dưới vẫn giữ để tiếp tục khi có task tương ứng.
+
+### Bàn giao HLG trước đó (2026-08-21)
+
 **Ngày:** 2026-08-21
 **Trạng thái:** ⏸️ TẠM DỪNG module Hoa Linh Gamification (HLG). Sẽ quay lại làm tiếp bộ Admin Razor UI.
 

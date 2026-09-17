@@ -1,8 +1,11 @@
-# Architecture — Module Hoa Linh (Dược phẩm)
+# Architecture — Module Hoa Linh Sales (Dược phẩm / Hoa Linh Gắn Kết)
 
 > Nguồn: `project_hoalinh_brd_overview.md`, `project_hoalinh_data_integration_pattern.md`,
 > `project_hoalinh_phase1..7_complete.md`, `project_hl_*.md`, `project_urbox_integration.md`,
 > `project_zalo_oa_articles.md`. Chi tiết đầy đủ trong `../memory/notes/project/`.
+
+## Định danh
+Hoa Linh Sales là tên phân biệt module Hoa Linh cũ. Mini App Dược Phẩm Hoa Linh – Hoa Linh Gắn Kết (Hoa Linh Miền Nam), database `HoaLinhMienNam`, schema `HL`. Không thuộc module HL25 hoặc HLG.
 
 ## Phạm vi (BRD)
 Mini App (8 module) + Admin Portal (10 module) + tích hợp API DMS Hoa Linh. Prefix entity: `AppHl`.
@@ -48,3 +51,6 @@ Phân biệt rõ **data ownership** để tránh conflict khi sync:
 - **UrBox eVoucher:** `IUrBoxService` (tra cứu GET, cartPayVoucher POST + Signature RSA-SHA256 .NET9); redeem lưu `HlGiftExchange`, success trừ `Customer.BonusAmount`. `HlGiftExchangeStatus`: 0=Failed/1=Success/2=Processing/3=Used.
 - **Zalo OA Articles:** `GetArticleList/DetailAsync` (GET openapi.zalo.me, token ZaloAuth fallback), cache per-tenant `IDistributedCache` (`Zalo:NewsCacheMinutes=5`); endpoint `api/mini-app/hl/news` + `news/{id}`.
 - **Customer registration:** `HlCustomerAppService` upsert theo phone; HL DMS→CustCode+HoaLinh(source=5), chưa có→HLKH{D6}+ZaloMiniApp.
+
+## Admin filters / Excel (2026-09-17)
+`HlSalesQuery` dùng chung filter PointHistory/GiftExchanges giữa list và Excel. `HlSalesExportAppService` xuất 3 file, gộp đầy đủ Genora+DMS cho Orders; bảng Orders dùng cùng service/filter. Ngày hiển thị dd/MM/yyyy, gửi ISO, khoảng ngày bao gồm hết ngày cuối. Chi tiết: [note](../memory/notes/project/project_hl_sales_admin_filters_excel_20260917.md).

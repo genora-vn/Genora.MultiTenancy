@@ -40,6 +40,8 @@ public class HlGiftExchangeFilterDto
     public int MaxResultCount { get; set; } = 20;
     public string? Filter { get; set; }
     public HlGiftExchangeStatus? Status { get; set; }
+    public DateTime? DateFrom { get; set; }
+    public DateTime? DateTo { get; set; }
 }
 
 /// <summary>

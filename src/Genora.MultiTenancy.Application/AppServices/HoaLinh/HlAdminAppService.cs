@@ -263,15 +263,7 @@ public class HlAdminAppService : ApplicationService, IHlAdminAppService
         var limit = filter.Limit <= 0 ? 20 : filter.Limit;
 
         var queryable = await _pointTxnRepo.GetQueryableAsync();
-        queryable = queryable
-            .WhereIf(!string.IsNullOrWhiteSpace(filter.Search),
-                x => x.CustomerCode!.Contains(filter.Search!)
-                     || x.CustomerName!.Contains(filter.Search!)
-                     || x.CustomerPhone!.Contains(filter.Search!)
-                     || x.RefCode!.Contains(filter.Search!))
-            .WhereIf(filter.Type.HasValue, x => (int)x.Type == filter.Type!.Value)
-            .WhereIf(filter.DateFrom.HasValue, x => x.CreationTime >= filter.DateFrom)
-            .WhereIf(filter.DateTo.HasValue, x => x.CreationTime <= filter.DateTo!.Value.AddDays(1));
+        queryable = HlSalesQuery.Transactions(queryable, filter);
 
         var totalCount = await AsyncExecuter.CountAsync(queryable);
         var items = await AsyncExecuter.ToListAsync(
@@ -307,7 +299,7 @@ public class HlAdminAppService : ApplicationService, IHlAdminAppService
         return HlApiResult<HlPagedResponse<HlPointTransactionDto>>.Ok(paged);
     }
 
-    public async Task<HlApiResult<HlPagedResponse<HlPointBatchDto>>> GetPointBatchesAsync(int page, int limit, string? search = null)
+    public async Task<HlApiResult<HlPagedResponse<HlPointBatchDto>>> GetPointBatchesAsync(int page, int limit, string? search = null, DateTime? dateFrom = null, DateTime? dateTo = null)
     {
         await CheckPermissionAsync(MultiTenancyPermissions.AppHlLoyalty.Default, MultiTenancyPermissions.HostAppHlLoyalty.Default);
 
@@ -315,11 +307,8 @@ public class HlAdminAppService : ApplicationService, IHlAdminAppService
         limit = limit <= 0 ? 20 : limit;
 
         var queryable = await _pointBatchRepo.GetQueryableAsync();
-        queryable = queryable.WhereIf(!string.IsNullOrWhiteSpace(search),
-            x => x.CustomerCode!.Contains(search!)
-                 || x.CustomerName!.Contains(search!)
-                 || x.BatchCode.Contains(search!)
-                 || x.CampaignCode!.Contains(search!));
+        queryable = HlSalesQuery.Batches(queryable, new HlPointHistoryFilter
+        { Search = search, DateFrom = dateFrom, DateTo = dateTo });
 
         var totalCount = await AsyncExecuter.CountAsync(queryable);
         var items = await AsyncExecuter.ToListAsync(

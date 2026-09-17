@@ -48,14 +48,7 @@ public class HlGiftExchangeAppService : ApplicationService, IHlGiftExchangeAppSe
 
         var queryable = await _giftRepo.GetQueryableAsync();
 
-        queryable = queryable
-            .WhereIf(!string.IsNullOrWhiteSpace(input.Filter),
-                x => x.ExchangeCode.Contains(input.Filter!) ||
-                     x.CustomerName!.Contains(input.Filter!) ||
-                     x.CustomerCode!.Contains(input.Filter!) ||
-                     x.CustomerPhone!.Contains(input.Filter!) ||
-                     x.GiftName.Contains(input.Filter!))
-            .WhereIf(input.Status.HasValue, x => x.Status == input.Status);
+        queryable = HlSalesQuery.Gifts(queryable, input);
 
         var totalCount = await AsyncExecuter.CountAsync(queryable);
 

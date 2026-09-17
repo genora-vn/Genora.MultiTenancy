@@ -48,7 +48,7 @@ public interface IHlAdminAppService : IApplicationService
 
     // Point History (Lịch sử điểm thưởng)
     Task<HlApiResult<HlPagedResponse<HlPointTransactionDto>>> GetPointHistoryAsync(HlPointHistoryFilter filter);
-    Task<HlApiResult<HlPagedResponse<HlPointBatchDto>>> GetPointBatchesAsync(int page, int limit, string? search = null);
+    Task<HlApiResult<HlPagedResponse<HlPointBatchDto>>> GetPointBatchesAsync(int page, int limit, string? search = null, DateTime? dateFrom = null, DateTime? dateTo = null);
 
     // API Logs
     Task<HlApiResult<HlPagedResponse<HlApiLogDto>>> GetApiLogsAsync(int page, int limit, string? dataType = null, bool? isError = null, DateTime? dateFrom = null, DateTime? dateTo = null);

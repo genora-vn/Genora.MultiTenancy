@@ -35,7 +35,9 @@
 - Migration mốc: 20260724091716 (link players), 20260725062150 (TotalCaddieFee).
 - Note: `project_caddie_*`.
 
-## Module: Hoa Linh (Dược phẩm) — HOÀN THÀNH Phase 1-7
+## Module: Hoa Linh Sales (Hoa Linh Gắn Kết / Dược phẩm) — HOÀN THÀNH Phase 1-7
+- **Định danh:** DB `HoaLinhMienNam`, schema `HL`; khác HL25/HLG.
+- **Admin 2026-09-17:** sửa lọc ngày PointHistory, thêm lọc ngày GiftExchanges, Excel theo bộ lọc cho 3 trang PointHistory/GiftExchanges/Orders. Web build + 14 Application/8 JS tests pass; chưa UAT runtime/deploy; không migration mới.
 - BRD: Mini App 8 module + Admin Portal 10 + API DMS sync.
 - Data integration: 10 nhóm dữ liệu Pull/Push, prefix `AppHl`, SyncLog.
 - Phase 1 foundation (4 enum, 4 entity schema HL, feature AllowHoaLinhModule, 7 permission pair, menu order 50).
@@ -86,6 +88,6 @@
 | Golf Core & MiniApp | ✅ Vận hành | maintenance / feature nhỏ |
 | Salon Beauty | ✅ Backend + UI | có thể còn polish UI |
 | Caddie | ✅ Phase 1-7 | multi-caddie mới nhất |
-| Hoa Linh | ✅ Phase 1-7 | loyalty + UrBox + Zalo OA |
+| Hoa Linh Sales | ✅ Phase 1-7 + Admin filters/Excel | DB HoaLinhMienNam/schema HL; cập nhật 17/09 chưa UAT runtime |
 | Documents | ✅ Xong | seeder 11 section |
 | Hoa Linh Gamification (HLG) | 🔄 Đã merge vào dev | merge 2026-09-16, Phase 0-6 xong, Phase 7 (Admin UI) dở |

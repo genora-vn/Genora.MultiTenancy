@@ -1,5 +1,7 @@
 (function () {
     var service = genora.multiTenancy.appServices.hoaLinh.hlGiftExchange;
+    var sales = genora.hoaLinhSales;
+    sales.initDates();
     var currentPage = 1, totalPages = 0, totalRecords = 0;
     var currentDetailId = null;
     var HOTLINE = '1900 545 435';
@@ -119,13 +121,21 @@
         paging.append('<li class="page-item ' + (currentPage === totalPages ? 'disabled' : '') + '"><a class="page-link" href="#" data-page="' + (currentPage + 1) + '">Next</a></li>');
     }
 
-    function loadData() {
-        var filter = $('#FilterText').val() || null;
-        var status = $('#FilterStatus').val() !== '' ? parseInt($('#FilterStatus').val()) : null;
-        var skipCount = (currentPage - 1) * getPageSize();
+    function getFilter() {
+        var dates = sales.dates();
+        if (!dates) return null;
+        return Object.assign(dates, {
+            filter: $('#FilterText').val() || null,
+            status: $('#FilterStatus').val() !== '' ? parseInt($('#FilterStatus').val()) : null,
+            skipCount: (currentPage - 1) * getPageSize(), maxResultCount: getPageSize()
+        });
+    }
 
+    function loadData() {
+        var filter = getFilter();
+        if (!filter) return;
         abp.ui.setBusy('#GiftExchangeContainer');
-        service.getList({ skipCount: skipCount, maxResultCount: getPageSize(), filter: filter, status: status })
+        service.getList(filter)
             .then(function (r) {
                 totalRecords = r.totalCount || 0;
                 totalPages = Math.ceil(totalRecords / getPageSize()) || 1;
@@ -235,8 +245,12 @@
     }
 
     // Events
+    $('#BtnExportExcel').click(function () {
+        var filter = getFilter();
+        if (filter) sales.download('api/app/hl-sales-excel/gift-exchanges', filter, this);
+    });
     $('#BtnSearch').click(function () { currentPage = 1; loadData(); });
-    $('#BtnRefresh').click(function () { $('#FilterText').val(''); $('#FilterStatus').val(''); currentPage = 1; loadData(); });
+    $('#BtnRefresh').click(function () { $('#FilterText').val(''); $('#FilterStatus').val(''); sales.clearDates(); currentPage = 1; loadData(); });
     $('#FilterText').keypress(function (e) { if (e.which === 13) { currentPage = 1; loadData(); } });
     $('#PageSize').change(function () { currentPage = 1; loadData(); });
     $(document).on('click', '#Pagination .page-link', function (e) { e.preventDefault(); var p = parseInt($(this).data('page')); if (p >= 1 && p <= totalPages && p !== currentPage) { currentPage = p; loadData(); } });

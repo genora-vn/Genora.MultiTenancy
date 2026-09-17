@@ -1,5 +1,7 @@
 (function () {
     var service = genora.multiTenancy.appServices.hoaLinh.hlAdmin;
+    var sales = genora.hoaLinhSales;
+    sales.initDates();
     var currentTab = 'txn';
     var currentPage = 1, totalPages = 0, totalRecords = 0;
 
@@ -76,20 +78,24 @@
         });
     }
 
+    function getFilter() {
+        var dates = sales.dates();
+        if (!dates) return null;
+        return Object.assign(dates, {
+            search: $('#FilterText').val() || null,
+            type: currentTab === 'txn' && $('#FilterType').val() ? parseInt($('#FilterType').val()) : null,
+            page: currentPage, limit: getPageSize()
+        });
+    }
+
     function load() {
+        var filter = getFilter();
+        if (!filter) return;
         abp.ui.setBusy('#PointContainer');
         var ps = getPageSize();
         var search = $('#FilterText').val() || null;
 
         if (currentTab === 'txn') {
-            var filter = {
-                search: search,
-                type: $('#FilterType').val() ? parseInt($('#FilterType').val()) : null,
-                dateFrom: $('#FilterDateFrom').val() || null,
-                dateTo: $('#FilterDateTo').val() || null,
-                page: currentPage,
-                limit: ps
-            };
             service.getPointHistory(filter).then(function (r) {
                 var d = (r.success && r.data) ? r.data : { data: [], totalRecords: 0, totalPages: 0 };
                 totalRecords = d.totalRecords; totalPages = d.totalPages;
@@ -98,7 +104,7 @@
             }).catch(function () { abp.notify.error('Lỗi tải dữ liệu'); })
               .always(function () { abp.ui.clearBusy('#PointContainer'); });
         } else {
-            service.getPointBatches(currentPage, ps, search).then(function (r) {
+            service.getPointBatches(currentPage, ps, search, filter.dateFrom, filter.dateTo).then(function (r) {
                 var d = (r.success && r.data) ? r.data : { data: [], totalRecords: 0, totalPages: 0 };
                 totalRecords = d.totalRecords; totalPages = d.totalPages;
                 renderBatch(d.data || []);
@@ -129,9 +135,15 @@
     }
 
     $('#PointTabs .nav-link').click(function (e) { e.preventDefault(); switchTab($(this).data('tab')); });
+    $('#BtnExportExcel').click(function () {
+        var filter = getFilter();
+        if (!filter) return;
+        filter.batches = currentTab === 'batch';
+        sales.download('api/app/hl-sales-excel/point-history', filter, this);
+    });
     $('#BtnSearch').click(function () { currentPage = 1; load(); });
     $('#BtnRefresh').click(function () {
-        $('#FilterText').val(''); $('#FilterType').val(''); $('#FilterDateFrom').val(''); $('#FilterDateTo').val('');
+        $('#FilterText').val(''); $('#FilterType').val(''); sales.clearDates();
         currentPage = 1; load();
     });
     $('#FilterText').keypress(function (e) { if (e.which === 13) { currentPage = 1; load(); } });

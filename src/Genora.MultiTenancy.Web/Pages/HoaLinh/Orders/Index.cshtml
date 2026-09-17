@@ -25,6 +25,7 @@
 
 @section scripts {
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="~/Pages/HoaLinh/sales.js" asp-append-version="true"></script>
     <script src="~/Pages/HoaLinh/Orders/index.js" asp-append-version="true"></script>
 }
 
@@ -35,6 +36,7 @@
                 <h4 class="mb-0"><i class="fa fa-receipt me-2"></i>@L["Menu:AppHlOrders"]</h4>
             </abp-column>
             <abp-column size-md="_6" class="text-end">
+                <button id="BtnExportExcel" class="btn btn-outline-success btn-sm"><i class="fa fa-file-excel"></i> Xuất Excel</button>
                 <button id="BtnRefresh" class="btn btn-outline-secondary btn-sm"><i class="fa fa-sync-alt"></i> Refresh</button>
             </abp-column>
         </abp-row>

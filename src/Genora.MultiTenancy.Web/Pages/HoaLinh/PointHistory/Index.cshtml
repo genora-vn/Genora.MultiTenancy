@@ -5,6 +5,7 @@
 @using Genora.MultiTenancy.Localization
 
 @section styles {
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
     <style>
         .hl-pt-earn { background-color: #d4edda; color: #155724; }
         .hl-pt-spend { background-color: #ffe5d0; color: #8a4b1d; }
@@ -18,6 +19,8 @@
 }
 
 @section scripts {
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="~/Pages/HoaLinh/sales.js" asp-append-version="true"></script>
     <script src="~/Pages/HoaLinh/PointHistory/index.js" asp-append-version="true"></script>
 }
 
@@ -28,6 +31,7 @@
                 <h4 class="mb-0"><i class="fa fa-coins me-2"></i>@L["Menu:AppHlPointHistory"]</h4>
             </abp-column>
             <abp-column size-md="_6" class="text-end">
+                <button id="BtnExportExcel" class="btn btn-outline-success btn-sm"><i class="fa fa-file-excel"></i> Xuất Excel</button>
                 <button id="BtnRefresh" class="btn btn-outline-secondary btn-sm">
                     <i class="fa fa-sync-alt"></i> Refresh
                 </button>
@@ -54,10 +58,10 @@
                 </select>
             </div>
             <div class="col-md-2">
-                <input type="date" id="FilterDateFrom" class="form-control form-control-sm" />
+                <input type="text" id="FilterDateFrom" class="form-control form-control-sm" placeholder="Từ ngày (dd/MM/yyyy)" aria-label="Từ ngày" />
             </div>
             <div class="col-md-2">
-                <input type="date" id="FilterDateTo" class="form-control form-control-sm" />
+                <input type="text" id="FilterDateTo" class="form-control form-control-sm" placeholder="Đến ngày (dd/MM/yyyy)" aria-label="Đến ngày" />
             </div>
             <div class="col-md-1">
                 <button id="BtnSearch" class="btn btn-primary btn-sm w-100"><i class="fa fa-search"></i></button>

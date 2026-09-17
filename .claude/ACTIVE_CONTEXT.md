@@ -5,6 +5,14 @@
 
 ## Cập nhật gần nhất
 
+### Hoa Linh Sales — Admin filters + Excel (2026-09-17)
+- **Nhánh:** `feature/hoalinh-sales`, baseline HEAD `501c10c`; thay đổi lần này chưa commit/deploy.
+- **Tên gọi:** Hoa Linh Sales = Hoa Linh cũ / Hoa Linh Gắn Kết, DB `HoaLinhMienNam`, schema `HL`; tách biệt HL25 và HLG.
+- **Đã xong code:** sửa ISO/ngày VN + placeholder/validation PointHistory (cả 2 tab); thêm lọc ngày GiftExchanges; Excel theo toàn bộ bộ lọc cho PointHistory/GiftExchanges/Orders, đúng cột yêu cầu. Orders gộp Genora+DMS dùng chung query cho bảng/Excel, đọc đầy đủ trang DMS.
+- **Kiểm tra:** Web build 0 errors, 14 Application + 8 JS tests pass; chưa UAT browser/DB/DMS thật. Không migration mới.
+- **Còn lại:** rebuild/restart host và smoke-test JS proxy, lọc 17/09/2026–17/09/2026, tải Excel với tài khoản Host/Tenant và dữ liệu thật; xem hiệu năng DMS nhiều trang. Giữ nguyên thay đổi appsettings của user.
+- **Chi tiết:** [Hoa Linh Sales filters/Excel](memory/notes/project/project_hl_sales_admin_filters_excel_20260917.md).
+
 ### Merge 2026-09-16 — Hoàn tất merge feature/hoalinh-gamification vào feature/dev-hoalinh-gamification
 - **Ngày:** 2026-09-16
 - **Nhánh:** `feature/dev-hoalinh-gamification` (HEAD `53e767f`)
