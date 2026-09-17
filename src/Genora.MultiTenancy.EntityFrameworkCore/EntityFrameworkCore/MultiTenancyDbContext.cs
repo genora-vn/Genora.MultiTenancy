@@ -35,6 +35,7 @@ using Genora.MultiTenancy.DomainModels.AppHlGiftExchanges;
 using Genora.MultiTenancy.DomainModels.AppHlOrders;
 using Genora.MultiTenancy.DomainModels.AppHl25;
 using Genora.MultiTenancy.DomainModels.AppHlPoints;
+using Genora.MultiTenancy.DomainModels.AppHlg;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Hosting;
 using Volo.Abp.AuditLogging.EntityFrameworkCore;
@@ -170,6 +171,21 @@ public class MultiTenancyDbContext :
     public DbSet<Hl25SpinLog> AppHl25SpinLogs { get; set; }
     public DbSet<Hl25Participant> AppHl25Participants { get; set; }
 
+    // Hoa Linh Gamification (HLG)
+    public DbSet<HlgUserProfile> AppHlgUserProfiles { get; set; }
+    public DbSet<HlgKnowledgeCategory> AppHlgKnowledgeCategories { get; set; }
+    public DbSet<HlgProduct> AppHlgProducts { get; set; }
+    public DbSet<HlgLearningProgress> AppHlgLearningProgress { get; set; }
+    public DbSet<HlgGame> AppHlgGames { get; set; }
+    public DbSet<HlgQuestion> AppHlgQuestions { get; set; }
+    public DbSet<HlgAnswerOption> AppHlgAnswerOptions { get; set; }
+    public DbSet<HlgGameSession> AppHlgGameSessions { get; set; }
+    public DbSet<HlgSessionAnswer> AppHlgSessionAnswers { get; set; }
+    public DbSet<HlgReward> AppHlgRewards { get; set; }
+    public DbSet<HlgRewardHistory> AppHlgRewardHistories { get; set; }
+    public DbSet<HlgShippingAddress> AppHlgShippingAddresses { get; set; }
+    public DbSet<HlgRankingEvent> AppHlgRankingEvents { get; set; }
+
     // Tenant Management
     public DbSet<Tenant> Tenants { get; set; }
     public DbSet<TenantConnectionString> TenantConnectionStrings { get; set; }
@@ -237,6 +253,7 @@ public class MultiTenancyDbContext :
         builder.ConfigureCaddieModule();
         builder.ConfigureHoaLinhModule();
         builder.ConfigureHl25Module();
+        builder.ConfigureHlgModule();
 
         builder.Entity<ZaloAuth>(b =>
         {

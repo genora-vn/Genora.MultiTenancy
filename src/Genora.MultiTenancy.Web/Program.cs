@@ -157,6 +157,7 @@ public class Program
 
             app.MapHub<Genora.MultiTenancy.SignalR.FnbOrderHub>("/signalr-hubs/fnb-orders");
             app.MapHub<Genora.MultiTenancy.SignalR.ProOrderHub>("/signalr-hubs/pro-orders");
+            app.MapHub<Genora.MultiTenancy.SignalR.HlgLiveFeedHub>("/signalr-hubs/hlg-live-feed");
 
             await app.InitializeApplicationAsync();
             await app.RunAsync();
