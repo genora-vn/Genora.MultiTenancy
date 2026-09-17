@@ -16,24 +16,25 @@ public class Hl25ParticipantExcelExporter : ITransientDependency
         var workbook = new XLWorkbook();
         var ws = workbook.Worksheets.Add("Participants");
 
-        // Headers — mở rộng thêm các cột: ZaloUserId, Ảnh thiệp, Lời chúc, Lịch sử quay.
-        ws.Cell(1, 1).Value = "Họ và tên";
-        ws.Cell(1, 2).Value = "Số điện thoại";
-        ws.Cell(1, 3).Value = "ZaloUserId";
-        ws.Cell(1, 4).Value = "Nhóm tuổi";
-        ws.Cell(1, 5).Value = "Giới tính";
-        ws.Cell(1, 6).Value = "Địa chỉ nhận quà";
-        ws.Cell(1, 7).Value = "Ngày tham gia";
-        ws.Cell(1, 8).Value = "Follow OA";
-        ws.Cell(1, 9).Value = "Đồng ý chia sẻ";
-        ws.Cell(1, 10).Value = "Lượt còn lại";
-        ws.Cell(1, 11).Value = "Tổng lượt";
-        ws.Cell(1, 12).Value = "Số quà đã trúng";
-        ws.Cell(1, 13).Value = "Ảnh thiệp (URL)";
-        ws.Cell(1, 14).Value = "Lời chúc";
-        ws.Cell(1, 15).Value = "Lịch sử quay";
+        // Headers — cột STT + các cột dữ liệu.
+        ws.Cell(1, 1).Value = "STT";
+        ws.Cell(1, 2).Value = "Họ và tên";
+        ws.Cell(1, 3).Value = "Số điện thoại";
+        ws.Cell(1, 4).Value = "ZaloUserId";
+        ws.Cell(1, 5).Value = "Nhóm tuổi";
+        ws.Cell(1, 6).Value = "Giới tính";
+        ws.Cell(1, 7).Value = "Địa chỉ nhận quà";
+        ws.Cell(1, 8).Value = "Ngày tham gia";
+        ws.Cell(1, 9).Value = "Follow OA";
+        ws.Cell(1, 10).Value = "Đồng ý chia sẻ";
+        ws.Cell(1, 11).Value = "Lượt còn lại";
+        ws.Cell(1, 12).Value = "Tổng lượt";
+        ws.Cell(1, 13).Value = "Số quà đã trúng";
+        ws.Cell(1, 14).Value = "Ảnh thiệp (URL)";
+        ws.Cell(1, 15).Value = "Lời chúc";
+        ws.Cell(1, 16).Value = "Lịch sử quay";
 
-        var headerRange = ws.Range(1, 1, 1, 15);
+        var headerRange = ws.Range(1, 1, 1, 16);
         headerRange.Style.Font.Bold = true;
         headerRange.Style.Fill.BackgroundColor = XLColor.LightBlue;
 
@@ -41,21 +42,22 @@ public class Hl25ParticipantExcelExporter : ITransientDependency
         {
             var row = i + 2;
             var item = items[i];
-            ws.Cell(row, 1).Value = item.FullName ?? "";
-            ws.Cell(row, 2).Value = item.PhoneNumber ?? "";
-            ws.Cell(row, 3).Value = item.ZaloUserId ?? "";
-            ws.Cell(row, 4).Value = AgeGroupText(item.AgeGroup);
-            ws.Cell(row, 5).Value = GenderText(item.Gender);
-            ws.Cell(row, 6).Value = item.ReceiveAddress ?? "";
-            ws.Cell(row, 7).Value = item.JoinedTime.ToString("dd/MM/yyyy HH:mm");
-            ws.Cell(row, 8).Value = item.IsFollowingOa ? "Có" : "Không";
-            ws.Cell(row, 9).Value = item.HasConsent ? "Có" : "Không";
-            ws.Cell(row, 10).Value = item.RemainingSpinTurns;
-            ws.Cell(row, 11).Value = item.TotalSpinTurns;
-            ws.Cell(row, 12).Value = item.TotalGiftsWon;
-            ws.Cell(row, 13).Value = item.LatestFrameImageUrl ?? "";
-            ws.Cell(row, 14).Value = item.LatestWishMessage ?? "";
-            ws.Cell(row, 15).Value = FormatSpinLogs(item.RecentSpinLogs);
+            ws.Cell(row, 1).Value = i + 1;
+            ws.Cell(row, 2).Value = item.FullName ?? "";
+            ws.Cell(row, 3).Value = item.PhoneNumber ?? "";
+            ws.Cell(row, 4).Value = item.ZaloUserId ?? "";
+            ws.Cell(row, 5).Value = AgeGroupText(item.AgeGroup);
+            ws.Cell(row, 6).Value = GenderText(item.Gender);
+            ws.Cell(row, 7).Value = item.ReceiveAddress ?? "";
+            ws.Cell(row, 8).Value = item.JoinedTime.ToString("dd/MM/yyyy HH:mm");
+            ws.Cell(row, 9).Value = item.IsFollowingOa ? "Có" : "Không";
+            ws.Cell(row, 10).Value = item.HasConsent ? "Có" : "Không";
+            ws.Cell(row, 11).Value = item.RemainingSpinTurns;
+            ws.Cell(row, 12).Value = item.TotalSpinTurns;
+            ws.Cell(row, 13).Value = item.TotalGiftsWon;
+            ws.Cell(row, 14).Value = item.LatestFrameImageUrl ?? "";
+            ws.Cell(row, 15).Value = item.LatestWishMessage ?? "";
+            ws.Cell(row, 16).Value = FormatSpinLogs(item.RecentSpinLogs);
         }
 
         ws.Columns().AdjustToContents();

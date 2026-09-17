@@ -5,6 +5,7 @@ using Genora.MultiTenancy.Features.AppHl25Features;
 using Genora.MultiTenancy.Localization;
 using Genora.MultiTenancy.Permissions;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -35,6 +36,7 @@ public class Hl25ParticipantAppService : ApplicationService, IHl25ParticipantApp
     private readonly IFeatureChecker _featureChecker;
     private readonly Hl25ParticipantExcelExporter _excelExporter;
     private readonly IUnitOfWorkManager _uowManager;
+    private readonly IHttpContextAccessor _httpContextAccessor;
 
     public Hl25ParticipantAppService(
         IRepository<Hl25Participant, Guid> repository,
@@ -43,7 +45,8 @@ public class Hl25ParticipantAppService : ApplicationService, IHl25ParticipantApp
         IRepository<Hl25SpinLog, Guid> spinLogRepository,
         IFeatureChecker featureChecker,
         Hl25ParticipantExcelExporter excelExporter,
-        IUnitOfWorkManager uowManager)
+        IUnitOfWorkManager uowManager,
+        IHttpContextAccessor httpContextAccessor)
     {
         _repository = repository;
         _spinTurnLogRepository = spinTurnLogRepository;
@@ -52,6 +55,7 @@ public class Hl25ParticipantAppService : ApplicationService, IHl25ParticipantApp
         _featureChecker = featureChecker;
         _excelExporter = excelExporter;
         _uowManager = uowManager;
+        _httpContextAccessor = httpContextAccessor;
         LocalizationResource = typeof(MultiTenancyResource);
     }
 
@@ -191,7 +195,7 @@ public class Hl25ParticipantAppService : ApplicationService, IHl25ParticipantApp
         {
             if (creationByParticipant.TryGetValue(dto.Id, out var creation))
             {
-                dto.LatestFrameImageUrl = creation.ResultImageUrl;
+                dto.LatestFrameImageUrl = ToFullUrl(creation.ResultImageUrl);
                 dto.LatestWishMessage = creation.WishMessage;
                 dto.LatestFrameTime = creation.CreatedTime;
             }
@@ -259,5 +263,26 @@ public class Hl25ParticipantAppService : ApplicationService, IHl25ParticipantApp
             : MultiTenancyPermissions.HostAppHl25Participants.Edit;
         await AuthorizationService.CheckAsync(policy);
         await EnsureFeatureAsync();
+    }
+
+    /// <summary>
+    /// Dựng URL đầy đủ (scheme + host + path) từ path tương đối lưu trong DB.
+    /// Idempotent: nếu đã là URL tuyệt đối (http/https) thì giữ nguyên. Null → null.
+    /// </summary>
+    private string? ToFullUrl(string? path)
+    {
+        if (string.IsNullOrWhiteSpace(path))
+            return path;
+
+        if (path.StartsWith("http://", StringComparison.OrdinalIgnoreCase) ||
+            path.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+            return path;
+
+        var request = _httpContextAccessor.HttpContext?.Request;
+        if (request == null)
+            return path;
+
+        var baseUrl = $"{request.Scheme}://{request.Host.Value}";
+        return path.StartsWith("/") ? baseUrl + path : baseUrl + "/" + path;
     }
 }
