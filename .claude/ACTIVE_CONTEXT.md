@@ -5,6 +5,13 @@
 
 ## Cập nhật gần nhất
 
+### DbMigrator — HLG host seeder failure (2026-09-18)
+- Nhánh `dev`, baseline HEAD `b8d0c06`; Sales exports đã commit. Fix này chưa commit/deploy.
+- Xác nhận SQL read-only: host GenoraMultiTenancy không có bảng HLG, nhưng history ghi đủ 5 migration HLG. Seeder host chạy luôn gây SQL 208 sau migrate host và chặn vòng lặp tenant.
+- Đã sửa seeder HLG chỉ chạy tenant bật Hlg.Management, dùng tenant scope riêng; host và tenant không bật HLG không truy vấn bảng HLG. 3 Domain tests pass, DbMigrator build 0 errors.
+- Chưa chạy lại DbMigrator trên DB thật hoặc sửa history/schema. Cần chạy lại sau rebuild; tenant bật HLG phải có đủ schema. Cảnh báo Salon/BonusAmount không thuộc lỗi dừng này.
+- Chi tiết: [note HLG host seeding](memory/notes/project/project_hlg_host_seed_migration_failure_20260918.md).
+
 ### Hoa Linh Sales — Admin filters + Excel (2026-09-17)
 - **Nhánh:** `feature/hoalinh-sales`, baseline HEAD `501c10c`; thay đổi lần này chưa commit/deploy.
 - **Tên gọi:** Hoa Linh Sales = Hoa Linh cũ / Hoa Linh Gắn Kết, DB `HoaLinhMienNam`, schema `HL`; tách biệt HL25 và HLG.
@@ -48,7 +55,7 @@
 - **Backend mini-app: HOÀN TẤT 100%** — ~24 endpoint theo contract, đã gửi CURL cho anh test (bỏ header `__tenant`).
 - **Migration đã sinh:** `AddHlgModule` (schema HLG + HlgUserProfile), `AddHlgKnowledge` (3 bảng knowledge), `AddHlgGames` (5 bảng game), `AddHlgRewards` (3 bảng reward), `AddHlgRanking` (1 bảng ranking event). SQL script idempotent tại `Migrations/Scripts/`.
 - **Files admin đã tạo (Rewards):** `Application.Contracts/AppDtos/Hlg/Admin/{HlgRewardAdminDtos,IHlgRewardAdminAppService}.cs` + `Application/AppServices/Hlg/Admin/HlgRewardAdminAppService.cs`. Localization keys cần bổ sung: `Hlg:RewardNameRequired`, `Hlg:RewardPointCostInvalid`, `Hlg:RewardTypeInvalid` (hiện fallback về key).
-- **Việc runtime chưa chạy:** áp `AddHlgKnowledge` + `AddHlgGames` + `AddHlgRewards` + `AddHlgRanking`; tạo tenant "Hoa Linh Miền Nam Gamification" + bật feature `Hlg.Management`; re-seed host admin để nhận permission `HostAppHlg*`. Seeder host seed luôn (không cần feature); tenant cần bật feature.
+- **Việc runtime chưa chạy:** áp `AddHlgKnowledge` + `AddHlgGames` + `AddHlgRewards` + `AddHlgRanking`; tạo tenant "Hoa Linh Miền Nam Gamification" + bật feature `Hlg.Management`; re-seed host admin để nhận permission `HostAppHlg*`. Từ fix 2026-09-18: seeder mẫu HLG bỏ qua host; chỉ tenant bật Hlg.Management mới seed.
 - **SignalR live-feed:** hub `/signalr-hubs/hlg-live-feed`, client `JoinGame(gameId)`, event `hlg.live-feed.activity`. Endpoint polling `games/{id}/live-feed` vẫn giữ làm fallback.
 - **Điểm chưa nối dây:** `GameResult.reward` + `requiresShippingAddress` trong finish (cần mapping game↔reward); `accuracyPercent` trong profile/stats; tích hợp UrBox thật cho voucher.
 - **Lưu ý (BD-2):** /answer chấm theo `HlgQuestion.CorrectKey` (bí mật, KHÔNG serialize ra client); /finish đối soát từ `HlgSessionAnswer`, bỏ qua totalScore client, log cảnh báo nếu lệch.

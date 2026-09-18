@@ -72,6 +72,7 @@
 - **🎉 MODULE HOÀN THÀNH.** Còn lại: chạy `dotnet ef database update` khi deploy + FE ghép API
 
 ## Module: Hoa Linh Gamification (HLG) — 🔨 ĐANG BUILD (đã merge vào `feature/dev-hoalinh-gamification`)
+- **DbMigrator fix 2026-09-18:** sample seeder bỏ qua host, chỉ seed tenant bật Hlg.Management và scope đúng tenant; 3 Domain tests/DbMigrator build pass. Host history/schema HLG drift đã xác nhận, chưa repair DB hoặc chạy lại migrate thật.
 - **Merge 2026-09-16:** đã merge từ `feature/hoalinh-gamification` (commit `b507697`) vào `feature/dev-hoalinh-gamification`, fix 4 conflict files, build thành công
 - **Backend mini-app HOÀN TẤT 100%** — ~24 endpoint theo contract
 - **Phase 0-6 xong:** Auth+Profile, Knowledge base, Games engine, Rewards & Shipping, Ranking, Live-feed SignalR

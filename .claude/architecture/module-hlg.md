@@ -181,3 +181,6 @@ Ranking: `GET ranking/event`, `GET ranking/entries`
 - **Admin Razor UI**: trang CRUD nội bộ cho Games/Questions, Knowledge, Rewards, Ranking, Users (mỗi nhóm: Index cshtml + .cs + JS + create/edit modal). Kèm menu contributor + menu localization keys.
 - Tích hợp UrBox thật khi phát voucher (hiện dùng `HlgReward.VoucherCode` sẵn có).
 - Mapping game↔reward để `GameResult.reward` + `requiresShippingAddress` trả giá trị thật khi finish.
+
+## DbMigrator host seed fix (2026-09-18)
+HLG sample-data seeder chỉ chạy trong tenant bật Hlg.Management; host bị bỏ qua trước mọi repository query. ICurrentTenant.Change dùng TenantId của DataSeedContext. Quyền host vẫn do permission seeder xử lý. Host DB có drift history/schema được xác nhận read-only, không tự repair trong code. Chi tiết: [note](../memory/notes/project/project_hlg_host_seed_migration_failure_20260918.md).

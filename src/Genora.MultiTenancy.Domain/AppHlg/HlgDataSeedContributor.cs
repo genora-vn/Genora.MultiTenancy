@@ -7,6 +7,7 @@ using Volo.Abp.DependencyInjection;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Features;
 using Volo.Abp.Guids;
+using Volo.Abp.MultiTenancy;
 using Volo.Abp.Timing;
 
 namespace Genora.MultiTenancy.AppHlg;
@@ -32,6 +33,7 @@ public class HlgDataSeedContributor : IDataSeedContributor, ITransientDependency
     private readonly IFeatureChecker _featureChecker;
     private readonly IGuidGenerator _guid;
     private readonly IClock _clock;
+    private readonly ICurrentTenant _currentTenant;
 
     public HlgDataSeedContributor(
         IRepository<HlgKnowledgeCategory, Guid> categoryRepo,
@@ -43,7 +45,8 @@ public class HlgDataSeedContributor : IDataSeedContributor, ITransientDependency
         IRepository<HlgRankingEvent, Guid> rankingRepo,
         IFeatureChecker featureChecker,
         IGuidGenerator guid,
-        IClock clock)
+        IClock clock,
+        ICurrentTenant currentTenant)
     {
         _categoryRepo = categoryRepo;
         _productRepo = productRepo;
@@ -55,19 +58,24 @@ public class HlgDataSeedContributor : IDataSeedContributor, ITransientDependency
         _featureChecker = featureChecker;
         _guid = guid;
         _clock = clock;
+        _currentTenant = currentTenant;
     }
 
     public async Task SeedAsync(DataSeedContext context)
     {
-        // Host (TenantId == null): seed luôn để test local trên tài khoản host.
-        // Tenant: chỉ seed khi bật feature HLG (tránh làm bẩn tenant khác dùng chung DbMigrator).
-        if (context.TenantId != null && !await _featureChecker.IsEnabledAsync(FeatHlg))
+        // HLG sample data belongs to its tenant, not the host database.
+        // Skip the host before evaluating features or accessing HLG repositories.
+        if (!context.TenantId.HasValue)
+            return;
+
+        using var tenantScope = _currentTenant.Change(context.TenantId);
+        if (!await _featureChecker.IsEnabledAsync(FeatHlg))
             return;
 
         // Idempotent: đã có game thì bỏ qua (không seed lại).
         if (await _gameRepo.AnyAsync()) return;
 
-        var tenantId = context.TenantId; // null cho host — entity nhận TenantId null là đúng cho host
+        var tenantId = context.TenantId;
 
         // ── Knowledge base ──────────────────────────────────────────────────
         var category = await _categoryRepo.InsertAsync(
