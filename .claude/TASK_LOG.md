@@ -12,6 +12,7 @@
 
 | Mốc | Module | Nội dung | Note gốc |
 |-----|--------|----------|----------|
+| 2026-09-18 | HL25 staging | Xác nhận Git migration cũ bị sửa BirthDate→AgeGroup cùng ID. Thêm 20260918093000_EnsureHl25ParticipantAgeGroup (DB HL25: DuocPhamHoaLinh; bỏ qua DB không có bảng HL25) conditional add tinyint NOT NULL/default0, giữ dữ liệu/cột cũ; EF build/script/no model changes + 4 SQL Server temp-table checks pass. SQL idempotent đã sinh, chưa áp DB nghiệp vụ. | [note](memory/notes/project/project_hl25_staging_agegroup_migration_fix_20260918.md) |
 | 2026-09-18 | Hoa Linh Sales Excel | Đổi 3 cột tiền sang #,##0 để bỏ dấu chấm cuối (600,000.→600,000), giữ numeric values. 14 Application tests pass, thêm assertions formatted output cho 3 file; user xác nhận download đã hoạt động. | [note](memory/notes/project/project_hl_sales_excel_money_format_fix_20260918.md) |
 | 2026-09-18 | Hoa Linh Sales Excel | Fix shared downloader gọi getTenantIdCookie không tồn tại; giữ same-origin cookies/filter/Blob. Thêm 4 test download thật, tổng 12 JS tests pass; không backend/schema/DB change. | [note](memory/notes/project/project_hl_sales_excel_tenant_cookie_fix_20260918.md) |
 | 2026-09-18 | DbMigrator / HLG | SQL read-only xác nhận host thiếu HLG tables dù đủ 5 history entries. Sửa HlgDataSeedContributor bỏ qua host, scope đúng tenant và feature gate; 3 Domain tests pass, DbMigrator build 0 errors. Không DB write/history edit hoặc chạy migrate thật. | [note](memory/notes/project/project_hlg_host_seed_migration_failure_20260918.md) |

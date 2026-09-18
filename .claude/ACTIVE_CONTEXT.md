@@ -5,6 +5,12 @@
 
 ## Cập nhật gần nhất
 
+### HL25 — staging AgeGroup schema repair (2026-09-18)
+- Lỗi staging Invalid column name AgeGroup. Git xác nhận migration AddHl25Module cùng ID đã bị sửa BirthDate→AgeGroup in-place; DB chạy bản cũ không được nâng cấp.
+- Đã thêm migration 20260918093000_EnsureHl25ParticipantAgeGroup: chỉ thêm AgeGroup nếu thiếu (tinyint NOT NULL, default Unknown=0), giữ BirthDate/dữ liệu cũ, bỏ qua cột đã đúng. Down giữ cột để tránh mất dữ liệu.
+- EF build/script generation + no pending model changes đã kiểm tra; 4 SQL Server checks trên bảng tạm pass. SQL idempotent tại docs/hl25_agegroup_repair_20260918.sql. Chưa áp schema/data DB nghiệp vụ hoặc staging, anh xác nhận tenant HL25 dùng DuocPhamHoaLinh; DB trong cấu hình hiện tại đã có AgeGroup đúng kiểu. Migration bỏ qua DB không có bảng HL25 khi chạy toàn bộ tenant; chưa xác minh trực tiếp staging.
+- Cần deploy migration mới, migrate đúng DB tenant HL25, restart host và test lại. [Chi tiết](memory/notes/project/project_hl25_staging_agegroup_migration_fix_20260918.md).
+
 ### Hoa Linh Sales — Excel money format (2026-09-18)
 - User xác nhận tải Excel đã hoạt động. Đã đổi format tiền #,##0.## → #,##0 cho Giá trị (PointHistory), Số tiền (GiftExchanges), Thành tiền (Orders); bỏ dấu thập phân thừa cuối số, giữ numeric values.
 - 14 Application tests pass, gồm assertions chuỗi hiển thị 600,000 / 500,000 / 900,000 trên file XLSX xuất thật qua service. Không migration/DB write; cần rebuild/restart host và xuất file mới.

@@ -5,6 +5,7 @@
 > Nguồn gốc: migrate từ `~\.claude\projects\D--Genora-...-Genora-MultiTenancy\memory\` (108 file).
 
 ## Điều hướng nhanh
+- **HL25 staging AgeGroup repair 2026-09-18:** [note](memory/notes/project/project_hl25_staging_agegroup_migration_fix_20260918.md). Migration mới 20260918093000_EnsureHl25ParticipantAgeGroup (DB HL25: DuocPhamHoaLinh; bỏ qua DB không có bảng HL25) sửa DB từng apply BirthDate cũ; giữ dữ liệu, thêm Unknown=0; chưa áp staging.
 - **Hoa Linh Sales Excel money format 2026-09-18:** [note](memory/notes/project/project_hl_sales_excel_money_format_fix_20260918.md). 3 cột tiền dùng #,##0, bỏ dấu chấm cuối; 14 Application tests pass. User đã xác nhận download hoạt động.
 - **Hoa Linh Sales Excel runtime fix 2026-09-18:** [note](memory/notes/project/project_hl_sales_excel_tenant_cookie_fix_20260918.md). Bỏ getTenantIdCookie không tồn tại, giữ same-origin cookie; 12 JS tests pass, gồm download thật.
 - **DbMigrator HLG host seed lỗi 2026-09-18:** [note](memory/notes/project/project_hlg_host_seed_migration_failure_20260918.md). Host thiếu bảng HLG dù history đã ghi; sửa seed tenant-only; 3 Domain tests + DbMigrator build pass. Chưa sửa DB hoặc chạy lại migrate thật.

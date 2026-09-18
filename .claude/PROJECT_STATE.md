@@ -54,6 +54,7 @@
 - Note: `project_app_documents_*`.
 
 ## Module: Hoa Linh 25 Năm (hl25) — ✅ HOÀN THÀNH (nhánh `feature/dev-hoalinh-gamification`)
+- **Staging fix 2026-09-18:** corrective migration 20260918093000_EnsureHl25ParticipantAgeGroup (DB HL25: DuocPhamHoaLinh; bỏ qua DB không có bảng HL25) bổ sung AgeGroup cho DB áp migration HL25 cũ còn BirthDate. EF build/script/no model change checked; chưa apply target.
 - **✅ Cập nhật 2026-09-16:**
   - **Participants page:** bổ sung cột ZaloUserId, AgeGroup, ảnh thiệp, lời chúc, lịch sử quay; full URL cho ảnh thiệp
   - **Excel export Participants:** 16 cột (STT + 15 cột dữ liệu), full URL cho ảnh thiệp
