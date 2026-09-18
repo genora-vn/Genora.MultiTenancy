@@ -83,7 +83,7 @@ public class HlSalesExportAppService : ApplicationService, IHlSalesExportAppServ
                     item.Batch, t.Value, t.CreationTime);
             }
         }
-        sheet.Column(10).Style.NumberFormat.Format = "#,##0.##";
+        sheet.Column(10).Style.NumberFormat.Format = "#,##0";
         sheet.Column(11).Style.DateFormat.Format = "dd/MM/yyyy HH:mm:ss";
         return Finish(workbook, sheet, row, "HoaLinhSales_PointHistory");
     }
@@ -124,7 +124,7 @@ public class HlSalesExportAppService : ApplicationService, IHlSalesExportAppServ
             Text(sheet, row, 11, match.Success ? match.Value : null);
             row++;
         }
-        sheet.Column(9).Style.NumberFormat.Format = "#,##0.##";
+        sheet.Column(9).Style.NumberFormat.Format = "#,##0";
         return Finish(workbook, sheet, row, "HoaLinhSales_GiftExchanges");
     }
 
@@ -238,7 +238,7 @@ public class HlSalesExportAppService : ApplicationService, IHlSalesExportAppServ
             if (item.OrderDate.HasValue) sheet.Cell(row, 7).Value = item.OrderDate.Value;
             Text(sheet, row, 8, item.SalesName); row++;
         }
-        sheet.Column(5).Style.NumberFormat.Format = "#,##0.##";
+        sheet.Column(5).Style.NumberFormat.Format = "#,##0";
         sheet.Column(7).Style.DateFormat.Format = "dd/MM/yyyy HH:mm:ss";
         return Finish(workbook, sheet, row, "HoaLinhSales_Orders");
     }

@@ -5,6 +5,17 @@
 
 ## Cập nhật gần nhất
 
+### Hoa Linh Sales — Excel money format (2026-09-18)
+- User xác nhận tải Excel đã hoạt động. Đã đổi format tiền #,##0.## → #,##0 cho Giá trị (PointHistory), Số tiền (GiftExchanges), Thành tiền (Orders); bỏ dấu thập phân thừa cuối số, giữ numeric values.
+- 14 Application tests pass, gồm assertions chuỗi hiển thị 600,000 / 500,000 / 900,000 trên file XLSX xuất thật qua service. Không migration/DB write; cần rebuild/restart host và xuất file mới.
+- [Chi tiết](memory/notes/project/project_hl_sales_excel_money_format_fix_20260918.md).
+
+### Hoa Linh Sales — sửa tải Excel (2026-09-18)
+- Nhánh dev. Console TypeError getTenantIdCookie trên 3 trang Sales do sales.js gọi API không có trong ABP runtime; lỗi xảy ra trước fetch.
+- Đã bỏ API/header tenant thủ công, giữ credentials same-origin gửi cookie và toàn bộ logic tải Excel theo bộ lọc.
+- 12 JS tests pass (thêm 4 test chạy download thật thay vì mock); syntax/diff checks pass. Không backend/schema change hoặc DB write; chưa kiểm tra browser live.
+- Cần serve JS mới và Ctrl+F5 ở 3 trang. [Chi tiết](memory/notes/project/project_hl_sales_excel_tenant_cookie_fix_20260918.md).
+
 ### DbMigrator — HLG host seeder failure (2026-09-18)
 - Nhánh `dev`, baseline HEAD `b8d0c06`; Sales exports đã commit. Fix này chưa commit/deploy.
 - Xác nhận SQL read-only: host GenoraMultiTenancy không có bảng HLG, nhưng history ghi đủ 5 migration HLG. Seeder host chạy luôn gây SQL 208 sau migrate host và chặn vòng lặp tenant.

@@ -45,11 +45,9 @@
             Object.keys(filter).forEach(function (key) {
                 if (filter[key] != null && filter[key] !== '') query.set(key, filter[key]);
             });
-            var headers = {};
-            if (abp.multiTenancy && abp.multiTenancy.getTenantIdCookie())
-                headers[abp.multiTenancy.tenantIdCookieName || '__tenant'] = abp.multiTenancy.getTenantIdCookie();
             $(button).prop('disabled', true);
-            return fetch(abp.appPath + route + '?' + query.toString(), { credentials: 'same-origin', headers: headers })
+            // Same-origin fetch sends authentication and tenant cookies automatically.
+            return fetch(abp.appPath + route + '?' + query.toString(), { credentials: 'same-origin' })
                 .then(async function (response) {
                     if (!response.ok || response.redirected || !response.headers.get('content-type')?.includes('spreadsheetml')) {
                         var error = await response.json().catch(function () { return null; });

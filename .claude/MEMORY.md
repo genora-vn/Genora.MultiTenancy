@@ -5,6 +5,8 @@
 > Nguồn gốc: migrate từ `~\.claude\projects\D--Genora-...-Genora-MultiTenancy\memory\` (108 file).
 
 ## Điều hướng nhanh
+- **Hoa Linh Sales Excel money format 2026-09-18:** [note](memory/notes/project/project_hl_sales_excel_money_format_fix_20260918.md). 3 cột tiền dùng #,##0, bỏ dấu chấm cuối; 14 Application tests pass. User đã xác nhận download hoạt động.
+- **Hoa Linh Sales Excel runtime fix 2026-09-18:** [note](memory/notes/project/project_hl_sales_excel_tenant_cookie_fix_20260918.md). Bỏ getTenantIdCookie không tồn tại, giữ same-origin cookie; 12 JS tests pass, gồm download thật.
 - **DbMigrator HLG host seed lỗi 2026-09-18:** [note](memory/notes/project/project_hlg_host_seed_migration_failure_20260918.md). Host thiếu bảng HLG dù history đã ghi; sửa seed tenant-only; 3 Domain tests + DbMigrator build pass. Chưa sửa DB hoặc chạy lại migrate thật.
 - **Hoa Linh Sales — Admin filters/Excel 2026-09-17 (mới nhất):** [note](memory/notes/project/project_hl_sales_admin_filters_excel_20260917.md). DB HoaLinhMienNam/schema HL, PointHistory/GiftExchanges/Orders; build + 14 Application/8 JS tests pass; chưa runtime UAT.
 - **Hoa Linh 25 — UI + ảnh vòng quay 2026-09-14 (mới nhất):** [note UI/images](memory/notes/project/project_hl25_gift_images_ui_fixes_20260914.md). Dropdown explicit vi/en; callback raw row; WheelImageUrl; modal/upload/VNĐ; migration 20260914111213 chưa apply.

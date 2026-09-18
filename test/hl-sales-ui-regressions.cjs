@@ -32,9 +32,10 @@ function harness(module, values = {}) {
     } } } };
     vm.createContext(context);
     vm.runInContext(fs.readFileSync(__dirname + '/../src/Genora.MultiTenancy.Web/Pages/HoaLinh/sales.js', 'utf8'), context);
+    const download = context.genora.hoaLinhSales.download;
     context.genora.hoaLinhSales.download = (route, filter) => calls.push({ name: 'excel', route, filter });
     if (module) vm.runInContext(fs.readFileSync(__dirname + '/../src/Genora.MultiTenancy.Web/Pages/HoaLinh/' + module + '/index.js', 'utf8'), context);
-    return { context, calls, events, warnings };
+    return { context, calls, events, warnings, download };
 }
 
 test('Vietnamese and ISO dates normalize; impossible and malformed dates are rejected', () => {
@@ -74,4 +75,74 @@ test('PointHistory: batch tab uses date filters and selects batch Excel data', (
     assert.equal(batch.args[4], '2026-09-17');
     h.events.BtnExportExcel.call({});
     assert.equal(h.calls.find(x => x.name === 'excel').filter.batches, true);
+});
+
+
+function downloadHarness(response) {
+    const h = harness();
+    const requests = [], links = [], states = [], errors = [], revoked = [];
+    h.context.abp.appPath = '/';
+    // Matches the reported runtime: multiTenancy exists, getTenantIdCookie does not.
+    h.context.abp.multiTenancy = {};
+    h.context.abp.notify.error = message => errors.push(message);
+    h.context.$ = () => ({ prop(name, value) { states.push(value); } });
+    h.context.fetch = async (url, options) => {
+        requests.push({ url, options });
+        return response;
+    };
+    h.context.document = {
+        body: { appendChild() {} },
+        createElement() {
+            const link = { click() { links.push(this); }, remove() {} };
+            return link;
+        }
+    };
+    h.context.URL = { createObjectURL() { return 'blob:excel'; }, revokeObjectURL(url) { revoked.push(url); } };
+    h.context.setTimeout = callback => callback();
+    return { ...h, requests, links, states, errors, revoked };
+}
+
+for (const route of ['point-history', 'gift-exchanges', 'orders']) {
+    test(route + ': real download works without getTenantIdCookie and keeps filters/cookies', async () => {
+        const h = downloadHarness({
+            ok: true, redirected: false,
+            headers: { get(name) {
+                return name === 'content-type' ? 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+                    : 'attachment; filename="HoaLinhSales.xlsx"';
+            } },
+            blob: async () => ({ workbook: true })
+        });
+        await h.download('api/app/hl-sales-excel/' + route,
+            { dateFrom: '2026-09-18', dateTo: '2026-09-18', status: 0, batches: false, search: 'Ngọc', empty: null }, {});
+        const request = h.requests[0];
+        const url = new URL(request.url, 'https://example.test');
+        assert.equal(url.pathname, '/api/app/hl-sales-excel/' + route);
+        assert.equal(url.searchParams.get('dateFrom'), '2026-09-18');
+        assert.equal(url.searchParams.get('dateTo'), '2026-09-18');
+        assert.equal(url.searchParams.get('status'), '0');
+        assert.equal(url.searchParams.get('batches'), 'false');
+        assert.equal(url.searchParams.get('search'), 'Ngọc');
+        assert.equal(url.searchParams.has('empty'), false);
+        assert.equal(request.options.credentials, 'same-origin');
+        assert.equal(h.links[0].download, 'HoaLinhSales.xlsx');
+        assert.equal(h.links[0].href, 'blob:excel');
+        assert.deepEqual(h.states, [true, false]);
+        assert.deepEqual(h.revoked, ['blob:excel']);
+        assert.equal(h.errors.length, 0);
+    });
+}
+
+test('Real download rejects API error and HTML login page, restores button', async () => {
+    for (const response of [
+        { ok: false, redirected: false, headers: { get() { return 'application/json'; } },
+            json: async () => ({ error: { message: 'Permission denied' } }) },
+        { ok: true, redirected: true, headers: { get() { return 'text/html'; } },
+            json: async () => { throw new Error('Not JSON'); } }
+    ]) {
+        const h = downloadHarness(response);
+        await h.download('api/app/hl-sales-excel/orders', {}, {});
+        assert.equal(h.links.length, 0);
+        assert.equal(h.errors.length, 1);
+        assert.deepEqual(h.states, [true, false]);
+    }
 });

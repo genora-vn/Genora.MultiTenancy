@@ -104,6 +104,7 @@ public class HlSalesExportTests : IDisposable
         sheet.Cell(3, 6).GetString().ShouldBe("Vàng");
         sheet.Cell(3, 8).GetString().ShouldBe("600K");
         sheet.Cell(3, 10).GetValue<decimal>().ShouldBe(600000m);
+        sheet.Cell(3, 10).GetFormattedString(System.Globalization.CultureInfo.InvariantCulture).ShouldBe("600,000");
         sheet.Cell(2, 10).GetValue<decimal>().ShouldBe(-500000m);
         sheet.Cell(3, 11).GetDateTime().ShouldBe(txn.CreationTime);
     }
@@ -136,6 +137,7 @@ public class HlSalesExportTests : IDisposable
         sheet.Cell(2, 5).GetString().ShouldBe("0971082552");
         sheet.Cell(2, 8).GetValue<decimal>().ShouldBe(2m);
         sheet.Cell(2, 9).GetValue<decimal>().ShouldBe(500000m);
+        sheet.Cell(2, 9).GetFormattedString(System.Globalization.CultureInfo.InvariantCulture).ShouldBe("500,000");
         sheet.Cell(2, 10).GetString().ShouldBe("Thành công");
         sheet.Cell(2, 11).GetString().ShouldBe(gift.InternalNote);
     }
@@ -165,6 +167,7 @@ public class HlSalesExportTests : IDisposable
         book.Worksheet(1).LastRowUsed()!.RowNumber().ShouldBe(2);
         book.Worksheet(1).Cell(2, 3).GetString().ShouldBe(rows.Single().OrderCode);
         book.Worksheet(1).Cell(2, 5).GetValue<decimal>().ShouldBe(900000m);
+        book.Worksheet(1).Cell(2, 5).GetFormattedString(System.Globalization.CultureInfo.InvariantCulture).ShouldBe("900,000");
     }
 
     [Fact]
