@@ -1,0 +1,25 @@
+@page
+@using Genora.MultiTenancy.Localization
+@using Microsoft.Extensions.Localization
+@inject IStringLocalizer<MultiTenancyResource> L
+@model Genora.MultiTenancy.Web.Pages.Hlg.Users.IndexModel
+@section scripts {
+    <abp-script src="/Pages/Hlg/admin.js" />
+    <abp-script src="/Pages/Hlg/Users/index.js" />
+}
+<div id="HlgAdmin" data-create="false" data-edit="false" data-delete="false">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1>@L["Hlg:Users"]</h1>
+    </div>
+    <div id="HlgError" role="alert" class="alert alert-danger d-none"></div>
+    <div class="card mb-3">
+        <div class="card-body">
+            <form id="HlgFilter" class="row g-3 align-items-end">
+                <div class="col-md-6"><label for="HlgSearch" class="form-label">@L["Hlg:Search"]</label><input id="HlgSearch" class="form-control" placeholder="@L["Hlg:SearchPlaceholder"]" /></div>
+                <div class="col-md-3"><label for="HlgActive" class="form-label">@L["Hlg:IsActive"]</label><select id="HlgActive" class="form-select"><option value="">@L["Hlg:All"]</option><option value="true">@L["Hlg:Active"]</option><option value="false">@L["Hlg:Inactive"]</option></select></div>
+                <div class="col-md-3"><button type="submit" class="btn btn-primary">@L["Hlg:Search"]</button> <button id="HlgReset" type="button" class="btn btn-outline-secondary">@L["Hlg:Reset"]</button></div>
+            </form>
+        </div>
+    </div>
+    <div class="card"><div class="card-body"><table id="HlgTable" class="table table-striped w-100"></table></div></div>
+</div>

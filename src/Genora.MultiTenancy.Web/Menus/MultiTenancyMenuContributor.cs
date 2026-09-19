@@ -1,4 +1,4 @@
-﻿using Genora.MultiTenancy.Features.AppBookingFeatures;
+using Genora.MultiTenancy.Features.AppBookingFeatures;
 using Genora.MultiTenancy.Features.AppCalendarSlots;
 using Genora.MultiTenancy.Features.AppCustomers;
 using Genora.MultiTenancy.Features.AppCustomerTypes;
@@ -2258,6 +2258,23 @@ public class MultiTenancyMenuContributor : IMenuContributor
             }
 
             context.Menu.AddItem(groupHl25);
+        }
+
+        // HLG admin: only expose links to implemented pages, scoped to the current side.
+        if (!tenant.IsAvailable || await feature.IsEnabledAsync(Genora.MultiTenancy.Features.AppHlgFeatures.AppHlgFeatures.Management))
+        {
+            var hlg = new ApplicationMenuItem("MenuGroup.Hlg", l["Menu:Hlg"], icon: "fa fa-gamepad", order: 49);
+            if (await perms.IsGrantedAsync(tenant.IsAvailable ? MultiTenancyPermissions.AppHlgRewards.Default : MultiTenancyPermissions.HostAppHlgRewards.Default))
+                hlg.AddItem(new ApplicationMenuItem("Hlg.Rewards", l["Hlg:Rewards"], url: "/Hlg/Rewards"));
+            if (await perms.IsGrantedAsync(tenant.IsAvailable ? MultiTenancyPermissions.AppHlgKnowledge.Default : MultiTenancyPermissions.HostAppHlgKnowledge.Default))
+                hlg.AddItem(new ApplicationMenuItem("Hlg.Categories", l["Hlg:Categories"], url: "/Hlg/Categories"));
+            if (await perms.IsGrantedAsync(tenant.IsAvailable ? MultiTenancyPermissions.AppHlgRanking.Default : MultiTenancyPermissions.HostAppHlgRanking.Default))
+                hlg.AddItem(new ApplicationMenuItem("Hlg.Ranking", l["Hlg:Ranking"], url: "/Hlg/Ranking"));
+            if (await perms.IsGrantedAsync(tenant.IsAvailable ? MultiTenancyPermissions.AppHlgGames.Default : MultiTenancyPermissions.HostAppHlgGames.Default))
+                hlg.AddItem(new ApplicationMenuItem("Hlg.Games", l["Hlg:Games"], url: "/Hlg/Games"));
+            if (await perms.IsGrantedAsync(tenant.IsAvailable ? MultiTenancyPermissions.AppHlgUsers.Default : MultiTenancyPermissions.HostAppHlgUsers.Default))
+                hlg.AddItem(new ApplicationMenuItem("Hlg.Users", l["Hlg:Users"], url: "/Hlg/Users"));
+            if (hlg.Items.Count > 0) context.Menu.AddItem(hlg);
         }
 
         foreach (var rootItem in context.Menu.Items)

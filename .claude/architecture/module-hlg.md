@@ -82,7 +82,7 @@ Live-feed người chơi cùng đạt điểm: realtime qua **SignalR** (`HlgLiv
 | 4 | Rewards & Shipping (endpoint shipping-address mới) | ✅ Xong (build 0 errors) |
 | 5 | Ranking (2 endpoint) | ✅ Xong (build 0 errors) |
 | 6 | Live-feed realtime (SignalR) | ✅ Xong (Web build 0 errors) |
-| 7 | Backend hoàn thiện: Permission provider ✅, sample data seeder ✅, tenant provisioning (hướng dẫn) ✅. **Admin Razor UI: chưa làm** (workstream lớn, làm theo từng nhóm entity) |
+| 7 | Backend hoàn thiện: Permission provider ✅, sample data seeder ✅, tenant provisioning (hướng dẫn) ✅. **Admin Razor UI: đã triển khai 5 nhóm 2026-09-18; còn UAT runtime** |
 
 ## Endpoints (contract — HoaLinhGamificationController)
 Auth: `POST decode-phone`, `POST customer/upsert`, `GET customer/by-phone`
@@ -159,7 +159,7 @@ Ranking: `GET ranking/event`, `GET ranking/entries`
 **Phase 7 (Backend hoàn thiện):**
 - Sample data seeder: `Domain/AppHlg/HlgDataSeedContributor.cs` — seed dữ liệu mẫu (1 danh mục + 2 bài học, 1 game quiz + 3 câu hỏi, 2 quà, 1 sự kiện xếp hạng). Gate bằng feature `Hlg.Management`, idempotent (chỉ seed khi bảng Games rỗng), chạy trong context tenant.
 - Permission provider (đã xong đợt trước).
-- **CHƯA làm: Admin Razor UI** (CRUD Games/Questions, Knowledge, Rewards, Ranking, Users) — workstream lớn, làm theo từng nhóm entity ở các lượt sau. Menu contributor nên làm cùng lúc với admin pages (menu item phải trỏ tới page tồn tại).
+- **Admin Razor UI đã triển khai 2026-09-18:** Rewards, Knowledge, Ranking, Games/Questions, Users read-only; menu đã nối các page, quyền/feature/VI-EN đầy đủ. 13 Application + 7 JS tests pass; chưa UAT browser/DB thật.
 - Ghi chú: các HLG AppService map thủ công (KHÔNG dùng AutoMapper profile riêng).
 
 **Permission:** `Application.Contracts/Permissions/MultiTenancyPermissions.cs` (region HLG) + `MultiTenancyPermissionDefinitionProvider.cs` (region HLG) + localization en/vi.
@@ -178,7 +178,7 @@ Ranking: `GET ranking/event`, `GET ranking/entries`
 - Re-seed host admin để nhận permission `HostAppHlg*` (restart DbMigrator/Web).
 
 ## Còn lại (workstream lớn, chưa làm)
-- **Admin Razor UI**: trang CRUD nội bộ cho Games/Questions, Knowledge, Rewards, Ranking, Users (mỗi nhóm: Index cshtml + .cs + JS + create/edit modal). Kèm menu contributor + menu localization keys.
+- **Admin Razor UI runtime UAT**: code đủ 5 nhóm + menu/localization đã hoàn tất; kiểm tra trên tenant HLG thật theo docs/HLG_ADMIN_UAT_20260918.md.
 - Tích hợp UrBox thật khi phát voucher (hiện dùng `HlgReward.VoucherCode` sẵn có).
 - Mapping game↔reward để `GameResult.reward` + `requiresShippingAddress` trả giá trị thật khi finish.
 

@@ -1,0 +1,80 @@
+@page
+@using Genora.MultiTenancy.Localization
+@using Microsoft.Extensions.Localization
+@using Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.TagHelpers.Modal
+@inject IStringLocalizer<MultiTenancyResource> L
+@model Genora.MultiTenancy.Web.Pages.Hlg.Questions.EditModalModel
+@{
+    Layout = null;
+}
+<form method="post" asp-page="/Hlg/Questions/EditModal">
+    <abp-modal size="Large">
+        <abp-modal-header title="@L["Hlg:Edit"].Value"></abp-modal-header>
+        <abp-modal-body>
+            <div asp-validation-summary="All" class="text-danger"></div>
+            <input asp-for="Id" type="hidden" />
+            <input asp-for="Input.GameId" type="hidden" />
+            <div class="mb-3">
+                <label asp-for="Input.Index" class="form-label">@L["Hlg:Index"]</label>
+                <input asp-for="Input.Index" type="number" class="form-control" min="0" />
+                <span asp-validation-for="Input.Index" class="text-danger"></span>
+            </div>
+            <div class="mb-3">
+                <label asp-for="Input.Content" class="form-label">@L["Hlg:Content"]</label>
+<textarea asp-for="Input.Content" rows="4" class="form-control"></textarea>
+                <span asp-validation-for="Input.Content" class="text-danger"></span>
+            </div>
+            <div class="mb-3">
+                <label asp-for="Input.ImageUrl" class="form-label">@L["Hlg:ImageUrl"]</label>
+                <input asp-for="Input.ImageUrl" type="text" class="form-control" />
+                <span asp-validation-for="Input.ImageUrl" class="text-danger"></span>
+            </div>
+            <div class="mb-3">
+                <label asp-for="Input.TimeLimitSec" class="form-label">@L["Hlg:TimeLimitSec"]</label>
+                <input asp-for="Input.TimeLimitSec" type="number" class="form-control" min="1" max="3600" />
+                <span asp-validation-for="Input.TimeLimitSec" class="text-danger"></span>
+            </div>
+            <div class="mb-3">
+                <label asp-for="Input.ScoreMultiplier" class="form-label">@L["Hlg:ScoreMultiplier"]</label>
+                <input asp-for="Input.ScoreMultiplier" type="number" class="form-control" step="0.01" min="0.01" max="100" />
+                <span asp-validation-for="Input.ScoreMultiplier" class="text-danger"></span>
+            </div>
+            <div class="mb-3">
+                <label asp-for="Input.OptionA" class="form-label">@L["Hlg:OptionA"]</label>
+<textarea asp-for="Input.OptionA" rows="4" class="form-control"></textarea>
+                <span asp-validation-for="Input.OptionA" class="text-danger"></span>
+            </div>
+            <div class="mb-3">
+                <label asp-for="Input.OptionB" class="form-label">@L["Hlg:OptionB"]</label>
+<textarea asp-for="Input.OptionB" rows="4" class="form-control"></textarea>
+                <span asp-validation-for="Input.OptionB" class="text-danger"></span>
+            </div>
+            <div class="mb-3">
+                <label asp-for="Input.OptionC" class="form-label">@L["Hlg:OptionC"]</label>
+<textarea asp-for="Input.OptionC" rows="4" class="form-control"></textarea>
+                <span asp-validation-for="Input.OptionC" class="text-danger"></span>
+            </div>
+            <div class="mb-3">
+                <label asp-for="Input.OptionD" class="form-label">@L["Hlg:OptionD"]</label>
+<textarea asp-for="Input.OptionD" rows="4" class="form-control"></textarea>
+                <span asp-validation-for="Input.OptionD" class="text-danger"></span>
+            </div>
+            <div class="mb-3">
+                <label asp-for="Input.CorrectKey" class="form-label">@L["Hlg:CorrectKey"]</label>
+                <select asp-for="Input.CorrectKey" class="form-select">
+                    <option value="1">@L["Hlg:A"]</option>
+                    <option value="2">@L["Hlg:B"]</option>
+                    <option value="3">@L["Hlg:C"]</option>
+                    <option value="4">@L["Hlg:D"]</option>
+                </select>
+                <div class="form-text">@L["Hlg:CorrectKeyHint"]</div>
+                <span asp-validation-for="Input.CorrectKey" class="text-danger"></span>
+            </div>
+            <div class="mb-3">
+                <label asp-for="Input.IsActive" class="form-label">@L["Hlg:IsActive"]</label>
+                <input asp-for="Input.IsActive" class="form-check-input ms-2" />
+                <span asp-validation-for="Input.IsActive" class="text-danger"></span>
+            </div>
+        </abp-modal-body><abp-modal-footer buttons="@(AbpModalButtons.Cancel | AbpModalButtons.Save)"></abp-modal-footer>
+    </abp-modal>
+</form>

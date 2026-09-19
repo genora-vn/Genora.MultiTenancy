@@ -78,7 +78,7 @@ public class HlgRewardAdminAppService :
         var totalCount = await AsyncExecuter.CountAsync(query);
 
         var items = await AsyncExecuter.ToListAsync(
-            query.OrderBy(x => x.DisplayOrder).ThenBy(x => x.PointCost)
+            query.OrderBy(x => x.DisplayOrder).ThenBy(x => x.PointCost).ThenBy(x => x.Id)
                  .Skip(input.SkipCount).Take(input.MaxResultCount));
 
         return new PagedResultDto<HlgRewardAdminDto>(totalCount, items.Select(MapToDto).ToList());

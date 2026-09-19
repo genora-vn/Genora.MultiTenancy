@@ -1,0 +1,30 @@
+@page
+@using Genora.MultiTenancy.Localization
+@using Microsoft.Extensions.Localization
+@inject IStringLocalizer<MultiTenancyResource> L
+@model Genora.MultiTenancy.Web.Pages.Hlg.Products.IndexModel
+@section scripts {
+    <abp-script src="/Pages/Hlg/admin.js" />
+    <abp-script src="/Pages/Hlg/Products/index.js" />
+}
+<div id="HlgAdmin" data-create="@((await Model.GrantedAsync(".Create")).ToString().ToLowerInvariant())" data-edit="@((await Model.GrantedAsync(".Edit")).ToString().ToLowerInvariant())" data-delete="@((await Model.GrantedAsync(".Delete")).ToString().ToLowerInvariant())" data-parent-id="@Model.ParentId">
+    <a asp-page="/Hlg/Categories/Index">@L["Hlg:Categories"]</a><p class="text-muted">@Model.ParentName</p>
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1>@L["Hlg:Products"]</h1>
+        @if (await Model.GrantedAsync(".Create"))
+        {
+            <button id="HlgCreate" class="btn btn-primary" type="button">@L["Hlg:Create"]</button>
+        }
+    </div>
+    <div id="HlgError" role="alert" class="alert alert-danger d-none"></div>
+    <div class="card mb-3">
+        <div class="card-body">
+            <form id="HlgFilter" class="row g-3 align-items-end">
+                <div class="col-md-6"><label for="HlgSearch" class="form-label">@L["Hlg:Search"]</label><input id="HlgSearch" class="form-control" placeholder="@L["Hlg:SearchPlaceholder"]" /></div>
+                <div class="col-md-3"><label for="HlgActive" class="form-label">@L["Hlg:IsActive"]</label><select id="HlgActive" class="form-select"><option value="">@L["Hlg:All"]</option><option value="true">@L["Hlg:Active"]</option><option value="false">@L["Hlg:Inactive"]</option></select></div>
+                <div class="col-md-3"><button type="submit" class="btn btn-primary">@L["Hlg:Search"]</button> <button id="HlgReset" type="button" class="btn btn-outline-secondary">@L["Hlg:Reset"]</button></div>
+            </form>
+        </div>
+    </div>
+    <div class="card"><div class="card-body"><table id="HlgTable" class="table table-striped w-100"></table></div></div>
+</div>

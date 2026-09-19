@@ -19,6 +19,9 @@
 
 ## Bàn giao hiện tại
 
+### HLG Admin 2026-09-18 — checkpoint mới nhất
+Đủ 5 nhóm Razor UI + service/menu/quyền/VI-EN đã triển khai; Web build 0 errors, 13 Application + 7 JS tests pass. Chưa UAT/deploy/DB write. Tiếp theo restart Web và UAT tenant HLG theo checklist. [Note](../memory/notes/project/project_hlg_admin_razor_ui_20260918.md) · [UAT](../docs/HLG_ADMIN_UAT_20260918.md). Checkpoint 2026-08-21 bên dưới chỉ là lịch sử, đã được thay thế.
+
 ### HL25 staging AgeGroup schema repair 2026-09-18
 Migration mới 20260918093000_EnsureHl25ParticipantAgeGroup và SQL idempotent đã chuẩn bị/kiểm tra EF; chưa apply staging. DB tenant HL25: DuocPhamHoaLinh. Migration bỏ qua DB không có bảng HL25 khi chạy toàn bộ tenant; migrate sau deploy rồi restart/test. Giữ BirthDate và dữ liệu hiện có. [Chi tiết](../memory/notes/project/project_hl25_staging_agegroup_migration_fix_20260918.md).
 

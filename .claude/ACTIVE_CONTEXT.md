@@ -5,6 +5,13 @@
 
 ## Cập nhật gần nhất
 
+### HLG — Admin Razor UI 5 nhóm (2026-09-18)
+- Đã triển khai Rewards, Knowledge (Category+Product), Ranking, Games+Questions, Users read-only; thêm service còn thiếu, menu order 49, VI/EN, feature/dual permission cho API và pages.
+- CorrectKey chỉ tải qua editor yêu cầu Games.Edit; không có trong list/get DTO hoặc mini-app response. Câu hỏi + options lưu transaction; chặn thay đổi khi game đã có phiên chơi.
+- Web build 0 errors; 13 Application + 7 JS tests pass. Chưa UAT browser/DB thật, chưa deploy. Không migration mới; giữ appsettings/log changes của user.
+- [Chi tiết](memory/notes/project/project_hlg_admin_razor_ui_20260918.md) · [UAT](docs/HLG_ADMIN_UAT_20260918.md).
+
+
 ### HL25 — staging AgeGroup schema repair (2026-09-18)
 - Lỗi staging Invalid column name AgeGroup. Git xác nhận migration AddHl25Module cùng ID đã bị sửa BirthDate→AgeGroup in-place; DB chạy bản cũ không được nâng cấp.
 - Đã thêm migration 20260918093000_EnsureHl25ParticipantAgeGroup: chỉ thêm AgeGroup nếu thiếu (tinyint NOT NULL, default Unknown=0), giữ BirthDate/dữ liệu cũ, bỏ qua cột đã đúng. Down giữ cột để tránh mất dữ liệu.
@@ -54,24 +61,22 @@
 - **2026-09-14 — Đã triển khai cập nhật Admin theo approach, chưa commit/deploy:** anh chốt **tạo thiệp nhận lượt đầu; chia sẻ nhận lượt thứ hai**. Đã sửa Domain/MiniApp, transaction tạo thiệp/AdminGrant; guard Won→Delivered idempotent; bảo toàn ID/ảnh cấu hình vòng quay; validate ngày/kho; báo cáo hết ngày cuối + tách lượt Admin; sửa code/message lỗi API. **32 tests pass**, build solution pass; EF không có model change, không tạo/apply migration. Chưa UAT browser/DB thật và tải đồng thời. Chi tiết/delta/checklist: [Admin update 14/09](docs/HOALINH25_ADMIN_UPDATE_20260914.md). Note context review bên dưới phản ánh baseline TRƯỚC sửa.
 - **2026-09-14 — Khôi phục context, đối chiếu source/Git:** nhánh `feature/dev-hoalinh-25years`, HEAD `31d8e11`; các thay đổi 08/09 đã commit. **Source hiện tại cộng lượt ở cả CreateFrame và ShareFrame, chung trần EarnedCycles=2; AdminGrant không áp trần.** Các mô tả cũ "chỉ cộng sau khi chia sẻ" dưới đây là lịch sử. Đã kiểm tra danh sách migration offline, chưa xác minh DB đích. Chưa có yêu cầu cập nhật chức năng cụ thể; bước tiếp theo là lập bảng delta theo từng trang, ưu tiên Wheel/Participants và quy tắc cấp lượt/trao quà. Chi tiết: [note rà soát 2026-09-14](memory/notes/project/project_hl25_context_review_20260914.md).
 
-### HLG — Hoa Linh Gamification (đã merge từ feature/hoalinh-gamification)
-- **Ngày:** 2026-08-21
-- **TRẠNG THÁI: ⏸️ TẠM DỪNG** module Hoa Linh Gamification (HLG). Sẽ quay lại làm tiếp bộ Admin Razor UI.
-- **Việc vừa làm:** Mini-app backend HLG hoàn tất Phase 0-6 (build sạch). Bắt đầu Phase 7 (Admin Razor UI): đã xong sample data seeder + permission provider + **Rewards admin CrudAppService** (`HlgRewardAdminAppService`, build 0 errors). Đang dở phần Razor Pages cho Rewards.
-- **Trước đó (2026-08-18):** Chuẩn hóa toàn bộ project memory vào `.claude/` (migrate 108 note từ user-level).
+### HLG — Hoa Linh Gamification
+- Checkpoint tạm dừng 2026-08-21 đã được tiếp tục ngày 2026-09-18; Admin Razor UI đủ 5 nhóm đã triển khai và kiểm thử tự động.
 
 ## HLG — ĐIỂM DỪNG (nơi tiếp tục khi quay lại)
-- **Việc kế tiếp NGAY:** Viết Razor Pages cho nhóm Rewards (Index.cshtml + Index.cshtml.cs + CreateModal + EditModal + index.js) theo pattern `Web/Pages/SalonBeautyStylists/*`. Backend Rewards admin đã sẵn sàng.
-- **⚠️ CHẶN kỹ thuật cần giải quyết trước khi viết JS:** Đường dẫn JS proxy runtime của HLG admin service CHƯA xác minh. ABP sinh proxy động (không nằm trong wwwroot). Path dự kiến theo convention: `genora.multiTenancy.appServices.hlg.admin.hlgRewardAdmin` (suy từ namespace `AppDtos.Hlg.Admin`). PHẢI xác minh bằng cách mở `{{BASE_URL}}/Abp/ServiceProxyScript` khi chạy app, hoặc dùng `resolveService()` có throw lỗi rõ như pattern salon (`index.js:5-11`). Build KHÔNG bắt được lỗi path này.
-- **Thứ tự làm admin UI (đã chốt):** Rewards (đơn giản nhất, làm mẫu) → Knowledge (Category+Product) → Ranking → Games+Questions (nested, phức tạp nhất, CorrectKey ẩn) → Users (read-only). Mỗi nhóm ~4 file, verify build từng nhóm.
-- **Còn lại sau admin UI:** Menu contributor (`MultiTenancyMenuContributor.cs`, order 49, gate feature `Hlg.Management` + permission) + menu localization keys — làm SAU khi có pages (menu item phải trỏ page tồn tại).
-- **Ghi chú:** HLG AppService map thủ công, KHÔNG dùng AutoMapper. Admin service dùng `FeatureProtectedCrudAppService` (bản 6-generic cho Create/Update DTO tách riêng) để sinh JS proxy.
+- **Bước kế tiếp:** chạy bản Web mới và UAT 5 nhóm quản trị với tenant HLG thật theo docs/HLG_ADMIN_UAT_20260918.md.
+- **Code đã xong:** Rewards → Knowledge (Category+Product) → Ranking → Games+Questions → Users (read-only), menu order 49, localization VI/EN, dual permissions/feature guards.
+- **Proxy:** shared resolveService() tìm namespace appServices.hlg.admin hoặc appDtos.hlg.admin, kiểm tra và báo lỗi rõ nếu thiếu. Chưa fetch proxy live hoặc UAT browser; không coi build là kiểm chứng proxy runtime.
+- **Kiểm tra:** Web build 0 errors; 13 Application + 7 JS tests pass. Không tạo/apply migration hoặc ghi DB thật.
+- **Runtime chưa xác nhận:** schema/feature/quyền của tenant HLG, hoạt động modal và proxy thật. Host từng thiếu bảng HLG dù history có; không tự sửa drift trong task UI.
+- **Quy tắc:** manual mapping, AsyncExecuter, FeatureProtectedCrudAppService Create/Update DTO riêng; CorrectKey chỉ có trong editor có quyền Games.Edit, không trong mini-app/list/get response.
 
 ## HLG — đã hoàn tất
 - **Đã xong:** Phase 0 (hạ tầng), Phase 1 (Auth + Profile), Phase 2 (Knowledge base), Phase 3 (Games engine), Phase 4 (Rewards & Shipping), Phase 5 (Ranking), Phase 6 (Live-feed SignalR), Permission provider (`HlgManagement` + `HlgManagementHost`), sample data seeder (`HlgDataSeedContributor`). Xem `architecture/module-hlg.md` (6 quyết định nghiệp vụ + 3 quyết định kiến trúc AD-1/2/3).
 - **Backend mini-app: HOÀN TẤT 100%** — ~24 endpoint theo contract, đã gửi CURL cho anh test (bỏ header `__tenant`).
 - **Migration đã sinh:** `AddHlgModule` (schema HLG + HlgUserProfile), `AddHlgKnowledge` (3 bảng knowledge), `AddHlgGames` (5 bảng game), `AddHlgRewards` (3 bảng reward), `AddHlgRanking` (1 bảng ranking event). SQL script idempotent tại `Migrations/Scripts/`.
-- **Files admin đã tạo (Rewards):** `Application.Contracts/AppDtos/Hlg/Admin/{HlgRewardAdminDtos,IHlgRewardAdminAppService}.cs` + `Application/AppServices/Hlg/Admin/HlgRewardAdminAppService.cs`. Localization keys cần bổ sung: `Hlg:RewardNameRequired`, `Hlg:RewardPointCostInvalid`, `Hlg:RewardTypeInvalid` (hiện fallback về key).
+- **Checkpoint cũ — files admin đầu tiên (Rewards):** `Application.Contracts/AppDtos/Hlg/Admin/{HlgRewardAdminDtos,IHlgRewardAdminAppService}.cs` + `Application/AppServices/Hlg/Admin/HlgRewardAdminAppService.cs`. Ba localization key Reward còn thiếu đã bổ sung VI/EN ngày 2026-09-18.
 - **Việc runtime chưa chạy:** áp `AddHlgKnowledge` + `AddHlgGames` + `AddHlgRewards` + `AddHlgRanking`; tạo tenant "Hoa Linh Miền Nam Gamification" + bật feature `Hlg.Management`; re-seed host admin để nhận permission `HostAppHlg*`. Từ fix 2026-09-18: seeder mẫu HLG bỏ qua host; chỉ tenant bật Hlg.Management mới seed.
 - **SignalR live-feed:** hub `/signalr-hubs/hlg-live-feed`, client `JoinGame(gameId)`, event `hlg.live-feed.activity`. Endpoint polling `games/{id}/live-feed` vẫn giữ làm fallback.
 - **Điểm chưa nối dây:** `GameResult.reward` + `requiresShippingAddress` trong finish (cần mapping game↔reward); `accuracyPercent` trong profile/stats; tích hợp UrBox thật cho voucher.

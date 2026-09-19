@@ -77,7 +77,7 @@
 - **Merge 2026-09-16:** đã merge từ `feature/hoalinh-gamification` (commit `b507697`) vào `feature/dev-hoalinh-gamification`, fix 4 conflict files, build thành công
 - **Backend mini-app HOÀN TẤT 100%** — ~24 endpoint theo contract
 - **Phase 0-6 xong:** Auth+Profile, Knowledge base, Games engine, Rewards & Shipping, Ranking, Live-feed SignalR
-- **Phase 7 (Admin Razor UI) ĐANG DỞ:** đã xong Rewards admin CrudAppService, đang dở Razor Pages
+- **Phase 7 (Admin Razor UI), 2026-09-18:** đã triển khai đủ 5 nhóm và menu/quyền/VI-EN; Web build + 13 Application/7 JS tests pass. Còn UAT với tenant thật; xem note project_hlg_admin_razor_ui_20260918.
 - **Migration đã sinh:** `AddHlgModule`, `AddHlgKnowledge`, `AddHlgGames`, `AddHlgRewards`, `AddHlgRanking`
 - **Schema:** HLG (tenant riêng)
 - **Xem chi tiết:** `architecture/module-hlg.md`

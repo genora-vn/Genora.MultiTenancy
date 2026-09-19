@@ -1,4 +1,5 @@
 using System;
+using System.ComponentModel.DataAnnotations;
 using Volo.Abp.Application.Dtos;
 
 namespace Genora.MultiTenancy.AppDtos.Hlg.Admin;
@@ -27,12 +28,12 @@ public class HlgRewardAdminDto : EntityDto<Guid>
 /// <summary>DTO tạo quà (admin).</summary>
 public class CreateHlgRewardDto
 {
-    public string Name { get; set; } = string.Empty;
-    public string? ImageUrl { get; set; }
-    public int PointCost { get; set; }
-    public byte Type { get; set; } = 1;
-    public int? StockQuantity { get; set; }
-    public string? VoucherCode { get; set; }
+    [Required, StringLength(250)] public string Name { get; set; } = string.Empty;
+    [StringLength(1000)] public string? ImageUrl { get; set; }
+    [Range(0, int.MaxValue)] public int PointCost { get; set; }
+    [Range(1, 2)] public byte Type { get; set; } = 1;
+    [Range(0, int.MaxValue)] public int? StockQuantity { get; set; }
+    [StringLength(100)] public string? VoucherCode { get; set; }
     public int DisplayOrder { get; set; }
     public bool IsActive { get; set; } = true;
 }
@@ -40,12 +41,12 @@ public class CreateHlgRewardDto
 /// <summary>DTO cập nhật quà (admin).</summary>
 public class UpdateHlgRewardDto
 {
-    public string Name { get; set; } = string.Empty;
-    public string? ImageUrl { get; set; }
-    public int PointCost { get; set; }
-    public byte Type { get; set; } = 1;
-    public int? StockQuantity { get; set; }
-    public string? VoucherCode { get; set; }
+    [Required, StringLength(250)] public string Name { get; set; } = string.Empty;
+    [StringLength(1000)] public string? ImageUrl { get; set; }
+    [Range(0, int.MaxValue)] public int PointCost { get; set; }
+    [Range(1, 2)] public byte Type { get; set; } = 1;
+    [Range(0, int.MaxValue)] public int? StockQuantity { get; set; }
+    [StringLength(100)] public string? VoucherCode { get; set; }
     public int DisplayOrder { get; set; }
     public bool IsActive { get; set; } = true;
 }

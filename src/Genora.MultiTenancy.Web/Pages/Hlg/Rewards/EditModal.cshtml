@@ -1,0 +1,62 @@
+@page
+@using Genora.MultiTenancy.Localization
+@using Microsoft.Extensions.Localization
+@using Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.TagHelpers.Modal
+@inject IStringLocalizer<MultiTenancyResource> L
+@model Genora.MultiTenancy.Web.Pages.Hlg.Rewards.EditModalModel
+@{
+    Layout = null;
+}
+<form method="post" asp-page="/Hlg/Rewards/EditModal">
+    <abp-modal size="Large">
+        <abp-modal-header title="@L["Hlg:Edit"].Value"></abp-modal-header>
+        <abp-modal-body>
+            <div asp-validation-summary="All" class="text-danger"></div>
+            <input asp-for="Id" type="hidden" />
+            <div class="mb-3">
+                <label asp-for="Input.Name" class="form-label">@L["Hlg:Name"]</label>
+                <input asp-for="Input.Name" type="text" class="form-control" />
+                <span asp-validation-for="Input.Name" class="text-danger"></span>
+            </div>
+            <div class="mb-3">
+                <label asp-for="Input.ImageUrl" class="form-label">@L["Hlg:ImageUrl"]</label>
+                <input asp-for="Input.ImageUrl" type="text" class="form-control" />
+                <span asp-validation-for="Input.ImageUrl" class="text-danger"></span>
+            </div>
+            <div class="mb-3">
+                <label asp-for="Input.PointCost" class="form-label">@L["Hlg:PointCost"]</label>
+                <input asp-for="Input.PointCost" type="number" class="form-control" min="0" />
+                <span asp-validation-for="Input.PointCost" class="text-danger"></span>
+            </div>
+            <div class="mb-3">
+                <label asp-for="Input.Type" class="form-label">@L["Hlg:Type"]</label>
+                <select asp-for="Input.Type" class="form-select">
+                    <option value="1">@L["Hlg:Physical"]</option>
+                    <option value="2">@L["Hlg:Voucher"]</option>
+                </select>
+                <span asp-validation-for="Input.Type" class="text-danger"></span>
+            </div>
+            <div class="mb-3">
+                <label asp-for="Input.StockQuantity" class="form-label">@L["Hlg:StockQuantity"]</label>
+                <input asp-for="Input.StockQuantity" type="number" class="form-control" min="0" />
+                <div class="form-text">@L["Hlg:StockQuantityHint"]</div>
+                <span asp-validation-for="Input.StockQuantity" class="text-danger"></span>
+            </div>
+            <div class="mb-3">
+                <label asp-for="Input.VoucherCode" class="form-label">@L["Hlg:VoucherCode"]</label>
+                <input asp-for="Input.VoucherCode" type="text" class="form-control" />
+                <span asp-validation-for="Input.VoucherCode" class="text-danger"></span>
+            </div>
+            <div class="mb-3">
+                <label asp-for="Input.DisplayOrder" class="form-label">@L["Hlg:DisplayOrder"]</label>
+                <input asp-for="Input.DisplayOrder" type="number" class="form-control" />
+                <span asp-validation-for="Input.DisplayOrder" class="text-danger"></span>
+            </div>
+            <div class="mb-3">
+                <label asp-for="Input.IsActive" class="form-label">@L["Hlg:IsActive"]</label>
+                <input asp-for="Input.IsActive" class="form-check-input ms-2" />
+                <span asp-validation-for="Input.IsActive" class="text-danger"></span>
+            </div>
+        </abp-modal-body><abp-modal-footer buttons="@(AbpModalButtons.Cancel | AbpModalButtons.Save)"></abp-modal-footer>
+    </abp-modal>
+</form>
