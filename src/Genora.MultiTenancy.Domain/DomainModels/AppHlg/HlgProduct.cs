@@ -15,6 +15,8 @@ namespace Genora.MultiTenancy.DomainModels.AppHlg;
 public class HlgProduct : FullAuditedAggregateRoot<Guid>, IMultiTenant
 {
     public Guid? TenantId { get; set; }
+    public Guid? BrandId { get; set; }
+    public string? DetailsJson { get; set; }
 
     public Guid CategoryId { get; set; }
     public virtual HlgKnowledgeCategory? Category { get; set; }

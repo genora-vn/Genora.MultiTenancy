@@ -13,6 +13,7 @@ namespace Genora.MultiTenancy.AppDtos.Hlg;
 /// </summary>
 public interface IHlgRewardAppService : IApplicationService
 {
+    Task<RewardHistoryItemDto> RedeemForSessionAsync(Guid rewardId, Guid sessionId, string phone, Guid? shippingAddressId = null, CancellationToken ct = default);
     /// <summary>Danh sách quà có thể đổi (active, còn tồn kho).</summary>
     Task<List<RewardDto>> GetRewardsAsync(CancellationToken ct = default);
 

@@ -1,0 +1,1 @@
+$(function () { window.hlgAdmin.init({"service": "hlgBrandAdmin", "folder": "Brands", "readOnly": false, "columns": [{"data": "name", "label": "Name", "kind": "text"}, {"data": "displayOrder", "label": "DisplayOrder", "kind": "number"}, {"data": "isActive", "label": "IsActive", "kind": "bool"}], "children": "Products"}); });

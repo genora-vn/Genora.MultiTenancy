@@ -52,10 +52,21 @@ public class HlgRankingAppService : ApplicationService, IHlgRankingAppService
         var ev = await GetActiveEventAsync(ct);
         if (ev == null) return new List<RankingEntryDto>();
 
+        return await BuildEntriesAsync(ev, phone, top, ct);
+    }
+    public async Task<List<RankingEntryDto>> GetEventEntriesAsync(Guid eventId, string? phone = null, int top = 50, CancellationToken ct = default)
+    {
+        var ev = await AsyncExecuter.FirstOrDefaultAsync((await _eventRepo.GetQueryableAsync()).Where(x => x.Id == eventId && x.IsActive && x.TenantId == CurrentTenant.Id));
+        if (ev == null) return new();
+        return await BuildEntriesAsync(ev, phone, top, ct);
+    }
+    private async Task<List<RankingEntryDto>> BuildEntriesAsync(HlgRankingEvent ev, string? phone, int top, CancellationToken ct)
+    {
+        top = Math.Clamp(top, 1, 1000);
         // Tổng điểm mỗi người chơi = sum(Score) các phiên finish trong khoảng sự kiện (BD-5).
         var sessionQ = await _sessionRepo.GetQueryableAsync();
         var finished = sessionQ.Where(s =>
-            s.IsFinished
+            s.TenantId == CurrentTenant.Id && (ev.GameId == null || s.GameId == ev.GameId) && s.IsFinished
             && s.FinishedAt != null
             && s.FinishedAt >= ev.StartAt
             && s.FinishedAt <= ev.EndAt);
@@ -77,7 +88,7 @@ public class HlgRankingAppService : ApplicationService, IHlgRankingAppService
 
         // Sắp xếp giảm dần theo điểm → gán rank (tuple, tránh dynamic/anonymous-type footgun).
         var ranked = aggregated
-            .OrderByDescending(x => x.Score)
+            .OrderByDescending(x => x.Score).ThenBy(x => x.CustomerId)
             .Select((x, i) => (CustomerId: x.CustomerId, Score: x.Score, Rank: i + 1))
             .ToList();
 
@@ -126,15 +137,8 @@ public class HlgRankingAppService : ApplicationService, IHlgRankingAppService
         var now = Clock.Now;
         var q = await _eventRepo.GetQueryableAsync();
         var events = await AsyncExecuter.ToListAsync(
-            q.Where(e => e.IsActive && e.StartAt <= now && e.EndAt >= now)
+            q.Where(e => e.TenantId == CurrentTenant.Id && e.IsActive && e.StartAt <= now && e.EndAt >= now)
              .OrderByDescending(e => e.StartAt), ct);
-
-        // Fallback: nếu không có sự kiện đang chạy, lấy sự kiện active gần nhất (mới nhất).
-        if (events.Count == 0)
-        {
-            events = await AsyncExecuter.ToListAsync(
-                q.Where(e => e.IsActive).OrderByDescending(e => e.StartAt), ct);
-        }
 
         return events.FirstOrDefault();
     }
@@ -142,6 +146,7 @@ public class HlgRankingAppService : ApplicationService, IHlgRankingAppService
     private static RankingEventDto MapEvent(HlgRankingEvent e) => new()
     {
         Id = e.Id,
+        GameId = e.GameId,
         Title = e.Title,
         Description = e.Description,
         StartAt = e.StartAt,

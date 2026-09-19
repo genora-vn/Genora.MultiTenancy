@@ -1,4 +1,4 @@
-﻿using Genora.MultiTenancy.Features;
+using Genora.MultiTenancy.Features;
 using Genora.MultiTenancy.Features.AppBookingFeatures;
 using Genora.MultiTenancy.Features.AppCalendarSlots;
 using Genora.MultiTenancy.Features.AppCustomers;
@@ -1773,6 +1773,18 @@ public class MultiTenancyPermissionDefinitionProvider : PermissionDefinitionProv
         hlgRankingTenantDelete.RequireFeatures(Features.AppHlgFeatures.AppHlgFeatures.Management);
 
         // HLG DASHBOARD (TENANT)
+        var hlgContentTenant = hlgGroup.AddPermission(AppHlgContent.Default, L("Permission:AppHlgContent"));
+        hlgContentTenant.MultiTenancySide = MultiTenancySides.Tenant;
+        hlgContentTenant.RequireFeatures(Features.AppHlgFeatures.AppHlgFeatures.Management);
+        var hlgContentTenantCreate = hlgContentTenant.AddChild(AppHlgContent.Create, L("Permission:AppHlgContent.Create"));
+        hlgContentTenantCreate.MultiTenancySide = MultiTenancySides.Tenant;
+        hlgContentTenantCreate.RequireFeatures(Features.AppHlgFeatures.AppHlgFeatures.Management);
+        var hlgContentTenantEdit = hlgContentTenant.AddChild(AppHlgContent.Edit, L("Permission:AppHlgContent.Edit"));
+        hlgContentTenantEdit.MultiTenancySide = MultiTenancySides.Tenant;
+        hlgContentTenantEdit.RequireFeatures(Features.AppHlgFeatures.AppHlgFeatures.Management);
+        var hlgContentTenantDelete = hlgContentTenant.AddChild(AppHlgContent.Delete, L("Permission:AppHlgContent.Delete"));
+        hlgContentTenantDelete.MultiTenancySide = MultiTenancySides.Tenant;
+        hlgContentTenantDelete.RequireFeatures(Features.AppHlgFeatures.AppHlgFeatures.Management);
         var hlgDashboardTenantRoot = hlgGroup.AddPermission(AppHlgDashboard.Default, L("Permission:AppHlgDashboard"));
         hlgDashboardTenantRoot.MultiTenancySide = MultiTenancySides.Tenant;
         hlgDashboardTenantRoot.RequireFeatures(Features.AppHlgFeatures.AppHlgFeatures.Management);
@@ -1813,6 +1825,14 @@ public class MultiTenancyPermissionDefinitionProvider : PermissionDefinitionProv
         hlgRankingHostRoot.AddChild(HostAppHlgRanking.Delete, L("Permission:AppHlgRanking.Delete")).MultiTenancySide = MultiTenancySides.Host;
 
         // HLG DASHBOARD (HOST)
+        var hlgContentHost = hlgGroupHost.AddPermission(HostAppHlgContent.Default, L("Permission:AppHlgContent"));
+        hlgContentHost.MultiTenancySide = MultiTenancySides.Host;
+        var hlgContentHostCreate = hlgContentHost.AddChild(HostAppHlgContent.Create, L("Permission:AppHlgContent.Create"));
+        hlgContentHostCreate.MultiTenancySide = MultiTenancySides.Host;
+        var hlgContentHostEdit = hlgContentHost.AddChild(HostAppHlgContent.Edit, L("Permission:AppHlgContent.Edit"));
+        hlgContentHostEdit.MultiTenancySide = MultiTenancySides.Host;
+        var hlgContentHostDelete = hlgContentHost.AddChild(HostAppHlgContent.Delete, L("Permission:AppHlgContent.Delete"));
+        hlgContentHostDelete.MultiTenancySide = MultiTenancySides.Host;
         var hlgDashboardHostRoot = hlgGroupHost.AddPermission(HostAppHlgDashboard.Default, L("Permission:AppHlgDashboard"));
         hlgDashboardHostRoot.MultiTenancySide = MultiTenancySides.Host;
 

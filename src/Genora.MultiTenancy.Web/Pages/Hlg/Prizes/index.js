@@ -1,0 +1,1 @@
+$(function () { window.hlgAdmin.init({"service": "hlgPrizeAdmin", "folder": "Prizes", "readOnly": false, "columns": [{"data": "title", "label": "Title", "kind": "text"}, {"data": "quantity", "label": "Quantity", "kind": "number"}, {"data": "displayOrder", "label": "DisplayOrder", "kind": "number"}, {"data": "isActive", "label": "IsActive", "kind": "bool"}]}); });

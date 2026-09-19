@@ -6,6 +6,8 @@ namespace Genora.MultiTenancy.AppDtos.Hlg;
 /// <summary>Game. Khớp contract Game. type/status là string contract.</summary>
 public class GameDto
 {
+    public string? BadgeText { get; set; }
+    public string? BannerUrl { get; set; }
     public Guid Id { get; set; }
     public string Name { get; set; } = string.Empty;
     public string Type { get; set; } = string.Empty;

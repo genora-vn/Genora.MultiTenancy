@@ -1,5 +1,15 @@
 # HANDOFF — Bàn giao giữa các phiên làm việc
 
+## HLG corrective design audit — 2026-09-19 (mới nhất)
+
+- Đã inspect trực quan31/31 trang PDF ở cả2 lượt;60 screen/component/state;54 nhóm dữ liệu.34 nhóm CMS/cần làm rõ:31 COVERED,0 PARTIAL,0 MISSING,3 UNKNOWN. Coverage source không phải nghiệm thu browser.
+- Đã bổ sung Ngành hàng→Nhãn hàng→Sản phẩm, nội dung/FAQ/media/video/related/CTA; CMS Home; game banner/badge; ranking theo game/cơ cấu giải/công bố người trúng; fulfillment; Users read-only chi tiết; PharmacyCode riêng HLG, retailer3, progress/game-history API. Giữ API Mini cũ.
+- Migration mới `20260919112304_AddHlgDesignContent` + SQL idempotent:4 bảng/6 cột nullable HLG; review additive; EF no pending model changes; **chưa apply DB**.
+- Web build0 errors;42 Application +3 Domain +17 Web +11 JS tests pass.13 proxy names xác minh bằng generator ABP đang cài; chưa chạy lại live proxy HTTP trong phiên corrective.
+- Browser UAT BLOCKED: browser tool báo không có browser, list=[]; chưa có thao tác tenant CRUD. Không suy ra DB kết nối lỗi. Ba UNKNOWN: vòng quay; tự chọn/trao giải và xử lý hòa; thời điểm cấp/trừ quà. Công bố winner thủ công không tự tạo đơn giao quà.
+- Bước tiếp: review/apply migration đúng workflow multi-database, cấu hình catalog thật/quyền Content và chạy UAT tenant. Xem [audit](../docs/HLG_FULL_DESIGN_AUDIT_20260919.md), [note](../memory/notes/project/project_hlg_corrective_design_audit_20260919.md).
+
+
 > Điền file này khi bàn giao cho người/phiên khác. Xem quy trình đầy đủ ở [../LOAD_CONTEXT.md](../LOAD_CONTEXT.md).
 
 ## Checklist bàn giao (người giao)
@@ -21,6 +31,9 @@
 
 ### HLG Admin 2026-09-18 — checkpoint mới nhất
 Đủ 5 nhóm Razor UI + service/menu/quyền/VI-EN đã triển khai; Web build 0 errors, 13 Application + 7 JS tests pass. Chưa UAT/deploy/DB write. Tiếp theo restart Web và UAT tenant HLG theo checklist. [Note](../memory/notes/project/project_hlg_admin_razor_ui_20260918.md) · [UAT](../docs/HLG_ADMIN_UAT_20260918.md). Checkpoint 2026-08-21 bên dưới chỉ là lịch sử, đã được thay thế.
+
+### HLG PDF design audit 2026-09-19
+Đã render và kiểm tra trực quan đủ 31/31 trang PDF export. Proxy runtime xác nhận `genora.multiTenancy.appServices.hlg.admin.*`. Không migration: game chỉ bắt đầu khi `Ongoing` và trong lịch; profile tính accuracy từ completed sessions; ranking không trả event ngoài hiệu lực; `VgaCode` được thêm optional vào profile contracts. Solution build + 13 Application + 7 JS pass. Browser UAT BLOCKED vì chưa có tenant HLG/database/credentials. Còn gap cần quyết định business trước schema: FAQ/sản phẩm liên quan có cấu trúc, cơ cấu giải thưởng và danh sách trúng thưởng của ranking event.
 
 ### HL25 staging AgeGroup schema repair 2026-09-18
 Migration mới 20260918093000_EnsureHl25ParticipantAgeGroup và SQL idempotent đã chuẩn bị/kiểm tra EF; chưa apply staging. DB tenant HL25: DuocPhamHoaLinh. Migration bỏ qua DB không có bảng HL25 khi chạy toàn bộ tenant; migrate sau deploy rồi restart/test. Giữ BirthDate và dữ liệu hiện có. [Chi tiết](../memory/notes/project/project_hl25_staging_agegroup_migration_fix_20260918.md).

@@ -40,12 +40,12 @@
             </div>
             <div class="mb-3">
                 <label asp-for="Input.Rules" class="form-label">@L["Hlg:Rules"]</label>
-<textarea asp-for="Input.Rules" rows="4" class="form-control"></textarea>
+<textarea asp-for="Input.Rules" rows="4" class="form-control hlg-rich"></textarea>
                 <span asp-validation-for="Input.Rules" class="text-danger"></span>
             </div>
             <div class="mb-3">
                 <label asp-for="Input.RewardDescription" class="form-label">@L["Hlg:RewardDescription"]</label>
-<textarea asp-for="Input.RewardDescription" rows="4" class="form-control"></textarea>
+<textarea asp-for="Input.RewardDescription" rows="4" class="form-control hlg-rich"></textarea>
                 <span asp-validation-for="Input.RewardDescription" class="text-danger"></span>
             </div>
             <div class="mb-3">
@@ -82,6 +82,8 @@
                 <input asp-for="Input.IsActive" class="form-check-input ms-2" />
                 <span asp-validation-for="Input.IsActive" class="text-danger"></span>
             </div>
+<div class="mb-3"><label asp-for="Input.BadgeText" class="form-label">@L["Hlg:BadgeText"]</label><input asp-for="Input.BadgeText" type="text" class="form-control" /><span asp-validation-for="Input.BadgeText" class="text-danger"></span></div>
+<div class="mb-3"><label asp-for="Input.BannerUrl" class="form-label">@L["Hlg:BannerUrl"]</label><input asp-for="Input.BannerUrl" type="text" class="form-control" /><span asp-validation-for="Input.BannerUrl" class="text-danger"></span></div>
         </abp-modal-body><abp-modal-footer buttons="@(AbpModalButtons.Cancel | AbpModalButtons.Save)"></abp-modal-footer>
     </abp-modal>
 </form>

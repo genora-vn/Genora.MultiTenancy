@@ -1,0 +1,19 @@
+@page
+@using Genora.MultiTenancy.Localization
+@using Microsoft.Extensions.Localization
+@using Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.TagHelpers.Modal
+@inject IStringLocalizer<MultiTenancyResource> L
+@model Genora.MultiTenancy.Web.Pages.Hlg.Content.EditModalModel
+@{ Layout=null; }
+<form method="post" asp-page="/Hlg/Content/EditModal"><input asp-for="Id" type="hidden" />
+<abp-modal size="Large"><abp-modal-header title="@L["Hlg:Edit"].Value" /><abp-modal-body>
+<div asp-validation-summary="All" class="text-danger"></div><div class="mb-3"><label asp-for="Input.Slot" class="form-label">@L["Hlg:Slot"]</label><select asp-for="Input.Slot" class="form-select"><option value="1">@L["Hlg:HomeBanner"]</option><option value="2">@L["Hlg:KnowledgeCard"]</option><option value="3">@L["Hlg:GamesCard"]</option><option value="4">@L["Hlg:RankingCard"]</option><option value="5">@L["Hlg:ShareLink"]</option></select><span asp-validation-for="Input.Slot" class="text-danger"></span></div>
+<div class="mb-3"><label asp-for="Input.Title" class="form-label">@L["Hlg:Title"]</label><input asp-for="Input.Title" type="text" class="form-control" /><span asp-validation-for="Input.Title" class="text-danger"></span></div>
+<div class="mb-3"><label asp-for="Input.Summary" class="form-label">@L["Hlg:Summary"]</label><textarea asp-for="Input.Summary" rows="4" class="form-control"></textarea><span asp-validation-for="Input.Summary" class="text-danger"></span></div>
+<div class="mb-3"><label asp-for="Input.BadgeText" class="form-label">@L["Hlg:BadgeText"]</label><input asp-for="Input.BadgeText" type="text" class="form-control" /><span asp-validation-for="Input.BadgeText" class="text-danger"></span></div>
+<div class="mb-3"><label asp-for="Input.ImageUrl" class="form-label">@L["Hlg:ImageUrl"]</label><input asp-for="Input.ImageUrl" type="text" class="form-control" /><span asp-validation-for="Input.ImageUrl" class="text-danger"></span></div>
+<div class="mb-3"><label asp-for="Input.TargetUrl" class="form-label">@L["Hlg:TargetUrl"]</label><input asp-for="Input.TargetUrl" type="text" class="form-control" /><span asp-validation-for="Input.TargetUrl" class="text-danger"></span></div>
+<div class="mb-3"><label asp-for="Input.GameId" class="form-label">@L["Hlg:GameId"]</label><select asp-for="Input.GameId" class="form-select" data-hlg-lookup="games"><option value="">@L["Hlg:Select"]</option>@if (Model.Input.GameId != null) { <option value="@Model.Input.GameId" selected>@Model.Input.GameId</option> }</select><span asp-validation-for="Input.GameId" class="text-danger"></span></div>
+<div class="mb-3"><label asp-for="Input.DisplayOrder" class="form-label">@L["Hlg:DisplayOrder"]</label><input asp-for="Input.DisplayOrder" type="number" class="form-control" /><span asp-validation-for="Input.DisplayOrder" class="text-danger"></span></div>
+<div class="mb-3"><label asp-for="Input.IsActive" class="form-label">@L["Hlg:IsActive"]</label><input asp-for="Input.IsActive" class="form-check-input ms-2" /><span asp-validation-for="Input.IsActive" class="text-danger"></span></div>
+</abp-modal-body><abp-modal-footer buttons="@(AbpModalButtons.Cancel | AbpModalButtons.Save)" /></abp-modal></form>

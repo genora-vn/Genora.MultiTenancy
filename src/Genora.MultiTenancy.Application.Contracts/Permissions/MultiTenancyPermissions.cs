@@ -1,4 +1,4 @@
-﻿namespace Genora.MultiTenancy.Permissions;
+namespace Genora.MultiTenancy.Permissions;
 
 public static class MultiTenancyPermissions
 {
@@ -939,6 +939,13 @@ public static class MultiTenancyPermissions
     }
 
     // ===== Dashboard =====
+    public static class AppHlgContent
+    { public const string Default = GroupName + ".AppHlgContent";
+       public const string Create = Default + ".Create"; public const string Edit = Default + ".Edit"; public const string Delete = Default + ".Delete"; }
+    public static class HostAppHlgContent
+    { public const string Default = GroupName + ".HostAppHlgContent";
+       public const string Create = Default + ".Create"; public const string Edit = Default + ".Edit"; public const string Delete = Default + ".Delete"; }
+
     public static class AppHlgDashboard
     {
         public const string Default = GroupName + ".AppHlgDashboard";

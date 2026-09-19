@@ -125,6 +125,12 @@ public class HlgRewardAdminAppService :
         return MapToDto(await _repository.UpdateAsync(entity, autoSave: true));
     }
 
+    public override async Task DeleteAsync(Guid id)
+    {
+        await CheckDeletePolicyAsync();
+        if (await LazyServiceProvider.LazyGetRequiredService<IRepository<HlgRankingPrize,Guid>>().AnyAsync(x=>x.RewardId==id)) throw new UserFriendlyException(L("Hlg:RewardHasPrizes"));
+        await _repository.DeleteAsync(id);
+    }
     private void Validate(string? name, int pointCost, byte type)
     {
         if (name.IsNullOrWhiteSpace())

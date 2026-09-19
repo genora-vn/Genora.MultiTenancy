@@ -12,6 +12,7 @@ namespace Genora.MultiTenancy.AppDtos.Hlg;
 /// </summary>
 public interface IHlgKnowledgeAppService : IApplicationService
 {
+    Task UpdateProgressAsync(Guid productId, string phone, int percent);
     /// <summary>Danh sách danh mục kiến thức (kèm productCount).</summary>
     Task<List<KnowledgeCategoryDto>> GetCategoriesAsync(CancellationToken ct = default);
 

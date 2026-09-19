@@ -75,6 +75,7 @@ public class HlgGameAdminAppService : FeatureProtectedCrudAppService<HlgGame, Hl
     private async Task ValidateAsync(HlgGameInput input, Guid? id)
     {
         Validator.ValidateObject(input, new ValidationContext(input), true);
+        HlgContentValidation.Localized(() => { HlgContentValidation.Url(input.BannerUrl); HlgContentValidation.Url(input.ImageUrl); }, key => L[key]);
         if (id.HasValue && await _sessions.AnyAsync(x => x.GameId == id.Value))
         {
             var current = await Repository.GetAsync(id.Value);
@@ -102,6 +103,8 @@ public class HlgGameAdminAppService : FeatureProtectedCrudAppService<HlgGame, Hl
         entity.EndAt = input.EndAt;
         entity.BaseScorePerQuestion = input.BaseScorePerQuestion;
         entity.DisplayOrder = input.DisplayOrder;
+        entity.BadgeText = input.BadgeText;
+        entity.BannerUrl = input.BannerUrl;
         entity.IsActive = input.IsActive;
     }
     private static HlgGameAdminDto Map(HlgGame entity) => new()
@@ -118,6 +121,8 @@ public class HlgGameAdminAppService : FeatureProtectedCrudAppService<HlgGame, Hl
         EndAt = entity.EndAt,
         BaseScorePerQuestion = entity.BaseScorePerQuestion,
         DisplayOrder = entity.DisplayOrder,
+        BadgeText = entity.BadgeText,
+        BannerUrl = entity.BannerUrl,
         IsActive = entity.IsActive,
     };
 }

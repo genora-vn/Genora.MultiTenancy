@@ -1,9 +1,25 @@
 # ACTIVE CONTEXT — Việc đang làm dở
 
+## HLG corrective design audit — 2026-09-19 (mới nhất)
+
+- Đã inspect trực quan31/31 trang PDF ở cả2 lượt;60 screen/component/state;54 nhóm dữ liệu.34 nhóm CMS/cần làm rõ:31 COVERED,0 PARTIAL,0 MISSING,3 UNKNOWN. Coverage source không phải nghiệm thu browser.
+- Đã bổ sung Ngành hàng→Nhãn hàng→Sản phẩm, nội dung/FAQ/media/video/related/CTA; CMS Home; game banner/badge; ranking theo game/cơ cấu giải/công bố người trúng; fulfillment; Users read-only chi tiết; PharmacyCode riêng HLG, retailer3, progress/game-history API. Giữ API Mini cũ.
+- Migration mới `20260919112304_AddHlgDesignContent` + SQL idempotent:4 bảng/6 cột nullable HLG; review additive; EF no pending model changes; **chưa apply DB**.
+- Web build0 errors;42 Application +3 Domain +17 Web +11 JS tests pass.13 proxy names xác minh bằng generator ABP đang cài; chưa chạy lại live proxy HTTP trong phiên corrective.
+- Browser UAT BLOCKED: browser tool báo không có browser, list=[]; chưa có thao tác tenant CRUD. Không suy ra DB kết nối lỗi. Ba UNKNOWN: vòng quay; tự chọn/trao giải và xử lý hòa; thời điểm cấp/trừ quà. Công bố winner thủ công không tự tạo đơn giao quà.
+- Bước tiếp: review/apply migration đúng workflow multi-database, cấu hình catalog thật/quyền Content và chạy UAT tenant. Xem [audit](docs/HLG_FULL_DESIGN_AUDIT_20260919.md), [note](memory/notes/project/project_hlg_corrective_design_audit_20260919.md).
+
+
 > File này mô tả bối cảnh đang hoạt động của phiên làm việc gần nhất.
 > Cập nhật ở CUỐI mỗi phiên (xem [handover/HANDOFF.md](handover/HANDOFF.md)).
 
 ## Cập nhật gần nhất
+
+### HLG — PDF design audit + runtime rules (2026-09-19)
+- Đã text-extract, render và kiểm tra trực quan đủ 31/31 trang `HLG_FIGMA_ALL_SCREENS.pdf`; proxy runtime xác nhận là `genora.multiTenancy.appServices.hlg.admin.*`.
+- Không migration: game bị chặn server-side nếu không `Ongoing` hoặc ngoài `StartAt`–`EndAt`; profile tính `accuracyPercent` từ completed sessions; ranking chỉ trả event active trong thời gian hiệu lực; profile contract thêm optional `VgaCode` vốn đã có trên `Customer`.
+- Solution build, 13 HLG Application tests và 7 HLG JS tests pass. Browser UAT tenant thật BLOCKED vì không có tenant DB/feature/permission credentials.
+- PDF gap thật còn lại: FAQ/sản phẩm liên quan có cấu trúc, cơ cấu giải thưởng/danh sách trúng thưởng. Source chỉ có content tự do và chưa có model prize/winner; không tự tạo schema khi chưa có quy tắc cấp/trao giải.
 
 ### HLG — Admin Razor UI 5 nhóm (2026-09-18)
 - Đã triển khai Rewards, Knowledge (Category+Product), Ranking, Games+Questions, Users read-only; thêm service còn thiếu, menu order 49, VI/EN, feature/dual permission cho API và pages.
@@ -64,15 +80,12 @@
 ### HLG — Hoa Linh Gamification
 - Checkpoint tạm dừng 2026-08-21 đã được tiếp tục ngày 2026-09-18; Admin Razor UI đủ 5 nhóm đã triển khai và kiểm thử tự động.
 
-## HLG — ĐIỂM DỪNG (nơi tiếp tục khi quay lại)
-- **Bước kế tiếp:** chạy bản Web mới và UAT 5 nhóm quản trị với tenant HLG thật theo docs/HLG_ADMIN_UAT_20260918.md.
-- **Code đã xong:** Rewards → Knowledge (Category+Product) → Ranking → Games+Questions → Users (read-only), menu order 49, localization VI/EN, dual permissions/feature guards.
-- **Proxy:** shared resolveService() tìm namespace appServices.hlg.admin hoặc appDtos.hlg.admin, kiểm tra và báo lỗi rõ nếu thiếu. Chưa fetch proxy live hoặc UAT browser; không coi build là kiểm chứng proxy runtime.
-- **Kiểm tra:** Web build 0 errors; 13 Application + 7 JS tests pass. Không tạo/apply migration hoặc ghi DB thật.
-- **Runtime chưa xác nhận:** schema/feature/quyền của tenant HLG, hoạt động modal và proxy thật. Host từng thiếu bảng HLG dù history có; không tự sửa drift trong task UI.
-- **Quy tắc:** manual mapping, AsyncExecuter, FeatureProtectedCrudAppService Create/Update DTO riêng; CorrectKey chỉ có trong editor có quyền Games.Edit, không trong mini-app/list/get response.
+## HLG — ĐIỂM DỪNG (hiện tại)
+- Corrective design audit/source implementation đã thực hiện; không coi checkpoint Admin5 nhóm là đủ design.
+- Chạy UAT tenant theo checklist sau khi review/apply migration AddHlgDesignContent; resolve3 UNKNOWN trong audit trước automatic game reward.
+- Chi tiết, test counts, proxy evidence và blocker ở mục mới nhất đầu file và docs/HLG_FULL_DESIGN_AUDIT_20260919.md.
 
-## HLG — đã hoàn tất
+## HLG — checkpoint backend trước corrective audit (lịch sử, không phải design coverage hiện tại)
 - **Đã xong:** Phase 0 (hạ tầng), Phase 1 (Auth + Profile), Phase 2 (Knowledge base), Phase 3 (Games engine), Phase 4 (Rewards & Shipping), Phase 5 (Ranking), Phase 6 (Live-feed SignalR), Permission provider (`HlgManagement` + `HlgManagementHost`), sample data seeder (`HlgDataSeedContributor`). Xem `architecture/module-hlg.md` (6 quyết định nghiệp vụ + 3 quyết định kiến trúc AD-1/2/3).
 - **Backend mini-app: HOÀN TẤT 100%** — ~24 endpoint theo contract, đã gửi CURL cho anh test (bỏ header `__tenant`).
 - **Migration đã sinh:** `AddHlgModule` (schema HLG + HlgUserProfile), `AddHlgKnowledge` (3 bảng knowledge), `AddHlgGames` (5 bảng game), `AddHlgRewards` (3 bảng reward), `AddHlgRanking` (1 bảng ranking event). SQL script idempotent tại `Migrations/Scripts/`.
@@ -92,7 +105,7 @@ Theo mốc thời gian trên tên note, các đợt làm việc gần nhất t�
 - **Hoa Linh loyalty + UrBox + Zalo OA** (migration 20260709064009): điểm thưởng FIFO, worker hết hạn, gift exchange status enum mới, eVoucher.
 - **Salon Beauty** UI polish + deposit/loyalty + MiniApp payment.
 
-## Không có task treo được ghi nhận rõ ràng
+## Nhận định lịch sử về task treo (không áp dụng cho HLG corrective audit ở đầu file)
 Các note dạng `*_complete` cho thấy các phase lớn đã đóng. Không phát hiện file "in-progress"
 nào ngoài `salon_beauty_implementation_progress.md` (bản cũ, đã được thay bằng `*_complete`).
 

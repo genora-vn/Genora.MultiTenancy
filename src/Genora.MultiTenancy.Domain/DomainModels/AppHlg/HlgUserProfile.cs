@@ -16,6 +16,7 @@ namespace Genora.MultiTenancy.DomainModels.AppHlg;
 public class HlgUserProfile : FullAuditedAggregateRoot<Guid>, IMultiTenant
 {
     public Guid? TenantId { get; set; }
+    [StringLength(100)] public string? PharmacyCode { get; set; }
 
     /// <summary>Liên kết tới dbo.AppCustomers (nguồn zalo/phone/code/points).</summary>
     public Guid CustomerId { get; set; }

@@ -4183,10 +4183,185 @@ namespace Genora.MultiTenancy.Migrations
                     b.ToTable("AppHlgAnswerOptions", "HLG");
                 });
 
+            modelBuilder.Entity("Genora.MultiTenancy.DomainModels.AppHlg.HlgBrand", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("CategoryId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("ConcurrencyStamp")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("nvarchar(40)")
+                        .HasColumnName("ConcurrencyStamp");
+
+                    b.Property<DateTime>("CreationTime")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("CreationTime");
+
+                    b.Property<Guid?>("CreatorId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("CreatorId");
+
+                    b.Property<Guid?>("DeleterId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("DeleterId");
+
+                    b.Property<DateTime?>("DeletionTime")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("DeletionTime");
+
+                    b.Property<int>("DisplayOrder")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ExtraProperties")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("ExtraProperties");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsDeleted")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false)
+                        .HasColumnName("IsDeleted");
+
+                    b.Property<DateTime?>("LastModificationTime")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("LastModificationTime");
+
+                    b.Property<Guid?>("LastModifierId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("LastModifierId");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(250)
+                        .HasColumnType("nvarchar(250)");
+
+                    b.Property<Guid?>("TenantId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("TenantId");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CategoryId");
+
+                    b.HasIndex("TenantId", "CategoryId", "DisplayOrder");
+
+                    b.ToTable("AppHlgBrands", "HLG");
+                });
+
+            modelBuilder.Entity("Genora.MultiTenancy.DomainModels.AppHlg.HlgContentItem", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("BadgeText")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("ConcurrencyStamp")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("nvarchar(40)")
+                        .HasColumnName("ConcurrencyStamp");
+
+                    b.Property<DateTime>("CreationTime")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("CreationTime");
+
+                    b.Property<Guid?>("CreatorId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("CreatorId");
+
+                    b.Property<Guid?>("DeleterId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("DeleterId");
+
+                    b.Property<DateTime?>("DeletionTime")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("DeletionTime");
+
+                    b.Property<int>("DisplayOrder")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ExtraProperties")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("ExtraProperties");
+
+                    b.Property<Guid?>("GameId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("ImageUrl")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsDeleted")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false)
+                        .HasColumnName("IsDeleted");
+
+                    b.Property<DateTime?>("LastModificationTime")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("LastModificationTime");
+
+                    b.Property<Guid?>("LastModifierId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("LastModifierId");
+
+                    b.Property<int>("Slot")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Summary")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<string>("TargetUrl")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<Guid?>("TenantId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("TenantId");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(250)
+                        .HasColumnType("nvarchar(250)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("GameId");
+
+                    b.HasIndex("TenantId", "Slot", "DisplayOrder");
+
+                    b.ToTable("AppHlgContentItems", "HLG");
+                });
+
             modelBuilder.Entity("Genora.MultiTenancy.DomainModels.AppHlg.HlgGame", b =>
                 {
                     b.Property<Guid>("Id")
                         .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("BadgeText")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("BannerUrl")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
 
                     b.Property<int>("BaseScorePerQuestion")
                         .HasColumnType("int");
@@ -4532,6 +4707,9 @@ namespace Genora.MultiTenancy.Migrations
                     b.Property<Guid>("Id")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<Guid?>("BrandId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<Guid>("CategoryId")
                         .HasColumnType("uniqueidentifier");
 
@@ -4560,6 +4738,9 @@ namespace Genora.MultiTenancy.Migrations
                     b.Property<DateTime?>("DeletionTime")
                         .HasColumnType("datetime2")
                         .HasColumnName("DeletionTime");
+
+                    b.Property<string>("DetailsJson")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<int>("DisplayOrder")
                         .HasColumnType("int");
@@ -4607,6 +4788,8 @@ namespace Genora.MultiTenancy.Migrations
                         .HasColumnType("nvarchar(1000)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("BrandId");
 
                     b.HasIndex("CategoryId");
 
@@ -4742,6 +4925,9 @@ namespace Genora.MultiTenancy.Migrations
                         .HasColumnType("nvarchar(max)")
                         .HasColumnName("ExtraProperties");
 
+                    b.Property<Guid?>("GameId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
 
@@ -4773,10 +4959,176 @@ namespace Genora.MultiTenancy.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("GameId");
+
                     b.HasIndex("TenantId", "IsActive", "StartAt")
                         .HasDatabaseName("IX_AppHlgRankingEvents_TenantId_IsActive_StartAt");
 
                     b.ToTable("AppHlgRankingEvents", "HLG");
+                });
+
+            modelBuilder.Entity("Genora.MultiTenancy.DomainModels.AppHlg.HlgRankingPrize", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("ConcurrencyStamp")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("nvarchar(40)")
+                        .HasColumnName("ConcurrencyStamp");
+
+                    b.Property<DateTime>("CreationTime")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("CreationTime");
+
+                    b.Property<Guid?>("CreatorId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("CreatorId");
+
+                    b.Property<Guid?>("DeleterId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("DeleterId");
+
+                    b.Property<DateTime?>("DeletionTime")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("DeletionTime");
+
+                    b.Property<int>("DisplayOrder")
+                        .HasColumnType("int");
+
+                    b.Property<Guid>("EventId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("ExtraProperties")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("ExtraProperties");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsDeleted")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false)
+                        .HasColumnName("IsDeleted");
+
+                    b.Property<DateTime?>("LastModificationTime")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("LastModificationTime");
+
+                    b.Property<Guid?>("LastModifierId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("LastModifierId");
+
+                    b.Property<int>("Quantity")
+                        .HasColumnType("int");
+
+                    b.Property<Guid>("RewardId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("TenantId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("TenantId");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(250)
+                        .HasColumnType("nvarchar(250)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EventId");
+
+                    b.HasIndex("RewardId");
+
+                    b.HasIndex("TenantId", "EventId", "DisplayOrder");
+
+                    b.ToTable("AppHlgRankingPrizes", "HLG");
+                });
+
+            modelBuilder.Entity("Genora.MultiTenancy.DomainModels.AppHlg.HlgRankingWinner", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("ConcurrencyStamp")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("nvarchar(40)")
+                        .HasColumnName("ConcurrencyStamp");
+
+                    b.Property<DateTime>("CreationTime")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("CreationTime");
+
+                    b.Property<Guid?>("CreatorId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("CreatorId");
+
+                    b.Property<Guid>("CustomerId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("DeleterId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("DeleterId");
+
+                    b.Property<DateTime?>("DeletionTime")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("DeletionTime");
+
+                    b.Property<Guid>("EventId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("ExtraProperties")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("ExtraProperties");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsDeleted")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false)
+                        .HasColumnName("IsDeleted");
+
+                    b.Property<DateTime?>("LastModificationTime")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("LastModificationTime");
+
+                    b.Property<Guid?>("LastModifierId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("LastModifierId");
+
+                    b.Property<Guid>("PrizeId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Rank")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Score")
+                        .HasColumnType("int");
+
+                    b.Property<Guid?>("TenantId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("TenantId");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EventId");
+
+                    b.HasIndex("PrizeId");
+
+                    b.HasIndex("TenantId", "EventId", "CustomerId")
+                        .IsUnique()
+                        .HasFilter("[IsDeleted] = 0");
+
+                    b.ToTable("AppHlgRankingWinners", "HLG");
                 });
 
             modelBuilder.Entity("Genora.MultiTenancy.DomainModels.AppHlg.HlgReward", b =>
@@ -5170,6 +5522,10 @@ namespace Genora.MultiTenancy.Migrations
                     b.Property<Guid?>("LastModifierId")
                         .HasColumnType("uniqueidentifier")
                         .HasColumnName("LastModifierId");
+
+                    b.Property<string>("PharmacyCode")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
                     b.Property<Guid?>("TenantId")
                         .HasColumnType("uniqueidentifier")
@@ -10104,8 +10460,30 @@ namespace Genora.MultiTenancy.Migrations
                     b.Navigation("Question");
                 });
 
+            modelBuilder.Entity("Genora.MultiTenancy.DomainModels.AppHlg.HlgBrand", b =>
+                {
+                    b.HasOne("Genora.MultiTenancy.DomainModels.AppHlg.HlgKnowledgeCategory", null)
+                        .WithMany()
+                        .HasForeignKey("CategoryId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Genora.MultiTenancy.DomainModels.AppHlg.HlgContentItem", b =>
+                {
+                    b.HasOne("Genora.MultiTenancy.DomainModels.AppHlg.HlgGame", null)
+                        .WithMany()
+                        .HasForeignKey("GameId")
+                        .OnDelete(DeleteBehavior.NoAction);
+                });
+
             modelBuilder.Entity("Genora.MultiTenancy.DomainModels.AppHlg.HlgProduct", b =>
                 {
+                    b.HasOne("Genora.MultiTenancy.DomainModels.AppHlg.HlgBrand", null)
+                        .WithMany()
+                        .HasForeignKey("BrandId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
                     b.HasOne("Genora.MultiTenancy.DomainModels.AppHlg.HlgKnowledgeCategory", "Category")
                         .WithMany("Products")
                         .HasForeignKey("CategoryId")
@@ -10124,6 +10502,44 @@ namespace Genora.MultiTenancy.Migrations
                         .IsRequired();
 
                     b.Navigation("Game");
+                });
+
+            modelBuilder.Entity("Genora.MultiTenancy.DomainModels.AppHlg.HlgRankingEvent", b =>
+                {
+                    b.HasOne("Genora.MultiTenancy.DomainModels.AppHlg.HlgGame", null)
+                        .WithMany()
+                        .HasForeignKey("GameId")
+                        .OnDelete(DeleteBehavior.NoAction);
+                });
+
+            modelBuilder.Entity("Genora.MultiTenancy.DomainModels.AppHlg.HlgRankingPrize", b =>
+                {
+                    b.HasOne("Genora.MultiTenancy.DomainModels.AppHlg.HlgRankingEvent", null)
+                        .WithMany()
+                        .HasForeignKey("EventId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("Genora.MultiTenancy.DomainModels.AppHlg.HlgReward", null)
+                        .WithMany()
+                        .HasForeignKey("RewardId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Genora.MultiTenancy.DomainModels.AppHlg.HlgRankingWinner", b =>
+                {
+                    b.HasOne("Genora.MultiTenancy.DomainModels.AppHlg.HlgRankingEvent", null)
+                        .WithMany()
+                        .HasForeignKey("EventId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("Genora.MultiTenancy.DomainModels.AppHlg.HlgRankingPrize", null)
+                        .WithMany()
+                        .HasForeignKey("PrizeId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("Genora.MultiTenancy.DomainModels.AppHlg.HlgSessionAnswer", b =>

@@ -27,6 +27,8 @@ public class EditModalModel : HlgAdminPageModel
             EndAt = item.EndAt,
             BaseScorePerQuestion = item.BaseScorePerQuestion,
             DisplayOrder = item.DisplayOrder,
+            BadgeText = item.BadgeText,
+            BannerUrl = item.BannerUrl,
             IsActive = item.IsActive,
         };
     }

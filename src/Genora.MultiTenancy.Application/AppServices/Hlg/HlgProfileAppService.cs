@@ -33,6 +33,7 @@ public class HlgProfileAppService : ApplicationService, IHlgProfileAppService
     private readonly IRepository<HlgUserProfile, Guid> _profileRepo;
     private readonly IRepository<HlPointTransaction, Guid> _pointTxnRepo;
     private readonly IRepository<HlgLearningProgress, Guid> _progressRepo;
+    private readonly IRepository<HlgGameSession, Guid> _sessionRepo;
     private readonly IRepository<HlgProduct, Guid> _productRepo;
     private readonly IRepository<HlgRewardHistory, Guid> _rewardHistoryRepo;
     private readonly ICurrentTenant _currentTenant;
@@ -43,15 +44,18 @@ public class HlgProfileAppService : ApplicationService, IHlgProfileAppService
         IRepository<HlgUserProfile, Guid> profileRepo,
         IRepository<HlPointTransaction, Guid> pointTxnRepo,
         IRepository<HlgLearningProgress, Guid> progressRepo,
+        IRepository<HlgGameSession, Guid> sessionRepo,
         IRepository<HlgProduct, Guid> productRepo,
         IRepository<HlgRewardHistory, Guid> rewardHistoryRepo,
         ICurrentTenant currentTenant,
         ILogger<HlgProfileAppService> logger)
     {
+        LocalizationResource = typeof(Genora.MultiTenancy.Localization.MultiTenancyResource);
         _customerRepo = customerRepo;
         _profileRepo = profileRepo;
         _pointTxnRepo = pointTxnRepo;
         _progressRepo = progressRepo;
+        _sessionRepo = sessionRepo;
         _productRepo = productRepo;
         _rewardHistoryRepo = rewardHistoryRepo;
         _currentTenant = currentTenant;
@@ -60,6 +64,8 @@ public class HlgProfileAppService : ApplicationService, IHlgProfileAppService
 
     public async Task<GamificationUserDto> UpsertCustomerAsync(HlgCustomerUpsertPayloadDto payload, CancellationToken ct = default)
     {
+        ValidatePharmacyCode(payload.PharmacyCode ?? payload.VgaCode);
+        ValidateCustomerType(payload.CustomerType);
         var phone = NormalizePhone(payload.Phone);
         if (string.IsNullOrWhiteSpace(phone))
             throw new UserFriendlyException("Thiếu số điện thoại");
@@ -78,6 +84,7 @@ public class HlgProfileAppService : ApplicationService, IHlgProfileAppService
                 IsFollower = payload.IsFollower ?? false,
                 IsActive = true,
                 Address = NullIfBlank(payload.Address),
+
                 Gender = HlgEnumMapper.GenderStringToByte(payload.Gender),
                 DateOfBirth = ParseDate(payload.Birthday),
                 CustomerCode = await GenerateCustomerCodeAsync(),
@@ -94,6 +101,7 @@ public class HlgProfileAppService : ApplicationService, IHlgProfileAppService
             customer.ZaloUserId = NullIfBlank(payload.ZaloUserId) ?? customer.ZaloUserId;
             if (payload.IsFollower.HasValue) customer.IsFollower = payload.IsFollower.Value;
             customer.Address = NullIfBlank(payload.Address) ?? customer.Address;
+
             var g = HlgEnumMapper.GenderStringToByte(payload.Gender);
             if (g.HasValue) customer.Gender = g;
             var b = ParseDate(payload.Birthday);
@@ -109,6 +117,7 @@ public class HlgProfileAppService : ApplicationService, IHlgProfileAppService
             profile = new HlgUserProfile(GuidGenerator.Create(), customer.Id, _currentTenant.Id)
             {
                 ZaloId = customer.ZaloUserId,
+                PharmacyCode = NullIfBlank(payload.PharmacyCode ?? payload.VgaCode),
                 CustomerType = customerType,
                 IsRegistered = customerType.HasValue
             };
@@ -116,6 +125,7 @@ public class HlgProfileAppService : ApplicationService, IHlgProfileAppService
         }
         else
         {
+            profile.PharmacyCode = NullIfBlank(payload.PharmacyCode ?? payload.VgaCode) ?? profile.PharmacyCode;
             profile.ZaloId = customer.ZaloUserId ?? profile.ZaloId;
             if (customerType.HasValue) profile.CustomerType = customerType;
             if (customerType.HasValue) profile.IsRegistered = true;
@@ -147,6 +157,12 @@ public class HlgProfileAppService : ApplicationService, IHlgProfileAppService
         if (!string.IsNullOrWhiteSpace(payload.Address))
             customer.Address = payload.Address.Trim();
 
+        ValidatePharmacyCode(payload.PharmacyCode ?? payload.VgaCode);
+        ValidateCustomerType(payload.CustomerType);
+        if (payload.PharmacyCode != null || payload.VgaCode != null) profile.PharmacyCode = NullIfBlank(payload.PharmacyCode ?? payload.VgaCode);
+        if (payload.CustomerType != null) profile.CustomerType = HlgEnumMapper.CustomerTypeFromString(payload.CustomerType);
+        await _profileRepo.UpdateAsync(profile, autoSave: true, cancellationToken: ct);
+
         // Phone là khóa đồng bộ; chỉ đổi khi khác và chưa bị chiếm bởi KH khác.
         var newPhone = NormalizePhone(payload.Phone);
         if (!string.IsNullOrWhiteSpace(newPhone) && newPhone != customer.PhoneNumber)
@@ -171,15 +187,31 @@ public class HlgProfileAppService : ApplicationService, IHlgProfileAppService
     {
         var (customer, _) = await ResolveAsync(phone, ct);
 
-        // knowledgeLearned = số bài học đã hoàn thành. accuracyPercent nối dây ở Phase 3 (game answers).
+        // knowledgeLearned = số bài học đã hoàn thành.
         var knowledgeLearned = await _progressRepo.CountAsync(
             x => x.CustomerId == customer.Id && x.IsCompleted, ct);
+
+        // Accuracy is derived exclusively from server-scored, completed sessions.
+        // Do not use any score/accuracy value supplied by the Mini App client.
+        var sessionQ = await _sessionRepo.GetQueryableAsync();
+        var totals = await AsyncExecuter.FirstOrDefaultAsync(
+            sessionQ.Where(x => x.CustomerId == customer.Id && x.IsFinished && x.TotalQuestions > 0)
+                    .GroupBy(_ => 1)
+                    .Select(g => new
+                    {
+                        Correct = g.Sum(x => x.CorrectCount),
+                        Questions = g.Sum(x => x.TotalQuestions)
+                    }), ct);
+
+        var accuracy = totals == null || totals.Questions == 0
+            ? 0
+            : (int)decimal.Round((decimal)totals.Correct * 100 / totals.Questions, 0, MidpointRounding.AwayFromZero);
 
         return new ProfileStatsDto
         {
             Points = (int)decimal.Round(customer.BonusPoint),
             KnowledgeLearned = knowledgeLearned,
-            AccuracyPercent = 0
+            AccuracyPercent = accuracy
         };
     }
 
@@ -197,13 +229,14 @@ public class HlgProfileAppService : ApplicationService, IHlgProfileAppService
         var productIds = rows.Select(x => x.ProductId).Distinct().ToList();
         var prodQ = await _productRepo.GetQueryableAsync();
         var products = await AsyncExecuter.ToListAsync(
-            prodQ.Where(p => productIds.Contains(p.Id)).Select(p => new { p.Id, p.Name }), ct);
+            prodQ.Where(p => productIds.Contains(p.Id)).Select(p => new { p.Id, p.Name, p.ThumbnailUrl }), ct);
         var nameById = products.ToDictionary(x => x.Id, x => x.Name);
 
         return rows.Select(x => new LearningHistoryItemDto
         {
             ProductId = x.ProductId,
             ProductName = nameById.TryGetValue(x.ProductId, out var n) ? n : string.Empty,
+            ThumbnailUrl = products.FirstOrDefault(p => p.Id == x.ProductId)?.ThumbnailUrl,
             ProgressPercent = x.ProgressPercent,
             LastViewedAt = x.LastViewedAt
         }).ToList();
@@ -234,8 +267,14 @@ public class HlgProfileAppService : ApplicationService, IHlgProfileAppService
         var rows = await AsyncExecuter.ToListAsync(
             q.Where(x => x.CustomerId == customer.Id).OrderByDescending(x => x.CreationTime), ct);
 
+        var sessionIds = rows.Where(x=>x.SessionId.HasValue).Select(x=>x.SessionId!.Value).ToList();
+        var sessions = await _sessionRepo.GetQueryableAsync();
+        var games = await LazyServiceProvider.LazyGetRequiredService<IRepository<HlgGame,Guid>>().GetQueryableAsync();
+        var origins = await AsyncExecuter.ToListAsync(from s in sessions join g in games on s.GameId equals g.Id
+            where sessionIds.Contains(s.Id) && s.CustomerId == customer.Id select new { s.Id, g.Name }, ct);
         return rows.Select(x => new RewardHistoryItemDto
         {
+            GameName = origins.FirstOrDefault(s=>s.Id==x.SessionId)?.Name,
             Id = x.Id,
             RewardName = x.RewardName,
             PointDelta = x.PointDelta,
@@ -244,6 +283,16 @@ public class HlgProfileAppService : ApplicationService, IHlgProfileAppService
         }).ToList();
     }
 
+    public async Task<List<GameHistoryDto>> GetGameHistoryAsync(string phone, int skip = 0, int take = 50)
+    {
+        var (customer, _) = await ResolveAsync(phone, default);
+        var sessions = await _sessionRepo.GetQueryableAsync();
+        var games = await LazyServiceProvider.LazyGetRequiredService<IRepository<HlgGame,Guid>>().GetQueryableAsync();
+        var rows = await AsyncExecuter.ToListAsync((from s in sessions join g in games on s.GameId equals g.Id
+            where s.CustomerId == customer.Id && s.IsFinished && s.FinishedAt != null
+            orderby s.FinishedAt descending, s.Id select new { s.Id, s.GameId, GameName = g.Name, s.Score, s.StartedAt, s.FinishedAt }).Skip(Math.Max(0,skip)).Take(Math.Clamp(take,1,100)));
+        return rows.Select(x=>new GameHistoryDto { Id=x.Id,GameId=x.GameId,GameName=x.GameName,Score=x.Score,FinishedAt=x.FinishedAt!.Value,DurationSeconds=(int)Math.Max(0,(x.FinishedAt.Value-x.StartedAt).TotalSeconds) }).ToList();
+    }
     // ── Helpers ────────────────────────────────────────────────────────────
 
     /// <summary>Tìm Customer theo phone + đảm bảo có HlgUserProfile (tạo nếu thiếu).</summary>
@@ -282,6 +331,8 @@ public class HlgProfileAppService : ApplicationService, IHlgProfileAppService
             Gender = HlgEnumMapper.GenderByteToString(c.Gender),
             Birthday = HlgEnumMapper.DateToIso(c.DateOfBirth),
             Address = c.Address,
+            PharmacyCode = p.PharmacyCode,
+            VgaCode = p.PharmacyCode,
             AvatarUrl = c.AvatarUrl,
             CustomerType = HlgEnumMapper.CustomerTypeToString(p.CustomerType),
             Points = (int)decimal.Round(c.BonusPoint),
@@ -290,6 +341,8 @@ public class HlgProfileAppService : ApplicationService, IHlgProfileAppService
         };
     }
 
+    private void ValidatePharmacyCode(string? code) { if (code?.Length > 100) throw new UserFriendlyException(L["Hlg:PharmacyCodeTooLong"]); }
+    private void ValidateCustomerType(string? type) { if (type != null && HlgEnumMapper.CustomerTypeFromString(type) == null) throw new UserFriendlyException(L["Hlg:InvalidCustomerType"]); }
     private static string? NormalizePhone(string? phone)
     {
         if (string.IsNullOrWhiteSpace(phone)) return null;

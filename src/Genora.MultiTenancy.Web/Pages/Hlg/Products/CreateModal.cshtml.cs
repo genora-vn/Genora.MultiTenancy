@@ -10,7 +10,7 @@ public class CreateModalModel : HlgAdminPageModel
     [BindProperty] public CreateHlgProductInput Input { get; set; } = new();
     private readonly IHlgProductAdminAppService _service;
     public CreateModalModel(IHlgProductAdminAppService service) { _service = service; }
-    public void OnGet(Guid parentId) { Input.CategoryId = parentId; }
+    public void OnGet(Guid? parentId, Guid? brandId) { Input.CategoryId = parentId ?? Guid.Empty; Input.BrandId = brandId; }
     public async Task<IActionResult> OnPostAsync()
     {
         if (!ModelState.IsValid) return Page();

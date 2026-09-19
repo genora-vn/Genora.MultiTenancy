@@ -12,6 +12,7 @@ namespace Genora.MultiTenancy.AppDtos.Hlg;
 /// </summary>
 public interface IHlgRankingAppService : IApplicationService
 {
+    Task<List<RankingEntryDto>> GetEventEntriesAsync(Guid eventId, string? phone = null, int top = 50, CancellationToken ct = default);
     /// <summary>Sự kiện xếp hạng đang kích hoạt hiện tại (mới nhất còn hiệu lực). Null nếu không có.</summary>
     Task<RankingEventDto?> GetCurrentEventAsync(CancellationToken ct = default);
 

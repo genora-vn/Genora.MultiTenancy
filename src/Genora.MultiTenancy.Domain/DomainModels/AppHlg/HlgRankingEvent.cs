@@ -15,6 +15,8 @@ namespace Genora.MultiTenancy.DomainModels.AppHlg;
 public class HlgRankingEvent : FullAuditedAggregateRoot<Guid>, IMultiTenant
 {
     public Guid? TenantId { get; set; }
+    /// <summary>Null retains legacy ranking across all games.</summary>
+    public Guid? GameId { get; set; }
 
     [Required]
     [StringLength(250)]

@@ -12,13 +12,16 @@ namespace Genora.MultiTenancy.SignalR;
 [AllowAnonymous]
 public class HlgLiveFeedHub : Hub
 {
-    private static string GroupName(Guid gameId) => $"hlg-live-feed:{gameId:D}";
+    private readonly Volo.Abp.MultiTenancy.ICurrentTenant _tenant;
+    private readonly Genora.MultiTenancy.AppDtos.Hlg.IHlgGameAppService _games;
+    public HlgLiveFeedHub(Volo.Abp.MultiTenancy.ICurrentTenant tenant, Genora.MultiTenancy.AppDtos.Hlg.IHlgGameAppService games) { _tenant=tenant; _games=games; }
+    public static string GroupName(Guid? tenantId, Guid gameId) => $"hlg-live-feed:{tenantId?.ToString("D") ?? "host"}:{gameId:D}";
 
     /// <summary>Client gọi để tham gia live-feed của một game.</summary>
-    public Task JoinGame(Guid gameId)
-        => Groups.AddToGroupAsync(Context.ConnectionId, GroupName(gameId));
+    public async Task JoinGame(Guid gameId)
+    { await _games.GetGameAsync(gameId); await Groups.AddToGroupAsync(Context.ConnectionId, GroupName(_tenant.Id,gameId)); }
 
     /// <summary>Client gọi để rời live-feed của một game.</summary>
     public Task LeaveGame(Guid gameId)
-        => Groups.RemoveFromGroupAsync(Context.ConnectionId, GroupName(gameId));
+        => Groups.RemoveFromGroupAsync(Context.ConnectionId, GroupName(_tenant.Id,gameId));
 }

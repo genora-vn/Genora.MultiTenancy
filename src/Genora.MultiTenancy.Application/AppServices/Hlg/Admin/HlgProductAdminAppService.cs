@@ -41,6 +41,7 @@ public class HlgProductAdminAppService : FeatureProtectedCrudAppService<HlgProdu
         var query = await Repository.GetQueryableAsync();
         if (!string.IsNullOrWhiteSpace(input.FilterText)) { var term = input.FilterText.Trim(); query = query.Where(x => x.Name.Contains(term)); }
         if (input.IsActive.HasValue) query = query.Where(x => x.IsActive == input.IsActive.Value);
+        if (input.BrandId.HasValue) query = query.Where(x => x.BrandId == input.BrandId);
         if (input.ParentId.HasValue) query = query.Where(x => x.CategoryId == input.ParentId.Value);
         var count = await AsyncExecuter.CountAsync(query);
         var rows = await AsyncExecuter.ToListAsync(query.OrderBy(x => x.DisplayOrder).ThenBy(x => x.Id).Skip(Math.Max(0, input.SkipCount)).Take(Math.Clamp(input.MaxResultCount, 1, 100)));
@@ -74,11 +75,27 @@ public class HlgProductAdminAppService : FeatureProtectedCrudAppService<HlgProdu
     private async Task ValidateAsync(HlgProductInput input, Guid? id)
     {
         Validator.ValidateObject(input, new ValidationContext(input), true);
-        await _categories.GetAsync(input.CategoryId);
+        var category = await _categories.GetAsync(input.CategoryId);
+        HlgContentValidation.Scope(category.TenantId, CurrentTenant.Id);
+        if (input.BrandId.HasValue) {
+            var brand = await LazyServiceProvider.LazyGetRequiredService<IRepository<HlgBrand, Guid>>().GetAsync(input.BrandId.Value);
+            HlgContentValidation.Scope(brand.TenantId, CurrentTenant.Id);
+            if (brand.CategoryId != input.CategoryId) throw new UserFriendlyException(L["Hlg:BrandCategoryMismatch"]);
+        }
+        HlgContentValidation.Localized(() => { HlgContentValidation.Url(input.ThumbnailUrl); HlgContentValidation.Product(input.Details, id); }, key => L[key]);
+        foreach (var relatedId in input.Details.RelatedProductIds) {
+            var related = await Repository.GetAsync(relatedId); HlgContentValidation.Scope(related.TenantId, CurrentTenant.Id);
+        }
+        if (input.Details.GameId.HasValue) {
+            var game = await LazyServiceProvider.LazyGetRequiredService<IRepository<HlgGame, Guid>>().GetAsync(input.Details.GameId.Value);
+            HlgContentValidation.Scope(game.TenantId, CurrentTenant.Id);
+        }
         await Task.CompletedTask;
     }
     private static void Apply(HlgProductInput input, HlgProduct entity)
     {
+        entity.BrandId = input.BrandId;
+        entity.DetailsJson = JsonSerializer.Serialize(input.Details);
         entity.CategoryId = input.CategoryId;
         entity.Name = input.Name.Trim();
         entity.ThumbnailUrl = input.ThumbnailUrl;
@@ -91,6 +108,8 @@ public class HlgProductAdminAppService : FeatureProtectedCrudAppService<HlgProdu
     private static HlgProductAdminDto Map(HlgProduct entity) => new()
     {
         Id = entity.Id,
+        BrandId = entity.BrandId,
+        Details = JsonSerializer.Deserialize<Genora.MultiTenancy.Hlg.HlgProductContent>(entity.DetailsJson ?? "{}") ?? new(),
         CategoryId = entity.CategoryId,
         Name = entity.Name,
         ThumbnailUrl = entity.ThumbnailUrl,

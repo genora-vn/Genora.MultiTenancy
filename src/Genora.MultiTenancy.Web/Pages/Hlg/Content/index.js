@@ -1,0 +1,1 @@
+$(function () { window.hlgAdmin.init({"service": "hlgContentAdmin", "folder": "Content", "readOnly": false, "columns": [{"data": "title", "label": "Title", "kind": "text"}, {"data": "slot", "label": "Slot", "kind": "contentSlot"}, {"data": "displayOrder", "label": "DisplayOrder", "kind": "number"}, {"data": "isActive", "label": "IsActive", "kind": "bool"}]}); });

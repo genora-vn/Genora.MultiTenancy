@@ -15,6 +15,9 @@ public class GamificationUserDto
     public string? Gender { get; set; }
     public string? Birthday { get; set; }
     public string? Address { get; set; }
+    /// <summary>Mã nhà thuốc hiển thị cho nhóm người dùng nhà thuốc.</summary>
+    public string? VgaCode { get; set; } // Legacy alias; HLG pharmacy code is not Customer golf VGA.
+    public string? PharmacyCode { get; set; }
     public string? AvatarUrl { get; set; }
     public string? CustomerType { get; set; }
     public int Points { get; set; }

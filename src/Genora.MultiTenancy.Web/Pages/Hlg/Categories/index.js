@@ -25,6 +25,6 @@ $(function () {
                 "kind": "bool"
             }
         ],
-        "children": "Products"
+        "children": "Brands"
     });
 });

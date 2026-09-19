@@ -12,6 +12,10 @@ namespace Genora.MultiTenancy.AppDtos.Hlg.Admin;
 public class GetHlgAdminListInput : GetHlgListInput
 {
     public Guid? ParentId { get; set; }
+    public Guid? BrandId { get; set; }
+    public byte? CustomerType { get; set; }
+    public bool? IsRegistered { get; set; }
+    public byte? Status { get; set; }
 }
 public class HlgCategoryInput
 {
@@ -23,6 +27,8 @@ public class HlgCategoryInput
 }
 public class HlgProductInput
 {
+    public Guid? BrandId { get; set; }
+    public Genora.MultiTenancy.Hlg.HlgProductContent Details { get; set; } = new();
     public Guid CategoryId { get; set; }
     [Required, StringLength(250)] public string Name { get; set; } = "";
     [StringLength(1000)] public string? ThumbnailUrl { get; set; }
@@ -35,6 +41,7 @@ public class HlgProductInput
 }
 public class HlgRankingInput : IValidatableObject
 {
+    public Guid? GameId { get; set; }
     [Required, StringLength(250)] public string Title { get; set; } = "";
     public string? Description { get; set; }
     public DateTime StartAt { get; set; } = DateTime.Today;
@@ -47,6 +54,8 @@ public class HlgRankingInput : IValidatableObject
 }
 public class HlgGameInput : IValidatableObject
 {
+    [StringLength(100)] public string? BadgeText { get; set; }
+    [StringLength(1000)] public string? BannerUrl { get; set; }
     [Required, StringLength(250)] public string Name { get; set; } = "";
     [EnumDataType(typeof(HlgGameType))] public HlgGameType Type { get; set; } = HlgGameType.Quiz;
     [StringLength(1000)] public string? ImageUrl { get; set; }
@@ -98,6 +107,10 @@ public class HlgQuestionInput : IValidatableObject
 }
 public class HlgUserAdminDto : EntityDto<Guid>
 {
+    public string? PharmacyCode { get; set; }
+    public string? Address { get; set; }
+    public DateTime? Birthday { get; set; }
+    public byte? Gender { get; set; }
     public Guid CustomerId { get; set; }
     public string? CustomerCode { get; set; }
     public string FullName { get; set; } = "";
@@ -111,6 +124,7 @@ public class HlgUserAdminDto : EntityDto<Guid>
 public interface IHlgUserAdminAppService : IApplicationService
 {
     Task<PagedResultDto<HlgUserAdminDto>> GetListAsync(GetHlgAdminListInput input);
+    Task<HlgUserDetailDto> GetAsync(Guid id);
 }
 public class HlgCategoryAdminDto : HlgCategoryInput, IEntityDto<Guid> { public Guid Id { get; set; } }
 public class HlgProductAdminDto : HlgProductInput, IEntityDto<Guid> { public Guid Id { get; set; } }
@@ -151,4 +165,12 @@ internal static class HlgInputValidation
         var text = localizer?[key];
         return new ValidationResult(text == null || text.ResourceNotFound ? fallback : text.Value, new[] { member });
     }
+}
+
+public class HlgUserDetailDto {
+    public HlgUserAdminDto Profile { get; set; } = new();
+    public ProfileStatsDto Stats { get; set; } = new();
+    public List<LearningHistoryItemDto> Learning { get; set; } = new();
+    public List<GameHistoryDto> Games { get; set; } = new();
+    public List<RewardHistoryItemDto> Rewards { get; set; } = new();
 }

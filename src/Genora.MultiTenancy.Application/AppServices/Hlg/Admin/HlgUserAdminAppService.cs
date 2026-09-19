@@ -39,15 +39,32 @@ public class HlgUserAdminAppService : ApplicationService, IHlgUserAdminAppServic
         var query = from p in profiles join c in customers on p.CustomerId equals c.Id
                     select new HlgUserAdminDto { Id = p.Id, CustomerId = c.Id, CustomerCode = c.CustomerCode,
                         FullName = c.FullName, PhoneNumber = c.PhoneNumber, ZaloId = p.ZaloId, CustomerType = (byte?)p.CustomerType,
+                        PharmacyCode = p.PharmacyCode, Address = c.Address, Birthday = c.DateOfBirth, Gender = c.Gender,
                         BonusPoint = c.BonusPoint, IsRegistered = p.IsRegistered, IsActive = c.IsActive };
         if (!string.IsNullOrWhiteSpace(input.FilterText))
         {
             var term = input.FilterText.Trim();
             query = query.Where(x => x.FullName.Contains(term) || x.PhoneNumber.Contains(term) || (x.CustomerCode != null && x.CustomerCode.Contains(term)) || (x.ZaloId != null && x.ZaloId.Contains(term)));
         }
+        if (input.CustomerType.HasValue) query = query.Where(x => x.CustomerType == input.CustomerType);
+        if (input.IsRegistered.HasValue) query = query.Where(x => x.IsRegistered == input.IsRegistered);
         if (input.IsActive.HasValue) query = query.Where(x => x.IsActive == input.IsActive.Value);
         var count = await AsyncExecuter.CountAsync(query);
         var items = await AsyncExecuter.ToListAsync(query.OrderBy(x => x.FullName).ThenBy(x => x.Id).Skip(Math.Max(0, input.SkipCount)).Take(Math.Clamp(input.MaxResultCount, 1, 100)));
         return new PagedResultDto<HlgUserAdminDto>(count, items);
+    }
+
+    public virtual async Task<HlgUserDetailDto> GetAsync(Guid id)
+    {
+        await AuthorizationService.CheckAsync(CurrentTenant.IsAvailable ? MultiTenancyPermissions.AppHlgUsers.Default : MultiTenancyPermissions.HostAppHlgUsers.Default);
+        if (CurrentTenant.IsAvailable && !await _features.IsEnabledAsync(AppHlgFeatures.Management)) throw new AbpAuthorizationException();
+        var profile = await _profiles.GetAsync(id); HlgContentValidation.Scope(profile.TenantId, CurrentTenant.Id);
+        var c = await _customers.GetAsync(profile.CustomerId); HlgContentValidation.Scope(c.TenantId, CurrentTenant.Id);
+        var mini = LazyServiceProvider.LazyGetRequiredService<Genora.MultiTenancy.AppDtos.Hlg.IHlgProfileAppService>();
+        return new HlgUserDetailDto {
+            Profile = new HlgUserAdminDto { Id=id, CustomerId=c.Id,CustomerCode=c.CustomerCode,FullName=c.FullName,PhoneNumber=c.PhoneNumber,PharmacyCode=profile.PharmacyCode,Address=c.Address,Birthday=c.DateOfBirth,Gender=c.Gender,CustomerType=(byte?)profile.CustomerType,IsRegistered=profile.IsRegistered,BonusPoint=c.BonusPoint,IsActive=c.IsActive },
+            Stats = await mini.GetStatsAsync(c.PhoneNumber), Learning = await mini.GetLearningHistoryAsync(c.PhoneNumber),
+            Games = await mini.GetGameHistoryAsync(c.PhoneNumber,0,100), Rewards = await mini.GetRewardHistoryAsync(c.PhoneNumber)
+        };
     }
 }

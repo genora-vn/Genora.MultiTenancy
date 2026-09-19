@@ -44,6 +44,7 @@ public class HlgKnowledgeAppService : ApplicationService, IHlgKnowledgeAppServic
         _categoryRepo = categoryRepo;
         _productRepo = productRepo;
         _progressRepo = progressRepo;
+        LocalizationResource = typeof(Genora.MultiTenancy.Localization.MultiTenancyResource);
         _customerRepo = customerRepo;
         _currentTenant = currentTenant;
         _logger = logger;
@@ -56,7 +57,7 @@ public class HlgKnowledgeAppService : ApplicationService, IHlgKnowledgeAppServic
             catQ.Where(x => x.IsActive).OrderBy(x => x.DisplayOrder).ThenBy(x => x.Name), ct);
 
         // Đếm số bài học active theo từng danh mục (1 query gộp).
-        var prodQ = await _productRepo.GetQueryableAsync();
+        var prodQ = await VisibleProductsAsync();
         var counts = await AsyncExecuter.ToListAsync(
             prodQ.Where(p => p.IsActive)
                  .GroupBy(p => p.CategoryId)
@@ -75,10 +76,10 @@ public class HlgKnowledgeAppService : ApplicationService, IHlgKnowledgeAppServic
 
     public async Task<KnowledgeCategoryDto> GetCategoryAsync(Guid id, CancellationToken ct = default)
     {
-        var c = await _categoryRepo.FirstOrDefaultAsync(x => x.Id == id, ct)
+        var c = await _categoryRepo.FirstOrDefaultAsync(x => x.Id == id && x.IsActive, ct)
             ?? throw new UserFriendlyException("Không tìm thấy danh mục");
 
-        var count = await _productRepo.CountAsync(p => p.CategoryId == id && p.IsActive, ct);
+        var count = await AsyncExecuter.CountAsync((await VisibleProductsAsync()).Where(p => p.CategoryId == id), ct);
 
         return new KnowledgeCategoryDto
         {
@@ -92,7 +93,7 @@ public class HlgKnowledgeAppService : ApplicationService, IHlgKnowledgeAppServic
 
     public async Task<List<ProductDto>> GetProductsByCategoryAsync(Guid categoryId, string? phone = null, CancellationToken ct = default)
     {
-        var prodQ = await _productRepo.GetQueryableAsync();
+        var prodQ = await VisibleProductsAsync();
         var products = await AsyncExecuter.ToListAsync(
             prodQ.Where(p => p.CategoryId == categoryId && p.IsActive)
                  .OrderBy(p => p.DisplayOrder).ThenBy(p => p.Name), ct);
@@ -104,18 +105,25 @@ public class HlgKnowledgeAppService : ApplicationService, IHlgKnowledgeAppServic
 
     public async Task<ProductDto> GetProductAsync(Guid id, string? phone = null, CancellationToken ct = default)
     {
-        var p = await _productRepo.FirstOrDefaultAsync(x => x.Id == id, ct)
+        var p = await AsyncExecuter.FirstOrDefaultAsync((await VisibleProductsAsync()).Where(x => x.Id == id), ct)
             ?? throw new UserFriendlyException("Không tìm thấy bài học");
 
         var completedIds = await GetCompletedProductIdsAsync(phone, ct);
-        return MapProduct(p, completedIds.Contains(p.Id));
+        var dto = MapProduct(p, completedIds.Contains(p.Id));
+        if (dto.Details.GameId.HasValue && !await LazyServiceProvider.LazyGetRequiredService<IRepository<HlgGame,Guid>>().AnyAsync(g=>g.Id==dto.Details.GameId && g.IsActive && g.TenantId==_currentTenant.Id,ct)) dto.Details.GameId=null;
+        var ids = dto.Details.RelatedProductIds;
+        var related = await AsyncExecuter.ToListAsync((await VisibleProductsAsync()).Where(x => ids.Contains(x.Id)), ct);
+        dto.RelatedProducts = ids.Where(id => related.Any(x => x.Id == id)).Select(id => MapProduct(related.Single(x => x.Id == id), completedIds.Contains(id))).ToList();
+        // Omit archived targets from public relations, while keeping the stored CMS configuration intact.
+        dto.Details.RelatedProductIds = dto.RelatedProducts.Select(x => x.Id).ToList();
+        return dto;
     }
 
     public async Task CompleteProductAsync(Guid productId, string phone, CancellationToken ct = default)
     {
         var customer = await ResolveCustomerAsync(phone, ct);
 
-        var product = await _productRepo.FirstOrDefaultAsync(x => x.Id == productId, ct)
+        var product = await AsyncExecuter.FirstOrDefaultAsync((await VisibleProductsAsync()).Where(x => x.Id == productId), ct)
             ?? throw new UserFriendlyException("Không tìm thấy bài học");
 
         var progress = await _progressRepo.FirstOrDefaultAsync(
@@ -144,6 +152,32 @@ public class HlgKnowledgeAppService : ApplicationService, IHlgKnowledgeAppServic
         _logger.LogInformation("HLG: customer {CustomerId} hoàn thành bài học {ProductId}", customer.Id, productId);
     }
 
+
+    private async Task<IQueryable<HlgProduct>> VisibleProductsAsync()
+    {
+        var products = await _productRepo.GetQueryableAsync();
+        var categories = await _categoryRepo.GetQueryableAsync();
+        var brands = await LazyServiceProvider.LazyGetRequiredService<IRepository<HlgBrand,Guid>>().GetQueryableAsync();
+        return products.Where(p => p.IsActive && p.TenantId == _currentTenant.Id
+            && categories.Any(c => c.Id == p.CategoryId && c.IsActive && c.TenantId == p.TenantId)
+            && (p.BrandId == null || brands.Any(b => b.Id == p.BrandId && b.CategoryId == p.CategoryId && b.IsActive && b.TenantId == p.TenantId)));
+    }
+    public async Task UpdateProgressAsync(Guid productId, string phone, int percent)
+    {
+        if (percent < 0 || percent > 100) throw new UserFriendlyException(L["Hlg:InvalidProgress"]);
+        await GetProductAsync(productId);
+        var customer = await ResolveCustomerAsync(phone, default);
+        var progress = await _progressRepo.FirstOrDefaultAsync(x => x.CustomerId == customer.Id && x.ProductId == productId);
+        if (progress == null) {
+            progress = new HlgLearningProgress(GuidGenerator.Create(), customer.Id, productId, _currentTenant.Id);
+            await _progressRepo.InsertAsync(progress, autoSave: true);
+        }
+        progress.ProgressPercent = Math.Max(progress.ProgressPercent, percent);
+        progress.IsCompleted = progress.ProgressPercent == 100;
+        if (progress.IsCompleted) progress.CompletedAt ??= Clock.Now;
+        progress.LastViewedAt = Clock.Now;
+        await _progressRepo.UpdateAsync(progress, autoSave: true);
+    }
     // ── Helpers ────────────────────────────────────────────────────────────
 
     /// <summary>Lấy set ProductId đã hoàn thành của user theo phone. Trả rỗng nếu phone null/không tìm thấy.</summary>
@@ -171,11 +205,13 @@ public class HlgKnowledgeAppService : ApplicationService, IHlgKnowledgeAppServic
             ?? throw new UserFriendlyException("Không tìm thấy khách hàng. Vui lòng đăng ký trước.");
     }
 
-    private static ProductDto MapProduct(HlgProduct p, bool isCompleted)
+    internal static ProductDto MapProduct(HlgProduct p, bool isCompleted)
     {
         return new ProductDto
         {
             Id = p.Id,
+            BrandId = p.BrandId,
+            Details = JsonSerializer.Deserialize<Genora.MultiTenancy.Hlg.HlgProductContent>(p.DetailsJson ?? "{}") ?? new(),
             CategoryId = p.CategoryId,
             Name = p.Name,
             ThumbnailUrl = p.ThumbnailUrl,

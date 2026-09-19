@@ -16,6 +16,9 @@ public class KnowledgeCategoryDto
 /// <summary>Bài học/sản phẩm kiến thức. Khớp contract Product.</summary>
 public class ProductDto
 {
+    public Guid? BrandId { get; set; }
+    public Genora.MultiTenancy.Hlg.HlgProductContent Details { get; set; } = new();
+    public List<ProductDto> RelatedProducts { get; set; } = new();
     public Guid Id { get; set; }
     public Guid CategoryId { get; set; }
     public string Name { get; set; } = string.Empty;

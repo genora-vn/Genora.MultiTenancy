@@ -78,6 +78,7 @@ public class HlgCategoryAdminAppService : FeatureProtectedCrudAppService<HlgKnow
     public override async Task DeleteAsync(Guid id)
     {
         await CheckDeletePolicyAsync();
+        if (await LazyServiceProvider.LazyGetRequiredService<IRepository<HlgBrand,Guid>>().AnyAsync(x => x.CategoryId == id)) throw new UserFriendlyException(L["Hlg:CategoryHasBrands"]);
         if (await _products.AnyAsync(x => x.CategoryId == id)) throw new UserFriendlyException(L["Hlg:CategoryHasProducts"]);
         await Repository.DeleteAsync(id);
     }

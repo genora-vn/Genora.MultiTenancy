@@ -1,0 +1,1 @@
+$(function () { window.hlgAdmin.init({"service": "hlgWinnerAdmin", "folder": "Winners", "readOnly": false, "columns": [{"data": "customerName", "label": "FullName", "kind": "text"}, {"data": "rank", "label": "Rank", "kind": "number"}, {"data": "score", "label": "Score", "kind": "number"}, {"data": "isActive", "label": "Published", "kind": "bool"}]}); });

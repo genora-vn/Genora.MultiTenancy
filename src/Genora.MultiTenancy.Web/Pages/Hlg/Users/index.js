@@ -2,7 +2,7 @@ $(function () {
     window.hlgAdmin.init({
         "service": "hlgUserAdmin",
         "folder": "Users",
-        "readOnly": true,
+        "readOnly": true, "detail": true,
         "columns": [
             {
                 "data": "customerCode",

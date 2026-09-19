@@ -57,3 +57,34 @@ test('nested navigation and modal actions use the selected record', async () => 
     actions[1].action({ record: { id: 'abc' } }); assert.equal(h.calls.at(-1)[2].id, 'abc');
     actions[2].action({ record: { id: 'abc' } }); await Promise.resolve(); assert.ok(h.calls.some(x => x[0] === 'delete' && x[1] === 'abc'));
 });
+
+test('brand navigation and creation preserve both industry and brand', () => {
+    const h = harness({ attrs: { 'data-parent-id': 'industry', 'data-brand-id': 'brand' } });
+    h.init({ folder: 'Brands', children: 'Products' });
+    h.grid.columnDefs[0].rowAction.items[0].action({record: {id: 'brand 1', categoryId: 'industry 2'}});
+    assert.equal(h.context.location.href, '/Hlg/Products?parentId=industry%202&brandId=brand%201');
+    assert.equal(h.input().brandId, 'brand');
+    h.events['HlgCreate:click']();
+    assert.equal(h.calls.at(-1)[2].parentId, 'industry'); assert.equal(h.calls.at(-1)[2].brandId, 'brand');
+});
+test('read-only player detail has no edit or delete action', () => {
+    const h = harness(); h.init({ folder: 'Users', readOnly: true, detail: true });
+    const actions = h.grid.columnDefs[0].rowAction.items; assert.equal(actions.length, 1);
+    actions[0].action({record: {id: 'player'}});
+    assert.equal(h.calls.at(-1)[1], '/Hlg/Users/DetailModal'); assert.equal(h.calls.at(-1)[2].id, 'player');
+});
+test('registration, fulfillment and three customer types preserve explicit filter values', () => {
+    const h = harness(); h.init({ columns: [{data:'customerType',label:'CustomerType',kind:'customerType'}] });
+    h.fields.HlgRegistered = 'false'; h.fields.HlgCustomerType = '3'; h.fields.HlgStatus = '1';
+    assert.equal(h.input().isRegistered, 'false'); assert.equal(h.input().customerType, '3'); assert.equal(h.input().status, '1');
+    assert.equal(h.grid.columnDefs[1].render(3, 'display'), 'Hlg:Retailer');
+});
+test('ordered content moves retain data and respect collection boundaries', () => {
+    const context = {}; context.window = context; vm.createContext(context);
+    vm.runInContext(fs.readFileSync(path.join(web,'Pages/Hlg/editor.js'),'utf8'),context);
+    const items=[{Title:'first',Content:'<p>keep</p>'},{Title:'second',Url:'/video.mp4'},{Title:'third'}];
+    context.hlgEditor.move(items,1,-1); assert.equal(items[0].Url,'/video.mp4'); assert.equal(items[1].Content,'<p>keep</p>');
+    context.hlgEditor.move(items,0,-1); assert.equal(items[0].Title,'second');
+    context.hlgEditor.move(items,0,1); assert.equal(items[0].Title,'first');
+    context.hlgEditor.move(items,2,1); assert.equal(items[2].Title,'third');
+});

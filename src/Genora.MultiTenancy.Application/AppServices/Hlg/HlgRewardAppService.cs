@@ -53,6 +53,7 @@ public class HlgRewardAppService : ApplicationService, IHlgRewardAppService
         _shippingRepo = shippingRepo;
         _sessionRepo = sessionRepo;
         _profileRepo = profileRepo;
+        LocalizationResource = typeof(Genora.MultiTenancy.Localization.MultiTenancyResource);
         _customerRepo = customerRepo;
         _currentTenant = currentTenant;
         _uowManager = uowManager;
@@ -69,10 +70,16 @@ public class HlgRewardAppService : ApplicationService, IHlgRewardAppService
         return rewards.Select(MapReward).ToList();
     }
 
-    public async Task<RewardHistoryItemDto> RedeemAsync(Guid rewardId, string phone, Guid? shippingAddressId = null, CancellationToken ct = default)
+    public Task<RewardHistoryItemDto> RedeemAsync(Guid rewardId, string phone, Guid? shippingAddressId = null, CancellationToken ct = default)
+        => RedeemCoreAsync(rewardId, phone, shippingAddressId, null, ct);
+    public Task<RewardHistoryItemDto> RedeemForSessionAsync(Guid rewardId, Guid sessionId, string phone, Guid? shippingAddressId = null, CancellationToken ct = default)
+        => RedeemCoreAsync(rewardId, phone, shippingAddressId, sessionId, ct);
+    private async Task<RewardHistoryItemDto> RedeemCoreAsync(Guid rewardId, string phone, Guid? shippingAddressId, Guid? sessionId, CancellationToken ct)
     {
         var customer = await ResolveCustomerAsync(phone, ct);
 
+        if (sessionId.HasValue && !await _sessionRepo.AnyAsync(x=>x.Id==sessionId && x.CustomerId==customer.Id && x.TenantId==_currentTenant.Id && x.IsFinished, ct))
+            throw new UserFriendlyException(L["Hlg:InvalidRewardSession"]);
         // ACID: trừ điểm + tạo history + giảm tồn kho trong 1 transaction.
         using var uow = _uowManager.Begin(requiresNew: true, isTransactional: true);
 
@@ -94,6 +101,8 @@ public class HlgRewardAppService : ApplicationService, IHlgRewardAppService
         if (reward.Type == HlgRewardType.Physical && isConsumer && shippingAddressId == null)
             throw new UserFriendlyException("Vui lòng cung cấp địa chỉ giao hàng để nhận quà");
 
+        if (shippingAddressId.HasValue && !await _shippingRepo.AnyAsync(x => x.Id == shippingAddressId.Value && x.CustomerId == customer.Id && x.TenantId == _currentTenant.Id, ct))
+            throw new UserFriendlyException(L["Hlg:InvalidShippingAddress"]);
         // Trừ điểm.
         customer.BonusPoint -= reward.PointCost;
         await _customerRepo.UpdateAsync(customer, autoSave: true, cancellationToken: ct);
@@ -115,6 +124,7 @@ public class HlgRewardAppService : ApplicationService, IHlgRewardAppService
 
         var history = new HlgRewardHistory(GuidGenerator.Create(), customer.Id, reward.Id, reward.Name, _currentTenant.Id)
         {
+            SessionId = sessionId,
             PointDelta = -reward.PointCost,
             RewardType = reward.Type,
             Status = status,

@@ -15,18 +15,19 @@ public class HlgLiveFeedNotifier : IHlgLiveFeedNotifier
 {
     private readonly IHubContext<HlgLiveFeedHub> _hubContext;
     private readonly ILogger<HlgLiveFeedNotifier> _logger;
+    private readonly Volo.Abp.MultiTenancy.ICurrentTenant _tenant;
 
     public HlgLiveFeedNotifier(
         IHubContext<HlgLiveFeedHub> hubContext,
-        ILogger<HlgLiveFeedNotifier> logger)
+        ILogger<HlgLiveFeedNotifier> logger, Volo.Abp.MultiTenancy.ICurrentTenant tenant)
     {
         _hubContext = hubContext;
-        _logger = logger;
+        _logger = logger; _tenant=tenant;
     }
 
     public async Task PlayerActivityAsync(Guid gameId, LivePlayerActivityDto activity)
     {
-        var group = $"hlg-live-feed:{gameId:D}";
+        var group = HlgLiveFeedHub.GroupName(_tenant.Id,gameId);
         _logger.LogInformation("Broadcast hlg.live-feed.activity game={GameId} user={UserId}", gameId, activity.UserId);
         await _hubContext.Clients.Group(group).SendAsync("hlg.live-feed.activity", activity);
     }

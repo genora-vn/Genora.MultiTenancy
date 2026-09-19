@@ -22,13 +22,16 @@
         try { service = resolveService(config.service); }
         catch (error) { $('#HlgError').text(l('Hlg:ProxyUnavailable')).removeClass('d-none'); root.console.error(error); return; }
         var parentId = page.attr('data-parent-id');
+        var brandId = page.attr('data-brand-id');
         var editable = page.attr('data-edit') === 'true';
         var deletable = page.attr('data-delete') === 'true';
         var create = config.readOnly ? null : new abp.ModalManager('/Hlg/' + config.folder + '/CreateModal');
         var edit = config.readOnly ? null : new abp.ModalManager('/Hlg/' + config.folder + '/EditModal');
         var enums = {
             rewardType: ['Physical', 'Voucher'], gameType: ['Quiz', 'PictureToWord', 'KingOfVietnamese', 'SpinWheel', 'TileFlip'],
-            gameStatus: ['Upcoming', 'Ongoing', 'Ended'], customerType: ['Pharmacy', 'Consumer']
+            gameStatus: ['Upcoming', 'Ongoing', 'Ended'], customerType: ['Pharmacy', 'Consumer', 'Retailer'],
+            contentSlot: ['HomeBanner', 'KnowledgeCard', 'GamesCard', 'RankingCard', 'ShareLink'],
+            fulfillmentStatus: ['Pending', 'Shipping', 'Delivered', 'Done']
         };
         var columns = config.columns.map(function (column) {
             return {
@@ -47,9 +50,11 @@
         var actions = [];
         if (config.children) actions.push({
             text: l('Hlg:' + config.children), action: function (data) {
-                root.location.href = abp.appPath + 'Hlg/' + config.children + '?parentId=' + encodeURIComponent(data.record.id);
+                root.location.href = abp.appPath + 'Hlg/' + config.children + '?parentId=' + encodeURIComponent(config.folder === 'Brands' ? data.record.categoryId : data.record.id) + (config.folder === 'Brands' ? '&brandId=' + encodeURIComponent(data.record.id) : '');
             }
         });
+        if (config.extraChildren) actions.push({ text: l('Hlg:' + config.extraChildren), action: function (data) { root.location.href = abp.appPath + 'Hlg/' + config.extraChildren + '?parentId=' + encodeURIComponent(data.record.id); } });
+        if (config.detail) actions.push({ text: l('Hlg:Details'), action: function (data) { new abp.ModalManager('/Hlg/' + config.folder + '/DetailModal').open({ id: data.record.id }); } });
         if (editable && !config.readOnly) actions.push({ text: l('Hlg:Edit'), action: function (data) { edit.open({ id: data.record.id }); } });
         if (deletable && !config.readOnly) actions.push({
             text: l('Hlg:Delete'), confirmMessage: function (data) {
@@ -64,13 +69,18 @@
             scrollX: true, order: [], pageLength: 10, lengthMenu: [10, 25, 50, 100], columnDefs: columns,
             ajax: abp.libs.datatables.createAjax(service.getList, function () {
                 var active = $('#HlgActive').val();
-                return { filterText: $('#HlgSearch').val(), isActive: active === '' ? null : active === 'true', parentId: parentId || null };
+                return { filterText: $('#HlgSearch').val(), isActive: active === '' ? null : active === 'true', parentId: parentId || null, brandId: brandId || null,
+                    status: $('#HlgStatus').val() || null, customerType: $('#HlgCustomerType').val() || null, isRegistered: $('#HlgRegistered').val() || null };
             })
         }));
         $('#HlgFilter').on('submit', function (event) { event.preventDefault(); table.ajax.reload(); });
-        $('#HlgReset').on('click', function () { $('#HlgSearch, #HlgActive').val(''); table.ajax.reload(); });
+        $('#HlgReset').on('click', function () { $('#HlgSearch, #HlgActive, #HlgStatus, #HlgCustomerType, #HlgRegistered').val(''); table.ajax.reload(); });
         if (create) {
-            $('#HlgCreate').on('click', function () { create.open({ parentId: parentId }); });
+            $('#HlgCreate').on('click', function () { create.open({ parentId: parentId, brandId: brandId }); });
+            if (root.hlgEditor) {
+                create.onOpen(function () { root.hlgEditor.init(create.getModal()); });
+                edit.onOpen(function () { root.hlgEditor.init(edit.getModal()); });
+            }
             create.onResult(function () { table.ajax.reload(); abp.notify.success(l('Hlg:Saved')); });
             edit.onResult(function () { table.ajax.reload(null, false); abp.notify.success(l('Hlg:Saved')); });
         }

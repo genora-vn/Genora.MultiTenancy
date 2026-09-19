@@ -15,6 +15,32 @@ public static class MultiTenancyDbContextModelCreatingExtensionsHlg
     {
         Check.NotNull(builder, nameof(builder));
 
+
+        builder.Entity<HlgBrand>(b => {
+            b.ToTable("AppHlgBrands", "HLG"); b.ConfigureByConvention();
+            b.HasOne<HlgKnowledgeCategory>().WithMany().HasForeignKey(x => x.CategoryId).OnDelete(DeleteBehavior.NoAction);
+            b.HasIndex(x => new { x.TenantId, x.CategoryId, x.DisplayOrder });
+        });
+        builder.Entity<HlgProduct>().HasOne<HlgBrand>().WithMany().HasForeignKey(x => x.BrandId).OnDelete(DeleteBehavior.NoAction);
+        builder.Entity<HlgContentItem>(b => {
+            b.ToTable("AppHlgContentItems", "HLG"); b.ConfigureByConvention();
+            b.HasOne<HlgGame>().WithMany().HasForeignKey(x => x.GameId).OnDelete(DeleteBehavior.NoAction);
+            b.HasIndex(x => new { x.TenantId, x.Slot, x.DisplayOrder });
+        });
+        builder.Entity<HlgRankingEvent>().HasOne<HlgGame>().WithMany().HasForeignKey(x => x.GameId).OnDelete(DeleteBehavior.NoAction);
+        builder.Entity<HlgRankingPrize>(b => {
+            b.ToTable("AppHlgRankingPrizes", "HLG"); b.ConfigureByConvention();
+            b.HasOne<HlgRankingEvent>().WithMany().HasForeignKey(x => x.EventId).OnDelete(DeleteBehavior.NoAction);
+            b.HasOne<HlgReward>().WithMany().HasForeignKey(x => x.RewardId).OnDelete(DeleteBehavior.NoAction);
+            b.HasIndex(x => new { x.TenantId, x.EventId, x.DisplayOrder });
+        });
+        builder.Entity<HlgRankingWinner>(b => {
+            b.ToTable("AppHlgRankingWinners", "HLG"); b.ConfigureByConvention();
+            b.HasOne<HlgRankingEvent>().WithMany().HasForeignKey(x => x.EventId).OnDelete(DeleteBehavior.NoAction);
+            b.HasOne<HlgRankingPrize>().WithMany().HasForeignKey(x => x.PrizeId).OnDelete(DeleteBehavior.NoAction);
+            b.HasIndex(x => new { x.TenantId, x.EventId, x.CustomerId }).IsUnique().HasFilter("[IsDeleted] = 0");
+        });
+
         // ========== HlgUserProfile ==========
         builder.Entity<HlgUserProfile>(b =>
         {

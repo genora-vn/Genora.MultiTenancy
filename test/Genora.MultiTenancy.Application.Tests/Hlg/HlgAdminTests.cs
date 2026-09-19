@@ -131,6 +131,7 @@ public class HlgAdminTests : IDisposable
         var products = Substitute.For<IRepository<HlgProduct, Guid>>();
         var categories = Substitute.For<IRepository<HlgKnowledgeCategory, Guid>>();
         products.InsertAsync(Arg.Any<HlgProduct>(), true, Arg.Any<CancellationToken>()).Returns(c => c.Arg<HlgProduct>());
+        categories.GetAsync(Arg.Any<Guid>(), Arg.Any<bool>(), Arg.Any<CancellationToken>()).Returns(c => new HlgKnowledgeCategory(c.Arg<Guid>(), "Category", _tenant.Id));
         var service = new HlgProductAdminAppService(products, _tenant, _features, categories) { LazyServiceProvider = new AbpLazyServiceProvider(_provider) };
         var result = await service.CreateAsync(new() { CategoryId = Guid.NewGuid(), Name = "Lesson", Content = null, ImageUrls = " /one.png\r\n\r\n/two.png " });
         result.Content.ShouldBeNull(); result.ImageUrls.ShouldBe("/one.png\n/two.png");

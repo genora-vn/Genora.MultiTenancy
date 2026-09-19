@@ -176,6 +176,9 @@ public class HoaLinhGamificationController : MultiTenancyController
 
     #endregion
 
+    [HttpGet("profile/game-history")]
+    public async Task<IActionResult> GetGameHistory(string phone, int skip=0, int take=50)
+        => Ok(HlgApiResult<System.Collections.Generic.List<GameHistoryDto>>.Ok(await _profileService.GetGameHistoryAsync(phone,skip,take)));
     #region Knowledge
 
     /// <summary>Danh sách danh mục kiến thức.</summary>
@@ -375,6 +378,9 @@ public class HoaLinhGamificationController : MultiTenancyController
 
     #endregion
 
+    [HttpPost("games/sessions/{sessionId}/rewards/{rewardId}/redeem")]
+    public async Task<IActionResult> RedeemSessionReward(Guid sessionId, Guid rewardId, string phone, Guid? shippingAddressId, CancellationToken ct)
+        => Ok(HlgApiResult<RewardHistoryItemDto>.Ok(await _rewardService.RedeemForSessionAsync(rewardId,sessionId,phone,shippingAddressId,ct)));
     #region Ranking
 
     /// <summary>Sự kiện xếp hạng hiện tại.</summary>

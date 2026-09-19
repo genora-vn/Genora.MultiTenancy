@@ -1,0 +1,15 @@
+@page
+@using Genora.MultiTenancy.Localization
+@using Microsoft.Extensions.Localization
+@using Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.TagHelpers.Modal
+@inject IStringLocalizer<MultiTenancyResource> L
+@model Genora.MultiTenancy.Web.Pages.Hlg.Users.DetailModalModel
+@{ Layout=null; }
+<abp-modal size="ExtraLarge"><abp-modal-header title="@L["Hlg:UserDetails"].Value" /><abp-modal-body>
+<h4>@Model.Item.Profile.FullName</h4><p>@Model.Item.Profile.PhoneNumber · @Model.Item.Profile.Address</p>
+<p>@L["Hlg:PharmacyCode"]: @Model.Item.Profile.PharmacyCode · @L["Hlg:Birthday"]: @Model.Item.Profile.Birthday?.ToString("dd/MM/yyyy")</p>
+<p>@L["Hlg:BonusPoint"]: @Model.Item.Stats.Points · @L["Hlg:KnowledgeLearned"]: @Model.Item.Stats.KnowledgeLearned · @L["Hlg:Accuracy"]: @Model.Item.Stats.AccuracyPercent%</p>
+<h5>@L["Hlg:LearningHistory"]</h5><div class="table-responsive"><table class="table"><thead><tr><th>@L["Hlg:Name"]</th><th>@L["Hlg:Progress"]</th></tr></thead><tbody>@foreach(var row in Model.Item.Learning) { <tr><td>@row.ProductName</td><td>@row.ProgressPercent%</td></tr> }</tbody></table></div>
+<h5>@L["Hlg:GameHistory"]</h5><p class="text-muted">@L["Hlg:Recent100Games"]</p><div class="table-responsive"><table class="table"><thead><tr><th>@L["Hlg:Name"]</th><th>@L["Hlg:Score"]</th><th>@L["Hlg:DurationSeconds"]</th><th>@L["Hlg:CreationTime"]</th></tr></thead><tbody>@foreach(var row in Model.Item.Games) { <tr><td>@row.GameName</td><td>@row.Score</td><td>@row.DurationSeconds</td><td>@row.FinishedAt.ToString("dd/MM/yyyy HH:mm")</td></tr> }</tbody></table></div>
+<h5>@L["Hlg:RewardHistory"]</h5><div class="table-responsive"><table class="table"><thead><tr><th>@L["Hlg:RewardName"]</th><th>@L["Hlg:BonusPoint"]</th><th>@L["Hlg:Status"]</th></tr></thead><tbody>@foreach(var row in Model.Item.Rewards) { <tr><td>@row.RewardName</td><td>@row.PointDelta</td><td>@L["Hlg:" + (row.Status switch { "pending" => "Pending", "shipping" => "Shipping", "delivered" => "Delivered", "done" => "Done", _ => "Unknown" })]</td></tr> }</tbody></table></div>
+</abp-modal-body><abp-modal-footer buttons="@(AbpModalButtons.Close)" /></abp-modal>

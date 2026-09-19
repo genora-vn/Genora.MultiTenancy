@@ -72,7 +72,7 @@ public class HlgGameAppService : ApplicationService, IHlgGameAppService
 
     public async Task<GameDto> GetGameAsync(Guid id, CancellationToken ct = default)
     {
-        var game = await _gameRepo.FirstOrDefaultAsync(x => x.Id == id, ct)
+        var game = await _gameRepo.FirstOrDefaultAsync(x => x.Id == id && x.IsActive, ct)
             ?? throw new UserFriendlyException("Không tìm thấy game");
 
         var count = await _questionRepo.CountAsync(q => q.GameId == id && q.IsActive, ct);
@@ -86,8 +86,7 @@ public class HlgGameAppService : ApplicationService, IHlgGameAppService
         var game = await _gameRepo.FirstOrDefaultAsync(x => x.Id == gameId && x.IsActive, ct)
             ?? throw new UserFriendlyException("Không tìm thấy game");
 
-        if (game.Status == HlgGameStatus.Ended)
-            throw new UserFriendlyException("Game đã kết thúc");
+        EnsureGameIsAvailable(game);
 
         // Lấy câu hỏi + options (KHÔNG kèm CorrectKey ra client — BD-2).
         var questionQ = await _questionRepo.GetQueryableAsync();
@@ -298,8 +297,28 @@ public class HlgGameAppService : ApplicationService, IHlgGameAppService
             ?? throw new UserFriendlyException("Không tìm thấy khách hàng. Vui lòng đăng ký trước.");
     }
 
+    /// <summary>
+    /// The game schedule is configured by an operator.  Enforce it here instead of
+    /// relying on the Mini App to hide a button, otherwise a client can start an
+    /// upcoming or expired game by calling the endpoint directly.
+    /// </summary>
+    private void EnsureGameIsAvailable(HlgGame game)
+    {
+        if (game.Status != HlgGameStatus.Ongoing)
+            throw new UserFriendlyException("Game chưa trong thời gian diễn ra");
+
+        var now = Clock.Now;
+        if (game.StartAt.HasValue && now < game.StartAt.Value)
+            throw new UserFriendlyException("Game chưa bắt đầu");
+
+        if (game.EndAt.HasValue && now > game.EndAt.Value)
+            throw new UserFriendlyException("Game đã kết thúc");
+    }
+
     private static GameDto MapGame(HlgGame g, int totalQuestions) => new()
     {
+        BadgeText = g.BadgeText,
+        BannerUrl = g.BannerUrl,
         Id = g.Id,
         Name = g.Name,
         Type = HlgEnumMapper.GameTypeToString(g.Type),

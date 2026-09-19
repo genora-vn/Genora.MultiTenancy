@@ -3,11 +3,17 @@
 @using Microsoft.Extensions.Localization
 @inject IStringLocalizer<MultiTenancyResource> L
 @model Genora.MultiTenancy.Web.Pages.Hlg.Ranking.IndexModel
+@section styles { <link rel="stylesheet" href="/libs/select2/css/select2.min.css" /> <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/summernote@0.8.18/dist/summernote-lite.min.css" /> }
 @section scripts {
+    <abp-script src="/libs/select2/js/select2.full.min.js" />
+    <script src="https://cdn.jsdelivr.net/npm/summernote@0.8.18/dist/summernote-lite.min.js"></script>
+    <abp-script src="/Pages/Hlg/editor.js" />
     <abp-script src="/Pages/Hlg/admin.js" />
     <abp-script src="/Pages/Hlg/Ranking/index.js" />
 }
 <div id="HlgAdmin" data-create="@((await Model.GrantedAsync(".Create")).ToString().ToLowerInvariant())" data-edit="@((await Model.GrantedAsync(".Edit")).ToString().ToLowerInvariant())" data-delete="@((await Model.GrantedAsync(".Delete")).ToString().ToLowerInvariant())">
+    <a class="btn btn-outline-secondary mb-3" asp-page="/Hlg/Prizes/Index">@L["Hlg:Prizes"]</a>
+    <a class="btn btn-outline-secondary mb-3" asp-page="/Hlg/Winners/Index">@L["Hlg:Winners"]</a>
     <div class="d-flex justify-content-between align-items-center mb-3">
         <h1>@L["Hlg:Ranking"]</h1>
         @if (await Model.GrantedAsync(".Create"))

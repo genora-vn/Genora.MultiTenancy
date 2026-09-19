@@ -3,7 +3,10 @@
 @using Microsoft.Extensions.Localization
 @inject IStringLocalizer<MultiTenancyResource> L
 @model Genora.MultiTenancy.Web.Pages.Hlg.Questions.IndexModel
+@section styles { <link rel="stylesheet" href="/libs/select2/css/select2.min.css" /> }
 @section scripts {
+    <abp-script src="/libs/select2/js/select2.full.min.js" />
+    <abp-script src="/Pages/Hlg/editor.js" />
     <abp-script src="/Pages/Hlg/admin.js" />
     <abp-script src="/Pages/Hlg/Questions/index.js" />
 }

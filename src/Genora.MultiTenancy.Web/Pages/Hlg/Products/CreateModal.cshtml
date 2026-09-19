@@ -12,43 +12,7 @@
         <abp-modal-header title="@L["Hlg:Create"].Value"></abp-modal-header>
         <abp-modal-body>
             <div asp-validation-summary="All" class="text-danger"></div>
-            <input asp-for="Input.CategoryId" type="hidden" />
-            <div class="mb-3">
-                <label asp-for="Input.Name" class="form-label">@L["Hlg:Name"]</label>
-                <input asp-for="Input.Name" type="text" class="form-control" />
-                <span asp-validation-for="Input.Name" class="text-danger"></span>
-            </div>
-            <div class="mb-3">
-                <label asp-for="Input.ThumbnailUrl" class="form-label">@L["Hlg:ThumbnailUrl"]</label>
-                <input asp-for="Input.ThumbnailUrl" type="text" class="form-control" />
-                <span asp-validation-for="Input.ThumbnailUrl" class="text-danger"></span>
-            </div>
-            <div class="mb-3">
-                <label asp-for="Input.Summary" class="form-label">@L["Hlg:Summary"]</label>
-<textarea asp-for="Input.Summary" rows="4" class="form-control"></textarea>
-                <span asp-validation-for="Input.Summary" class="text-danger"></span>
-            </div>
-            <div class="mb-3">
-                <label asp-for="Input.Content" class="form-label">@L["Hlg:Content"]</label>
-<textarea asp-for="Input.Content" rows="4" class="form-control"></textarea>
-                <span asp-validation-for="Input.Content" class="text-danger"></span>
-            </div>
-            <div class="mb-3">
-                <label asp-for="Input.ImageUrls" class="form-label">@L["Hlg:ImageUrls"]</label>
-<textarea asp-for="Input.ImageUrls" rows="4" class="form-control"></textarea>
-                <div class="form-text">@L["Hlg:ImageUrlsHint"]</div>
-                <span asp-validation-for="Input.ImageUrls" class="text-danger"></span>
-            </div>
-            <div class="mb-3">
-                <label asp-for="Input.DisplayOrder" class="form-label">@L["Hlg:DisplayOrder"]</label>
-                <input asp-for="Input.DisplayOrder" type="number" class="form-control" />
-                <span asp-validation-for="Input.DisplayOrder" class="text-danger"></span>
-            </div>
-            <div class="mb-3">
-                <label asp-for="Input.IsActive" class="form-label">@L["Hlg:IsActive"]</label>
-                <input asp-for="Input.IsActive" class="form-check-input ms-2" />
-                <span asp-validation-for="Input.IsActive" class="text-danger"></span>
-            </div>
+            <partial name="_ProductFields" model="Model.Input" />
         </abp-modal-body><abp-modal-footer buttons="@(AbpModalButtons.Cancel | AbpModalButtons.Save)"></abp-modal-footer>
     </abp-modal>
 </form>

@@ -1,4 +1,4 @@
-﻿using Genora.MultiTenancy.Apps.AppSettings;
+using Genora.MultiTenancy.Apps.AppSettings;
 using Genora.MultiTenancy.Diagnostics;
 using Genora.MultiTenancy.DomainModels.AppBookingPlayers;
 using Genora.MultiTenancy.DomainModels.AppBookings;
@@ -172,6 +172,10 @@ public class MultiTenancyDbContext :
     public DbSet<Hl25Participant> AppHl25Participants { get; set; }
 
     // Hoa Linh Gamification (HLG)
+    public DbSet<HlgBrand> HlgBrands { get; set; }
+    public DbSet<HlgContentItem> HlgContentItems { get; set; }
+    public DbSet<HlgRankingPrize> HlgRankingPrizes { get; set; }
+    public DbSet<HlgRankingWinner> HlgRankingWinners { get; set; }
     public DbSet<HlgUserProfile> AppHlgUserProfiles { get; set; }
     public DbSet<HlgKnowledgeCategory> AppHlgKnowledgeCategories { get; set; }
     public DbSet<HlgProduct> AppHlgProducts { get; set; }

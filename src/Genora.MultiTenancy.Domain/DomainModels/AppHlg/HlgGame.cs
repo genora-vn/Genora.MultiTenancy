@@ -16,6 +16,8 @@ namespace Genora.MultiTenancy.DomainModels.AppHlg;
 public class HlgGame : FullAuditedAggregateRoot<Guid>, IMultiTenant
 {
     public Guid? TenantId { get; set; }
+    [StringLength(100)] public string? BadgeText { get; set; }
+    [StringLength(1000)] public string? BannerUrl { get; set; }
 
     [Required]
     [StringLength(250)]

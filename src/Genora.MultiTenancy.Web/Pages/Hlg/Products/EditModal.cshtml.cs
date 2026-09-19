@@ -16,6 +16,7 @@ public class EditModalModel : HlgAdminPageModel
         var item = await _service.GetAsync(Id);
         Input = new UpdateHlgProductInput
         {
+            BrandId = item.BrandId, Details = item.Details,
             CategoryId = item.CategoryId,
             Name = item.Name,
             ThumbnailUrl = item.ThumbnailUrl,

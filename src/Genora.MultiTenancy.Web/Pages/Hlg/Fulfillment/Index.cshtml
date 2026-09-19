@@ -1,0 +1,29 @@
+@page
+@using Genora.MultiTenancy.Localization
+@using Microsoft.Extensions.Localization
+@inject IStringLocalizer<MultiTenancyResource> L
+@model Genora.MultiTenancy.Web.Pages.Hlg.Fulfillment.IndexModel
+@section styles { <link rel="stylesheet" href="/libs/select2/css/select2.min.css" /> }
+@section scripts {
+    <abp-script src="/libs/select2/js/select2.full.min.js" />
+    <abp-script src="/Pages/Hlg/editor.js" />
+    <abp-script src="/Pages/Hlg/admin.js" />
+    <abp-script src="/Pages/Hlg/Fulfillment/index.js" />
+}
+<div id="HlgAdmin" data-create="false" data-edit="@((await Model.GrantedAsync(".Edit")).ToString().ToLowerInvariant())" data-delete="false">
+    <a class="btn btn-outline-secondary mb-3" asp-page="/Hlg/Rewards/Index">@L["Hlg:Rewards"]</a>
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1>@L["Hlg:Fulfillment"]</h1>
+    </div>
+    <div id="HlgError" role="alert" class="alert alert-danger d-none"></div>
+    <div class="card mb-3">
+        <div class="card-body">
+            <form id="HlgFilter" class="row g-3 align-items-end">
+                <div class="col-md-6"><label for="HlgSearch" class="form-label">@L["Hlg:Search"]</label><input id="HlgSearch" class="form-control" placeholder="@L["Hlg:SearchPlaceholder"]" /></div>
+                <div class="col-md-3"><label for="HlgStatus" class="form-label">@L["Hlg:Status"]</label><select id="HlgStatus" class="form-select"><option value="">@L["Hlg:All"]</option><option value="1">@L["Hlg:Pending"]</option><option value="2">@L["Hlg:Shipping"]</option><option value="3">@L["Hlg:Delivered"]</option><option value="4">@L["Hlg:Done"]</option></select><input type="hidden" id="HlgActive" value="" /></div>
+                <div class="col-md-3"><button type="submit" class="btn btn-primary">@L["Hlg:Search"]</button> <button id="HlgReset" type="button" class="btn btn-outline-secondary">@L["Hlg:Reset"]</button></div>
+            </form>
+        </div>
+    </div>
+    <div class="card"><div class="card-body"><table id="HlgTable" class="table table-striped w-100"></table></div></div>
+</div>

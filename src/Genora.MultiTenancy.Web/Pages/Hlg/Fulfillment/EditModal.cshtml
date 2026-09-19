@@ -1,0 +1,11 @@
+@page
+@using Genora.MultiTenancy.Localization
+@using Microsoft.Extensions.Localization
+@using Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.TagHelpers.Modal
+@inject IStringLocalizer<MultiTenancyResource> L
+@model Genora.MultiTenancy.Web.Pages.Hlg.Fulfillment.EditModalModel
+@{ Layout=null; }
+<form method="post" asp-page="/Hlg/Fulfillment/EditModal"><input asp-for="Id" type="hidden" /><abp-modal><abp-modal-header title="@L["Hlg:Fulfillment"].Value" /><abp-modal-body>
+<div asp-validation-summary="All" class="text-danger"></div><p>@Model.Item.CustomerName — @Model.Item.RewardName</p><p>@Model.Item.ReceiverName · @Model.Item.Phone · @Model.Item.Address</p>
+<label asp-for="Input.Status">@L["Hlg:Status"]</label><select asp-for="Input.Status" class="form-select"><option value="1">@L["Hlg:Pending"]</option><option value="2">@L["Hlg:Shipping"]</option><option value="3">@L["Hlg:Delivered"]</option><option value="4">@L["Hlg:Done"]</option></select>
+<p class="text-muted mt-2">@L["Hlg:FulfillmentHint"]</p></abp-modal-body><abp-modal-footer buttons="@(AbpModalButtons.Cancel | AbpModalButtons.Save)" /></abp-modal></form>

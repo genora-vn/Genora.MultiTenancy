@@ -12,6 +12,7 @@ namespace Genora.MultiTenancy.AppDtos.Hlg;
 /// </summary>
 public interface IHlgProfileAppService : IApplicationService
 {
+    Task<List<GameHistoryDto>> GetGameHistoryAsync(string phone, int skip = 0, int take = 50);
     /// <summary>
     /// Đăng ký/đồng bộ khách hàng Gamification vào dbo.AppCustomers + tạo/cập nhật HLG profile.
     /// Idempotent theo phone. customerType gán khi register.

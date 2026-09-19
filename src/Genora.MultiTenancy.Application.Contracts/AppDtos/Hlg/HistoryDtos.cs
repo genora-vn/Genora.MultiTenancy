@@ -5,6 +5,7 @@ namespace Genora.MultiTenancy.AppDtos.Hlg;
 /// <summary>Mục lịch sử học. Khớp contract LearningHistoryItem.</summary>
 public class LearningHistoryItemDto
 {
+    public string? ThumbnailUrl { get; set; }
     public Guid ProductId { get; set; }
     public string ProductName { get; set; } = string.Empty;
     public int ProgressPercent { get; set; }
@@ -23,6 +24,7 @@ public class PointHistoryItemDto
 /// <summary>Mục lịch sử đổi quà. Khớp contract RewardHistoryItem. status: pending|shipping|delivered|done.</summary>
 public class RewardHistoryItemDto
 {
+    public string? GameName { get; set; }
     public Guid Id { get; set; }
     public string RewardName { get; set; } = string.Empty;
     public int PointDelta { get; set; }

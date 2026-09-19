@@ -10,5 +10,6 @@ public enum HlgCustomerType : byte
     Pharmacy = 1,
 
     /// <summary>Người tiêu dùng — nhận quà vật lý cần địa chỉ giao hàng.</summary>
-    Consumer = 2
+    Consumer = 2,
+    Retailer = 3
 }

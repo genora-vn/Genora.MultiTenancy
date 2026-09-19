@@ -20,6 +20,7 @@ public class EditModalModel : HlgAdminPageModel
             Description = item.Description,
             StartAt = item.StartAt,
             EndAt = item.EndAt,
+            GameId = item.GameId,
             IsActive = item.IsActive,
         };
     }

@@ -49,6 +49,7 @@ public static class HlgEnumMapper
     {
         HlgCustomerType.Pharmacy => "pharmacy",
         HlgCustomerType.Consumer => "consumer",
+        HlgCustomerType.Retailer => "retailer",
         _ => null
     };
 
@@ -56,6 +57,7 @@ public static class HlgEnumMapper
     {
         "pharmacy" => HlgCustomerType.Pharmacy,
         "consumer" => HlgCustomerType.Consumer,
+        "retailer" => HlgCustomerType.Retailer,
         _ => null
     };
 

@@ -5,6 +5,7 @@ namespace Genora.MultiTenancy.AppDtos.Hlg;
 /// <summary>Sự kiện xếp hạng. Khớp contract RankingEvent.</summary>
 public class RankingEventDto
 {
+    public Guid? GameId { get; set; }
     public Guid Id { get; set; }
     public string Title { get; set; } = string.Empty;
     public string? Description { get; set; }

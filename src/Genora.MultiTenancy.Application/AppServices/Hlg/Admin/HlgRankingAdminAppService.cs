@@ -71,7 +71,20 @@ public class HlgRankingAdminAppService : FeatureProtectedCrudAppService<HlgRanki
     private async Task ValidateAsync(HlgRankingInput input, Guid? id)
     {
         Validator.ValidateObject(input, new ValidationContext(input), true);
-        await Task.CompletedTask;
+        if (input.GameId.HasValue) {
+            var game = await LazyServiceProvider.LazyGetRequiredService<IRepository<HlgGame,Guid>>().GetAsync(input.GameId.Value);
+            HlgContentValidation.Scope(game.TenantId,CurrentTenant.Id);
+        }
+        if (id.HasValue && await LazyServiceProvider.LazyGetRequiredService<IRepository<HlgRankingWinner,Guid>>().AnyAsync(x => x.EventId == id)) {
+            var old = await Repository.GetAsync(id.Value);
+            if (old.GameId != input.GameId || old.StartAt != input.StartAt || old.EndAt != input.EndAt) throw new UserFriendlyException(L["Hlg:EventHasWinners"]);
+        }
+    }
+    public override async Task DeleteAsync(Guid id)
+    {
+        await CheckDeletePolicyAsync();
+        if (await LazyServiceProvider.LazyGetRequiredService<IRepository<HlgRankingPrize,Guid>>().AnyAsync(x => x.EventId == id)) throw new UserFriendlyException(L["Hlg:EventHasPrizes"]);
+        await Repository.DeleteAsync(id);
     }
     private static void Apply(HlgRankingInput input, HlgRankingEvent entity)
     {
@@ -79,6 +92,7 @@ public class HlgRankingAdminAppService : FeatureProtectedCrudAppService<HlgRanki
         entity.Description = input.Description;
         entity.StartAt = input.StartAt;
         entity.EndAt = input.EndAt;
+        entity.GameId = input.GameId;
         entity.IsActive = input.IsActive;
     }
     private static HlgRankingAdminDto Map(HlgRankingEvent entity) => new()
@@ -88,6 +102,7 @@ public class HlgRankingAdminAppService : FeatureProtectedCrudAppService<HlgRanki
         Description = entity.Description,
         StartAt = entity.StartAt,
         EndAt = entity.EndAt,
+        GameId = entity.GameId,
         IsActive = entity.IsActive,
     };
 }
