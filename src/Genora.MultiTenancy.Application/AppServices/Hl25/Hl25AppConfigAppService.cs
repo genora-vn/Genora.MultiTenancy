@@ -27,15 +27,18 @@ public class Hl25AppConfigAppService : ApplicationService, IHl25AppConfigAppServ
     private readonly IRepository<Hl25AppConfig, Guid> _repository;
     private readonly IManageImageService _manageImageService;
     private readonly IFeatureChecker _featureChecker;
+    private readonly Hl25MiniAppCacheInvalidator _cacheInvalidator;
 
     public Hl25AppConfigAppService(
         IRepository<Hl25AppConfig, Guid> repository,
         IManageImageService manageImageService,
-        IFeatureChecker featureChecker)
+        IFeatureChecker featureChecker,
+        Hl25MiniAppCacheInvalidator cacheInvalidator)
     {
         _repository = repository;
         _manageImageService = manageImageService;
         _featureChecker = featureChecker;
+        _cacheInvalidator = cacheInvalidator;
         LocalizationResource = typeof(MultiTenancyResource);
     }
 
@@ -55,6 +58,7 @@ public class Hl25AppConfigAppService : ApplicationService, IHl25AppConfigAppServ
         var entity = await GetOrCreateAsync();
         ObjectMapper.Map(input, entity);
         entity = await _repository.UpdateAsync(entity, autoSave: true);
+        await _cacheInvalidator.AfterCommitAsync(CurrentTenant.Id, Hl25CacheArea.Config);
 
         return ObjectMapper.Map<Hl25AppConfig, Hl25AppConfigDto>(entity);
     }
@@ -95,6 +99,7 @@ public class Hl25AppConfigAppService : ApplicationService, IHl25AppConfigAppServ
                 IsActive = true
             };
             entity = await _repository.InsertAsync(entity, autoSave: true);
+            await _cacheInvalidator.AfterCommitAsync(CurrentTenant.Id, Hl25CacheArea.Config);
         }
 
         return entity;

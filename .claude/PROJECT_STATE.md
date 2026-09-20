@@ -54,6 +54,7 @@
 - Note: `project_app_documents_*`.
 
 ## Module: Hoa Linh 25 Năm (hl25) — ✅ HOÀN THÀNH (nhánh `feature/dev-hoalinh-gamification`)
+- **Performance 2026-09-20 (`hotfix/20260920`):** cache 4 read APIs theo tenant 20 phút + after-commit invalidation; single-process stampede protection. Migration 20260920100056 thêm 3 index chưa apply. 81 .NET + 3 JS tests pass; chưa browser/load UAT và chưa xác nhận capacity 1.000 CCU. [Note](memory/notes/project/project_hl25_cache_indexes_20260920.md).
 - **Staging fix 2026-09-18:** corrective migration 20260918093000_EnsureHl25ParticipantAgeGroup (DB HL25: DuocPhamHoaLinh; bỏ qua DB không có bảng HL25) bổ sung AgeGroup cho DB áp migration HL25 cũ còn BirthDate. EF build/script/no model change checked; chưa apply target.
 - **✅ Cập nhật 2026-09-16:**
   - **Participants page:** bổ sung cột ZaloUserId, AgeGroup, ảnh thiệp, lời chúc, lịch sử quay; full URL cho ảnh thiệp

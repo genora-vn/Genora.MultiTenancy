@@ -82,6 +82,9 @@ public static class MultiTenancyDbContextModelCreatingExtensionsHl25
             b.HasIndex(x => new { x.TenantId, x.ParticipantId })
                 .HasDatabaseName("IX_AppHl25FrameCreations_TenantId_ParticipantId");
 
+            b.HasIndex(x => new { x.TenantId, x.ParticipantId, x.CreatedTime })
+                .HasDatabaseName("IX_AppHl25FrameCreations_TenantId_ParticipantId_CreatedTime");
+
             b.HasIndex(x => new { x.TenantId, x.CampaignId })
                 .HasDatabaseName("IX_AppHl25FrameCreations_TenantId_CampaignId");
 
@@ -182,6 +185,9 @@ public static class MultiTenancyDbContextModelCreatingExtensionsHl25
             b.HasIndex(x => new { x.TenantId, x.ParticipantId })
                 .HasDatabaseName("IX_AppHl25SpinLogs_TenantId_ParticipantId");
 
+            b.HasIndex(x => new { x.TenantId, x.ParticipantId, x.SpinTime })
+                .HasDatabaseName("IX_AppHl25SpinLogs_TenantId_ParticipantId_SpinTime");
+
             b.HasIndex(x => new { x.TenantId, x.GiftId })
                 .HasDatabaseName("IX_AppHl25SpinLogs_TenantId_GiftId");
 
@@ -207,10 +213,14 @@ public static class MultiTenancyDbContextModelCreatingExtensionsHl25
 
             b.HasIndex(x => new { x.TenantId, x.ZaloUserId })
                 .IsUnique()
+                .HasFilter("[TenantId] IS NOT NULL AND [ZaloUserId] IS NOT NULL")
                 .HasDatabaseName("IX_AppHl25Participants_TenantId_ZaloUserId");
 
             b.HasIndex(x => new { x.TenantId, x.PhoneNumber })
                 .HasDatabaseName("IX_AppHl25Participants_TenantId_PhoneNumber");
+
+            b.HasIndex(x => new { x.TenantId, x.PhoneNumber, x.IsDeleted })
+                .HasDatabaseName("IX_AppHl25Participants_TenantId_PhoneNumber_IsDeleted");
 
             b.HasIndex(x => new { x.TenantId, x.JoinedTime })
                 .HasDatabaseName("IX_AppHl25Participants_TenantId_JoinedTime");

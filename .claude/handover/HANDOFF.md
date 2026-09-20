@@ -19,6 +19,9 @@
 
 ## Bàn giao hiện tại
 
+### HL25 cache/index 2026-09-20
+Source trên `hotfix/20260920`: cache 4 API 20 phút theo tenant, single-process locking/invalidation sau commit. Migration `20260920100056_AddHl25MiniAppReadIndexes` và SQL đã chuẩn bị, chưa áp DB. Build + 81 .NET/3 JS tests pass, EF model khớp snapshot. Cần migrate/restart theo quy trình triển khai, smoke-test tenant/Admin và đo HTTP/SQL 1.000 CCU thực tế. Nhiều worker/replica cần cơ chế cache/lock/invalidation dùng chung; test 7.000 lời gọi helper không phải benchmark HTTP. Giữ appsettings/logs của user. [Chi tiết](../memory/notes/project/project_hl25_cache_indexes_20260920.md).
+
 ### HL25 staging AgeGroup schema repair 2026-09-18
 Migration mới 20260918093000_EnsureHl25ParticipantAgeGroup và SQL idempotent đã chuẩn bị/kiểm tra EF; chưa apply staging. DB tenant HL25: DuocPhamHoaLinh. Migration bỏ qua DB không có bảng HL25 khi chạy toàn bộ tenant; migrate sau deploy rồi restart/test. Giữ BirthDate và dữ liệu hiện có. [Chi tiết](../memory/notes/project/project_hl25_staging_agegroup_migration_fix_20260918.md).
 

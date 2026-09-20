@@ -12,6 +12,7 @@
 
 | Mốc | Module | Nội dung | Note gốc |
 |-----|--------|----------|----------|
+| 2026-09-20 | HL25 performance | Cache 4 GET theo tenant 20 phút, chống stampede, invalidation sau commit Admin/last gift; migration 20260920100056 thêm 3 index (chưa apply). Build + 81 .NET/3 JS tests pass, EF khớp snapshot. Chưa UAT/load test 1.000 CCU, cache một process. | [note](memory/notes/project/project_hl25_cache_indexes_20260920.md) |
 | 2026-09-18 | HL25 staging | Xác nhận Git migration cũ bị sửa BirthDate→AgeGroup cùng ID. Thêm 20260918093000_EnsureHl25ParticipantAgeGroup (DB HL25: DuocPhamHoaLinh; bỏ qua DB không có bảng HL25) conditional add tinyint NOT NULL/default0, giữ dữ liệu/cột cũ; EF build/script/no model changes + 4 SQL Server temp-table checks pass. SQL idempotent đã sinh, chưa áp DB nghiệp vụ. | [note](memory/notes/project/project_hl25_staging_agegroup_migration_fix_20260918.md) |
 | 2026-09-18 | Hoa Linh Sales Excel | Đổi 3 cột tiền sang #,##0 để bỏ dấu chấm cuối (600,000.→600,000), giữ numeric values. 14 Application tests pass, thêm assertions formatted output cho 3 file; user xác nhận download đã hoạt động. | [note](memory/notes/project/project_hl_sales_excel_money_format_fix_20260918.md) |
 | 2026-09-18 | Hoa Linh Sales Excel | Fix shared downloader gọi getTenantIdCookie không tồn tại; giữ same-origin cookies/filter/Blob. Thêm 4 test download thật, tổng 12 JS tests pass; không backend/schema/DB change. | [note](memory/notes/project/project_hl_sales_excel_tenant_cookie_fix_20260918.md) |

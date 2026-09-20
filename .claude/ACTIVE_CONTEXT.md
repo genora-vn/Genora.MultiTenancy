@@ -5,6 +5,13 @@
 
 ## Cập nhật gần nhất
 
+### HL25 — cache read APIs + index (2026-09-20)
+- Branch `hotfix/20260920`, baseline `c76c54b`. Thêm cache bộ nhớ 20 phút theo tenant cho config/campaigns/templates/gifts; khóa chống nạp trùng, invalidation sau commit Admin và khi quà vừa hết hàng. API contract/quy tắc quay giữ nguyên, tồn kho quay vẫn đọc DB.
+- EF migration **20260920100056_AddHl25MiniAppReadIndexes** + SQL `docs/hl25_read_indexes_20260920.sql`: 3 index mới, explicit filter unique; bỏ qua DB thiếu bảng HL25/index cùng tên đã có. **Chưa apply DB**.
+- Build 0 errors; **43 Application + 18 Domain + 6 EF + 14 Web = 81 .NET tests**, **3 JS tests** pass; EF model khớp snapshot. Test 7.000 lời gọi helper đồng thời mỗi nhóm/cold+expiry chỉ nạp một lần mỗi đợt.
+- **Giới hạn:** cache/lock/invalidation chỉ trong một process. Chưa browser/API UAT, chưa benchmark HTTP/SQL 1.000 CCU. Nhiều worker/replica cần cache chung và invalidation/lock liên node. Appsettings/logs có sẵn giữ nguyên; không deploy/restart/commit.
+- [Chi tiết và lệnh verify](memory/notes/project/project_hl25_cache_indexes_20260920.md).
+
 ### HL25 — staging AgeGroup schema repair (2026-09-18)
 - Lỗi staging Invalid column name AgeGroup. Git xác nhận migration AddHl25Module cùng ID đã bị sửa BirthDate→AgeGroup in-place; DB chạy bản cũ không được nâng cấp.
 - Đã thêm migration 20260918093000_EnsureHl25ParticipantAgeGroup: chỉ thêm AgeGroup nếu thiếu (tinyint NOT NULL, default Unknown=0), giữ BirthDate/dữ liệu cũ, bỏ qua cột đã đúng. Down giữ cột để tránh mất dữ liệu.

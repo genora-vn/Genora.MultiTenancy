@@ -5,6 +5,7 @@
 > Nguồn gốc: migrate từ `~\.claude\projects\D--Genora-...-Genora-MultiTenancy\memory\` (108 file).
 
 ## Điều hướng nhanh
+- **HL25 cache/index 2026-09-20:** [note](memory/notes/project/project_hl25_cache_indexes_20260920.md). Cache 4 read API theo tenant 20 phút, after-commit invalidation; 3 index mới/migration chưa apply. 81 .NET + 3 JS tests pass, chưa HTTP load test; cache một process.
 - **HL25 staging AgeGroup repair 2026-09-18:** [note](memory/notes/project/project_hl25_staging_agegroup_migration_fix_20260918.md). Migration mới 20260918093000_EnsureHl25ParticipantAgeGroup (DB HL25: DuocPhamHoaLinh; bỏ qua DB không có bảng HL25) sửa DB từng apply BirthDate cũ; giữ dữ liệu, thêm Unknown=0; chưa áp staging.
 - **Hoa Linh Sales Excel money format 2026-09-18:** [note](memory/notes/project/project_hl_sales_excel_money_format_fix_20260918.md). 3 cột tiền dùng #,##0, bỏ dấu chấm cuối; 14 Application tests pass. User đã xác nhận download hoạt động.
 - **Hoa Linh Sales Excel runtime fix 2026-09-18:** [note](memory/notes/project/project_hl_sales_excel_tenant_cookie_fix_20260918.md). Bỏ getTenantIdCookie không tồn tại, giữ same-origin cookie; 12 JS tests pass, gồm download thật.

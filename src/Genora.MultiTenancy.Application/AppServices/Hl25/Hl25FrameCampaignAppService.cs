@@ -30,13 +30,17 @@ public class Hl25FrameCampaignAppService :
 
     private readonly IRepository<Hl25FrameTemplate, Guid> _templateRepository;
 
+    private readonly Hl25MiniAppCacheInvalidator _cacheInvalidator;
+
     public Hl25FrameCampaignAppService(
         IRepository<Hl25FrameCampaign, Guid> repository,
         IRepository<Hl25FrameTemplate, Guid> templateRepository,
         ICurrentTenant currentTenant,
-        IFeatureChecker featureChecker)
+        IFeatureChecker featureChecker,
+        Hl25MiniAppCacheInvalidator cacheInvalidator)
         : base(repository, currentTenant, featureChecker)
     {
+        _cacheInvalidator = cacheInvalidator;
         GetPolicyName = MultiTenancyPermissions.AppHl25Frames.Default;
         GetListPolicyName = MultiTenancyPermissions.AppHl25Frames.Default;
         CreatePolicyName = MultiTenancyPermissions.AppHl25Frames.Create;
@@ -44,6 +48,12 @@ public class Hl25FrameCampaignAppService :
         DeletePolicyName = MultiTenancyPermissions.AppHl25Frames.Delete;
 
         _templateRepository = templateRepository;
+    }
+
+    public override async Task DeleteAsync(Guid id)
+    {
+        await base.DeleteAsync(id);
+        await _cacheInvalidator.AfterCommitAsync(CurrentTenant.Id, Hl25CacheArea.FrameCampaigns, Hl25CacheArea.FrameTemplates);
     }
 
     [DisableValidation]
@@ -109,6 +119,7 @@ public class Hl25FrameCampaignAppService :
         };
 
         entity = await Repository.InsertAsync(entity, autoSave: true);
+        await _cacheInvalidator.AfterCommitAsync(CurrentTenant.Id, Hl25CacheArea.FrameCampaigns, Hl25CacheArea.FrameTemplates);
         return ObjectMapper.Map<Hl25FrameCampaign, Hl25FrameCampaignDto>(entity);
     }
 
@@ -125,6 +136,7 @@ public class Hl25FrameCampaignAppService :
         entity.Status = input.Status;
 
         entity = await Repository.UpdateAsync(entity, autoSave: true);
+        await _cacheInvalidator.AfterCommitAsync(CurrentTenant.Id, Hl25CacheArea.FrameCampaigns, Hl25CacheArea.FrameTemplates);
         return ObjectMapper.Map<Hl25FrameCampaign, Hl25FrameCampaignDto>(entity);
     }
 }
