@@ -144,7 +144,7 @@ public class HlPointAppService : ApplicationService, IHlPointAppService
         };
 
         // 5. Cộng quỹ AppCustomers + gán CustomerId nếu tìm được
-        var customer = await _customerRepo.FirstOrDefaultAsync(x => x.CustomerCode == input.CustomerCode, ct);
+        var customer = await _customerRepo.FirstOrDefaultAsync(x => x.PhoneNumber == input.CustomerPhone, ct);
         decimal balancePoint = 0, balanceAmount = 0;
         if (customer != null)
         {
