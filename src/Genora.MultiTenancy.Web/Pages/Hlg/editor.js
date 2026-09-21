@@ -52,11 +52,7 @@
                     return modal.find('[name="Input.' + (kind === 'brands' ? 'CategoryId' : kind === 'prizes' ? 'EventId' : '') + '"]').val() || null;
                 }
                 var current = select.val();
-                if (current && current !== '00000000-0000-0000-0000-000000000000') {
-                    lookup.getList({ kind: select.attr('data-hlg-lookup'), id: current, maxResultCount: 1 }).then(function (data) {
-                        if (data.items.length) { select.find('option:selected').text(data.items[0].name); select.trigger('change.select2'); }
-                    });
-                } else select.val('');
+                if (!current || current === '00000000-0000-0000-0000-000000000000') select.val('');
                 select.select2({ width: '100%', dropdownParent: modal, placeholder: l('Hlg:Select'), allowClear: true,
                     ajax: { delay: 250, transport: function (params, success, failure) {
                         var page = params.data.page || 1;
@@ -64,6 +60,14 @@
                             .then(function (data) { success({ results: data.items.map(function (x) { return { id: x.id, text: x.name }; }), pagination: { more: page * 50 < data.totalCount } }); }, failure);
                     } }
                 });
+                if (current && current !== '00000000-0000-0000-0000-000000000000') {
+                    lookup.getList({ kind: select.attr('data-hlg-lookup'), id: current, maxResultCount: 1 }).then(function (data) {
+                        if (!data.items.length) return;
+                        var item = data.items[0];
+                        select.find('option').filter(function () { return this.value === current; }).remove();
+                        select.append(new Option(item.name, item.id, true, true)).trigger('change.select2');
+                    });
+                }
             });
             container.find('.hlg-rich').each(function () {
                 var editor = $(this);
