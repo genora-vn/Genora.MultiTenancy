@@ -1531,6 +1531,8 @@
     "Hlg:Kind": "Media type",
     "Hlg:Placement": "Placement",
     "Hlg:Url": "Image/video URL",
+    "Hlg:FieldRequired": "{0} is required.",
+    "Hlg:FixValidationErrors": "Please complete the required fields in the opened tab.",
     "Hlg:PosterUrl": "Video poster URL",
     "Hlg:AltText": "Image description",
     "Hlg:Image": "Image",

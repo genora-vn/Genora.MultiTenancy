@@ -31,6 +31,7 @@ using Volo.Abp.Guids;
 using Volo.Abp.Linq;
 using Volo.Abp.MultiTenancy;
 using Volo.Abp.Timing;
+using Volo.Abp.Uow;
 using Xunit;
 namespace Genora.MultiTenancy.Hlg;
 public class HlgDesignContentTests : IDisposable
@@ -56,6 +57,7 @@ public class HlgDesignContentTests : IDisposable
         var repo=Substitute.For<IRepository<T,Guid>>();
         repo.GetQueryableAsync().Returns(Task.FromResult(rows.AsQueryable()));
         repo.GetAsync(Arg.Any<Guid>(),Arg.Any<bool>(),Arg.Any<CancellationToken>()).Returns(c=>Task.FromResult(rows.Single(x=>x.Id==c.Arg<Guid>())));
+        repo.FirstOrDefaultAsync(Arg.Any<Expression<Func<T,bool>>>(),Arg.Any<CancellationToken>()).Returns(c=>Task.FromResult(rows.FirstOrDefault(c.Arg<Expression<Func<T,bool>>>().Compile())));
         repo.AnyAsync(Arg.Any<Expression<Func<T,bool>>>(),Arg.Any<CancellationToken>()).Returns(c=>rows.Any(c.Arg<Expression<Func<T,bool>>>().Compile()));
         repo.CountAsync(Arg.Any<Expression<Func<T,bool>>>(),Arg.Any<CancellationToken>()).Returns(c=>rows.Count(c.Arg<Expression<Func<T,bool>>>().Compile()));
 
@@ -97,6 +99,16 @@ public class HlgDesignContentTests : IDisposable
         await Should.ThrowAsync<UserFriendlyException>(()=>Bind(new HlgProductAdminAppService(products,_tenant,_features,categories)).CreateAsync(new(){CategoryId=category.Id,BrandId=brand.Id,Name="Product"}));
         await products.DidNotReceive().InsertAsync(Arg.Any<HlgProduct>(),Arg.Any<bool>(),Arg.Any<CancellationToken>());
     }
+    [Theory]
+    [InlineData("javascript:alert(1)")]
+    [InlineData("/\\foreign.test/image.png")]
+    public async Task Product_Rejects_Unsafe_Legacy_Image_Urls(string imageUrl) {
+        var category=new HlgKnowledgeCategory(Guid.NewGuid(),"Industry",_tenantId);
+        var products=Repo<HlgProduct>();var categories=Repo(category);Repo<HlgBrand>();
+        var service=Bind(new HlgProductAdminAppService(products,_tenant,_features,categories));
+        await Should.ThrowAsync<UserFriendlyException>(()=>service.CreateAsync(new(){CategoryId=category.Id,Name="Product",ImageUrls=imageUrl}));
+        await products.DidNotReceive().InsertAsync(Arg.Any<HlgProduct>(),Arg.Any<bool>(),Arg.Any<CancellationToken>());
+    }
     [Fact]
     public async Task Forged_Cross_Tenant_Category_Is_Rejected_Even_Without_Repository_Filter() {
         var category=new HlgKnowledgeCategory(Guid.NewGuid(),"Other",Guid.NewGuid());var products=Repo<HlgProduct>();var categories=Repo(category);
@@ -131,6 +143,17 @@ public class HlgDesignContentTests : IDisposable
     }
     [Theory][InlineData(1,2,1,true)][InlineData(2,3,1,true)][InlineData(3,1,1,false)][InlineData(1,4,2,true)][InlineData(1,4,1,false)]
     public void Fulfillment_Transitions_Are_Type_Specific_And_Forward_Only(int from,int to,int type,bool expected) => HlgFulfillmentAdminAppService.CanTransition((HlgRewardHistoryStatus)from,(HlgRewardHistoryStatus)to,(HlgRewardType)type).ShouldBe(expected);
+    [Theory]
+    [InlineData(false, true)]
+    [InlineData(true, false)]
+    public async Task Shipping_Address_Rejects_Foreign_Or_Unfinished_Session(bool sameOwner,bool finished) {
+        var customer=new Customer(Guid.NewGuid(),"0900000000","Player"){TenantId=_tenantId};
+        var session=new HlgGameSession(Guid.NewGuid(),Guid.NewGuid(),sameOwner?customer.Id:Guid.NewGuid(),_tenantId){IsFinished=finished};
+        var rewards=Repo<HlgReward>();var histories=Repo<HlgRewardHistory>();var addresses=Repo<HlgShippingAddress>();var sessions=Repo(session);var profiles=Repo<HlgUserProfile>();var customers=Repo(customer);
+        var service=Bind(new HlgRewardAppService(rewards,histories,addresses,sessions,profiles,customers,_tenant,Substitute.For<IUnitOfWorkManager>(),NullLogger<HlgRewardAppService>.Instance));
+        await Should.ThrowAsync<UserFriendlyException>(()=>service.SetSessionShippingAddressAsync(session.Id,customer.PhoneNumber!,new(){ReceiverName="Player",Phone="0900000000",Address="Address"}));
+        await addresses.DidNotReceive().InsertAsync(Arg.Any<HlgShippingAddress>(),Arg.Any<bool>(),Arg.Any<CancellationToken>());
+    }
     [Fact]
     public void Retailer_Is_Additive_Without_Changing_Existing_Customer_Values() {
         ((byte)HlgCustomerType.Pharmacy).ShouldBe((byte)1);((byte)HlgCustomerType.Consumer).ShouldBe((byte)2);((byte)HlgCustomerType.Retailer).ShouldBe((byte)3);

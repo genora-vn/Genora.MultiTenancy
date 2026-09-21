@@ -25,8 +25,8 @@
         var brandId = page.attr('data-brand-id');
         var editable = page.attr('data-edit') === 'true';
         var deletable = page.attr('data-delete') === 'true';
-        var create = config.readOnly ? null : new abp.ModalManager('/Hlg/' + config.folder + '/CreateModal');
-        var edit = config.readOnly ? null : new abp.ModalManager('/Hlg/' + config.folder + '/EditModal');
+        var create = config.readOnly || config.createPage ? null : new abp.ModalManager('/Hlg/' + config.folder + '/CreateModal');
+        var edit = config.readOnly || config.editPage ? null : new abp.ModalManager('/Hlg/' + config.folder + '/EditModal');
         var enums = {
             rewardType: ['Physical', 'Voucher'], gameType: ['Quiz', 'PictureToWord', 'KingOfVietnamese', 'SpinWheel', 'TileFlip'],
             gameStatus: ['Upcoming', 'Ongoing', 'Ended'], customerType: ['Pharmacy', 'Consumer', 'Retailer'],
@@ -55,7 +55,12 @@
         });
         if (config.extraChildren) actions.push({ text: l('Hlg:' + config.extraChildren), action: function (data) { root.location.href = abp.appPath + 'Hlg/' + config.extraChildren + '?parentId=' + encodeURIComponent(data.record.id); } });
         if (config.detail) actions.push({ text: l('Hlg:Details'), action: function (data) { new abp.ModalManager('/Hlg/' + config.folder + '/DetailModal').open({ id: data.record.id }); } });
-        if (editable && !config.readOnly) actions.push({ text: l('Hlg:Edit'), action: function (data) { edit.open({ id: data.record.id }); } });
+        if (editable && !config.readOnly) actions.push({
+            text: l('Hlg:Edit'), action: function (data) {
+                if (config.editPage) root.location.href = abp.appPath + 'Hlg/' + config.folder + '/Edit?id=' + encodeURIComponent(data.record.id);
+                else edit.open({ id: data.record.id });
+            }
+        });
         if (deletable && !config.readOnly) actions.push({
             text: l('Hlg:Delete'), confirmMessage: function (data) {
                 return l('Hlg:DeleteConfirm', data.record.name || data.record.title || data.record.content || '');
@@ -77,11 +82,11 @@
         $('#HlgReset').on('click', function () { $('#HlgSearch, #HlgActive, #HlgStatus, #HlgCustomerType, #HlgRegistered').val(''); table.ajax.reload(); });
         if (create) {
             $('#HlgCreate').on('click', function () { create.open({ parentId: parentId, brandId: brandId }); });
-            if (root.hlgEditor) {
-                create.onOpen(function () { root.hlgEditor.init(create.getModal()); });
-                edit.onOpen(function () { root.hlgEditor.init(edit.getModal()); });
-            }
+            if (root.hlgEditor) create.onOpen(function () { root.hlgEditor.init(create.getModal()); });
             create.onResult(function () { table.ajax.reload(); abp.notify.success(l('Hlg:Saved')); });
+        }
+        if (edit) {
+            if (root.hlgEditor) edit.onOpen(function () { root.hlgEditor.init(edit.getModal()); });
             edit.onResult(function () { table.ajax.reload(null, false); abp.notify.success(l('Hlg:Saved')); });
         }
     }

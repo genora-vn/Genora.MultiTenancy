@@ -1,0 +1,179 @@
+@page
+@using Genora.MultiTenancy.Localization
+@using Microsoft.Extensions.Localization
+@model Genora.MultiTenancy.Web.Pages.Hlg.Games.CreateModel
+@inject IStringLocalizer<MultiTenancyResource> L
+
+@section styles {
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/summernote@0.8.18/dist/summernote-lite.min.css" />
+    <style>
+        .hlg-game-sticky-save { position: sticky; top: 80px; }
+        #HlgGameCreateForm .card-header { font-weight: 600; background-color: #f8f9fa; }
+        #HlgGameCreateForm .note-editor { margin-bottom: 0; }
+    </style>
+}
+
+@section scripts {
+    <script src="https://cdn.jsdelivr.net/npm/summernote@0.8.18/dist/summernote-lite.min.js"></script>
+    <abp-script src="/Pages/Hlg/admin.js" />
+    <abp-script src="/Pages/Hlg/editor.js" />
+    <script>
+        $(function () {
+            window.hlgEditor.init($('#HlgGameCreateForm'));
+        });
+    </script>
+}
+
+<div class="mb-4">
+    <h4><i class="fa fa-gamepad me-2"></i>@L["Hlg:Create"] — @L["Hlg:Games"]</h4>
+</div>
+
+<form method="post" id="HlgGameCreateForm">
+    <div asp-validation-summary="All" class="alert alert-danger"></div>
+
+    <div class="row g-3">
+        <div class="col-lg-4">
+            <div class="card mb-3">
+                <div class="card-header py-2">
+                    <i class="fa fa-circle-info me-1"></i> @L["Hlg:General"]
+                </div>
+                <div class="card-body">
+                    <div class="mb-3 row">
+                        <div class="col-md-7">
+                            <label asp-for="Input.Name" class="form-label fw-semibold">@L["Hlg:Name"]</label>
+                            <input asp-for="Input.Name" type="text" class="form-control" />
+                            <span asp-validation-for="Input.Name" class="text-danger"></span>
+                        </div>
+                        <div class="col-md-5">
+                            <label asp-for="Input.Type" class="form-label fw-semibold">@L["Hlg:Type"]</label>
+                            <select asp-for="Input.Type" class="form-select">
+                                <option value="1">@L["Hlg:Quiz"]</option>
+                                <option value="2">@L["Hlg:PictureToWord"]</option>
+                                <option value="3">@L["Hlg:KingOfVietnamese"]</option>
+                                <option value="4">@L["Hlg:SpinWheel"]</option>
+                                <option value="5">@L["Hlg:TileFlip"]</option>
+                            </select>
+                            <span asp-validation-for="Input.Type" class="text-danger"></span>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label asp-for="Input.ImageUrl" class="form-label fw-semibold">@L["Hlg:ImageUrl"]</label>
+                        <input asp-for="Input.ImageUrl" type="text" class="form-control" />
+                        <span asp-validation-for="Input.ImageUrl" class="text-danger"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="Input.BannerUrl" class="form-label fw-semibold">@L["Hlg:BannerUrl"]</label>
+                        <input asp-for="Input.BannerUrl" type="text" class="form-control" />
+                        <span asp-validation-for="Input.BannerUrl" class="text-danger"></span>
+                    </div>
+
+                    <div class="mb-0">
+                        <label asp-for="Input.BadgeText" class="form-label fw-semibold">@L["Hlg:BadgeText"]</label>
+                        <input asp-for="Input.BadgeText" type="text" class="form-control" />
+                        <span asp-validation-for="Input.BadgeText" class="text-danger"></span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card mb-3">
+                <div class="card-header py-2">
+                    <i class="fa fa-calendar-days me-1"></i> @L["Hlg:Status"]
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        
+                    </div>
+
+                    <div class="mb-3 row">
+                        <div class="col-md-6">
+                            <label asp-for="Input.StartAt" class="form-label fw-semibold">@L["Hlg:StartAt"]</label>
+                            <input asp-for="Input.StartAt" type="datetime-local" class="form-control" asp-format="{0:yyyy-MM-ddTHH:mm}" />
+                            <span asp-validation-for="Input.StartAt" class="text-danger"></span>
+                        </div>
+                        <div class="col-md-6">
+                            <label asp-for="Input.EndAt" class="form-label fw-semibold">@L["Hlg:EndAt"]</label>
+                            <input asp-for="Input.EndAt" type="datetime-local" class="form-control" asp-format="{0:yyyy-MM-ddTHH:mm}" />
+                            <span asp-validation-for="Input.EndAt" class="text-danger"></span>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-4">
+                            <label asp-for="Input.Status" class="form-label fw-semibold">@L["Hlg:Status"]</label>
+                            <select asp-for="Input.Status" class="form-select">
+                                <option value="1">@L["Hlg:Upcoming"]</option>
+                                <option value="2">@L["Hlg:Ongoing"]</option>
+                                <option value="3">@L["Hlg:Ended"]</option>
+                            </select>
+                            <span asp-validation-for="Input.Status" class="text-danger"></span>
+                        </div>
+                        <div class="col-md-4 mb-3 mb-md-0">
+                            <label asp-for="Input.BaseScorePerQuestion" class="form-label fw-semibold">@L["Hlg:BaseScorePerQuestion"]</label>
+                            <input asp-for="Input.BaseScorePerQuestion" type="number" class="form-control" min="0" />
+                            <span asp-validation-for="Input.BaseScorePerQuestion" class="text-danger"></span>
+                        </div>
+                        <div class="col-md-4">
+                            <label asp-for="Input.DisplayOrder" class="form-label fw-semibold">@L["Hlg:DisplayOrder"]</label>
+                            <input asp-for="Input.DisplayOrder" type="number" class="form-control" />
+                            <span asp-validation-for="Input.DisplayOrder" class="text-danger"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card hlg-game-sticky-save">
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <button type="submit" class="btn btn-primary" style="width: 100%;">
+                                <i class="fa fa-save me-1"></i> @L["Save"]
+                            </button>
+                        </div>
+                        <div class="col-md-4 d-flex flex-wrap align-content-center justify-content-center">
+                            <input asp-for="Input.IsActive" class="form-check-input" type="checkbox" role="switch" />
+                            <label asp-for="Input.IsActive" class="form-check-label fw-semibold ps-1">@L["Hlg:IsActive"]</label>
+                        </div>
+                        <div class="col-md-4">
+                            <a asp-page="./Index" class="btn btn-outline-secondary" style="width: 100%;">
+                                <i class="fa fa-arrow-left me-1"></i> @L["Back"]
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-8">
+            <div class="card mb-3">
+                <div class="card-header py-2">
+                    <i class="fa fa-align-left me-1"></i> @L["Hlg:Description"]
+                </div>
+                <div class="card-body">
+                    <textarea asp-for="Input.Description" rows="4" class="form-control"></textarea>
+                    <span asp-validation-for="Input.Description" class="text-danger"></span>
+                </div>
+            </div>
+
+            <div class="card mb-3">
+                <div class="card-header py-2">
+                    <i class="fa fa-scroll me-1"></i> @L["Hlg:Rules"]
+                </div>
+                <div class="card-body">
+                    <textarea asp-for="Input.Rules" rows="8" class="form-control hlg-rich"></textarea>
+                    <span asp-validation-for="Input.Rules" class="text-danger"></span>
+                </div>
+            </div>
+
+            <div class="card mb-3">
+                <div class="card-header py-2">
+                    <i class="fa fa-gift me-1"></i> @L["Hlg:RewardDescription"]
+                </div>
+                <div class="card-body">
+                    <textarea asp-for="Input.RewardDescription" rows="8" class="form-control hlg-rich"></textarea>
+                    <span asp-validation-for="Input.RewardDescription" class="text-danger"></span>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>

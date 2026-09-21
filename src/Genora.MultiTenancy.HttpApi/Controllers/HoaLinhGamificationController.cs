@@ -31,6 +31,7 @@ public class HoaLinhGamificationController : MultiTenancyController
     private readonly IHlgRewardAppService _rewardService;
     private readonly IHlgRankingAppService _rankingService;
     private readonly ILogger<HoaLinhGamificationController> _logger;
+    private readonly IHlgBrandAppService _brandService;
 
     public HoaLinhGamificationController(
         IZaloApiClient zaloApiClient,
@@ -39,6 +40,7 @@ public class HoaLinhGamificationController : MultiTenancyController
         IHlgGameAppService gameService,
         IHlgRewardAppService rewardService,
         IHlgRankingAppService rankingService,
+        IHlgBrandAppService brandService,
         ILogger<HoaLinhGamificationController> logger)
     {
         _zaloApiClient = zaloApiClient;
@@ -47,6 +49,7 @@ public class HoaLinhGamificationController : MultiTenancyController
         _gameService = gameService;
         _rewardService = rewardService;
         _rankingService = rankingService;
+        _brandService = brandService;
         _logger = logger;
     }
 
@@ -203,6 +206,19 @@ public class HoaLinhGamificationController : MultiTenancyController
             return Ok(HlgApiResult<object>.Fail(404, ex.Message));
         }
     }
+    [HttpGet("knowledge/brands/{id}")]
+    public async Task<IActionResult> GetKnowledgeBrands(Guid id, CancellationToken ct)
+    {
+        try
+        {
+            var dto = await _brandService.GetBrandAsync(id, ct);
+            return Ok(HlgApiResult<BrandKnowledgeDto>.Ok(dto));
+        }
+        catch (UserFriendlyException ex)
+        {
+            return Ok(HlgApiResult<object>.Fail(404, ex.Message));
+        }
+    }
 
     /// <summary>Danh sách bài học trong một danh mục. isCompleted theo phone (optional).</summary>
     [HttpGet("knowledge/categories/{id}/products")]
@@ -218,8 +234,8 @@ public class HoaLinhGamificationController : MultiTenancyController
     {
         try
         {
-            var dto = await _knowledgeService.GetProductAsync(id, phone, ct);
-            return Ok(HlgApiResult<ProductDto>.Ok(dto));
+            var dto = await _brandService.GetProductAsync(id,  ct);
+            return Ok(HlgApiResult<HlgProductDto>.Ok(dto));
         }
         catch (UserFriendlyException ex)
         {
@@ -333,11 +349,13 @@ public class HoaLinhGamificationController : MultiTenancyController
 
     /// <summary>Lưu địa chỉ giao hàng cho phiên (luồng consumer nhận quà vật lý sau game). Endpoint MỚI.</summary>
     [HttpPost("games/sessions/{sessionId}/shipping-address")]
-    public async Task<IActionResult> SetSessionShippingAddress(Guid sessionId, [FromBody] ShippingAddressPayloadDto payload, CancellationToken ct)
+    public async Task<IActionResult> SetSessionShippingAddress(Guid sessionId, [FromQuery] string phone, [FromBody] ShippingAddressPayloadDto payload, CancellationToken ct)
     {
+        if (string.IsNullOrWhiteSpace(phone))
+            return Ok(HlgApiResult<object>.Fail(400, "Thiếu số điện thoại"));
         try
         {
-            await _rewardService.SetSessionShippingAddressAsync(sessionId, payload, ct);
+            await _rewardService.SetSessionShippingAddressAsync(sessionId, phone, payload, ct);
             return Ok(HlgApiResult<object>.Ok(null!));
         }
         catch (UserFriendlyException ex)

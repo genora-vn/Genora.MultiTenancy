@@ -10,6 +10,33 @@
     function init(modal) {
         var $ = root.jQuery, l = abp.localization.getResource('MultiTenancy');
         var lookup = root.hlgAdmin.resolveService('hlgLookupAdmin');
+        var form = modal.find('form').addBack('form').first();
+        if (!form.length) form = modal.closest('form');
+        function syncRichEditors(container) {
+            container.find('.hlg-rich').each(function () {
+                var editor = $(this);
+                if ($.fn.summernote && editor.next('.note-editor').length) editor.val(editor.summernote('code'));
+            });
+        }
+        function richTextIsEmpty(value) {
+            return $('<div>').html(value || '').text().replace(/\u00a0/g, ' ').trim() === '';
+        }
+        function activateInvalidTab() {
+            var invalid = form.find('[aria-invalid="true"], .input-validation-error, .error').filter(':input').first();
+            var pane = invalid.closest('.tab-pane');
+            if (!pane.length) return;
+            var trigger = modal.find('[data-bs-toggle="tab"][data-bs-target="#' + pane.attr('id') + '"]').get(0);
+            if (trigger && root.bootstrap && root.bootstrap.Tab) root.bootstrap.Tab.getOrCreateInstance(trigger).show();
+            invalid.trigger('focus');
+        }
+        function reparseValidation() {
+            if (!form.length || !$.validator || !$.validator.unobtrusive) return true;
+            form.removeData('validator').removeData('unobtrusiveValidation');
+            $.validator.unobtrusive.parse(form);
+            var validator = form.data('validator');
+            if (validator) validator.settings.ignore = [];
+            return form.valid();
+        }
         function upload(file) {
             var form = new FormData(); form.append('file', file);
             return fetch(abp.appPath + 'Hlg/Upload', { method: 'POST', headers: { RequestVerificationToken: abp.security.antiForgery.getToken() }, body: form })
@@ -76,7 +103,8 @@
                     var row = $('<fieldset class="border rounded p-3 mb-3">').appendTo(rows);
                     var fields = kind === 'knowledge' ? [['Title', 'text'], ['Content', 'rich']] : kind === 'media' ? [['Kind', 'kind'], ['Placement', 'placement'], ['Url', 'text'], ['PosterUrl', 'text'], ['AltText', 'text']] : [['Id', 'lookup']];
                     fields.forEach(function (f) {
-                        $('<label class="form-label d-block">').text(l('Hlg:' + (f[0] === 'Id' ? 'RelatedProduct' : f[0]))).appendTo(row);
+                        var label = l('Hlg:' + (f[0] === 'Id' ? 'RelatedProduct' : f[0]));
+                        $('<label class="form-label d-block">').text(label).appendTo(row);
                         var input;
                         if (f[1] === 'rich') input = $('<textarea rows="4" class="form-control hlg-rich mb-2">');
                         else if (f[1] === 'kind' || f[1] === 'placement') {
@@ -84,8 +112,15 @@
                             (f[1] === 'kind' ? ['Image', 'Video'] : ['Hero', 'Information', 'Knowledge', 'Related']).forEach(function (key, i) { $('<option>').val(i + 1).text(l('Hlg:' + key)).appendTo(input); });
                         } else if (f[1] === 'lookup') { input = $('<select class="form-select mb-2" data-hlg-lookup="products">'); $('<option>').val('').text(l('Hlg:Select')).appendTo(input); if (item) $('<option>').val(item).text(item).appendTo(input); }
                         else input = $('<input type="text" class="form-control mb-2">');
-                        input.attr('name', prefix + '[' + index + ']' + (kind === 'related' ? '' : '.' + f[0])).attr('data-field', f[0])
+                        var name = prefix + '[' + index + ']' + (kind === 'related' ? '' : '.' + f[0]);
+                        input.attr('name', name).attr('data-field', f[0])
                             .val(kind === 'related' ? item : item[f[0]] || (f[1] === 'kind' || f[1] === 'placement' ? 1 : '')).appendTo(row);
+                        if ((kind === 'knowledge' && (f[0] === 'Title' || f[0] === 'Content')) ||
+                            (kind === 'media' && f[0] === 'Url') || kind === 'related') {
+                            input.attr({ 'data-val': 'true', 'data-val-required': l('Hlg:FieldRequired', label), 'aria-required': 'true' });
+                            $('<span class="text-danger field-validation-valid">')
+                                .attr({ 'data-valmsg-for': name, 'data-valmsg-replace': 'true' }).appendTo(row);
+                        }
                         if (kind === 'media' && (f[0] === 'PosterUrl' || (f[0] === 'Url' && Number(item.Kind || 1) === 1))) input.attr('data-hlg-image', 'true');
                     });
                     [['MoveUp', -1], ['MoveDown', 1], ['Remove', 0]].forEach(function (action) {
@@ -95,6 +130,16 @@
                     });
                 }); enhance(rows);
             }
+            function compact() {
+                syncRichEditors(rows);
+                items = read().filter(function (item) {
+                    if (kind === 'related') return !!item;
+                    if (kind === 'knowledge') return !!((item.Title || '').trim() || !richTextIsEmpty(item.Content));
+                    return !!((item.Url || '').trim() || (item.PosterUrl || '').trim() || (item.AltText || '').trim());
+                });
+                draw();
+            }
+            box.data('hlg-compact', compact);
             $('<button type="button" class="btn btn-outline-primary mb-3">').text(l('Hlg:Add')).appendTo(box).on('click', function () {
                 items = read(); items.push(kind === 'related' ? '' : {}); draw();
             }); draw();
@@ -102,6 +147,22 @@
         modal.find('[name="Input.CategoryId"]').on('change', function () { modal.find('[name="Input.BrandId"]').val('').trigger('change'); });
         modal.find('[name="Input.EventId"]').on('change', function () { modal.find('[name="Input.PrizeId"]').val('').trigger('change'); });
         enhance(modal);
+        if (form.length && !form.data('hlg-submit-ready')) {
+            form.data('hlg-submit-ready', true);
+            form.get(0).addEventListener('submit', function (event) {
+                syncRichEditors(form);
+                modal.find('.hlg-collection').each(function () {
+                    var compact = $(this).data('hlg-compact');
+                    if (compact) compact();
+                });
+                if (!reparseValidation()) {
+                    event.preventDefault();
+                    event.stopImmediatePropagation();
+                    activateInvalidTab();
+                    abp.notify.warn(l('Hlg:FixValidationErrors'));
+                }
+            }, true);
+        }
     }
     root.hlgEditor = { init: init, move: move };
 })(window);

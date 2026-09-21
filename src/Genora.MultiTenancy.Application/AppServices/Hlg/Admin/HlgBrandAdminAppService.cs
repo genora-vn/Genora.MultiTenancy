@@ -22,7 +22,7 @@ public class HlgBrandAdminAppService : FeatureProtectedCrudAppService<HlgBrand, 
     protected override string FeatureName => AppHlgFeatures.Management;
     protected override string TenantDefaultPermission => MultiTenancyPermissions.AppHlgKnowledge.Default;
     protected override string HostDefaultPermission => MultiTenancyPermissions.HostAppHlgKnowledge.Default;
-    public HlgBrandAdminAppService(IRepository<HlgBrand, Guid> repository, ICurrentTenant tenant, IFeatureChecker features) : base(repository,tenant,features)
+    public HlgBrandAdminAppService(IRepository<HlgBrand, Guid> repository, ICurrentTenant tenant, IFeatureChecker features) : base(repository, tenant, features)
     {
         LocalizationResource = typeof(MultiTenancyResource);
         GetPolicyName = GetListPolicyName = TenantDefaultPermission;
@@ -38,29 +38,30 @@ public class HlgBrandAdminAppService : FeatureProtectedCrudAppService<HlgBrand, 
         if (input.IsActive.HasValue) query = query.Where(x => x.IsActive == input.IsActive);
         if (input.ParentId.HasValue) query = query.Where(x => x.CategoryId == input.ParentId);
         var count = await AsyncExecuter.CountAsync(query);
-        var rows = await AsyncExecuter.ToListAsync(query.OrderBy(x => x.DisplayOrder).ThenBy(x => x.Id).Skip(Math.Max(0,input.SkipCount)).Take(Math.Clamp(input.MaxResultCount,1,100)));
+        var rows = await AsyncExecuter.ToListAsync(query.OrderBy(x => x.DisplayOrder).ThenBy(x => x.Id).Skip(Math.Max(0, input.SkipCount)).Take(Math.Clamp(input.MaxResultCount, 1, 100)));
         return new(count, rows.Select(Map).ToList());
     }
     public override async Task<HlgBrandAdminDto> GetAsync(Guid id) { await CheckGetPolicyAsync(); var entity = await Repository.GetAsync(id); Scope(entity.TenantId); return Map(entity); }
     [UnitOfWork(isTransactional: true)]
     public override async Task<HlgBrandAdminDto> CreateAsync(CreateHlgBrandInput input)
     {
-        await CheckCreatePolicyAsync(); await ValidateAsync(input,null);
-        var entity = new HlgBrand(GuidGenerator.Create(),CurrentTenant.Id); Apply(input,entity);
-        await Repository.InsertAsync(entity,autoSave:true); return Map(entity);
+        await CheckCreatePolicyAsync(); await ValidateAsync(input, null);
+        var entity = new HlgBrand(GuidGenerator.Create(), CurrentTenant.Id); Apply(input, entity);
+        await Repository.InsertAsync(entity, autoSave: true); return Map(entity);
     }
     [UnitOfWork(isTransactional: true)]
     public override async Task<HlgBrandAdminDto> UpdateAsync(Guid id, UpdateHlgBrandInput input)
     {
         await CheckUpdatePolicyAsync(); var entity = await Repository.GetAsync(id); Scope(entity.TenantId);
-        await ValidateAsync(input,id); Apply(input,entity);
-        await Repository.UpdateAsync(entity,autoSave:true); return Map(entity);
+        await ValidateAsync(input, id); Apply(input, entity);
+        await Repository.UpdateAsync(entity, autoSave: true); return Map(entity);
     }
     private async Task ValidateAsync(HlgBrandInput input, Guid? id)
-    { HlgContentValidation.Validate(input);
+    {
+        HlgContentValidation.Validate(input);
         var category = await Repo<HlgKnowledgeCategory>().GetAsync(input.CategoryId); Scope(category.TenantId);
         if (id.HasValue && await Repo<HlgProduct>().AnyAsync(x => x.BrandId == id && x.CategoryId != input.CategoryId)) throw new UserFriendlyException(L["Hlg:BrandCategoryInUse"]);
- }
+    }
     public override async Task DeleteAsync(Guid id)
     { await CheckDeletePolicyAsync(); var entity = await Repository.GetAsync(id); Scope(entity.TenantId); if (await Repo<HlgProduct>().AnyAsync(x => x.BrandId == id)) throw new UserFriendlyException(L["Hlg:BrandHasProducts"]); await Repository.DeleteAsync(entity); }
     private static void Apply(HlgBrandInput input, HlgBrand entity) { entity.CategoryId = input.CategoryId; entity.Name = input.Name; entity.DisplayOrder = input.DisplayOrder; entity.IsActive = input.IsActive; }

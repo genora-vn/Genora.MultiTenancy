@@ -5,6 +5,7 @@
 > Nguồn gốc: migrate từ `~\.claude\projects\D--Genora-...-Genora-MultiTenancy\memory\` (108 file).
 
 ## Điều hướng nhanh
+- **HLG verification follow-up 2026-09-19:** [note](memory/notes/project/project_hlg_verification_followup_20260919.md). Xác minh corrective code đã nằm trong HEAD `d4f67f9`; fix ownership/finished-session cho shipping address + URL validation Admin; 46App+3Domain+17Web+11JS pass; browser vẫn BLOCKED (không có browser); migration chưa apply.
 - **HLG corrective full design audit2026-09-19 (mới nhất):** [note](memory/notes/project/project_hlg_corrective_design_audit_20260919.md) · [matrix/report](docs/HLG_FULL_DESIGN_AUDIT_20260919.md).31/31 pages×2; hierarchy/content/CMS/prizes/fulfillment; migration mới chưa apply;42App+3Domain+17Web+11JS pass; browser BLOCKED và3UNKNOWN.
 - **HLG Admin Razor UI 2026-09-18:** [note](memory/notes/project/project_hlg_admin_razor_ui_20260918.md). Đủ 5 nhóm, menu/quyền/VI-EN; 13 Application + 7 JS tests, Web build pass; còn UAT tenant thật.
 - **HL25 staging AgeGroup repair 2026-09-18:** [note](memory/notes/project/project_hl25_staging_agegroup_migration_fix_20260918.md). Migration mới 20260918093000_EnsureHl25ParticipantAgeGroup (DB HL25: DuocPhamHoaLinh; bỏ qua DB không có bảng HL25) sửa DB từng apply BirthDate cũ; giữ dữ liệu, thêm Unknown=0; chưa áp staging.

@@ -1,5 +1,15 @@
 # HANDOFF — Bàn giao giữa các phiên làm việc
 
+## HLG verification follow-up — 2026-09-19 (mới nhất)
+
+- Branch `feature/nghiadt-hoalinh-gamification`; HEAD `d4f67f9485d156da5e52640a5cad31446511647d`. Corrective implementation đã commit trong HEAD, follow-up fixes chưa commit.
+- Đã fix: `POST games/sessions/{sessionId}/shipping-address` yêu cầu query `phone`, chỉ chấp nhận session đã finish thuộc customer/tenant; Admin image URL validation đã phủ category/reward/question/product legacy list.
+- Phiên này thực chạy: Web build PASS 0 errors/52 warnings; Application46, Domain3, Web17, JS11 đều pass; EF pending model check clean.
+- Browser UAT BLOCKED: `apps=[]`, `browsers=[]`, create iab báo `Browser is not available: iab`. Không start host, không live proxy/tenant CRUD/DB write.
+- Migration `20260919112304_AddHlgDesignContent` NOT APPLIED. Ba UNKNOWN giữ nguyên. Unrelated appsettings/log work phải tiếp tục được bảo toàn.
+- Next: FE bổ sung query `phone` cho shipping-address; review/apply migration đúng target/workflow sau khi được xác nhận; UAT authenticated tenant khi có browser; SQL concurrency test cho prize capacity.
+- Chi tiết: [follow-up note](../memory/notes/project/project_hlg_verification_followup_20260919.md).
+
 ## HLG corrective design audit — 2026-09-19 (mới nhất)
 
 - Đã inspect trực quan31/31 trang PDF ở cả2 lượt;60 screen/component/state;54 nhóm dữ liệu.34 nhóm CMS/cần làm rõ:31 COVERED,0 PARTIAL,0 MISSING,3 UNKNOWN. Coverage source không phải nghiệm thu browser.

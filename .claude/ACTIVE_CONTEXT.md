@@ -1,5 +1,13 @@
 # ACTIVE CONTEXT — Việc đang làm dở
 
+## HLG verification follow-up — 2026-09-19 (mới nhất)
+
+- Branch `feature/nghiadt-hoalinh-gamification`, HEAD `d4f67f9485d156da5e52640a5cad31446511647d`; corrective implementation đã nằm trong HEAD. Appsettings/log changes là pre-existing/unrelated và được giữ nguyên.
+- Fix security/validation: shipping-address yêu cầu query `phone`, chỉ nhận session đã finish thuộc customer/tenant; URL validator áp dụng thêm cho category/reward/question image và từng product image-list URL. Route/envelope giữ nguyên; FE phải gửi `phone`.
+- Verification phiên này: Web build PASS 0 errors (52 warnings); Application46/46, Domain3/3, Web17/17, JS11/11; EF no pending model changes.
+- Browser UAT BLOCKED: Computer Use `apps=[]`, `browsers=[]`; create `iab` trả `Browser is not available: iab`. Không start Web, không DB write/live proxy/authenticated CRUD.
+- Migration `20260919112304_AddHlgDesignContent` vẫn NOT APPLIED. Ba UNKNOWN giữ nguyên. Chi tiết: [note](memory/notes/project/project_hlg_verification_followup_20260919.md).
+
 ## HLG corrective design audit — 2026-09-19 (mới nhất)
 
 - Đã inspect trực quan31/31 trang PDF ở cả2 lượt;60 screen/component/state;54 nhóm dữ liệu.34 nhóm CMS/cần làm rõ:31 COVERED,0 PARTIAL,0 MISSING,3 UNKNOWN. Coverage source không phải nghiệm thu browser.

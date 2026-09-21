@@ -141,7 +141,7 @@ public class HlgRewardAppService : ApplicationService, IHlgRewardAppService
         return MapHistory(history);
     }
 
-    public async Task SetSessionShippingAddressAsync(Guid sessionId, ShippingAddressPayloadDto payload, CancellationToken ct = default)
+    public async Task SetSessionShippingAddressAsync(Guid sessionId, string phone, ShippingAddressPayloadDto payload, CancellationToken ct = default)
     {
         if (payload == null
             || string.IsNullOrWhiteSpace(payload.ReceiverName)
@@ -151,8 +151,13 @@ public class HlgRewardAppService : ApplicationService, IHlgRewardAppService
             throw new UserFriendlyException("Thiếu thông tin địa chỉ giao hàng (tên, sđt, địa chỉ)");
         }
 
-        var session = await _sessionRepo.FirstOrDefaultAsync(x => x.Id == sessionId, ct)
-            ?? throw new UserFriendlyException("Không tìm thấy phiên chơi");
+        var customer = await ResolveCustomerAsync(phone, ct);
+        var session = await _sessionRepo.FirstOrDefaultAsync(
+            x => x.Id == sessionId
+                && x.CustomerId == customer.Id
+                && x.TenantId == _currentTenant.Id
+                && x.IsFinished,
+            ct) ?? throw new UserFriendlyException(L["Hlg:InvalidRewardSession"]);
 
         var address = new HlgShippingAddress(
             GuidGenerator.Create(),

@@ -81,6 +81,7 @@ public class HlgQuestionAdminAppService : FeatureProtectedCrudAppService<HlgQues
     private async Task ValidateAsync(HlgQuestionInput input, Guid? id)
     {
         Validator.ValidateObject(input, new ValidationContext(input), true);
+        HlgContentValidation.Localized(() => HlgContentValidation.Url(input.ImageUrl), key => L[key]);
         await _games.GetAsync(input.GameId);
         if (await _sessions.AnyAsync(x => x.GameId == input.GameId)) throw new UserFriendlyException(L["Hlg:GameHasSessions"]);
         if (await Repository.AnyAsync(x => x.GameId == input.GameId && x.Index == input.Index && x.Id != id)) throw new UserFriendlyException(L["Hlg:QuestionIndexExists"]);

@@ -134,6 +134,11 @@ Migration `20260919112304_AddHlgDesignContent`: 4 new HLG tables and 6 nullable 
 Generated idempotent SQL: `src/Genora.MultiTenancy.EntityFrameworkCore/Migrations/Scripts/AddHlgDesignContent.sql`. Up reviewed: no drop, rename or unrelated schema operation. `dotnet ef migrations has-pending-model-changes ...` PASS (no changes). Migration **not applied** to any database; existing schema drift is not repaired by this task.
 
 ## Verification (actually executed)
+
+Follow-up verification on the same date found and fixed two implementation defects without changing the coverage classification: session shipping-address now requires phone-based customer ownership and a finished current-tenant session; Admin URL validation now covers category/reward/question images and every legacy product image-list URL. The endpoint route/envelope are unchanged, but callers must supply the `phone` query value.
+
+Latest follow-up results: Web build PASS with 0 errors/52 warnings; Application **46 passed**, Domain **3 passed**, Web **17 passed**, JS **11 passed**; EF reports no pending model changes. Browser remains BLOCKED with `apps=[]`, `browsers=[]`, and `Browser is not available: iab`. No host or database was started/written and the migration remains not applied.
+
 - `dotnet build src/Genora.MultiTenancy.Web/Genora.MultiTenancy.Web.csproj --no-restore`: PASS, 0 errors; existing solution warnings remain. Subsequent Web test build after final policy/localization fix also PASS.
 - `dotnet test test/Genora.MultiTenancy.Application.Tests --no-restore --filter FullyQualifiedName~Hlg`: **42 passed / 0 failed** (13 existing + 29 new cases).
 - `dotnet test test/Genora.MultiTenancy.Domain.Tests --no-restore --filter FullyQualifiedName~Hlg`: **3 passed / 0 failed**.

@@ -2,6 +2,8 @@ $(function () {
     window.hlgAdmin.init({
         "service": "hlgGameAdmin",
         "folder": "Games",
+        "createPage": true,
+        "editPage": true,
         "readOnly": false,
         "columns": [
             {

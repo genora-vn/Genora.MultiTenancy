@@ -1,5 +1,13 @@
 # HLG Admin — UAT 2026-09-18
 
+## Verification follow-up 2026-09-19
+
+- Automated PASS in this session: Web build 0 errors (52 warnings); 46 Application, 3 Domain, 17 Web and 11 JS tests; EF pending-model check reports no changes.
+- Corrective fixes: shipping-address now requires query `phone` and rejects foreign/un-finished sessions; Admin image URL validation now also covers category, reward, question and legacy product image lists.
+- Browser UAT remains BLOCKED: Computer Use returned no apps/browsers and in-app browser creation failed with `Browser is not available: iab`. No host startup, live proxy fetch, authenticated CRUD or database write occurred.
+- Migration `20260919112304_AddHlgDesignContent` remains NOT APPLIED.
+- Add to runtime UAT: call `POST /api/mini-app/hlg/games/sessions/{sessionId}/shipping-address?phone=...`; verify missing phone, another customer's session and unfinished session are rejected, while the owner's finished session succeeds.
+
 Prerequisites: rebuild/restart Web; select the HLG tenant (not HL Sales or HL25), ensure HLG schema is present, enable Hlg.Management, grant the corresponding AppHlg* permissions. Use test records.
 
 1. Menu Hoa Linh Gamification shows Rewards, Knowledge categories, Ranking, Games and Users. Tenant feature disabled: menu hidden and direct routes/API denied.

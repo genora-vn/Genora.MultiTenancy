@@ -82,7 +82,11 @@ public class HlgProductAdminAppService : FeatureProtectedCrudAppService<HlgProdu
             HlgContentValidation.Scope(brand.TenantId, CurrentTenant.Id);
             if (brand.CategoryId != input.CategoryId) throw new UserFriendlyException(L["Hlg:BrandCategoryMismatch"]);
         }
-        HlgContentValidation.Localized(() => { HlgContentValidation.Url(input.ThumbnailUrl); HlgContentValidation.Product(input.Details, id); }, key => L[key]);
+        HlgContentValidation.Localized(() => {
+            HlgContentValidation.Url(input.ThumbnailUrl);
+            foreach (var imageUrl in ParseImageUrls(input.ImageUrls)) HlgContentValidation.Url(imageUrl);
+            HlgContentValidation.Product(input.Details, id);
+        }, key => L[key]);
         foreach (var relatedId in input.Details.RelatedProductIds) {
             var related = await Repository.GetAsync(relatedId); HlgContentValidation.Scope(related.TenantId, CurrentTenant.Id);
         }
@@ -103,8 +107,9 @@ public class HlgProductAdminAppService : FeatureProtectedCrudAppService<HlgProdu
         entity.Content = input.Content?.Trim();
         entity.DisplayOrder = input.DisplayOrder;
         entity.IsActive = input.IsActive;
-        entity.ImagesJson = JsonSerializer.Serialize((input.ImageUrls ?? "").Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries));
+        entity.ImagesJson = JsonSerializer.Serialize(ParseImageUrls(input.ImageUrls));
     }
+    private static string[] ParseImageUrls(string? value) => (value ?? "").Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
     private static HlgProductAdminDto Map(HlgProduct entity) => new()
     {
         Id = entity.Id,

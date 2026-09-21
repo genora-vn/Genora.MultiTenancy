@@ -10,9 +10,9 @@ public class KnowledgeCategoryDto
     public string Name { get; set; } = string.Empty;
     public string? Description { get; set; }
     public string? ImageUrl { get; set; }
+    public List<BrandKnowledgeDto> Brands { get; set; }
     public int ProductCount { get; set; }
 }
-
 /// <summary>Bài học/sản phẩm kiến thức. Khớp contract Product.</summary>
 public class ProductDto
 {

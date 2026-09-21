@@ -73,6 +73,7 @@ public class HlgCategoryAdminAppService : FeatureProtectedCrudAppService<HlgKnow
     private async Task ValidateAsync(HlgCategoryInput input, Guid? id)
     {
         Validator.ValidateObject(input, new ValidationContext(input), true);
+        HlgContentValidation.Localized(() => HlgContentValidation.Url(input.ImageUrl), key => L[key]);
         await Task.CompletedTask;
     }
     public override async Task DeleteAsync(Guid id)

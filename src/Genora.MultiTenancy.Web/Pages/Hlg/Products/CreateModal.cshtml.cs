@@ -13,8 +13,16 @@ public class CreateModalModel : HlgAdminPageModel
     public void OnGet(Guid? parentId, Guid? brandId) { Input.CategoryId = parentId ?? Guid.Empty; Input.BrandId = brandId; }
     public async Task<IActionResult> OnPostAsync()
     {
+        EnsureDetails();
         if (!ModelState.IsValid) return Page();
         await _service.CreateAsync(Input);
         return NoContent();
+    }
+    private void EnsureDetails()
+    {
+        Input.Details ??= new();
+        Input.Details.Knowledge ??= new();
+        Input.Details.Media ??= new();
+        Input.Details.RelatedProductIds ??= new();
     }
 }

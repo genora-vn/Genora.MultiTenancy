@@ -8,25 +8,27 @@
     Layout = null;
 }
 <form method="post" asp-page="/Hlg/Games/CreateModal">
-    <abp-modal size="Large">
+    <abp-modal size="ExtraLarge">
         <abp-modal-header title="@L["Hlg:Create"].Value"></abp-modal-header>
         <abp-modal-body>
             <div asp-validation-summary="All" class="text-danger"></div>
-            <div class="mb-3">
-                <label asp-for="Input.Name" class="form-label">@L["Hlg:Name"]</label>
-                <input asp-for="Input.Name" type="text" class="form-control" />
-                <span asp-validation-for="Input.Name" class="text-danger"></span>
-            </div>
-            <div class="mb-3">
-                <label asp-for="Input.Type" class="form-label">@L["Hlg:Type"]</label>
-                <select asp-for="Input.Type" class="form-select">
-                    <option value="1">@L["Hlg:Quiz"]</option>
-                    <option value="2">@L["Hlg:PictureToWord"]</option>
-                    <option value="3">@L["Hlg:KingOfVietnamese"]</option>
-                    <option value="4">@L["Hlg:SpinWheel"]</option>
-                    <option value="5">@L["Hlg:TileFlip"]</option>
-                </select>
-                <span asp-validation-for="Input.Type" class="text-danger"></span>
+            <div class="mb-3 row">
+                <div class="col-md-8">
+                    <label asp-for="Input.Name" class="form-label">@L["Hlg:Name"]</label>
+                    <input asp-for="Input.Name" type="text" class="form-control" />
+                    <span asp-validation-for="Input.Name" class="text-danger"></span>
+                </div>
+                <div class="col-md-4">
+                    <label asp-for="Input.Type" class="form-label">@L["Hlg:Type"]</label>
+                    <select asp-for="Input.Type" class="form-select">
+                        <option value="1">@L["Hlg:Quiz"]</option>
+                        <option value="2">@L["Hlg:PictureToWord"]</option>
+                        <option value="3">@L["Hlg:KingOfVietnamese"]</option>
+                        <option value="4">@L["Hlg:SpinWheel"]</option>
+                        <option value="5">@L["Hlg:TileFlip"]</option>
+                    </select>
+                    <span asp-validation-for="Input.Type" class="text-danger"></span>
+                </div>
             </div>
             <div class="mb-3">
                 <label asp-for="Input.ImageUrl" class="form-label">@L["Hlg:ImageUrl"]</label>

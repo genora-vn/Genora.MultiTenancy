@@ -4,134 +4,149 @@
 @using System.Text.Json
 @inject IStringLocalizer<MultiTenancyResource> L
 @model HlgProductInput
-@{ ViewData.TemplateInfo.HtmlFieldPrefix = "Input"; }
+@{
+    ViewData.TemplateInfo.HtmlFieldPrefix = "Input";
+}
 <ul class="nav nav-tabs mb-3" role="tablist">
-<li class="nav-item">
-<button class="nav-link active" data-bs-toggle="tab" data-bs-target="#HlgGeneral" type="button">@L["Hlg:General"]</button>
-</li>
-<li class="nav-item">
-<button class="nav-link " data-bs-toggle="tab" data-bs-target="#HlgInformation" type="button">@L["Hlg:Information"]</button>
-</li>
-<li class="nav-item">
-<button class="nav-link " data-bs-toggle="tab" data-bs-target="#HlgKnowledge" type="button">@L["Hlg:Knowledge"]</button>
-</li>
-<li class="nav-item">
-<button class="nav-link " data-bs-toggle="tab" data-bs-target="#HlgMedia" type="button">@L["Hlg:Media"]</button>
-</li>
-<li class="nav-item">
-<button class="nav-link " data-bs-toggle="tab" data-bs-target="#HlgRelated" type="button">@L["Hlg:Related"]</button>
-</li>
-<li class="nav-item">
-<button class="nav-link " data-bs-toggle="tab" data-bs-target="#HlgPromotion" type="button">@L["Hlg:Promotion"]</button>
-</li>
+    <li class="nav-item">
+        <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#HlgGeneral" type="button">@L["Hlg:General"]</button>
+    </li>
+    <li class="nav-item">
+        <button class="nav-link " data-bs-toggle="tab" data-bs-target="#HlgInformation" type="button">@L["Hlg:Information"]</button>
+    </li>
+    <li class="nav-item">
+        <button class="nav-link " data-bs-toggle="tab" data-bs-target="#HlgKnowledge" type="button">@L["Hlg:Knowledge"]</button>
+    </li>
+    <li class="nav-item">
+        <button class="nav-link " data-bs-toggle="tab" data-bs-target="#HlgMedia" type="button">@L["Hlg:Media"]</button>
+    </li>
+    <li class="nav-item">
+        <button class="nav-link " data-bs-toggle="tab" data-bs-target="#HlgRelated" type="button">@L["Hlg:Related"]</button>
+    </li>
+    <li class="nav-item">
+        <button class="nav-link " data-bs-toggle="tab" data-bs-target="#HlgPromotion" type="button">@L["Hlg:Promotion"]</button>
+    </li>
 </ul>
 <div class="tab-content">
-<div class="tab-pane fade show active" id="HlgGeneral">
-<div class="mb-3">
-<label asp-for="CategoryId" class="form-label">@L["Hlg:CategoryId"]</label>
-<select asp-for="CategoryId" class="form-select" data-hlg-lookup="categories">
-<option value="">@L["Hlg:Select"]</option>@if (Model.CategoryId != Guid.Empty) { <option value="@Model.CategoryId" selected>@Model.CategoryId</option> }</select>
-<span asp-validation-for="CategoryId" class="text-danger">
-</span>
-</div>
-<div class="mb-3">
-<label asp-for="BrandId" class="form-label">@L["Hlg:BrandId"]</label>
-<select asp-for="BrandId" class="form-select" data-hlg-lookup="brands">
-<option value="">@L["Hlg:Select"]</option>@if (Model.BrandId != null) { <option value="@Model.BrandId" selected>@Model.BrandId</option> }</select>
-<span asp-validation-for="BrandId" class="text-danger">
-</span>
-</div>
-<div class="mb-3">
-<label asp-for="Name" class="form-label">@L["Hlg:Name"]</label>
-<input asp-for="Name" type="text" class="form-control" />
-<span asp-validation-for="Name" class="text-danger">
-</span>
-</div>
-<div class="mb-3">
-<label asp-for="ThumbnailUrl" class="form-label">@L["Hlg:ThumbnailUrl"]</label>
-<input asp-for="ThumbnailUrl" type="text" class="form-control" />
-<span asp-validation-for="ThumbnailUrl" class="text-danger">
-</span>
-</div>
-<div class="mb-3">
-<label asp-for="Summary" class="form-label">@L["Hlg:Summary"]</label>
+    <div class="tab-pane fade show active" id="HlgGeneral">
+        <div class="mb-3 row">
+            <div class="col-md-6">
+                <label asp-for="CategoryId" class="form-label">@L["Hlg:CategoryId"]</label>
+                <select asp-for="CategoryId" class="form-select" data-hlg-lookup="categories">
+                    <option value="">@L["Hlg:Select"]</option>@if (Model.CategoryId != Guid.Empty) {
+                    <option value="@Model.CategoryId" selected>@Model.CategoryId</option>
+                                        }
+                </select>
+                <span asp-validation-for="CategoryId" class="text-danger">
+                </span>
+            </div>
+            <div class="col-md-6">
+                <label asp-for="BrandId" class="form-label">@L["Hlg:BrandId"]</label>
+                <select asp-for="BrandId" class="form-select" data-hlg-lookup="brands">
+                    <option value="">@L["Hlg:Select"]</option>@if (Model.BrandId != null) {
+                    <option value="@Model.BrandId" selected>@Model.BrandId</option>
+                  }
+                </select>
+                <span asp-validation-for="BrandId" class="text-danger">
+                </span>
+            </div>
+        </div>
+        <div class="mb-3">
+            <label asp-for="Name" class="form-label">@L["Hlg:Name"]</label>
+            <input asp-for="Name" type="text" class="form-control" />
+            <span asp-validation-for="Name" class="text-danger">
+            </span>
+        </div>
+        <div class="mb-3">
+            <label asp-for="ThumbnailUrl" class="form-label">@L["Hlg:ThumbnailUrl"]</label>
+            <input asp-for="ThumbnailUrl" type="text" class="form-control" />
+            <span asp-validation-for="ThumbnailUrl" class="text-danger">
+            </span>
+        </div>
+        <div class="mb-3">
+            <label asp-for="Summary" class="form-label">@L["Hlg:Summary"]</label>
 <textarea asp-for="Summary" rows="4" class="form-control">
 </textarea>
-<span asp-validation-for="Summary" class="text-danger">
-</span>
-</div>
-<div class="mb-3">
-<label asp-for="DisplayOrder" class="form-label">@L["Hlg:DisplayOrder"]</label>
-<input asp-for="DisplayOrder" type="number" class="form-control" />
-<span asp-validation-for="DisplayOrder" class="text-danger">
-</span>
-</div>
-<div class="mb-3">
-<label asp-for="IsActive" class="form-label">@L["Hlg:IsActive"]</label>
-<input asp-for="IsActive" class="form-check-input ms-2" />
-<span asp-validation-for="IsActive" class="text-danger">
-</span>
-</div>
-</div>
-<div class="tab-pane fade " id="HlgInformation">
-<div class="mb-3">
-<label asp-for="Content" class="form-label">@L["Hlg:Content"]</label>
+            <span asp-validation-for="Summary" class="text-danger">
+            </span>
+        </div>
+        <div class="mb-3 row">
+            <div class="col-md-6">
+                <label asp-for="DisplayOrder" class="form-label">@L["Hlg:DisplayOrder"]</label>
+                <input asp-for="DisplayOrder" type="number" class="form-control" />
+                <span asp-validation-for="DisplayOrder" class="text-danger">
+                </span>
+            </div>
+            <div class="col-md-6 d-flex flex-wrap align-content-center justify-content-center">
+                <label asp-for="IsActive" class="form-label">@L["Hlg:IsActive"]</label>
+                <input asp-for="IsActive" class="form-check-input ms-2" />
+                <span asp-validation-for="IsActive" class="text-danger">
+                </span>
+            </div>
+        </div>
+    </div>
+    <div class="tab-pane fade " id="HlgInformation">
+        <div class="mb-3">
+            <label asp-for="Content" class="form-label">@L["Hlg:Content"]</label>
 <textarea asp-for="Content" rows="4" class="form-control hlg-rich">
 </textarea>
-<span asp-validation-for="Content" class="text-danger">
-</span>
-</div>
-<p class="text-muted">@L["Hlg:ProductInformationHint"]</p>
-</div>
-<div class="tab-pane fade " id="HlgKnowledge">
-<div class="hlg-collection" data-kind="knowledge" data-prefix="Input.Details.Knowledge">
+            <span asp-validation-for="Content" class="text-danger">
+            </span>
+        </div>
+        <p class="text-muted">@L["Hlg:ProductInformationHint"]</p>
+    </div>
+    <div class="tab-pane fade " id="HlgKnowledge">
+        <div class="hlg-collection" data-kind="knowledge" data-prefix="Input.Details.Knowledge">
 <textarea class="hlg-initial" hidden>@JsonSerializer.Serialize(Model.Details.Knowledge)</textarea>
-</div>
-</div>
-<div class="tab-pane fade " id="HlgMedia">
-<div class="hlg-collection" data-kind="media" data-prefix="Input.Details.Media">
+        </div>
+    </div>
+    <div class="tab-pane fade " id="HlgMedia">
+        <div class="hlg-collection" data-kind="media" data-prefix="Input.Details.Media">
 <textarea class="hlg-initial" hidden>@JsonSerializer.Serialize(Model.Details.Media)</textarea>
-</div>
-<div class="mb-3">
-<label asp-for="ImageUrls" class="form-label">@L["Hlg:ImageUrls"]</label>
+        </div>
+        <div class="mb-3">
+            <label asp-for="ImageUrls" class="form-label">@L["Hlg:ImageUrls"]</label>
 <textarea asp-for="ImageUrls" rows="4" class="form-control">
 </textarea>
-<span asp-validation-for="ImageUrls" class="text-danger">
-</span>
-</div>
-<p class="text-muted">@L["Hlg:ImageUrlsHint"]</p>
-</div>
-<div class="tab-pane fade " id="HlgRelated">
-<div class="hlg-collection" data-kind="related" data-prefix="Input.Details.RelatedProductIds">
+            <span asp-validation-for="ImageUrls" class="text-danger">
+            </span>
+        </div>
+        <p class="text-muted">@L["Hlg:ImageUrlsHint"]</p>
+    </div>
+    <div class="tab-pane fade " id="HlgRelated">
+        <div class="hlg-collection" data-kind="related" data-prefix="Input.Details.RelatedProductIds">
 <textarea class="hlg-initial" hidden>@JsonSerializer.Serialize(Model.Details.RelatedProductIds)</textarea>
-</div>
-</div>
-<div class="tab-pane fade " id="HlgPromotion">
-<div class="mb-3">
-<label asp-for="Details.BadgeText" class="form-label">@L["Hlg:Details.BadgeText"]</label>
-<input asp-for="Details.BadgeText" type="text" class="form-control" />
-<span asp-validation-for="Details.BadgeText" class="text-danger">
-</span>
-</div>
-<div class="mb-3">
-<label asp-for="Details.GameId" class="form-label">@L["Hlg:Details.GameId"]</label>
-<select asp-for="Details.GameId" class="form-select" data-hlg-lookup="games">
-<option value="">@L["Hlg:Select"]</option>@if (Model.Details.GameId != null) { <option value="@Model.Details.GameId" selected>@Model.Details.GameId</option> }</select>
-<span asp-validation-for="Details.GameId" class="text-danger">
-</span>
-</div>
-<div class="mb-3">
-<label asp-for="Details.CallToActionText" class="form-label">@L["Hlg:Details.CallToActionText"]</label>
-<input asp-for="Details.CallToActionText" type="text" class="form-control" />
-<span asp-validation-for="Details.CallToActionText" class="text-danger">
-</span>
-</div>
-<div class="mb-3">
-<label asp-for="Details.PromotionText" class="form-label">@L["Hlg:Details.PromotionText"]</label>
+        </div>
+    </div>
+    <div class="tab-pane fade " id="HlgPromotion">
+        <div class="mb-3">
+            <label asp-for="Details.BadgeText" class="form-label">@L["Hlg:Details.BadgeText"]</label>
+            <input asp-for="Details.BadgeText" type="text" class="form-control" />
+            <span asp-validation-for="Details.BadgeText" class="text-danger">
+            </span>
+        </div>
+        <div class="mb-3">
+            <label asp-for="Details.GameId" class="form-label">@L["Hlg:Details.GameId"]</label>
+            <select asp-for="Details.GameId" class="form-select" data-hlg-lookup="games">
+                <option value="">@L["Hlg:Select"]</option>@if (Model.Details.GameId != null) {
+                <option value="@Model.Details.GameId" selected>@Model.Details.GameId</option>
+                                }
+            </select>
+            <span asp-validation-for="Details.GameId" class="text-danger">
+            </span>
+        </div>
+        <div class="mb-3">
+            <label asp-for="Details.CallToActionText" class="form-label">@L["Hlg:Details.CallToActionText"]</label>
+            <input asp-for="Details.CallToActionText" type="text" class="form-control" />
+            <span asp-validation-for="Details.CallToActionText" class="text-danger">
+            </span>
+        </div>
+        <div class="mb-3">
+            <label asp-for="Details.PromotionText" class="form-label">@L["Hlg:Details.PromotionText"]</label>
 <textarea asp-for="Details.PromotionText" rows="4" class="form-control">
 </textarea>
-<span asp-validation-for="Details.PromotionText" class="text-danger">
-</span>
-</div>
-</div>
+            <span asp-validation-for="Details.PromotionText" class="text-danger">
+            </span>
+        </div>
+    </div>
 </div>

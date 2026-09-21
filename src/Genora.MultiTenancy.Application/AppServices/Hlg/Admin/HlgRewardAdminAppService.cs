@@ -93,7 +93,7 @@ public class HlgRewardAdminAppService :
     public override async Task<HlgRewardAdminDto> CreateAsync(CreateHlgRewardDto input)
     {
         await CheckCreatePolicyAsync();
-        Validate(input.Name, input.PointCost, input.Type);
+        Validate(input.Name, input.ImageUrl, input.PointCost, input.Type);
 
         var entity = new HlgReward(GuidGenerator.Create(), input.Name.Trim(), (HlgRewardType)input.Type, input.PointCost, CurrentTenant.Id)
         {
@@ -110,7 +110,7 @@ public class HlgRewardAdminAppService :
     public override async Task<HlgRewardAdminDto> UpdateAsync(Guid id, UpdateHlgRewardDto input)
     {
         await CheckUpdatePolicyAsync();
-        Validate(input.Name, input.PointCost, input.Type);
+        Validate(input.Name, input.ImageUrl, input.PointCost, input.Type);
 
         var entity = await _repository.GetAsync(id);
         entity.Name = input.Name.Trim();
@@ -131,7 +131,7 @@ public class HlgRewardAdminAppService :
         if (await LazyServiceProvider.LazyGetRequiredService<IRepository<HlgRankingPrize,Guid>>().AnyAsync(x=>x.RewardId==id)) throw new UserFriendlyException(L("Hlg:RewardHasPrizes"));
         await _repository.DeleteAsync(id);
     }
-    private void Validate(string? name, int pointCost, byte type)
+    private void Validate(string? name, string? imageUrl, int pointCost, byte type)
     {
         if (name.IsNullOrWhiteSpace())
             throw new UserFriendlyException(L("Hlg:RewardNameRequired"));
@@ -139,6 +139,7 @@ public class HlgRewardAdminAppService :
             throw new UserFriendlyException(L("Hlg:RewardPointCostInvalid"));
         if (!Enum.IsDefined(typeof(HlgRewardType), type))
             throw new UserFriendlyException(L("Hlg:RewardTypeInvalid"));
+        HlgContentValidation.Localized(() => HlgContentValidation.Url(imageUrl), L);
     }
 
     private HlgRewardAdminDto MapToDto(HlgReward e) => new()

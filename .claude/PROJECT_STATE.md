@@ -1,5 +1,11 @@
 # PROJECT STATE — Genora.MultiTenancy
 
+## HLG verification follow-up — 2026-09-19 (mới nhất)
+
+- Corrective source đã commit trong HEAD `d4f67f9`; follow-up chưa commit fix session shipping ownership/finished guard và bổ sung URL validation cho các image field Admin còn thiếu.
+- Web build0 errors;46 Application +3 Domain +17 Web +11 JS pass; EF model không pending.
+- Browser UAT vẫn BLOCKED do không có browser surface (`apps=[]`, `browsers=[]`, iab unavailable). Migration AddHlgDesignContent vẫn chưa apply;3 UNKNOWN không đổi.
+
 ## HLG corrective design audit — 2026-09-19 (mới nhất)
 
 - Đã inspect trực quan31/31 trang PDF ở cả2 lượt;60 screen/component/state;54 nhóm dữ liệu.34 nhóm CMS/cần làm rõ:31 COVERED,0 PARTIAL,0 MISSING,3 UNKNOWN. Coverage source không phải nghiệm thu browser.

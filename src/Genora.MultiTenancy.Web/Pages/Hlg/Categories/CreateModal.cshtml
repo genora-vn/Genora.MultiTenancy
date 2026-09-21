@@ -27,15 +27,20 @@
                 <input asp-for="Input.ImageUrl" type="text" class="form-control" />
                 <span asp-validation-for="Input.ImageUrl" class="text-danger"></span>
             </div>
-            <div class="mb-3">
-                <label asp-for="Input.DisplayOrder" class="form-label">@L["Hlg:DisplayOrder"]</label>
-                <input asp-for="Input.DisplayOrder" type="number" class="form-control" />
-                <span asp-validation-for="Input.DisplayOrder" class="text-danger"></span>
-            </div>
-            <div class="mb-3">
-                <label asp-for="Input.IsActive" class="form-label">@L["Hlg:IsActive"]</label>
-                <input asp-for="Input.IsActive" class="form-check-input ms-2" />
-                <span asp-validation-for="Input.IsActive" class="text-danger"></span>
+            @* <div class="mb-3">
+                
+            </div> *@
+            <div class="mb-3 row">
+                <div class="col-md-6">
+                    <label asp-for="Input.DisplayOrder" class="form-label">@L["Hlg:DisplayOrder"]</label>
+                    <input asp-for="Input.DisplayOrder" type="number" class="form-control" />
+                    <span asp-validation-for="Input.DisplayOrder" class="text-danger"></span>
+                </div>
+                <div class="col-md-6 d-flex flex-wrap align-items-center justify-content-center">
+                    <label asp-for="Input.IsActive" class="form-label">@L["Hlg:IsActive"]</label>
+                    <input asp-for="Input.IsActive" class="form-check-input ms-2" />
+                    <span asp-validation-for="Input.IsActive" class="text-danger"></span>
+                </div>
             </div>
         </abp-modal-body><abp-modal-footer buttons="@(AbpModalButtons.Cancel | AbpModalButtons.Save)"></abp-modal-footer>
     </abp-modal>

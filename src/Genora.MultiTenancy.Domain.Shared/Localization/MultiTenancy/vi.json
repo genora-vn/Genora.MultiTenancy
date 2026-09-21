@@ -1935,6 +1935,8 @@
     "Hlg:Kind": "Loại media",
     "Hlg:Placement": "Vị trí",
     "Hlg:Url": "URL ảnh/video",
+    "Hlg:FieldRequired": "Vui lòng nhập {0}.",
+    "Hlg:FixValidationErrors": "Vui lòng bổ sung các trường bắt buộc trong tab vừa được mở.",
     "Hlg:PosterUrl": "Ảnh đại diện video",
     "Hlg:AltText": "Mô tả ảnh",
     "Hlg:Image": "Hình ảnh",

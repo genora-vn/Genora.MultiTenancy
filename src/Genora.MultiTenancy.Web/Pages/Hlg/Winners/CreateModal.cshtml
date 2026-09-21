@@ -4,11 +4,27 @@
 @using Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.TagHelpers.Modal
 @inject IStringLocalizer<MultiTenancyResource> L
 @model Genora.MultiTenancy.Web.Pages.Hlg.Winners.CreateModalModel
-@{ Layout=null; }
-<form method="post" asp-page="/Hlg/Winners/CreateModal"><input asp-for="Id" type="hidden" />
-<abp-modal size="Large"><abp-modal-header title="@L["Hlg:Create"].Value" /><abp-modal-body>
-<div asp-validation-summary="All" class="text-danger"></div><div class="alert alert-info">@L["Hlg:WinnerPublicationHint"]</div><div class="mb-3"><label asp-for="Input.EventId" class="form-label">@L["Hlg:EventId"]</label><select asp-for="Input.EventId" class="form-select" data-hlg-lookup="events"><option value="">@L["Hlg:Select"]</option>@if (Model.Input.EventId != Guid.Empty) { <option value="@Model.Input.EventId" selected>@Model.Input.EventId</option> }</select><span asp-validation-for="Input.EventId" class="text-danger"></span></div>
-<div class="mb-3"><label asp-for="Input.PrizeId" class="form-label">@L["Hlg:PrizeId"]</label><select asp-for="Input.PrizeId" class="form-select" data-hlg-lookup="prizes"><option value="">@L["Hlg:Select"]</option>@if (Model.Input.PrizeId != Guid.Empty) { <option value="@Model.Input.PrizeId" selected>@Model.Input.PrizeId</option> }</select><span asp-validation-for="Input.PrizeId" class="text-danger"></span></div>
-<div class="mb-3"><label asp-for="Input.CustomerId" class="form-label">@L["Hlg:CustomerId"]</label><select asp-for="Input.CustomerId" class="form-select" data-hlg-lookup="customers"><option value="">@L["Hlg:Select"]</option>@if (Model.Input.CustomerId != Guid.Empty) { <option value="@Model.Input.CustomerId" selected>@Model.Input.CustomerId</option> }</select><span asp-validation-for="Input.CustomerId" class="text-danger"></span></div>
-<div class="mb-3"><label asp-for="Input.IsActive" class="form-label">@L["Hlg:Published"]</label><input asp-for="Input.IsActive" class="form-check-input ms-2" /><span asp-validation-for="Input.IsActive" class="text-danger"></span></div>
-</abp-modal-body><abp-modal-footer buttons="@(AbpModalButtons.Cancel | AbpModalButtons.Save)" /></abp-modal></form>
+@{
+    Layout = null;
+}
+<form method="post" asp-page="/Hlg/Winners/CreateModal">
+    <input asp-for="Id" type="hidden" />
+    <abp-modal size="Large">
+        <abp-modal-header title="@L["Hlg:Create"].Value"></abp-modal-header>
+        <abp-modal-body>
+            <div asp-validation-summary="All" class="text-danger"></div><div class="alert alert-info">@L["Hlg:WinnerPublicationHint"]</div><div class="mb-3"><label asp-for="Input.EventId" class="form-label">@L["Hlg:EventId"]</label><select asp-for="Input.EventId" class="form-select" data-hlg-lookup="events"><option value="">@L["Hlg:Select"]</option>@if (Model.Input.EventId != Guid.Empty) {
+            <option value="@Model.Input.EventId" selected>@Model.Input.EventId</option>
+                        }
+</select><span asp-validation-for="Input.EventId" class="text-danger"></span></div>
+            <div class="mb-3"><label asp-for="Input.PrizeId" class="form-label">@L["Hlg:PrizeId"]</label><select asp-for="Input.PrizeId" class="form-select" data-hlg-lookup="prizes"><option value="">@L["Hlg:Select"]</option>@if (Model.Input.PrizeId != Guid.Empty) {
+            <option value="@Model.Input.PrizeId" selected>@Model.Input.PrizeId</option>
+                        }
+</select><span asp-validation-for="Input.PrizeId" class="text-danger"></span></div>
+            <div class="mb-3"><label asp-for="Input.CustomerId" class="form-label">@L["Hlg:CustomerId"]</label><select asp-for="Input.CustomerId" class="form-select" data-hlg-lookup="customers"><option value="">@L["Hlg:Select"]</option>@if (Model.Input.CustomerId != Guid.Empty) {
+            <option value="@Model.Input.CustomerId" selected>@Model.Input.CustomerId</option>
+                        }
+</select><span asp-validation-for="Input.CustomerId" class="text-danger"></span></div>
+            <div class="mb-3"><label asp-for="Input.IsActive" class="form-label">@L["Hlg:Published"]</label><input asp-for="Input.IsActive" class="form-check-input ms-2" /><span asp-validation-for="Input.IsActive" class="text-danger"></span></div>
+        </abp-modal-body><abp-modal-footer buttons="@(AbpModalButtons.Cancel | AbpModalButtons.Save)"></abp-modal-footer>
+    </abp-modal>
+</form>

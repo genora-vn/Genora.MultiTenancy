@@ -16,7 +16,7 @@
         <h1>@L["Hlg:Games"]</h1>
         @if (await Model.GrantedAsync(".Create"))
         {
-            <button id="HlgCreate" class="btn btn-primary" type="button">@L["Hlg:Create"]</button>
+            <a asp-page="./Create" class="btn btn-primary">@L["Hlg:Create"]</a>
         }
     </div>
     <div id="HlgError" role="alert" class="alert alert-danger d-none"></div>

@@ -63,8 +63,9 @@ public class HlgKnowledgeAppService : ApplicationService, IHlgKnowledgeAppServic
                  .GroupBy(p => p.CategoryId)
                  .Select(g => new { CategoryId = g.Key, Count = g.Count() }), ct);
         var countByCat = counts.ToDictionary(x => x.CategoryId, x => x.Count);
-
-        return categories.Select(c => new KnowledgeCategoryDto
+        var brands = await LazyServiceProvider.LazyGetRequiredService<IRepository<HlgBrand, Guid>>().GetQueryableAsync();
+        var products = await LazyServiceProvider.LazyGetRequiredService<IRepository<HlgProduct, Guid>>().GetQueryableAsync();
+        var result = categories.Select(c => new KnowledgeCategoryDto
         {
             Id = c.Id,
             Name = c.Name,
@@ -72,13 +73,24 @@ public class HlgKnowledgeAppService : ApplicationService, IHlgKnowledgeAppServic
             ImageUrl = c.ImageUrl,
             ProductCount = countByCat.TryGetValue(c.Id, out var n) ? n : 0
         }).ToList();
+        foreach (var c in result)
+        {
+            c.Brands = brands.Where(b => b.CategoryId == c.Id && b.IsActive).OrderBy(b => b.DisplayOrder).ThenBy(b => b.Name)
+                .Select(b => new BrandKnowledgeDto { Id = b.Id, Name = b.Name, CategoryId = b.CategoryId }).ToList();
+            foreach (var b in c.Brands)
+            {
+                b.Products = products.Where(p => p.BrandId == b.Id && p.IsActive).OrderBy(p => p.DisplayOrder).ThenBy(p => p.Name)
+                    .Select(p => new BrandProductDto { Id = p.Id, Name = p.Name, ImageUrl = p.ThumbnailUrl, Description = p.Summary }).ToList();
+            }
+        }
+        return result;
     }
 
     public async Task<KnowledgeCategoryDto> GetCategoryAsync(Guid id, CancellationToken ct = default)
     {
         var c = await _categoryRepo.FirstOrDefaultAsync(x => x.Id == id && x.IsActive, ct)
             ?? throw new UserFriendlyException("Không tìm thấy danh mục");
-
+        
         var count = await AsyncExecuter.CountAsync((await VisibleProductsAsync()).Where(p => p.CategoryId == id), ct);
 
         return new KnowledgeCategoryDto

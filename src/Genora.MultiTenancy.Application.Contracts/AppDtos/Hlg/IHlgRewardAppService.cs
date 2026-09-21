@@ -29,7 +29,7 @@ public interface IHlgRewardAppService : IApplicationService
     /// Lưu địa chỉ giao hàng cho một phiên game (luồng consumer nhận quà vật lý sau game).
     /// Endpoint: POST games/sessions/{sessionId}/shipping-address.
     /// </summary>
-    Task SetSessionShippingAddressAsync(Guid sessionId, ShippingAddressPayloadDto payload, CancellationToken ct = default);
+    Task SetSessionShippingAddressAsync(Guid sessionId, string phone, ShippingAddressPayloadDto payload, CancellationToken ct = default);
 
     /// <summary>Lịch sử đổi quà của người dùng (theo phone). Dùng cho endpoint profile/reward-history.</summary>
     Task<List<RewardHistoryItemDto>> GetRewardHistoryAsync(string phone, CancellationToken ct = default);
