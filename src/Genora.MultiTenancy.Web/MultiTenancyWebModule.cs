@@ -373,7 +373,27 @@ public class MultiTenancyWebModule : AbpModule
         {
             options.TenantResolvers.Clear();
             options.TenantResolvers.Add(new HostTenantResolveContributor());
-            options.TenantResolvers.Add(new DomainTenantResolveContributor("{0}.local"));
+
+            var selfUrl = configuration["App:SelfUrl"];
+            if (!string.IsNullOrEmpty(selfUrl))
+            {
+                // Loại bỏ protocol https:// hoặc http:// và dấu / ở cuối
+                var domainFormat = selfUrl.Replace("https://", "")
+                                          .Replace("http://", "")
+                                          .TrimEnd('/');
+
+                // BẮT BUỘC: DomainTenantResolveContributor yêu cầu chuỗi phải chứa "{0}"
+                if (domainFormat.Contains("{0}"))
+                {
+                    options.TenantResolvers.Add(new DomainTenantResolveContributor(domainFormat));
+                }
+                else
+                {
+                    // Nếu App:SelfUrl là "https://staging.genora.vn", tự thêm {0} cho subdomain
+                    options.TenantResolvers.Add(new DomainTenantResolveContributor("{0}-staging.genora.vn"));
+                }
+            }
+
             options.TenantResolvers.Add(new HeaderTenantResolveContributor());
             options.TenantResolvers.Add(new QueryStringTenantResolveContributor());
         });
