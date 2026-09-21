@@ -4,6 +4,8 @@
 > `*_complete` trong `.claude/memory/notes/project/`. Cập nhật khi hoàn thành mốc lớn.
 
 ## Tổng quan
+- **Tên project gateway hiện tại (2026-09-21):** `Genora.MultiTenancy.Gateway` + `Genora.MultiTenancy.Gateway.Tests`; solution/namespace/IIS/runbook đồng bộ, publish +42 tests PASS. Cấu hình nhiều tenant giữ nguyên. [Note](memory/notes/project/project_gateway_rename_20260921.md).
+- **Gateway multi-tenant 2026-09-21:** source/config/runbook staging ready; HL25=500 / HLG=300 theo tenantGUID, generic opt-in origin guard. Build +42 gateway/40 Web/12 Node tests PASS; không migration. Chưa deploy/SQLloadUAT, IISorigin staging chưa được cung cấp. [Note](memory/notes/project/project_multi_tenant_yarp_gateway_20260921.md).
 - **Framework:** ABP (DDD), multi-tenancy enabled.
 - **Core modules:** Calendar Slots, Zalo Auths, Bookings, Golf Courses, News Services.
 - **Feature modules đã build:** Golf core + MiniApp, Salon Beauty, Caddie, Hoa Linh, Documents site.
@@ -54,6 +56,7 @@
 - Note: `project_app_documents_*`.
 
 ## Module: Hoa Linh 25 Năm (hl25) — ✅ HOÀN THÀNH (nhánh `feature/dev-hoalinh-gamification`)
+- **Gateway2026-09-20 (`hotfix/20260920`): source ready, deployment pending.** Separate YARP with shared500RPS quota and opt-in ABP guard; keep tenant hostname. Gateway/Web build PASS;19 gateway +24 Web +7 Node tests PASS. No migration/business API change; no IIS/Ocelot UAT or SQL-backed250–500RPS benchmark. [Note](memory/notes/project/project_hl25_yarp_gateway_20260920.md).
 - **Performance 2026-09-20 (`hotfix/20260920`):** cache 4 read APIs theo tenant 20 phút + after-commit invalidation; single-process stampede protection. Migration 20260920100056 thêm 3 index chưa apply. 81 .NET + 3 JS tests pass; chưa browser/load UAT và chưa xác nhận capacity 1.000 CCU. [Note](memory/notes/project/project_hl25_cache_indexes_20260920.md).
 - **Staging fix 2026-09-18:** corrective migration 20260918093000_EnsureHl25ParticipantAgeGroup (DB HL25: DuocPhamHoaLinh; bỏ qua DB không có bảng HL25) bổ sung AgeGroup cho DB áp migration HL25 cũ còn BirthDate. EF build/script/no model change checked; chưa apply target.
 - **✅ Cập nhật 2026-09-16:**

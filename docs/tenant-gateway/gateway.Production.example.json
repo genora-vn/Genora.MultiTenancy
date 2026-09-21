@@ -1,0 +1,42 @@
+{
+  "TenantGateway": {
+    "Tenants": {
+      "hl25": {
+        "Enabled": true,
+        "TenantId": "209567fc-4850-44e9-11c8-3a23c58d15a4",
+        "PublicHosts": [
+          "duocpham-hoalinh.genora.vn"
+        ],
+        "BackendAddress": "",
+        "BackendTenantOrigin": "https://duocpham-hoalinh.genora.vn",
+        "SharedKey": "",
+        "PermitLimit": 500,
+        "AllowedOrigins": [
+          "https://h5.zdn.vn"
+        ],
+        "ApiProfiles": [
+          "Hl25"
+        ],
+        "AdditionalRoutes": []
+      },
+      "hlg": {
+        "Enabled": true,
+        "TenantId": "27e348a9-036c-bef8-fa2b-3a22fc202c26",
+        "PublicHosts": [
+          "hoalinh.genora.vn"
+        ],
+        "BackendAddress": "",
+        "BackendTenantOrigin": "https://hoalinh.genora.vn",
+        "SharedKey": "",
+        "PermitLimit": 300,
+        "AllowedOrigins": [
+          "https://h5.zdn.vn"
+        ],
+        "ApiProfiles": [
+          "Hlg"
+        ],
+        "AdditionalRoutes": []
+      }
+    }
+  }
+}

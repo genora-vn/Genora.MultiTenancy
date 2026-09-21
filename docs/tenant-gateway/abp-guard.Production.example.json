@@ -1,0 +1,30 @@
+{
+  "Hl25GatewayGuard": {
+    "Enabled": false
+  },
+  "TenantGatewayGuard": {
+    "Enabled": true,
+    "Tenants": {
+      "hl25": {
+        "Enabled": true,
+        "TenantId": "209567fc-4850-44e9-11c8-3a23c58d15a4",
+        "SharedKey": "",
+        "PathPrefixes": [
+          "/api/mini-app/hl25"
+        ],
+        "ExcludedPathPrefixes": [
+          "/api/mini-app/hl25/admin"
+        ]
+      },
+      "hlg": {
+        "Enabled": true,
+        "TenantId": "27e348a9-036c-bef8-fa2b-3a22fc202c26",
+        "SharedKey": "",
+        "PathPrefixes": [
+          "/api/mini-app/hlg"
+        ],
+        "ExcludedPathPrefixes": []
+      }
+    }
+  }
+}

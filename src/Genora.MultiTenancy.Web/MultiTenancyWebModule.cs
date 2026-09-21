@@ -342,6 +342,20 @@ public class MultiTenancyWebModule : AbpModule
         ConfigureAutoMapper(context);
         ConfigureVirtualFileSystem(hostingEnvironment);
         ConfigureNavigationServices();
+        context.Services.AddOptions<TenantGatewayGuardOptions>()
+            .Bind(configuration.GetSection("TenantGatewayGuard"))
+            .Validate(o => o.IsValid(), "TenantGatewayGuard requires distinct tenant GUIDs/keys and explicit Mini App path prefixes.")
+            .Validate(o => !o.Enabled || !configuration.GetValue<bool>("Hl25GatewayGuard:Enabled"),
+                "Enable either TenantGatewayGuard or legacy Hl25GatewayGuard, not both.")
+            .ValidateOnStart();
+
+        context.Services.AddOptions<Hl25GatewayGuardOptions>()
+            .Bind(configuration.GetSection("Hl25GatewayGuard"))
+            .Validate(o => !o.Enabled || (o.TenantId != Guid.Empty &&
+                o.SharedKey.Length >= 32 && o.SharedKey.All(c => c >= 33 && c <= 126)),
+                "Hl25GatewayGuard requires the target tenant GUID and a shared key of at least 32 printable ASCII characters.")
+            .ValidateOnStart();
+
         ConfigureAutoApiControllers();
         ConfigureSwaggerServices(context.Services);
 
@@ -554,6 +568,8 @@ public class MultiTenancyWebModule : AbpModule
             app.UseMultiTenancy();
         }
 
+        app.UseMiddleware<TenantGatewayGuardMiddleware>();
+        app.UseMiddleware<Hl25GatewayGuardMiddleware>();
         app.UseMiddleware<TenantAutoMigrateMiddleware>();
         app.UseMiddleware<LogEnrichmentMiddleware>();
 

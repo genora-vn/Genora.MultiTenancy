@@ -1,0 +1,26 @@
+{
+  "UpstreamHost": "duocpham-hoalinh.genora.vn",
+  "UpstreamPathTemplate": "/api/mini-app/hl25/{everything}",
+  "UpstreamHttpMethod": [
+    "GET",
+    "POST",
+    "PUT",
+    "OPTIONS"
+  ],
+  "DownstreamPathTemplate": "/api/mini-app/hl25/{everything}",
+  "DownstreamScheme": "http",
+  "DownstreamHostAndPorts": [
+    {
+      "Host": "127.0.0.1",
+      "Port": 5088
+    }
+  ],
+  "Priority": 100,
+  "HttpHandlerOptions": {
+    "AllowAutoRedirect": false,
+    "UseCookieContainer": false
+  },
+  "UpstreamHeaderTransform": {
+    "Host": "duocpham-hoalinh.genora.vn"
+  }
+}

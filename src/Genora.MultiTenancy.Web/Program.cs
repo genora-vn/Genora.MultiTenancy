@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.CookiePolicy;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.HttpOverrides; // Namespace cho ForwardedHeaders
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -12,6 +13,7 @@ using Serilog.Exceptions.Core;
 using Serilog.Exceptions.SqlServer.Destructurers;
 using System;
 using System.IO;
+using System.Net;
 using System.Threading.Tasks;
 
 namespace Genora.MultiTenancy.Web;
@@ -69,6 +71,33 @@ public class Program
                       ));
                 });
 
+            // 1. Đọc cấu hình ReverseProxy từ appsettings.json
+            if (builder.Configuration.GetValue<bool>("ReverseProxy:Enabled"))
+            {
+                builder.Services.Configure<ForwardedHeadersOptions>(options =>
+                {
+                    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor
+                                             | ForwardedHeaders.XForwardedProto
+                                             | ForwardedHeaders.XForwardedHost;
+
+                    options.KnownNetworks.Clear();
+                    options.KnownProxies.Clear();
+
+                    // Load danh sách IP KnownProxies từ appsettings.json
+                    var knownProxies = builder.Configuration.GetSection("ReverseProxy:KnownProxies").Get<string[]>();
+                    if (knownProxies != null)
+                    {
+                        foreach (var proxyIp in knownProxies)
+                        {
+                            if (IPAddress.TryParse(proxyIp, out var parsedIp))
+                            {
+                                options.KnownProxies.Add(parsedIp);
+                            }
+                        }
+                    }
+                });
+            }
+
             var sharedKeyPath = builder.Configuration["DataProtection:KeyPath"];
             if (string.IsNullOrWhiteSpace(sharedKeyPath))
             {
@@ -101,6 +130,7 @@ public class Program
 
             var app = builder.Build();
 
+            // 2. Kích hoạt ForwardedHeaders ngay ĐẦU Pipeline (Trước ABP & Cookie Policy)
             if (app.Configuration.GetValue<bool>("ReverseProxy:Enabled"))
             {
                 app.UseForwardedHeaders();

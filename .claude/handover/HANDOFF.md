@@ -19,6 +19,15 @@
 
 ## Bàn giao hiện tại
 
+### Gateway dùng chung — đổi tên project (2026-09-21)
+Sử dụng `src/Genora.MultiTenancy.Gateway/Genora.MultiTenancy.Gateway.csproj` và `test/Genora.MultiTenancy.Gateway.Tests/Genora.MultiTenancy.Gateway.Tests.csproj` từ đây. Namespace/assembly/solution/launch profile/IIS web.config và lệnh trong runbook đã cập nhật.42 gateway tests PASS; gói publish local gọi đúng DLL mới, không chứa DLL gateway cũ. Giữ cấu hình nhiều tenant và compatibility HL25 legacy; không deploy/schema change. User đã staged công việc trước, Git index giữ nguyên; cần đưa cả rename vào commit sau review. [Note](../memory/notes/project/project_gateway_rename_20260921.md).
+
+### Multi-tenant YARP — 2026-09-21
+Đã mở rộng source gateway từ HL25 sang dictionary tenant/profile/hostname, HL25quota500 vàHLG300. GuardABP genericopt-in, fixedHost regression được kiểm thử. Staging/production examples điềnpublicdomain/GUID đã đối chiếu; secrets/backendaddress trống bắt buộc điền. Runbook `docs/tenant-gateway/README.md`, smoke script và dualtenant gatedk6 readscript. Gateway/Web buildsPASS;42gateway +40Web +12Node testsPASS. KhôngbusinessAPI/DBmigration, deploy/k6/SQLcapacityUAT; quota1process. Tiếp theo xác minhIISorigin staging/secret/ingressHostpreservation+Admin/staticfallback, deploystagingrồitest429/403 và tải250→500/300. Giữ appsettings/logs user và unrelatedcode. [Note](../memory/notes/project/project_multi_tenant_yarp_gateway_20260921.md).
+
+### HL25 YARP gateway 500 RPS — 2026-09-20
+Source ready on `hotfix/20260920` (baseline060df7e): standalone YARP2.3/.NET9, shared public HL25 quota500RPS, opt-in ABP guard, deployment examples and gated k6 scripts. Gateway/Web builds PASS;19 gateway +24 Web tests and7 Node tests PASS. Keep `duocpham-hoalinh.genora.vn`; verified tenant GUID209567fc-4850-44e9-11c8-3a23c58d15a4. Port8868 responded HTTP200, HTTPS failed. Next: review actual ingress/Ocelot version and Admin/static fallback, gateway placement/TLS/loopback, secrets/trusted proxies/one worker, then SQL-backed UAT/load tests. No deployment, migration or capacity certification. [Details](../memory/notes/project/project_hl25_yarp_gateway_20260920.md); runbook `docs/hl25-gateway/README.md`.
+
 ### HL25 cache/index 2026-09-20
 Source trên `hotfix/20260920`: cache 4 API 20 phút theo tenant, single-process locking/invalidation sau commit. Migration `20260920100056_AddHl25MiniAppReadIndexes` và SQL đã chuẩn bị, chưa áp DB. Build + 81 .NET/3 JS tests pass, EF model khớp snapshot. Cần migrate/restart theo quy trình triển khai, smoke-test tenant/Admin và đo HTTP/SQL 1.000 CCU thực tế. Nhiều worker/replica cần cơ chế cache/lock/invalidation dùng chung; test 7.000 lời gọi helper không phải benchmark HTTP. Giữ appsettings/logs của user. [Chi tiết](../memory/notes/project/project_hl25_cache_indexes_20260920.md).
 

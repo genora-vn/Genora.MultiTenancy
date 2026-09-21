@@ -1,0 +1,13 @@
+{
+  "Urls": "http://127.0.0.1:5088",
+  "Hl25Gateway": {
+    "TenantId": "209567fc-4850-44e9-11c8-3a23c58d15a4",
+    "BackendAddress": "http://127.0.0.1:8868/",
+    "BackendTenantOrigin": "https://duocpham-hoalinh.genora.vn",
+    "SharedKey": "",
+    "AllowedOrigins": [
+      "https://h5.zdn.vn"
+    ],
+    "PermitLimit": 500
+  }
+}
