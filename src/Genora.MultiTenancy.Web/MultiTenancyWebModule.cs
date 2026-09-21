@@ -20,7 +20,6 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Localization;
-using Microsoft.EntityFrameworkCore.Internal;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -342,6 +341,7 @@ public class MultiTenancyWebModule : AbpModule
         ConfigureAutoMapper(context);
         ConfigureVirtualFileSystem(hostingEnvironment);
         ConfigureNavigationServices();
+
         context.Services.AddOptions<TenantGatewayGuardOptions>()
             .Bind(configuration.GetSection("TenantGatewayGuard"))
             .Validate(o => o.IsValid(), "TenantGatewayGuard requires distinct tenant GUIDs/keys and explicit Mini App path prefixes.")
@@ -359,12 +359,6 @@ public class MultiTenancyWebModule : AbpModule
         ConfigureAutoApiControllers();
         ConfigureSwaggerServices(context.Services);
 
-        Configure<AbpTenantResolveOptions>(options =>
-        {
-            options.TenantResolvers.Clear();
-            options.TenantResolvers.Add(new HostTenantResolveContributor());
-        });
-
         Configure<PermissionManagementOptions>(options =>
         {
             options.IsDynamicPermissionStoreEnabled = true;
@@ -375,11 +369,13 @@ public class MultiTenancyWebModule : AbpModule
             o.TenantKey = "tenant";
         });
 
-        Configure<AbpTenantResolveOptions>(o =>
+        Configure<AbpTenantResolveOptions>(options =>
         {
-            o.TenantResolvers.Add(new DomainTenantResolveContributor("{0}.local"));
-            o.TenantResolvers.Add(new HeaderTenantResolveContributor());
-            o.TenantResolvers.Add(new QueryStringTenantResolveContributor());
+            options.TenantResolvers.Clear();
+            options.TenantResolvers.Add(new HostTenantResolveContributor());
+            options.TenantResolvers.Add(new DomainTenantResolveContributor("{0}.local"));
+            options.TenantResolvers.Add(new HeaderTenantResolveContributor());
+            options.TenantResolvers.Add(new QueryStringTenantResolveContributor());
         });
     }
 
@@ -543,31 +539,41 @@ public class MultiTenancyWebModule : AbpModule
             logger.LogWarning("Hangfire recurring registration skipped (Hangfire:RegisterRecurringJobs=false).");
         }
 
-        app.UseCors("ZaloPolicy");
+        // 1. Forwarded Headers cho Reverse Proxy
+        var behindProxy = config.GetValue<bool>("ReverseProxy:Enabled");
+        if (behindProxy)
+        {
+            app.UseForwardedHeaders();
+        }
 
+        // 2. Exception Handling & HSTS
         if (env.IsDevelopment())
         {
             app.UseDeveloperExceptionPage();
         }
-
-        app.UseAbpRequestLocalization();
-
-        if (!env.IsDevelopment())
+        else
         {
-            app.UseDeveloperExceptionPage();
+            app.UseExceptionHandler("/Error");
             app.UseHsts();
         }
 
         app.UseCorrelationId();
-        app.UseRouting();
-        app.UseCookiePolicy();
         app.UseStaticFiles();
 
+        // 3. Routing & CORS
+        app.UseRouting();
+        app.UseCors("ZaloPolicy");
+
+        app.UseAbpRequestLocalization();
+        app.UseCookiePolicy();
+
+        // 4. MultiTenancy
         if (MultiTenancyConsts.IsEnabled)
         {
             app.UseMultiTenancy();
         }
 
+        // Custom Gateway & Migration Middlewares
         app.UseMiddleware<TenantGatewayGuardMiddleware>();
         app.UseMiddleware<Hl25GatewayGuardMiddleware>();
         app.UseMiddleware<TenantAutoMigrateMiddleware>();
@@ -577,6 +583,7 @@ public class MultiTenancyWebModule : AbpModule
         app.UseAbpStudioLink();
         app.UseAbpSecurityHeaders();
 
+        // 5. Authentication & Authorization
         app.UseAuthentication();
         app.UseAbpOpenIddictValidation();
 
@@ -584,6 +591,7 @@ public class MultiTenancyWebModule : AbpModule
         app.UseDynamicClaims();
         app.UseAuthorization();
 
+        // 6. Dashboards, Swagger & Auditing
         app.UseHangfireDashboard("/hangfire", new DashboardOptions
         {
             Authorization = new[] { new HangfireDashboardAuthFilter() }
