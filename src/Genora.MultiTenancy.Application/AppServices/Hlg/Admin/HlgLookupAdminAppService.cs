@@ -43,6 +43,7 @@ public class HlgLookupAdminAppService : ApplicationService, IHlgLookupAdminAppSe
                 q=(await Repo<Customer>().GetQueryableAsync()).Where(x=>x.TenantId==CurrentTenant.Id && profiles.Any(p=>p.CustomerId==x.Id)).Select(x=>new HlgLookupDto { Id=x.Id,Name=x.FullName+" ("+x.CustomerCode+")" }); break;
         }
         if(input.Id.HasValue) q=q.Where(x=>x.Id==input.Id);
+        if(input.ExcludeId.HasValue) q=q.Where(x=>x.Id!=input.ExcludeId);
         if(!string.IsNullOrWhiteSpace(input.FilterText)) { var term=input.FilterText.Trim(); q=q.Where(x=>x.Name.Contains(term)); }
         var count=await AsyncExecuter.CountAsync(q);
         return new(count,await AsyncExecuter.ToListAsync(q.OrderBy(x=>x.Name).ThenBy(x=>x.Id).Skip(Math.Max(0,input.SkipCount)).Take(Math.Clamp(input.MaxResultCount,1,50))));

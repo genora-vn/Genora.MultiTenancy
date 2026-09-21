@@ -51,17 +51,20 @@
                     var kind = select.attr('data-hlg-lookup');
                     return modal.find('[name="Input.' + (kind === 'brands' ? 'CategoryId' : kind === 'prizes' ? 'EventId' : '') + '"]').val() || null;
                 }
+                function excludeId() {
+                    return select.attr('data-hlg-lookup') === 'products' ? modal.find('input[name="Id"]').val() || null : null;
+                }
                 var current = select.val();
                 if (!current || current === '00000000-0000-0000-0000-000000000000') select.val('');
                 select.select2({ width: '100%', dropdownParent: modal, placeholder: l('Hlg:Select'), allowClear: true,
                     ajax: { delay: 250, transport: function (params, success, failure) {
                         var page = params.data.page || 1;
-                        return lookup.getList({ kind: select.attr('data-hlg-lookup'), parentId: parentId(), filterText: params.data.term || '', skipCount: (page - 1) * 50, maxResultCount: 50 })
+                        return lookup.getList({ kind: select.attr('data-hlg-lookup'), parentId: parentId(), excludeId: excludeId(), filterText: params.data.term || '', skipCount: (page - 1) * 50, maxResultCount: 50 })
                             .then(function (data) { success({ results: data.items.map(function (x) { return { id: x.id, text: x.name }; }), pagination: { more: page * 50 < data.totalCount } }); }, failure);
                     } }
                 });
                 if (current && current !== '00000000-0000-0000-0000-000000000000') {
-                    lookup.getList({ kind: select.attr('data-hlg-lookup'), id: current, maxResultCount: 1 }).then(function (data) {
+                    lookup.getList({ kind: select.attr('data-hlg-lookup'), id: current, excludeId: excludeId(), maxResultCount: 1 }).then(function (data) {
                         if (!data.items.length) return;
                         var item = data.items[0];
                         select.find('option').filter(function () { return this.value === current; }).remove();

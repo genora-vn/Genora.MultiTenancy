@@ -68,6 +68,7 @@ public class HlgLookupInput : PagedResultRequestDto
     [Required] public string Kind { get; set; } = "";
     public Guid? ParentId { get; set; }
     public Guid? Id { get; set; }
+    public Guid? ExcludeId { get; set; }
     public string? FilterText { get; set; }
 }
 public class HlgLookupDto : EntityDto<Guid> { public string Name { get; set; } = ""; }

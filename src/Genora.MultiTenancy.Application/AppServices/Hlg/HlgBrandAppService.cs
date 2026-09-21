@@ -65,6 +65,7 @@ namespace Genora.MultiTenancy.AppServices.Hlg
             }
             var relatedProducts = productRepository.Where(p => p.CategoryId == product.CategoryId && p.Id != product.Id && p.IsActive).ToList();
             var detail = string.IsNullOrEmpty(product.DetailsJson) ? null : JsonSerializer.Deserialize<HlgProductContent>(product.DetailsJson);
+            
             var result = new HlgProductDto
             {
                 Id = product.Id,
@@ -73,25 +74,32 @@ namespace Genora.MultiTenancy.AppServices.Hlg
                 Summary = product.Summary,
                 BrandName = brand?.Name,
                 CategoryName = category?.Name,
-                //Content = product.Content,
-                ThumbnailUrl = product.ThumbnailUrl,
+                ThumbnailUrl = detail?.Media.FirstOrDefault(x => x.Placement == HlgMediaPlacement.Hero)?.Url ?? product.ThumbnailUrl,
                 BrandId = product.BrandId,
                 ProductInformation = new ProductInformationDto
                 {
-                    ProductInformation = product.Content
+                    ProductInformation = product.Content,
+                    ImageUrl = detail?.Media.FirstOrDefault(x => x.Placement == HlgMediaPlacement.Information)?.Url
                 },
-                Knowledge = detail == null ? new List<QuestionProductDto>() : detail.Knowledge.Select(kn => new QuestionProductDto
+                Knowledge = new KnowledgeProductDto
                 {
-                    Question = kn.Title,
-                    Answer = kn.Content
-                }).ToList(),
-                RelatedProducts = relatedProducts.Select(rp => new RolationProductDto
-                {
-                    Id = rp.Id,
-                    Name = rp.Name,
-                    Description = rp.Summary,
-                    ImageUrl = rp.ThumbnailUrl
-                }).ToList()
+                    QuestionAndAnswers = detail?.Knowledge.Select(kn => new QuestionProductDto
+                    {
+                        Question = kn.Title,
+                        Answer = kn.Content
+                    }).ToList(),
+                    ImageUrl = detail?.Media.FirstOrDefault(x => x.Placement == HlgMediaPlacement.Knowledge)?.Url
+                },
+                RelatedProducts = new RolationsDto{
+                    RolationProductDtos = relatedProducts.Select(rp => new RolationProductDto
+                    {
+                        Id = rp.Id,
+                        Name = rp.Name,
+                        Description = rp.Summary,
+                        ImageUrl = rp.ThumbnailUrl
+                    }).ToList(),
+                    ImageUrl = detail?.Media.FirstOrDefault(x => x.Placement == HlgMediaPlacement.Related)?.Url
+                }
             };
             return result;
         }
