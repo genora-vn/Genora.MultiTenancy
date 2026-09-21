@@ -342,11 +342,9 @@ public class MultiTenancyWebModule : AbpModule
         ConfigureVirtualFileSystem(hostingEnvironment);
         ConfigureNavigationServices();
 
+        context.Services.AddSingleton<Microsoft.Extensions.Options.IValidateOptions<TenantGatewayGuardOptions>, TenantGatewayGuardOptionsValidator>();
         context.Services.AddOptions<TenantGatewayGuardOptions>()
             .Bind(configuration.GetSection("TenantGatewayGuard"))
-            .Validate(o => o.IsValid(), "TenantGatewayGuard requires distinct tenant GUIDs/keys and explicit Mini App path prefixes.")
-            .Validate(o => !o.Enabled || !configuration.GetValue<bool>("Hl25GatewayGuard:Enabled"),
-                "Enable either TenantGatewayGuard or legacy Hl25GatewayGuard, not both.")
             .ValidateOnStart();
 
         context.Services.AddOptions<Hl25GatewayGuardOptions>()

@@ -1,5 +1,7 @@
 # YARP nhiều tenant — triển khai và kiểm thử staging
 
+> **IIS staging thực tế (21/09):** anh dùng ARR + URL Rewrite làm ingress. Xem [bộ cấu hình ba site và cách sửa startup](iis/README.md), script tạo key/config đồng bộ và mẫu ingress đã chặn gọi nhầm hostname/module. Các fragment Ocelot bên dưới là phương án khác, không cần dùng thêm Ocelot cho topology ARR này.
+
 Ngày 2026-09-21. Gateway dùng chung có project/assembly `Genora.MultiTenancy.Gateway` và project kiểm thử `Genora.MultiTenancy.Gateway.Tests`. Tên đã được đổi từ project HL25 trước khi triển khai staging; namespace, solution, launch profile và DLL trong `web.config` đã cập nhật đồng bộ. Không thay controller/DTO/business rule, cache, DB, migration hay UI quản trị Host. Cấu hình quota bằng file triển khai/environment variables; chưa có trang quản trị quota trong ABP.
 
 ## Phạm vi
@@ -29,7 +31,7 @@ GUID lấy từ một GET application-configuration read-only theo hostname (HL2
 - `abp-guard.Staging.example.json` / `abp-guard.Production.example.json`: **merge section** vào cấu hình triển khai ABP; không thay toàn bộ appsettings.
 - `ocelot-routes.*.example.json`: mảng **route fragments**, không phải file Ocelot hoàn chỉnh. Merge vào `ReRoutes` của version đang chạy; bản mới dùng `Routes`. Không thay GlobalConfiguration/BaseUrl hoặc các route dự án khác.
 
-`BackendAddress` và `SharedKey` cố ý để trống: startup sẽ từ chối cấu hình thiếu. Chưa có địa chỉ/port IIS **staging** nội bộ. Điền origin nội bộ đã test, ví dụ HTTP loopback khi YARP cùng máy ABP hoặc HTTPS có chứng chỉ hợp lệ khi khác máy. Không dùng domain public phía trên làm backend sau cutover để tránh vòng lặp. Không copy port production8868 sang staging theo suy đoán. Production8868 từng phản hồi **HTTP**, còn HTTPS handshake thất bại; chỉ dùng `http://127.0.0.1:8868/` khi xác minh binding trên chính máy ABP. Code từ chối HTTP không phải loopback; không tắt TLS validation.
+`BackendAddress` và `SharedKey` cố ý để trống: startup sẽ từ chối cấu hình thiếu. Cập nhật21/09: cấu hình user dùng ABP staging `http://127.0.0.1:8868/`; binding thực tế/worker cần xác minh theo runbook IIS mới. Các mẫu chung giữ BackendAddress trống; generator IIS điền theo port được chọn. Điền origin nội bộ đã test, ví dụ HTTP loopback khi YARP cùng máy ABP hoặc HTTPS có chứng chỉ hợp lệ khi khác máy. Không dùng domain public phía trên làm backend sau cutover để tránh vòng lặp. Không copy port production8868 sang staging theo suy đoán. Production8868 từng phản hồi **HTTP**, còn HTTPS handshake thất bại; chỉ dùng `http://127.0.0.1:8868/` khi xác minh binding trên chính máy ABP. Code từ chối HTTP không phải loopback; không tắt TLS validation.
 
 Mỗi tenant dùng secret ngẫu nhiên riêng >=32 ký tự ASCII không khoảng trắng. Cấp qua environment variables của đúng App Pool/process hoặc secret store triển khai, không Git/log/FE/Ocelot:
 

@@ -4,6 +4,7 @@
 > `*_complete` trong `.claude/memory/notes/project/`. Cập nhật khi hoàn thành mốc lớn.
 
 ## Tổng quan
+- **Gateway IIS audit 2026-09-21:** source vàmẫuARR+key/configgenerator đã sửa;60gateway/42Webtests,build/publishPASS. Stagingdeploychưahoạtđộngtheologuser; bindingAppPool/cutoverUATcầnxácminh, chưaproduction-ready. [Note](memory/notes/project/project_gateway_iis_staging_fix_20260921.md).
 - **Tên project gateway hiện tại (2026-09-21):** `Genora.MultiTenancy.Gateway` + `Genora.MultiTenancy.Gateway.Tests`; solution/namespace/IIS/runbook đồng bộ, publish +42 tests PASS. Cấu hình nhiều tenant giữ nguyên. [Note](memory/notes/project/project_gateway_rename_20260921.md).
 - **Gateway multi-tenant 2026-09-21:** source/config/runbook staging ready; HL25=500 / HLG=300 theo tenantGUID, generic opt-in origin guard. Build +42 gateway/40 Web/12 Node tests PASS; không migration. Chưa deploy/SQLloadUAT, IISorigin staging chưa được cung cấp. [Note](memory/notes/project/project_multi_tenant_yarp_gateway_20260921.md).
 - **Framework:** ABP (DDD), multi-tenancy enabled.

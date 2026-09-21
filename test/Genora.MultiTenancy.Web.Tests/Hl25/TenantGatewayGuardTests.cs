@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Genora.MultiTenancy.Web.Middlewares;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Options;
+using Microsoft.Extensions.Configuration;
 using NSubstitute;
 using Volo.Abp.MultiTenancy;
 using Xunit;
@@ -71,6 +72,39 @@ public class TenantGatewayGuardTests
         o = Settings(); o.Tenants["b"].PathPrefixes = new[] { "/api/mini-app/hlg/../hl25" }; Assert.False(o.IsValid());
         o = Settings(); o.Tenants["b"].ExcludedPathPrefixes = new[] { "/api/mini-app/hlg" }; Assert.False(o.IsValid());
         o = new(); Assert.True(o.IsValid());
+    }
+
+    [Fact]
+    public void Startup_Validation_Explains_Duplicate_Keys_And_Mixed_Guards_Without_Logging_Secrets()
+    {
+        var options = Settings(); options.Tenants["b"].SharedKey = KeyA;
+        var config = new Microsoft.Extensions.Configuration.ConfigurationBuilder()
+            .AddInMemoryCollection(new System.Collections.Generic.Dictionary<string, string>
+                { ["Hl25GatewayGuard:Enabled"] = "true" }).Build();
+        var validator = new TenantGatewayGuardOptionsValidator(config);
+        var result = validator.Validate(Options.DefaultName, options);
+        Assert.True(result.Failed);
+        var errors = string.Join("\n", result.Failures);
+        Assert.Contains("Tenants:b:SharedKey duplicates TenantGatewayGuard:Tenants:a:SharedKey", errors);
+        Assert.Contains("Hl25GatewayGuard:Enabled=false", errors);
+        Assert.DoesNotContain(KeyA, errors);
+        Assert.DoesNotContain(KeyB, errors);
+    }
+
+    [Fact]
+    public void Startup_Validation_Accepts_Distinct_Keys_And_Explains_Missing_Key_And_Bad_Prefix()
+    {
+        var validator = new TenantGatewayGuardOptionsValidator(new Microsoft.Extensions.Configuration.ConfigurationBuilder().Build());
+        var options = Settings();
+        Assert.True(validator.Validate(Options.DefaultName, options).Succeeded);
+        options.Tenants["a"].SharedKey = "";
+        options.Tenants["b"].ExcludedPathPrefixes = new[] { "/api/mini-app/hlg" };
+        var result = validator.Validate(Options.DefaultName, options);
+        Assert.True(result.Failed);
+        var errors = string.Join("\n", result.Failures);
+        Assert.Contains("Tenants:a:SharedKey", errors);
+        Assert.Contains("Tenants:b:ExcludedPathPrefixes", errors);
+        Assert.DoesNotContain(KeyB, errors);
     }
 
     [Fact]

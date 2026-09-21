@@ -12,6 +12,7 @@
 
 | Mốc | Module | Nội dung | Note gốc |
 |-----|--------|----------|----------|
+| 2026-09-21 | IIS ARR/YARP staging | Diagnose duplicatekeys/mixedguards/customJSONnotloaded/oldDLL/wronghostfallback; detailedvalidator, ARRtemplates/configgenerator/runbook.60gateway+42WebtestsPASS;build/publish+PowerShellgeneratorPASS; noIISdeploy/load/migration. | [note](memory/notes/project/project_gateway_iis_staging_fix_20260921.md) |
 | 2026-09-21 | Gateway rename | Đổi project/namespace/assembly Hl25Gateway thành Gateway và project tests tương ứng; solution/IIS/runbook đồng bộ. Build/publish +42 gateway tests PASS; không thay behavior/config/schema, chưa deploy. | [note](memory/notes/project/project_gateway_rename_20260921.md) |
 | 2026-09-21 | Multi-tenant YARP | Per-tenant Host/GUID/quota500HL25+300HLG, genericguard, canonicalHostfix; staging/prod examples/GUIDs and gated dual-tenant load script. BuildPASS;42gateway+40Web+12Node testsPASS. No migration/deploy/real load/UAT; staginginternalorigin pending. | [note](memory/notes/project/project_multi_tenant_yarp_gateway_20260921.md) |
 | 2026-09-20 | HL25 YARP gateway | Shared tenant quota500RPS,429/CORS and opt-in ABP guard; keep HL25 hostname, observed origin8868 HTTP. Build PASS;19 gateway +24 Web +7 Node tests PASS. Runbook/load scripts ready; no deployment, real load test or migration. | [note](memory/notes/project/project_hl25_yarp_gateway_20260920.md) |

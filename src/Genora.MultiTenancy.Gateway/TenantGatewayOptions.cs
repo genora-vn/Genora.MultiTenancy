@@ -41,32 +41,34 @@ public sealed class TenantGatewayOptions
     {
         var ids = new HashSet<Guid>();
         var hosts = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        var keys = new HashSet<string>(StringComparer.Ordinal);
+        var keys = new Dictionary<string, string>(StringComparer.Ordinal);
         var names = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         foreach (var (name, tenant) in Tenants.Where(t => t.Value.Enabled))
         {
             if (!Regex.IsMatch(name, "^[a-zA-Z0-9-]+$") || !names.Add(name))
                 throw new InvalidOperationException("TenantGateway entry names must be unique letters, digits or hyphens.");
             if (tenant.TenantId == Guid.Empty || !ids.Add(tenant.TenantId))
-                throw new InvalidOperationException($"TenantGateway:{name}: unique non-empty TenantId required. Put all APIs/aliases of one tenant in one entry.");
+                throw new InvalidOperationException($"TenantGateway:Tenants:{name}: unique non-empty TenantId required. Put all APIs/aliases of one tenant in one entry.");
             if (tenant.PublicHosts.Length == 0 || tenant.PublicHosts.Any(h =>
                     !Regex.IsMatch(h, "^[a-zA-Z0-9][a-zA-Z0-9.-]*[a-zA-Z0-9]$") ||
                     Uri.CheckHostName(h) == UriHostNameType.Unknown || !hosts.Add(h)))
-                throw new InvalidOperationException($"TenantGateway:{name}: PublicHosts must be exact unique hostnames without scheme, port, wildcard or trailing dot.");
+                throw new InvalidOperationException($"TenantGateway:Tenants:{name}: PublicHosts must be exact unique hostnames without scheme, port, wildcard or trailing dot.");
             if (!IsOrigin(tenant.BackendAddress) || !IsOrigin(tenant.BackendTenantOrigin))
-                throw new InvalidOperationException($"TenantGateway:{name}: backend address/origin must be HTTP(S) origins without paths, credentials or query.");
+                throw new InvalidOperationException($"TenantGateway:Tenants:{name}: backend address/origin must be HTTP(S) origins without paths, credentials or query.");
             var backend = new Uri(tenant.BackendAddress);
             if (backend.Scheme == "http" && !backend.IsLoopback)
-                throw new InvalidOperationException($"TenantGateway:{name}: use HTTPS for non-loopback backends.");
-            if (tenant.SharedKey.Length < 32 || tenant.SharedKey.Any(c => c < 33 || c > 126) || !keys.Add(tenant.SharedKey))
-                throw new InvalidOperationException($"TenantGateway:{name}: a distinct shared key of at least 32 printable ASCII characters is required.");
+                throw new InvalidOperationException($"TenantGateway:Tenants:{name}: use HTTPS for non-loopback backends.");
+            if (string.IsNullOrEmpty(tenant.SharedKey) || tenant.SharedKey.Length < 32 || tenant.SharedKey.Any(c => c < 33 || c > 126))
+                throw new InvalidOperationException($"TenantGateway:Tenants:{name}:SharedKey requires at least 32 printable ASCII characters without spaces. Configure it in appsettings.<Environment>.json or environment variables; gateway.<Environment>.json is not loaded automatically.");
+            if (!keys.TryAdd(tenant.SharedKey, name))
+                throw new InvalidOperationException($"TenantGateway:Tenants:{name}:SharedKey duplicates TenantGateway:Tenants:{keys[tenant.SharedKey]}:SharedKey. Use a different key per tenant and match it in the ABP guard.");
             if (tenant.PermitLimit < 1)
-                throw new InvalidOperationException($"TenantGateway:{name}: PermitLimit must be positive.");
+                throw new InvalidOperationException($"TenantGateway:Tenants:{name}: PermitLimit must be positive.");
             if (tenant.AllowedOrigins.Length == 0 || tenant.AllowedOrigins.Any(o => !IsOrigin(o) || o.EndsWith('/')))
-                throw new InvalidOperationException($"TenantGateway:{name}: exact CORS origins without trailing slash are required.");
+                throw new InvalidOperationException($"TenantGateway:Tenants:{name}: exact CORS origins without trailing slash are required.");
             var endpoints = GatewayApiProfiles.GetEndpoints(tenant);
             if (endpoints.Count == 0)
-                throw new InvalidOperationException($"TenantGateway:{name}: at least one API profile or explicit additional route is required.");
+                throw new InvalidOperationException($"TenantGateway:Tenants:{name}: at least one API profile or explicit additional route is required.");
             var matches = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             foreach (var endpoint in endpoints)
             {
@@ -74,14 +76,14 @@ public sealed class TenantGatewayOptions
                     endpoint.Path.IndexOfAny(['*', '?', '#', '%', '\\']) >= 0 || endpoint.Path.Contains("..") ||
                     endpoint.Path.EndsWith('/') || endpoint.Path.Contains("//") ||
                     endpoint.Path.Split('/').Any(s => s.Equals("admin", StringComparison.OrdinalIgnoreCase)))
-                    throw new InvalidOperationException($"TenantGateway:{name}: only explicit Mini App routes without admin, catch-all or encoded paths are allowed.");
+                    throw new InvalidOperationException($"TenantGateway:Tenants:{name}: only explicit Mini App routes without admin, catch-all or encoded paths are allowed.");
                 RoutePatternFactory.Parse(endpoint.Path);
                 if (endpoint.Methods.Length == 0 || endpoint.Methods.Any(m =>
                     !new[] { "GET", "POST", "PUT", "PATCH", "DELETE", "HEAD" }.Contains(m)))
-                    throw new InvalidOperationException($"TenantGateway:{name}: each route needs explicit supported uppercase HTTP methods.");
+                    throw new InvalidOperationException($"TenantGateway:Tenants:{name}: each route needs explicit supported uppercase HTTP methods.");
                 foreach (var method in endpoint.Methods)
                     if (!matches.Add(method + " " + Regex.Replace(endpoint.Path, "\\{[^}]+\\}", "{}")))
-                        throw new InvalidOperationException($"TenantGateway:{name}: duplicate or ambiguous route patterns.");
+                        throw new InvalidOperationException($"TenantGateway:Tenants:{name}: duplicate or ambiguous route patterns.");
             }
         }
         if (ids.Count == 0) throw new InvalidOperationException("TenantGateway requires at least one enabled tenant.");

@@ -5,6 +5,12 @@
 
 ## Cập nhật gần nhất
 
+### IIS staging — ARR / YARP / guard configuration repair (2026-09-21)
+- Đã kiểm tra log/cấu hình/2ảnh và source mới `e4ec431`: lỗi chính key trùng giữa2tenant, bật2guard, custom gateway.Staging.json không được nạp; ảnh còn DLL cũ. TestHL25trênhostnameHLG đang bypassYARP qua rulefallbackcũ.
+- Source báo lỗi validation theo field không lộsecret; thêm mẫuARR chặn wronghost, script sinhcấuhình/keyriêng khớpGateway+ABP và runbook `docs/tenant-gateway/iis/README.md`.
+- Build/publishPASS;60gateway+42WebtestsPASS; generatorPowerShell5 PASSStaging/Production. Khôngdeploy/IISruntimeUAT/loadtest hoặc migration. Cầnbindingloopback5088/8868 vàAppPool/ARRflags thực tế; Port user gửi có2dòng làIP nên chưa rõ.
+- Next: theo runbook mới, generateconfig/freshpublish/reviewbindings rồi smoke200/403/404/429 và đo tải trướcproduction. Giữcácsửauser vềtenantresolver. [Note](memory/notes/project/project_gateway_iis_staging_fix_20260921.md).
+
 ### Gateway — đổi tên project dùng chung (2026-09-21)
 - Tên hiện tại: `src/Genora.MultiTenancy.Gateway` và `test/Genora.MultiTenancy.Gateway.Tests`; csproj, namespace, assembly, solution, launch profile và IIS `web.config` đã đồng bộ. Runbook dùng đường dẫn mới.
 - Restore/build và42 gateway tests PASS; publish local PASS, xác minh DLL/IIS entry point mới và không đóng gói DLL gateway cũ. Giữ cấu hình/quota/route/guard; không migration hay deploy.

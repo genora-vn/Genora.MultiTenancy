@@ -15,18 +15,38 @@ public sealed class TenantGatewayGuardOptions
     public bool Enabled { get; set; }
     public Dictionary<string, TenantGatewayGuardTenant> Tenants { get; set; } = new();
 
-    public bool IsValid()
+    public bool IsValid() => GetValidationErrors().Count == 0;
+
+    public List<string> GetValidationErrors()
     {
-        if (!Enabled) return true;
-        var tenants = Tenants.Values.Where(t => t.Enabled).ToArray();
-        return tenants.Length > 0 && tenants.Select(t => t.TenantId).Distinct().Count() == tenants.Length &&
-            tenants.Select(t => t.SharedKey).Distinct().Count() == tenants.Length && tenants.All(t =>
-                t.TenantId != Guid.Empty && t.SharedKey.Length >= 32 && t.SharedKey.All(c => c >= 33 && c <= 126) &&
-                t.PathPrefixes.Length > 0 && t.PathPrefixes.All(IsPrefix) &&
-                t.ExcludedPathPrefixes.All(e => IsPrefix(e) && t.PathPrefixes.Any(p =>
-                    e.StartsWith(p + "/", StringComparison.OrdinalIgnoreCase))));
+        var errors = new List<string>();
+        if (!Enabled) return errors;
+        var enabled = Tenants?.Where(t => t.Value?.Enabled == true).ToArray();
+        if (enabled == null || enabled.Length == 0)
+        {
+            errors.Add("TenantGatewayGuard:Tenants requires at least one enabled tenant.");
+            return errors;
+        }
+        var ids = new HashSet<Guid>();
+        var keys = new Dictionary<string, string>(StringComparer.Ordinal);
+        foreach (var (name, tenant) in enabled)
+        {
+            var prefix = $"TenantGatewayGuard:Tenants:{name}";
+            if (tenant.TenantId == Guid.Empty || !ids.Add(tenant.TenantId))
+                errors.Add($"{prefix}:TenantId must be a distinct, non-empty tenant GUID.");
+            if (string.IsNullOrEmpty(tenant.SharedKey) || tenant.SharedKey.Length < 32 || tenant.SharedKey.Any(c => c < 33 || c > 126))
+                errors.Add($"{prefix}:SharedKey requires at least 32 printable ASCII characters without spaces. Set the same key for this tenant in Gateway.");
+            else if (!keys.TryAdd(tenant.SharedKey, name))
+                errors.Add($"{prefix}:SharedKey duplicates TenantGatewayGuard:Tenants:{keys[tenant.SharedKey]}:SharedKey. Use a different key per tenant, matching its Gateway configuration.");
+            if (tenant.PathPrefixes == null || tenant.PathPrefixes.Length == 0 || !tenant.PathPrefixes.All(IsPrefix))
+                errors.Add($"{prefix}:PathPrefixes requires explicit /api/mini-app/... prefixes without trailing slash, wildcard or traversal.");
+            if (tenant.ExcludedPathPrefixes == null || !tenant.ExcludedPathPrefixes.All(e => IsPrefix(e) &&
+                    tenant.PathPrefixes != null && tenant.PathPrefixes.Any(p => IsPrefix(p) && e.StartsWith(p + "/", StringComparison.OrdinalIgnoreCase))))
+                errors.Add($"{prefix}:ExcludedPathPrefixes must be narrower child paths of PathPrefixes; use [] when no exclusions are needed.");
+        }
+        return errors;
     }
-    private static bool IsPrefix(string p) => p.StartsWith("/api/mini-app/", StringComparison.OrdinalIgnoreCase) &&
+    private static bool IsPrefix(string p) => !string.IsNullOrEmpty(p) && p.StartsWith("/api/mini-app/", StringComparison.OrdinalIgnoreCase) &&
         !p.EndsWith('/') && !p.Contains("//") && !p.Contains("..") && p.IndexOfAny(new[] { '*', '?', '#', '%', '{', '}', '\\' }) < 0;
 }
 

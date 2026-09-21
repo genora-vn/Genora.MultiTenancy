@@ -19,6 +19,9 @@
 
 ## Bàn giao hiện tại
 
+### IIS staging repair — 2026-09-21
+Sourcebaselinee4ec431; giữ3commitproxy/tenantresolvercủauser. Cácnguyênnhânstartup/routingđãxácđịnhvàsửa diagnostics/mẫutriểnkhai; dùng `docs/tenant-gateway/iis/README.md` cùngNew-DeploymentConfig.ps1 vàGet-IisInventory.ps1.60gateway/42WebtestsPASS,build/publishPASS, generatorPowerShell5PASS2env. ChưaIISruntime/cutover/loadtest; khôngxácnhậnproduction-ready. Cầnbindingloopback5088/8868,Host443rõhostname/ARRpreserveHost/AppPool/envđúngrồismoke200/403/404/429; keys mới sinh trênmáytriểnkhai, khôngcopysecrettronghộithoại. [Note](../memory/notes/project/project_gateway_iis_staging_fix_20260921.md).
+
 ### Gateway dùng chung — đổi tên project (2026-09-21)
 Sử dụng `src/Genora.MultiTenancy.Gateway/Genora.MultiTenancy.Gateway.csproj` và `test/Genora.MultiTenancy.Gateway.Tests/Genora.MultiTenancy.Gateway.Tests.csproj` từ đây. Namespace/assembly/solution/launch profile/IIS web.config và lệnh trong runbook đã cập nhật.42 gateway tests PASS; gói publish local gọi đúng DLL mới, không chứa DLL gateway cũ. Giữ cấu hình nhiều tenant và compatibility HL25 legacy; không deploy/schema change. User đã staged công việc trước, Git index giữ nguyên; cần đưa cả rename vào commit sau review. [Note](../memory/notes/project/project_gateway_rename_20260921.md).
 

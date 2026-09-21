@@ -5,6 +5,7 @@
 > Nguồn gốc: migrate từ `~\.claude\projects\D--Genora-...-Genora-MultiTenancy\memory\` (108 file).
 
 ## Điều hướng nhanh
+- **IIS staging ARR/YARP repair (2026-09-21):** [note](memory/notes/project/project_gateway_iis_staging_fix_20260921.md); [runbook](../docs/tenant-gateway/iis/README.md). Duplicatekeys/mixedguards/unloadedcustomJSON/oldbinary/wronghostfallback được xác định. Field-levelvalidation+ARRtemplates+configgenerator;60gateway/42WebtestsPASS. ChưaIISliveUAT/production approval.
 - **Đổi tên gateway dùng chung (2026-09-21):** [note](memory/notes/project/project_gateway_rename_20260921.md). Project/namespace/assembly `Genora.MultiTenancy.Gateway`, tests `Genora.MultiTenancy.Gateway.Tests`; solution, IIS web.config và runbook đã cập nhật. Build/publish PASS,42 gateway tests PASS; cấu hình/quota giữ nguyên, chưa deploy.
 - **Multi-tenant YARP (2026-09-21):** [note](memory/notes/project/project_multi_tenant_yarp_gateway_20260921.md); [runbook](../docs/tenant-gateway/README.md). Config theo tenant/hostname, HL25=500 + HLG=300, staging/prod GUID verified, generic ABP guard. Build PASS;42 gateway +40 Web +12 Node tests PASS. Staging IIS origin/secrets/deployment/load UAT còn chờ; quota một process.
 - **HL25 YARP gateway500RPS (2026-09-20):** [note](memory/notes/project/project_hl25_yarp_gateway_20260920.md). Source, opt-in guard and runbook/k6 scripts ready;19 gateway +24 Web +7 Node tests PASS. Keep tenant hostname; origin8868 observed HTTP. No deployment/IIS UAT/SQL load test or capacity certification.
