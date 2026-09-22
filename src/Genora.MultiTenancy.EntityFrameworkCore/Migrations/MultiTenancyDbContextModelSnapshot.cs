@@ -2781,6 +2781,9 @@ namespace Genora.MultiTenancy.Migrations
                     b.HasIndex("TenantId", "ParticipantId")
                         .HasDatabaseName("IX_AppHl25FrameCreations_TenantId_ParticipantId");
 
+                    b.HasIndex("TenantId", "ParticipantId", "CreatedTime")
+                        .HasDatabaseName("IX_AppHl25FrameCreations_TenantId_ParticipantId_CreatedTime");
+
                     b.ToTable("AppHl25FrameCreations", "hl25");
                 });
 
@@ -3070,6 +3073,9 @@ namespace Genora.MultiTenancy.Migrations
                         .HasDatabaseName("IX_AppHl25Participants_TenantId_ZaloUserId")
                         .HasFilter("[TenantId] IS NOT NULL AND [ZaloUserId] IS NOT NULL");
 
+                    b.HasIndex("TenantId", "PhoneNumber", "IsDeleted")
+                        .HasDatabaseName("IX_AppHl25Participants_TenantId_PhoneNumber_IsDeleted");
+
                     b.ToTable("AppHl25Participants", "hl25");
                 });
 
@@ -3165,6 +3171,9 @@ namespace Genora.MultiTenancy.Migrations
 
                     b.HasIndex("TenantId", "SpinTime")
                         .HasDatabaseName("IX_AppHl25SpinLogs_TenantId_SpinTime");
+
+                    b.HasIndex("TenantId", "ParticipantId", "SpinTime")
+                        .HasDatabaseName("IX_AppHl25SpinLogs_TenantId_ParticipantId_SpinTime");
 
                     b.ToTable("AppHl25SpinLogs", "hl25");
                 });

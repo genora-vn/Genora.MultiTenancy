@@ -35,13 +35,17 @@ public class Hl25GiftAppService :
 
     private readonly IManageImageService _manageImageService;
 
+    private readonly Hl25MiniAppCacheInvalidator _cacheInvalidator;
+
     public Hl25GiftAppService(
         IRepository<Hl25Gift, Guid> repository,
         ICurrentTenant currentTenant,
         IFeatureChecker featureChecker,
-        IManageImageService manageImageService)
+        IManageImageService manageImageService,
+        Hl25MiniAppCacheInvalidator cacheInvalidator)
         : base(repository, currentTenant, featureChecker)
     {
+        _cacheInvalidator = cacheInvalidator;
         GetPolicyName = MultiTenancyPermissions.AppHl25Wheel.Default;
         GetListPolicyName = MultiTenancyPermissions.AppHl25Wheel.Default;
         CreatePolicyName = MultiTenancyPermissions.AppHl25Wheel.Create;
@@ -49,6 +53,12 @@ public class Hl25GiftAppService :
         DeletePolicyName = MultiTenancyPermissions.AppHl25Wheel.Delete;
 
         _manageImageService = manageImageService;
+    }
+
+    public override async Task DeleteAsync(Guid id)
+    {
+        await base.DeleteAsync(id);
+        await _cacheInvalidator.AfterCommitAsync(CurrentTenant.Id, Hl25CacheArea.Gifts);
     }
 
     [DisableValidation]
@@ -92,6 +102,7 @@ public class Hl25GiftAppService :
         MapToEntity(input, entity);
 
         entity = await Repository.InsertAsync(entity, autoSave: true);
+        await _cacheInvalidator.AfterCommitAsync(CurrentTenant.Id, Hl25CacheArea.Gifts);
         return ObjectMapper.Map<Hl25Gift, Hl25GiftDto>(entity);
     }
 
@@ -105,6 +116,7 @@ public class Hl25GiftAppService :
         MapToEntity(input, entity);
 
         entity = await Repository.UpdateAsync(entity, autoSave: true);
+        await _cacheInvalidator.AfterCommitAsync(CurrentTenant.Id, Hl25CacheArea.Gifts);
         return ObjectMapper.Map<Hl25Gift, Hl25GiftDto>(entity);
     }
 

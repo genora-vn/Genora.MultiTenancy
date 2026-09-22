@@ -20,7 +20,6 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Localization;
-using Microsoft.EntityFrameworkCore.Internal;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -342,14 +341,21 @@ public class MultiTenancyWebModule : AbpModule
         ConfigureAutoMapper(context);
         ConfigureVirtualFileSystem(hostingEnvironment);
         ConfigureNavigationServices();
+
+        context.Services.AddSingleton<Microsoft.Extensions.Options.IValidateOptions<TenantGatewayGuardOptions>, TenantGatewayGuardOptionsValidator>();
+        context.Services.AddOptions<TenantGatewayGuardOptions>()
+            .Bind(configuration.GetSection("TenantGatewayGuard"))
+            .ValidateOnStart();
+
+        context.Services.AddOptions<Hl25GatewayGuardOptions>()
+            .Bind(configuration.GetSection("Hl25GatewayGuard"))
+            .Validate(o => !o.Enabled || (o.TenantId != Guid.Empty &&
+                o.SharedKey.Length >= 32 && o.SharedKey.All(c => c >= 33 && c <= 126)),
+                "Hl25GatewayGuard requires the target tenant GUID and a shared key of at least 32 printable ASCII characters.")
+            .ValidateOnStart();
+
         ConfigureAutoApiControllers();
         ConfigureSwaggerServices(context.Services);
-
-        Configure<AbpTenantResolveOptions>(options =>
-        {
-            options.TenantResolvers.Clear();
-            options.TenantResolvers.Add(new HostTenantResolveContributor());
-        });
 
         Configure<PermissionManagementOptions>(options =>
         {
@@ -361,11 +367,36 @@ public class MultiTenancyWebModule : AbpModule
             o.TenantKey = "tenant";
         });
 
-        Configure<AbpTenantResolveOptions>(o =>
+        Configure<AbpTenantResolveOptions>(options =>
         {
-            o.TenantResolvers.Add(new DomainTenantResolveContributor("{0}.local"));
-            o.TenantResolvers.Add(new HeaderTenantResolveContributor());
-            o.TenantResolvers.Add(new QueryStringTenantResolveContributor());
+            options.TenantResolvers.Clear();
+            // Thêm Resolver kiểm tra theo Host Domain trong DB lên ĐẦU TIÊN
+            options.TenantResolvers.Add(new DatabaseHostTenantResolveContributor());
+            options.TenantResolvers.Add(new HostTenantResolveContributor());
+
+            var selfUrl = configuration["App:SelfUrl"];
+            if (!string.IsNullOrEmpty(selfUrl))
+            {
+                var domainFormat = selfUrl.Replace("https://", "")
+                                          .Replace("http://", "")
+                                          .TrimEnd('/');
+
+                if (domainFormat.Contains("{0}"))
+                {
+                    options.TenantResolvers.Add(new DomainTenantResolveContributor(domainFormat));
+                }
+                else
+                {
+                    // Nếu dùng dạng hoalinh-staging.genora.vn (gạch ngang):
+                    options.TenantResolvers.Add(new DomainTenantResolveContributor("{0}-" + domainFormat));
+
+                    // Hoặc nếu dùng dạng hoalinh.staging.genora.vn (dấu chấm):
+                    // options.TenantResolvers.Add(new DomainTenantResolveContributor("{0}." + domainFormat));
+                }
+            }
+
+            options.TenantResolvers.Add(new HeaderTenantResolveContributor());
+            options.TenantResolvers.Add(new QueryStringTenantResolveContributor());
         });
     }
 
@@ -529,31 +560,43 @@ public class MultiTenancyWebModule : AbpModule
             logger.LogWarning("Hangfire recurring registration skipped (Hangfire:RegisterRecurringJobs=false).");
         }
 
-        app.UseCors("ZaloPolicy");
+        // 1. Forwarded Headers cho Reverse Proxy
+        var behindProxy = config.GetValue<bool>("ReverseProxy:Enabled");
+        if (behindProxy)
+        {
+            app.UseForwardedHeaders();
+        }
 
+        // 2. Exception Handling & HSTS
         if (env.IsDevelopment())
         {
             app.UseDeveloperExceptionPage();
         }
-
-        app.UseAbpRequestLocalization();
-
-        if (!env.IsDevelopment())
+        else
         {
-            app.UseDeveloperExceptionPage();
+            app.UseExceptionHandler("/Error");
             app.UseHsts();
         }
 
         app.UseCorrelationId();
-        app.UseRouting();
-        app.UseCookiePolicy();
         app.UseStaticFiles();
 
+        // 3. Routing & CORS
+        app.UseRouting();
+        app.UseCors("ZaloPolicy");
+
+        app.UseAbpRequestLocalization();
+        app.UseCookiePolicy();
+
+        // 4. MultiTenancy
         if (MultiTenancyConsts.IsEnabled)
         {
             app.UseMultiTenancy();
         }
 
+        // Custom Gateway & Migration Middlewares
+        app.UseMiddleware<TenantGatewayGuardMiddleware>();
+        app.UseMiddleware<Hl25GatewayGuardMiddleware>();
         app.UseMiddleware<TenantAutoMigrateMiddleware>();
         app.UseMiddleware<LogEnrichmentMiddleware>();
 
@@ -561,6 +604,7 @@ public class MultiTenancyWebModule : AbpModule
         app.UseAbpStudioLink();
         app.UseAbpSecurityHeaders();
 
+        // 5. Authentication & Authorization
         app.UseAuthentication();
         app.UseAbpOpenIddictValidation();
 
@@ -568,6 +612,7 @@ public class MultiTenancyWebModule : AbpModule
         app.UseDynamicClaims();
         app.UseAuthorization();
 
+        // 6. Dashboards, Swagger & Auditing
         app.UseHangfireDashboard("/hangfire", new DashboardOptions
         {
             Authorization = new[] { new HangfireDashboardAuthFilter() }

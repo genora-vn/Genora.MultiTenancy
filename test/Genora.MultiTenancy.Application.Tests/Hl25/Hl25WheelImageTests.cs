@@ -47,11 +47,12 @@ public class Hl25WheelImageTests
         using var provider = new ServiceCollection()
             .AddSingleton<IAsyncQueryableExecuter>(new AsyncQueryableExecuter(Array.Empty<IAsyncQueryableProvider>()))
             .BuildServiceProvider();
+        using var catalogCache = new Hl25MiniAppCache();
         var service = new MiniAppHl25Service(Substitute.For<IRepository<Hl25AppConfig, Guid>>(), participants,
             Substitute.For<IRepository<Hl25FrameCampaign, Guid>>(), Substitute.For<IRepository<Hl25FrameTemplate, Guid>>(),
             Substitute.For<IRepository<Hl25FrameCreation, Guid>>(), Substitute.For<IRepository<Hl25SpinTurnLog, Guid>>(),
             configs, slots, gifts, Substitute.For<IRepository<Hl25SpinLog, Guid>>(),
-            Substitute.For<IUnitOfWorkManager>(), Substitute.For<IManageImageService>(), accessor, new ConfigurationBuilder().Build())
+            Substitute.For<IUnitOfWorkManager>(), Substitute.For<IManageImageService>(), accessor, new ConfigurationBuilder().Build(), catalogCache)
         { LazyServiceProvider = new AbpLazyServiceProvider(provider) };
 
         var response = await service.GetWheelAsync("test-user");

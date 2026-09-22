@@ -35,6 +35,35 @@
 - Web build 0 errors; 13 Application + 7 JS tests pass. Chưa UAT browser/DB thật, chưa deploy. Không migration mới; giữ appsettings/log changes của user.
 - [Chi tiết](memory/notes/project/project_hlg_admin_razor_ui_20260918.md) · [UAT](docs/HLG_ADMIN_UAT_20260918.md).
 
+### IIS staging — ARR / YARP / guard configuration repair (2026-09-21)
+- Đã kiểm tra log/cấu hình/2ảnh và source mới `e4ec431`: lỗi chính key trùng giữa2tenant, bật2guard, custom gateway.Staging.json không được nạp; ảnh còn DLL cũ. TestHL25trênhostnameHLG đang bypassYARP qua rulefallbackcũ.
+- Source báo lỗi validation theo field không lộsecret; thêm mẫuARR chặn wronghost, script sinhcấuhình/keyriêng khớpGateway+ABP và runbook `docs/tenant-gateway/iis/README.md`.
+- Build/publishPASS;60gateway+42WebtestsPASS; generatorPowerShell5 PASSStaging/Production. Khôngdeploy/IISruntimeUAT/loadtest hoặc migration. Cầnbindingloopback5088/8868 vàAppPool/ARRflags thực tế; Port user gửi có2dòng làIP nên chưa rõ.
+- Next: theo runbook mới, generateconfig/freshpublish/reviewbindings rồi smoke200/403/404/429 và đo tải trướcproduction. Giữcácsửauser vềtenantresolver. [Note](memory/notes/project/project_gateway_iis_staging_fix_20260921.md).
+
+### Gateway — đổi tên project dùng chung (2026-09-21)
+- Tên hiện tại: `src/Genora.MultiTenancy.Gateway` và `test/Genora.MultiTenancy.Gateway.Tests`; csproj, namespace, assembly, solution, launch profile và IIS `web.config` đã đồng bộ. Runbook dùng đường dẫn mới.
+- Restore/build và42 gateway tests PASS; publish local PASS, xác minh DLL/IIS entry point mới và không đóng gói DLL gateway cũ. Giữ cấu hình/quota/route/guard; không migration hay deploy.
+- Chưa thay Git index của user. Bước tiếp theo vẫn là cấu hình IIS origin/secret rồi triển khai và test staging theo `docs/tenant-gateway/README.md`. [Chi tiết](memory/notes/project/project_gateway_rename_20260921.md).
+
+### Multi-tenant YARP — HL25 500 / HLG 300, staging preparation (2026-09-21)
+- Source mở rộng gateway cũ theo exact host + configured TenantId. Alias/modules cùng tenant chung quota; tenant khác độc lập. Generic opt-in ABP guard pin tenant/key/path; legacy mode còn hỗ trợ nhưng không trộn cấu hình.
+- Staging/prod public domains/GUID đã điền trong `docs/tenant-gateway/*.example.json`; Host quản trị nằm ngoài gateway. Còn thiếu IIS origin staging và secret; không suy diễn origin từ public URL/production8868.
+- Fix regression YARP default OriginalHost transform xóa Host canonical. Gateway/Web builds PASS,42 gateway +40 Web +12 Node tests PASS. Không DB migration/businessAPI changes. Không deploy/browserUAT/k6load/SQLcapacitytest, k6 chưa có.
+- Next: theo `docs/tenant-gateway/README.md`, điền cấu hình và deploy staging, smoke/direct-origin403/lowquota429, rồi đo tải250→500 HL25 và300 HLG riêng/kết hợp. Quota local1process, cần giữ1worker/tránhrecycleoverlap. [Chi tiết](memory/notes/project/project_multi_tenant_yarp_gateway_20260921.md).
+
+### HL25 — YARP gateway 500 RPS: source ready, deployment pending (2026-09-20)
+- Branch `hotfix/20260920`, baseline `060df7e`. Separate YARP gateway with one shared500RPS quota for public HL25 APIs. Keep `https://duocpham-hoalinh.genora.vn`; preserve Admin/static routing and unrelated Ocelot routes.
+- Runtime tenant GUID: `209567fc-4850-44e9-11c8-3a23c58d15a4`. Origin IP:8868 responded HTTP200; HTTPS handshake failed. Loopback example requires YARP on the ABP machine; no shared key over public HTTP.
+- Gateway/Web builds PASS;19 gateway +24 Web HL25 tests and7 Node load-script tests PASS. ABP adds an opt-in guard (default off). No migration/business API change, deployment or real SQL load test. Cache/quota remain process-local.
+- Runbook: `docs/hl25-gateway/README.md`; scripts: `tests/load/hl25-gateway/`. Remaining: ingress fallback, placement/binding, secrets/proxy trust, IIS/UAT and measured250→500RPS. Existing request-time auto-migration remains a risk. [Details](memory/notes/project/project_hl25_yarp_gateway_20260920.md).
+
+### HL25 — cache read APIs + index (2026-09-20)
+- Branch `hotfix/20260920`, baseline `c76c54b`. Thêm cache bộ nhớ 20 phút theo tenant cho config/campaigns/templates/gifts; khóa chống nạp trùng, invalidation sau commit Admin và khi quà vừa hết hàng. API contract/quy tắc quay giữ nguyên, tồn kho quay vẫn đọc DB.
+- EF migration **20260920100056_AddHl25MiniAppReadIndexes** + SQL `docs/hl25_read_indexes_20260920.sql`: 3 index mới, explicit filter unique; bỏ qua DB thiếu bảng HL25/index cùng tên đã có. **Chưa apply DB**.
+- Build 0 errors; **43 Application + 18 Domain + 6 EF + 14 Web = 81 .NET tests**, **3 JS tests** pass; EF model khớp snapshot. Test 7.000 lời gọi helper đồng thời mỗi nhóm/cold+expiry chỉ nạp một lần mỗi đợt.
+- **Giới hạn:** cache/lock/invalidation chỉ trong một process. Chưa browser/API UAT, chưa benchmark HTTP/SQL 1.000 CCU. Nhiều worker/replica cần cache chung và invalidation/lock liên node. Appsettings/logs có sẵn giữ nguyên; không deploy/restart/commit.
+- [Chi tiết và lệnh verify](memory/notes/project/project_hl25_cache_indexes_20260920.md).
 
 ### HL25 — staging AgeGroup schema repair (2026-09-18)
 - Lỗi staging Invalid column name AgeGroup. Git xác nhận migration AddHl25Module cùng ID đã bị sửa BirthDate→AgeGroup in-place; DB chạy bản cũ không được nâng cấp.

@@ -128,12 +128,12 @@ public class HlCustomerAppService : ApplicationService, IHlCustomerAppService
     {
         if (customers == null || customers.Count == 0) return;
 
-        // Lấy các mã KH đủ điều kiện: có custCode + custChannel = "OTC" + isGkhl = true
+        // Lấy các mã KH đủ điều kiện: có CustPhone + custChannel = "OTC" + isGkhl = true
         var eligibleCodes = customers
-            .Where(c => !string.IsNullOrWhiteSpace(c.CustCode)
+            .Where(c => !string.IsNullOrWhiteSpace(c.CustPhone)
                         && string.Equals(c.CustChannel, "OTC", StringComparison.OrdinalIgnoreCase)
                         && c.IsGkhl == true)
-            .Select(c => c.CustCode!)
+            .Select(c => c.CustPhone!)
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .ToList();
 
@@ -145,19 +145,19 @@ public class HlCustomerAppService : ApplicationService, IHlCustomerAppService
         // Tra BonusAmount từ dbo.AppCustomers theo CustomerCode
         var queryable = await _customerRepo.GetQueryableAsync();
         var rows = await AsyncExecuter.ToListAsync(
-            queryable.Where(x => x.CustomerCode != null && eligibleCodes.Contains(x.CustomerCode))
-                     .Select(x => new { x.CustomerCode, x.BonusAmount }), ct);
+            queryable.Where(x => x.PhoneNumber != null && eligibleCodes.Contains(x.PhoneNumber))
+                     .Select(x => new { x.PhoneNumber, x.BonusAmount }), ct);
 
         var byCode = rows
-            .GroupBy(x => x.CustomerCode!, StringComparer.OrdinalIgnoreCase)
+            .GroupBy(x => x.PhoneNumber!, StringComparer.OrdinalIgnoreCase)
             .ToDictionary(g => g.Key, g => g.Sum(x => x.BonusAmount), StringComparer.OrdinalIgnoreCase);
 
         foreach (var c in customers)
         {
-            if (!string.IsNullOrWhiteSpace(c.CustCode)
+            if (!string.IsNullOrWhiteSpace(c.CustPhone)
                 && string.Equals(c.CustChannel, "OTC", StringComparison.OrdinalIgnoreCase)
                 && c.IsGkhl == true
-                && byCode.TryGetValue(c.CustCode!, out var amount))
+                && byCode.TryGetValue(c.CustPhone!, out var amount))
             {
                 c.BonusAmount = amount;
             }

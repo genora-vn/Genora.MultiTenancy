@@ -34,13 +34,17 @@ public class Hl25FrameTemplateAppService :
 
     private readonly IManageImageService _manageImageService;
 
+    private readonly Hl25MiniAppCacheInvalidator _cacheInvalidator;
+
     public Hl25FrameTemplateAppService(
         IRepository<Hl25FrameTemplate, Guid> repository,
         ICurrentTenant currentTenant,
         IFeatureChecker featureChecker,
-        IManageImageService manageImageService)
+        IManageImageService manageImageService,
+        Hl25MiniAppCacheInvalidator cacheInvalidator)
         : base(repository, currentTenant, featureChecker)
     {
+        _cacheInvalidator = cacheInvalidator;
         GetPolicyName = MultiTenancyPermissions.AppHl25Frames.Default;
         GetListPolicyName = MultiTenancyPermissions.AppHl25Frames.Default;
         CreatePolicyName = MultiTenancyPermissions.AppHl25Frames.Create;
@@ -48,6 +52,12 @@ public class Hl25FrameTemplateAppService :
         DeletePolicyName = MultiTenancyPermissions.AppHl25Frames.Delete;
 
         _manageImageService = manageImageService;
+    }
+
+    public override async Task DeleteAsync(Guid id)
+    {
+        await base.DeleteAsync(id);
+        await _cacheInvalidator.AfterCommitAsync(CurrentTenant.Id, Hl25CacheArea.FrameCampaigns, Hl25CacheArea.FrameTemplates);
     }
 
     [DisableValidation]
@@ -100,6 +110,7 @@ public class Hl25FrameTemplateAppService :
         };
 
         entity = await Repository.InsertAsync(entity, autoSave: true);
+        await _cacheInvalidator.AfterCommitAsync(CurrentTenant.Id, Hl25CacheArea.FrameCampaigns, Hl25CacheArea.FrameTemplates);
         return ObjectMapper.Map<Hl25FrameTemplate, Hl25FrameTemplateDto>(entity);
     }
 
@@ -116,6 +127,7 @@ public class Hl25FrameTemplateAppService :
         entity.IsActive = input.IsActive;
 
         entity = await Repository.UpdateAsync(entity, autoSave: true);
+        await _cacheInvalidator.AfterCommitAsync(CurrentTenant.Id, Hl25CacheArea.FrameCampaigns, Hl25CacheArea.FrameTemplates);
         return ObjectMapper.Map<Hl25FrameTemplate, Hl25FrameTemplateDto>(entity);
     }
 

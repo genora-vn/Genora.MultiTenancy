@@ -32,6 +32,7 @@ public class Hl25MiniAppTurnTests : IDisposable
     private readonly List<Hl25SpinTurnLog> _turns = new();
     private readonly MiniAppHl25Service _service;
     private readonly ServiceProvider _provider;
+    private readonly Hl25MiniAppCache catalogCache = new();
 
     public Hl25MiniAppTurnTests()
     {
@@ -57,7 +58,7 @@ public class Hl25MiniAppTurnTests : IDisposable
             Substitute.For<IRepository<Hl25FrameCampaign, Guid>>(), Substitute.For<IRepository<Hl25FrameTemplate, Guid>>(),
             frames, turns, Substitute.For<IRepository<Hl25WheelConfig, Guid>>(), Substitute.For<IRepository<Hl25WheelSlot, Guid>>(),
             Substitute.For<IRepository<Hl25Gift, Guid>>(), Substitute.For<IRepository<Hl25SpinLog, Guid>>(),
-            uowManager, Substitute.For<IManageImageService>(), Substitute.For<IHttpContextAccessor>(), new ConfigurationBuilder().Build())
+            uowManager, Substitute.For<IManageImageService>(), Substitute.For<IHttpContextAccessor>(), new ConfigurationBuilder().Build(), catalogCache)
         { LazyServiceProvider = new AbpLazyServiceProvider(_provider) };
     }
 
@@ -126,5 +127,5 @@ public class Hl25MiniAppTurnTests : IDisposable
         error.Code.ShouldBe(Hl25ErrorCodes.ImageTooLarge);
     }
 
-    public void Dispose() => _provider.Dispose();
+    public void Dispose() { _provider.Dispose(); catalogCache.Dispose(); }
 }

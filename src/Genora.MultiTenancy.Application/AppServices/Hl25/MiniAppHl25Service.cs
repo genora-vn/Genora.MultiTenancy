@@ -45,6 +45,7 @@ public class MiniAppHl25Service : ApplicationService, IMiniAppHl25Service
     private readonly IManageImageService _manageImageService;
     private readonly IHttpContextAccessor _httpContextAccessor;
     private readonly IConfiguration _configuration;
+    private readonly Hl25MiniAppCache _catalogCache;
 
     public MiniAppHl25Service(
         IRepository<Hl25AppConfig, Guid> configRepository,
@@ -60,7 +61,8 @@ public class MiniAppHl25Service : ApplicationService, IMiniAppHl25Service
         IUnitOfWorkManager uowManager,
         IManageImageService manageImageService,
         IHttpContextAccessor httpContextAccessor,
-        IConfiguration configuration)
+        IConfiguration configuration,
+        Hl25MiniAppCache catalogCache)
     {
         _configRepository = configRepository;
         _participantRepository = participantRepository;
@@ -77,10 +79,14 @@ public class MiniAppHl25Service : ApplicationService, IMiniAppHl25Service
         _httpContextAccessor = httpContextAccessor;
         LocalizationResource = typeof(MultiTenancyResource);
         _configuration = configuration;
+        _catalogCache = catalogCache;
     }
 
     // ===== Cấu hình =====
-    public async Task<Hl25MiniAppConfigDto> GetConfigAsync()
+    public Task<Hl25MiniAppConfigDto> GetConfigAsync()
+        => _catalogCache.GetAsync(Hl25CacheArea.Config, CurrentTenant.Id, LoadConfigAsync);
+
+    private async Task<Hl25MiniAppConfigDto> LoadConfigAsync()
     {
         var queryable = await _configRepository.GetQueryableAsync();
         var config = await AsyncExecuter.FirstOrDefaultAsync(queryable);
@@ -410,7 +416,11 @@ public class MiniAppHl25Service : ApplicationService, IMiniAppHl25Service
             {
                 gift.RemainingQuantity -= 1;
                 if (gift.RemainingQuantity <= 0)
+                {
                     gift.Status = Hl25GiftStatus.OutOfStock;
+                    var tenantId = CurrentTenant.Id;
+                    uow.OnCompleted(() => _catalogCache.InvalidateAsync(tenantId, Hl25CacheArea.Gifts));
+                }
                 await _giftRepository.UpdateAsync(gift, autoSave: false);
 
                 spinLog.GiftId = gift.Id;
@@ -486,7 +496,10 @@ public class MiniAppHl25Service : ApplicationService, IMiniAppHl25Service
     }
 
     // ===== (Delta 2026-09) Frame — public read =====
-    public async Task<List<Hl25FrameCampaignPublicDto>> GetFrameCampaignsAsync()
+    public Task<List<Hl25FrameCampaignPublicDto>> GetFrameCampaignsAsync()
+        => _catalogCache.GetAsync(Hl25CacheArea.FrameCampaigns, CurrentTenant.Id, LoadFrameCampaignsAsync);
+
+    private async Task<List<Hl25FrameCampaignPublicDto>> LoadFrameCampaignsAsync()
     {
         var campaignQueryable = await _frameCampaignRepository.GetQueryableAsync();
         var templateQueryable = await _frameTemplateRepository.GetQueryableAsync();
@@ -497,11 +510,11 @@ public class MiniAppHl25Service : ApplicationService, IMiniAppHl25Service
                              .OrderByDescending(x => x.StartTime));
 
         // Đếm số mẫu frame đang bật theo từng chiến dịch.
-        var activeTemplates = await AsyncExecuter.ToListAsync(
-            templateQueryable.Where(x => x.IsActive));
-        var countByCampaign = activeTemplates
-            .GroupBy(x => x.CampaignId)
-            .ToDictionary(g => g.Key, g => g.Count());
+        var counts = await AsyncExecuter.ToListAsync(
+            templateQueryable.Where(x => x.IsActive)
+                .GroupBy(x => x.CampaignId)
+                .Select(g => new { CampaignId = g.Key, Count = g.Count() }));
+        var countByCampaign = counts.ToDictionary(x => x.CampaignId, x => x.Count);
 
         return campaigns.Select(c => new Hl25FrameCampaignPublicDto
         {
@@ -517,6 +530,18 @@ public class MiniAppHl25Service : ApplicationService, IMiniAppHl25Service
 
     public async Task<List<Hl25FrameTemplatePublicDto>> GetFrameTemplatesAsync(Guid? campaignId)
     {
+        var items = await _catalogCache.GetAsync(Hl25CacheArea.FrameTemplates, CurrentTenant.Id,
+            () => LoadFrameTemplatesAsync(campaignId), campaignId);
+        foreach (var item in items)
+        {
+            item.ImageUrl = ImageHelper.NormalizeThumb(_configuration, item.ImageUrl);
+            item.ThumbnailUrl = ImageHelper.NormalizeThumb(_configuration, item.ThumbnailUrl);
+        }
+        return items;
+    }
+
+    private async Task<List<Hl25FrameTemplatePublicDto>> LoadFrameTemplatesAsync(Guid? campaignId)
+    {
         var queryable = await _frameTemplateRepository.GetQueryableAsync();
         var query = queryable.Where(x => x.IsActive);
 
@@ -531,10 +556,8 @@ public class MiniAppHl25Service : ApplicationService, IMiniAppHl25Service
             Id = t.Id,
             CampaignId = t.CampaignId,
             Name = t.Name,
-            //ImageUrl = ToFullUrl(t.ImageUrl)!,
-            //ThumbnailUrl = ToFullUrl(t.ThumbnailUrl),
-            ImageUrl = ImageHelper.NormalizeThumb(_configuration, t.ImageUrl),
-            ThumbnailUrl = ImageHelper.NormalizeThumb(_configuration, t.ThumbnailUrl),
+            ImageUrl = t.ImageUrl,
+            ThumbnailUrl = t.ThumbnailUrl,
             DisplayOrder = t.DisplayOrder
         }).ToList();
     }
@@ -567,6 +590,14 @@ public class MiniAppHl25Service : ApplicationService, IMiniAppHl25Service
     // ===== (Delta 2026-09) Wheel — public read =====
     public async Task<List<Hl25GiftPublicDto>> GetGiftsAsync()
     {
+        var items = await _catalogCache.GetAsync(Hl25CacheArea.Gifts, CurrentTenant.Id, LoadGiftsAsync);
+        // Relative paths stay in cache; absolute URLs belong to this request's origin.
+        foreach (var item in items) item.ImageUrl = ToFullUrl(item.ImageUrl);
+        return items;
+    }
+
+    private async Task<List<Hl25GiftPublicDto>> LoadGiftsAsync()
+    {
         var queryable = await _giftRepository.GetQueryableAsync();
         // Ẩn quà bị vô hiệu hóa (Disabled) — chỉ trả Available + OutOfStock để FE hiển thị cơ cấu giải.
         var gifts = await AsyncExecuter.ToListAsync(
@@ -577,7 +608,7 @@ public class MiniAppHl25Service : ApplicationService, IMiniAppHl25Service
         {
             Id = g.Id,
             Name = g.Name,
-            ImageUrl = ToFullUrl(g.ImageUrl),
+            ImageUrl = g.ImageUrl,
             Description = g.Description,
             Value = g.Value,
             Status = g.Status
