@@ -85,6 +85,14 @@
 
             var formData = new FormData();
             formData.append('file', file);
+            if (options.data) {
+                Object.keys(options.data).forEach(function (key) {
+                    var value = options.data[key];
+                    if (value !== null && value !== undefined) {
+                        formData.append(key, value);
+                    }
+                });
+            }
 
             abp.ui.setBusy();
 

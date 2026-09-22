@@ -7,6 +7,7 @@ using System.ComponentModel.DataAnnotations;
 using Genora.MultiTenancy.Enums.Hlg;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Application.Services;
+using Volo.Abp.Content;
 namespace Genora.MultiTenancy.AppDtos.Hlg.Admin;
 
 public class GetHlgAdminListInput : GetHlgListInput
@@ -155,9 +156,16 @@ public interface IHlgGameAdminAppService : ICrudAppService<HlgGameAdminDto, Guid
 }
 public class CreateHlgQuestionInput : HlgQuestionInput { }
 public class UpdateHlgQuestionInput : HlgQuestionInput { }
+public class ImportHlgQuestionExcelInput
+{
+    public Guid GameId { get; set; }
+    public IRemoteStreamContent? File { get; set; }
+}
 public interface IHlgQuestionAdminAppService : ICrudAppService<HlgQuestionAdminDto, Guid, GetHlgAdminListInput, CreateHlgQuestionInput, UpdateHlgQuestionInput>
 {
     Task<HlgQuestionInput> GetEditorAsync(Guid id);
+    Task<IRemoteStreamContent> DownloadImportTemplateAsync(Guid gameId);
+    Task<int> ImportExcelAsync(ImportHlgQuestionExcelInput input);
 }
 
 internal static class HlgInputValidation

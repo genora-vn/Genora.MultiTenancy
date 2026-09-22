@@ -10,14 +10,31 @@
     <abp-script src="/Pages/Hlg/admin.js" />
     <abp-script src="/Pages/Hlg/Questions/index.js" />
 }
-<div id="HlgAdmin" data-create="@((await Model.GrantedAsync(".Create")).ToString().ToLowerInvariant())" data-edit="@((await Model.GrantedAsync(".Edit")).ToString().ToLowerInvariant())" data-delete="@((await Model.GrantedAsync(".Delete")).ToString().ToLowerInvariant())" data-parent-id="@Model.ParentId">
+@{
+    var canCreate = await Model.GrantedAsync(".Create");
+    var canEdit = await Model.GrantedAsync(".Edit");
+    var canDelete = await Model.GrantedAsync(".Delete");
+}
+<div id="HlgAdmin" data-create="@canCreate.ToString().ToLowerInvariant()" data-edit="@canEdit.ToString().ToLowerInvariant()" data-delete="@canDelete.ToString().ToLowerInvariant()" data-parent-id="@Model.ParentId">
     <a asp-page="/Hlg/Games/Index">@L["Hlg:Games"]</a><p class="text-muted">@Model.ParentName</p>
     <div class="d-flex justify-content-between align-items-center mb-3">
         <h1>@L["Hlg:Questions"]</h1>
-        @if (await Model.GrantedAsync(".Create"))
-        {
-            <button id="HlgCreate" class="btn btn-primary" type="button">@L["Hlg:Create"]</button>
-        }
+        <div class="d-flex gap-2 flex-wrap justify-content-end">
+            <button id="HlgDownloadQuestionTemplate" class="btn btn-outline-secondary" type="button">
+                <i class="fa fa-download"></i> @L["DownloadTemplateBtn"]
+            </button>
+            @if (canCreate && canEdit)
+            {
+                <button id="HlgImportQuestions" class="btn btn-outline-secondary" type="button">
+                    <i class="fa fa-upload"></i> @L["ImportExcel"]
+                </button>
+                <input id="HlgQuestionExcelFile" type="file" accept=".xlsx" class="d-none" />
+            }
+            @if (canCreate)
+            {
+                <button id="HlgCreate" class="btn btn-primary" type="button">@L["Hlg:Create"]</button>
+            }
+        </div>
     </div>
     <div id="HlgError" role="alert" class="alert alert-danger d-none"></div>
     <div class="card mb-3">
