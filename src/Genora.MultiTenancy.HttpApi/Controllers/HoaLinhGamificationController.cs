@@ -280,7 +280,7 @@ public class HoaLinhGamificationController : MultiTenancyController
         try
         {
             var dto = await _gameService.GetGameAsync(id, ct);
-            return Ok(HlgApiResult<GameDto>.Ok(dto));
+            return Ok(HlgApiResult<GameDetailDto>.Ok(dto));
         }
         catch (UserFriendlyException ex)
         {

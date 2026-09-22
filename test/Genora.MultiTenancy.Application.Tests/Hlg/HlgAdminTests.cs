@@ -27,6 +27,8 @@ using Volo.Abp.Guids;
 using Volo.Abp.Linq;
 using Volo.Abp.MultiTenancy;
 using Xunit;
+using ClosedXML.Excel;
+using System.IO;
 namespace Genora.MultiTenancy.Hlg;
 
 public class HlgAdminTests : IDisposable
@@ -55,8 +57,28 @@ public class HlgAdminTests : IDisposable
         _options.GetListAsync(Arg.Any<Expression<Func<HlgAnswerOption, bool>>>(), Arg.Any<bool>(), Arg.Any<CancellationToken>()).Returns(new List<HlgAnswerOption>());
         _games.GetAsync(_gameId, Arg.Any<bool>(), Arg.Any<CancellationToken>()).Returns(new HlgGame(_gameId, "Quiz", HlgGameType.Quiz));
     }
-    private HlgQuestionAdminAppService Service() => new(_questions, _tenant, _features, _games, _options, _sessions) { LazyServiceProvider = new AbpLazyServiceProvider(_provider) };
+    private HlgQuestionAdminAppService Service() => new(_questions, _tenant, _features, _games, _options, _sessions, new HlgQuestionExcelTemplateGenerator(), new HlgQuestionExcelImporter()) { LazyServiceProvider = new AbpLazyServiceProvider(_provider) };
     private CreateHlgQuestionInput Input() => new() { GameId = _gameId, Content = "Question", OptionA = "A", OptionB = "B", CorrectKey = HlgAnswerKey.B };
+
+    [Fact]
+    public void Excel_Importer_Reads_Data_After_Blank_Rows()
+    {
+        using var workbook = new XLWorkbook();
+        var worksheet = workbook.Worksheets.Add("Questions");
+        worksheet.Cell(3, 1).Value = 1;
+        worksheet.Cell(3, 2).Value = "Question one";
+        worksheet.Cell(5, 1).Value = 2;
+        worksheet.Cell(5, 2).Value = "Question two";
+        using var stream = new MemoryStream();
+        workbook.SaveAs(stream);
+        stream.Position = 0;
+
+        var rows = new HlgQuestionExcelImporter().Read(stream);
+
+        rows.Count.ShouldBe(2);
+        rows[0].RowNumber.ShouldBe(3);
+        rows[1].RowNumber.ShouldBe(5);
+    }
 
     [Fact]
     public async Task Disabled_Feature_Stops_Before_Query()

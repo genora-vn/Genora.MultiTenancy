@@ -16,7 +16,7 @@ public interface IHlgGameAppService : IApplicationService
     Task<List<GameDto>> GetGamesAsync(CancellationToken ct = default);
 
     /// <summary>Chi tiết một game.</summary>
-    Task<GameDto> GetGameAsync(Guid id, CancellationToken ct = default);
+    Task<GameDetailDto> GetGameAsync(Guid id, CancellationToken ct = default);
 
     /// <summary>
     /// Bắt đầu chơi game: tạo session + trả câu hỏi (KHÔNG kèm đáp án đúng).

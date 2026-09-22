@@ -7,6 +7,7 @@ using System.ComponentModel.DataAnnotations;
 using Genora.MultiTenancy.Enums.Hlg;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Application.Services;
+using Volo.Abp.Content;
 namespace Genora.MultiTenancy.AppDtos.Hlg.Admin;
 
 public class GetHlgAdminListInput : GetHlgListInput
@@ -91,8 +92,11 @@ public class HlgQuestionInput : IValidatableObject
     [Range(0, int.MaxValue)] public int Index { get; set; }
     [Required] public string Content { get; set; } = "";
     [StringLength(1000)] public string? ImageUrl { get; set; }
-    [Range(1, 3600)] public int TimeLimitSec { get; set; } = 30;
-    [Range(typeof(decimal), "0.01", "100")] public decimal ScoreMultiplier { get; set; } = 1;
+    [Range(1, 3600)] 
+    public int TimeLimitSec { get; set; } = 30;
+
+    [Range(typeof(decimal), "0.01", "100", ParseLimitsInInvariantCulture = true)]
+    public decimal ScoreMultiplier { get; set; } = 1;
     [EnumDataType(typeof(HlgAnswerKey))] public HlgAnswerKey CorrectKey { get; set; } = HlgAnswerKey.A;
     [Required] public string OptionA { get; set; } = "";
     [Required] public string OptionB { get; set; } = "";
@@ -152,9 +156,16 @@ public interface IHlgGameAdminAppService : ICrudAppService<HlgGameAdminDto, Guid
 }
 public class CreateHlgQuestionInput : HlgQuestionInput { }
 public class UpdateHlgQuestionInput : HlgQuestionInput { }
+public class ImportHlgQuestionExcelInput
+{
+    public Guid GameId { get; set; }
+    public IRemoteStreamContent? File { get; set; }
+}
 public interface IHlgQuestionAdminAppService : ICrudAppService<HlgQuestionAdminDto, Guid, GetHlgAdminListInput, CreateHlgQuestionInput, UpdateHlgQuestionInput>
 {
     Task<HlgQuestionInput> GetEditorAsync(Guid id);
+    Task<IRemoteStreamContent> DownloadImportTemplateAsync(Guid gameId);
+    Task<int> ImportExcelAsync(ImportHlgQuestionExcelInput input);
 }
 
 internal static class HlgInputValidation
@@ -167,7 +178,8 @@ internal static class HlgInputValidation
     }
 }
 
-public class HlgUserDetailDto {
+public class HlgUserDetailDto
+{
     public HlgUserAdminDto Profile { get; set; } = new();
     public ProfileStatsDto Stats { get; set; } = new();
     public List<LearningHistoryItemDto> Learning { get; set; } = new();

@@ -1,15 +1,16 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text.RegularExpressions;
-using System.Threading;
-using System.Threading.Tasks;
+using DocumentFormat.OpenXml.Spreadsheet;
 using Genora.MultiTenancy.AppDtos.Hlg;
 using Genora.MultiTenancy.DomainModels.AppCustomers;
 using Genora.MultiTenancy.DomainModels.AppHlg;
 using Genora.MultiTenancy.Enums.Hlg;
 using Genora.MultiTenancy.Realtime;
 using Microsoft.Extensions.Logging;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text.RegularExpressions;
+using System.Threading;
+using System.Threading.Tasks;
 using Volo.Abp;
 using Volo.Abp.Application.Services;
 using Volo.Abp.Domain.Repositories;
@@ -70,13 +71,58 @@ public class HlgGameAppService : ApplicationService, IHlgGameAppService
         return games.Select(g => MapGame(g, counts.TryGetValue(g.Id, out var n) ? n : 0)).ToList();
     }
 
-    public async Task<GameDto> GetGameAsync(Guid id, CancellationToken ct = default)
+    public async Task<GameDetailDto> GetGameAsync(Guid id, CancellationToken ct = default)
     {
         var game = await _gameRepo.FirstOrDefaultAsync(x => x.Id == id && x.IsActive, ct)
             ?? throw new UserFriendlyException("Không tìm thấy game");
 
-        var count = await _questionRepo.CountAsync(q => q.GameId == id && q.IsActive, ct);
-        return MapGame(game, count);
+        //var count = await _questionRepo.CountAsync(q => q.GameId == id && q.IsActive, ct);
+        var result = new GameDetailDto
+        {
+            Id = id,
+            Name = game.Name,
+            Type = HlgEnumMapper.GameTypeToString(game.Type),
+            ImageUrl = game.ImageUrl,
+            Description = game.Description,
+            Rules = game.Rules,
+            RewardDescription = game.RewardDescription,
+            StartAt = game.StartAt,
+            EndAt = game.EndAt,
+            Status = HlgEnumMapper.GameStatusToString(game.Status),
+            BadgeText = game.BadgeText,
+            BannerUrl = game.BannerUrl,
+        };
+        var player = await _customerRepo.GetQueryableAsync();
+        result.TopPlayers = player.Where(x => x.IsActive && x.BonusPoint > 0).OrderByDescending(x => x.BonusPoint).Select(x => new TopPlayer { Id = x.Id, Name = x.FullName, TotalPoint = x.BonusPoint}).Take(5).ToList();
+        //var reward = 
+        var eventQuery = await LazyServiceProvider.LazyGetRequiredService<IRepository<HlgRankingEvent, Guid>>().GetQueryableAsync();
+        var prizeQuery = await LazyServiceProvider.LazyGetRequiredService<IRepository<HlgRankingPrize, Guid>>().GetQueryableAsync();
+        var rewardQuery = await LazyServiceProvider.LazyGetRequiredService<IRepository<HlgReward, Guid>>().GetQueryableAsync();
+        var now = Clock.Now;
+        result.Prizes = await AsyncExecuter.ToListAsync(
+            from rankingEvent in eventQuery
+            join prize in prizeQuery
+                on rankingEvent.Id equals prize.EventId
+            join reward in rewardQuery
+                on prize.RewardId equals reward.Id
+            where rankingEvent.GameId == id
+                  && rankingEvent.TenantId == CurrentTenant.Id
+                  && rankingEvent.IsActive
+                  && rankingEvent.StartAt <= now
+                  && rankingEvent.EndAt >= now
+                  && prize.TenantId == CurrentTenant.Id
+                  && prize.IsActive
+                  && reward.TenantId == CurrentTenant.Id
+                  && reward.IsActive
+            orderby prize.DisplayOrder, prize.Id
+            select new Prizes
+            {
+                Order = prize.DisplayOrder,
+                Name = reward.Name,
+                Quantity = prize.Quantity
+            },
+            ct);
+        return result;
     }
 
     public async Task<StartGameResultDto> StartGameAsync(Guid gameId, string phone, CancellationToken ct = default)
