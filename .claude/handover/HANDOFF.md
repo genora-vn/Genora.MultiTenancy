@@ -1,5 +1,12 @@
 # HANDOFF — Bàn giao giữa các phiên làm việc
 
+## HLG DbMigrator all tenants — 2026-09-23 (latest)
+
+- Test1 had 0 HLG objects/5 baseline history rows. Guarded `docs/HLG_TEST1_SCHEMA_REPAIR_20260923.sql` backed up and cleared them; EF replayed baseline + design-content. Test2 had baseline tables and received design-content via explicit EF connection.
+- `EntityFrameworkCoreMultiTenancyDbSchemaMigrator` now pings target before master and creates DB only on SQL 4060/911, with quoted DB name and no full connection string in error data. In-sandbox SQL client hit TLS support error at AmiHairSalon, but the built DbMigrator run outside sandbox completed all tenant migrations/seeding with exit 0.
+- Read-only post-check across nine distinct DBs: each has 17 HLG tables, six HLG migration rows and design-content. Host/Test1 history backup tables each contain five rows. New-database creation branch untested; no full DB backup created by this task.
+- Next workstream is still IIS deployment/authenticated UAT for HLG Admin menu. [Runbook](../../docs/HLG_DBMIGRATOR_RECOVERY_20260923.md) · [note](../memory/notes/project/project_hlg_dbmigrator_all_tenants_recovery_20260923.md). Preserve unrelated log changes.
+
 ## HLG staging schema/menu — 2026-09-23 (current handoff)
 
 - Host `GenoraMultiTenancy` had zero HLG objects with five HLG baseline migration rows. Guarded SQL repair backed them up (`dbo.HlgMigrationHistoryRepair_20260923`) and removed just those five history rows; EF replayed the baseline and `AddHlgDesignContent`. Verified 17 HLG tables, six migration rows and `PharmacyCode`; a second `dotnet ef database update --no-build` was no-op.

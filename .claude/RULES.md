@@ -1,12 +1,13 @@
 # RULES — Coding Conventions & Lessons Learned
 
-> Tổng hợp từ 19 note `feedback_*` trong `.claude/memory/notes/feedback/`.
+> Tổng hợp từ 20 note `feedback_*` trong `.claude/memory/notes/feedback/`.
 > Mỗi quy tắc kèm tên file gốc để tra cứu chi tiết. Đây là "phải nhớ" khi code trên repo này.
 
 ## ABP Framework — Data & Domain
 - **WithDetailsAsync để load navigation props.** `GetAsync` không eager-load `Items`; dùng `WithDetailsAsync` khi cần child collection. → `feedback_abp_with_details.md`
 - **Application layer KHÔNG dùng EF Core trực tiếp.** Count/ToList/FirstOrDefault qua `AsyncExecuter`. Tạo entity `Entity<Guid>` qua constructor. → `feedback_no_ef_in_application_layer.md`
 - **EF migrations rỗng khi Web lock dll.** Kill Web process + clean `bin/obj` trước khi `migrations add`. → `feedback_ef_migration_dll_lock.md`
+- **DbMigrator kiểm tra database đích trước; đối chiếu history với schema từng tenant.** Chỉ dùng `master` khi database thật sự thiếu (SQL 4060/911). Reset history chỉ với preflight chính xác, backup transaction và dry-run mặc định. → `feedback_dbmigrator_target_first_schema_history_drift.md`
 - **MARS + autoSave:** insert parent trước, child sau (qua repo). Không cascade insert / không SaveChanges một lần cho cả cây. → `feedback_mars_autosave_pattern.md`
 
 ## ABP Framework — Permission & Feature (Multi-tenant)

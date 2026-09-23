@@ -1,5 +1,11 @@
 # PROJECT STATE — Genora.MultiTenancy
 
+## HLG all-tenant migration — 2026-09-23 (latest)
+
+- `Test1` schema/history drift repaired with guarded five-row backup/replay; `Test2` design-content migration applied via explicit EF connection. DbMigrator target-first preflight avoids unnecessary master access and no longer exposes connection strings in error data.
+- Full DbMigrator run outside sandbox completed with exit 0; read-only audit confirms **nine distinct DBs each have 17 HLG tables/six HLG migration rows**. Existing build warnings are unrelated. In-sandbox SQL TLS failure at AmiHairSalon was environment-specific. [Runbook](../docs/HLG_DBMIGRATOR_RECOVERY_20260923.md) · [note](memory/notes/project/project_hlg_dbmigrator_all_tenants_recovery_20260923.md).
+- Admin menu still awaits deployment of prepared Web Release package to both staging IIS sites and authenticated UAT.
+
 ## Gateway production rate-limit — 2026-09-23 ✅ HOẠT ĐỘNG
 
 - Rate-limit mini-app tenant trên production ĐÃ CHẠY (burst test → 200 + 429 `Hl25:RateLimitExceeded`). Luồng: **Apache (XAMPP) :443 → YARP gateway `127.0.0.1:5088` → ABP `8868` (guard)**.

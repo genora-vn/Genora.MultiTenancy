@@ -1,5 +1,12 @@
 # ACTIVE CONTEXT — Việc đang làm dở
 
+## HLG DbMigrator all-tenant recovery — 2026-09-23 (current)
+
+- `Test1` had 0 HLG objects but five baseline HLG migrations in history; guarded Test1 repair backed up/cleared only those five rows, then EF replayed baseline + design-content. `Test2` had 13 baseline HLG tables; explicit EF connection applied design-content only. [Repair SQL](../docs/HLG_TEST1_SCHEMA_REPAIR_20260923.sql).
+- DbMigrator now pings an existing target DB before attempting `master`, creates only on missing-database SQL 4060/911, quotes database names, and no longer includes connection strings in error data. In-sandbox run stopped at AmiHairSalon because this machine's sandbox SQL client lacked TLS support; the same built DbMigrator run outside sandbox completed all DBs and seeding, exit 0.
+- Post-run read-only audit: **all nine distinct host/tenant DBs have 17 HLG tables and six HLG migration rows**, design-content recorded. Host and Test1 each have five backup history rows. DbMigrator build 0 errors. New-database creation path not exercised. [Runbook](../docs/HLG_DBMIGRATOR_RECOVERY_20260923.md) · [note](memory/notes/project/project_hlg_dbmigrator_all_tenants_recovery_20260923.md).
+- HLG Admin menu on staging remains separate IIS Web publish task; local Release artifact `artifacts/hlg-web-staging-20260923` prepared in prior task. Preserve unrelated log changes.
+
 ## Gateway production — rate-limit qua Apache (XAMPP) — 2026-09-23 (MỚI NHẤT) ✅
 
 - **HOÀN THÀNH:** rate-limit mini-app tenant trên production đã chạy. Burst test trả hỗn hợp 200 + 429 `Hl25:RateLimitExceeded`.

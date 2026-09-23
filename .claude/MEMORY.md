@@ -5,6 +5,7 @@
 > Nguồn gốc: migrate từ `~\.claude\projects\D--Genora-...-Genora-MultiTenancy\memory\` (108 file).
 
 ## Điều hướng nhanh
+- **HLG DbMigrator all-tenant recovery 2026-09-23 (mới nhất):** [note](memory/notes/project/project_hlg_dbmigrator_all_tenants_recovery_20260923.md) · [runbook](../docs/HLG_DBMIGRATOR_RECOVERY_20260923.md). Test1 guarded history/schema repair, Test2 design migration, target-first migrator preflight; full run exit 0 and nine DBs verified 17 HLG tables/6 migrations. Web menu IIS deployment still pending.
 - **Gateway production rate-limit qua Apache 2026-09-23 (MỚI NHẤT) ✅:** [note](memory/notes/project/project_gateway_production_apache_ingress_20260923.md) · [feedback](memory/notes/feedback/feedback_prod_apache_ingress_not_iis.md). Rate-limit mini-app production ĐÃ CHẠY (burst → 200+429). GỐC RỄ: XAMPP Apache giữ `.191:443` (KHÔNG phải IIS), vhost `*.genora.vn` proxy thẳng ABP → bỏ qua IIS ingress + gateway. Fix: 2 vhost Apache route public hl25/hlg → gateway 5088. Luôn kiểm `Get-NetTCPConnection -LocalPort 443` trước khi sửa IIS.
 - **HLG staging schema/menu recovery 2026-09-23:** [note](memory/notes/project/project_hlg_staging_schema_menu_recovery_20260923.md) · [runbook](../docs/HLG_STAGING_RECOVERY_20260923.md). Host schema/history drift repaired live; host and tenant each have 17 HLG tables/6 migrations. Staging Web omits HLG Admin assets/routes (404); IIS publish artifact ready, deployment pending. 17 HLG Web tests pass.
 - **HLG verification follow-up 2026-09-19:** [note](memory/notes/project/project_hlg_verification_followup_20260919.md). Xác minh corrective code đã nằm trong HEAD `d4f67f9`; fix ownership/finished-session cho shipping address + URL validation Admin; 46App+3Domain+17Web+11JS pass; browser vẫn BLOCKED (không có browser); migration chưa apply.
@@ -34,7 +35,7 @@
 
 ---
 
-## Feedback — quy tắc làm việc (19 note)
+## Feedback — quy tắc làm việc (20 note)
 Nằm tại `memory/notes/feedback/`. Tổng hợp trong [RULES.md](RULES.md).
 
 - ABP WithDetailsAsync load navigation props — `feedback_abp_with_details.md`
@@ -52,6 +53,7 @@ Nằm tại `memory/notes/feedback/`. Tổng hợp trong [RULES.md](RULES.md).
 - Disabled select phải kèm hidden input — `feedback_disabled_select_hidden_input.md`
 - Email template Scriban `!= empty` → `!= null` — `email_template_fixes.md`
 - EF migrations body rỗng khi Web lock dll — `feedback_ef_migration_dll_lock.md`
+- DbMigrator kiểm tra database đích trước; xác minh migration history khớp schema từng tenant trước khi phục hồi — `feedback_dbmigrator_target_first_schema_history_drift.md`
 - Salon phone regex đầu 0 hoặc 84 — `feedback_salon_phone_regex_0_or_84.md`
 - Application layer không dùng EF Core (AsyncExecuter) — `feedback_no_ef_in_application_layer.md`
 - ABP internal AppService multi complex param + null validation — `feedback_appservice_multi_complex_param.md`

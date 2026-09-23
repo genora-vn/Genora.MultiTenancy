@@ -1,5 +1,7 @@
 # HLG staging recovery — 2026-09-23
 
+> Follow-up later on 2026-09-23: `Test1` also had empty HLG schema with five recorded baseline migrations. It was repaired with a guarded history backup/replay; `Test2` received design-content. Full DbMigrator then completed all host/tenant databases, and nine distinct DBs were verified at 17 HLG tables/six HLG migrations each. See [DbMigrator recovery](HLG_DBMIGRATOR_RECOVERY_20260923.md). The Web menu still awaits IIS deployment.
+
 ## Database finding and repair
 
 `dotnet ef database update` in `src/Genora.MultiTenancy.EntityFrameworkCore` uses the **Default** connection in `src/Genora.MultiTenancy.DbMigrator/appsettings.json` through `MultiTenancyDbContextFactory`; on this staging checkout it targets host DB `GenoraMultiTenancy`, not the Hoa Linh tenant database. Read-only inspection found schema `HLG` with **zero objects**, although the first five HLG migrations were marked applied. This is schema/history drift, not an error in the six new nullable columns.

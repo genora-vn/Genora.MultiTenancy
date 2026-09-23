@@ -39,40 +39,61 @@ public class EntityFrameworkCoreMultiTenancyDbSchemaMigrator
             var cs = new SqlConnectionStringBuilder(rawCs) { MultipleActiveResultSets = true };
             _logger.LogInformation("Migrating DB: {Db}", cs.InitialCatalog);
 
-            // 2) preflight tới master + tạo DB nếu thiếu
-            var master = new SqlConnectionStringBuilder(cs.ConnectionString)
-            { InitialCatalog = "master", ConnectTimeout = 5 };
-
+            // Existing tenant databases should not depend on access to master.
+            // Only use master when SQL Server explicitly reports a missing database.
+            var quick = new SqlConnectionStringBuilder(cs.ConnectionString) { ConnectTimeout = 15 };
             try
             {
-                using (var conn = new SqlConnection(master.ConnectionString))
+                try
                 {
+                    using var ping = new SqlConnection(quick.ConnectionString);
+                    await ping.OpenAsync();
+                }
+                catch (SqlException ex) when (IsMissingDatabase(ex))
+                {
+                    var master = new SqlConnectionStringBuilder(cs.ConnectionString)
+                    { InitialCatalog = "master", ConnectTimeout = 15 };
+                    using var conn = new SqlConnection(master.ConnectionString);
                     await conn.OpenAsync();
                     using var cmd = conn.CreateCommand();
-                    cmd.CommandText = "IF DB_ID(@db) IS NULL EXEC('CREATE DATABASE [' + @db + ']')";
+                    cmd.CommandText = @"
+IF DB_ID(@db) IS NULL
+BEGIN
+    DECLARE @sql nvarchar(max) = N'CREATE DATABASE ' + QUOTENAME(@db);
+    EXEC (@sql);
+END";
                     cmd.Parameters.AddWithValue("@db", cs.InitialCatalog);
                     cmd.CommandTimeout = 30;
                     await cmd.ExecuteNonQueryAsync();
+
+                    using var ping = new SqlConnection(quick.ConnectionString);
+                    await ping.OpenAsync();
                 }
             }
             catch (Exception ex)
             {
+                _logger.LogError("Database preflight failed for {Db}: {Reason}", cs.InitialCatalog, ex.Message);
                 throw new BusinessException("TenantDatabaseUnreachable")
-                    .WithData("ConnectionString", cs.ConnectionString)
+                    .WithData("Database", cs.InitialCatalog)
                     .WithData("Reason", ex.Message);
             }
 
-            // 3) ping nhanh DB đích 5s (nếu unreachable → fail ngay, khỏi treo timeout dài)
-            var quick = new SqlConnectionStringBuilder(cs.ConnectionString) { ConnectTimeout = 5 };
-            using (var ping = new SqlConnection(quick.ConnectionString))
-            { await ping.OpenAsync(); }
-
-            // 4) migrate với timeout lớn – KHÔNG mở transaction thủ công
+            // Migrate with a longer command timeout; do not open a manual transaction.
             ctx.Database.SetCommandTimeout(180);
             await ctx.Database.MigrateAsync();
 
             await uow.CompleteAsync();
             _logger.LogInformation("Migrated DB OK: {Db}", cs.InitialCatalog);
         }
+    }
+
+    private static bool IsMissingDatabase(SqlException exception)
+    {
+        foreach (SqlError error in exception.Errors)
+        {
+            if (error.Number is 4060 or 911) return true;
+        }
+
+        return false;
     }
 }
