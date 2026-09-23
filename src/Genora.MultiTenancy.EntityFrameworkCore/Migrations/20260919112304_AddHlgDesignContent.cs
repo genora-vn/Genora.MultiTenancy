@@ -11,6 +11,25 @@ namespace Genora.MultiTenancy.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
+            // A previously migrated database can have HLG history rows without the
+            // physical HLG tables (observed on staging host). Fail before any DDL;
+            // those baseline migrations must be replayed after a guarded repair.
+            migrationBuilder.Sql(@"
+IF OBJECT_ID(N'[HLG].[AppHlgUserProfiles]', N'U') IS NULL
+    OR OBJECT_ID(N'[HLG].[AppHlgKnowledgeCategories]', N'U') IS NULL
+    OR OBJECT_ID(N'[HLG].[AppHlgLearningProgress]', N'U') IS NULL
+    OR OBJECT_ID(N'[HLG].[AppHlgProducts]', N'U') IS NULL
+    OR OBJECT_ID(N'[HLG].[AppHlgGames]', N'U') IS NULL
+    OR OBJECT_ID(N'[HLG].[AppHlgGameSessions]', N'U') IS NULL
+    OR OBJECT_ID(N'[HLG].[AppHlgQuestions]', N'U') IS NULL
+    OR OBJECT_ID(N'[HLG].[AppHlgSessionAnswers]', N'U') IS NULL
+    OR OBJECT_ID(N'[HLG].[AppHlgAnswerOptions]', N'U') IS NULL
+    OR OBJECT_ID(N'[HLG].[AppHlgRewardHistories]', N'U') IS NULL
+    OR OBJECT_ID(N'[HLG].[AppHlgRewards]', N'U') IS NULL
+    OR OBJECT_ID(N'[HLG].[AppHlgShippingAddresses]', N'U') IS NULL
+    OR OBJECT_ID(N'[HLG].[AppHlgRankingEvents]', N'U') IS NULL
+    THROW 51023, 'HLG baseline tables are missing. Repair the HLG migration history/schema before AddHlgDesignContent.', 1;");
+
             migrationBuilder.AddColumn<string>(
                 name: "PharmacyCode",
                 schema: "HLG",

@@ -1,5 +1,7 @@
 # Architecture — Module Hoa Linh Gamification (HLG)
 
+> **Staging 2026-09-23:** Host `GenoraMultiTenancy` và tenant `HoaLinhMienNam` đều đã áp `AddHlgDesignContent` (17 bảng HLG/6 migration mỗi DB). Host từng có lịch sử 5 migration nhưng 0 bảng; đã repair có backup rồi replay. Web staging ở cả hai hostname vẫn là bản cũ: HLG Admin JS/routes 404, nên menu cần publish Web hiện tại rồi UAT đăng nhập. [Chi tiết](../../docs/HLG_STAGING_RECOVERY_20260923.md).
+
 > Mini app MỚI, tách biệt hoàn toàn với module Hoa Linh (schema HL) hiện tại.
 > Schema DB riêng: **HLG**. Tenant riêng: **"Hoa Linh Miền Nam Gamification"** (database-per-tenant).
 > Controller: `HoaLinhGamificationController` route `api/mini-app/hlg`.

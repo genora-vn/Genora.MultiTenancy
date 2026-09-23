@@ -1,5 +1,12 @@
 # ACTIVE CONTEXT — Việc đang làm dở
 
+## HLG staging schema + menu recovery — 2026-09-23 (mới nhất)
+
+- Branch `feature/dev-hoalinh-gamification`, starting HEAD `22a126b`. Host `GenoraMultiTenancy` had 0 HLG objects but five baseline HLG migrations in history. Guarded repair SQL backed up/cleared those rows and EF replayed five baseline + `AddHlgDesignContent`: verified 17 HLG tables, 6 history rows, 5 backup rows, `PharmacyCode` present. `dotnet ef database update --no-build` now reports up to date. Direct EF build and Web `HlgMenuValidation` build 0 errors; 17 HLG Web tests pass. Default `dotnet ef database update` inside this sandbox cannot read user NuGet.Config, so use a prior build plus `--no-build` here; normal external shell is unaffected.
+- Tenant `HoaLinhMienNam` had 13 baseline HLG tables/5 history rows. Explicit `--connection` applied `AddHlgDesignContent`; now verified 17 HLG tables/6 history rows/`PharmacyCode` present. `Hlg.Management=True` and tenant admin root grants. Plain EF CLI still targets host.
+- Host admin root HLG grants exist. Both staging Web sites return 404 for HLG Admin JS, while known HL25 JS returns 200; host HLG routes 404. Source menu/pages were added in `20b9e1c` after permissions. Web Release publish prepared at ignored `artifacts/hlg-web-staging-20260923` with DLL/web.config/HLG JS verified. **Menu issue requires deployment of that current Web package to both IIS staging sites**; no live deployment/authenticated UAT done here. Current source menu condition is correct for both sides. [Runbook](../docs/HLG_STAGING_RECOVERY_20260923.md) · [note](memory/notes/project/project_hlg_staging_schema_menu_recovery_20260923.md).
+- Preserve unrelated Web log deletion/new log. HLG repair SQL and preflight migration change are uncommitted in this workspace.
+
 ## HLG verification follow-up — 2026-09-19 (mới nhất)
 
 - Branch `feature/nghiadt-hoalinh-gamification`, HEAD `d4f67f9485d156da5e52640a5cad31446511647d`; corrective implementation đã nằm trong HEAD. Appsettings/log changes là pre-existing/unrelated và được giữ nguyên.

@@ -3,6 +3,8 @@
 Đây là nơi lưu trữ project memory (kiến thức đặc thù dự án) được version-control cùng source code.
 Nguồn chân lý duy nhất cho memory của các module. Không lưu secret hay config cá nhân ở đây.
 
+Latest HLG handoff (2026-09-23): [staging schema/menu recovery](notes/project/project_hlg_staging_schema_menu_recovery_20260923.md). Host and tenant HLG migrations applied; staging Web publish remains.
+
 ## Modules
 
 ### Salon Beauty

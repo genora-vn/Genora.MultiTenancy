@@ -1,5 +1,12 @@
 # HANDOFF — Bàn giao giữa các phiên làm việc
 
+## HLG staging schema/menu — 2026-09-23 (current handoff)
+
+- Host `GenoraMultiTenancy` had zero HLG objects with five HLG baseline migration rows. Guarded SQL repair backed them up (`dbo.HlgMigrationHistoryRepair_20260923`) and removed just those five history rows; EF replayed the baseline and `AddHlgDesignContent`. Verified 17 HLG tables, six migration rows and `PharmacyCode`; a second `dotnet ef database update --no-build` was no-op.
+- Tenant `HoaLinhMienNam`: after explicit `--connection` migration, 17 HLG tables/six HLG history rows/`PharmacyCode` present. `Hlg.Management=True`, admin roots granted. Host repair SQL was not run on tenant.
+- Both staging IIS hosts serve old Web: `/Pages/Hlg/admin.js` and HLG routes 404, while HL25 assets return 200. Source menu/pages exist. Local Web Release artifact `artifacts/hlg-web-staging-20260923` is ready (DLL/web.config/HLG JS verified). Deploy complete package to both sites, preserve each site's staging config, then run authenticated host/tenant smoke per [runbook](../../docs/HLG_STAGING_RECOVERY_20260923.md). No IIS deployment or signed-in UAT done here.
+- EF and Web builds pass, 17 HLG Web tests pass. `dotnet ef database update` with its implicit build is blocked by sandbox access to user NuGet.Config; explicit build followed by `--no-build` worked. Preserve unrelated Web log changes. [Detailed note](../memory/notes/project/project_hlg_staging_schema_menu_recovery_20260923.md).
+
 ## HLG verification follow-up — 2026-09-19 (mới nhất)
 
 - Branch `feature/nghiadt-hoalinh-gamification`; HEAD `d4f67f9485d156da5e52640a5cad31446511647d`. Corrective implementation đã commit trong HEAD, follow-up fixes chưa commit.

@@ -1,5 +1,11 @@
 # PROJECT STATE — Genora.MultiTenancy
 
+## HLG staging recovery — 2026-09-23 (current)
+
+- Host HLG schema/history drift repaired on staging: 17 physical HLG tables, six HLG migrations including `20260919112304_AddHlgDesignContent`, five baseline history rows backed up in `dbo.HlgMigrationHistoryRepair_20260923`. Guarded repair SQL + migration preflight are in source. Host EF `--no-build` is up to date; no tenant DB writes.
+- Tenant `HoaLinhMienNam` design-content migration also applied through explicit `--connection`; now 17 HLG tables/six HLG history rows, with `PharmacyCode` present. `Hlg.Management` is enabled and admin HLG roots are granted.
+- Menu/pages exist in current source but are absent from deployed Web on both staging hosts (HLG JS/routes 404, HL25 JS 200). Local Web Release artifact `artifacts/hlg-web-staging-20260923` contains the missing files; deploy to both IIS sites and verify authenticated host/tenant menu. Web build 0 errors and 17 HLG Web tests pass; no IIS deployment/live signed-in UAT in this task. [Recovery](../docs/HLG_STAGING_RECOVERY_20260923.md) · [note](memory/notes/project/project_hlg_staging_schema_menu_recovery_20260923.md).
+
 ## HLG verification follow-up — 2026-09-19 (mới nhất)
 
 - Corrective source đã commit trong HEAD `d4f67f9`; follow-up chưa commit fix session shipping ownership/finished guard và bổ sung URL validation cho các image field Admin còn thiếu.

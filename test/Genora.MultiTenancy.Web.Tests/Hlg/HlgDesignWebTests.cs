@@ -29,7 +29,7 @@ public class HlgDesignWebTests
     {
         var tenant=Substitute.For<ICurrentTenant>();tenant.Id.Returns(Guid.NewGuid());
         var game=Guid.NewGuid();var games=Substitute.For<IHlgGameAppService>();
-        games.GetGameAsync(game,Arg.Any<CancellationToken>()).Returns(_=>visible ? Task.FromResult(new GameDto{Id=game}) : Task.FromException<GameDto>(new Volo.Abp.UserFriendlyException("hidden")));
+        games.GetGameAsync(game,Arg.Any<CancellationToken>()).Returns(_=>visible ? Task.FromResult(new GameDetailDto{Id=game}) : Task.FromException<GameDetailDto>(new Volo.Abp.UserFriendlyException("hidden")));
         var groups=Substitute.For<IGroupManager>();var context=Substitute.For<HubCallerContext>();context.ConnectionId.Returns("connection");
         var hub=new HlgLiveFeedHub(tenant,games){Groups=groups,Context=context};
         if (visible) { await hub.JoinGame(game);await groups.Received().AddToGroupAsync("connection",HlgLiveFeedHub.GroupName(tenant.Id,game),Arg.Any<CancellationToken>()); }

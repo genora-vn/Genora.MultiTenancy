@@ -1,5 +1,9 @@
 # HLG Admin — UAT 2026-09-18
 
+## Staging update 2026-09-23
+
+Host `GenoraMultiTenancy` schema/history drift was repaired and `AddHlgDesignContent` applied; tenant `HoaLinhMienNam` also received this migration via explicit connection. Each now has 17 HLG tables/six HLG migration rows. However, both staging Web sites still return 404 for HLG Admin JS/routes while known HL25 assets return 200, so the current Web build must be published before browser UAT or menu verification. See [recovery runbook](../../docs/HLG_STAGING_RECOVERY_20260923.md). Historical status statements below describe their original dates.
+
 ## Verification follow-up 2026-09-19
 
 - Automated PASS in this session: Web build 0 errors (52 warnings); 46 Application, 3 Domain, 17 Web and 11 JS tests; EF pending-model check reports no changes.
