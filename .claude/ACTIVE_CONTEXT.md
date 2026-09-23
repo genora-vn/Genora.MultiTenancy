@@ -1,6 +1,15 @@
 # ACTIVE CONTEXT — Việc đang làm dở
 
-## HLG staging schema + menu recovery — 2026-09-23 (mới nhất)
+## Gateway production — rate-limit qua Apache (XAMPP) — 2026-09-23 (MỚI NHẤT) ✅
+
+- **HOÀN THÀNH:** rate-limit mini-app tenant trên production đã chạy. Burst test trả hỗn hợp 200 + 429 `Hl25:RateLimitExceeded`.
+- **Gốc rễ (đắt giá):** cổng `103.157.218.191:443` do **XAMPP Apache** (`C:\xampp\apache\bin\httpd.exe`) chiếm, KHÔNG phải IIS. Vhost `*.genora.vn` proxy thẳng ABP `.174:8868` → bỏ qua cả IIS ingress lẫn YARP gateway. Mọi sửa `web.config` IIS đều vô ích vì request không tới IIS. Kiểm cổng bằng `Get-NetTCPConnection -LocalPort 443`.
+- **Fix đúng tầng:** thêm 2 vhost Apache (`duocpham-hoalinh.genora.vn`=HL25, `hoalinh.genora.vn`=HLG) route public `/api/mini-app/hl25|hlg` → gateway `127.0.0.1:5088`; admin + phần còn lại (gồm `/api/mini-app/hl` Sales) → ABP `.174:8868`; reject cross-host bằng `RewriteRule [R=404,L]`. Đặt TRƯỚC vhost wildcard.
+- **Gateway + ABP đều env=Production** → dùng `appsettings.Production.json` (không phải Staging). Guard `TenantGatewayGuard.Enabled=true`, key khớp gateway, admin excluded, KHÔNG đưa `/api/mini-app/hl` vào PathPrefixes.
+- **Còn lại (vận hành):** (1) trả `PermitLimit` hl25 về 500 rồi recycle app pool `Genora.Tenant.Gateway`; (2) reload Apache để 2 reject-rule 404 hiệu lực; (3) firewall cổng 5088 chỉ cho localhost; (4) gỡ rule `DIAG_ALL` khỏi IIS ingress.
+- Bộ file chuẩn (đã commit, secret sanitize): `docs/tenant-gateway/` (README + apache/gateway/abp/iis-ingress-alternative). Chi tiết + hành trình debug: [note](memory/notes/project/project_gateway_production_apache_ingress_20260923.md) · bài học: [feedback](memory/notes/feedback/feedback_prod_apache_ingress_not_iis.md).
+
+## HLG staging schema + menu recovery — 2026-09-23
 
 - Branch `feature/dev-hoalinh-gamification`, starting HEAD `22a126b`. Host `GenoraMultiTenancy` had 0 HLG objects but five baseline HLG migrations in history. Guarded repair SQL backed up/cleared those rows and EF replayed five baseline + `AddHlgDesignContent`: verified 17 HLG tables, 6 history rows, 5 backup rows, `PharmacyCode` present. `dotnet ef database update --no-build` now reports up to date. Direct EF build and Web `HlgMenuValidation` build 0 errors; 17 HLG Web tests pass. Default `dotnet ef database update` inside this sandbox cannot read user NuGet.Config, so use a prior build plus `--no-build` here; normal external shell is unaffected.
 - Tenant `HoaLinhMienNam` had 13 baseline HLG tables/5 history rows. Explicit `--connection` applied `AddHlgDesignContent`; now verified 17 HLG tables/6 history rows/`PharmacyCode` present. `Hlg.Management=True` and tenant admin root grants. Plain EF CLI still targets host.

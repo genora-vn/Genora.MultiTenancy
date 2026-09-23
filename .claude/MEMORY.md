@@ -5,7 +5,8 @@
 > Nguồn gốc: migrate từ `~\.claude\projects\D--Genora-...-Genora-MultiTenancy\memory\` (108 file).
 
 ## Điều hướng nhanh
-- **HLG staging schema/menu recovery 2026-09-23 (mới nhất):** [note](memory/notes/project/project_hlg_staging_schema_menu_recovery_20260923.md) · [runbook](../docs/HLG_STAGING_RECOVERY_20260923.md). Host schema/history drift repaired live; host and tenant each have 17 HLG tables/6 migrations. Staging Web omits HLG Admin assets/routes (404); IIS publish artifact ready, deployment pending. 17 HLG Web tests pass.
+- **Gateway production rate-limit qua Apache 2026-09-23 (MỚI NHẤT) ✅:** [note](memory/notes/project/project_gateway_production_apache_ingress_20260923.md) · [feedback](memory/notes/feedback/feedback_prod_apache_ingress_not_iis.md). Rate-limit mini-app production ĐÃ CHẠY (burst → 200+429). GỐC RỄ: XAMPP Apache giữ `.191:443` (KHÔNG phải IIS), vhost `*.genora.vn` proxy thẳng ABP → bỏ qua IIS ingress + gateway. Fix: 2 vhost Apache route public hl25/hlg → gateway 5088. Luôn kiểm `Get-NetTCPConnection -LocalPort 443` trước khi sửa IIS.
+- **HLG staging schema/menu recovery 2026-09-23:** [note](memory/notes/project/project_hlg_staging_schema_menu_recovery_20260923.md) · [runbook](../docs/HLG_STAGING_RECOVERY_20260923.md). Host schema/history drift repaired live; host and tenant each have 17 HLG tables/6 migrations. Staging Web omits HLG Admin assets/routes (404); IIS publish artifact ready, deployment pending. 17 HLG Web tests pass.
 - **HLG verification follow-up 2026-09-19:** [note](memory/notes/project/project_hlg_verification_followup_20260919.md). Xác minh corrective code đã nằm trong HEAD `d4f67f9`; fix ownership/finished-session cho shipping address + URL validation Admin; 46App+3Domain+17Web+11JS pass; browser vẫn BLOCKED (không có browser); migration chưa apply.
 - **HLG corrective full design audit2026-09-19 (mới nhất):** [note](memory/notes/project/project_hlg_corrective_design_audit_20260919.md) · [matrix/report](docs/HLG_FULL_DESIGN_AUDIT_20260919.md).31/31 pages×2; hierarchy/content/CMS/prizes/fulfillment; migration mới chưa apply;42App+3Domain+17Web+11JS pass; browser BLOCKED và3UNKNOWN.
 - **HLG Admin Razor UI 2026-09-18:** [note](memory/notes/project/project_hlg_admin_razor_ui_20260918.md). Đủ 5 nhóm, menu/quyền/VI-EN; 13 Application + 7 JS tests, Web build pass; còn UAT tenant thật.
@@ -33,7 +34,7 @@
 
 ---
 
-## Feedback — quy tắc làm việc (18 note)
+## Feedback — quy tắc làm việc (19 note)
 Nằm tại `memory/notes/feedback/`. Tổng hợp trong [RULES.md](RULES.md).
 
 - ABP WithDetailsAsync load navigation props — `feedback_abp_with_details.md`
@@ -55,6 +56,7 @@ Nằm tại `memory/notes/feedback/`. Tổng hợp trong [RULES.md](RULES.md).
 - Application layer không dùng EF Core (AsyncExecuter) — `feedback_no_ef_in_application_layer.md`
 - ABP internal AppService multi complex param + null validation — `feedback_appservice_multi_complex_param.md`
 - HL dual permission + JSON array parse + DTO không JsonPropertyName — `feedback_hl_dual_permission_and_json_parse.md`
+- Production ingress là Apache (XAMPP) không phải IIS; kiểm cổng 443 trước khi sửa IIS — `feedback_prod_apache_ingress_not_iis.md`
 
 ## Project — Golf core & MiniApp (33 note)
 Nằm tại `memory/notes/project/`. Xem tóm tắt module trong [PROJECT_STATE.md](PROJECT_STATE.md).

@@ -1,5 +1,12 @@
 # PROJECT STATE — Genora.MultiTenancy
 
+## Gateway production rate-limit — 2026-09-23 ✅ HOẠT ĐỘNG
+
+- Rate-limit mini-app tenant trên production ĐÃ CHẠY (burst test → 200 + 429 `Hl25:RateLimitExceeded`). Luồng: **Apache (XAMPP) :443 → YARP gateway `127.0.0.1:5088` → ABP `8868` (guard)**.
+- **CỰC KỲ QUAN TRỌNG:** ingress thật trên production là **XAMPP Apache** (giữ `103.157.218.191:443`), KHÔNG phải IIS. Cấu hình route/rate-limit nằm ở `C:\xampp\apache\conf\extra\httpd-vhost.conf` (2 vhost cho `duocpham-hoalinh`/HL25 và `hoalinh`/HLG). Site IIS `Genora.Ingress.Production` vô tác dụng.
+- Gateway + ABP đều env=Production (dùng `appsettings.Production.json`). Guard `TenantGatewayGuard.Enabled=true`. Bộ file chuẩn (đã commit, secret sanitize): `docs/tenant-gateway/`. Chi tiết: [note](memory/notes/project/project_gateway_production_apache_ingress_20260923.md).
+- Còn lại (vận hành): trả `PermitLimit` hl25 về 500 + recycle gateway; reload Apache cho reject-rule 404; firewall 5088 chỉ localhost; gỡ DIAG_ALL khỏi IIS; chưa load-test SLA thực tế.
+
 ## HLG staging recovery — 2026-09-23 (current)
 
 - Host HLG schema/history drift repaired on staging: 17 physical HLG tables, six HLG migrations including `20260919112304_AddHlgDesignContent`, five baseline history rows backed up in `dbo.HlgMigrationHistoryRepair_20260923`. Guarded repair SQL + migration preflight are in source. Host EF `--no-build` is up to date; no tenant DB writes.

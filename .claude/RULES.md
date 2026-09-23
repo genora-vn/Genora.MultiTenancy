@@ -1,6 +1,6 @@
 # RULES — Coding Conventions & Lessons Learned
 
-> Tổng hợp từ 18 note `feedback_*` trong `.claude/memory/notes/feedback/`.
+> Tổng hợp từ 19 note `feedback_*` trong `.claude/memory/notes/feedback/`.
 > Mỗi quy tắc kèm tên file gốc để tra cứu chi tiết. Đây là "phải nhớ" khi code trên repo này.
 
 ## ABP Framework — Data & Domain
@@ -36,6 +36,10 @@
 ## Quy trình / Handoff (BẮT BUỘC)
 - **Cập nhật memory trước khi handoff.** Lưu note chi tiết + cập nhật `MEMORY.md` index TRƯỚC khi chuyển sang task tiếp theo. → `feedback_memory_update_before_handoff.md`
 - **Parked branch phải đăng ký con trỏ trên `dev`.** Memory trong `.claude/` là branch-local → task đang tạm dừng trên feature branch CHƯA merge sẽ vô hình từ các nhánh khác. Khi tạm dừng (park) một feature branch: (1) giữ memory chi tiết TRÊN chính nhánh đó (single source of truth: `HANDOFF.md` + `architecture/` + `PROJECT_STATE.md`); (2) thêm 1 dòng vào bảng "⛔ Task tạm dừng (parked branches)" trong `ACTIVE_CONTEXT.md` **trên `dev`** (nhánh | HEAD commit | trạng thái 1 dòng | trỏ tới chi tiết). KHÔNG copy full memory của nhánh parked về `dev` (gây sai lệch "đã xong" + conflict khi merge thật).
+
+## Deployment / Production infra
+- **Production ingress là XAMPP Apache, KHÔNG phải IIS.** Cổng `103.157.218.191:443` do `C:\xampp\apache\bin\httpd.exe` giữ; vhost `*.genora.vn` (`httpd-vhost.conf`) proxy thẳng vào ABP `.174:8868`. Trước khi debug URL Rewrite/ARR trên IIS, LUÔN kiểm `Get-NetTCPConnection -LocalPort 443 -State Listen` (PID 4/System=IIS; httpd.exe=Apache). Muốn chèn tầng gateway rate-limit cho mini-app phải sửa **vhost Apache** (`ProxyPass /api/mini-app/hl25 http://127.0.0.1:5088/...`), đặt vhost `ServerName` cụ thể TRƯỚC vhost wildcard. Dấu nhận biết luồng: response có `X-Powered-By: ASP.NET` = qua gateway/Apache; không có = ABP trực tiếp (ABP strip header này). → `feedback_prod_apache_ingress_not_iis.md`
+- **Gateway + ABP trên production chạy env=Production** → config phải nằm trong `appsettings.Production.json` (không phải Staging). Gateway đọc config lúc startup → đổi `PermitLimit` phải recycle app pool `Genora.Tenant.Gateway`; quota process-local nên giữ MaxProcesses=1. → `project_gateway_production_apache_ingress_20260923.md`
 
 ---
 Ngoài ra, các quy tắc ở CLAUDE.md gốc vẫn áp dụng: ưu tiên AppService thay vì logic ở Controller;
