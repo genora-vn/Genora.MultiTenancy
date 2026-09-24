@@ -380,7 +380,11 @@ public class MultiTenancyWebModule : AbpModule
         {
             options.StyleBundles.Configure(
                LeptonXLiteThemeBundles.Styles.Global,
-               bundle => { bundle.AddFiles("/global-styles.css"); }
+               bundle =>
+               {
+                   bundle.AddFiles("/global-styles.css");
+                   bundle.AddFiles("/pages/hlg/hlg-select2.css");
+               }
             );
 
             options.ScriptBundles.Configure(

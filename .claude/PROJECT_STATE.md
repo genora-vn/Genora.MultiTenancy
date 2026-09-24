@@ -1,5 +1,10 @@
 # PROJECT STATE — Genora.MultiTenancy
 
+## HLG quiz play configuration — 2026-09-24 (mới nhất)
+
+- Full chain thêm `QuestionsPerPlay`/`AllowedWrongAnswers`; Start snapshot cấu hình. Answer/finish trả game fail khi wrong count vượt giới hạn, khóa session và không cộng điểm cho game thất bại.
+- Migration `20260924023725_AddHlgQuizPlayConfiguration` thêm 3 nullable columns (2 game, 1 session), chưa apply DB. Web build 0 errors; 57 App +19 Web pass; EF model clean.
+
 ## HLG verification follow-up — 2026-09-19 (mới nhất)
 
 - Corrective source đã commit trong HEAD `d4f67f9`; follow-up chưa commit fix session shipping ownership/finished guard và bổ sung URL validation cho các image field Admin còn thiếu.

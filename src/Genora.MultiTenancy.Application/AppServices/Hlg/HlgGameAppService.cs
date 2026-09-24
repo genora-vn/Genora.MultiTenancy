@@ -76,7 +76,7 @@ public class HlgGameAppService : ApplicationService, IHlgGameAppService
         var game = await _gameRepo.FirstOrDefaultAsync(x => x.Id == id && x.IsActive, ct)
             ?? throw new UserFriendlyException("Không tìm thấy game");
 
-        //var count = await _questionRepo.CountAsync(q => q.GameId == id && q.IsActive, ct);
+        var activeQuestionCount = await _questionRepo.CountAsync(q => q.GameId == id && q.IsActive, ct);
         var result = new GameDetailDto
         {
             Id = id,
@@ -91,6 +91,11 @@ public class HlgGameAppService : ApplicationService, IHlgGameAppService
             Status = HlgEnumMapper.GameStatusToString(game.Status),
             BadgeText = game.BadgeText,
             BannerUrl = game.BannerUrl,
+            QuestionsPerPlay = game.QuestionsPerPlay,
+            AllowedWrongAnswers = game.AllowedWrongAnswers,
+            TotalQuestions = game.Type == HlgGameType.Quiz && game.QuestionsPerPlay.HasValue
+                ? Math.Min(activeQuestionCount, game.QuestionsPerPlay.Value)
+                : activeQuestionCount,
         };
         var player = await _customerRepo.GetQueryableAsync();
         result.TopPlayers = player.Where(x => x.IsActive && x.BonusPoint > 0).OrderByDescending(x => x.BonusPoint).Select(x => new TopPlayer { Id = x.Id, Name = x.FullName, TotalPoint = x.BonusPoint}).Take(5).ToList();
@@ -135,9 +140,25 @@ public class HlgGameAppService : ApplicationService, IHlgGameAppService
         EnsureGameIsAvailable(game);
 
         // Lấy câu hỏi + options (KHÔNG kèm CorrectKey ra client — BD-2).
+        //var questionQ = await _questionRepo.GetQueryableAsync();
+        //IQueryable<HlgQuestion> questionsQuery = questionQ.Where(q => q.GameId == gameId && q.IsActive).OrderBy(q => q.Index);
+        //if (game.Type == HlgGameType.Quiz && game.QuestionsPerPlay.HasValue)
+        //    questionsQuery = questionsQuery.Take(game.QuestionsPerPlay.Value);
+        //var questions = await AsyncExecuter.ToListAsync(questionsQuery, ct);
         var questionQ = await _questionRepo.GetQueryableAsync();
-        var questions = await AsyncExecuter.ToListAsync(
-            questionQ.Where(q => q.GameId == gameId && q.IsActive).OrderBy(q => q.Index), ct);
+
+        var allQuestions = await AsyncExecuter.ToListAsync(
+            questionQ.Where(q => q.GameId == gameId && q.IsActive),
+            ct);
+
+        var questionCount = game.Type == HlgGameType.Quiz
+            ? Math.Min(game.QuestionsPerPlay ?? allQuestions.Count, allQuestions.Count)
+            : allQuestions.Count;
+
+        var questions = allQuestions
+            .OrderBy(_ => Guid.NewGuid())
+            .Take(questionCount)
+            .ToList();
 
         var questionIds = questions.Select(q => q.Id).ToList();
         var optionQ = await _optionRepo.GetQueryableAsync();
@@ -154,6 +175,7 @@ public class HlgGameAppService : ApplicationService, IHlgGameAppService
             Score = 0,
             CorrectCount = 0,
             TotalQuestions = questions.Count,
+            AllowedWrongAnswers = game.Type == HlgGameType.Quiz ? game.AllowedWrongAnswers : null,
             StartedAt = Clock.Now
         };
         session = await _sessionRepo.InsertAsync(session, autoSave: true, cancellationToken: ct);
@@ -165,7 +187,8 @@ public class HlgGameAppService : ApplicationService, IHlgGameAppService
         {
             Session = MapSession(session),
             Questions = questions.Select(q => MapQuestion(q,
-                optionsByQuestion.TryGetValue(q.Id, out var opts) ? opts : new List<HlgAnswerOption>())).ToList()
+                optionsByQuestion.TryGetValue(q.Id, out var opts) ? opts : new List<HlgAnswerOption>())).ToList(),
+            AllowedWrongAnswers = game.Type == HlgGameType.Quiz ? game.AllowedWrongAnswers : null
         };
     }
 
@@ -187,7 +210,17 @@ public class HlgGameAppService : ApplicationService, IHlgGameAppService
         var existing = await _answerRepo.FirstOrDefaultAsync(
             x => x.SessionId == session.Id && x.QuestionId == question.Id, ct);
         if (existing != null)
-            return new AnswerResultDto { Correct = existing.IsCorrect, ScoreGained = existing.ScoreGained };
+        {
+            var existingWrongCount = await _answerRepo.CountAsync(x => x.SessionId == session.Id && !x.IsCorrect, ct);
+            var existingResult = BuildAnswerResult(existing.IsCorrect, existing.ScoreGained, session.AllowedWrongAnswers, existingWrongCount);
+            if (existingResult.GameFailed)
+            {
+                session.IsFinished = true;
+                session.FinishedAt = Clock.Now;
+                await _sessionRepo.UpdateAsync(session, autoSave: true, cancellationToken: ct);
+            }
+            return existingResult;
+        }
 
         // ===== CHẤM ĐIỂM SERVER-SIDE (BD-2) =====
         var selectedKey = HlgEnumMapper.AnswerKeyFromString(payload.SelectedKey);
@@ -209,13 +242,20 @@ public class HlgGameAppService : ApplicationService, IHlgGameAppService
         session.Score += scoreGained;
         if (isCorrect) session.CorrectCount += 1;
         session.CurrentIndex += 1;
+        var wrongAnswerCount = await _answerRepo.CountAsync(x => x.SessionId == session.Id && !x.IsCorrect, ct);
+        var gameFailed = HasExceededWrongAnswerLimit(session.AllowedWrongAnswers, wrongAnswerCount);
+        if (gameFailed)
+        {
+            session.IsFinished = true;
+            session.FinishedAt = Clock.Now;
+        }
         await _sessionRepo.UpdateAsync(session, autoSave: true, cancellationToken: ct);
 
         // Broadcast live-feed khi trả lời đúng (BD-4). Bọc try/catch để không fail luồng chơi.
         if (isCorrect)
             await BroadcastActivityAsync(session.GameId, session.CustomerId, $"vừa ghi {scoreGained} điểm", ct);
 
-        return new AnswerResultDto { Correct = isCorrect, ScoreGained = scoreGained };
+        return BuildAnswerResult(isCorrect, scoreGained, session.AllowedWrongAnswers, wrongAnswerCount);
     }
 
     public async Task<GameResultDto> FinishAsync(Guid sessionId, FinishGamePayloadDto payload, CancellationToken ct = default)
@@ -229,6 +269,8 @@ public class HlgGameAppService : ApplicationService, IHlgGameAppService
 
         var serverTotalScore = answers.Sum(a => a.ScoreGained);
         var serverCorrectCount = answers.Count(a => a.IsCorrect);
+        var wrongAnswerCount = answers.Count(a => !a.IsCorrect);
+        var gameFailed = HasExceededWrongAnswerLimit(session.AllowedWrongAnswers, wrongAnswerCount);
 
         // Cảnh báo nếu client gửi điểm khác server (dấu hiệu gian lận).
         if (payload.TotalScore != serverTotalScore)
@@ -248,7 +290,7 @@ public class HlgGameAppService : ApplicationService, IHlgGameAppService
 
             // Cộng điểm vào Customer.BonusPoint (AD-2). Chỉ cộng 1 lần khi finish.
             var customer = await _customerRepo.FirstOrDefaultAsync(x => x.Id == session.CustomerId, ct);
-            if (customer != null && serverTotalScore > 0)
+            if (!gameFailed && customer != null && serverTotalScore > 0)
             {
                 customer.BonusPoint += serverTotalScore;
                 await _customerRepo.UpdateAsync(customer, autoSave: true, cancellationToken: ct);
@@ -258,7 +300,11 @@ public class HlgGameAppService : ApplicationService, IHlgGameAppService
                 sessionId, serverTotalScore, serverCorrectCount, session.TotalQuestions);
 
             // Broadcast live-feed khi hoàn thành game (BD-4). Bọc try/catch để không fail luồng chơi.
-            await BroadcastActivityAsync(session.GameId, session.CustomerId, $"vừa hoàn thành với {serverTotalScore} điểm", ct);
+            await BroadcastActivityAsync(
+                session.GameId,
+                session.CustomerId,
+                gameFailed ? "đã thất bại do vượt quá số câu sai" : $"vừa hoàn thành với {serverTotalScore} điểm",
+                ct);
         }
 
         // reward + requiresShippingAddress nối dây ở Phase 4 (Rewards & Shipping).
@@ -268,6 +314,9 @@ public class HlgGameAppService : ApplicationService, IHlgGameAppService
             TotalScore = session.Score,
             CorrectCount = session.CorrectCount,
             TotalQuestions = session.TotalQuestions,
+            WrongAnswerCount = wrongAnswerCount,
+            AllowedWrongAnswers = session.AllowedWrongAnswers,
+            GameFailed = gameFailed,
             Reward = null,
             RequiresShippingAddress = false
         };
@@ -322,6 +371,18 @@ public class HlgGameAppService : ApplicationService, IHlgGameAppService
         return (int)Math.Round(raw, MidpointRounding.AwayFromZero);
     }
 
+    internal static bool HasExceededWrongAnswerLimit(int? allowedWrongAnswers, int wrongAnswerCount)
+        => allowedWrongAnswers.HasValue && wrongAnswerCount > allowedWrongAnswers.Value;
+
+    private static AnswerResultDto BuildAnswerResult(bool correct, int scoreGained, int? allowedWrongAnswers, int wrongAnswerCount) => new()
+    {
+        Correct = correct,
+        ScoreGained = scoreGained,
+        WrongAnswerCount = wrongAnswerCount,
+        AllowedWrongAnswers = allowedWrongAnswers,
+        GameFailed = HasExceededWrongAnswerLimit(allowedWrongAnswers, wrongAnswerCount)
+    };
+
     private async Task<Dictionary<Guid, int>> GetQuestionCountsAsync(List<Guid> gameIds, CancellationToken ct)
     {
         if (gameIds.Count == 0) return new Dictionary<Guid, int>();
@@ -375,7 +436,11 @@ public class HlgGameAppService : ApplicationService, IHlgGameAppService
         Status = HlgEnumMapper.GameStatusToString(g.Status),
         StartAt = g.StartAt,
         EndAt = g.EndAt,
-        TotalQuestions = totalQuestions
+        TotalQuestions = g.Type == HlgGameType.Quiz && g.QuestionsPerPlay.HasValue
+            ? Math.Min(totalQuestions, g.QuestionsPerPlay.Value)
+            : totalQuestions,
+        QuestionsPerPlay = g.QuestionsPerPlay,
+        AllowedWrongAnswers = g.AllowedWrongAnswers
     };
 
     private static QuestionDto MapQuestion(HlgQuestion q, List<HlgAnswerOption> options) => new()

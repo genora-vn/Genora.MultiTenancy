@@ -32,7 +32,7 @@
         <div class="mb-3 row">
             <div class="col-md-6">
                 <label asp-for="CategoryId" class="form-label">@L["Hlg:CategoryId"]</label>
-                <select asp-for="CategoryId" class="form-select" data-hlg-lookup="categories">
+                <select asp-for="CategoryId" class="form-select form-control" data-hlg-lookup="categories">
                     <option value="">@L["Hlg:Select"]</option>@if (Model.CategoryId != Guid.Empty) {
                     <option value="@Model.CategoryId" selected>@Model.CategoryId</option>
                                         }

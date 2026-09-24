@@ -5,6 +5,8 @@
 > Nguồn gốc: migrate từ `~\.claude\projects\D--Genora-...-Genora-MultiTenancy\memory\` (108 file).
 
 ## Điều hướng nhanh
+- **HLG quiz play configuration 2026-09-24:** [note](memory/notes/project/project_hlg_quiz_play_configuration_20260924.md). Thêm QuestionsPerPlay/AllowedWrongAnswers; Answer/Finish fail khi wrong count vượt limit, không cộng điểm; migration chưa apply; 57App+19Web pass, EF clean.
+- **HLG knowledge menus 2026-09-23:** [note](memory/notes/project/project_hlg_knowledge_separate_menus_20260923.md). Tách Categories/Brands/Products thành ba menu độc lập cùng quyền Knowledge; bỏ shortcut nội dung cũ; Web build pass, không migration.
 - **HLG verification follow-up 2026-09-19:** [note](memory/notes/project/project_hlg_verification_followup_20260919.md). Xác minh corrective code đã nằm trong HEAD `d4f67f9`; fix ownership/finished-session cho shipping address + URL validation Admin; 46App+3Domain+17Web+11JS pass; browser vẫn BLOCKED (không có browser); migration chưa apply.
 - **HLG corrective full design audit2026-09-19 (mới nhất):** [note](memory/notes/project/project_hlg_corrective_design_audit_20260919.md) · [matrix/report](docs/HLG_FULL_DESIGN_AUDIT_20260919.md).31/31 pages×2; hierarchy/content/CMS/prizes/fulfillment; migration mới chưa apply;42App+3Domain+17Web+11JS pass; browser BLOCKED và3UNKNOWN.
 - **HLG Admin Razor UI 2026-09-18:** [note](memory/notes/project/project_hlg_admin_razor_ui_20260918.md). Đủ 5 nhóm, menu/quyền/VI-EN; 13 Application + 7 JS tests, Web build pass; còn UAT tenant thật.

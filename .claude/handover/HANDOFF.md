@@ -1,5 +1,15 @@
 # HANDOFF — Bàn giao giữa các phiên làm việc
 
+## HLG quiz play configuration — 2026-09-24 (mới nhất)
+
+- Branch `feature/nghiadt-hoalinh-gamification`, HEAD `ca7e0c08daf2938fa23e0c71da9f3d4eb4e8959d`; task changes chưa commit, các thay đổi menu/log có sẵn được bảo toàn.
+- Đã thêm `QuestionsPerPlay`/`AllowedWrongAnswers` vào Create/Edit, entity/Admin service, game list/detail/start DTO; Start Quiz lấy tối đa số câu theo `Index` và snapshot limit vào session.
+- Rule đã xác nhận: bằng giới hạn vẫn chơi, vượt giới hạn thì `/answer` khóa session và trả `gameFailed=true`; `/finish` đối soát lại, trả cùng trạng thái; game fail không cộng BonusPoint. Null giữ tương thích session cũ.
+- Migration `20260924023725_AddHlgQuizPlayConfiguration` thêm 2 nullable game columns +1 nullable session snapshot; SQL idempotent đã cập nhật, **NOT APPLIED**.
+- Follow-up thực chạy: Web Release build PASS (full build 0 errors/384 existing warnings; final incremental rebuild 0 errors/52 existing warnings); final Release Application HLG 57/57, final Release Web HLG 19/19, final JS 11/11; EF pending-model clean. Một lần Web Debug rerun không build được vì DLL output bị tiến trình ngoài khóa; Release rerun đã PASS.
+- Next: review/apply migration đúng tenant workflow; cập nhật Mini App xử lý `gameFailed`/message; browser UAT answer boundary và finish.
+- Chi tiết: [note](../memory/notes/project/project_hlg_quiz_play_configuration_20260924.md).
+
 ## HLG verification follow-up — 2026-09-19 (mới nhất)
 
 - Branch `feature/nghiadt-hoalinh-gamification`; HEAD `d4f67f9485d156da5e52640a5cad31446511647d`. Corrective implementation đã commit trong HEAD, follow-up fixes chưa commit.

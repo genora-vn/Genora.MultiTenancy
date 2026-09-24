@@ -58,6 +58,7 @@ public class HlgRankingAppService : ApplicationService, IHlgRankingAppService
     {
         var ev = await AsyncExecuter.FirstOrDefaultAsync((await _eventRepo.GetQueryableAsync()).Where(x => x.Id == eventId && x.IsActive && x.TenantId == CurrentTenant.Id));
         if (ev == null) return new();
+        
         return await BuildEntriesAsync(ev, phone, top, ct);
     }
     private async Task<List<RankingEntryDto>> BuildEntriesAsync(HlgRankingEvent ev, string? phone, int top, CancellationToken ct)

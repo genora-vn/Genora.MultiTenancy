@@ -44,6 +44,12 @@ public class HlgGame : FullAuditedAggregateRoot<Guid>, IMultiTenant
     /// <summary>Điểm cơ bản mỗi câu đúng (server dùng chấm điểm, BD-2). Mặc định 100.</summary>
     public int BaseScorePerQuestion { get; set; } = 100;
 
+    /// <summary>Số câu hỏi được đưa vào một lượt chơi trắc nghiệm. Null giữ hành vi cũ: dùng toàn bộ câu active.</summary>
+    public int? QuestionsPerPlay { get; set; }
+
+    /// <summary>Số câu trả lời sai được phép trong một ván trắc nghiệm. Null giữ hành vi cũ: không giới hạn.</summary>
+    public int? AllowedWrongAnswers { get; set; }
+
     public int DisplayOrder { get; set; }
 
     public bool IsActive { get; set; } = true;

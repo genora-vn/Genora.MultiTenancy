@@ -12,7 +12,6 @@
     <abp-script src="/Pages/Hlg/Brands/index.js" />
 }
 <div id="HlgAdmin" data-parent-id="@Model.ParentId" data-create="@((await Model.GrantedAsync(".Create")).ToString().ToLowerInvariant())" data-edit="@((await Model.GrantedAsync(".Edit")).ToString().ToLowerInvariant())" data-delete="@((await Model.GrantedAsync(".Delete")).ToString().ToLowerInvariant())">
-    <a asp-page="/Hlg/Categories/Index">@L["Hlg:Categories"]</a>
     <div class="d-flex justify-content-between align-items-center mb-3">
         <h1>@L["Hlg:Brands"]</h1>
         @if (await Model.GrantedAsync(".Create"))

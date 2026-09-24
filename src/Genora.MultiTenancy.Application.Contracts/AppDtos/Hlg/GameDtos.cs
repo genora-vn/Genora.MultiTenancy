@@ -19,6 +19,8 @@ public class GameDto
     public DateTime? StartAt { get; set; }
     public DateTime? EndAt { get; set; }
     public int TotalQuestions { get; set; }
+    public int? QuestionsPerPlay { get; set; }
+    public int? AllowedWrongAnswers { get; set; }
 }
 
 /// <summary>Lựa chọn đáp án. Khớp contract Question.options[]. key là "A".."D".</summary>
@@ -57,6 +59,7 @@ public class StartGameResultDto
 {
     public GameSessionDto Session { get; set; } = new();
     public List<QuestionDto> Questions { get; set; } = new();
+    public int? AllowedWrongAnswers { get; set; }
 }
 
 /// <summary>Payload trả lời câu hỏi. Khớp contract {sessionId, questionId, selectedKey, timeSpentSec}.</summary>
@@ -73,6 +76,9 @@ public class AnswerResultDto
 {
     public bool Correct { get; set; }
     public int ScoreGained { get; set; }
+    public int WrongAnswerCount { get; set; }
+    public int? AllowedWrongAnswers { get; set; }
+    public bool GameFailed { get; set; }
 }
 
 /// <summary>Payload finish game (client gửi — server KHÔNG tin totalScore, chỉ dùng đối soát log). BD-2.</summary>
@@ -100,6 +106,9 @@ public class GameResultDto
     public int TotalScore { get; set; }
     public int CorrectCount { get; set; }
     public int TotalQuestions { get; set; }
+    public int WrongAnswerCount { get; set; }
+    public int? AllowedWrongAnswers { get; set; }
+    public bool GameFailed { get; set; }
     public RewardDto? Reward { get; set; }
     public bool RequiresShippingAddress { get; set; }
 }

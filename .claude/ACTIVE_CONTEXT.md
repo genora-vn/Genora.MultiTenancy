@@ -1,5 +1,18 @@
 # ACTIVE CONTEXT — Việc đang làm dở
 
+## HLG quiz play configuration — 2026-09-24 (mới nhất)
+
+- Đã thêm `QuestionsPerPlay` và `AllowedWrongAnswers` xuyên suốt entity, Admin DTO/service, Create/Edit Razor, Mini App game DTO/start flow và VI/EN.
+- Start Quiz giới hạn số câu theo `Index` và snapshot wrong limit vào session. Answer/finish thất bại khi số sai **lớn hơn** giới hạn; answer khóa session, finish đối soát server-side, game fail không cộng BonusPoint.
+- Migration `20260924023725_AddHlgQuizPlayConfiguration` + SQL idempotent thêm 2 cột game/1 cột session, **chưa apply DB**.
+- Verification mới nhất: Web Release build 0 errors; 57 Application HLG +19 Web HLG pass; EF model clean. Chi tiết: [note](memory/notes/project/project_hlg_quiz_play_configuration_20260924.md).
+
+## HLG knowledge menus — 2026-09-23 (mới nhất)
+
+- Đã tách `Nhãn hàng` (`/Hlg/Brands`) và `Bài học / Sản phẩm` (`/Hlg/Products`) thành hai mục menu HLG độc lập cạnh `Ngành hàng`, dùng chung quyền Knowledge Tenant/Host.
+- Đã bỏ các shortcut nội dung cũ giữa ba trang; vẫn giữ row-action drill-down có `parentId`/`brandId`. Web build output riêng pass 0 errors; không migration/DB change.
+- Chi tiết: [note](memory/notes/project/project_hlg_knowledge_separate_menus_20260923.md).
+
 ## HLG verification follow-up — 2026-09-19 (mới nhất)
 
 - Branch `feature/nghiadt-hoalinh-gamification`, HEAD `d4f67f9485d156da5e52640a5cad31446511647d`; corrective implementation đã nằm trong HEAD. Appsettings/log changes là pre-existing/unrelated và được giữ nguyên.

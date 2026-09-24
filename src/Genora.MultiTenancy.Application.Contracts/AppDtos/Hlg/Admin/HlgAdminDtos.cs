@@ -67,12 +67,20 @@ public class HlgGameInput : IValidatableObject
     public DateTime? StartAt { get; set; }
     public DateTime? EndAt { get; set; }
     [Range(0, 1000000)] public int BaseScorePerQuestion { get; set; } = 100;
+    [Range(1, 1000)] public int? QuestionsPerPlay { get; set; }
+    [Range(0, 1000)] public int? AllowedWrongAnswers { get; set; }
     public int DisplayOrder { get; set; }
     public bool IsActive { get; set; } = true;
     public IEnumerable<ValidationResult> Validate(ValidationContext context)
     {
         if (StartAt.HasValue && EndAt.HasValue && StartAt >= EndAt)
             yield return HlgInputValidation.Error(context, "Hlg:DateRangeInvalid", "End time must be after start time.", nameof(EndAt));
+        if (Type == HlgGameType.Quiz && !QuestionsPerPlay.HasValue)
+            yield return HlgInputValidation.Error(context, "Hlg:QuestionsPerPlayRequired", "Questions per play is required for quiz games.", nameof(QuestionsPerPlay));
+        if (Type == HlgGameType.Quiz && !AllowedWrongAnswers.HasValue)
+            yield return HlgInputValidation.Error(context, "Hlg:AllowedWrongAnswersRequired", "Allowed wrong answers is required for quiz games.", nameof(AllowedWrongAnswers));
+        if (Type == HlgGameType.Quiz && QuestionsPerPlay.HasValue && AllowedWrongAnswers > QuestionsPerPlay)
+            yield return HlgInputValidation.Error(context, "Hlg:AllowedWrongAnswersInvalid", "Allowed wrong answers cannot exceed questions per play.", nameof(AllowedWrongAnswers));
     }
 }
 // No CorrectKey or answer options on the list/read DTO.
