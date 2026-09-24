@@ -53,6 +53,18 @@ public static class GatewayApiProfiles
                     new() { Path = "/api/mini-app/hlg/rewards/{id}/redeem", Methods = ["POST"] },
                     new() { Path = "/api/mini-app/hlg/ranking/event", Methods = ["GET"] },
                     new() { Path = "/api/mini-app/hlg/ranking/entries", Methods = ["GET"] },
+                    // CMS content + phân cấp Ngành hàng→Nhãn hàng→Sản phẩm + ranking events (khớp HoaLinhGamificationContentController và các endpoint mới của HoaLinhGamificationController)
+                    new() { Path = "/api/mini-app/hlg/content", Methods = ["GET"] },
+                    new() { Path = "/api/mini-app/hlg/knowledge/brands", Methods = ["GET"] },
+                    new() { Path = "/api/mini-app/hlg/knowledge/brands/{id}", Methods = ["GET"] },
+                    new() { Path = "/api/mini-app/hlg/knowledge/products", Methods = ["GET"] },
+                    new() { Path = "/api/mini-app/hlg/knowledge/products/{id}/progress", Methods = ["POST"] },
+                    new() { Path = "/api/mini-app/hlg/profile/game-history", Methods = ["GET"] },
+                    new() { Path = "/api/mini-app/hlg/games/sessions/{sessionId}/rewards/{rewardId}/redeem", Methods = ["POST"] },
+                    new() { Path = "/api/mini-app/hlg/ranking/events", Methods = ["GET"] },
+                    new() { Path = "/api/mini-app/hlg/ranking/events/{id}/prizes", Methods = ["GET"] },
+                    new() { Path = "/api/mini-app/hlg/ranking/events/{id}/winners", Methods = ["GET"] },
+                    new() { Path = "/api/mini-app/hlg/ranking/events/{id}/entries", Methods = ["GET"] },
                 ]);
             else throw new InvalidOperationException("Unknown TenantGateway API profile; use Hl25, Hlg or explicit AdditionalRoutes.");
         }

@@ -22,29 +22,29 @@ public class DeploymentConfigurationTests
         Assert.Contains("not loaded automatically", error.Message);
     }
 
+    // Production được phục vụ bởi Apache (mod_proxy); đây là bản IIS ingress THAY THẾ (fallback) giữ trong docs.
+    // Chỉ còn hostname production; các case staging đã bỏ vì config staging IIS được dọn khỏi docs.
     [Theory]
-    [InlineData("Staging", "duocphamhoalinh-staging.genora.vn", "api/mini-app/hl25/config", "5088")]
-    [InlineData("Staging", "hoalinh-staging.genora.vn", "api/mini-app/hlg/games", "5088")]
-    [InlineData("Staging", "hoalinh-staging.genora.vn", "api/mini-app/hl25/config", "404")]
-    [InlineData("Staging", "duocphamhoalinh-staging.genora.vn", "api/mini-app/hlg/games", "404")]
-    [InlineData("Staging", "staging.genora.vn", "api/mini-app/hl25/config", "404")]
-    [InlineData("Staging", "staging.genora.vn", "", "8868")]
-    [InlineData("Staging", "staging.genora.vn", "api/abp/application-configuration", "8868")]
-    [InlineData("Staging", "duocphamhoalinh-staging.genora.vn", "api/mini-app/hl25/admin", "8868")]
-    [InlineData("Staging", "duocphamhoalinh-staging.genora.vn", "api/mini-app/hl25/admin/frame-creations/download-all-images", "8868")]
-    [InlineData("Staging", "duocphamhoalinh-staging.genora.vn", "api/mini-app/hl25/admin-other", "5088")]
-    [InlineData("Staging", "HOALINH-STAGING.GENORA.VN:443", "api/mini-app/hlg", "5088")]
-    [InlineData("Staging", "hoalinh-staging.genora.vn", "signalr-hubs/hlg-live-feed", "8868")]
-    [InlineData("Staging", "duocphamhoalinh-staging.genora.vn", "uploads/frame.png", "8868")]
-    [InlineData("Staging", "unknown.example.test", "", "404")]
-    [InlineData("Production", "duocpham-hoalinh.genora.vn", "api/mini-app/hl25/config", "5088")]
-    [InlineData("Production", "hoalinh.genora.vn", "api/mini-app/hlg/games", "5088")]
-    [InlineData("Production", "production.genora.vn", "api/mini-app/hlg/games", "404")]
-    public void Ingress_Examples_Route_Only_The_Correct_Host_Profile_And_Preserve_Admin(string environment, string host, string path, string expected)
+    [InlineData("duocpham-hoalinh.genora.vn", "api/mini-app/hl25/config", "5088")]
+    [InlineData("hoalinh.genora.vn", "api/mini-app/hlg/games", "5088")]
+    [InlineData("hoalinh.genora.vn", "api/mini-app/hl25/config", "404")]
+    [InlineData("duocpham-hoalinh.genora.vn", "api/mini-app/hlg/games", "404")]
+    [InlineData("production.genora.vn", "api/mini-app/hlg/games", "404")]
+    [InlineData("production.genora.vn", "", "8868")]
+    [InlineData("production.genora.vn", "api/abp/application-configuration", "8868")]
+    [InlineData("duocpham-hoalinh.genora.vn", "api/mini-app/hl25/admin", "8868")]
+    [InlineData("duocpham-hoalinh.genora.vn", "api/mini-app/hl25/admin/frame-creations/download-all-images", "8868")]
+    [InlineData("hoalinh.genora.vn", "api/mini-app/hlg/admin", "8868")]
+    [InlineData("duocpham-hoalinh.genora.vn", "api/mini-app/hl25/admin-other", "5088")]
+    [InlineData("HOALINH.GENORA.VN:443", "api/mini-app/hlg", "5088")]
+    [InlineData("hoalinh.genora.vn", "signalr-hubs/hlg-live-feed", "8868")]
+    [InlineData("duocpham-hoalinh.genora.vn", "uploads/frame.png", "8868")]
+    [InlineData("unknown.example.test", "", "404")]
+    public void Iis_Ingress_Alternative_Routes_Only_The_Correct_Host_Profile_And_Preserves_Admin(string host, string path, string expected)
     {
         // Evaluate the deployed rule expressions/order. This does not substitute for real ARR/IIS UAT.
         var root = FindRepositoryRoot();
-        var xml = XDocument.Load(Path.Combine(root, "docs", "tenant-gateway", "iis", $"ingress.{environment}.web.config"));
+        var xml = XDocument.Load(Path.Combine(root, "docs", "tenant-gateway", "iis-ingress-alternative", "web.config"));
         var rule = xml.Descendants("rule").First(r => Regex.IsMatch(path, r.Element("match")!.Attribute("url")!.Value, RegexOptions.IgnoreCase) &&
             r.Descendants("add").All(c => Regex.IsMatch(host, c.Attribute("pattern")!.Value, RegexOptions.IgnoreCase)));
         var action = rule.Element("action")!;
