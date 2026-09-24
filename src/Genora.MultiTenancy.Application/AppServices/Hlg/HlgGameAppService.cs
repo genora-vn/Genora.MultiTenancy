@@ -194,14 +194,16 @@ public class HlgGameAppService : ApplicationService, IHlgGameAppService
         var isCorrect = selectedKey.HasValue && selectedKey.Value == question.CorrectKey;
 
         var game = await _gameRepo.GetAsync(session.GameId, cancellationToken: ct);
-        var scoreGained = isCorrect ? ComputeScore(game.BaseScorePerQuestion, question.ScoreMultiplier, payload.TimeSpentSec, question.TimeLimitSec) : 0;
+        // FE gửi timeSpentSec dạng số thực; lưu/tính điểm dùng giây nguyên (làm tròn, không âm).
+        var timeSpentSec = Math.Max(0, (int)Math.Round(payload.TimeSpentSec, MidpointRounding.AwayFromZero));
+        var scoreGained = isCorrect ? ComputeScore(game.BaseScorePerQuestion, question.ScoreMultiplier, timeSpentSec, question.TimeLimitSec) : 0;
 
         var answer = new HlgSessionAnswer(GuidGenerator.Create(), session.Id, question.Id, _currentTenant.Id)
         {
             SelectedKey = selectedKey ?? default,
             IsCorrect = isCorrect,
             ScoreGained = scoreGained,
-            TimeSpentSec = payload.TimeSpentSec
+            TimeSpentSec = timeSpentSec
         };
         await _answerRepo.InsertAsync(answer, autoSave: true, cancellationToken: ct);
 

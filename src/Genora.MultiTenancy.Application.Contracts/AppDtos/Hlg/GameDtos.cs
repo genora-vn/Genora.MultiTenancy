@@ -65,7 +65,8 @@ public class AnswerQuestionPayloadDto
     public Guid SessionId { get; set; }
     public Guid QuestionId { get; set; }
     public string? SelectedKey { get; set; }
-    public int TimeSpentSec { get; set; }
+    // FE gửi số thực (vd 3.65) => dùng double để tránh lỗi bind JSON làm payload null (400 "Thiếu dữ liệu").
+    public double TimeSpentSec { get; set; }
 }
 
 /// <summary>Kết quả trả lời (server chấm). Khớp contract {correct, scoreGained}.</summary>
