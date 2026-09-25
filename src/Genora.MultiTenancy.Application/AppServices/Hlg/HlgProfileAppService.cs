@@ -246,16 +246,25 @@ public class HlgProfileAppService : ApplicationService, IHlgProfileAppService
     {
         var (customer, _) = await ResolveAsync(phone, ct);
 
-        var q = await _pointTxnRepo.GetQueryableAsync();
+        // Lịch sử điểm = lịch sử chơi game trả lời câu hỏi (vd "Thử thách tốc độ") đã KẾT THÚC
+        // và ĐẠT YÊU CẦU (đúng >= 1/2 tổng số câu, khớp ví dụ >=5/10). Điểm game cộng vào
+        // Customer.BonusPoint khi finish (AD-2); mỗi phiên đạt yêu cầu là 1 mục lịch sử điểm.
+        var sessions = await _sessionRepo.GetQueryableAsync();
+        var games = await LazyServiceProvider.LazyGetRequiredService<IRepository<HlgGame, Guid>>().GetQueryableAsync();
         var rows = await AsyncExecuter.ToListAsync(
-            q.Where(x => x.CustomerId == customer.Id).OrderByDescending(x => x.CreationTime), ct);
+            from s in sessions
+            join g in games on s.GameId equals g.Id
+            where s.CustomerId == customer.Id && s.IsFinished && s.FinishedAt != null
+                  && s.TotalQuestions > 0 && s.CorrectCount * 2 >= s.TotalQuestions
+            orderby s.FinishedAt descending, s.Id
+            select new { s.Id, GameName = g.Name, s.Score, s.CorrectCount, s.TotalQuestions, s.FinishedAt }, ct);
 
         return rows.Select(x => new PointHistoryItemDto
         {
             Id = x.Id,
-            SourceName = x.Description ?? x.RefCode ?? "Điểm",
-            PointDelta = (int)decimal.Round(x.Value),
-            CreatedAt = x.CreationTime
+            SourceName = $"{x.GameName} (đúng {x.CorrectCount}/{x.TotalQuestions})",
+            PointDelta = x.Score,
+            CreatedAt = x.FinishedAt!.Value
         }).ToList();
     }
 

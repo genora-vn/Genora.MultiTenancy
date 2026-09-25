@@ -12,6 +12,13 @@ public class LearningHistoryItemDto
     public DateTime LastViewedAt { get; set; }
 }
 
+/// <summary>Kết quả ghi nhận tiến độ học (server chấm % theo thời gian ở trang + số tab đã xem).</summary>
+public class LearningProgressResultDto
+{
+    public int ProgressPercent { get; set; }
+    public bool IsCompleted { get; set; }
+}
+
 /// <summary>Mục lịch sử điểm. Khớp contract PointHistoryItem.</summary>
 public class PointHistoryItemDto
 {

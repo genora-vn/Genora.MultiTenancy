@@ -32,6 +32,16 @@ public class HoaLinhGamificationContentController : MultiTenancyController
     public async Task<object> Entries(Guid id, string? phone=null, int top=50) => HlgApiResult<List<RankingEntryDto>>.Ok(await _ranking.GetEventEntriesAsync(id,phone,top));
     [HttpPost("knowledge/products/{id}/progress")]
     public async Task<object> Progress(Guid id, [Required] string phone, [FromBody] HlgProgressPayload payload)
-    { await _knowledge.UpdateProgressAsync(id,phone,payload.Percent); return HlgApiResult<object>.Ok(null!); }
+    {
+        var result = await _knowledge.UpdateProgressAsync(id, phone, payload?.TimeSpentSec ?? 0, payload?.ViewedTabs);
+        return HlgApiResult<LearningProgressResultDto>.Ok(result);
+    }
 }
-public class HlgProgressPayload { [Range(0,100)] public int Percent { get; set; } }
+/// <summary>Payload ghi nhận tiến độ học. FE gửi tổng thời gian ở trang + tập tab đã click.</summary>
+public class HlgProgressPayload
+{
+    /// <summary>Tổng số giây người dùng đã ở trên trang chi tiết bài học (tích lũy).</summary>
+    public double TimeSpentSec { get; set; }
+    /// <summary>Các tab đã click: "info" (Thông tin SP), "knowledge" (Kiến thức SP), "related" (SP liên quan).</summary>
+    public List<string>? ViewedTabs { get; set; }
+}

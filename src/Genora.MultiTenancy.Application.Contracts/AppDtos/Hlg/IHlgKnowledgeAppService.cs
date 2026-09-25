@@ -12,7 +12,12 @@ namespace Genora.MultiTenancy.AppDtos.Hlg;
 /// </summary>
 public interface IHlgKnowledgeAppService : IApplicationService
 {
-    Task UpdateProgressAsync(Guid productId, string phone, int percent);
+    /// <summary>
+    /// Ghi nhận tiến độ học 1 bài (server tự chấm %, chống gian lận):
+    /// timeSpentSec = số giây ở trang chi tiết; viewedTabs = các tab đã click (info/knowledge/related).
+    /// Hoàn thành (100%) = ở >= 60s VÀ click đủ 3 tab. Trả về % + trạng thái hoàn thành.
+    /// </summary>
+    Task<LearningProgressResultDto> UpdateProgressAsync(Guid productId, string phone, double timeSpentSec, IEnumerable<string>? viewedTabs);
     /// <summary>Danh sách danh mục kiến thức (kèm productCount).</summary>
     Task<List<KnowledgeCategoryDto>> GetCategoriesAsync(CancellationToken ct = default);
 

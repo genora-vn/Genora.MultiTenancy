@@ -282,17 +282,26 @@ public class HlgGameAppService : ApplicationService, IHlgGameAppService
         var recent = await AsyncExecuter.ToListAsync(
             sessionQ.Where(s => s.GameId == gameId)
                     .OrderByDescending(s => s.LastModificationTime ?? s.CreationTime)
-                    .Take(20), ct);
+                    .Take(200), ct);
 
         if (recent.Count == 0) return new List<LivePlayerActivityDto>();
 
-        var customerIds = recent.Select(s => s.CustomerId).Distinct().ToList();
+        // Dedup theo người chơi: mỗi customer CHỈ hiển thị 1 dòng = hoạt động MỚI NHẤT
+        // (recent đã sắp giảm dần theo thời gian nên phiên đầu mỗi nhóm là mới nhất).
+        var latestPerCustomer = recent
+            .GroupBy(s => s.CustomerId)
+            .Select(g => g.First())
+            .OrderByDescending(s => s.LastModificationTime ?? s.CreationTime)
+            .Take(20)
+            .ToList();
+
+        var customerIds = latestPerCustomer.Select(s => s.CustomerId).Distinct().ToList();
         var custQ = await _customerRepo.GetQueryableAsync();
         var customers = await AsyncExecuter.ToListAsync(
             custQ.Where(c => customerIds.Contains(c.Id)).Select(c => new { c.Id, c.FullName, c.AvatarUrl }), ct);
         var custById = customers.ToDictionary(x => x.Id, x => x);
 
-        return recent.Select(s =>
+        return latestPerCustomer.Select(s =>
         {
             custById.TryGetValue(s.CustomerId, out var c);
             var action = s.IsFinished ? $"đạt {s.Score} điểm" : "đang chơi";

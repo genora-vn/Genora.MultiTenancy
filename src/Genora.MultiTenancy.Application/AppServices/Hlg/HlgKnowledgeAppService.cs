@@ -174,21 +174,59 @@ public class HlgKnowledgeAppService : ApplicationService, IHlgKnowledgeAppServic
             && categories.Any(c => c.Id == p.CategoryId && c.IsActive && c.TenantId == p.TenantId)
             && (p.BrandId == null || brands.Any(b => b.Id == p.BrandId && b.CategoryId == p.CategoryId && b.IsActive && b.TenantId == p.TenantId)));
     }
-    public async Task UpdateProgressAsync(Guid productId, string phone, int percent)
+    /// <summary>Ba tab bắt buộc trên trang chi tiết bài học (khớp FE): Thông tin SP / Kiến thức SP / SP liên quan.</summary>
+    private static readonly string[] RequiredTabs = { "info", "knowledge", "related" };
+
+    /// <summary>Số giây tối thiểu ở trang để đủ điều kiện hoàn thành.</summary>
+    private const int RequiredSecondsOnPage = 60;
+
+    /// <summary>
+    /// Ghi nhận tiến độ học 1 bài theo hành vi thực tế trên trang chi tiết. Server TỰ chấm % (chống gian lận,
+    /// FE không gửi %): 3 tab (info/knowledge/related) = 60% (mỗi tab 20%) + thời gian ở trang = 40% (đủ 60s là tối đa).
+    /// HOÀN THÀNH (100%) = ở >= 60s VÀ click đủ 3 tab. Model aggregate: mỗi (customer, product) 1 dòng,
+    /// giữ % cao nhất, không hạ tiến độ/đảo trạng thái đã hoàn thành.
+    /// </summary>
+    public async Task<LearningProgressResultDto> UpdateProgressAsync(Guid productId, string phone, double timeSpentSec, IEnumerable<string>? viewedTabs)
     {
-        if (percent < 0 || percent > 100) throw new UserFriendlyException(L["Hlg:InvalidProgress"]);
-        await GetProductAsync(productId);
+        // Xác thực bài học tồn tại & đang hiển thị (nhẹ, không nạp related/game như GetProductAsync).
+        if (!await AsyncExecuter.AnyAsync((await VisibleProductsAsync()).Where(x => x.Id == productId)))
+            throw new UserFriendlyException("Không tìm thấy bài học");
+
         var customer = await ResolveCustomerAsync(phone, default);
+
+        var seconds = double.IsNaN(timeSpentSec) || timeSpentSec < 0 ? 0 : timeSpentSec;
+        var distinctTabs = (viewedTabs ?? Enumerable.Empty<string>())
+            .Where(t => !string.IsNullOrWhiteSpace(t))
+            .Select(t => t.Trim().ToLowerInvariant())
+            .Where(t => RequiredTabs.Contains(t))
+            .Distinct()
+            .Count();
+
+        var completed = seconds >= RequiredSecondsOnPage && distinctTabs >= RequiredTabs.Length;
+        var tabPercent = distinctTabs * (60 / RequiredTabs.Length);                                              // 3 tab × 20% = tối đa 60%
+        var timePercent = (int)Math.Round(Math.Min(seconds / RequiredSecondsOnPage, 1.0) * 40, MidpointRounding.AwayFromZero); // tối đa 40%
+        var percent = completed ? 100 : Math.Min(99, tabPercent + timePercent);                                 // chỉ đạt 100% khi thực sự hoàn thành
+
         var progress = await _progressRepo.FirstOrDefaultAsync(x => x.CustomerId == customer.Id && x.ProductId == productId);
-        if (progress == null) {
+        if (progress == null)
+        {
             progress = new HlgLearningProgress(GuidGenerator.Create(), customer.Id, productId, _currentTenant.Id);
             await _progressRepo.InsertAsync(progress, autoSave: true);
         }
+
         progress.ProgressPercent = Math.Max(progress.ProgressPercent, percent);
-        progress.IsCompleted = progress.ProgressPercent == 100;
-        if (progress.IsCompleted) progress.CompletedAt ??= Clock.Now;
+        if (completed && !progress.IsCompleted)
+        {
+            progress.IsCompleted = true;
+            progress.CompletedAt = Clock.Now;
+        }
         progress.LastViewedAt = Clock.Now;
         await _progressRepo.UpdateAsync(progress, autoSave: true);
+
+        _logger.LogInformation("HLG: tiến độ học customer {CustomerId} bài {ProductId} = {Percent}% (tab {Tabs}/3, {Seconds}s, completed={Completed})",
+            customer.Id, productId, progress.ProgressPercent, distinctTabs, (int)seconds, progress.IsCompleted);
+
+        return new LearningProgressResultDto { ProgressPercent = progress.ProgressPercent, IsCompleted = progress.IsCompleted };
     }
     // ── Helpers ────────────────────────────────────────────────────────────
 
