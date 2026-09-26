@@ -13,6 +13,13 @@ namespace Genora.MultiTenancy.AppDtos.Hlg;
 public interface IHlgRankingAppService : IApplicationService
 {
     Task<List<RankingEntryDto>> GetEventEntriesAsync(Guid eventId, string? phone = null, int top = 50, CancellationToken ct = default);
+
+    /// <summary>
+    /// Lưu ảnh chia sẻ Bảng xếp hạng do FE chụp (PNG/JPEG), trả URL HTTPS công khai để dùng làm thumbnail share.
+    /// Server tự sinh UUID + validate nội dung ảnh thật (không tin extension/MIME). phone là định danh khách hàng (không phải chứng cứ auth).
+    /// Ném UserFriendlyException với Code = HTTP status ("400"/"404"/"413"/"500").
+    /// </summary>
+    Task<HlgRankingShareImageResultDto> SaveShareImageAsync(string phone, byte[]? content, CancellationToken ct = default);
     /// <summary>Sự kiện xếp hạng đang kích hoạt hiện tại (mới nhất còn hiệu lực). Null nếu không có.</summary>
     Task<RankingEventDto?> GetCurrentEventAsync(CancellationToken ct = default);
 

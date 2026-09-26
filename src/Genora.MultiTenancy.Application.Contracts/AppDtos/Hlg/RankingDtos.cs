@@ -23,3 +23,9 @@ public class RankingEntryDto
     public int Score { get; set; }
     public bool IsCurrentUser { get; set; }
 }
+
+/// <summary>Kết quả upload ảnh chia sẻ Bảng xếp hạng. FE đọc CHÍNH XÁC data.url (URL HTTPS tuyệt đối, GET công khai).</summary>
+public class HlgRankingShareImageResultDto
+{
+    public string Url { get; set; } = string.Empty;
+}

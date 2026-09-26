@@ -65,6 +65,7 @@ public static class GatewayApiProfiles
                     new() { Path = "/api/mini-app/hlg/ranking/events/{id}/prizes", Methods = ["GET"] },
                     new() { Path = "/api/mini-app/hlg/ranking/events/{id}/winners", Methods = ["GET"] },
                     new() { Path = "/api/mini-app/hlg/ranking/events/{id}/entries", Methods = ["GET"] },
+                    new() { Path = "/api/mini-app/hlg/ranking/share-image", Methods = ["POST"] },
                 ]);
             else throw new InvalidOperationException("Unknown TenantGateway API profile; use Hl25, Hlg or explicit AdditionalRoutes.");
         }

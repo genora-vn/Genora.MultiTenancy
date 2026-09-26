@@ -1,0 +1,43 @@
+{
+  "info": {
+    "name": "Hoa Linh Gamification - Mini App",
+    "description": "Bộ sưu tập API mini-app HLG. Biến: baseUrl (staging: https://hoalinh-staging.genora.vn, production: https://hoalinh.genora.vn), phone (SĐT đã decode-phone).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Ranking - Upload share image",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Accept", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "file",
+              "type": "file",
+              "src": "hoa-linh-ranking.png",
+              "description": "Ảnh PNG/JPEG chụp Bảng xếp hạng, tối đa 5 MiB, mỗi cạnh <= 8192px, <= 16 megapixel. KHÔNG set Content-Type thủ công (browser/Postman tự sinh boundary)."
+            }
+          ]
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/mini-app/hlg/ranking/share-image?phone={{phone}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "mini-app", "hlg", "ranking", "share-image"],
+          "query": [
+            { "key": "phone", "value": "{{phone}}", "description": "SĐT đã xác minh qua decode-phone. Bắt buộc." }
+          ]
+        },
+        "description": "Upload ảnh chụp Bảng xếp hạng, trả URL HTTPS công khai để làm thumbnail chia sẻ Zalo. Thành công 200 { error:null, data:{ url } }. Lỗi: 400 (thiếu/sai phone|thiếu file|ảnh không hợp lệ|vượt giới hạn pixel), 404 (khách không tồn tại), 413 (file > 5 MiB), 429 (rate-limit, có Retry-After), 500 (lưu thất bại). Ảnh giữ tối thiểu 30 ngày."
+      },
+      "response": []
+    }
+  ],
+  "variable": [
+    { "key": "baseUrl", "value": "https://hoalinh-staging.genora.vn" },
+    { "key": "phone", "value": "0976687984" }
+  ]
+}
