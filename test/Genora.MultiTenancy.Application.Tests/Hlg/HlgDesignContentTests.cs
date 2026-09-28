@@ -15,6 +15,7 @@ using Genora.MultiTenancy.DomainModels.AppHlg;
 using Genora.MultiTenancy.DomainModels.AppCustomers;
 using Genora.MultiTenancy.Enums.Hlg;
 using Genora.MultiTenancy.Features.AppHlgFeatures;
+using Genora.MultiTenancy.Realtime;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Localization;
@@ -73,6 +74,25 @@ public class HlgDesignContentTests : IDisposable
     public void Unsafe_Media_And_Cta_Urls_Are_Rejected(string url) => Should.Throw<ValidationException>(()=>HlgContentValidation.Url(url));
     [Theory][InlineData("https://cdn.example.test/a.mp4")][InlineData("/uploads/tenant/a.png")]
     public void Existing_Storage_And_Generic_Video_Urls_Are_Accepted(string url) => HlgContentValidation.Url(url);
+    [Fact]
+    public async Task Quiz_List_Uses_Configured_Question_Count_And_Returns_Wrong_Answer_Limit()
+    {
+        var game=new HlgGame(Guid.NewGuid(),"Quiz",HlgGameType.Quiz,_tenantId){Status=HlgGameStatus.Ongoing,QuestionsPerPlay=2,AllowedWrongAnswers=1};
+        var questions=Enumerable.Range(0,4).Select(index=>new HlgQuestion(Guid.NewGuid(),game.Id,index,$"Question {index}"){TenantId=_tenantId}).ToArray();
+        var games=Repo(game);var questionRepo=Repo(questions);var options=Repo<HlgAnswerOption>();var sessions=Repo<HlgGameSession>();var answers=Repo<HlgSessionAnswer>();var customers=Repo<Customer>();
+        var service=Bind(new HlgGameAppService(games,questionRepo,options,sessions,answers,customers,_tenant,Substitute.For<IHlgLiveFeedNotifier>(),NullLogger<HlgGameAppService>.Instance));
+
+        var result=await service.GetGamesAsync();
+
+        result.Single().TotalQuestions.ShouldBe(2);result.Single().QuestionsPerPlay.ShouldBe(2);result.Single().AllowedWrongAnswers.ShouldBe(1);
+    }
+    [Theory]
+    [InlineData(null, 99, false)]
+    [InlineData(2, 2, false)]
+    [InlineData(2, 3, true)]
+    [InlineData(0, 1, true)]
+    public void Quiz_Fails_Only_After_Wrong_Answers_Exceed_The_Configured_Maximum(int? allowed, int wrongCount, bool expected)
+        => HlgGameAppService.HasExceededWrongAnswerLimit(allowed, wrongCount).ShouldBe(expected);
     [Fact]
     public void Product_Collections_Reject_Self_Duplicate_And_Empty_Answers() {
         var id=Guid.NewGuid();var details=new HlgProductContent { RelatedProductIds=new(){id} };

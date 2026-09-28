@@ -20,6 +20,8 @@ namespace Genora.MultiTenancy.AppDtos.Hlg
         public DateTime? StartAt { get; set; }
         public DateTime? EndAt { get; set; }
         public int TotalQuestions { get; set; }
+        public int? QuestionsPerPlay { get; set; }
+        public int? AllowedWrongAnswers { get; set; }
         public List<TopPlayer> TopPlayers { get; set; } = new List<TopPlayer>();
         public List<Prizes> Prizes { get; set; } = new List<Prizes> { };
     }

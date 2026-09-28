@@ -306,7 +306,7 @@ public class HoaLinhGamificationController : MultiTenancyController
         }
     }
 
-    /// <summary>Trả lời 1 câu — server tự chấm điểm (chống gian lận). Trả {correct, scoreGained}.</summary>
+    /// <summary>Trả lời 1 câu — server tự chấm điểm, đếm số câu sai và trả gameFailed khi vượt giới hạn.</summary>
     [HttpPost("games/answer")]
     public async Task<IActionResult> Answer([FromBody] AnswerQuestionPayloadDto payload, CancellationToken ct)
     {
@@ -316,7 +316,7 @@ public class HoaLinhGamificationController : MultiTenancyController
         try
         {
             var dto = await _gameService.AnswerAsync(payload, ct);
-            return Ok(HlgApiResult<AnswerResultDto>.Ok(dto));
+            return Ok(HlgApiResult<AnswerResultDto>.Ok(dto, dto.GameFailed ? "Trò chơi thất bại" : null));
         }
         catch (UserFriendlyException ex)
         {
@@ -324,14 +324,14 @@ public class HoaLinhGamificationController : MultiTenancyController
         }
     }
 
-    /// <summary>Kết thúc phiên — server đối soát tổng điểm từ answer đã ghi (bỏ qua totalScore client).</summary>
+    /// <summary>Kết thúc phiên — server đối soát tổng điểm/số câu sai và trả gameFailed khi vượt giới hạn.</summary>
     [HttpPost("games/sessions/{sessionId}/finish")]
     public async Task<IActionResult> Finish(Guid sessionId, [FromBody] FinishGamePayloadDto payload, CancellationToken ct)
     {
         try
         {
             var dto = await _gameService.FinishAsync(sessionId, payload ?? new FinishGamePayloadDto(), ct);
-            return Ok(HlgApiResult<GameResultDto>.Ok(dto));
+            return Ok(HlgApiResult<GameResultDto>.Ok(dto, dto.GameFailed ? "Trò chơi thất bại" : null));
         }
         catch (UserFriendlyException ex)
         {

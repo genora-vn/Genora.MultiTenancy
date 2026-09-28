@@ -1,5 +1,10 @@
 # PROJECT STATE — Genora.MultiTenancy
 
+## HLG quiz play configuration — 2026-09-24 (mới nhất)
+
+- Full chain thêm `QuestionsPerPlay`/`AllowedWrongAnswers`; Start snapshot cấu hình. Answer/finish trả game fail khi wrong count vượt giới hạn, khóa session và không cộng điểm cho game thất bại.
+- Migration `20260924023725_AddHlgQuizPlayConfiguration` thêm 3 nullable columns (2 game, 1 session), chưa apply DB. Web build 0 errors; 57 App +19 Web pass; EF model clean.
+
 ## HLG all-tenant migration — 2026-09-23 (latest)
 
 - `Test1` schema/history drift repaired with guarded five-row backup/replay; `Test2` design-content migration applied via explicit EF connection. DbMigrator target-first preflight avoids unnecessary master access and no longer exposes connection strings in error data.

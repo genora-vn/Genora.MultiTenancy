@@ -20,6 +20,15 @@
     <script>
         $(function () {
             window.hlgEditor.init($('#HlgGameCreateForm'));
+            const type = $('#Input_Type');
+            const quizConfiguration = $('.hlg-quiz-configuration');
+            const syncQuizConfiguration = function () {
+                const isQuiz = type.val() === '1';
+                quizConfiguration.toggle(isQuiz);
+                quizConfiguration.find('input').prop('disabled', !isQuiz);
+            };
+            type.on('change', syncQuizConfiguration);
+            syncQuizConfiguration();
         });
     </script>
 }
@@ -72,6 +81,24 @@
                         <label asp-for="Input.BadgeText" class="form-label fw-semibold">@L["Hlg:BadgeText"]</label>
                         <input asp-for="Input.BadgeText" type="text" class="form-control" />
                         <span asp-validation-for="Input.BadgeText" class="text-danger"></span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card mb-3 hlg-quiz-configuration">
+                <div class="card-header py-2">
+                    <i class="fa fa-list-check me-1"></i> @L["Hlg:QuizConfiguration"]
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label asp-for="Input.QuestionsPerPlay" class="form-label fw-semibold">@L["Hlg:QuestionsPerPlay"]</label>
+                        <input asp-for="Input.QuestionsPerPlay" type="number" class="form-control" min="1" max="1000" />
+                        <span asp-validation-for="Input.QuestionsPerPlay" class="text-danger"></span>
+                    </div>
+                    <div class="mb-0">
+                        <label asp-for="Input.AllowedWrongAnswers" class="form-label fw-semibold">@L["Hlg:AllowedWrongAnswers"]</label>
+                        <input asp-for="Input.AllowedWrongAnswers" type="number" class="form-control" min="0" max="1000" />
+                        <span asp-validation-for="Input.AllowedWrongAnswers" class="text-danger"></span>
                     </div>
                 </div>
             </div>

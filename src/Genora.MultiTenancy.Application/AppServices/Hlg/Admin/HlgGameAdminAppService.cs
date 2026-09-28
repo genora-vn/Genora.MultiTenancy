@@ -79,7 +79,12 @@ public class HlgGameAdminAppService : FeatureProtectedCrudAppService<HlgGame, Hl
         if (id.HasValue && await _sessions.AnyAsync(x => x.GameId == id.Value))
         {
             var current = await Repository.GetAsync(id.Value);
-            if (current.Type != input.Type || current.BaseScorePerQuestion != input.BaseScorePerQuestion)
+            var questionsPerPlay = input.Type == HlgGameType.Quiz ? input.QuestionsPerPlay : null;
+            var allowedWrongAnswers = input.Type == HlgGameType.Quiz ? input.AllowedWrongAnswers : null;
+            if (current.Type != input.Type
+                || current.BaseScorePerQuestion != input.BaseScorePerQuestion
+                || current.QuestionsPerPlay.HasValue && current.QuestionsPerPlay != questionsPerPlay
+                || current.AllowedWrongAnswers.HasValue && current.AllowedWrongAnswers != allowedWrongAnswers)
                 throw new UserFriendlyException(L["Hlg:GameHasSessions"]);
         }
         await Task.CompletedTask;
@@ -102,6 +107,8 @@ public class HlgGameAdminAppService : FeatureProtectedCrudAppService<HlgGame, Hl
         entity.StartAt = input.StartAt;
         entity.EndAt = input.EndAt;
         entity.BaseScorePerQuestion = input.BaseScorePerQuestion;
+        entity.QuestionsPerPlay = input.Type == HlgGameType.Quiz ? input.QuestionsPerPlay : null;
+        entity.AllowedWrongAnswers = input.Type == HlgGameType.Quiz ? input.AllowedWrongAnswers : null;
         entity.DisplayOrder = input.DisplayOrder;
         entity.BadgeText = input.BadgeText;
         entity.BannerUrl = input.BannerUrl;
@@ -120,6 +127,8 @@ public class HlgGameAdminAppService : FeatureProtectedCrudAppService<HlgGame, Hl
         StartAt = entity.StartAt,
         EndAt = entity.EndAt,
         BaseScorePerQuestion = entity.BaseScorePerQuestion,
+        QuestionsPerPlay = entity.QuestionsPerPlay,
+        AllowedWrongAnswers = entity.AllowedWrongAnswers,
         DisplayOrder = entity.DisplayOrder,
         BadgeText = entity.BadgeText,
         BannerUrl = entity.BannerUrl,

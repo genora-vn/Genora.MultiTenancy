@@ -33,6 +33,9 @@ public class HlgGameSession : FullAuditedAggregateRoot<Guid>, IMultiTenant
     /// <summary>Tổng số câu hỏi của game tại thời điểm bắt đầu (snapshot).</summary>
     public int TotalQuestions { get; set; }
 
+    /// <summary>Số câu sai tối đa tại thời điểm bắt đầu. Null nghĩa là không giới hạn/legacy session.</summary>
+    public int? AllowedWrongAnswers { get; set; }
+
     public DateTime StartedAt { get; set; }
 
     /// <summary>Đã finish chưa (chống finish/answer nhiều lần).</summary>

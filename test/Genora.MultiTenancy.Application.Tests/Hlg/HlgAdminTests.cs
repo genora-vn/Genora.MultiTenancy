@@ -56,8 +56,11 @@ public class HlgAdminTests : IDisposable
         _questions.GetQueryableAsync().Returns(Task.FromResult(Array.Empty<HlgQuestion>().AsQueryable()));
         _options.GetListAsync(Arg.Any<Expression<Func<HlgAnswerOption, bool>>>(), Arg.Any<bool>(), Arg.Any<CancellationToken>()).Returns(new List<HlgAnswerOption>());
         _games.GetAsync(_gameId, Arg.Any<bool>(), Arg.Any<CancellationToken>()).Returns(new HlgGame(_gameId, "Quiz", HlgGameType.Quiz));
+        _games.InsertAsync(Arg.Any<HlgGame>(), true, Arg.Any<CancellationToken>()).Returns(c => c.Arg<HlgGame>());
+        _games.UpdateAsync(Arg.Any<HlgGame>(), true, Arg.Any<CancellationToken>()).Returns(c => c.Arg<HlgGame>());
     }
     private HlgQuestionAdminAppService Service() => new(_questions, _tenant, _features, _games, _options, _sessions, new HlgQuestionExcelTemplateGenerator(), new HlgQuestionExcelImporter()) { LazyServiceProvider = new AbpLazyServiceProvider(_provider) };
+    private HlgGameAdminAppService GameService() => new(_games, _tenant, _features, _questions, _sessions) { LazyServiceProvider = new AbpLazyServiceProvider(_provider) };
     private CreateHlgQuestionInput Input() => new() { GameId = _gameId, Content = "Question", OptionA = "A", OptionB = "B", CorrectKey = HlgAnswerKey.B };
 
     [Fact]
@@ -146,6 +149,56 @@ public class HlgAdminTests : IDisposable
     {
         var input = new CreateHlgRewardDto { Name = "Gift", StockQuantity = -1 };
         Should.Throw<ValidationException>(() => Validator.ValidateObject(input, new ValidationContext(input), true));
+    }
+    [Theory]
+    [InlineData(null, 1)]
+    [InlineData(10, null)]
+    [InlineData(10, 11)]
+    public void Quiz_Requires_Valid_Play_Configuration(int? questionsPerPlay, int? allowedWrongAnswers)
+    {
+        var input = new CreateHlgGameInput
+        {
+            Name = "Quiz",
+            Type = HlgGameType.Quiz,
+            QuestionsPerPlay = questionsPerPlay,
+            AllowedWrongAnswers = allowedWrongAnswers
+        };
+
+        Should.Throw<ValidationException>(() => Validator.ValidateObject(input, new ValidationContext(input), true));
+    }
+    [Fact]
+    public async Task Game_Create_Persists_Quiz_Play_Configuration()
+    {
+        var result = await GameService().CreateAsync(new CreateHlgGameInput
+        {
+            Name = "Quiz",
+            Type = HlgGameType.Quiz,
+            QuestionsPerPlay = 12,
+            AllowedWrongAnswers = 3
+        });
+
+        result.QuestionsPerPlay.ShouldBe(12);
+        result.AllowedWrongAnswers.ShouldBe(3);
+        await _games.Received().InsertAsync(
+            Arg.Is<HlgGame>(x => x.QuestionsPerPlay == 12 && x.AllowedWrongAnswers == 3),
+            true,
+            Arg.Any<CancellationToken>());
+    }
+    [Fact]
+    public async Task Existing_Quiz_With_Sessions_Can_Initialize_Pre_Migration_Null_Configuration()
+    {
+        _sessions.AnyAsync(Arg.Any<Expression<Func<HlgGameSession, bool>>>(), Arg.Any<CancellationToken>()).Returns(true);
+
+        var result = await GameService().UpdateAsync(_gameId, new UpdateHlgGameInput
+        {
+            Name = "Quiz",
+            Type = HlgGameType.Quiz,
+            QuestionsPerPlay = 10,
+            AllowedWrongAnswers = 2
+        });
+
+        result.QuestionsPerPlay.ShouldBe(10);
+        result.AllowedWrongAnswers.ShouldBe(2);
     }
     [Fact]
     public async Task Product_Allows_Empty_Optional_Content_And_Stores_Image_Array()

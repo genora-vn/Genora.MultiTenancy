@@ -25,13 +25,13 @@ public interface IHlgGameAppService : IApplicationService
     Task<StartGameResultDto> StartGameAsync(Guid gameId, string phone, CancellationToken ct = default);
 
     /// <summary>
-    /// Trả lời 1 câu — server tự chấm điểm (BD-2). Trả {correct, scoreGained}.
+    /// Trả lời 1 câu — server tự chấm điểm (BD-2), đếm số câu sai và trả trạng thái gameFailed.
     /// Bỏ qua mọi điểm client tự tính.
     /// </summary>
     Task<AnswerResultDto> AnswerAsync(AnswerQuestionPayloadDto payload, CancellationToken ct = default);
 
     /// <summary>
-    /// Kết thúc phiên — server đối soát tổng điểm từ các answer đã ghi (BD-2), bỏ qua totalScore client.
+    /// Kết thúc phiên — server đối soát tổng điểm và số câu sai từ các answer đã ghi (BD-2), bỏ qua dữ liệu tổng hợp client.
     /// Trả GameResult (reward nối dây ở Phase 4).
     /// </summary>
     Task<GameResultDto> FinishAsync(Guid sessionId, FinishGamePayloadDto payload, CancellationToken ct = default);

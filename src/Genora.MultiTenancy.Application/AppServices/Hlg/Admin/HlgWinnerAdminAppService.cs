@@ -22,7 +22,7 @@ public class HlgWinnerAdminAppService : FeatureProtectedCrudAppService<HlgRankin
     protected override string FeatureName => AppHlgFeatures.Management;
     protected override string TenantDefaultPermission => MultiTenancyPermissions.AppHlgRanking.Default;
     protected override string HostDefaultPermission => MultiTenancyPermissions.HostAppHlgRanking.Default;
-    public HlgWinnerAdminAppService(IRepository<HlgRankingWinner, Guid> repository, ICurrentTenant tenant, IFeatureChecker features) : base(repository,tenant,features)
+    public HlgWinnerAdminAppService(IRepository<HlgRankingWinner, Guid> repository, ICurrentTenant tenant, IFeatureChecker features) : base(repository, tenant, features)
     {
         LocalizationResource = typeof(MultiTenancyResource);
         GetPolicyName = GetListPolicyName = TenantDefaultPermission;
@@ -35,42 +35,44 @@ public class HlgWinnerAdminAppService : FeatureProtectedCrudAppService<HlgRankin
         await CheckGetListPolicyAsync();
         var query = (await Repository.GetQueryableAsync()).Where(x => x.TenantId == CurrentTenant.Id);
 
-        if (!string.IsNullOrWhiteSpace(input.FilterText)) {
-            var term=input.FilterText.Trim();var players=await Repo<Customer>().GetQueryableAsync();
-            query=query.Where(x=>players.Any(c=>c.Id==x.CustomerId && c.FullName.Contains(term)));
+        if (!string.IsNullOrWhiteSpace(input.FilterText))
+        {
+            var term = input.FilterText.Trim(); var players = await Repo<Customer>().GetQueryableAsync();
+            query = query.Where(x => players.Any(c => c.Id == x.CustomerId && c.FullName.Contains(term)));
         }
         if (input.IsActive.HasValue) query = query.Where(x => x.IsActive == input.IsActive);
         if (input.ParentId.HasValue) query = query.Where(x => x.EventId == input.ParentId);
         var count = await AsyncExecuter.CountAsync(query);
-        var rows = await AsyncExecuter.ToListAsync(query.OrderBy(x => x.Rank).ThenBy(x => x.Id).Skip(Math.Max(0,input.SkipCount)).Take(Math.Clamp(input.MaxResultCount,1,100)));
-        var ids = rows.Select(x=>x.CustomerId).ToList();
-        var customers = await AsyncExecuter.ToListAsync((await Repo<Customer>().GetQueryableAsync()).Where(x=>ids.Contains(x.Id)));
-        var dtos=rows.Select(Map).ToList(); foreach(var dto in dtos) dto.CustomerName=customers.FirstOrDefault(x=>x.Id==dto.CustomerId)?.FullName ?? "";
+        var rows = await AsyncExecuter.ToListAsync(query.OrderBy(x => x.Rank).ThenBy(x => x.Id).Skip(Math.Max(0, input.SkipCount)).Take(Math.Clamp(input.MaxResultCount, 1, 100)));
+        var ids = rows.Select(x => x.CustomerId).ToList();
+        var customers = await AsyncExecuter.ToListAsync((await Repo<Customer>().GetQueryableAsync()).Where(x => ids.Contains(x.Id)));
+        var dtos = rows.Select(Map).ToList(); foreach (var dto in dtos) dto.CustomerName = customers.FirstOrDefault(x => x.Id == dto.CustomerId)?.FullName ?? "";
         return new(count, dtos);
     }
     public override async Task<HlgWinnerAdminDto> GetAsync(Guid id) { await CheckGetPolicyAsync(); var entity = await Repository.GetAsync(id); Scope(entity.TenantId); return Map(entity); }
     [UnitOfWork(isTransactional: true)]
     public override async Task<HlgWinnerAdminDto> CreateAsync(CreateHlgWinnerInput input)
     {
-        await CheckCreatePolicyAsync(); await ValidateAsync(input,null);
-        var entity = new HlgRankingWinner(GuidGenerator.Create(),CurrentTenant.Id); Apply(input,entity);
+        await CheckCreatePolicyAsync(); await ValidateAsync(input, null);
+        var entity = new HlgRankingWinner(GuidGenerator.Create(), CurrentTenant.Id); Apply(input, entity);
         var entries = await LazyServiceProvider.LazyGetRequiredService<IHlgRankingAppService>().GetEventEntriesAsync(entity.EventId, (await Repo<Customer>().GetAsync(entity.CustomerId)).PhoneNumber, 1);
         var row = entries.Single(x => x.UserId == entity.CustomerId); entity.Rank = row.Rank; entity.Score = row.Score;
 
-        await Repository.InsertAsync(entity,autoSave:true); return Map(entity);
+        await Repository.InsertAsync(entity, autoSave: true); return Map(entity);
     }
     [UnitOfWork(isTransactional: true)]
     public override async Task<HlgWinnerAdminDto> UpdateAsync(Guid id, UpdateHlgWinnerInput input)
     {
         await CheckUpdatePolicyAsync(); var entity = await Repository.GetAsync(id); Scope(entity.TenantId);
-        await ValidateAsync(input,id); Apply(input,entity);
+        await ValidateAsync(input, id); Apply(input, entity);
         var entries = await LazyServiceProvider.LazyGetRequiredService<IHlgRankingAppService>().GetEventEntriesAsync(entity.EventId, (await Repo<Customer>().GetAsync(entity.CustomerId)).PhoneNumber, 1);
         var row = entries.Single(x => x.UserId == entity.CustomerId); entity.Rank = row.Rank; entity.Score = row.Score;
 
-        await Repository.UpdateAsync(entity,autoSave:true); return Map(entity);
+        await Repository.UpdateAsync(entity, autoSave: true); return Map(entity);
     }
     private async Task ValidateAsync(HlgWinnerInput input, Guid? id)
-    { HlgContentValidation.Validate(input);
+    {
+        HlgContentValidation.Validate(input);
         var ev = await Repo<HlgRankingEvent>().GetAsync(input.EventId); Scope(ev.TenantId);
         var prize = await Repo<HlgRankingPrize>().GetAsync(input.PrizeId); Scope(prize.TenantId);
         var customer = await Repo<Customer>().GetAsync(input.CustomerId); Scope(customer.TenantId);
@@ -83,9 +85,9 @@ public class HlgWinnerAdminAppService : FeatureProtectedCrudAppService<HlgRankin
         // Serialize concurrent publications against the same prize using ABP optimistic concurrency.
         prize.ConcurrencyStamp = Guid.NewGuid().ToString("N");
         await Repo<HlgRankingPrize>().UpdateAsync(prize, autoSave: true);
- }
+    }
     public override async Task DeleteAsync(Guid id)
-    { await CheckDeletePolicyAsync(); var entity = await Repository.GetAsync(id); Scope(entity.TenantId);  await Repository.DeleteAsync(entity); }
+    { await CheckDeletePolicyAsync(); var entity = await Repository.GetAsync(id); Scope(entity.TenantId); await Repository.DeleteAsync(entity); }
     private static void Apply(HlgWinnerInput input, HlgRankingWinner entity) { entity.EventId = input.EventId; entity.PrizeId = input.PrizeId; entity.CustomerId = input.CustomerId; entity.IsActive = input.IsActive; }
     private static HlgWinnerAdminDto Map(HlgRankingWinner entity) => new() { Id = entity.Id, EventId = entity.EventId, PrizeId = entity.PrizeId, CustomerId = entity.CustomerId, IsActive = entity.IsActive, Rank = entity.Rank, Score = entity.Score };
 }

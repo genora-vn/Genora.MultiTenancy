@@ -63,6 +63,7 @@
                             .then(function (data) { success({ results: data.items.map(function (x) { return { id: x.id, text: x.name }; }), pagination: { more: page * 50 < data.totalCount } }); }, failure);
                     } }
                 });
+                select.next('.select2-container').addClass('hlg-select2');
                 if (current && current !== '00000000-0000-0000-0000-000000000000') {
                     lookup.getList({ kind: select.attr('data-hlg-lookup'), id: current, excludeId: excludeId(), maxResultCount: 1 }).then(function (data) {
                         if (!data.items.length) return;

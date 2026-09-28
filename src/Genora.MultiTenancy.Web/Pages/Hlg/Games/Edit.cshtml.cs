@@ -38,6 +38,8 @@ public class EditModel : HlgAdminPageModel
             StartAt = item.StartAt,
             EndAt = item.EndAt,
             BaseScorePerQuestion = item.BaseScorePerQuestion,
+            QuestionsPerPlay = item.QuestionsPerPlay,
+            AllowedWrongAnswers = item.AllowedWrongAnswers,
             DisplayOrder = item.DisplayOrder,
             BadgeText = item.BadgeText,
             BannerUrl = item.BannerUrl,

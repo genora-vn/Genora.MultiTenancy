@@ -2267,7 +2267,11 @@ public class MultiTenancyMenuContributor : IMenuContributor
             if (await perms.IsGrantedAsync(tenant.IsAvailable ? MultiTenancyPermissions.AppHlgRewards.Default : MultiTenancyPermissions.HostAppHlgRewards.Default))
                 hlg.AddItem(new ApplicationMenuItem("Hlg.Rewards", l["Hlg:Rewards"], url: "/Hlg/Rewards"));
             if (await perms.IsGrantedAsync(tenant.IsAvailable ? MultiTenancyPermissions.AppHlgKnowledge.Default : MultiTenancyPermissions.HostAppHlgKnowledge.Default))
+            {
                 hlg.AddItem(new ApplicationMenuItem("Hlg.Categories", l["Hlg:Categories"], url: "/Hlg/Categories"));
+                hlg.AddItem(new ApplicationMenuItem("Hlg.Brands", l["Hlg:Brands"], url: "/Hlg/Brands"));
+                hlg.AddItem(new ApplicationMenuItem("Hlg.Products", l["Hlg:Products"], url: "/Hlg/Products"));
+            }
             if (await perms.IsGrantedAsync(tenant.IsAvailable ? MultiTenancyPermissions.AppHlgRanking.Default : MultiTenancyPermissions.HostAppHlgRanking.Default))
                 hlg.AddItem(new ApplicationMenuItem("Hlg.Ranking", l["Hlg:Ranking"], url: "/Hlg/Ranking"));
             if (await perms.IsGrantedAsync(tenant.IsAvailable ? MultiTenancyPermissions.AppHlgGames.Default : MultiTenancyPermissions.HostAppHlgGames.Default))
