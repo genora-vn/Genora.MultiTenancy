@@ -27,13 +27,13 @@ namespace Genora.MultiTenancy.AppServices.Hlg
         {
             var brand = await _brandRepository.FirstOrDefaultAsync(x => x.Id == id && x.IsActive, ct);
             var products = await LazyServiceProvider.LazyGetRequiredService<IRepository<HlgProduct, Guid>>().GetQueryableAsync();
-            var brandProducts = products.Where(p => p.Id == id && p.IsActive).ToList();
+            var brandProducts = products.Where(p => p.BrandId == id && p.IsActive).ToList();
             return new BrandKnowledgeDto
             {
                 Id = brand.Id,
                 Name = brand.Name,
                 CategoryId = brand.CategoryId,
-                Products = products.Select(p => new BrandProductDto
+                Products = brandProducts.Select(p => new BrandProductDto
                 {
                     Id = p.Id,
                     Name = p.Name,
