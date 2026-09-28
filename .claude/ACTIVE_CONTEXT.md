@@ -1,5 +1,22 @@
 # ACTIVE CONTEXT — Việc đang làm dở
 
+## HL25 0,05% / nạp kho mỗi ngày — 2026-09-28 (mới nhất)
+
+- Phát hiện code pacing trước đó chặn nạp kho hằng ngày vì đếm quà đã trao toàn lịch sử cùng GiftId. Đã bỏ lifetime award cap, dùng stock/status live + transaction lock; pacing chuyển **opt-in** (`Hl25:WheelTargetEligibleSpins > 0`), mặc định weighted random tuyệt đối. Không migration/API/DTO. Test nạp lại cùng GiftId pass; HL25 Application46/46, Domain wheel9/9, EF+Web Release build0 errors. Chưa deploy/load test; SQL lock cần đo tải.
+- Với 0.05%×5, ngày1131/5476/6020/9441 eligible spins chỉ kỳ vọng2.83/13.69/15.05/23.60 quà. Nếu50 tổng/ngày (10/loại), mô phỏng hết cả5 loại mean27765 spin; nếu50/loại (250 tổng), mean117406. Nếu1000 tổng đến30/10 (còn32 ngày), cần danh nghĩa400k eligible (~12500/ngày), hết cả5 loại mean433281 (~13540/ngày). Nếu1000/loại cần~2.074m (~64809/ngày). [Report](../docs/HL25_WHEEL_005_FORECAST_20260928.md) · [note](memory/notes/project/project_hl25_low_rate_daily_stock_20260928.md).
+- Working-tree appsettings hiện trỏ local không tenant; committed config trỏ staging và được đọc chỉ đọc, staging **vẫn** 1.67%/10 quà mỗi loại/1 spin, chưa thể xác minh cấu hình0.05% hoặc bốn ngày count từ DB. Production external config phải kiểm `WheelTargetEligibleSpins`=0/absent trước publish.
+
+## HL25 staging retest / forecast 1.000 quà đến 30/10 — 2026-09-28
+
+- Đã đọc staging SQL chỉ đọc: tenant host đăng ký `650ccd37-aeb4-63e7-bac7-3a23a72f9cbc` trong DB `DuocPhamHoaLinh` có 1 active wheel, 6 slots 1.67×5+91.65, nhưng kho chỉ 10/loại, 1 SpinLog không trúng. Cùng DB có TenantId khác với tỷ lệ 20/18/18/18/18/8, không trộn vào tenant này. Không có dữ liệu thực tế 1600/50 để xác định nguyên nhân production.
+- Simulation source: 50/loại → 26–27 tại1600 eligible, đúng50 tại3000; 1000 tổng (200/loại) với target mặc định3000 → 100 batch cạn hết ở mean12885 eligible (min11869,max14440), xấp xỉ4 ngày ở3000/ngày. Từ28/09 đến30/10 là33 ngày, 99k eligible; 1.67%×5 đòi hỏi ~8267 quà. Muốn1000 quà qua99k lượt phải effective ~0.202%/loại hoặc đổi quota/pacing; không thể đồng thời giữ actual1.67% và hạn30/10. Test8/8 pass; xem [report](../docs/HL25_WHEEL_STAGING_FORECAST_20260928.md).
+- Chưa deploy code, chưa viết DB, chưa test HTTP/load trên staging. Cần đo lưu lượng eligible thực và ngày bắt đầu thực tế trước khi chốt kho/quota.
+
+## HL25 wheel probability/pacing audit — 2026-09-28 (mới nhất)
+
+- Branch `hotfix/20260928`. Đã sửa runtime/Admin chọn active WheelConfig, strict 100% WinRate, rải quà theo 3000 eligible spins và SQL transaction lock để không cấp trùng; giữ API/DTO/schema. Simulation100k xác suất ~1.67%/gift; 200 paced batches cho 50/quà tại3000, 26–27/quà tại1600. Domain5, Application45, Web42, JS3 pass; EF+Web Release build0 errors. [report](../docs/HL25_WHEEL_DISTRIBUTION_20260928.md) · [note](memory/notes/project/project_hl25_wheel_pacing_audit_20260928.md).
+- Dữ liệu truy cập được chỉ là local host: 1 spin, 0 quà cấp, cấu hình kho500/1000, stock delta41. **Chưa truy cập production DB ~1600/50**; phải chạy [read-only audit SQL](../docs/HL25_WHEEL_AUDIT_20260928.sql) trên tenant thật trước khi quy nguyên nhân lịch sử. FE caller repo khác; chưa chứng minh một UI action chỉ POST một lần. Cần authenticated UAT/load test lock latency. Giữ thay đổi appsettings/log/uploads có sẵn của user.
+
 ## HLG quiz play configuration — 2026-09-24 (mới nhất)
 
 - Đã thêm `QuestionsPerPlay` và `AllowedWrongAnswers` xuyên suốt entity, Admin DTO/service, Create/Edit Razor, Mini App game DTO/start flow và VI/EN.

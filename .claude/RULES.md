@@ -1,6 +1,6 @@
 # RULES — Coding Conventions & Lessons Learned
 
-> Tổng hợp từ 20 note `feedback_*` trong `.claude/memory/notes/feedback/`.
+> Tổng hợp từ 21 note `feedback_*` trong `.claude/memory/notes/feedback/`.
 > Mỗi quy tắc kèm tên file gốc để tra cứu chi tiết. Đây là "phải nhớ" khi code trên repo này.
 
 ## ABP Framework — Data & Domain
@@ -29,6 +29,7 @@
 ## Hoa Linh / Salon specifics
 - **HL Payment dùng `ZaloPaymentSettingNames` constants**, không string cứng (gây "Undefined setting"). → `feedback_hl_payment_setting_names.md`
 - **HL dual permission + JSON array parse:** Host 403 fix bằng `P()`; array wrap qua `DeserializeSmartResponse`; DTO dựa `SnakeCaseLower` policy (không cần `JsonPropertyName`). → `feedback_hl_dual_permission_and_json_parse.md`
+- **HL25 wheel: phần trăm tuyệt đối khác pacing.** Tổng rate phải đúng 100%; audit theo eligible spins/SpinLog, không suy số quà từ kho hiện tại; lock transaction và idempotency là hai vấn đề riêng. → `feedback_hl25_wheel_probability_pacing.md`
 - **Salon phone regex:** đầu 0 hoặc 84, pattern `^(0\d{9,10}|84\d{9,10})$`, maxlength 13. Sửa đồng bộ DTO + cshtml + JS + server. → `feedback_salon_phone_regex_0_or_84.md`
 
 ## Email templates

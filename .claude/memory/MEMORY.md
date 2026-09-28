@@ -3,6 +3,8 @@
 Đây là nơi lưu trữ project memory (kiến thức đặc thù dự án) được version-control cùng source code.
 Nguồn chân lý duy nhất cho memory của các module. Không lưu secret hay config cá nhân ở đây.
 
+Latest HL25 wheel handoff (2026-09-28): [0.05% / daily replenish forecast](notes/project/project_hl25_low_rate_daily_stock_20260928.md), [staging forecast](notes/project/project_hl25_staging_forecast_20260928.md), and [probability/pacing audit](notes/project/project_hl25_wheel_pacing_audit_20260928.md). Default now weighted random; pacing explicit opt-in. Production SpinLog audit and rollout/load check remain.
+
 Latest DbMigrator handoff (2026-09-23): [HLG all-tenant recovery](notes/project/project_hlg_dbmigrator_all_tenants_recovery_20260923.md). Nine DBs migrated/verified; staging Web menu release remains.
 
 Latest HLG handoff (2026-09-23): [staging schema/menu recovery](notes/project/project_hlg_staging_schema_menu_recovery_20260923.md). Host and tenant HLG migrations applied; staging Web publish remains.

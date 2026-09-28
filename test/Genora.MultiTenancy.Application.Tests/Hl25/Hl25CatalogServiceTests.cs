@@ -47,12 +47,15 @@ public class Hl25CatalogServiceTests : IDisposable
     private readonly Hl25AppConfig _config = new(Guid.NewGuid()) { ProgramName = "program", IsActive = true };
     private readonly Hl25FrameCampaign _campaign = new(Guid.NewGuid(), "campaign") { Status = Hl25CampaignStatus.Active };
     private readonly Hl25FrameTemplate _template;
-    private readonly Hl25Gift _gift = new(Guid.NewGuid(), "gift") { ImageUrl = "/gift.png", RemainingQuantity = 1, TotalQuantity = 1 };
+    private readonly Hl25Gift _gift = new(Guid.NewGuid(), "gift") { ImageUrl = "/gift.png", RemainingQuantity = 1, TotalQuantity = 3000 };
     private readonly Hl25Participant _participant = new(Guid.NewGuid()) { ZaloUserId = "player", RemainingSpinTurns = 1 };
+    private readonly List<Hl25Participant> _participants = new();
     private readonly IRepository<Hl25AppConfig, Guid> _configs;
     private readonly IRepository<Hl25FrameCampaign, Guid> _campaigns;
     private readonly IRepository<Hl25FrameTemplate, Guid> _templates;
     private readonly IRepository<Hl25Gift, Guid> _gifts;
+    private readonly List<Hl25SpinLog> _spinLogs = new();
+    private readonly IHl25SpinSequencer _sequencer = Substitute.For<IHl25SpinSequencer>();
     private readonly MiniAppHl25Service _mini;
 
     public Hl25CatalogServiceTests()
@@ -62,6 +65,15 @@ public class Hl25CatalogServiceTests : IDisposable
         _http.HttpContext.Returns(httpContext);
         _template = new Hl25FrameTemplate(Guid.NewGuid(), _campaign.Id, "template", "/frame.png") { IsActive = true };
         _configs = Repo(_config); _campaigns = Repo(_campaign); _templates = Repo(_template); _gifts = Repo(_gift);
+        _participants.Add(_participant);
+        var participantRepository = Substitute.For<IRepository<Hl25Participant, Guid>>();
+        participantRepository.GetQueryableAsync().Returns(_ => Task.FromResult(_participants.AsQueryable()));
+        participantRepository.UpdateAsync(Arg.Any<Hl25Participant>(), Arg.Any<bool>(), Arg.Any<CancellationToken>())
+            .Returns(call => call.Arg<Hl25Participant>());
+        var spinLogRepository = Substitute.For<IRepository<Hl25SpinLog, Guid>>();
+        spinLogRepository.GetQueryableAsync().Returns(_ => Task.FromResult(_spinLogs.AsQueryable()));
+        spinLogRepository.InsertAsync(Arg.Any<Hl25SpinLog>(), Arg.Any<bool>(), Arg.Any<CancellationToken>())
+            .Returns(call => { var log = call.Arg<Hl25SpinLog>(); _spinLogs.Add(log); return Task.FromResult(log); });
         _auth.AuthorizeAsync(Arg.Any<ClaimsPrincipal>(), Arg.Any<object>(), Arg.Any<string>()).Returns(AuthorizationResult.Success());
         var uow = Substitute.For<IUnitOfWork>();
         _uowManager.Current.Returns(uow);
@@ -70,15 +82,18 @@ public class Hl25CatalogServiceTests : IDisposable
         uow.CompleteAsync(Arg.Any<CancellationToken>()).Returns(_ => Commit());
         _provider = new ServiceCollection()
             .AddSingleton<IAsyncQueryableExecuter>(new AsyncQueryableExecuter(Array.Empty<IAsyncQueryableProvider>()))
+            .AddLogging()
             .AddSingleton(_tenant).AddSingleton<IAuthorizationService>(_auth).AddSingleton(_mapper)
             .AddSingleton<IGuidGenerator>(SimpleGuidGenerator.Instance).BuildServiceProvider();
         _invalidator = new Hl25MiniAppCacheInvalidator(_cache, _uowManager);
         var wheel = new Hl25WheelConfig(Guid.NewGuid()) { IsActive = true };
         var slot = new Hl25WheelSlot(Guid.NewGuid(), wheel.Id) { GiftId = _gift.Id, WinRate = 100 };
-        _mini = new MiniAppHl25Service(_configs, Repo(_participant), _campaigns, _templates,
+        var noGift = new Hl25WheelSlot(Guid.NewGuid(), wheel.Id) { WinRate = 0 };
+        _sequencer.GetNextEligibleOrdinalAsync(Arg.Any<Guid?>()).Returns(1L);
+        _mini = new MiniAppHl25Service(_configs, participantRepository, _campaigns, _templates,
             Substitute.For<IRepository<Hl25FrameCreation, Guid>>(), Substitute.For<IRepository<Hl25SpinTurnLog, Guid>>(),
-            Repo(wheel), Repo(slot), _gifts, Substitute.For<IRepository<Hl25SpinLog, Guid>>(),
-            _uowManager, _images, _http, new ConfigurationBuilder().Build(), _cache)
+            Repo(wheel), RepoMany(slot, noGift), _gifts, spinLogRepository,
+            _uowManager, _images, _http, new ConfigurationBuilder().Build(), _cache, _sequencer)
         { LazyServiceProvider = new AbpLazyServiceProvider(_provider) };
     }
 
@@ -239,6 +254,49 @@ public class Hl25CatalogServiceTests : IDisposable
         _gift.RemainingQuantity.ShouldBe(0);
     }
 
+    [Fact]
+    public async Task Winner_Second_Spin_Lands_On_No_Gift_And_Does_Not_Allocate_Again()
+    {
+        _participant.RemainingSpinTurns = 2;
+        var first = await _mini.SpinAsync(new Hl25SpinRequest { ZaloUserId = "player" });
+        var second = await _mini.SpinAsync(new Hl25SpinRequest { ZaloUserId = "player" });
+        first.Won.ShouldBeTrue();
+        second.Won.ShouldBeFalse();
+        second.HasWonBefore.ShouldBeTrue();
+        second.SlotId.ShouldNotBe(first.SlotId);
+        _gift.RemainingQuantity.ShouldBe(0);
+        _participant.TotalGiftsWon.ShouldBe(1);
+        _participant.RemainingSpinTurns.ShouldBe(0);
+    }
+
+    [Fact]
+    public async Task Prior_Gift_Log_Still_Prevents_Second_Win_When_Participant_Counter_Drifted()
+    {
+        _participant.RemainingSpinTurns = 2;
+        (await _mini.SpinAsync(new Hl25SpinRequest { ZaloUserId = "player" })).Won.ShouldBeTrue();
+        _participant.TotalGiftsWon = 0; // simulate stale/corrected participant counter
+        var second = await _mini.SpinAsync(new Hl25SpinRequest { ZaloUserId = "player" });
+        second.Won.ShouldBeFalse();
+        second.HasWonBefore.ShouldBeTrue();
+        _spinLogs.Count(x => x.GiftId.HasValue).ShouldBe(1);
+        _gift.RemainingQuantity.ShouldBe(0);
+    }
+
+    [Fact]
+    public async Task Replenished_Same_Gift_Can_Be_Won_By_A_New_Participant()
+    {
+        _gift.TotalQuantity = 1;
+        (await _mini.SpinAsync(new Hl25SpinRequest { ZaloUserId = "player" })).Won.ShouldBeTrue();
+        _gift.RemainingQuantity = 1;
+        _gift.Status = Hl25GiftStatus.Available;
+        _participants.Add(new Hl25Participant(Guid.NewGuid()) { ZaloUserId = "new-player", RemainingSpinTurns = 1 });
+
+        (await _mini.SpinAsync(new Hl25SpinRequest { ZaloUserId = "new-player" })).Won.ShouldBeTrue();
+        _spinLogs.Count(x => x.GiftId == _gift.Id).ShouldBe(2);
+        _gift.RemainingQuantity.ShouldBe(0);
+        await _sequencer.DidNotReceive().GetNextEligibleOrdinalAsync(Arg.Any<Guid?>());
+    }
+
     private async Task Commit()
     {
         foreach (var callback in _commits.ToArray()) await callback();
@@ -253,6 +311,13 @@ public class Hl25CatalogServiceTests : IDisposable
         repo.FindAsync(item.Id, Arg.Any<bool>(), Arg.Any<CancellationToken>()).Returns(item);
         repo.InsertAsync(Arg.Any<T>(), Arg.Any<bool>(), Arg.Any<CancellationToken>()).Returns(x => x.Arg<T>());
         repo.UpdateAsync(Arg.Any<T>(), Arg.Any<bool>(), Arg.Any<CancellationToken>()).Returns(x => x.Arg<T>());
+        return repo;
+    }
+
+    private static IRepository<T, Guid> RepoMany<T>(params T[] items) where T : class, IEntity<Guid>
+    {
+        var repo = Substitute.For<IRepository<T, Guid>>();
+        repo.GetQueryableAsync().Returns(Task.FromResult(items.AsQueryable()));
         return repo;
     }
 

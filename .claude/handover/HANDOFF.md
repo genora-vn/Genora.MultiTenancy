@@ -1,5 +1,14 @@
 # HANDOFF — Bàn giao giữa các phiên làm việc
 
+## HL25 wheel probability/pacing — 2026-09-28 (latest)
+
+- **0,05% daily stock follow-up:** Previous uncommitted lifetime award count blocked Admin daily replenish on same GiftId. Removed; default wheel mode now weighted random (target0), pacing requires explicit positive `Hl25:WheelTargetEligibleSpins`. At0.05×5,50 total/day needs mean~27765 eligible spins to deplete all5 with10 each;1000 total by30/10 at32days needs nominal400k, simulation all exhausted mean433281 (~13540/day). Staging DB still old1.67 rates/10 gifts; user counts supplied, not DB verified. Application46/46, Domain9/9, EF+Web Release0 errors; no deploy/load test. [Report](../../docs/HL25_WHEEL_005_FORECAST_20260928.md) · [note](../memory/notes/project/project_hl25_low_rate_daily_stock_20260928.md).
+
+- **Staging retest same day:** Registered tenant Dược phẩm Hoa Linh has 10 gifts/type, 1 NotWon SpinLog, rate1.67×5+91.65. Simulation 1000 total (200/type), target3000: all stock depleted mean12885 eligible over100 batches (~4.3days at3k/day), while 28/09–30/10 is33days/~99k eligible and 1.67%×5 implies~8267 gifts. Test8/8 pass. [Report](../../docs/HL25_WHEEL_STAGING_FORECAST_20260928.md) · [note](../memory/notes/project/project_hl25_staging_forecast_20260928.md). No DB write/deployment; source binary on staging not verified.
+
+- Branch `hotfix/20260928`, changes uncommitted. Strict absolute WinRate100%, unique active config, stratified 3000 eligible-spin schedule and SQL transaction-owned lock in SpinAsync. Participant one-win rule and public API shape remain. DB schema/migration unchanged. [Detailed note](../memory/notes/project/project_hl25_wheel_pacing_audit_20260928.md) · [report](../../docs/HL25_WHEEL_DISTRIBUTION_20260928.md).
+- Tests: Domain5, HL25 Application45, HL25 Web42, Admin JS3; EF Core + Web Release build0 errors. Local host read-only audit: config1/slots6/SpinLog1/allocated0/stock delta41; production 1600/50 data unavailable. Run [read-only audit SQL](../../docs/HL25_WHEEL_AUDIT_20260928.sql) on actual tenant DB, then authenticated spin/load test. FE Mini App caller is separate; no request idempotency key yet. Preserve existing user appsettings/log/upload changes.
+
 ## HLG quiz play configuration — 2026-09-24 (mới nhất)
 
 - Branch `feature/nghiadt-hoalinh-gamification`, HEAD `ca7e0c08daf2938fa23e0c71da9f3d4eb4e8959d`; task changes chưa commit, các thay đổi menu/log có sẵn được bảo toàn.

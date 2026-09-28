@@ -8,6 +8,7 @@ using Genora.MultiTenancy.Localization;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -46,6 +47,8 @@ public class MiniAppHl25Service : ApplicationService, IMiniAppHl25Service
     private readonly IHttpContextAccessor _httpContextAccessor;
     private readonly IConfiguration _configuration;
     private readonly Hl25MiniAppCache _catalogCache;
+    private readonly IHl25SpinSequencer _spinSequencer;
+    private readonly int _targetEligibleSpins;
 
     public MiniAppHl25Service(
         IRepository<Hl25AppConfig, Guid> configRepository,
@@ -62,7 +65,8 @@ public class MiniAppHl25Service : ApplicationService, IMiniAppHl25Service
         IManageImageService manageImageService,
         IHttpContextAccessor httpContextAccessor,
         IConfiguration configuration,
-        Hl25MiniAppCache catalogCache)
+        Hl25MiniAppCache catalogCache,
+        IHl25SpinSequencer spinSequencer)
     {
         _configRepository = configRepository;
         _participantRepository = participantRepository;
@@ -80,6 +84,11 @@ public class MiniAppHl25Service : ApplicationService, IMiniAppHl25Service
         LocalizationResource = typeof(MultiTenancyResource);
         _configuration = configuration;
         _catalogCache = catalogCache;
+        _spinSequencer = spinSequencer;
+        _targetEligibleSpins = configuration.GetValue<int?>("Hl25:WheelTargetEligibleSpins")
+            ?? Hl25WheelDistribution.DefaultTargetEligibleSpins;
+        if (_targetEligibleSpins < 0)
+            throw new BusinessException("Hl25:InvalidWheelTargetSpins");
     }
 
     // ===== Cấu hình =====
@@ -304,7 +313,7 @@ public class MiniAppHl25Service : ApplicationService, IMiniAppHl25Service
         ValidateZaloUserId(zaloUserId);
 
         var wheelQueryable = await _wheelConfigRepository.GetQueryableAsync();
-        var config = await AsyncExecuter.FirstOrDefaultAsync(wheelQueryable);
+        var config = SelectPublicWheelConfig(await AsyncExecuter.ToListAsync(wheelQueryable));
 
         var participant = await FindByZaloUserIdAsync(zaloUserId);
         var remaining = participant?.RemainingSpinTurns ?? 0;
@@ -315,6 +324,7 @@ public class MiniAppHl25Service : ApplicationService, IMiniAppHl25Service
         var slotQueryable = await _wheelSlotRepository.GetQueryableAsync();
         var slots = await AsyncExecuter.ToListAsync(
             slotQueryable.Where(x => x.WheelConfigId == config.Id).OrderBy(x => x.DisplayOrder));
+        if (config.IsActive && slots.Count > 0) ValidatePublicWheel(slots);
 
         // Nạp thông tin quà đã gán để mapping ảnh/tên/mô tả cho từng ô.
         var giftIds = slots.Where(x => x.GiftId.HasValue).Select(x => x.GiftId!.Value).Distinct().ToList();
@@ -368,32 +378,73 @@ public class MiniAppHl25Service : ApplicationService, IMiniAppHl25Service
 
         using var uow = _uowManager.Begin(requiresNew: true, isTransactional: true);
 
-        var participant = await FindByZaloUserIdAsync(request.ZaloUserId)
-            ?? throw new UserFriendlyException(code: Hl25ErrorCodes.ParticipantNotFound, message: "Người dùng chưa đăng ký chương trình.");
-
-        // Kiểm tra lượt còn lại TRONG transaction (validate-then-write).
-        if (participant.RemainingSpinTurns <= 0)
-            throw new UserFriendlyException(code: Hl25ErrorCodes.NoSpinTurns, message: "Bạn đã hết lượt quay.");
-
         var wheelQueryable = await _wheelConfigRepository.GetQueryableAsync();
-        var config = await AsyncExecuter.FirstOrDefaultAsync(wheelQueryable)
+        var config = SelectPublicWheelConfig(await AsyncExecuter.ToListAsync(wheelQueryable))
             ?? throw new UserFriendlyException(code: Hl25ErrorCodes.WheelNotConfigured, message: "Vòng quay chưa được cấu hình.");
         if (!config.IsActive)
             throw new UserFriendlyException(code: Hl25ErrorCodes.WheelInactive, message: "Vòng quay đang tạm dừng.");
+
+        // Serialize spins before reading a participant or inventory. The lock belongs to
+        // this transaction, so duplicate requests cannot spend the same turn or gift.
+        try { await _spinSequencer.AcquireAsync(config.Id); }
+        catch (BusinessException ex) when (ex.Code == "Hl25:WheelBusy")
+        {
+            throw new UserFriendlyException(code: ex.Code, message: "Vòng quay đang bận, vui lòng thử lại.");
+        }
+        var participant = await FindByZaloUserIdAsync(request.ZaloUserId)
+            ?? throw new UserFriendlyException(code: Hl25ErrorCodes.ParticipantNotFound, message: "Người dùng chưa đăng ký chương trình.");
+        if (participant.RemainingSpinTurns <= 0)
+            throw new UserFriendlyException(code: Hl25ErrorCodes.NoSpinTurns, message: "Bạn đã hết lượt quay.");
 
         var slotQueryable = await _wheelSlotRepository.GetQueryableAsync();
         var slots = await AsyncExecuter.ToListAsync(
             slotQueryable.Where(x => x.WheelConfigId == config.Id).OrderBy(x => x.DisplayOrder));
         if (slots.Count == 0)
             throw new UserFriendlyException(code: Hl25ErrorCodes.WheelNoSlots, message: "Vòng quay chưa có ô quay.");
+        ValidatePublicWheel(slots);
 
         // Delta 2026-09 — mỗi người TỐI ĐA TRÚNG 1 LẦN trong toàn chương trình.
         // Nếu đã trúng trước đó (TotalGiftsWon >= 1) thì lượt này ép KHÔNG trúng
         // (lần 1 trúng → lần 2 ép trượt; lần 1 trượt → lần 2 quay ngẫu nhiên bình thường).
         var hasWonBefore = participant.TotalGiftsWon >= 1;
+        if (!hasWonBefore)
+        {
+            var priorSpins = await _spinLogRepository.GetQueryableAsync();
+            hasWonBefore = await AsyncExecuter.AnyAsync(
+                priorSpins.Where(s => s.ParticipantId == participant.Id && s.GiftId.HasValue));
+        }
 
-        // Chọn ô theo tỷ lệ WinRate (weighted random).
-        var selected = PickSlotByWinRate(slots);
+        var noGiftSlot = slots.Single(s => !s.GiftId.HasValue);
+        Hl25WheelSlot selected;
+        long eligibleOrdinal = 0;
+        if (hasWonBefore)
+        {
+            selected = noGiftSlot;
+        }
+        else
+        {
+            if (_targetEligibleSpins == 0)
+            {
+                selected = Hl25WheelDistribution.PickWeighted(slots, Random.Shared.NextDouble());
+            }
+            else
+            {
+                var giftIds = slots.Where(s => s.GiftId.HasValue).Select(s => s.GiftId!.Value).ToList();
+                var giftQueryable = await _giftRepository.GetQueryableAsync();
+                var gifts = await AsyncExecuter.ToListAsync(giftQueryable.Where(g => giftIds.Contains(g.Id)));
+                var quantities = gifts.ToDictionary(g => g.Id, g => g.TotalQuantity);
+                eligibleOrdinal = await _spinSequencer.GetNextEligibleOrdinalAsync(CurrentTenant.Id);
+                try
+                {
+                    selected = Hl25WheelDistribution.PickPaced(slots, quantities, config.Id, eligibleOrdinal,
+                        _targetEligibleSpins);
+                }
+                catch (BusinessException ex)
+                {
+                    throw new UserFriendlyException(code: ex.Code, message: "Cấu hình quà trên vòng quay không hợp lệ.");
+                }
+            }
+        }
 
         // Trừ 1 lượt quay.
         participant.RemainingSpinTurns -= 1;
@@ -431,8 +482,10 @@ public class MiniAppHl25Service : ApplicationService, IMiniAppHl25Service
             }
             else
             {
-                // Ô có quà nhưng hết kho → coi như không trúng.
+                // A scheduled gift cannot be issued: land on the no-gift slot as well.
                 gift = null;
+                selected = noGiftSlot;
+                spinLog.WheelSlotId = noGiftSlot.Id;
                 spinLog.RewardStatus = Hl25RewardStatus.NotWon;
             }
         }
@@ -446,6 +499,18 @@ public class MiniAppHl25Service : ApplicationService, IMiniAppHl25Service
         await _spinLogRepository.InsertAsync(spinLog, autoSave: false);
 
         await uow.CompleteAsync();
+
+        try
+        {
+            Logger.LogInformation(
+                "HL25 spin committed: TenantId={TenantId} ConfigId={ConfigId} SlotCount={SlotCount} TotalRate={TotalRate} EligibleOrdinal={EligibleOrdinal} SlotId={SlotId} SlotRate={SlotRate} GiftId={GiftId} Won={Won} SpinLogId={SpinLogId}",
+                CurrentTenant.Id, config.Id, slots.Count, slots.Sum(s => s.WinRate), eligibleOrdinal,
+                selected.Id, selected.WinRate, spinLog.GiftId, won, spinLog.Id);
+        }
+        catch (Exception)
+        {
+            // Logging after commit must not turn an issued gift into an API failure/retry.
+        }
 
         return new Hl25SpinResultDto
         {
@@ -732,24 +797,22 @@ public class MiniAppHl25Service : ApplicationService, IMiniAppHl25Service
             throw new UserFriendlyException(code: Hl25ErrorCodes.MissingZaloUserId, message: "Thiếu ZaloUserId.");
     }
 
-    /// <summary>
-    /// Chọn ô theo tỷ lệ trúng WinRate (weighted random). Nếu tổng WinRate = 0 → chọn ngẫu nhiên đều.
-    /// </summary>
-    private static Hl25WheelSlot PickSlotByWinRate(List<Hl25WheelSlot> slots)
+    private static Hl25WheelConfig? SelectPublicWheelConfig(List<Hl25WheelConfig> configs)
     {
-        var totalRate = slots.Sum(x => x.WinRate);
-        if (totalRate <= 0)
-            return slots[Random.Shared.Next(slots.Count)];
-
-        var roll = (decimal)Random.Shared.NextDouble() * totalRate;
-        decimal cumulative = 0;
-        foreach (var slot in slots)
+        try { return Hl25WheelDistribution.SelectConfig(configs); }
+        catch (BusinessException ex)
         {
-            cumulative += slot.WinRate;
-            if (roll < cumulative)
-                return slot;
+            throw new UserFriendlyException(code: ex.Code, message: "Có nhiều cấu hình vòng quay; quản trị viên cần chọn một cấu hình hoạt động.");
         }
-        return slots[^1];
+    }
+
+    private static void ValidatePublicWheel(List<Hl25WheelSlot> slots)
+    {
+        try { Hl25WheelDistribution.Validate(slots); }
+        catch (BusinessException ex)
+        {
+            throw new UserFriendlyException(code: ex.Code, message: "Tỷ lệ hoặc ô quay không hợp lệ; vui lòng kiểm tra cấu hình vòng quay.");
+        }
     }
 
     private static Hl25MeDto MapMe(Hl25Participant p) => new()

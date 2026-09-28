@@ -28,11 +28,12 @@ public class Hl25WheelImageTests
     {
         var config = new Hl25WheelConfig(Guid.NewGuid());
         var gift = new Hl25Gift(Guid.NewGuid(), "Gift") { ImageUrl = "/prize.png", WheelImageUrl = wheelImage };
-        var slot = new Hl25WheelSlot(Guid.NewGuid(), config.Id) { GiftId = gift.Id, SlotImageUrl = slotImage };
+        var slot = new Hl25WheelSlot(Guid.NewGuid(), config.Id) { GiftId = gift.Id, SlotImageUrl = slotImage, WinRate = 100 };
+        var noGift = new Hl25WheelSlot(Guid.NewGuid(), config.Id) { WinRate = 0 };
         var configs = Substitute.For<IRepository<Hl25WheelConfig, Guid>>();
         configs.GetQueryableAsync().Returns(Task.FromResult(new[] { config }.AsQueryable()));
         var slots = Substitute.For<IRepository<Hl25WheelSlot, Guid>>();
-        slots.GetQueryableAsync().Returns(Task.FromResult(new[] { slot }.AsQueryable()));
+        slots.GetQueryableAsync().Returns(Task.FromResult(new[] { slot, noGift }.AsQueryable()));
         var gifts = Substitute.For<IRepository<Hl25Gift, Guid>>();
         gifts.GetQueryableAsync().Returns(Task.FromResult(new[] { gift }.AsQueryable()));
         var participants = Substitute.For<IRepository<Hl25Participant, Guid>>();
@@ -52,11 +53,12 @@ public class Hl25WheelImageTests
             Substitute.For<IRepository<Hl25FrameCampaign, Guid>>(), Substitute.For<IRepository<Hl25FrameTemplate, Guid>>(),
             Substitute.For<IRepository<Hl25FrameCreation, Guid>>(), Substitute.For<IRepository<Hl25SpinTurnLog, Guid>>(),
             configs, slots, gifts, Substitute.For<IRepository<Hl25SpinLog, Guid>>(),
-            Substitute.For<IUnitOfWorkManager>(), Substitute.For<IManageImageService>(), accessor, new ConfigurationBuilder().Build(), catalogCache)
+            Substitute.For<IUnitOfWorkManager>(), Substitute.For<IManageImageService>(), accessor, new ConfigurationBuilder().Build(), catalogCache,
+            Substitute.For<IHl25SpinSequencer>())
         { LazyServiceProvider = new AbpLazyServiceProvider(provider) };
 
         var response = await service.GetWheelAsync("test-user");
-        var result = response.Slots.Single();
+        var result = response.Slots.Single(s => s.GiftId == gift.Id);
         result.WheelImageUrl.ShouldBe(wheelImage == null ? null : "https://localhost:44374" + wheelImage);
         result.GiftImageUrl.ShouldBe("https://localhost:44374/prize.png");
         result.SlotImageUrl.ShouldBe("https://localhost:44374" + expectedSlotImage);

@@ -5,6 +5,9 @@
 > Nguồn gốc: migrate từ `~\.claude\projects\D--Genora-...-Genora-MultiTenancy\memory\` (108 file).
 
 ## Điều hướng nhanh
+- **HL25 0,05% / stock daily / forecast 30/10:** [report](../docs/HL25_WHEEL_005_FORECAST_20260928.md) · [note](memory/notes/project/project_hl25_low_rate_daily_stock_20260928.md). Default weighted random, pacing opt-in; bỏ lifetime award cap để daily replenish cùng GiftId hoạt động. 1000 tổng/32 ngày cần danh nghĩa12500 eligible/ngày ở0.05%; theo avg4ngày chỉ~441 quà. Tests/build pass; no deploy/load proof.
+- **HL25 staging forecast 1.000 quà đến 30/10 2026:** [report](../docs/HL25_WHEEL_STAGING_FORECAST_20260928.md). Staging tenant thật có 10/loại, 1 SpinLog; source simulation 1000 tổng cạn ~12.9k eligible (~4 ngày ở3k/ngày), không đủ33 ngày. Tỷ lệ1.67% thực tế và1000 quà/99k lượt mâu thuẫn toán học.
+- **HL25 wheel probability/pacing 2026-09-28:** [note](memory/notes/project/project_hl25_wheel_pacing_audit_20260928.md) · [report](../docs/HL25_WHEEL_DISTRIBUTION_20260928.md) · [SQL audit](../docs/HL25_WHEEL_AUDIT_20260928.sql). Strict 100%, chọn active config, paced 50/quà trong 3000 eligible spins, lock transaction; local DB không phải số liệu production, cần audit production để xác định nguyên nhân lịch sử.
 - **HLG quiz play configuration 2026-09-24 (mới nhất):** [note](memory/notes/project/project_hlg_quiz_play_configuration_20260924.md). Thêm QuestionsPerPlay/AllowedWrongAnswers; Answer/Finish fail khi wrong count vượt limit, không cộng điểm; migration chưa apply; 57App+19Web pass, EF clean.
 - **HLG knowledge menus 2026-09-23:** [note](memory/notes/project/project_hlg_knowledge_separate_menus_20260923.md). Tách Categories/Brands/Products thành ba menu độc lập cùng quyền Knowledge; bỏ shortcut nội dung cũ; Web build pass, không migration.
 - **HLG DbMigrator all-tenant recovery 2026-09-23:** [note](memory/notes/project/project_hlg_dbmigrator_all_tenants_recovery_20260923.md) · [runbook](../docs/HLG_DBMIGRATOR_RECOVERY_20260923.md). Test1 guarded history/schema repair, Test2 design migration, target-first migrator preflight; full run exit 0 and nine DBs verified 17 HLG tables/6 migrations. Web menu IIS deployment still pending.
@@ -37,7 +40,7 @@
 
 ---
 
-## Feedback — quy tắc làm việc (20 note)
+## Feedback — quy tắc làm việc (21 note)
 Nằm tại `memory/notes/feedback/`. Tổng hợp trong [RULES.md](RULES.md).
 
 - ABP WithDetailsAsync load navigation props — `feedback_abp_with_details.md`
@@ -61,6 +64,7 @@ Nằm tại `memory/notes/feedback/`. Tổng hợp trong [RULES.md](RULES.md).
 - ABP internal AppService multi complex param + null validation — `feedback_appservice_multi_complex_param.md`
 - HL dual permission + JSON array parse + DTO không JsonPropertyName — `feedback_hl_dual_permission_and_json_parse.md`
 - Production ingress là Apache (XAMPP) không phải IIS; kiểm cổng 443 trước khi sửa IIS — `feedback_prod_apache_ingress_not_iis.md`
+- HL25 wheel: xác suất, pacing, eligible denominator, stock vs SpinLog và lock/idempotency — `feedback_hl25_wheel_probability_pacing.md`
 
 ## Project — Golf core & MiniApp (33 note)
 Nằm tại `memory/notes/project/`. Xem tóm tắt module trong [PROJECT_STATE.md](PROJECT_STATE.md).

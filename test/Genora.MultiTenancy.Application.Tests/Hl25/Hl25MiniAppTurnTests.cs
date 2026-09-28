@@ -58,7 +58,8 @@ public class Hl25MiniAppTurnTests : IDisposable
             Substitute.For<IRepository<Hl25FrameCampaign, Guid>>(), Substitute.For<IRepository<Hl25FrameTemplate, Guid>>(),
             frames, turns, Substitute.For<IRepository<Hl25WheelConfig, Guid>>(), Substitute.For<IRepository<Hl25WheelSlot, Guid>>(),
             Substitute.For<IRepository<Hl25Gift, Guid>>(), Substitute.For<IRepository<Hl25SpinLog, Guid>>(),
-            uowManager, Substitute.For<IManageImageService>(), Substitute.For<IHttpContextAccessor>(), new ConfigurationBuilder().Build(), catalogCache)
+            uowManager, Substitute.For<IManageImageService>(), Substitute.For<IHttpContextAccessor>(), new ConfigurationBuilder().Build(), catalogCache,
+            Substitute.For<IHl25SpinSequencer>())
         { LazyServiceProvider = new AbpLazyServiceProvider(_provider) };
     }
 

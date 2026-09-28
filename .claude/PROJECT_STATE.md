@@ -1,5 +1,13 @@
 # PROJECT STATE — Genora.MultiTenancy
 
+## HL25 0,05% production-operations follow-up — 2026-09-28
+
+- Pacing target3000 nay **opt-in**; mặc định dùng weighted random đúng WinRate khi không có `Hl25:WheelTargetEligibleSpins` dương. Bỏ kiểm tra tổng quà đã phát lifetime trên cùng GiftId để Admin nạp lại stock theo ngày vẫn phát được; stock live/transaction lock/one-win-user giữ nguyên. Application46/46, Domain wheel9/9, EF+Web Release0 errors. Chưa deploy/load/UAT. [Report](../docs/HL25_WHEEL_005_FORECAST_20260928.md).
+
+## HL25 staging forecast — 2026-09-28
+
+- Staging tenant HL25 có 5 quà ×10 phần và 1 spin, không phải bộ dữ liệu 50/loại hoặc1000 tổng. Source simulation 50/loại đạt50 ở3000 eligible; 1000 tổng cạn mean~12885 eligible sau fallback random, tương đương~4.3 ngày ở3000 eligible/ngày. Mốc30/10 với33 ngày cần99k eligible và~8267 quà nếu actual WinRate giữ1.67%×5. [Báo cáo](../docs/HL25_WHEEL_STAGING_FORECAST_20260928.md). Không DB write/deploy; 8 Domain tests pass.
+
 ## HLG quiz play configuration — 2026-09-24 (mới nhất)
 
 - Full chain thêm `QuestionsPerPlay`/`AllowedWrongAnswers`; Start snapshot cấu hình. Answer/finish trả game fail khi wrong count vượt giới hạn, khóa session và không cộng điểm cho game thất bại.
@@ -97,6 +105,7 @@
 - Note: `project_app_documents_*`.
 
 ## Module: Hoa Linh 25 Năm (hl25) — ✅ HOÀN THÀNH (nhánh `feature/dev-hoalinh-gamification`)
+- **Wheel pacing hotfix 2026-09-28 (`hotfix/20260928`):** code/test hoàn thành: active config, strict100% WinRate, 50 gift/3000 eligible-spin schedule, transaction lock, 1-quà/người. Không migration/API shape; chưa audit dữ liệu 1600/50 production hoặc deploy/load UAT. [note](memory/notes/project/project_hl25_wheel_pacing_audit_20260928.md) · [report](../docs/HL25_WHEEL_DISTRIBUTION_20260928.md).
 - **Gateway2026-09-20 (`hotfix/20260920`): source ready, deployment pending.** Separate YARP with shared500RPS quota and opt-in ABP guard; keep tenant hostname. Gateway/Web build PASS;19 gateway +24 Web +7 Node tests PASS. No migration/business API change; no IIS/Ocelot UAT or SQL-backed250–500RPS benchmark. [Note](memory/notes/project/project_hl25_yarp_gateway_20260920.md).
 - **Performance 2026-09-20 (`hotfix/20260920`):** cache 4 read APIs theo tenant 20 phút + after-commit invalidation; single-process stampede protection. Migration 20260920100056 thêm 3 index chưa apply. 81 .NET + 3 JS tests pass; chưa browser/load UAT và chưa xác nhận capacity 1.000 CCU. [Note](memory/notes/project/project_hl25_cache_indexes_20260920.md).
 - **Staging fix 2026-09-18:** corrective migration 20260918093000_EnsureHl25ParticipantAgeGroup (DB HL25: DuocPhamHoaLinh; bỏ qua DB không có bảng HL25) bổ sung AgeGroup cho DB áp migration HL25 cũ còn BirthDate. EF build/script/no model change checked; chưa apply target.

@@ -134,6 +134,11 @@ $(function () {
 
     function escapeHtml(value) { return $('<div>').text(value || '').html(); }
 
+    function parseRate(value) {
+        var text = String(value || '').trim().replace(',', '.');
+        return /^\d+(?:\.\d{1,4})?$/.test(text) ? Number(text) : NaN;
+    }
+
     function loadGiftOptions() {
         return giftService.getList({ maxResultCount: 1000, skipCount: 0 }).then(function (r) {
             giftOptionsCache = (r.items || []).map(function (g) {
@@ -159,7 +164,7 @@ $(function () {
             '<tr>' +
             '<td><input type="text" class="form-control form-control-sm slot-label" /></td>' +
             '<td>' + giftSelectHtml(slot.giftId) + '</td>' +
-            '<td><input type="number" class="form-control form-control-sm slot-rate" min="0" max="100" step="0.01" value="' + (slot.winRate || 0) + '" /></td>' +
+            '<td><input type="text" inputmode="decimal" class="form-control form-control-sm slot-rate" value="' + (slot.winRate || 0) + '" /></td>' +
             '<td class="text-end"><button type="button" class="btn btn-sm btn-outline-danger slot-del"><i class="fa fa-trash"></i></button></td>' +
             '</tr>'
         );
@@ -172,12 +177,15 @@ $(function () {
     function recalcTotal() {
         var total = 0;
         $('#SlotsBody .slot-rate').each(function () {
-            total += parseFloat($(this).val()) || 0;
+            var rate = parseRate($(this).val());
+            total += Number.isNaN(rate) ? 0 : rate;
         });
         var $badge = $('#wcTotalRate');
         $badge.text('Tổng: ' + total + '%');
         $badge.removeClass('bg-secondary bg-success bg-danger');
-        $badge.addClass(Math.abs(total - 100) < 0.01 ? 'bg-success' : 'bg-danger');
+        $badge.addClass(Math.abs(total - 100) < 0.00001 &&
+            $('#SlotsBody .slot-rate').toArray().every(function (input) { return !Number.isNaN(parseRate($(input).val())); })
+            ? 'bg-success' : 'bg-danger');
     }
 
     $('#AddSlotButton').click(function () { addSlotRow(); });
@@ -216,10 +224,21 @@ $(function () {
                 label: $tr.find('.slot-label').val(),
                 slotImageUrl: original.slotImageUrl || null,
                 colorHex: original.colorHex || null,
-                winRate: parseFloat($tr.find('.slot-rate').val()) || 0,
+                winRate: parseRate($tr.find('.slot-rate').val()),
                 displayOrder: idx
             });
         });
+
+        if (slots.some(function (s) { return Number.isNaN(s.winRate) || s.winRate < 0 || s.winRate > 100; }) ||
+            Math.abs(slots.reduce(function (sum, s) { return sum + s.winRate; }, 0) - 100) > 0.00001) {
+            abp.message.error('Tỷ lệ các ô phải hợp lệ và có tổng chính xác 100%. Dùng dấu chấm hoặc dấu phẩy cho phần thập phân.');
+            return;
+        }
+        var giftIds = slots.filter(function (s) { return !!s.giftId; }).map(function (s) { return s.giftId; });
+        if (slots.filter(function (s) { return !s.giftId; }).length !== 1 || new Set(giftIds).size !== giftIds.length) {
+            abp.message.error('Cần đúng một ô Chúc may mắn và mỗi quà chỉ được gắn vào một ô.');
+            return;
+        }
 
         var input = {
             title: $('#wcTitle').val(),

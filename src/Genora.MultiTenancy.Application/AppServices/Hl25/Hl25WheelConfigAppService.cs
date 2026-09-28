@@ -133,7 +133,7 @@ public class Hl25WheelConfigAppService : ApplicationService, IHl25WheelConfigApp
     private async Task<Hl25WheelConfig> GetOrCreateConfigAsync()
     {
         var queryable = await _configRepository.GetQueryableAsync();
-        var config = await AsyncExecuter.FirstOrDefaultAsync(queryable);
+        var config = Hl25WheelDistribution.SelectConfig(await AsyncExecuter.ToListAsync(queryable));
 
         if (config == null)
         {
@@ -162,11 +162,16 @@ public class Hl25WheelConfigAppService : ApplicationService, IHl25WheelConfigApp
             throw new BusinessException("Hl25:WheelWinRateInvalid");
 
         var total = slots.Sum(x => x.WinRate);
-        if (Math.Abs(total - 100m) > 0.01m)
+        if (total != 100m || slots.Any(s => decimal.Round(s.WinRate, 4) != s.WinRate))
         {
             throw new BusinessException("Hl25:WheelWinRateInvalid")
                 .WithData("Total", total);
         }
+
+        if (slots.Where(s => s.Id.HasValue).GroupBy(s => s.Id).Any(g => g.Count() > 1) ||
+            slots.Count(s => !s.GiftId.HasValue) != 1 ||
+            slots.Where(s => s.GiftId.HasValue).GroupBy(s => s.GiftId).Any(g => g.Count() > 1))
+            throw new BusinessException("Hl25:InvalidWheelSlot");
     }
 
     private Hl25WheelConfigDto MapToDto(Hl25WheelConfig config, List<Hl25WheelSlot> slots)
