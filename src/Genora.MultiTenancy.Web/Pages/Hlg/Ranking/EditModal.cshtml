@@ -7,7 +7,7 @@
 @{
     Layout = null;
 }
-<form method="post" asp-page="/Hlg/Ranking/EditModal">
+<form method="post" asp-page="/Hlg/Ranking/EditModal" id="EditHlgRanking">
     <abp-modal size="Large">
         <abp-modal-header title="@L["Hlg:Edit"].Value"></abp-modal-header>
         <abp-modal-body>
@@ -23,15 +23,17 @@
 <textarea asp-for="Input.Description" rows="4" class="form-control"></textarea>
                 <span asp-validation-for="Input.Description" class="text-danger"></span>
             </div>
-            <div class="mb-3">
-                <label asp-for="Input.StartAt" class="form-label">@L["Hlg:StartAt"]</label>
-                <input asp-for="Input.StartAt" type="datetime-local" class="form-control" asp-format="{0:yyyy-MM-ddTHH:mm}" />
-                <span asp-validation-for="Input.StartAt" class="text-danger"></span>
-            </div>
-            <div class="mb-3">
-                <label asp-for="Input.EndAt" class="form-label">@L["Hlg:EndAt"]</label>
-                <input asp-for="Input.EndAt" type="datetime-local" class="form-control" asp-format="{0:yyyy-MM-ddTHH:mm}" />
-                <span asp-validation-for="Input.EndAt" class="text-danger"></span>
+            <div class="mb-3 row">
+                <div class="col-md-6">
+                    <label asp-for="Input.StartAt" class="form-label">@L["Hlg:StartAt"]</label>
+                    <input asp-for="Input.StartAt" type="text" class="form-control flatpickr-datetime" asp-format="{0:yyyy-MM-dd HH:mm}" autocomplete="off" />
+                    <span asp-validation-for="Input.StartAt" class="text-danger"></span>
+                </div>
+                <div class="col-md-6">
+                    <label asp-for="Input.EndAt" class="form-label">@L["Hlg:EndAt"]</label>
+                    <input asp-for="Input.EndAt" type="text" class="form-control flatpickr-datetime" asp-format="{0:yyyy-MM-dd HH:mm}" autocomplete="off" />
+                    <span asp-validation-for="Input.EndAt" class="text-danger"></span>
+                </div>
             </div>
             <div class="mb-3">
                 <label asp-for="Input.IsActive" class="form-label">@L["Hlg:IsActive"]</label>
@@ -42,3 +44,17 @@
         </abp-modal-body><abp-modal-footer buttons="@(AbpModalButtons.Cancel | AbpModalButtons.Save)"></abp-modal-footer>
     </abp-modal>
 </form>
+<script>
+    (function () {
+        if (window.flatpickr) {
+            flatpickr('#EditHlgRanking .flatpickr-datetime', {
+                enableTime: true,
+                dateFormat: 'Y-m-d H:i',
+                time_24hr: true,
+                allowInput: true,
+                static: true,
+                minuteIncrement: 1
+            });
+        }
+    })();
+</script>

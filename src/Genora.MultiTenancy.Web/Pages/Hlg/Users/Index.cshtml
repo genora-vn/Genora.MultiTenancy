@@ -8,7 +8,7 @@
     <abp-script src="/Pages/Hlg/Users/index.js" />
 }
 <div id="HlgAdmin" data-create="false" data-edit="false" data-delete="false">
-    <div class="d-flex justify-content-between align-items-center mb-3">
+    <div class="d-flex justify-content-between align-items-center tool-bar">
         <h1>@L["Hlg:Users"]</h1>
     </div>
     <div id="HlgError" role="alert" class="alert alert-danger d-none"></div>
@@ -16,10 +16,11 @@
         <div class="card-body">
             <form id="HlgFilter" class="row g-3 align-items-end">
                 <div class="col-md-4"><label for="HlgSearch" class="form-label">@L["Hlg:Search"]</label><input id="HlgSearch" class="form-control" placeholder="@L["Hlg:SearchPlaceholder"]" /></div>
-                <div class="col-md-3"><label for="HlgActive" class="form-label">@L["Hlg:IsActive"]</label><select id="HlgActive" class="form-select"><option value="">@L["Hlg:All"]</option><option value="true">@L["Hlg:Active"]</option><option value="false">@L["Hlg:Inactive"]</option></select></div>
-                <div class="col-md-3"><button type="submit" class="btn btn-primary">@L["Hlg:Search"]</button> <button id="HlgReset" type="button" class="btn btn-outline-secondary">@L["Hlg:Reset"]</button></div>
-                <div class="col-md-4"><label for="HlgCustomerType" class="form-label">@L["Hlg:CustomerType"]</label><select id="HlgCustomerType" class="form-select"><option value="">@L["Hlg:All"]</option><option value="1">@L["Hlg:Pharmacy"]</option><option value="3">@L["Hlg:Retailer"]</option><option value="2">@L["Hlg:Consumer"]</option></select></div>
-                <div class="col-md-4"><label for="HlgRegistered" class="form-label">@L["Hlg:IsRegistered"]</label><select id="HlgRegistered" class="form-select"><option value="">@L["Hlg:All"]</option><option value="true">@L["Hlg:Yes"]</option><option value="false">@L["Hlg:No"]</option></select></div>
+                <div class="col-md-2"><label for="HlgActive" class="form-label">@L["Hlg:IsActive"]</label><select id="HlgActive" class="form-select"><option value="">@L["Hlg:All"]</option><option value="true">@L["Hlg:Active"]</option><option value="false">@L["Hlg:Inactive"]</option></select></div>
+                
+                <div class="col-md-2"><label for="HlgCustomerType" class="form-label">@L["Hlg:CustomerType"]</label><select id="HlgCustomerType" class="form-select"><option value="">@L["Hlg:All"]</option><option value="1">@L["Hlg:Pharmacy"]</option><option value="3">@L["Hlg:Retailer"]</option><option value="2">@L["Hlg:Consumer"]</option></select></div>
+                <div class="col-md-2"><label for="HlgRegistered" class="form-label">@L["Hlg:IsRegistered"]</label><select id="HlgRegistered" class="form-select"><option value="">@L["Hlg:All"]</option><option value="true">@L["Hlg:Yes"]</option><option value="false">@L["Hlg:No"]</option></select></div>
+                <div class="col-md-2"><button type="submit" class="btn btn-primary">@L["Hlg:Search"]</button> <button id="HlgReset" type="button" class="btn btn-outline-secondary">@L["Hlg:Reset"]</button></div>
             </form>
         </div>
     </div>

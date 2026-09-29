@@ -414,6 +414,7 @@ public class MultiTenancyWebModule : AbpModule
                bundle =>
                {
                    bundle.AddFiles("/global-styles.css");
+                   bundle.AddFiles("/pages/hlg/hlg-shared.css");
                    bundle.AddFiles("/pages/hlg/hlg-select2.css");
                }
             );
