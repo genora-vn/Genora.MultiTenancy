@@ -83,7 +83,7 @@ public class HlgWinnerAdminAppService : FeatureProtectedCrudAppService<HlgRankin
         var entries = await LazyServiceProvider.LazyGetRequiredService<IHlgRankingAppService>().GetEventEntriesAsync(ev.Id, customer.PhoneNumber, 1);
         if (!entries.Any(x => x.UserId == input.CustomerId)) throw new UserFriendlyException(L["Hlg:WinnerHasNoScore"]);
         // Serialize concurrent publications against the same prize using ABP optimistic concurrency.
-        prize.ConcurrencyStamp = Guid.NewGuid().ToString("N");
+        //prize.ConcurrencyStamp = Guid.NewGuid().ToString("N");
         await Repo<HlgRankingPrize>().UpdateAsync(prize, autoSave: true);
     }
     public override async Task DeleteAsync(Guid id)
