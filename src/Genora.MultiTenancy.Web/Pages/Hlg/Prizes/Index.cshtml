@@ -12,12 +12,15 @@
     <abp-script src="/Pages/Hlg/Prizes/index.js" />
 }
 <div id="HlgAdmin" data-parent-id="@Model.ParentId" data-create="@((await Model.GrantedAsync(".Create")).ToString().ToLowerInvariant())" data-edit="@((await Model.GrantedAsync(".Edit")).ToString().ToLowerInvariant())" data-delete="@((await Model.GrantedAsync(".Delete")).ToString().ToLowerInvariant())">
-    <a asp-page="/Hlg/Ranking/Index">@L["Hlg:Ranking"]</a>
-    <div class="d-flex justify-content-between align-items-center mb-3">
+    @* <a asp-page="/Hlg/Ranking/Index">@L["Hlg:Ranking"]</a> *@
+    <div class="d-flex justify-content-between align-items-center tool-bar">
         <h1>@L["Hlg:Prizes"]</h1>
         @if (await Model.GrantedAsync(".Create"))
         {
-            <button id="HlgCreate" class="btn btn-primary" type="button">@L["Hlg:Create"]</button>
+            <button id="HlgCreate" class="btn btn-outline-primary create-btn" type="button">
+                <i class="fa fa-plus"></i>
+                <span>@L["Hlg:Create"]</span>
+            </button>
         }
     </div>
     <div id="HlgError" role="alert" class="alert alert-danger d-none"></div>

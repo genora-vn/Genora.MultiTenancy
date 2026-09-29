@@ -19,17 +19,20 @@
             </div>
             <div class="mb-3">
                 <label asp-for="Input.Description" class="form-label">@L["Hlg:Description"]</label>
-<textarea asp-for="Input.Description" rows="4" class="form-control"></textarea>
+                <textarea asp-for="Input.Description" rows="4" class="form-control"></textarea>
                 <span asp-validation-for="Input.Description" class="text-danger"></span>
             </div>
-            <div class="mb-3">
-                <label asp-for="Input.ImageUrl" class="form-label">@L["Hlg:ImageUrl"]</label>
-                <input asp-for="Input.ImageUrl" type="text" class="form-control" />
-                <span asp-validation-for="Input.ImageUrl" class="text-danger"></span>
+            <div class="row mb-3 align-items-start" data-hlg-image-field>
+                <div class="col-md-8">
+                    <label asp-for="Input.ImageUrl" class="form-label">@L["Hlg:ImageUrl"]</label>
+                    <input asp-for="Input.ImageUrl" type="text" class="form-control" />
+                    <span asp-validation-for="Input.ImageUrl" class="text-danger"></span>
+                </div>
+                <div class="col-md-4 mt-3 mt-md-0">
+                    <div class="hlg-image-preview-slot" data-hlg-image-preview></div>
+                </div>
             </div>
-            @* <div class="mb-3">
-                
-            </div> *@
+
             <div class="mb-3 row">
                 <div class="col-md-6">
                     <label asp-for="Input.DisplayOrder" class="form-label">@L["Hlg:DisplayOrder"]</label>

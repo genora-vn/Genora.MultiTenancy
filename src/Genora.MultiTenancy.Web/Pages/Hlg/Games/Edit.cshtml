@@ -6,15 +6,13 @@
 
 @section styles {
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/summernote@0.8.18/dist/summernote-lite.min.css" />
-    <style>
-        .hlg-game-sticky-save { position: sticky; top: 80px; }
-        #HlgGameEditForm .card-header { font-weight: 600; background-color: #f8f9fa; }
-        #HlgGameEditForm .note-editor { margin-bottom: 0; }
-    </style>
+    <link rel="stylesheet" href="/libs/select2/css/select2.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
 }
 
 @section scripts {
     <script src="https://cdn.jsdelivr.net/npm/summernote@0.8.18/dist/summernote-lite.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <abp-script src="/Pages/Hlg/admin.js" />
     <abp-script src="/Pages/Hlg/editor.js" />
     <script>
@@ -29,6 +27,17 @@
             };
             type.on('change', syncQuizConfiguration);
             syncQuizConfiguration();
+
+            if (window.flatpickr) {
+                flatpickr('#HlgGameEditForm .flatpickr-datetime', {
+                    enableTime: true,
+                    dateFormat: 'Y-m-d H:i',
+                    time_24hr: true,
+                    allowInput: true,
+                    static: true,
+                    minuteIncrement: 1
+                });
+            }
         });
     </script>
 }
@@ -110,18 +119,15 @@
                     <i class="fa fa-calendar-days me-1"></i> @L["Hlg:Status"]
                 </div>
                 <div class="card-body">
-                    <div class="mb-3">
-                    </div>
-
                     <div class="mb-3 row">
                         <div class="col-md-6">
-                            <label asp-for="Input.StartAt" class="form-label fw-semibold">@L["Hlg:StartAt"]</label>
-                            <input asp-for="Input.StartAt" type="datetime-local" class="form-control" asp-format="{0:yyyy-MM-ddTHH:mm}" />
+                            <label asp-for="Input.StartAt" class="form-label">@L["Hlg:StartAt"]</label>
+                            <input asp-for="Input.StartAt" type="text" class="form-control flatpickr-datetime" asp-format="{0:yyyy-MM-dd HH:mm}" autocomplete="off" />
                             <span asp-validation-for="Input.StartAt" class="text-danger"></span>
                         </div>
                         <div class="col-md-6">
-                            <label asp-for="Input.EndAt" class="form-label fw-semibold">@L["Hlg:EndAt"]</label>
-                            <input asp-for="Input.EndAt" type="datetime-local" class="form-control" asp-format="{0:yyyy-MM-ddTHH:mm}" />
+                            <label asp-for="Input.EndAt" class="form-label">@L["Hlg:EndAt"]</label>
+                            <input asp-for="Input.EndAt" type="text" class="form-control flatpickr-datetime" asp-format="{0:yyyy-MM-dd HH:mm}" autocomplete="off" />
                             <span asp-validation-for="Input.EndAt" class="text-danger"></span>
                         </div>
                     </div>

@@ -37,9 +37,10 @@
             if (validator) validator.settings.ignore = [];
             return form.valid();
         }
-        function upload(file) {
+        function upload(file, mediaType) {
             var form = new FormData(); form.append('file', file);
-            return fetch(abp.appPath + 'Hlg/Upload', { method: 'POST', headers: { RequestVerificationToken: abp.security.antiForgery.getToken() }, body: form })
+            var endpoint = abp.appPath + 'Hlg/Upload' + (mediaType === 'video' ? '?handler=Video' : '');
+            return fetch(endpoint, { method: 'POST', headers: { RequestVerificationToken: abp.security.antiForgery.getToken() }, body: form })
                 .then(function (r) { if (!r.ok) throw new Error(l('Hlg:UploadFailed')); return r.json(); });
         }
         function enhance(container) {
@@ -98,10 +99,134 @@
                     } }
                 });
             });
+            container.find('input[data-hlg-media-url]').each(function () {
+                var target = $(this); if (target.data('hlg-upload')) return; target.data('hlg-upload', true);
+                var row = target.closest('fieldset');
+                var kind = row.find('[data-field="Kind"]');
+                var file = $('<input type="file" class="form-control mt-2" data-hlg-media-upload>')
+                    .attr('aria-label', l('Hlg:UploadImage')).insertAfter(target);
+                var previewHost = target.closest('[data-hlg-image-field]').find('[data-hlg-image-preview]').first();
+                var isModal = modal.is('.modal') || modal.closest('.modal').length || modal.find('.modal-dialog').length;
+                if (!previewHost.length && isModal) {
+                    var field = target.closest('.mb-3');
+                    if (field.length) {
+                        var inputColumn = $('<div class="col-md-8">');
+                        field.children().appendTo(inputColumn);
+                        var previewColumn = $('<div class="col-md-4 mt-3 mt-md-0">');
+                        previewHost = $('<div class="hlg-image-preview-slot" data-hlg-image-preview>').appendTo(previewColumn);
+                        field.addClass('row align-items-start').attr('data-hlg-image-field', '');
+                        field.append(inputColumn, previewColumn);
+                    }
+                }
+                var imagePreview = $('<img class="img-thumbnail hlg-image-preview d-none">').attr('alt', l('Hlg:ImagePreview'));
+                var videoPreview = $('<video class="img-thumbnail hlg-video-preview d-none" controls preload="metadata">')
+                    .attr('aria-label', l('Hlg:VideoPreview'));
+                if (previewHost.length) previewHost.append(imagePreview, videoPreview);
+                else target.parent().append(imagePreview.addClass('mt-2'), videoPreview.addClass('mt-2'));
+                var objectUrl = null;
+                function isVideo() { return Number(kind.val() || 1) === 2; }
+                function releaseObjectUrl() {
+                    if (!objectUrl) return;
+                    root.URL.revokeObjectURL(objectUrl);
+                    objectUrl = null;
+                }
+                function showPreview(url) {
+                    imagePreview.addClass('d-none').removeAttr('src');
+                    videoPreview.addClass('d-none').removeAttr('src');
+                    if (videoPreview.get(0)) videoPreview.get(0).load();
+                    if (!url) return;
+                    if (isVideo()) {
+                        videoPreview.attr('src', url).removeClass('d-none');
+                        videoPreview.get(0).load();
+                    } else imagePreview.attr('src', url).removeClass('d-none');
+                }
+                function syncKind() {
+                    file.attr('accept', isVideo() ? 'video/mp4,video/webm,video/ogg,video/quicktime' : 'image/png,image/jpeg,image/webp,image/gif');
+                    file.attr('aria-label', l(isVideo() ? 'Hlg:UploadVideo' : 'Hlg:UploadImage')).val('');
+                    releaseObjectUrl();
+                    showPreview((target.val() || '').trim());
+                }
+                imagePreview.on('error', function () { $(this).addClass('d-none'); });
+                imagePreview.on('load', function () { $(this).removeClass('d-none'); });
+                videoPreview.on('error', function () { $(this).addClass('d-none'); });
+                target.on('input change', function () { releaseObjectUrl(); showPreview(target.val().trim()); });
+                kind.on('change', syncKind);
+                syncKind();
+                file.on('change', function () {
+                    var selectedFile = this.files[0];
+                    if (!selectedFile) return;
+                    releaseObjectUrl();
+                    objectUrl = root.URL.createObjectURL(selectedFile);
+                    showPreview(objectUrl);
+                    file.prop('disabled', true);
+                    upload(selectedFile, isVideo() ? 'video' : 'image').then(function (data) {
+                        target.val(data.url).trigger('change');
+                    }).catch(function () {
+                        releaseObjectUrl();
+                        showPreview((target.val() || '').trim());
+                        file.val('');
+                        abp.notify.error(l(isVideo() ? 'Hlg:VideoUploadFailed' : 'Hlg:UploadFailed'));
+                    }).finally(function () { file.prop('disabled', false); });
+                });
+            });
             container.find('input[data-hlg-image], input[name$="ThumbnailUrl"], input[name$="ImageUrl"], input[name$="BannerUrl"]').each(function () {
                 var target = $(this); if (target.data('hlg-upload')) return; target.data('hlg-upload', true);
                 var file = $('<input type="file" accept="image/png,image/jpeg,image/webp,image/gif" class="form-control mt-2">').attr('aria-label', l('Hlg:UploadImage')).insertAfter(target);
-                file.on('change', function () { if (this.files[0]) upload(this.files[0]).then(function (data) { target.val(data.url).trigger('change'); }).catch(function () { abp.notify.error(l('Hlg:UploadFailed')); }); });
+                var previewHost = target.closest('[data-hlg-image-field]').find('[data-hlg-image-preview]').first();
+                var isModal = modal.is('.modal') || modal.closest('.modal').length || modal.find('.modal-dialog').length;
+                if (!previewHost.length && isModal) {
+                    var field = target.closest('.mb-3');
+                    if (field.length) {
+                        var inputColumn = $('<div class="col-md-8">');
+                        field.children().appendTo(inputColumn);
+                        var previewColumn = $('<div class="col-md-4 mt-3 mt-md-0">');
+                        previewHost = $('<div class="hlg-image-preview-slot" data-hlg-image-preview>')
+                            .appendTo(previewColumn);
+                        field.addClass('row align-items-start').attr('data-hlg-image-field', '');
+                        field.append(inputColumn, previewColumn);
+                    }
+                }
+                var preview = $('<img class="img-thumbnail hlg-image-preview d-none">').attr('alt', l('Hlg:ImagePreview'));
+                if (previewHost.length) preview.appendTo(previewHost);
+                else preview.addClass('mt-2').insertAfter(file);
+                var objectUrl = null;
+                function releaseObjectUrl() {
+                    if (!objectUrl) return;
+                    root.URL.revokeObjectURL(objectUrl);
+                    objectUrl = null;
+                }
+                function showPreview(url) {
+                    if (!url) {
+                        preview.removeAttr('src').addClass('d-none');
+                        return;
+                    }
+                    preview.attr('src', url).removeClass('d-none');
+                }
+                preview.on('error', function () { $(this).addClass('d-none'); });
+                preview.on('load', function () { $(this).removeClass('d-none'); });
+                target.on('input change', function () {
+                    releaseObjectUrl();
+                    showPreview(target.val().trim());
+                });
+                showPreview((target.val() || '').trim());
+                file.on('change', function () {
+                    var selectedFile = this.files[0];
+                    if (!selectedFile) return;
+                    releaseObjectUrl();
+                    objectUrl = root.URL.createObjectURL(selectedFile);
+                    showPreview(objectUrl);
+                    file.prop('disabled', true);
+                    upload(selectedFile).then(function (data) {
+                        target.val(data.url).trigger('change');
+                    }).catch(function () {
+                        releaseObjectUrl();
+                        showPreview((target.val() || '').trim());
+                        file.val('');
+                        abp.notify.error(l('Hlg:UploadFailed'));
+                    }).finally(function () {
+                        file.prop('disabled', false);
+                    });
+                });
             });
         }
         modal.find('.hlg-collection').each(function () {
@@ -127,8 +252,9 @@
                     var row = $('<fieldset class="border rounded p-3 mb-3">').appendTo(rows);
                     var fields = kind === 'knowledge' ? [['Title', 'text'], ['Content', 'rich']] : kind === 'media' ? [['Kind', 'kind'], ['Placement', 'placement'], ['Url', 'text'], ['PosterUrl', 'text'], ['AltText', 'text']] : [['Id', 'lookup']];
                     fields.forEach(function (f) {
+                        var field = $('<div class="mb-3">').appendTo(row);
                         var label = l('Hlg:' + (f[0] === 'Id' ? 'RelatedProduct' : f[0]));
-                        $('<label class="form-label d-block">').text(label).appendTo(row);
+                        $('<label class="form-label d-block">').text(label).appendTo(field);
                         var input;
                         if (f[1] === 'rich') input = $('<textarea rows="4" class="form-control hlg-rich mb-2">');
                         else if (f[1] === 'kind' || f[1] === 'placement') {
@@ -138,15 +264,31 @@
                         else input = $('<input type="text" class="form-control mb-2">');
                         var name = prefix + '[' + index + ']' + (kind === 'related' ? '' : '.' + f[0]);
                         input.attr('name', name).attr('data-field', f[0])
-                            .val(kind === 'related' ? item : item[f[0]] || (f[1] === 'kind' || f[1] === 'placement' ? 1 : '')).appendTo(row);
+                            .val(kind === 'related' ? item : item[f[0]] || (f[1] === 'kind' || f[1] === 'placement' ? 1 : '')).appendTo(field);
                         if ((kind === 'knowledge' && (f[0] === 'Title' || f[0] === 'Content')) ||
                             (kind === 'media' && f[0] === 'Url') || kind === 'related') {
                             input.attr({ 'data-val': 'true', 'data-val-required': l('Hlg:FieldRequired', label), 'aria-required': 'true' });
                             $('<span class="text-danger field-validation-valid">')
-                                .attr({ 'data-valmsg-for': name, 'data-valmsg-replace': 'true' }).appendTo(row);
+                                .attr({ 'data-valmsg-for': name, 'data-valmsg-replace': 'true' }).appendTo(field);
                         }
-                        if (kind === 'media' && (f[0] === 'PosterUrl' || (f[0] === 'Url' && Number(item.Kind || 1) === 1))) input.attr('data-hlg-image', 'true');
+                        if (kind === 'media' && f[0] === 'Url') input.attr('data-hlg-media-url', 'true');
+                        if (kind === 'media' && f[0] === 'PosterUrl') input.attr('data-hlg-image', 'true');
                     });
+                    if (kind === 'media') {
+                        var kindInput = row.find('[data-field="Kind"]');
+                        var mediaUrl = row.find('[data-field="Url"]');
+                        var posterField = row.find('[data-field="PosterUrl"]').closest('.mb-3');
+                        var posterInput = posterField.find('[data-field="PosterUrl"]');
+                        function syncMediaKind() {
+                            var video = Number(kindInput.val() || 1) === 2;
+                            posterField.toggleClass('d-none', !video);
+                            posterInput.prop('disabled', !video);
+                            if (!video) posterInput.val('').trigger('change');
+                            mediaUrl.trigger('change');
+                        }
+                        kindInput.on('change', syncMediaKind);
+                        syncMediaKind();
+                    }
                     [['MoveUp', -1], ['MoveDown', 1], ['Remove', 0]].forEach(function (action) {
                         $('<button type="button" class="btn btn-sm btn-outline-secondary me-2 mt-2">').text(l('Hlg:' + action[0])).appendTo(row).on('click', function () {
                             items = read(); if (action[1]) move(items, index, action[1]); else items.splice(index, 1); draw();

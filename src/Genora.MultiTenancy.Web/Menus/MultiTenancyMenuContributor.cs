@@ -2273,7 +2273,11 @@ public class MultiTenancyMenuContributor : IMenuContributor
                 hlg.AddItem(new ApplicationMenuItem("Hlg.Products", l["Hlg:Products"], url: "/Hlg/Products"));
             }
             if (await perms.IsGrantedAsync(tenant.IsAvailable ? MultiTenancyPermissions.AppHlgRanking.Default : MultiTenancyPermissions.HostAppHlgRanking.Default))
+            {
                 hlg.AddItem(new ApplicationMenuItem("Hlg.Ranking", l["Hlg:Ranking"], url: "/Hlg/Ranking"));
+                hlg.AddItem(new ApplicationMenuItem("Hlg.Prizes", l["Hlg:Prizes"], url: "/Hlg/Prizes"));
+                hlg.AddItem(new ApplicationMenuItem("Hlg.Winners", l["Hlg:Winners"], url: "/Hlg/Winners"));
+            }
             if (await perms.IsGrantedAsync(tenant.IsAvailable ? MultiTenancyPermissions.AppHlgGames.Default : MultiTenancyPermissions.HostAppHlgGames.Default))
                 hlg.AddItem(new ApplicationMenuItem("Hlg.Games", l["Hlg:Games"], url: "/Hlg/Games"));
             if (await perms.IsGrantedAsync(tenant.IsAvailable ? MultiTenancyPermissions.AppHlgUsers.Default : MultiTenancyPermissions.HostAppHlgUsers.Default))
