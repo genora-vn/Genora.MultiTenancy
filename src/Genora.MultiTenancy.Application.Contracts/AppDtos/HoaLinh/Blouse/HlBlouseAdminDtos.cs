@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using Genora.MultiTenancy.Enums;
 
 namespace Genora.MultiTenancy.AppDtos.HoaLinh.Blouse;
@@ -100,11 +101,16 @@ public class HlBlouseCampaignDto
 
 public class HlBlouseCampaignSaveDto
 {
+    [Required, StringLength(250)]
     public string ProgramName { get; set; } = null!;
     public string? IntroductionHtml { get; set; }
+    [Range(0, int.MaxValue)]
     public int FreeShirtLimit { get; set; } = 2;
+    [Range(0, int.MaxValue)]
     public int PointsPerShirt { get; set; } = 150;
+    [Range(0, int.MaxValue)]
     public int MaxExchangeShirt { get; set; } = 0;
+    [StringLength(500)]
     public string? SizeChartImageUrl { get; set; }
     public DateTime? StartTime { get; set; }
     public DateTime? EndTime { get; set; }

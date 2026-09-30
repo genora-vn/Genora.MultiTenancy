@@ -5,6 +5,8 @@
 > Nguồn gốc: migrate từ `~\.claude\projects\D--Genora-...-Genora-MultiTenancy\memory\` (108 file).
 
 ## Điều hướng nhanh
+- **HLG lỗi constructor IConfiguration 2026-09-30:** [follow-up](memory/notes/project/project_hl_blouse_config_datetime_fix_20260930.md). Sửa helper test còn gọi constructor cũ; full solution build 0 errors, 82 tests liên quan pass trực tiếp, không cần loại test HLG nữa.
+- **BlouseConfig lưu ngày giờ 2026-09-30:** [note](memory/notes/project/project_hl_blouse_config_datetime_fix_20260930.md). Reproduce flatpickr parse ISO sai; Date-object load/local ISO save, typed/cleared input, cùng campaign selector, validation. Web build +35 Sale tests (workaround compile HLG cũ) +27 Node pass; không migration/deploy, chưa browser UAT.
 - **HLG quiz play configuration 2026-09-24 (mới nhất):** [note](memory/notes/project/project_hlg_quiz_play_configuration_20260924.md). Thêm QuestionsPerPlay/AllowedWrongAnswers; Answer/Finish fail khi wrong count vượt limit, không cộng điểm; migration chưa apply; 57App+19Web pass, EF clean.
 - **HLG Ranking result Excel 2026-09-30:** [note](memory/notes/project/project_hlg_ranking_result_excel_20260930.md). Action chỉ hiện sau EndAt, backend chặn gọi sớm; báo cáo người chơi–game/lượt/điểm/hạng; Web build +20 Admin tests + JS syntax pass, không migration.
 - **HLG quiz play configuration 2026-09-24:** [note](memory/notes/project/project_hlg_quiz_play_configuration_20260924.md). Thêm QuestionsPerPlay/AllowedWrongAnswers; Answer/Finish fail khi wrong count vượt limit, không cộng điểm; migration chưa apply; 57App+19Web pass, EF clean.

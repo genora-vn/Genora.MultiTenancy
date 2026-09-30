@@ -3,6 +3,14 @@
     var styleNames = { 1: 'Nam', 2: 'Nữ' };
     var sizeModal;
     var fpStart, fpEnd;
+    var campaignReady = false, campaignBusy = false;
+
+    function setCampaignBusy(busy) {
+        campaignBusy = busy;
+        $('#BtnSaveCampaign').prop('disabled', busy || !campaignReady);
+        if (busy) abp.ui.setBusy('#CampaignForm');
+        else abp.ui.clearBusy('#CampaignForm');
+    }
 
     // ===== Banner preview =====
     function updatePreview(val) {
@@ -12,20 +20,53 @@
     }
 
     // ===== Campaign =====
+    function setCampaignDate(selector, picker, value) {
+        // API/SQL dates are ISO, not the picker's display format d/m/Y H:i.
+        var date = value ? new Date(value) : null;
+        if (date && isNaN(date.getTime())) throw new Error('Ngày giờ chương trình không hợp lệ.');
+        if (picker) picker.setDate(date, false);
+        else $(selector).val(date ? formatDateTime(date) : '');
+    }
+
+    function renderCampaign(c) {
+        if (!c) return;
+        $('#ProgramName').val(c.programName || '');
+        $('#IntroductionHtml').val(c.introductionHtml || '');
+        $('#FreeShirtLimit').val(c.freeShirtLimit ?? 2);
+        $('#PointsPerShirt').val(c.pointsPerShirt ?? 150);
+        $('#MaxExchangeShirt').val(c.maxExchangeShirt ?? 0);
+        $('#SizeChartImageUrl').val(c.sizeChartImageUrl || '');
+        updatePreview(c.sizeChartImageUrl || '');
+        setCampaignDate('#StartTime', fpStart, c.startTime);
+        setCampaignDate('#EndTime', fpEnd, c.endTime);
+        $('#IsActive').prop('checked', !!c.isActive);
+    }
+
     function loadCampaign() {
-        service.getCampaign().then(function (c) {
-            if (!c) return;
-            $('#ProgramName').val(c.programName || '');
-            $('#IntroductionHtml').val(c.introductionHtml || '');
-            $('#FreeShirtLimit').val(c.freeShirtLimit ?? 2);
-            $('#PointsPerShirt').val(c.pointsPerShirt ?? 150);
-            $('#MaxExchangeShirt').val(c.maxExchangeShirt ?? 0);
-            $('#SizeChartImageUrl').val(c.sizeChartImageUrl || '');
-            updatePreview(c.sizeChartImageUrl || '');
-            if (fpStart) fpStart.setDate(c.startTime || null, false);
-            if (fpEnd) fpEnd.setDate(c.endTime || null, false);
-            $('#IsActive').prop('checked', !!c.isActive);
-        }).catch(function (err) { console.error(err); });
+        setCampaignBusy(true);
+        service.getCampaign()
+            .then(function (c) { renderCampaign(c); campaignReady = true; })
+            .catch(function () { abp.notify.error('Không tải được cấu hình chương trình. Vui lòng tải lại trang.'); })
+            .always(function () { setCampaignBusy(false); });
+    }
+
+    function formatDateTime(date) {
+        var pad = function (n) { return String(n).padStart(2, '0'); };
+        return pad(date.getDate()) + '/' + pad(date.getMonth() + 1) + '/' + date.getFullYear() +
+            ' ' + pad(date.getHours()) + ':' + pad(date.getMinutes());
+    }
+
+    function readCampaignDate(selector) {
+        var value = ($(selector).val() || '').trim();
+        if (!value) return null;
+        var parts = /^(\d{2})\/(\d{2})\/(\d{4}) (\d{2}):(\d{2})$/.exec(value);
+        if (parts) {
+            var date = new Date(0);
+            date.setFullYear(+parts[3], +parts[2] - 1, +parts[1]);
+            date.setHours(+parts[4], +parts[5], 0, 0);
+            if (+parts[3] > 0 && formatDateTime(date) === value) return date;
+        }
+        throw new Error('Ngày giờ không hợp lệ. Vui lòng nhập theo định dạng dd/MM/yyyy HH:mm.');
     }
 
     // Chuyển Date (giờ local flatpickr đang hiển thị) thành chuỗi "naive" KHÔNG có hậu tố Z/offset.
@@ -40,27 +81,36 @@
             'T' + pad(date.getHours()) + ':' + pad(date.getMinutes()) + ':' + pad(date.getSeconds());
     }
 
-    function saveCampaign() {
+    function saveCampaign(event) {
+        if (event) event.preventDefault();
+        if (!campaignReady || campaignBusy) return;
+        if (!document.getElementById('CampaignForm').reportValidity()) return;
         var name = ($('#ProgramName').val() || '').trim();
         if (!name) { abp.notify.warn('Vui lòng nhập tên chương trình'); return; }
-        var start = fpStart && fpStart.selectedDates[0] ? toNaiveIsoString(fpStart.selectedDates[0]) : null;
-        var end = fpEnd && fpEnd.selectedDates[0] ? toNaiveIsoString(fpEnd.selectedDates[0]) : null;
+        // Read the visible inputs so typed/cleared values cannot reuse an old selectedDates value.
+        var start, end;
+        try { start = readCampaignDate('#StartTime'); end = readCampaignDate('#EndTime'); }
+        catch (err) { abp.notify.warn(err.message); return; }
+        if (start && end && end < start) {
+            abp.notify.warn('Thời gian kết thúc phải bằng hoặc sau thời gian bắt đầu.');
+            return;
+        }
         var input = {
             programName: name,
             introductionHtml: $('#IntroductionHtml').val() || null,
-            freeShirtLimit: parseInt($('#FreeShirtLimit').val()) || 0,
-            pointsPerShirt: parseInt($('#PointsPerShirt').val()) || 0,
-            maxExchangeShirt: parseInt($('#MaxExchangeShirt').val()) || 0,
+            freeShirtLimit: Number($('#FreeShirtLimit').val()),
+            pointsPerShirt: Number($('#PointsPerShirt').val()),
+            maxExchangeShirt: Number($('#MaxExchangeShirt').val()),
             sizeChartImageUrl: $('#SizeChartImageUrl').val() || null,
-            startTime: start,
-            endTime: end,
+            startTime: toNaiveIsoString(start),
+            endTime: toNaiveIsoString(end),
             isActive: $('#IsActive').is(':checked')
         };
-        abp.ui.setBusy('#CampaignForm');
+        setCampaignBusy(true);
         service.saveCampaign(input)
-            .then(function () { abp.notify.success('Đã lưu cấu hình'); loadCampaign(); })
+            .then(function (c) { renderCampaign(c); abp.notify.success('Đã lưu cấu hình'); })
             .catch(function (err) { abp.notify.error('Lỗi: ' + (err.message || '')); })
-            .always(function () { abp.ui.clearBusy('#CampaignForm'); });
+            .always(function () { setCampaignBusy(false); });
     }
 
     // ===== Banner upload (chọn tệp từ máy) =====
@@ -70,7 +120,8 @@
         if (file.size > 5 * 1024 * 1024) { abp.notify.warn('Ảnh vượt quá 5MB'); $('#BannerFile').val(''); return; }
         var form = new FormData();
         form.append('file', file);
-        abp.ui.setBusy('#CampaignForm');
+        if (!campaignReady || campaignBusy) return;
+        setCampaignBusy(true);
         fetch(abp.appPath + 'HoaLinh/BlouseConfig?handler=UploadImage', {
             method: 'POST',
             headers: { RequestVerificationToken: abp.security.antiForgery.getToken() },
@@ -86,7 +137,7 @@
         }).catch(function (err) {
             abp.notify.error(err.message || 'Upload thất bại');
         }).finally(function () {
-            abp.ui.clearBusy('#CampaignForm');
+            setCampaignBusy(false);
             $('#BannerFile').val('');
         });
     }
@@ -181,12 +232,12 @@
     $(function () {
         sizeModal = new bootstrap.Modal(document.getElementById('SizeModal'));
         if (window.flatpickr) {
-            var opts = { enableTime: true, dateFormat: 'd/m/Y H:i', time_24hr: true, allowInput: true, minuteIncrement: 5 };
+            var opts = { enableTime: true, dateFormat: 'd/m/Y H:i', time_24hr: true, allowInput: true, minuteIncrement: 1, disableMobile: true };
             if (flatpickr.l10ns && flatpickr.l10ns.vn) opts.locale = flatpickr.l10ns.vn;
             fpStart = flatpickr('#StartTime', opts);
             fpEnd = flatpickr('#EndTime', opts);
         }
-        $('#BtnSaveCampaign').click(saveCampaign);
+        $('#CampaignForm').on('submit', saveCampaign);
         $('#SizeChartImageUrl').on('input', function () { updatePreview($(this).val()); });
         $('#BannerFile').on('change', function () { uploadBanner(this.files && this.files[0]); });
         $('#BtnAddSize').click(function () { openSizeModal(null); });

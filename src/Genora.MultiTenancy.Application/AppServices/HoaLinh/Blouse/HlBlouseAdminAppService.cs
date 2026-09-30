@@ -140,9 +140,7 @@ public class HlBlouseAdminAppService : ApplicationService, IHlBlouseAdminAppServ
             MultiTenancyPermissions.AppHlBlouse.Default,
             MultiTenancyPermissions.HostAppHlBlouse.Default);
 
-        var queryable = await _campaignRepo.GetQueryableAsync();
-        var entity = await AsyncExecuter.FirstOrDefaultAsync(
-            queryable.OrderByDescending(x => x.IsActive).ThenByDescending(x => x.CreationTime));
+        var entity = await FindCampaignAsync();
         return entity == null ? null : MapCampaign(entity);
     }
 
@@ -156,10 +154,10 @@ public class HlBlouseAdminAppService : ApplicationService, IHlBlouseAdminAppServ
             throw new UserFriendlyException("Tên chương trình là bắt buộc.");
         if (input.FreeShirtLimit < 0 || input.PointsPerShirt < 0 || input.MaxExchangeShirt < 0)
             throw new UserFriendlyException("Giá trị cấu hình không hợp lệ.");
+        if (input.StartTime.HasValue && input.EndTime.HasValue && input.EndTime < input.StartTime)
+            throw new UserFriendlyException("Thời gian kết thúc phải bằng hoặc sau thời gian bắt đầu.");
 
-        var queryable = await _campaignRepo.GetQueryableAsync();
-        var entity = await AsyncExecuter.FirstOrDefaultAsync(
-            queryable.OrderByDescending(x => x.CreationTime));
+        var entity = await FindCampaignAsync();
 
         if (entity == null)
         {
@@ -232,6 +230,16 @@ public class HlBlouseAdminAppService : ApplicationService, IHlBlouseAdminAppServ
     // ========================================================================
     // Helpers
     // ========================================================================
+    private async Task<HlBlouseCampaign?> FindCampaignAsync()
+    {
+        // Read and save must select the same tenant-filtered campaign, including legacy inactive rows.
+        var queryable = await _campaignRepo.GetQueryableAsync();
+        return await AsyncExecuter.FirstOrDefaultAsync(queryable
+            .OrderByDescending(x => x.IsActive)
+            .ThenByDescending(x => x.CreationTime)
+            .ThenBy(x => x.Id));
+    }
+
     private static void ValidateSizeInput(HlBlouseSizeSaveDto input)
     {
         if (string.IsNullOrWhiteSpace(input.SizeCode))
@@ -242,7 +250,7 @@ public class HlBlouseAdminAppService : ApplicationService, IHlBlouseAdminAppServ
 
     private static void ApplyCampaign(HlBlouseCampaign entity, HlBlouseCampaignSaveDto input)
     {
-        entity.ProgramName = input.ProgramName;
+        entity.ProgramName = input.ProgramName.Trim();
         entity.IntroductionHtml = input.IntroductionHtml;
         entity.FreeShirtLimit = input.FreeShirtLimit;
         entity.PointsPerShirt = input.PointsPerShirt;

@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using Genora.MultiTenancy.AppServices.Hlg;
 using Genora.MultiTenancy.DomainModels.AppCustomers;
 using Genora.MultiTenancy.DomainModels.AppHlg;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
 using NSubstitute;
@@ -81,7 +82,8 @@ public class HlgRankingShareImageTests : IDisposable
         var events = Repo<HlgRankingEvent>();
         var sessions = Repo<HlgGameSession>();
         var custRepo = Repo(customers);
-        var service = new HlgRankingAppService(events, sessions, custRepo, NullLogger<HlgRankingAppService>.Instance);
+        var service = new HlgRankingAppService(events, sessions, custRepo,
+            NullLogger<HlgRankingAppService>.Instance, new ConfigurationBuilder().Build());
         var provider = _services.BuildServiceProvider();
         _providers.Add(provider);
         service.LazyServiceProvider = new AbpLazyServiceProvider(provider);

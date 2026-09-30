@@ -1,5 +1,16 @@
 # ACTIVE CONTEXT — Việc đang làm dở
 
+## HLG sửa lỗi build thiếu IConfiguration — 2026-09-30 (follow-up)
+
+- `HlgRankingShareImageTests.Build` đã truyền ConfigurationBuilder().Build() vào constructor mới của HlgRankingAppService; chỉ sửa test setup.
+- Full solution build **0 errors, 2 warnings**; **82/82** RankingShareImage + HlgDesignContent + HoaLinhSales tests pass bằng lệnh bình thường, không loại test HLG/workaround như lượt trước. [Chi tiết](memory/notes/project/project_hl_blouse_config_datetime_fix_20260930.md).
+
+## Hoa Linh Sales — BlouseConfig sửa lưu ngày giờ — 2026-09-30 (mới nhất)
+
+- Đã reproduce flatpickr đọc sai ISO bằng format `d/m/Y H:i` (30/10/2026 23:55 thành 20/06/2026 00:00). Fix chuyển Date trước setDate, đọc input hiện tại khi save, render saved DTO; giữ local ISO không Z. Read/save backend dùng cùng campaign selector; thêm validation ngày/numeric/length và chặn lưu trước khi tải xong/double submit.
+- Web build 0 errors; 35 HoaLinhSales tests pass (loại riêng test HLG có sẵn đang lỗi compile bằng target tạm), 27 Node tests pass; 15 Blouse tests pass cả TZ UTC. Không migration/deploy/DB writes. Browser unavailable, cần UAT save→F5 trên tenant thật.
+- Chi tiết, giới hạn kiểm thử và checklist: [note](memory/notes/project/project_hl_blouse_config_datetime_fix_20260930.md). Entry này supersede mô tả lưu date bằng toISOString trong phần Blouse cũ bên dưới.
+
 ## HLG Ranking result Excel — 2026-09-30 (mới nhất)
 
 - Đã thêm action `Xuất Excel kết quả` trong dropdown dòng sự kiện `/Hlg/Ranking`, chỉ hiện khi server xác định `Clock.Now > EndAt`; endpoint vẫn enforce permission, tenant scope và end-time.

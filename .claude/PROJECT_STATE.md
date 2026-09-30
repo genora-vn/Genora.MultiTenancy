@@ -83,6 +83,7 @@
 - Note: `project_caddie_*`.
 
 ## Module: Hoa Linh Sales (Hoa Linh Gắn Kết / Dược phẩm) — HOÀN THÀNH Phase 1-7
+- **BlouseConfig 2026-09-30:** sửa ngày giờ bị reset do flatpickr parse ISO theo display format; đồng bộ chọn campaign khi read/save, validate trường cấu hình. Web build 0 errors; 35 Sale tests (bỏ riêng test HLG cũ lỗi compile) +27 Node pass. Không migration/deploy; cần UAT tenant thật. [Note](memory/notes/project/project_hl_blouse_config_datetime_fix_20260930.md).
 - **Định danh:** DB `HoaLinhMienNam`, schema `HL`; khác HL25/HLG.
 - **Admin 2026-09-17:** sửa lọc ngày PointHistory, thêm lọc ngày GiftExchanges, Excel theo bộ lọc cho 3 trang PointHistory/GiftExchanges/Orders. Web build + 14 Application/8 JS tests pass; chưa UAT runtime/deploy; không migration mới.
 - BRD: Mini App 8 module + Admin Portal 10 + API DMS sync.
