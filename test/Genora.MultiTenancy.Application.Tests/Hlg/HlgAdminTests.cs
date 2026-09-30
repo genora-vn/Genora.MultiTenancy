@@ -29,6 +29,7 @@ using Volo.Abp.MultiTenancy;
 using Xunit;
 using ClosedXML.Excel;
 using System.IO;
+using System.IO.Compression;
 namespace Genora.MultiTenancy.Hlg;
 
 public class HlgAdminTests : IDisposable
@@ -81,6 +82,54 @@ public class HlgAdminTests : IDisposable
         rows.Count.ShouldBe(2);
         rows[0].RowNumber.ShouldBe(3);
         rows[1].RowNumber.ShouldBe(5);
+    }
+
+    [Fact]
+    public void Winner_Excel_Template_And_Importer_Preserve_Prize_And_Phone()
+    {
+        var rankingEvent = new HlgRankingEvent(Guid.NewGuid(), "Sự kiện tháng 9", DateTime.Today, DateTime.Today.AddDays(1), _tenant.Id);
+        var prize = new HlgRankingPrize(Guid.NewGuid(), _tenant.Id)
+        {
+            EventId = rankingEvent.Id,
+            Title = "Giải nhất",
+            Quantity = 1,
+            IsActive = true
+        };
+
+        using var template = new HlgWinnerExcelTemplateGenerator().Generate(new[] { rankingEvent }, new[] { prize });
+        var templateStream = template.GetStream();
+        using (var archive = new ZipArchive(templateStream, ZipArchiveMode.Read, leaveOpen: true))
+        using (var reader = new StreamReader(archive.GetEntry("xl/worksheets/sheet1.xml")!.Open()))
+        {
+            var worksheetXml = reader.ReadToEnd();
+            worksheetXml.ShouldContain("<x:formula1>=HlgWinnerPublishedValues</x:formula1>");
+            worksheetXml.ShouldNotContain("<x:formula1>TRUE,FALSE</x:formula1>");
+        }
+        templateStream.Position = 0;
+        using var workbook = new XLWorkbook(templateStream);
+        var input = workbook.Worksheet("TraoThuong");
+        var events = workbook.Worksheet("DanhMucSuKien");
+        var prizes = workbook.Worksheet("DanhMucGiai");
+        input.Cell(3, 1).Value = $"{rankingEvent.Title} | {rankingEvent.Id}";
+        input.Cell(3, 2).Value = $"{prize.Title} | {prize.Id}";
+        input.Cell(3, 3).Value = "0900123456";
+        input.Cell(3, 4).Value = "TRUE";
+        using var stream = new MemoryStream();
+        workbook.SaveAs(stream);
+        stream.Position = 0;
+
+        var rows = new HlgWinnerExcelImporter().Read(stream);
+
+        events.Cell(2, 1).GetString().ShouldContain(rankingEvent.Id.ToString());
+        events.Cell(2, 4).GetString().ShouldBe("TRUE");
+        events.Cell(3, 4).GetString().ShouldBe("FALSE");
+        prizes.Cell(2, 1).GetString().ShouldBe($"{prize.Title} | {prize.Id}");
+        prizes.Cell(2, 2).GetString().ShouldBe("Giải nhất");
+        input.Column(3).Style.NumberFormat.Format.ShouldBe("@");
+        rows.Single().EventId.ShouldContain(rankingEvent.Id.ToString());
+        rows.Single().PrizeId.ShouldBe($"{prize.Title} | {prize.Id}");
+        rows.Single().CustomerPhone.ShouldBe("0900123456");
+        rows.Single().IsActive.ShouldBe("TRUE");
     }
 
     [Fact]

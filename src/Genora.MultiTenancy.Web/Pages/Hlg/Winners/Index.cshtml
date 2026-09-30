@@ -11,17 +11,31 @@
     <abp-script src="/Pages/Hlg/admin.js" />
     <abp-script src="/Pages/Hlg/Winners/index.js" />
 }
-<div id="HlgAdmin" data-parent-id="@Model.ParentId" data-create="@((await Model.GrantedAsync(".Create")).ToString().ToLowerInvariant())" data-edit="@((await Model.GrantedAsync(".Edit")).ToString().ToLowerInvariant())" data-delete="@((await Model.GrantedAsync(".Delete")).ToString().ToLowerInvariant())">
+@{
+    var canCreate = await Model.GrantedAsync(".Create");
+    var canEdit = await Model.GrantedAsync(".Edit");
+    var canDelete = await Model.GrantedAsync(".Delete");
+}
+<div id="HlgAdmin" data-parent-id="@Model.ParentId" data-create="@canCreate.ToString().ToLowerInvariant()" data-edit="@canEdit.ToString().ToLowerInvariant()" data-delete="@canDelete.ToString().ToLowerInvariant()">
     @* <a asp-page="/Hlg/Ranking/Index">@L["Hlg:Ranking"]</a> *@
     <div class="d-flex justify-content-between align-items-center tool-bar">
         <h1>@L["Hlg:Winners"]</h1>
-        @if (await Model.GrantedAsync(".Create"))
-        {
-            <button id="HlgCreate" class="btn btn-outline-primary create-btn" type="button">
-                <i class="fa fa-plus"></i>
-                <span>@L["Hlg:Create"]</span>
+        <div class="d-flex gap-2 flex-wrap justify-content-end">
+            <button id="HlgDownloadWinnerTemplate" class="btn btn-outline-secondary create-btn" type="button">
+                <i class="fa fa-download"></i> @L["DownloadTemplateBtn"]
             </button>
-        }
+            @if (canCreate)
+            {
+                <button id="HlgImportWinners" class="btn btn-outline-secondary create-btn" type="button">
+                    <i class="fa fa-upload"></i> @L["ImportExcel"]
+                </button>
+                <input id="HlgWinnerExcelFile" type="file" accept=".xlsx" class="d-none" />
+                <button id="HlgCreate" class="btn btn-outline-primary create-btn" type="button">
+                    <i class="fa fa-plus"></i>
+                    <span>@L["Hlg:Create"]</span>
+                </button>
+            }
+        </div>
     </div>
     <div id="HlgError" role="alert" class="alert alert-danger d-none"></div>
     <div class="card mb-3">

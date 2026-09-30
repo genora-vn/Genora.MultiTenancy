@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Genora.MultiTenancy.Hlg;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Application.Services;
+using Volo.Abp.Content;
 namespace Genora.MultiTenancy.AppDtos.Hlg.Admin;
 public class HlgBrandInput
 {
@@ -93,4 +94,12 @@ public interface IHlgPrizeAdminAppService : ICrudAppService<HlgPrizeAdminDto, Gu
 public class HlgWinnerAdminDto : HlgWinnerInput, IEntityDto<Guid> { public Guid Id { get; set; } public int Rank { get; set; } public int Score { get; set; } public string CustomerName { get; set; } = ""; }
 public class CreateHlgWinnerInput : HlgWinnerInput { }
 public class UpdateHlgWinnerInput : HlgWinnerInput { }
-public interface IHlgWinnerAdminAppService : ICrudAppService<HlgWinnerAdminDto, Guid, GetHlgAdminListInput, CreateHlgWinnerInput, UpdateHlgWinnerInput> { }
+public class ImportHlgWinnerExcelInput
+{
+    public IRemoteStreamContent? File { get; set; }
+}
+public interface IHlgWinnerAdminAppService : ICrudAppService<HlgWinnerAdminDto, Guid, GetHlgAdminListInput, CreateHlgWinnerInput, UpdateHlgWinnerInput>
+{
+    Task<IRemoteStreamContent> DownloadImportTemplateAsync();
+    Task<int> ImportExcelAsync(ImportHlgWinnerExcelInput input);
+}
