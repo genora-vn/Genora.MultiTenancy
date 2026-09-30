@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Genora.MultiTenancy.AppDtos.Hlg;
@@ -9,12 +10,15 @@ using Genora.MultiTenancy.Features.AppHlgFeatures;
 using Genora.MultiTenancy.Localization;
 using Genora.MultiTenancy.Permissions;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.Extensions.Logging;
 using Volo.Abp;
 using Volo.Abp.Application.Dtos;
+using Volo.Abp.Content;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Features;
 using Volo.Abp.MultiTenancy;
 using Volo.Abp.Uow;
+using Volo.Abp.Validation;
 namespace Genora.MultiTenancy.AppServices.Hlg.Admin;
 [Authorize]
 public class HlgWinnerAdminAppService : FeatureProtectedCrudAppService<HlgRankingWinner, HlgWinnerAdminDto, Guid, GetHlgAdminListInput, CreateHlgWinnerInput, UpdateHlgWinnerInput>, IHlgWinnerAdminAppService
@@ -53,7 +57,12 @@ public class HlgWinnerAdminAppService : FeatureProtectedCrudAppService<HlgRankin
     [UnitOfWork(isTransactional: true)]
     public override async Task<HlgWinnerAdminDto> CreateAsync(CreateHlgWinnerInput input)
     {
-        await CheckCreatePolicyAsync(); await ValidateAsync(input, null);
+        await CheckCreatePolicyAsync();
+        return await CreateWinnerAsync(input);
+    }
+    private async Task<HlgWinnerAdminDto> CreateWinnerAsync(HlgWinnerInput input)
+    {
+        await ValidateAsync(input, null);
         var entity = new HlgRankingWinner(GuidGenerator.Create(), CurrentTenant.Id); Apply(input, entity);
         var entries = await LazyServiceProvider.LazyGetRequiredService<IHlgRankingAppService>().GetEventEntriesAsync(entity.EventId, (await Repo<Customer>().GetAsync(entity.CustomerId)).PhoneNumber, 1);
         var row = entries.Single(x => x.UserId == entity.CustomerId); entity.Rank = row.Rank; entity.Score = row.Score;
@@ -83,11 +92,110 @@ public class HlgWinnerAdminAppService : FeatureProtectedCrudAppService<HlgRankin
         var entries = await LazyServiceProvider.LazyGetRequiredService<IHlgRankingAppService>().GetEventEntriesAsync(ev.Id, customer.PhoneNumber, 1);
         if (!entries.Any(x => x.UserId == input.CustomerId)) throw new UserFriendlyException(L["Hlg:WinnerHasNoScore"]);
         // Serialize concurrent publications against the same prize using ABP optimistic concurrency.
-        prize.ConcurrencyStamp = Guid.NewGuid().ToString("N");
+        //prize.ConcurrencyStamp = Guid.NewGuid().ToString("N");
         await Repo<HlgRankingPrize>().UpdateAsync(prize, autoSave: true);
     }
     public override async Task DeleteAsync(Guid id)
     { await CheckDeletePolicyAsync(); var entity = await Repository.GetAsync(id); Scope(entity.TenantId); await Repository.DeleteAsync(entity); }
+
+    public async Task<IRemoteStreamContent> DownloadImportTemplateAsync()
+    {
+        await CheckGetListPolicyAsync();
+        var events = await Repo<HlgRankingEvent>().GetListAsync(x => x.TenantId == CurrentTenant.Id);
+        var eventIds = events.Select(x => x.Id).ToList();
+        var prizes = await Repo<HlgRankingPrize>().GetListAsync(x => x.TenantId == CurrentTenant.Id && eventIds.Contains(x.EventId) && x.IsActive);
+        return LazyServiceProvider.LazyGetRequiredService<HlgWinnerExcelTemplateGenerator>().Generate(
+            events.OrderByDescending(x => x.StartAt).ThenBy(x => x.Title),
+            prizes.OrderBy(x => x.EventId).ThenBy(x => x.DisplayOrder).ThenBy(x => x.Title));
+    }
+
+    [DisableValidation]
+    [UnitOfWork(isTransactional: true)]
+    public async Task<int> ImportExcelAsync(ImportHlgWinnerExcelInput input)
+    {
+        await CheckCreatePolicyAsync();
+        if (input.File == null) throw new UserFriendlyException(L["Hlg:ImportFileRequired"]);
+        if (!(input.File.FileName ?? "").EndsWith(".xlsx", StringComparison.OrdinalIgnoreCase))
+            throw new UserFriendlyException(L["Hlg:ImportFileTypeInvalid"]);
+        if ((input.File.ContentLength ?? 0) > 10 * 1024 * 1024)
+            throw new UserFriendlyException(L["Hlg:ImportFileTooLarge"]);
+
+        List<HlgWinnerExcelRow> rows;
+        try
+        {
+            using var stream = input.File.GetStream();
+            rows = LazyServiceProvider.LazyGetRequiredService<HlgWinnerExcelImporter>().Read(stream);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogWarning(ex, "Cannot read HLG winner import workbook");
+            throw new UserFriendlyException(L["Hlg:ImportFileInvalid"]);
+        }
+
+        if (rows.Count == 0) throw new UserFriendlyException(L["Hlg:WinnerImportNoData"]);
+
+        var success = 0;
+        foreach (var row in rows)
+        {
+            try
+            {
+                if (!TryParseLookupId(row.EventId, out var eventId))
+                    throw new UserFriendlyException(L["Hlg:WinnerImportEventInvalid"]);
+                if (!TryParseLookupId(row.PrizeId, out var prizeId))
+                    throw new UserFriendlyException(L["Hlg:WinnerImportPrizeInvalid"]);
+                if (string.IsNullOrWhiteSpace(row.CustomerPhone))
+                    throw new UserFriendlyException(L["Hlg:WinnerImportPhoneRequired"]);
+                if (!TryParseBoolean(row.IsActive, false, out var isActive))
+                    throw new UserFriendlyException(L["Hlg:WinnerImportIsActiveInvalid"]);
+
+                var rankingEvent = await Repo<HlgRankingEvent>().FirstOrDefaultAsync(x => x.Id == eventId && x.TenantId == CurrentTenant.Id);
+                if (rankingEvent == null) throw new UserFriendlyException(L["Hlg:WinnerImportEventInvalid"]);
+                var prize = await Repo<HlgRankingPrize>().FirstOrDefaultAsync(x => x.Id == prizeId && x.TenantId == CurrentTenant.Id && x.EventId == eventId);
+                if (prize == null) throw new UserFriendlyException(L["Hlg:WinnerImportPrizeInvalid"]);
+                var phone = row.CustomerPhone.Trim();
+                var customer = await Repo<Customer>().FirstOrDefaultAsync(x => x.TenantId == CurrentTenant.Id && x.PhoneNumber == phone);
+                if (customer == null) throw new UserFriendlyException(L["Hlg:WinnerImportCustomerNotFound", phone]);
+
+                await CreateWinnerAsync(new HlgWinnerInput
+                {
+                    EventId = eventId,
+                    PrizeId = prizeId,
+                    CustomerId = customer.Id,
+                    IsActive = isActive
+                });
+                success++;
+            }
+            catch (UserFriendlyException ex)
+            {
+                throw new UserFriendlyException(L["Hlg:WinnerImportRowInvalid", row.RowNumber, ex.Message]);
+            }
+            catch (System.ComponentModel.DataAnnotations.ValidationException ex)
+            {
+                throw new UserFriendlyException(L["Hlg:WinnerImportRowInvalid", row.RowNumber, ex.Message]);
+            }
+        }
+
+        return success;
+    }
+
+    private static bool TryParseLookupId(string value, out Guid result)
+    {
+        var normalized = value.Trim();
+        if (Guid.TryParse(normalized, out result)) return true;
+        var separator = normalized.LastIndexOf('|');
+        return separator >= 0 && Guid.TryParse(normalized[(separator + 1)..].Trim(), out result);
+    }
+
+    private static bool TryParseBoolean(string value, bool defaultValue, out bool result)
+    {
+        if (string.IsNullOrWhiteSpace(value)) { result = defaultValue; return true; }
+        var normalized = value.Trim();
+        if (bool.TryParse(normalized, out result)) return true;
+        if (normalized == "1" || normalized.Equals("yes", StringComparison.OrdinalIgnoreCase) || normalized.Equals("có", StringComparison.OrdinalIgnoreCase)) { result = true; return true; }
+        if (normalized == "0" || normalized.Equals("no", StringComparison.OrdinalIgnoreCase) || normalized.Equals("không", StringComparison.OrdinalIgnoreCase)) { result = false; return true; }
+        return false;
+    }
+
     private static void Apply(HlgWinnerInput input, HlgRankingWinner entity) { entity.EventId = input.EventId; entity.PrizeId = input.PrizeId; entity.CustomerId = input.CustomerId; entity.IsActive = input.IsActive; }
     private static HlgWinnerAdminDto Map(HlgRankingWinner entity) => new() { Id = entity.Id, EventId = entity.EventId, PrizeId = entity.PrizeId, CustomerId = entity.CustomerId, IsActive = entity.IsActive, Rank = entity.Rank, Score = entity.Score };
 }

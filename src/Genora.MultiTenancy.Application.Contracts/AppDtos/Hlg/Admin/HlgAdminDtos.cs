@@ -140,7 +140,11 @@ public interface IHlgUserAdminAppService : IApplicationService
 }
 public class HlgCategoryAdminDto : HlgCategoryInput, IEntityDto<Guid> { public Guid Id { get; set; } }
 public class HlgProductAdminDto : HlgProductInput, IEntityDto<Guid> { public Guid Id { get; set; } }
-public class HlgRankingAdminDto : HlgRankingInput, IEntityDto<Guid> { public Guid Id { get; set; } }
+public class HlgRankingAdminDto : HlgRankingInput, IEntityDto<Guid>
+{
+    public Guid Id { get; set; }
+    public bool CanExportResults { get; set; }
+}
 public class HlgGameAdminDto : HlgGameInput, IEntityDto<Guid> { public Guid Id { get; set; } }
 public class CreateHlgCategoryInput : HlgCategoryInput { }
 public class UpdateHlgCategoryInput : HlgCategoryInput { }
@@ -156,6 +160,7 @@ public class CreateHlgRankingInput : HlgRankingInput { }
 public class UpdateHlgRankingInput : HlgRankingInput { }
 public interface IHlgRankingAdminAppService : ICrudAppService<HlgRankingAdminDto, Guid, GetHlgAdminListInput, CreateHlgRankingInput, UpdateHlgRankingInput>
 {
+    Task<IRemoteStreamContent> ExportResultsAsync(Guid id);
 }
 public class CreateHlgGameInput : HlgGameInput { }
 public class UpdateHlgGameInput : HlgGameInput { }

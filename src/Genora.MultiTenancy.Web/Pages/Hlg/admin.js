@@ -54,6 +54,14 @@
             }
         });
         if (config.extraChildren) actions.push({ text: l('Hlg:' + config.extraChildren), action: function (data) { root.location.href = abp.appPath + 'Hlg/' + config.extraChildren + '?parentId=' + encodeURIComponent(data.record.id); } });
+        if (config.exportResults) actions.push({
+            text: l('Hlg:ExportEventResults'),
+            visible: function (record) { return !!record && record.canExportResults === true; },
+            action: function (data) {
+                if (!root.genora || !root.genora.excel) { abp.notify.error(l('Hlg:ExcelHelperUnavailable')); return; }
+                root.genora.excel.download('api/app/hlg-ranking-excel/export', { eventId: data.record.id });
+            }
+        });
         if (config.detail) actions.push({ text: l('Hlg:Details'), action: function (data) { new abp.ModalManager('/Hlg/' + config.folder + '/DetailModal').open({ id: data.record.id }); } });
         if (editable && !config.readOnly) actions.push({
             text: l('Hlg:Edit'), action: function (data) {

@@ -1,5 +1,12 @@
 # ACTIVE CONTEXT — Việc đang làm dở
 
+## HLG Ranking result Excel — 2026-09-30 (mới nhất)
+
+- Đã thêm action `Xuất Excel kết quả` trong dropdown dòng sự kiện `/Hlg/Ranking`, chỉ hiện khi server xác định `Clock.Now > EndAt`; endpoint vẫn enforce permission, tenant scope và end-time.
+- Excel nhóm theo người chơi–trò chơi, gồm thông tin định danh, lượt chơi hoàn tất, điểm game/cao nhất, câu đúng/tổng câu, tổng điểm và thứ hạng sự kiện, thời gian lượt đầu/cuối.
+- Web build 0 errors; 20 HLG Admin tests + JS syntax pass; không migration. Chưa UAT tenant DB/browser thật. Chi tiết: [note](memory/notes/project/project_hlg_ranking_result_excel_20260930.md).
+- Follow-up đã sửa `rowAction.visible(record)` để DataTable không đứng loading khi dựng action xuất Excel; log trước sửa cho thấy API danh sách vẫn trả 200.
+
 ## HLG quiz play configuration — 2026-09-24 (mới nhất)
 
 - Đã thêm `QuestionsPerPlay` và `AllowedWrongAnswers` xuyên suốt entity, Admin DTO/service, Create/Edit Razor, Mini App game DTO/start flow và VI/EN.

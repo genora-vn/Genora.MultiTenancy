@@ -18,6 +18,7 @@ using Genora.MultiTenancy.Features.AppHlgFeatures;
 using Genora.MultiTenancy.Realtime;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Logging.Abstractions;
 using NSubstitute;
@@ -43,6 +44,9 @@ public class HlgDesignContentTests : IDisposable
     private readonly IAbpAuthorizationService _auth=Substitute.For<IAbpAuthorizationService>();
     private readonly ServiceCollection _services=new();
     private readonly List<ServiceProvider> _providers=new();
+    private readonly IConfiguration _configuration = new ConfigurationBuilder()
+        .AddInMemoryCollection(new Dictionary<string, string?> { ["App:AppUrl"] = "https://api.example.test" })
+        .Build();
     public HlgDesignContentTests() {
         _tenant.Id.Returns(_tenantId); _tenant.IsAvailable.Returns(true);
         _features.IsEnabledAsync(AppHlgFeatures.Management).Returns(true);
@@ -51,7 +55,7 @@ public class HlgDesignContentTests : IDisposable
         var clock=Substitute.For<IClock>();clock.Now.Returns(new DateTime(2026,9,19));
         var localizer=Substitute.For<IStringLocalizer>();localizer[Arg.Any<string>()].Returns(c=>new LocalizedString(c.Arg<string>(),c.Arg<string>()));
         var factory=Substitute.For<IStringLocalizerFactory>();factory.Create(Arg.Any<Type>()).Returns(localizer);
-        _services.AddSingleton<ICurrentTenant>(_tenant).AddSingleton(_features).AddSingleton<IAuthorizationService>(_auth).AddSingleton(guid).AddSingleton(clock).AddSingleton(factory)
+        _services.AddSingleton<ICurrentTenant>(_tenant).AddSingleton(_features).AddSingleton<IAuthorizationService>(_auth).AddSingleton(guid).AddSingleton(clock).AddSingleton(factory).AddSingleton(_configuration)
             .AddSingleton<IAsyncQueryableExecuter>(new AsyncQueryableExecuter(Array.Empty<IAsyncQueryableProvider>()));
     }
     private IRepository<T,Guid> Repo<T>(params T[] rows) where T:class,IEntity<Guid> {
@@ -77,14 +81,16 @@ public class HlgDesignContentTests : IDisposable
     [Fact]
     public async Task Quiz_List_Uses_Configured_Question_Count_And_Returns_Wrong_Answer_Limit()
     {
-        var game=new HlgGame(Guid.NewGuid(),"Quiz",HlgGameType.Quiz,_tenantId){Status=HlgGameStatus.Ongoing,QuestionsPerPlay=2,AllowedWrongAnswers=1};
+        var game=new HlgGame(Guid.NewGuid(),"Quiz",HlgGameType.Quiz,_tenantId){Status=HlgGameStatus.Ongoing,QuestionsPerPlay=2,AllowedWrongAnswers=1,ImageUrl="/uploads/hlg/game.png",BannerUrl="https://cdn.example.test/banner.png"};
         var questions=Enumerable.Range(0,4).Select(index=>new HlgQuestion(Guid.NewGuid(),game.Id,index,$"Question {index}"){TenantId=_tenantId}).ToArray();
         var games=Repo(game);var questionRepo=Repo(questions);var options=Repo<HlgAnswerOption>();var sessions=Repo<HlgGameSession>();var answers=Repo<HlgSessionAnswer>();var customers=Repo<Customer>();
-        var service=Bind(new HlgGameAppService(games,questionRepo,options,sessions,answers,customers,_tenant,Substitute.For<IHlgLiveFeedNotifier>(),NullLogger<HlgGameAppService>.Instance));
+        var service=Bind(new HlgGameAppService(games,questionRepo,options,sessions,answers,customers,_tenant,Substitute.For<IHlgLiveFeedNotifier>(),NullLogger<HlgGameAppService>.Instance,_configuration));
 
         var result=await service.GetGamesAsync();
 
         result.Single().TotalQuestions.ShouldBe(2);result.Single().QuestionsPerPlay.ShouldBe(2);result.Single().AllowedWrongAnswers.ShouldBe(1);
+        result.Single().ImageUrl.ShouldBe("https://api.example.test/uploads/hlg/game.png");
+        result.Single().BannerUrl.ShouldBe("https://cdn.example.test/banner.png");
     }
     [Theory]
     [InlineData(null, 99, false)]
@@ -138,9 +144,18 @@ public class HlgDesignContentTests : IDisposable
     public async Task Public_Catalog_Hides_Inactive_Brand_And_Cross_Tenant_Product() {
         var category=new HlgKnowledgeCategory(Guid.NewGuid(),"Industry",_tenantId);Repo(category);
         var brand=new HlgBrand(Guid.NewGuid(),_tenantId){CategoryId=category.Id,Name="Hidden",IsActive=false};Repo(brand);
-        var shown=new HlgProduct(Guid.NewGuid(),category.Id,"Visible",_tenantId);
+        var shown=new HlgProduct(Guid.NewGuid(),category.Id,"Visible",_tenantId)
+        {
+            ThumbnailUrl="/uploads/hlg/thumb.png",
+            ImagesJson=JsonSerializer.Serialize(new[]{"/uploads/hlg/gallery.png","https://cdn.example.test/gallery.png"}),
+            DetailsJson=JsonSerializer.Serialize(new HlgProductContent { Media=new(){new(){Url="/uploads/hlg/video.mp4",PosterUrl="/uploads/hlg/poster.png"}} })
+        };
         Repo(shown,new HlgProduct(Guid.NewGuid(),category.Id,"Hidden brand",_tenantId){BrandId=brand.Id},new HlgProduct(Guid.NewGuid(),category.Id,"Other tenant",Guid.NewGuid()));
-        var result=await Bind(new HlgContentAppService()).SearchProductsAsync();result.Count.ShouldBe(1);result.Single().Id.ShouldBe(shown.Id);
+        var result=await Bind(new HlgContentAppService(_configuration)).SearchProductsAsync();result.Count.ShouldBe(1);result.Single().Id.ShouldBe(shown.Id);
+        result.Single().ThumbnailUrl.ShouldBe("https://api.example.test/uploads/hlg/thumb.png");
+        result.Single().Images.ShouldBe(new[]{"https://api.example.test/uploads/hlg/gallery.png","https://cdn.example.test/gallery.png"});
+        result.Single().Details.Media.Single().Url.ShouldBe("https://api.example.test/uploads/hlg/video.mp4");
+        result.Single().Details.Media.Single().PosterUrl.ShouldBe("https://api.example.test/uploads/hlg/poster.png");
     }
     [Theory][InlineData(true)][InlineData(false)]
     public async Task Content_Admin_Denies_Missing_Permission_Or_Feature_Before_Query(bool missingPermission) {
@@ -159,7 +174,7 @@ public class HlgDesignContentTests : IDisposable
         var gameId=Guid.NewGuid();var customerId=Guid.NewGuid();var start=new DateTime(2026,9,1);var ev=new HlgRankingEvent(Guid.NewGuid(),"Event",start,start.AddMonths(1),_tenantId){GameId=gameId};
         var events=Repo(ev);var sessions=Repo(new HlgGameSession(Guid.NewGuid(),gameId,customerId,_tenantId){IsFinished=true,FinishedAt=start.AddDays(1),Score=50},new HlgGameSession(Guid.NewGuid(),Guid.NewGuid(),customerId,_tenantId){IsFinished=true,FinishedAt=start.AddDays(1),Score=999});
         var customers=Repo(new Customer(customerId,"0900000000","Player"){TenantId=_tenantId});
-        var result=await Bind(new HlgRankingAppService(events,sessions,customers,NullLogger<HlgRankingAppService>.Instance)).GetEventEntriesAsync(ev.Id);result.Single().Score.ShouldBe(50);
+        var result=await Bind(new HlgRankingAppService(events,sessions,customers,NullLogger<HlgRankingAppService>.Instance,_configuration)).GetEventEntriesAsync(ev.Id);result.Single().Score.ShouldBe(50);
     }
     [Theory][InlineData(1,2,1,true)][InlineData(2,3,1,true)][InlineData(3,1,1,false)][InlineData(1,4,2,true)][InlineData(1,4,1,false)]
     public void Fulfillment_Transitions_Are_Type_Specific_And_Forward_Only(int from,int to,int type,bool expected) => HlgFulfillmentAdminAppService.CanTransition((HlgRewardHistoryStatus)from,(HlgRewardHistoryStatus)to,(HlgRewardType)type).ShouldBe(expected);
@@ -170,7 +185,7 @@ public class HlgDesignContentTests : IDisposable
         var customer=new Customer(Guid.NewGuid(),"0900000000","Player"){TenantId=_tenantId};
         var session=new HlgGameSession(Guid.NewGuid(),Guid.NewGuid(),sameOwner?customer.Id:Guid.NewGuid(),_tenantId){IsFinished=finished};
         var rewards=Repo<HlgReward>();var histories=Repo<HlgRewardHistory>();var addresses=Repo<HlgShippingAddress>();var sessions=Repo(session);var profiles=Repo<HlgUserProfile>();var customers=Repo(customer);
-        var service=Bind(new HlgRewardAppService(rewards,histories,addresses,sessions,profiles,customers,_tenant,Substitute.For<IUnitOfWorkManager>(),NullLogger<HlgRewardAppService>.Instance));
+        var service=Bind(new HlgRewardAppService(rewards,histories,addresses,sessions,profiles,customers,_tenant,Substitute.For<IUnitOfWorkManager>(),NullLogger<HlgRewardAppService>.Instance,_configuration));
         await Should.ThrowAsync<UserFriendlyException>(()=>service.SetSessionShippingAddressAsync(session.Id,customer.PhoneNumber!,new(){ReceiverName="Player",Phone="0900000000",Address="Address"}));
         await addresses.DidNotReceive().InsertAsync(Arg.Any<HlgShippingAddress>(),Arg.Any<bool>(),Arg.Any<CancellationToken>());
     }
@@ -210,7 +225,7 @@ public class HlgDesignContentTests : IDisposable
         var category=new HlgKnowledgeCategory(Guid.NewGuid(),"Industry",_tenantId);Repo(category);Repo<HlgBrand>();
         var first=new HlgProduct(Guid.NewGuid(),category.Id,"First",_tenantId);var hidden=new HlgProduct(Guid.NewGuid(),category.Id,"Hidden",_tenantId){IsActive=false};
         Repo(first,hidden,new HlgProduct(Guid.NewGuid(),category.Id,"Unselected",_tenantId));
-        var result=await Bind(new HlgContentAppService()).SearchProductsAsync(productIds:new(){first.Id,hidden.Id});
+        var result=await Bind(new HlgContentAppService(_configuration)).SearchProductsAsync(productIds:new(){first.Id,hidden.Id});
         result.Single().Id.ShouldBe(first.Id);
     }
     public void Dispose() { foreach(var provider in _providers)provider.Dispose(); }

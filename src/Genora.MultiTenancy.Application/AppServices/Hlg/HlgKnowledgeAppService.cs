@@ -1,3 +1,9 @@
+using Genora.MultiTenancy.AppDtos.Hlg;
+using Genora.MultiTenancy.DomainModels.AppCustomers;
+using Genora.MultiTenancy.DomainModels.AppHlg;
+using Genora.MultiTenancy.Helpers;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -5,10 +11,6 @@ using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
-using Genora.MultiTenancy.AppDtos.Hlg;
-using Genora.MultiTenancy.DomainModels.AppCustomers;
-using Genora.MultiTenancy.DomainModels.AppHlg;
-using Microsoft.Extensions.Logging;
 using Volo.Abp;
 using Volo.Abp.Application.Services;
 using Volo.Abp.Domain.Repositories;
@@ -32,14 +34,15 @@ public class HlgKnowledgeAppService : ApplicationService, IHlgKnowledgeAppServic
     private readonly IRepository<Customer, Guid> _customerRepo;
     private readonly ICurrentTenant _currentTenant;
     private readonly ILogger<HlgKnowledgeAppService> _logger;
-
+    private readonly IConfiguration _configuration;
     public HlgKnowledgeAppService(
         IRepository<HlgKnowledgeCategory, Guid> categoryRepo,
         IRepository<HlgProduct, Guid> productRepo,
         IRepository<HlgLearningProgress, Guid> progressRepo,
         IRepository<Customer, Guid> customerRepo,
         ICurrentTenant currentTenant,
-        ILogger<HlgKnowledgeAppService> logger)
+        ILogger<HlgKnowledgeAppService> logger,
+        IConfiguration configuration)
     {
         _categoryRepo = categoryRepo;
         _productRepo = productRepo;
@@ -48,6 +51,7 @@ public class HlgKnowledgeAppService : ApplicationService, IHlgKnowledgeAppServic
         _customerRepo = customerRepo;
         _currentTenant = currentTenant;
         _logger = logger;
+        _configuration = configuration;
     }
 
     public async Task<List<KnowledgeCategoryDto>> GetCategoriesAsync(CancellationToken ct = default)
@@ -70,7 +74,7 @@ public class HlgKnowledgeAppService : ApplicationService, IHlgKnowledgeAppServic
             Id = c.Id,
             Name = c.Name,
             Description = c.Description,
-            ImageUrl = c.ImageUrl,
+            ImageUrl = NormalizeMediaUrl(c.ImageUrl),
             ProductCount = countByCat.TryGetValue(c.Id, out var n) ? n : 0
         }).ToList();
         foreach (var c in result)
@@ -81,6 +85,10 @@ public class HlgKnowledgeAppService : ApplicationService, IHlgKnowledgeAppServic
             {
                 b.Products = products.Where(p => p.BrandId == b.Id && p.IsActive).OrderBy(p => p.DisplayOrder).ThenBy(p => p.Name)
                     .Select(p => new BrandProductDto { Id = p.Id, Name = p.Name, ImageUrl = p.ThumbnailUrl, Description = p.Summary }).ToList();
+                foreach (var product in b.Products)
+                {
+                    product.ImageUrl = NormalizeMediaUrl(product.ImageUrl);
+                }
             }
         }
         return result;
@@ -92,13 +100,12 @@ public class HlgKnowledgeAppService : ApplicationService, IHlgKnowledgeAppServic
             ?? throw new UserFriendlyException("Không tìm thấy danh mục");
         
         var count = await AsyncExecuter.CountAsync((await VisibleProductsAsync()).Where(p => p.CategoryId == id), ct);
-
         return new KnowledgeCategoryDto
         {
             Id = c.Id,
             Name = c.Name,
             Description = c.Description,
-            ImageUrl = c.ImageUrl,
+            ImageUrl = NormalizeMediaUrl(c.ImageUrl),
             ProductCount = count
         };
     }
@@ -112,7 +119,7 @@ public class HlgKnowledgeAppService : ApplicationService, IHlgKnowledgeAppServic
 
         var completedIds = await GetCompletedProductIdsAsync(phone, ct);
 
-        return products.Select(p => MapProduct(p, completedIds.Contains(p.Id))).ToList();
+        return products.Select(p => MapProductForResponse(p, completedIds.Contains(p.Id))).ToList();
     }
 
     public async Task<ProductDto> GetProductAsync(Guid id, string? phone = null, CancellationToken ct = default)
@@ -121,11 +128,11 @@ public class HlgKnowledgeAppService : ApplicationService, IHlgKnowledgeAppServic
             ?? throw new UserFriendlyException("Không tìm thấy bài học");
 
         var completedIds = await GetCompletedProductIdsAsync(phone, ct);
-        var dto = MapProduct(p, completedIds.Contains(p.Id));
+        var dto = MapProductForResponse(p, completedIds.Contains(p.Id));
         if (dto.Details.GameId.HasValue && !await LazyServiceProvider.LazyGetRequiredService<IRepository<HlgGame,Guid>>().AnyAsync(g=>g.Id==dto.Details.GameId && g.IsActive && g.TenantId==_currentTenant.Id,ct)) dto.Details.GameId=null;
         var ids = dto.Details.RelatedProductIds;
         var related = await AsyncExecuter.ToListAsync((await VisibleProductsAsync()).Where(x => ids.Contains(x.Id)), ct);
-        dto.RelatedProducts = ids.Where(id => related.Any(x => x.Id == id)).Select(id => MapProduct(related.Single(x => x.Id == id), completedIds.Contains(id))).ToList();
+        dto.RelatedProducts = ids.Where(id => related.Any(x => x.Id == id)).Select(id => MapProductForResponse(related.Single(x => x.Id == id), completedIds.Contains(id))).ToList();
         // Omit archived targets from public relations, while keeping the stored CMS configuration intact.
         dto.Details.RelatedProductIds = dto.RelatedProducts.Select(x => x.Id).ToList();
         return dto;
@@ -271,6 +278,24 @@ public class HlgKnowledgeAppService : ApplicationService, IHlgKnowledgeAppServic
             IsCompleted = isCompleted
         };
     }
+
+    private ProductDto MapProductForResponse(HlgProduct product, bool isCompleted)
+    {
+        var dto = MapProduct(product, isCompleted);
+        dto.ThumbnailUrl = NormalizeMediaUrl(dto.ThumbnailUrl);
+        dto.Images = dto.Images.Select(url => NormalizeMediaUrl(url) ?? url).ToList();
+
+        foreach (var media in dto.Details.Media)
+        {
+            media.Url = NormalizeMediaUrl(media.Url) ?? media.Url;
+            media.PosterUrl = NormalizeMediaUrl(media.PosterUrl);
+        }
+
+        return dto;
+    }
+
+    private string? NormalizeMediaUrl(string? url)
+        => ImageHelper.NormalizeThumb(_configuration, url);
 
     /// <summary>Parse ImagesJson (JSON array) → List string. Trả rỗng nếu null/lỗi.</summary>
     private static List<string> ParseImages(string? json)

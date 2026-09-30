@@ -2,7 +2,7 @@ $(function () {
     window.hlgAdmin.init({
         "service": "hlgRankingAdmin",
         "folder": "Ranking",
-        "readOnly": false, "children": "Prizes", "extraChildren": "Winners",
+        "readOnly": false, "children": "Prizes", "extraChildren": "Winners", "exportResults": true,
         "columns": [
             {
                 "data": "title",

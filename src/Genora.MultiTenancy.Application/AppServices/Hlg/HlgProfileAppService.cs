@@ -10,6 +10,8 @@ using Genora.MultiTenancy.DomainModels.AppHlg;
 using Genora.MultiTenancy.DomainModels.AppHlPoints;
 using Genora.MultiTenancy.Enums;
 using Genora.MultiTenancy.Enums.Hlg;
+using Genora.MultiTenancy.Helpers;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Volo.Abp;
 using Volo.Abp.Application.Services;
@@ -38,6 +40,7 @@ public class HlgProfileAppService : ApplicationService, IHlgProfileAppService
     private readonly IRepository<HlgRewardHistory, Guid> _rewardHistoryRepo;
     private readonly ICurrentTenant _currentTenant;
     private readonly ILogger<HlgProfileAppService> _logger;
+    private readonly IConfiguration _configuration;
 
     public HlgProfileAppService(
         IRepository<Customer, Guid> customerRepo,
@@ -48,7 +51,8 @@ public class HlgProfileAppService : ApplicationService, IHlgProfileAppService
         IRepository<HlgProduct, Guid> productRepo,
         IRepository<HlgRewardHistory, Guid> rewardHistoryRepo,
         ICurrentTenant currentTenant,
-        ILogger<HlgProfileAppService> logger)
+        ILogger<HlgProfileAppService> logger,
+        IConfiguration configuration)
     {
         LocalizationResource = typeof(Genora.MultiTenancy.Localization.MultiTenancyResource);
         _customerRepo = customerRepo;
@@ -60,6 +64,7 @@ public class HlgProfileAppService : ApplicationService, IHlgProfileAppService
         _rewardHistoryRepo = rewardHistoryRepo;
         _currentTenant = currentTenant;
         _logger = logger;
+        _configuration = configuration;
     }
 
     public async Task<GamificationUserDto> UpsertCustomerAsync(HlgCustomerUpsertPayloadDto payload, CancellationToken ct = default)
@@ -236,7 +241,7 @@ public class HlgProfileAppService : ApplicationService, IHlgProfileAppService
         {
             ProductId = x.ProductId,
             ProductName = nameById.TryGetValue(x.ProductId, out var n) ? n : string.Empty,
-            ThumbnailUrl = products.FirstOrDefault(p => p.Id == x.ProductId)?.ThumbnailUrl,
+            ThumbnailUrl = NormalizeMediaUrl(products.FirstOrDefault(p => p.Id == x.ProductId)?.ThumbnailUrl),
             ProgressPercent = x.ProgressPercent,
             LastViewedAt = x.LastViewedAt
         }).ToList();
@@ -329,7 +334,7 @@ public class HlgProfileAppService : ApplicationService, IHlgProfileAppService
         return (customer, profile);
     }
 
-    private static GamificationUserDto MapToDto(Customer c, HlgUserProfile p)
+    private GamificationUserDto MapToDto(Customer c, HlgUserProfile p)
     {
         return new GamificationUserDto
         {
@@ -342,7 +347,7 @@ public class HlgProfileAppService : ApplicationService, IHlgProfileAppService
             Address = c.Address,
             PharmacyCode = p.PharmacyCode,
             VgaCode = p.PharmacyCode,
-            AvatarUrl = c.AvatarUrl,
+            AvatarUrl = NormalizeMediaUrl(c.AvatarUrl),
             CustomerType = HlgEnumMapper.CustomerTypeToString(p.CustomerType),
             Points = (int)decimal.Round(c.BonusPoint),
             IsRegistered = p.IsRegistered,
@@ -360,6 +365,9 @@ public class HlgProfileAppService : ApplicationService, IHlgProfileAppService
 
     private static string? NullIfBlank(string? value)
         => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+
+    private string? NormalizeMediaUrl(string? url)
+        => ImageHelper.NormalizeThumb(_configuration, url);
 
     private async Task<string> GenerateCustomerCodeAsync()
     {

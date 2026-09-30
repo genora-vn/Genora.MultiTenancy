@@ -1,8 +1,13 @@
 /* Shared styles for Razor Pages under /Pages/Hlg. */
-
+.lpx-content-container .lpx-content {
+    padding-top: 0 !important;
+}
 .hlg-game-sticky-save {
     position: sticky;
     top: 80px;
+}
+.lpx-content .card {
+    margin-bottom: 0 !important;
 }
 h1 {
     font-size: calc(1rem + 0.8vw);
@@ -18,8 +23,8 @@ h1 {
 .tool-bar{
     margin-bottom:0.5rem;
 }
-.dt-scroll-body{
-    height: 50vh;
+.dt-scroll-body {
+    height: 55vh;
 }
 .hlg-image-preview-slot {
     display: flex;

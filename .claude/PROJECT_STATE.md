@@ -1,5 +1,9 @@
 # PROJECT STATE — Genora.MultiTenancy
 
+## HLG Ranking result Excel — 2026-09-30 (mới nhất)
+
+- Sự kiện xếp hạng đã có action xuất Excel sau EndAt, kiểm tra lại ở backend; báo cáo theo người chơi–game gồm lượt/điểm/câu đúng/hạng và mốc chơi. Web build +20 Admin tests + JS syntax pass; không migration, chưa UAT runtime.
+
 ## HLG quiz play configuration — 2026-09-24 (mới nhất)
 
 - Full chain thêm `QuestionsPerPlay`/`AllowedWrongAnswers`; Start snapshot cấu hình. Answer/finish trả game fail khi wrong count vượt giới hạn, khóa session và không cộng điểm cho game thất bại.
