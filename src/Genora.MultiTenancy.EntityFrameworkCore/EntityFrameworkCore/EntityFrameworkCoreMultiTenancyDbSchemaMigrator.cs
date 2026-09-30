@@ -34,22 +34,47 @@ public class EntityFrameworkCoreMultiTenancyDbSchemaMigrator
         {
             var ctx = await _db.GetDbContextAsync();
 
-            // 1) lấy connection hiện tại (host/tenant tuỳ CurrentTenant)
+            // 1) Lấy connection hiện tại (host/tenant tuỳ CurrentTenant) + chuẩn hoá để luôn kết nối được:
+            //    - MultipleActiveResultSets + TrustServerCertificate luôn bật
+            //    - Encrypt=False nếu người dùng không tự chỉ định (SqlClient 5.x mặc định Encrypt=True gây lỗi TLS trên SQL nội bộ)
             var rawCs = ctx.Database.GetDbConnection().ConnectionString;
-            var cs = new SqlConnectionStringBuilder(rawCs) { MultipleActiveResultSets = true };
+            var cs = new SqlConnectionStringBuilder(rawCs)
+            {
+                MultipleActiveResultSets = true,
+                TrustServerCertificate = true
+            };
+            if (rawCs.IndexOf("encrypt", StringComparison.OrdinalIgnoreCase) < 0)
+            {
+                cs.Encrypt = false;
+            }
             _logger.LogInformation("Migrating DB: {Db}", cs.InitialCatalog);
 
-            // Existing tenant databases should not depend on access to master.
-            // Only use master when SQL Server explicitly reports a missing database.
-            var quick = new SqlConnectionStringBuilder(cs.ConnectionString) { ConnectTimeout = 15 };
+            // 2) DB tenant đã tồn tại thì KHÔNG cần quyền master (giữ cho kịch bản đồng bộ nhiều tenant chạy tốt).
+            //    Chỉ khi DB thực sự chưa có (SQL 4060/911) mới tạo qua master.
+            var target = new SqlConnectionStringBuilder(cs.ConnectionString) { ConnectTimeout = 15 };
+            var reachable = false;
             try
             {
+                using var ping = new SqlConnection(target.ConnectionString);
+                await ping.OpenAsync();
+                reachable = true;
+            }
+            catch (SqlException ex) when (IsMissingDatabase(ex))
+            {
+                // DB chưa tồn tại → sẽ tạo qua master bên dưới.
+            }
+            catch (Exception ex)
+            {
+                // Lỗi kết nối KHÁC (login/TLS/tên server sai...) → báo rõ, không đoán mò.
+                _logger.LogError("Cannot connect to tenant DB {Db}: {Reason}", cs.InitialCatalog, ex.Message);
+                throw new BusinessException("TenantDatabaseUnreachable")
+                    .WithData("Database", cs.InitialCatalog)
+                    .WithData("Reason", ex.Message);
+            }
+
+            if (!reachable)
+            {
                 try
-                {
-                    using var ping = new SqlConnection(quick.ConnectionString);
-                    await ping.OpenAsync();
-                }
-                catch (SqlException ex) when (IsMissingDatabase(ex))
                 {
                     var master = new SqlConnectionStringBuilder(cs.ConnectionString)
                     { InitialCatalog = "master", ConnectTimeout = 15 };
@@ -65,20 +90,26 @@ END";
                     cmd.Parameters.AddWithValue("@db", cs.InitialCatalog);
                     cmd.CommandTimeout = 30;
                     await cmd.ExecuteNonQueryAsync();
-
-                    using var ping = new SqlConnection(quick.ConnectionString);
-                    await ping.OpenAsync();
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError("Cannot create tenant DB {Db} via master: {Reason}", cs.InitialCatalog, ex.Message);
+                    throw new BusinessException("TenantDatabaseCreateFailed")
+                        .WithData("Database", cs.InitialCatalog)
+                        .WithData("Reason", ex.Message);
                 }
             }
-            catch (Exception ex)
+
+            // 3) Áp chuỗi kết nối đã chuẩn hoá cho chính DbContext trước khi migrate (nếu connection đang đóng),
+            //    để MigrateAsync cũng dùng Encrypt/TrustServerCertificate/MARS đúng — tránh lỗi TLS khi migrate.
+            var dbConn = ctx.Database.GetDbConnection();
+            if (dbConn.State == System.Data.ConnectionState.Closed &&
+                !string.Equals(dbConn.ConnectionString, cs.ConnectionString, StringComparison.Ordinal))
             {
-                _logger.LogError("Database preflight failed for {Db}: {Reason}", cs.InitialCatalog, ex.Message);
-                throw new BusinessException("TenantDatabaseUnreachable")
-                    .WithData("Database", cs.InitialCatalog)
-                    .WithData("Reason", ex.Message);
+                dbConn.ConnectionString = cs.ConnectionString;
             }
 
-            // Migrate with a longer command timeout; do not open a manual transaction.
+            // 4) Migrate với timeout lớn – KHÔNG mở transaction thủ công.
             ctx.Database.SetCommandTimeout(180);
             await ctx.Database.MigrateAsync();
 

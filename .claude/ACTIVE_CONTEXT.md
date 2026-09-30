@@ -1,5 +1,35 @@
 # ACTIVE CONTEXT — Việc đang làm dở
 
+## Hoa Linh Sales — Blouse: Config banner/flatpickr + gộp API + dedup + Excel — 2026-09-30 (MỚI NHẤT)
+
+- **P1 — BlouseConfig (`Web/Pages/HoaLinh/BlouseConfig`):** đổi label "Ảnh bảng size (URL)" → "Ảnh banner chương trình"; thêm upload ảnh (input URL + input Chọn tệp bên trái, preview nhỏ bên phải cao ~70px). Upload qua Razor handler `OnPostUploadImageAsync` (route `POST /HoaLinh/BlouseConfig?handler=UploadImage`, cần `RequestVerificationToken`) → `IManageImageService` lưu `/uploads/hl-blouse/{tenant}/...`, trả `{path, url}`; **lưu path tương đối** vào `SizeChartImageUrl`. Start/End đổi sang **flatpickr** `dd/MM/yyyy HH:mm` (locale vn), lưu qua `selectedDates[0].toISOString()`.
+- **P2 — Gộp API + dedup:** XÓA `HoaLinhBlouseMiniAppController`; 3 endpoint chuyển vào `HoaLinhMiniAppController` (route `api/mini-app/hl`): `GET blouse/config`, `POST blouse/register`, `GET blouse/my-registrations` — bọc `HlApiResult<T>` `{success,data,error,message}`. `MiniAppHlBlouseService`: thêm `Err(code)` (UserFriendlyException kèm Code=key), **chặn trùng theo (CustomerPhone + CustomerCode)** bỏ qua đơn Cancelled/Rejected → `HlBlouse:BranchAlreadyRegistered` = "Chi nhánh của quý khách hàng đã đăng ký thành công trước đó."; `GetConfigAsync` trả banner **full URL** qua `ImageHelper.NormalizeThumb(App:AppUrl)`.
+- **P3 — Excel đơn Blouse:** `ExportBlouseRegistrationsAsync(HlBlouseRegistrationFilterDto)` trong `HlSalesExportAppService` (inject repo `HlBlouseRegistration`), sheet đầy đủ cột như list + 2 cột gom nhóm "Chi tiết áo tặng"/"Chi tiết áo đổi" ("Nam M x2, Nữ M x1"). Endpoint `GET api/app/hl-sales-excel/blouse-registrations`. Nút "Xuất Excel" trên `BlouseRegistrations` dùng `sales.download` theo bộ lọc hiện tại.
+- **Verify:** Application + HttpApi + Web build **0 errors**. Chưa UAT browser thật.
+
+## Hoa Linh Sales — Blouse: Admin Razor UI + đơn giản hóa — 2026-09-29
+
+- **YC1 (quyền):** Admin service `HlBlouseAdminAppService` là ABP auto-API (không `[RemoteService(false)]`) → proxy JS `genora.multiTenancy.appServices.hoaLinh.hlBlouseAdmin`. Chỉ cần bật feature `HoaLinh.Management` + gán `MultiTenancy.AppHlBlouse.*` cho role. Interface + impl + validator đã chuyển namespace về `Genora.MultiTenancy.AppServices.HoaLinh` (khớp convention HL, file vẫn để trong subfolder `Blouse/`).
+- **YC2 (__tenant):** mỗi tenant 1 DB + 1 URL riêng → KHÔNG truyền `__tenant`. Code không hề yêu cầu `__tenant`; JS admin dùng ABP proxy + cookie same-origin (giống các trang HL khác). FE mini app chỉ cần gọi đúng domain tenant.
+- **YC3 (bỏ trừ điểm):** `MiniAppHlBlouseService` đã **bỏ Customer repo + validate điểm + trừ `BonusPoint`**. Chỉ ghi nhận `TotalPointsUsed` để tham khảo. Vẫn giữ validate + trừ tồn kho size (inventory) và giới hạn áo tặng/đổi.
+- **YC4 (Razor UI):** thêm 2 trang trong `Web/Pages/HoaLinh/`:
+  - `BlouseRegistrations/` (Index.cshtml+.cs+index.js): list + filter (text/status/ngày) + phân trang + modal chi tiết (người ĐK, thông tin in áo, bảng áo tặng/đổi) + đổi trạng thái. Dùng `sales.js` chung.
+  - `BlouseConfig/` (Index.cshtml+.cs+index.js): form cấu hình campaign + bảng CRUD size (thêm/sửa/xóa qua modal).
+  - Menu: thêm 2 item `AppHlBlouse` (order 8) + `AppHlBlouseConfig` (order 9) vào `MenuGroup.HoaLinh`, gate `AppHlBlouse.Default`/`HostAppHlBlouse.Default`; đã thêm vào `canSeeHoaLinh`/`canSeeHoaLinhHost`. Localization `Menu:AppHlBlouse`(+Config) VI/EN.
+- **Verify:** Web build 0 errors; 8/8 `HlBlouseValidatorTests` pass. Chưa UAT browser thật.
+- **Còn lại:** seed campaign+sizes qua trang Cấu hình; gán quyền cho role admin; UAT các trang + FE mini app ghép API.
+
+## Hoa Linh Sales — "Đăng ký nhận áo Blouse" — 2026-09-29
+
+- **Tính năng:** đăng ký nhận áo Blouse Nam/Nữ từ Zalo Mini App: chọn áo tặng miễn phí (giới hạn theo GKHL) + đổi áo bằng điểm tích lũy (150đ/áo), thông tin in trên áo, ghi chú. Payload động (danh sách dòng áo).
+- **Schema HL — 4 entity mới** (`DomainModels/AppHlBlouse/`): `HlBlouseCampaign` (config: FreeShirtLimit/PointsPerShirt/MaxExchangeShirt/SizeChartImageUrl/thời gian), `HlBlouseSize` (dáng+size+cân nặng+tồn kho), `HlBlouseRegistration` (aggregate root) + `HlBlouseRegistrationItem` (child, cascade). Enums tại `Domain.Shared/Enums/HlBlouseEnums.cs` (Style/ItemType/RegistrationStatus/BusinessType).
+- **AppService:** `MiniAppHlBlouseService` (`[AllowAnonymous][RemoteService(false)][DisableValidation]`) — GetConfig/Register(payload động, validate tồn kho+điểm+giới hạn trong transaction, trừ kho + trừ `Customer.BonusPoint`)/GetMyRegistrations. Logic thuần tách ra `HlBlouseValidator.BuildSummary` (test được). `HlBlouseAdminAppService` — dual permission `P()`: list/get/update-status đơn + campaign CRUD + size CRUD.
+- **Controller:** `HoaLinhBlouseMiniAppController` route `api/mini-app/hl/blouse` (config GET, register POST, my-registrations GET).
+- **Permission:** `AppHlBlouse`/`HostAppHlBlouse` (Default/Create/Edit/Delete) đăng ký trong provider nhóm HoaLinhManagement(+Host), tenant `RequireFeatures(HoaLinh.Management)`. Localization VI/EN đầy đủ (permission + 12 mã lỗi `HlBlouse:*`).
+- **Migration:** `20260929091139_AddHlBlouseModule` (4 bảng + FK + index filtered-unique) + SQL idempotent `Migrations/Scripts/AddHlBlouseModule.sql`. **CHƯA APPLY DB.**
+- **Verify:** Application + HttpApi + EntityFrameworkCore build 0 errors (full-solution chỉ fail do lock DLL Web/VS đang chạy). 8/8 `HlBlouseValidatorTests` pass. Chưa UAT browser/DB thật, chưa deploy.
+- **Còn lại:** apply migration đúng DB tenant HL (VD `HoaLinhMienNam`) + seed campaign/sizes; cấp permission `AppHlBlouse.*` cho role admin; UAT Mini App gọi API; (tùy chọn) trang Admin Razor + Excel export; quyết định lại có nên trừ `BonusPoint` lúc đăng ký hay lúc admin duyệt (hiện trừ lúc đăng ký, trong transaction).
+
 ## HLG quiz play configuration — 2026-09-24 (mới nhất)
 
 - Đã thêm `QuestionsPerPlay` và `AllowedWrongAnswers` xuyên suốt entity, Admin DTO/service, Create/Edit Razor, Mini App game DTO/start flow và VI/EN.

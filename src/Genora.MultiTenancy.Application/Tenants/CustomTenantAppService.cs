@@ -16,6 +16,7 @@ using Volo.Abp.MultiTenancy;
 using Volo.Abp.TenantManagement;
 using Volo.Abp.Uow;
 using System.Linq.Dynamic.Core;
+using System.Data.Common;
 
 namespace Genora.MultiTenancy.Tenants;
 
@@ -71,10 +72,17 @@ public class CustomTenantAppService : ApplicationService, ITenantAppService
         if (host.IsNullOrWhiteSpace()) throw new BusinessException("HostRequired");
         if (conn.IsNullOrWhiteSpace()) throw new BusinessException("ConnectionRequired");
 
+        // Chuẩn hoá chuỗi kết nối để migrate + runtime luôn kết nối được (khớp cấu hình Host on-prem).
+        conn = NormalizeConnectionString(conn!);
+
         Guid tenantId;
         string tenantName;
 
         // 1) HOST DB: tạo tenant + set default connection
+        // ⭐ Ép Host context (tenant = null) + tắt filter IMultiTenant để AbpTenantValidator.FindByNameAsync
+        //    và InsertAsync luôn chạy trên DB Host, tránh bị route sang DB tenant khi request resolve ra tenant.
+        using (_currentTenant.Change(null))
+        using (_dataFilter.Disable<IMultiTenant>())
         using (var uow = _uow.Begin(requiresNew: true, isTransactional: false))
         {
             var tenant = await _tenantManager.CreateAsync(input.Name);
@@ -132,6 +140,7 @@ public class CustomTenantAppService : ApplicationService, ITenantAppService
 
         if (!conn.IsNullOrWhiteSpace())
         {
+            conn = NormalizeConnectionString(conn!);
             tenant.SetProperty(Constant.ConnectionString, conn);
             tenant.SetDefaultConnectionString(conn); // đồng bộ Default
         }
@@ -213,6 +222,7 @@ public class CustomTenantAppService : ApplicationService, ITenantAppService
     public virtual async Task UpdateDefaultConnectionStringAsync(Guid id, string defaultConnectionString)
     {
         var tenant = await _tenantRepository.GetAsync(id, includeDetails: true);
+        defaultConnectionString = NormalizeConnectionString(defaultConnectionString);
         tenant.SetProperty(Constant.ConnectionString, defaultConnectionString); // để UI thấy
         tenant.SetDefaultConnectionString(defaultConnectionString);             // để resolver dùng
         await _tenantRepository.UpdateAsync(tenant, autoSave: true);
@@ -234,5 +244,33 @@ public class CustomTenantAppService : ApplicationService, ITenantAppService
 
         await _tenantCache.RemoveAsync(TenantConfigurationCacheItem.CalculateCacheKey(tenant.Id));
         await _tenantCache.RemoveAsync(TenantConfigurationCacheItem.CalculateCacheKey(tenant.Name!));
+    }
+
+    // --------------------- HELPERS ---------------------
+    /// <summary>
+    /// Chuẩn hoá chuỗi kết nối tenant để cả migrate lẫn runtime luôn kết nối được với SQL Server on-prem
+    /// (khớp cấu hình Host): luôn bật TrustServerCertificate + MultipleActiveResultSets; mặc định Encrypt=False
+    /// nếu người dùng chưa tự chỉ định (Microsoft.Data.SqlClient 5.x mặc định Encrypt=True gây lỗi TLS trên SQL nội bộ).
+    /// Dùng DbConnectionStringBuilder (BCL) để parse/escape an toàn, không phụ thuộc Microsoft.Data.SqlClient ở tầng Application.
+    /// </summary>
+    private static string NormalizeConnectionString(string raw)
+    {
+        if (string.IsNullOrWhiteSpace(raw)) return raw;
+        try
+        {
+            var b = new DbConnectionStringBuilder { ConnectionString = raw };
+            b["TrustServerCertificate"] = "True";
+            b["MultipleActiveResultSets"] = "True";
+            if (!b.ContainsKey("Encrypt"))
+            {
+                b["Encrypt"] = "False";
+            }
+            return b.ConnectionString;
+        }
+        catch
+        {
+            // Chuỗi không parse được → giữ nguyên để lỗi hiển thị rõ ràng ở bước sau.
+            return raw;
+        }
     }
 }

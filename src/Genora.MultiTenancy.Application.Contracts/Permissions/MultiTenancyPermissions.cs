@@ -774,6 +774,23 @@ public static class MultiTenancyPermissions
         public const string Default = GroupName + ".HostAppHlApiLogs";
     }
 
+    // ===== Đăng ký nhận áo Blouse =====
+    public static class AppHlBlouse
+    {
+        public const string Default = GroupName + ".AppHlBlouse";
+        public const string Create = Default + ".Create";
+        public const string Edit = Default + ".Edit";
+        public const string Delete = Default + ".Delete";
+    }
+
+    public static class HostAppHlBlouse
+    {
+        public const string Default = GroupName + ".HostAppHlBlouse";
+        public const string Create = Default + ".Create";
+        public const string Edit = Default + ".Edit";
+        public const string Delete = Default + ".Delete";
+    }
+
     #endregion
 
     #region Permission cho module "Dược Phẩm Hoa Linh 25 Năm" (hl25)

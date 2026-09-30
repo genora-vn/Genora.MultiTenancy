@@ -25,4 +25,8 @@ public class HlSalesExcelController : AbpController
     [HttpGet("orders")]
     public Task<IRemoteStreamContent> Orders([FromQuery] HlSalesOrderFilter input)
         => _service.ExportOrdersAsync(input);
+
+    [HttpGet("blouse-registrations")]
+    public Task<IRemoteStreamContent> BlouseRegistrations([FromQuery] Genora.MultiTenancy.AppDtos.HoaLinh.Blouse.HlBlouseRegistrationFilterDto input)
+        => _service.ExportBlouseRegistrationsAsync(input);
 }

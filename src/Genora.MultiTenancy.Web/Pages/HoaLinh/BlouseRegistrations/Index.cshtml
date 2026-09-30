@@ -1,0 +1,132 @@
+@page
+@model Genora.MultiTenancy.Web.Pages.HoaLinh.BlouseRegistrations.IndexModel
+@inject IHtmlLocalizer<MultiTenancyResource> L
+@using Microsoft.AspNetCore.Mvc.Localization
+@using Genora.MultiTenancy.Localization
+
+@section styles {
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
+    <style>
+        .hl-bl-pending { background-color: #fff3cd; color: #856404; }
+        .hl-bl-confirmed { background-color: #cce5ff; color: #004085; }
+        .hl-bl-processing { background-color: #d1ecf1; color: #0c5460; }
+        .hl-bl-delivered { background-color: #d4edda; color: #155724; }
+        .hl-bl-cancelled { background-color: #e9ecef; color: #495057; }
+        .hl-bl-rejected { background-color: #f8d7da; color: #721c24; }
+        .hl-vc-card { border: 1px solid #e5e7eb; border-radius: 10px; padding: 16px; height: 100%; background: #fff; }
+        .hl-vc-title { font-weight: 600; font-size: 15px; color: #1f2937; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid #f0f0f0; }
+        .hl-vc-row { display: flex; justify-content: space-between; gap: 12px; padding: 6px 0; font-size: 14px; border-bottom: 1px dashed #f3f4f6; }
+        .hl-vc-row:last-of-type { border-bottom: none; }
+        .hl-vc-label { color: #6b7280; flex: 0 0 auto; white-space: nowrap; }
+        .hl-vc-value { color: #111827; text-align: right; word-break: break-word; }
+    </style>
+}
+
+@section scripts {
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="~/Pages/HoaLinh/sales.js" asp-append-version="true"></script>
+    <script src="~/Pages/HoaLinh/BlouseRegistrations/index.js" asp-append-version="true"></script>
+}
+
+<abp-card>
+    <abp-card-header>
+        <abp-row>
+            <abp-column size-md="_6">
+                <h4 class="mb-0"><i class="fa fa-shirt me-2"></i>@L["Menu:AppHlBlouse"]</h4>
+            </abp-column>
+            <abp-column size-md="_6" class="text-end">
+                <button id="BtnExportExcel" class="btn btn-outline-success btn-sm"><i class="fa fa-file-excel"></i> Xuất Excel</button>
+                <button id="BtnRefresh" class="btn btn-outline-secondary btn-sm">
+                    <i class="fa fa-sync-alt"></i> Refresh
+                </button>
+            </abp-column>
+        </abp-row>
+    </abp-card-header>
+    <abp-card-body>
+        <div class="row mb-3 align-items-center g-2">
+            <div class="col-md-3">
+                <input type="text" id="FilterText" class="form-control form-control-sm" placeholder="Tìm mã đơn, mã KH, tên KH, SĐT, tên in áo..." />
+            </div>
+            <div class="col-md-2">
+                <select id="FilterStatus" class="form-select form-select-sm">
+                    <option value="">Tất cả trạng thái</option>
+                    <option value="0">Chờ xác nhận</option>
+                    <option value="1">Đã xác nhận</option>
+                    <option value="2">Đang xử lý</option>
+                    <option value="3">Đã giao</option>
+                    <option value="4">Đã hủy</option>
+                    <option value="5">Từ chối</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <input type="text" id="FilterDateFrom" class="form-control form-control-sm" placeholder="Đăng ký từ ngày" />
+            </div>
+            <div class="col-md-2">
+                <input type="text" id="FilterDateTo" class="form-control form-control-sm" placeholder="Đăng ký đến ngày" />
+            </div>
+            <div class="col-md-1">
+                <button id="BtnSearch" class="btn btn-primary btn-sm w-100"><i class="fa fa-search"></i></button>
+            </div>
+        </div>
+
+        <div id="BlouseContainer">
+            <table id="HlBlouseTable" class="table table-hover table-bordered table-sm w-100">
+                <thead class="table-light">
+                    <tr>
+                        <th>Mã đơn</th>
+                        <th>Khách hàng</th>
+                        <th>Tên in áo</th>
+                        <th class="text-center">Tặng</th>
+                        <th class="text-center">Đổi</th>
+                        <th class="text-center">Tổng</th>
+                        <th class="text-center">Điểm</th>
+                        <th>Trạng thái</th>
+                        <th>Ngày tạo</th>
+                        <th style="width:90px" class="text-center">Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+
+        <div class="d-flex justify-content-between align-items-center mt-3">
+            <div id="PagingInfo" class="text-muted small"></div>
+            <div class="d-flex align-items-center gap-2">
+                <select id="PageSize" class="form-select form-select-sm" style="width:auto">
+                    <option value="10">10</option>
+                    <option value="20" selected>20</option>
+                    <option value="50">50</option>
+                </select>
+                <nav><ul id="Pagination" class="pagination pagination-sm mb-0"></ul></nav>
+            </div>
+        </div>
+    </abp-card-body>
+</abp-card>
+
+<!-- Detail Modal -->
+<div class="modal fade" id="BlouseDetailModal" tabindex="-1">
+    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fa fa-shirt me-2"></i>Chi tiết đơn đăng ký áo Blouse</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="BlouseDetailBody"></div>
+            <div class="modal-footer">
+                <div class="d-flex align-items-center gap-2 w-100">
+                    <label class="mb-0 small text-muted">Cập nhật trạng thái:</label>
+                    <select id="StatusSelect" class="form-select form-select-sm" style="width:auto">
+                        <option value="0">Chờ xác nhận</option>
+                        <option value="1">Đã xác nhận</option>
+                        <option value="2">Đang xử lý</option>
+                        <option value="3">Đã giao</option>
+                        <option value="4">Đã hủy</option>
+                        <option value="5">Từ chối</option>
+                    </select>
+                    <input type="text" id="StatusNote" class="form-control form-control-sm" style="max-width:320px" placeholder="Ghi chú nội bộ (tùy chọn)" />
+                    <button id="BtnUpdateStatus" class="btn btn-primary btn-sm ms-auto"><i class="fa fa-save me-1"></i>Lưu trạng thái</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

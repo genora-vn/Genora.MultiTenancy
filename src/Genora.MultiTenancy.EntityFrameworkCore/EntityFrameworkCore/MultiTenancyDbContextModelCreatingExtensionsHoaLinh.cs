@@ -1,4 +1,5 @@
 using Genora.MultiTenancy.DomainModels.AppHlApiLogs;
+using Genora.MultiTenancy.DomainModels.AppHlBlouse;
 using Genora.MultiTenancy.DomainModels.AppHlGiftExchanges;
 using Genora.MultiTenancy.DomainModels.AppHlOrders;
 using Genora.MultiTenancy.DomainModels.AppHlPoints;
@@ -192,6 +193,90 @@ public static class MultiTenancyDbContextModelCreatingExtensionsHoaLinh
 
             b.HasIndex(x => new { x.TenantId, x.Type })
                 .HasDatabaseName("IX_AppHlPointTransactions_TenantId_Type");
+        });
+
+        // ========== HlBlouseCampaign ==========
+        builder.Entity<HlBlouseCampaign>(b =>
+        {
+            b.ToTable("AppHlBlouseCampaigns", "HL");
+            b.ConfigureByConvention();
+
+            b.Property(x => x.ProgramName).IsRequired().HasMaxLength(250);
+            b.Property(x => x.SizeChartImageUrl).HasMaxLength(500);
+
+            b.HasIndex(x => new { x.TenantId, x.IsActive })
+                .HasDatabaseName("IX_AppHlBlouseCampaigns_TenantId_IsActive");
+        });
+
+        // ========== HlBlouseSize ==========
+        builder.Entity<HlBlouseSize>(b =>
+        {
+            b.ToTable("AppHlBlouseSizes", "HL");
+            b.ConfigureByConvention();
+
+            b.Property(x => x.SizeCode).IsRequired().HasMaxLength(20);
+            b.Property(x => x.WeightRange).HasMaxLength(100);
+            b.Property(x => x.Style).HasConversion<byte>();
+
+            b.HasIndex(x => new { x.TenantId, x.Style, x.SizeCode })
+                .IsUnique()
+                .HasDatabaseName("IX_AppHlBlouseSizes_TenantId_Style_SizeCode");
+
+            b.HasIndex(x => new { x.TenantId, x.IsActive, x.Style })
+                .HasDatabaseName("IX_AppHlBlouseSizes_TenantId_IsActive_Style");
+        });
+
+        // ========== HlBlouseRegistration ==========
+        builder.Entity<HlBlouseRegistration>(b =>
+        {
+            b.ToTable("AppHlBlouseRegistrations", "HL");
+            b.ConfigureByConvention();
+
+            b.Property(x => x.RegistrationCode).IsRequired().HasMaxLength(50);
+            b.Property(x => x.CustomerCode).HasMaxLength(50);
+            b.Property(x => x.CustomerName).HasMaxLength(250);
+            b.Property(x => x.CustomerPhone).HasMaxLength(20);
+            b.Property(x => x.ZaloUserId).HasMaxLength(100);
+            b.Property(x => x.ReceiverName).HasMaxLength(150);
+            b.Property(x => x.DeliveryAddress).HasMaxLength(500);
+            b.Property(x => x.BusinessType).HasConversion<byte?>();
+            b.Property(x => x.BusinessTypeName).HasMaxLength(250);
+            b.Property(x => x.StoreName).HasMaxLength(250);
+            b.Property(x => x.PrintedName).HasMaxLength(250);
+            b.Property(x => x.Status).HasConversion<byte>();
+
+            b.HasMany(x => x.Items)
+                .WithOne(x => x.Registration)
+                .HasForeignKey(x => x.RegistrationId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            b.HasIndex(x => new { x.TenantId, x.RegistrationCode })
+                .IsUnique()
+                .HasDatabaseName("IX_AppHlBlouseRegistrations_TenantId_Code");
+
+            b.HasIndex(x => new { x.TenantId, x.CreationTime })
+                .HasDatabaseName("IX_AppHlBlouseRegistrations_TenantId_CreationTime");
+
+            b.HasIndex(x => new { x.TenantId, x.CustomerCode })
+                .HasDatabaseName("IX_AppHlBlouseRegistrations_TenantId_CustomerCode");
+
+            b.HasIndex(x => new { x.TenantId, x.Status })
+                .HasDatabaseName("IX_AppHlBlouseRegistrations_TenantId_Status");
+        });
+
+        // ========== HlBlouseRegistrationItem ==========
+        builder.Entity<HlBlouseRegistrationItem>(b =>
+        {
+            b.ToTable("AppHlBlouseRegistrationItems", "HL");
+            b.ConfigureByConvention();
+
+            b.Property(x => x.SizeCode).IsRequired().HasMaxLength(20);
+            b.Property(x => x.WeightRange).HasMaxLength(100);
+            b.Property(x => x.ItemType).HasConversion<byte>();
+            b.Property(x => x.Style).HasConversion<byte>();
+
+            b.HasIndex(x => new { x.TenantId, x.RegistrationId })
+                .HasDatabaseName("IX_AppHlBlouseRegistrationItems_TenantId_RegistrationId");
         });
     }
 }
