@@ -1569,6 +1569,20 @@ public class MultiTenancyPermissionDefinitionProvider : PermissionDefinitionProv
         hlApiLogsTenantRoot.MultiTenancySide = MultiTenancySides.Tenant;
         hlApiLogsTenantRoot.RequireFeatures(Features.AppHoaLinhFeatures.AppHoaLinhFeatures.Management);
 
+        // HL BLOUSE — Đăng ký nhận áo Blouse (TENANT)
+        var hlBlouseTenantRoot = hlGroup.AddPermission(AppHlBlouse.Default, L("Permission:AppHlBlouse"));
+        hlBlouseTenantRoot.MultiTenancySide = MultiTenancySides.Tenant;
+        hlBlouseTenantRoot.RequireFeatures(Features.AppHoaLinhFeatures.AppHoaLinhFeatures.Management);
+        var hlBlouseTenantCreate = hlBlouseTenantRoot.AddChild(AppHlBlouse.Create, L("Permission:AppHlBlouse.Create"));
+        hlBlouseTenantCreate.MultiTenancySide = MultiTenancySides.Tenant;
+        hlBlouseTenantCreate.RequireFeatures(Features.AppHoaLinhFeatures.AppHoaLinhFeatures.Management);
+        var hlBlouseTenantEdit = hlBlouseTenantRoot.AddChild(AppHlBlouse.Edit, L("Permission:AppHlBlouse.Edit"));
+        hlBlouseTenantEdit.MultiTenancySide = MultiTenancySides.Tenant;
+        hlBlouseTenantEdit.RequireFeatures(Features.AppHoaLinhFeatures.AppHoaLinhFeatures.Management);
+        var hlBlouseTenantDelete = hlBlouseTenantRoot.AddChild(AppHlBlouse.Delete, L("Permission:AppHlBlouse.Delete"));
+        hlBlouseTenantDelete.MultiTenancySide = MultiTenancySides.Tenant;
+        hlBlouseTenantDelete.RequireFeatures(Features.AppHoaLinhFeatures.AppHoaLinhFeatures.Management);
+
         // ========== HOST GROUP ==========
         var hlGroupHost = context.AddGroup("HoaLinhManagementHost", L("PermissionGroup:HoaLinhManagementHost"));
 
@@ -1605,6 +1619,13 @@ public class MultiTenancyPermissionDefinitionProvider : PermissionDefinitionProv
         // HL API LOGS (HOST)
         var hlApiLogsHostRoot = hlGroupHost.AddPermission(HostAppHlApiLogs.Default, L("Permission:AppHlApiLogs"));
         hlApiLogsHostRoot.MultiTenancySide = MultiTenancySides.Host;
+
+        // HL BLOUSE — Đăng ký nhận áo Blouse (HOST)
+        var hlBlouseHostRoot = hlGroupHost.AddPermission(HostAppHlBlouse.Default, L("Permission:AppHlBlouse"));
+        hlBlouseHostRoot.MultiTenancySide = MultiTenancySides.Host;
+        hlBlouseHostRoot.AddChild(HostAppHlBlouse.Create, L("Permission:AppHlBlouse.Create")).MultiTenancySide = MultiTenancySides.Host;
+        hlBlouseHostRoot.AddChild(HostAppHlBlouse.Edit, L("Permission:AppHlBlouse.Edit")).MultiTenancySide = MultiTenancySides.Host;
+        hlBlouseHostRoot.AddChild(HostAppHlBlouse.Delete, L("Permission:AppHlBlouse.Delete")).MultiTenancySide = MultiTenancySides.Host;
 
         #endregion
 

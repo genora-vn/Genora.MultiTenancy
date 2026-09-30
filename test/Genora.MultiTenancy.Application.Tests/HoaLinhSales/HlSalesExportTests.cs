@@ -8,6 +8,7 @@ using Genora.MultiTenancy.AppServices.HoaLinh;
 using Genora.MultiTenancy.DomainModels.AppHlPoints;
 using Genora.MultiTenancy.DomainModels.AppHlGiftExchanges;
 using Genora.MultiTenancy.DomainModels.AppHlOrders;
+using Genora.MultiTenancy.DomainModels.AppHlBlouse;
 using Genora.MultiTenancy.Enums;
 using Genora.MultiTenancy.Permissions;
 using Microsoft.AspNetCore.Authorization;
@@ -31,6 +32,7 @@ public class HlSalesExportTests : IDisposable
     private readonly IRepository<HlPointBatch, Guid> _batches = Substitute.For<IRepository<HlPointBatch, Guid>>();
     private readonly IRepository<HlGiftExchange, Guid> _gifts = Substitute.For<IRepository<HlGiftExchange, Guid>>();
     private readonly IRepository<HlOrder, Guid> _orders = Substitute.For<IRepository<HlOrder, Guid>>();
+    private readonly IRepository<HlBlouseRegistration, Guid> _blouseRegistrations = Substitute.For<IRepository<HlBlouseRegistration, Guid>>();
     private readonly IHlAdminAppService _admin = Substitute.For<IHlAdminAppService>();
     private readonly ICurrentTenant _tenant = Substitute.For<ICurrentTenant>();
     private readonly IAbpAuthorizationService _auth = Substitute.For<IAbpAuthorizationService>();
@@ -43,11 +45,12 @@ public class HlSalesExportTests : IDisposable
         _batches.GetQueryableAsync().Returns(Task.FromResult(Array.Empty<HlPointBatch>().AsQueryable()));
         _gifts.GetQueryableAsync().Returns(Task.FromResult(Array.Empty<HlGiftExchange>().AsQueryable()));
         _orders.GetQueryableAsync().Returns(Task.FromResult(Array.Empty<HlOrder>().AsQueryable()));
+        _blouseRegistrations.GetQueryableAsync().Returns(Task.FromResult(Array.Empty<HlBlouseRegistration>().AsQueryable()));
         _auth.AuthorizeAsync(Arg.Any<ClaimsPrincipal>(), Arg.Any<object>(), Arg.Any<string>()).Returns(AuthorizationResult.Success());
         _provider = new ServiceCollection()
             .AddSingleton<IAsyncQueryableExecuter>(new AsyncQueryableExecuter(Array.Empty<IAsyncQueryableProvider>()))
             .BuildServiceProvider();
-        _service = new HlSalesExportAppService(_transactions, _batches, _gifts, _orders, _admin, _tenant, _auth)
+        _service = new HlSalesExportAppService(_transactions, _batches, _gifts, _orders, _blouseRegistrations, _admin, _tenant, _auth)
         { LazyServiceProvider = new AbpLazyServiceProvider(_provider) };
     }
 

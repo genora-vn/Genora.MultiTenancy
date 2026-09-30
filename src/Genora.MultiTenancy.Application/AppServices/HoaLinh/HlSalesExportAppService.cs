@@ -8,9 +8,11 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using ClosedXML.Excel;
 using Genora.MultiTenancy.AppDtos.HoaLinh;
+using Genora.MultiTenancy.AppDtos.HoaLinh.Blouse;
 using Genora.MultiTenancy.DomainModels.AppHlPoints;
 using Genora.MultiTenancy.DomainModels.AppHlGiftExchanges;
 using Genora.MultiTenancy.DomainModels.AppHlOrders;
+using Genora.MultiTenancy.DomainModels.AppHlBlouse;
 using Genora.MultiTenancy.Enums;
 using Genora.MultiTenancy.Permissions;
 using Microsoft.AspNetCore.Authorization;
@@ -29,16 +31,20 @@ public class HlSalesExportAppService : ApplicationService, IHlSalesExportAppServ
     private readonly IRepository<HlPointBatch, Guid> _batches;
     private readonly IRepository<HlGiftExchange, Guid> _gifts;
     private readonly IRepository<HlOrder, Guid> _orders;
+    private readonly IRepository<DomainModels.AppHlBlouse.HlBlouseRegistration, Guid> _blouseRegistrations;
     private readonly IHlAdminAppService _admin;
     private readonly ICurrentTenant _tenant;
     private readonly IAuthorizationService _authorization;
 
     public HlSalesExportAppService(IRepository<HlPointTransaction, Guid> transactions,
         IRepository<HlPointBatch, Guid> batches, IRepository<HlGiftExchange, Guid> gifts,
-        IRepository<HlOrder, Guid> orders, IHlAdminAppService admin, ICurrentTenant tenant,
+        IRepository<HlOrder, Guid> orders,
+        IRepository<DomainModels.AppHlBlouse.HlBlouseRegistration, Guid> blouseRegistrations,
+        IHlAdminAppService admin, ICurrentTenant tenant,
         IAuthorizationService authorization)
     {
         _transactions = transactions; _batches = batches; _gifts = gifts; _orders = orders;
+        _blouseRegistrations = blouseRegistrations;
         _admin = admin; _tenant = tenant; _authorization = authorization;
     }
 
@@ -242,6 +248,95 @@ public class HlSalesExportAppService : ApplicationService, IHlSalesExportAppServ
         sheet.Column(7).Style.DateFormat.Format = "dd/MM/yyyy HH:mm:ss";
         return Finish(workbook, sheet, row, "HoaLinhSales_Orders");
     }
+
+    // ===== Đăng ký nhận áo Blouse =====
+    public async Task<IRemoteStreamContent> ExportBlouseRegistrationsAsync(HlBlouseRegistrationFilterDto input)
+    {
+        await CheckPermissionAsync(MultiTenancyPermissions.AppHlBlouse.Default, MultiTenancyPermissions.HostAppHlBlouse.Default);
+        HlSalesQuery.ValidateDates(input.DateFrom, input.DateTo);
+
+        var queryable = await _blouseRegistrations.WithDetailsAsync(x => x.Items);
+        if (!string.IsNullOrWhiteSpace(input.Filter))
+        {
+            var f = input.Filter.Trim();
+            queryable = queryable.Where(x =>
+                x.RegistrationCode.Contains(f) ||
+                (x.CustomerCode ?? "").Contains(f) ||
+                (x.CustomerName ?? "").Contains(f) ||
+                (x.CustomerPhone ?? "").Contains(f) ||
+                (x.PrintedName ?? "").Contains(f) ||
+                (x.StoreName ?? "").Contains(f));
+        }
+        if (input.Status.HasValue) queryable = queryable.Where(x => x.Status == input.Status.Value);
+        if (input.DateFrom.HasValue) { var from = input.DateFrom.Value.Date; queryable = queryable.Where(x => x.CreationTime >= from); }
+        if (input.DateTo.HasValue) { var until = input.DateTo.Value.Date.AddDays(1); queryable = queryable.Where(x => x.CreationTime < until); }
+
+        var items = await AsyncExecuter.ToListAsync(queryable.OrderByDescending(x => x.CreationTime).ThenBy(x => x.Id));
+
+        using var workbook = new XLWorkbook();
+        var sheet = CreateSheet(workbook, "Đăng ký áo Blouse", new[] {
+            "STT", "Mã đơn", "Mã KH", "Tên khách hàng", "Số điện thoại", "Đại diện tiếp nhận",
+            "Địa chỉ giao nhận", "Loại hình KD", "Tên cửa hàng", "Tên in trên áo",
+            "Áo tặng", "Áo đổi", "Tổng áo", "Điểm quy đổi",
+            "Chi tiết áo tặng", "Chi tiết áo đổi", "Trạng thái", "Ghi chú thêm", "Ghi chú nội bộ", "Ngày đăng ký" });
+        var row = 2;
+        foreach (var e in items)
+        {
+            var free = e.Items.Where(i => i.ItemType == HlBlouseItemType.Free);
+            var exchange = e.Items.Where(i => i.ItemType == HlBlouseItemType.Exchange);
+            sheet.Cell(row, 1).Value = row - 1;
+            Text(sheet, row, 2, e.RegistrationCode);
+            Text(sheet, row, 3, e.CustomerCode);
+            Text(sheet, row, 4, e.CustomerName);
+            Text(sheet, row, 5, e.CustomerPhone);
+            Text(sheet, row, 6, e.ReceiverName);
+            Text(sheet, row, 7, e.DeliveryAddress);
+            Text(sheet, row, 8, BlouseBusinessTypeText(e.BusinessType, e.BusinessTypeName));
+            Text(sheet, row, 9, e.StoreName);
+            Text(sheet, row, 10, e.PrintedName);
+            sheet.Cell(row, 11).Value = e.FreeQuantity;
+            sheet.Cell(row, 12).Value = e.ExchangeQuantity;
+            sheet.Cell(row, 13).Value = e.TotalQuantity;
+            sheet.Cell(row, 14).Value = e.TotalPointsUsed;
+            Text(sheet, row, 15, SummarizeBlouseItems(free));
+            Text(sheet, row, 16, SummarizeBlouseItems(exchange));
+            Text(sheet, row, 17, BlouseStatusText(e.Status));
+            Text(sheet, row, 18, e.Note);
+            Text(sheet, row, 19, e.InternalNote);
+            sheet.Cell(row, 20).Value = e.CreationTime;
+            row++;
+        }
+        sheet.Column(20).Style.DateFormat.Format = "dd/MM/yyyy HH:mm:ss";
+        return Finish(workbook, sheet, row, "HoaLinhSales_BlouseRegistrations");
+    }
+
+    private static string BlouseStyleText(HlBlouseStyle style) => style == HlBlouseStyle.Male ? "Nam" : "Nữ";
+
+    private static string BlouseStatusText(HlBlouseRegistrationStatus status) => status switch
+    {
+        HlBlouseRegistrationStatus.Pending => "Chờ xác nhận",
+        HlBlouseRegistrationStatus.Confirmed => "Đã xác nhận",
+        HlBlouseRegistrationStatus.Processing => "Đang xử lý",
+        HlBlouseRegistrationStatus.Delivered => "Đã giao",
+        HlBlouseRegistrationStatus.Cancelled => "Đã hủy",
+        HlBlouseRegistrationStatus.Rejected => "Từ chối",
+        _ => "Không xác định"
+    };
+
+    private static string BlouseBusinessTypeText(HlBlouseBusinessType? type, string? otherName) => type switch
+    {
+        HlBlouseBusinessType.Pharmacy => "Nhà thuốc",
+        HlBlouseBusinessType.Drugstore => "Quầy thuốc",
+        HlBlouseBusinessType.Other => string.IsNullOrWhiteSpace(otherName) ? "Khác" : otherName,
+        _ => ""
+    };
+
+    // Gom nhóm các dòng áo theo (dáng + size): "Nam M x2, Nữ M x1".
+    private static string SummarizeBlouseItems(IEnumerable<HlBlouseRegistrationItem> items)
+        => string.Join(", ", items
+            .GroupBy(i => new { i.Style, Size = i.SizeCode ?? "" })
+            .OrderBy(g => g.Key.Style).ThenBy(g => g.Key.Size)
+            .Select(g => $"{BlouseStyleText(g.Key.Style)} {g.Key.Size} x{g.Sum(i => i.Quantity)}"));
 
     private static IXLWorksheet CreateSheet(XLWorkbook workbook, string name, string[] headers)
     {

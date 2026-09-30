@@ -35,6 +35,7 @@ using Genora.MultiTenancy.DomainModels.AppHlGiftExchanges;
 using Genora.MultiTenancy.DomainModels.AppHlOrders;
 using Genora.MultiTenancy.DomainModels.AppHl25;
 using Genora.MultiTenancy.DomainModels.AppHlPoints;
+using Genora.MultiTenancy.DomainModels.AppHlBlouse;
 using Genora.MultiTenancy.DomainModels.AppHlg;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Hosting;
@@ -158,6 +159,10 @@ public class MultiTenancyDbContext :
     public DbSet<HlApiLog> AppHlApiLogs { get; set; }
     public DbSet<HlPointBatch> AppHlPointBatches { get; set; }
     public DbSet<HlPointTransaction> AppHlPointTransactions { get; set; }
+    public DbSet<HlBlouseCampaign> AppHlBlouseCampaigns { get; set; }
+    public DbSet<HlBlouseSize> AppHlBlouseSizes { get; set; }
+    public DbSet<HlBlouseRegistration> AppHlBlouseRegistrations { get; set; }
+    public DbSet<HlBlouseRegistrationItem> AppHlBlouseRegistrationItems { get; set; }
 
     // Hoa Linh 25 Năm (hl25)
     public DbSet<Hl25AppConfig> AppHl25AppConfig { get; set; }

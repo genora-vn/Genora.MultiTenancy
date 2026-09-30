@@ -3,6 +3,7 @@ using Genora.MultiTenancy.AppDtos.AppEmails;
 using Genora.MultiTenancy.AppDtos.AppPayments;
 using Genora.MultiTenancy.AppDtos.AppZaloAuths;
 using Genora.MultiTenancy.AppDtos.HoaLinh;
+using Genora.MultiTenancy.AppDtos.HoaLinh.Blouse;
 using Genora.MultiTenancy.AppServices.AppEmails;
 using Genora.MultiTenancy.AppServices.AppPayments;
 using Genora.MultiTenancy.AppServices.AppZaloAuths;
@@ -27,6 +28,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Volo.Abp;
+using Volo.Abp.Application.Dtos;
 using Volo.Abp.BackgroundJobs;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.Linq;
@@ -61,6 +63,7 @@ public class HoaLinhMiniAppController : MultiTenancyController
     private readonly ILogger<HoaLinhMiniAppController> _logger;
     private readonly IAppEmailSenderService _appEmailSenderService;
     private readonly ISettingProvider _settingProvider;
+    private readonly IMiniAppHlBlouseService _blouseService;
     IStringLocalizer<MultiTenancyResource> l;
 
     public HoaLinhMiniAppController(
@@ -79,6 +82,7 @@ public class HoaLinhMiniAppController : MultiTenancyController
         ILogger<HoaLinhMiniAppController> logger,
         IAppEmailSenderService appEmailSenderService,
         ISettingProvider settingProvider,
+        IMiniAppHlBlouseService blouseService,
         IStringLocalizer<MultiTenancyResource> l)
     {
         _hlApi = hlApi;
@@ -96,6 +100,7 @@ public class HoaLinhMiniAppController : MultiTenancyController
         _logger = logger;
         _appEmailSenderService = appEmailSenderService;
         _settingProvider = settingProvider;
+        _blouseService = blouseService;
         this.l = l;
     }
 
@@ -1118,6 +1123,55 @@ public class HoaLinhMiniAppController : MultiTenancyController
         var methods = await _paymentService.GetPaymentMethodsAsync();
         return Ok(HlApiResult<List<HlPaymentMethodDto>>.Ok(methods));
     }
+
+    #region Đăng ký nhận áo Blouse
+
+    /// <summary>
+    /// GET /api/mini-app/hl/blouse/config — cấu hình chương trình + danh mục size (nhóm theo dáng nam/nữ).
+    /// </summary>
+    [HttpGet("blouse/config")]
+    public async Task<IActionResult> GetBlouseConfig()
+    {
+        var data = await _blouseService.GetConfigAsync();
+        return Ok(HlApiResult<HlBlouseConfigDto>.Ok(data));
+    }
+
+    /// <summary>
+    /// POST /api/mini-app/hl/blouse/register — ghi nhận đơn đăng ký (payload động các dòng áo tặng + đổi điểm).
+    /// Chặn trùng theo (số điện thoại + mã khách hàng/chi nhánh).
+    /// </summary>
+    [HttpPost("blouse/register")]
+    public async Task<IActionResult> RegisterBlouse([FromBody] HlBlouseRegisterRequest request, CancellationToken ct)
+    {
+        try
+        {
+            var data = await _blouseService.RegisterAsync(request, ct);
+            return Ok(HlApiResult<HlBlouseRegistrationDto>.Ok(data));
+        }
+        catch (UserFriendlyException ex)
+        {
+            return Ok(HlApiResult<HlBlouseRegistrationDto>.Fail(ex.Code ?? "HlBlouse:Error", ex.Message));
+        }
+    }
+
+    /// <summary>
+    /// GET /api/mini-app/hl/blouse/my-registrations?phone=... — lịch sử đơn đã đăng ký của khách theo SĐT.
+    /// </summary>
+    [HttpGet("blouse/my-registrations")]
+    public async Task<IActionResult> GetMyBlouseRegistrations([FromQuery] string phone, CancellationToken ct)
+    {
+        try
+        {
+            var data = await _blouseService.GetMyRegistrationsAsync(phone, ct);
+            return Ok(HlApiResult<ListResultDto<HlBlouseRegistrationDto>>.Ok(data));
+        }
+        catch (UserFriendlyException ex)
+        {
+            return Ok(HlApiResult<ListResultDto<HlBlouseRegistrationDto>>.Fail(ex.Code ?? "HlBlouse:Error", ex.Message));
+        }
+    }
+
+    #endregion
 
     #endregion
 }

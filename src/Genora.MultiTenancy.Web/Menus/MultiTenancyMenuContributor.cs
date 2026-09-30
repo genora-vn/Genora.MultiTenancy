@@ -2028,6 +2028,7 @@ public class MultiTenancyMenuContributor : IMenuContributor
                 await perms.IsGrantedAsync(MultiTenancyPermissions.AppHlLoyalty.Default) ||
                 await perms.IsGrantedAsync(MultiTenancyPermissions.AppHlGiftExchange.Default) ||
                 await perms.IsGrantedAsync(MultiTenancyPermissions.AppHlDashboard.Default) ||
+                await perms.IsGrantedAsync(MultiTenancyPermissions.AppHlBlouse.Default) ||
                 await perms.IsGrantedAsync(MultiTenancyPermissions.AppHlApiLogs.Default)
             );
 
@@ -2038,6 +2039,7 @@ public class MultiTenancyMenuContributor : IMenuContributor
             await perms.IsGrantedAsync(MultiTenancyPermissions.HostAppHlLoyalty.Default) ||
             await perms.IsGrantedAsync(MultiTenancyPermissions.HostAppHlGiftExchange.Default) ||
             await perms.IsGrantedAsync(MultiTenancyPermissions.HostAppHlDashboard.Default) ||
+            await perms.IsGrantedAsync(MultiTenancyPermissions.HostAppHlBlouse.Default) ||
             await perms.IsGrantedAsync(MultiTenancyPermissions.HostAppHlApiLogs.Default);
 
         if (canSeeHoaLinh || canSeeHoaLinhHost)
@@ -2163,6 +2165,30 @@ public class MultiTenancyMenuContributor : IMenuContributor
                         url: "/HoaLinh/PointHistory",
                         icon: "fa fa-coins",
                         order: 7
+                    )
+                );
+            }
+
+            if (await perms.IsGrantedAsync(MultiTenancyPermissions.AppHlBlouse.Default) ||
+                await perms.IsGrantedAsync(MultiTenancyPermissions.HostAppHlBlouse.Default))
+            {
+                groupHl.AddItem(
+                    new ApplicationMenuItem(
+                        name: "AppHlBlouse",
+                        displayName: l["Menu:AppHlBlouse"],
+                        url: "/HoaLinh/BlouseRegistrations",
+                        icon: "fa fa-shirt",
+                        order: 8
+                    )
+                );
+
+                groupHl.AddItem(
+                    new ApplicationMenuItem(
+                        name: "AppHlBlouseConfig",
+                        displayName: l["Menu:AppHlBlouseConfig"],
+                        url: "/HoaLinh/BlouseConfig",
+                        icon: "fa fa-sliders",
+                        order: 9
                     )
                 );
             }

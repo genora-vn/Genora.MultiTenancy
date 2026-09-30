@@ -37,4 +37,5 @@ public interface IHlSalesExportAppService : IApplicationService
     Task<IRemoteStreamContent> ExportGiftExchangesAsync(Genora.MultiTenancy.AppDtos.HoaLinh.HlGiftExchangeFilterDto input);
     Task<List<HlSalesOrderRow>> GetOrdersAsync(HlSalesOrderFilter input);
     Task<IRemoteStreamContent> ExportOrdersAsync(HlSalesOrderFilter input);
+    Task<IRemoteStreamContent> ExportBlouseRegistrationsAsync(Genora.MultiTenancy.AppDtos.HoaLinh.Blouse.HlBlouseRegistrationFilterDto input);
 }
