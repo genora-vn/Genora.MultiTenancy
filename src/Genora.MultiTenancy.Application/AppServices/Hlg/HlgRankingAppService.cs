@@ -7,6 +7,8 @@ using System.Threading.Tasks;
 using Genora.MultiTenancy.AppDtos.Hlg;
 using Genora.MultiTenancy.DomainModels.AppCustomers;
 using Genora.MultiTenancy.DomainModels.AppHlg;
+using Genora.MultiTenancy.Helpers;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Volo.Abp;
 using Volo.Abp.Application.Services;
@@ -28,17 +30,20 @@ public class HlgRankingAppService : ApplicationService, IHlgRankingAppService
     private readonly IRepository<HlgGameSession, Guid> _sessionRepo;
     private readonly IRepository<Customer, Guid> _customerRepo;
     private readonly ILogger<HlgRankingAppService> _logger;
+    private readonly IConfiguration _configuration;
 
     public HlgRankingAppService(
         IRepository<HlgRankingEvent, Guid> eventRepo,
         IRepository<HlgGameSession, Guid> sessionRepo,
         IRepository<Customer, Guid> customerRepo,
-        ILogger<HlgRankingAppService> logger)
+        ILogger<HlgRankingAppService> logger,
+        IConfiguration configuration)
     {
         _eventRepo = eventRepo;
         _sessionRepo = sessionRepo;
         _customerRepo = customerRepo;
         _logger = logger;
+        _configuration = configuration;
     }
 
     public async Task<RankingEventDto?> GetCurrentEventAsync(CancellationToken ct = default)
@@ -112,7 +117,7 @@ public class HlgRankingAppService : ApplicationService, IHlgRankingAppService
                 Rank = r.Rank,
                 UserId = r.CustomerId,
                 DisplayName = c?.FullName ?? "Người chơi",
-                AvatarUrl = c?.AvatarUrl,
+                AvatarUrl = ImageHelper.NormalizeThumb(_configuration, c?.AvatarUrl),
                 Score = r.Score,
                 IsCurrentUser = currentCustomerId.HasValue && r.CustomerId == currentCustomerId.Value
             };

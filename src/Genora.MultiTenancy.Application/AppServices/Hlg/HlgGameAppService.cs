@@ -3,7 +3,9 @@ using Genora.MultiTenancy.AppDtos.Hlg;
 using Genora.MultiTenancy.DomainModels.AppCustomers;
 using Genora.MultiTenancy.DomainModels.AppHlg;
 using Genora.MultiTenancy.Enums.Hlg;
+using Genora.MultiTenancy.Helpers;
 using Genora.MultiTenancy.Realtime;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
@@ -38,6 +40,7 @@ public class HlgGameAppService : ApplicationService, IHlgGameAppService
     private readonly ICurrentTenant _currentTenant;
     private readonly IHlgLiveFeedNotifier _liveFeedNotifier;
     private readonly ILogger<HlgGameAppService> _logger;
+    private readonly IConfiguration _configuration;
 
     public HlgGameAppService(
         IRepository<HlgGame, Guid> gameRepo,
@@ -48,7 +51,8 @@ public class HlgGameAppService : ApplicationService, IHlgGameAppService
         IRepository<Customer, Guid> customerRepo,
         ICurrentTenant currentTenant,
         IHlgLiveFeedNotifier liveFeedNotifier,
-        ILogger<HlgGameAppService> logger)
+        ILogger<HlgGameAppService> logger,
+        IConfiguration configuration)
     {
         _gameRepo = gameRepo;
         _questionRepo = questionRepo;
@@ -59,6 +63,7 @@ public class HlgGameAppService : ApplicationService, IHlgGameAppService
         _currentTenant = currentTenant;
         _liveFeedNotifier = liveFeedNotifier;
         _logger = logger;
+        _configuration = configuration;
     }
 
     public async Task<List<GameDto>> GetGamesAsync(CancellationToken ct = default)
@@ -82,7 +87,7 @@ public class HlgGameAppService : ApplicationService, IHlgGameAppService
             Id = id,
             Name = game.Name,
             Type = HlgEnumMapper.GameTypeToString(game.Type),
-            ImageUrl = game.ImageUrl,
+            ImageUrl = NormalizeMediaUrl(game.ImageUrl),
             Description = game.Description,
             Rules = game.Rules,
             RewardDescription = game.RewardDescription,
@@ -90,7 +95,7 @@ public class HlgGameAppService : ApplicationService, IHlgGameAppService
             EndAt = game.EndAt,
             Status = HlgEnumMapper.GameStatusToString(game.Status),
             BadgeText = game.BadgeText,
-            BannerUrl = game.BannerUrl,
+            BannerUrl = NormalizeMediaUrl(game.BannerUrl),
             QuestionsPerPlay = game.QuestionsPerPlay,
             AllowedWrongAnswers = game.AllowedWrongAnswers,
             TotalQuestions = game.Type == HlgGameType.Quiz && game.QuestionsPerPlay.HasValue
@@ -347,7 +352,7 @@ public class HlgGameAppService : ApplicationService, IHlgGameAppService
             {
                 UserId = s.CustomerId,
                 DisplayName = c?.FullName ?? "Người chơi",
-                AvatarUrl = c?.AvatarUrl,
+                AvatarUrl = NormalizeMediaUrl(c?.AvatarUrl),
                 Action = action
             };
         }).ToList();
@@ -422,14 +427,14 @@ public class HlgGameAppService : ApplicationService, IHlgGameAppService
             throw new UserFriendlyException("Game đã kết thúc");
     }
 
-    private static GameDto MapGame(HlgGame g, int totalQuestions) => new()
+    private GameDto MapGame(HlgGame g, int totalQuestions) => new()
     {
         BadgeText = g.BadgeText,
-        BannerUrl = g.BannerUrl,
+        BannerUrl = NormalizeMediaUrl(g.BannerUrl),
         Id = g.Id,
         Name = g.Name,
         Type = HlgEnumMapper.GameTypeToString(g.Type),
-        ImageUrl = g.ImageUrl,
+        ImageUrl = NormalizeMediaUrl(g.ImageUrl),
         Description = g.Description,
         Rules = g.Rules,
         RewardDescription = g.RewardDescription,
@@ -443,13 +448,13 @@ public class HlgGameAppService : ApplicationService, IHlgGameAppService
         AllowedWrongAnswers = g.AllowedWrongAnswers
     };
 
-    private static QuestionDto MapQuestion(HlgQuestion q, List<HlgAnswerOption> options) => new()
+    private QuestionDto MapQuestion(HlgQuestion q, List<HlgAnswerOption> options) => new()
     {
         Id = q.Id,
         GameId = q.GameId,
         Index = q.Index,
         Content = q.Content,
-        ImageUrl = q.ImageUrl,
+        ImageUrl = NormalizeMediaUrl(q.ImageUrl),
         Options = options.Select(o => new AnswerOptionDto
         {
             Key = HlgEnumMapper.AnswerKeyToString(o.Key),
@@ -476,6 +481,9 @@ public class HlgGameAppService : ApplicationService, IHlgGameAppService
         return Regex.Replace(phone.Trim(), @"\s+|-|\.", "");
     }
 
+    private string? NormalizeMediaUrl(string? url)
+        => ImageHelper.NormalizeThumb(_configuration, url);
+
     /// <summary>
     /// Broadcast hoạt động người chơi tới live-feed (BD-4). Bọc try/catch để lỗi SignalR
     /// KHÔNG làm fail luồng chơi chính (theo lesson feedback_signalr_try_catch).
@@ -489,7 +497,7 @@ public class HlgGameAppService : ApplicationService, IHlgGameAppService
             {
                 UserId = customerId,
                 DisplayName = customer?.FullName ?? "Người chơi",
-                AvatarUrl = customer?.AvatarUrl,
+                AvatarUrl = NormalizeMediaUrl(customer?.AvatarUrl),
                 Action = action
             };
             await _liveFeedNotifier.PlayerActivityAsync(gameId, activity);

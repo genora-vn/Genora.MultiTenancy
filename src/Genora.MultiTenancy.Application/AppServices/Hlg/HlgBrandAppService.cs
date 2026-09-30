@@ -1,7 +1,9 @@
 ﻿
 using Genora.MultiTenancy.AppDtos.Hlg;
 using Genora.MultiTenancy.DomainModels.AppHlg;
+using Genora.MultiTenancy.Helpers;
 using Genora.MultiTenancy.Hlg;
+using Microsoft.Extensions.Configuration;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -17,10 +19,11 @@ namespace Genora.MultiTenancy.AppServices.Hlg
     public class HlgBrandAppService : ApplicationService, IHlgBrandAppService
     {
         private readonly IRepository<HlgBrand, Guid> _brandRepository;
-
-        public HlgBrandAppService(IRepository<HlgBrand, Guid> brandRepository)
+        private readonly IConfiguration _configuration;
+        public HlgBrandAppService(IRepository<HlgBrand, Guid> brandRepository, IConfiguration configuration)
         {
             _brandRepository = brandRepository;
+            _configuration = configuration;
         }
 
         public async Task<BrandKnowledgeDto> GetBrandAsync(Guid id, CancellationToken ct = default)
@@ -28,18 +31,23 @@ namespace Genora.MultiTenancy.AppServices.Hlg
             var brand = await _brandRepository.FirstOrDefaultAsync(x => x.Id == id && x.IsActive, ct);
             var products = await LazyServiceProvider.LazyGetRequiredService<IRepository<HlgProduct, Guid>>().GetQueryableAsync();
             var brandProducts = products.Where(p => p.BrandId == id && p.IsActive).ToList();
+            var productDtos = brandProducts.Select(p => new BrandProductDto
+            {
+                Id = p.Id,
+                Name = p.Name,
+                Description = p.Summary,
+                ImageUrl = p.ThumbnailUrl
+            }).ToList();
+            foreach (var product in productDtos)
+            {
+                product.ImageUrl = ImageHelper.NormalizeThumb(_configuration, product.ImageUrl);
+            }
             return new BrandKnowledgeDto
             {
                 Id = brand.Id,
                 Name = brand.Name,
                 CategoryId = brand.CategoryId,
-                Products = brandProducts.Select(p => new BrandProductDto
-                {
-                    Id = p.Id,
-                    Name = p.Name,
-                    Description = p.Summary,
-                    ImageUrl = p.ThumbnailUrl
-                }).ToList()
+                Products = productDtos
             };
         }
 
@@ -101,7 +109,18 @@ namespace Genora.MultiTenancy.AppServices.Hlg
                     ImageUrl = detail?.Media.FirstOrDefault(x => x.Placement == HlgMediaPlacement.Related)?.Url
                 }
             };
+            result.ThumbnailUrl = NormalizeMediaUrl(result.ThumbnailUrl);
+            result.ProductInformation.ImageUrl = NormalizeMediaUrl(result.ProductInformation.ImageUrl);
+            result.Knowledge.ImageUrl = NormalizeMediaUrl(result.Knowledge.ImageUrl);
+            result.RelatedProducts.ImageUrl = NormalizeMediaUrl(result.RelatedProducts.ImageUrl);
+            foreach (var relatedProduct in result.RelatedProducts.RolationProductDtos)
+            {
+                relatedProduct.ImageUrl = NormalizeMediaUrl(relatedProduct.ImageUrl);
+            }
             return result;
         }
+
+        private string? NormalizeMediaUrl(string? url)
+            => ImageHelper.NormalizeThumb(_configuration, url);
     }
 }

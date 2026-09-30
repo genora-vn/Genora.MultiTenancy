@@ -8,6 +8,8 @@ using Genora.MultiTenancy.AppDtos.Hlg;
 using Genora.MultiTenancy.DomainModels.AppCustomers;
 using Genora.MultiTenancy.DomainModels.AppHlg;
 using Genora.MultiTenancy.Enums.Hlg;
+using Genora.MultiTenancy.Helpers;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Volo.Abp;
 using Volo.Abp.Application.Services;
@@ -36,6 +38,7 @@ public class HlgRewardAppService : ApplicationService, IHlgRewardAppService
     private readonly ICurrentTenant _currentTenant;
     private readonly IUnitOfWorkManager _uowManager;
     private readonly ILogger<HlgRewardAppService> _logger;
+    private readonly IConfiguration _configuration;
 
     public HlgRewardAppService(
         IRepository<HlgReward, Guid> rewardRepo,
@@ -46,7 +49,8 @@ public class HlgRewardAppService : ApplicationService, IHlgRewardAppService
         IRepository<Customer, Guid> customerRepo,
         ICurrentTenant currentTenant,
         IUnitOfWorkManager uowManager,
-        ILogger<HlgRewardAppService> logger)
+        ILogger<HlgRewardAppService> logger,
+        IConfiguration configuration)
     {
         _rewardRepo = rewardRepo;
         _historyRepo = historyRepo;
@@ -58,6 +62,7 @@ public class HlgRewardAppService : ApplicationService, IHlgRewardAppService
         _currentTenant = currentTenant;
         _uowManager = uowManager;
         _logger = logger;
+        _configuration = configuration;
     }
 
     public async Task<List<RewardDto>> GetRewardsAsync(CancellationToken ct = default)
@@ -201,11 +206,11 @@ public class HlgRewardAppService : ApplicationService, IHlgRewardAppService
             ?? throw new UserFriendlyException("Không tìm thấy khách hàng. Vui lòng đăng ký trước.");
     }
 
-    private static RewardDto MapReward(HlgReward r) => new()
+    private RewardDto MapReward(HlgReward r) => new()
     {
         Id = r.Id,
         Name = r.Name,
-        ImageUrl = r.ImageUrl,
+        ImageUrl = ImageHelper.NormalizeThumb(_configuration, r.ImageUrl),
         PointCost = r.PointCost,
         Type = HlgEnumMapper.RewardTypeToString(r.Type)
     };

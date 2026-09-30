@@ -84,6 +84,44 @@ public class HlgAdminTests : IDisposable
     }
 
     [Fact]
+    public void Ranking_Result_Excel_Contains_Report_Columns_And_Preserves_Player_Identifiers()
+    {
+        var playedAt = new DateTime(2026, 9, 30, 8, 15, 0);
+        using var content = new HlgRankingResultExcelExporter().Export("Sự kiện tháng 9", new[]
+        {
+            new HlgRankingResultExcelRow
+            {
+                EventRank = 1,
+                CustomerCode = "00123",
+                PlayerName = "Nguyễn Văn A",
+                PhoneNumber = "0900123456",
+                ZaloUserId = "zalo-1",
+                GameName = "Đố vui",
+                PlayCount = 3,
+                GameScore = 2500,
+                BestScore = 1000,
+                CorrectAnswerCount = 25,
+                TotalQuestionCount = 30,
+                EventScore = 2500,
+                FirstPlayedAt = playedAt,
+                LastPlayedAt = playedAt.AddHours(2)
+            }
+        });
+        using var workbook = new XLWorkbook(content.GetStream());
+        var sheet = workbook.Worksheet("Kết quả sự kiện");
+
+        sheet.Cell(1, 7).GetString().ShouldBe("Tên trò chơi");
+        sheet.Cell(1, 8).GetString().ShouldBe("Số lượt chơi");
+        sheet.Cell(2, 3).GetString().ShouldBe("00123");
+        sheet.Cell(2, 3).DataType.ShouldBe(XLDataType.Text);
+        sheet.Cell(2, 5).GetString().ShouldBe("0900123456");
+        sheet.Cell(2, 8).GetValue<int>().ShouldBe(3);
+        sheet.Cell(2, 9).GetValue<int>().ShouldBe(2500);
+        sheet.Cell(2, 13).GetValue<int>().ShouldBe(2500);
+        sheet.Cell(2, 14).GetDateTime().ShouldBe(playedAt);
+    }
+
+    [Fact]
     public async Task Disabled_Feature_Stops_Before_Query()
     {
         _features.IsEnabledAsync(AppHlgFeatures.Management).Returns(false);

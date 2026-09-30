@@ -94,6 +94,8 @@
     "Hlg:ParentCannotChange": "A question cannot be moved to another game.",
     "Hlg:QuestionIndexExists": "This question index already exists in the game.",
     "Hlg:ExcelHelperUnavailable": "The Excel feature is not available.",
+    "Hlg:ExportEventResults": "Export results to Excel",
+    "Hlg:EventNotEndedForExport": "Results can only be exported after the event has ended.",
     "Hlg:ImportGameRequired": "The game to import questions into could not be determined.",
     "Hlg:ImportFileRequired": "Please select an Excel file.",
     "Hlg:ImportFileTypeInvalid": "Only .xlsx Excel files are supported.",

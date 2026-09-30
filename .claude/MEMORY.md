@@ -5,6 +5,7 @@
 > Nguồn gốc: migrate từ `~\.claude\projects\D--Genora-...-Genora-MultiTenancy\memory\` (108 file).
 
 ## Điều hướng nhanh
+- **HLG Ranking result Excel 2026-09-30:** [note](memory/notes/project/project_hlg_ranking_result_excel_20260930.md). Action chỉ hiện sau EndAt, backend chặn gọi sớm; báo cáo người chơi–game/lượt/điểm/hạng; Web build +20 Admin tests + JS syntax pass, không migration.
 - **HLG quiz play configuration 2026-09-24:** [note](memory/notes/project/project_hlg_quiz_play_configuration_20260924.md). Thêm QuestionsPerPlay/AllowedWrongAnswers; Answer/Finish fail khi wrong count vượt limit, không cộng điểm; migration chưa apply; 57App+19Web pass, EF clean.
 - **HLG knowledge menus 2026-09-23:** [note](memory/notes/project/project_hlg_knowledge_separate_menus_20260923.md). Tách Categories/Brands/Products thành ba menu độc lập cùng quyền Knowledge; bỏ shortcut nội dung cũ; Web build pass, không migration.
 - **HLG verification follow-up 2026-09-19:** [note](memory/notes/project/project_hlg_verification_followup_20260919.md). Xác minh corrective code đã nằm trong HEAD `d4f67f9`; fix ownership/finished-session cho shipping address + URL validation Admin; 46App+3Domain+17Web+11JS pass; browser vẫn BLOCKED (không có browser); migration chưa apply.
