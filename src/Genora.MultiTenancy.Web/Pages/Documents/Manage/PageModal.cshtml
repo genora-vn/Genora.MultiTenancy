@@ -5,6 +5,7 @@
 @using Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.TagHelpers.Modal
 @model PageModalModel
 @inject IStringLocalizer<MultiTenancyResource> L
+@inject Microsoft.Extensions.Configuration.IConfiguration Configuration
 
 @{ Layout = null; }
 
@@ -70,6 +71,13 @@
 
 <script>
     (function () {
+        var APP_BASE_URL = '@(Configuration["App:AppUrl"] ?? "")';
+        function toAbsoluteUrl(url) {
+            if (!url || /^(https?:|data:|blob:)/i.test(url)) return url;
+            var base = (APP_BASE_URL || window.location.origin || '').replace(/\/+$/, '');
+            if (!base) return url;
+            return base + (url.charAt(0) === '/' ? url : '/' + url);
+        }
         function initEditor() {
             const $ta = $('#DocsContentEditor');
             if (!$ta.length || $ta.next('.note-editor').length) return;
@@ -124,7 +132,7 @@
                 .then(r => r.json())
                 .then(d => {
                     if (d && d.url) {
-                        $editor.summernote('insertImage', d.url, file.name);
+                        $editor.summernote('insertImage', toAbsoluteUrl(d.url), file.name);
                     } else {
                         abp.notify.warn('Upload ảnh thất bại.');
                     }

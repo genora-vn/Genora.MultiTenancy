@@ -7,6 +7,12 @@
         }
         return items;
     }
+    function toAbsoluteUrl(url) {
+        if (!url || /^(https?:|data:|blob:)/i.test(url)) return url;
+        var base = (root.APP_BASE_URL || root.location.origin || '').replace(/\/+$/, '');
+        if (!base) return url;
+        return base + (url.charAt(0) === '/' ? url : '/' + url);
+    }
     function init(modal) {
         var $ = root.jQuery, l = abp.localization.getResource('MultiTenancy');
         var lookup = root.hlgAdmin.resolveService('hlgLookupAdmin');
@@ -95,7 +101,7 @@
                         ['view', ['fullscreen', 'codeview', 'help']]
                     ],
                     callbacks: { onChange: function (html) { editor.val(html); }, onImageUpload: function (files) {
-                        Array.from(files).forEach(function (file) { upload(file).then(function (data) { editor.summernote('insertImage', data.url); }).catch(function () { abp.notify.error(l('Hlg:UploadFailed')); }); });
+                        Array.from(files).forEach(function (file) { upload(file).then(function (data) { editor.summernote('insertImage', toAbsoluteUrl(data.url)); }).catch(function () { abp.notify.error(l('Hlg:UploadFailed')); }); });
                     } }
                 });
             });
