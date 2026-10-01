@@ -27,7 +27,13 @@ public class HlgRankingAdminAppService : FeatureProtectedCrudAppService<HlgRanki
     protected override string TenantDefaultPermission => MultiTenancyPermissions.AppHlgRanking.Default;
     protected override string HostDefaultPermission => MultiTenancyPermissions.HostAppHlgRanking.Default;
     private readonly HlgRankingResultExcelExporter _excelExporter;
-    public HlgRankingAdminAppService(IRepository<HlgRankingEvent, Guid> repository, ICurrentTenant tenant, IFeatureChecker features, HlgRankingResultExcelExporter excelExporter) : base(repository, tenant, features)
+    private readonly IRepository<HlgRankingResultSnapshot, Guid> _resultSnapshots;
+    public HlgRankingAdminAppService(
+        IRepository<HlgRankingEvent, Guid> repository,
+        ICurrentTenant tenant,
+        IFeatureChecker features,
+        HlgRankingResultExcelExporter excelExporter,
+        IRepository<HlgRankingResultSnapshot, Guid> resultSnapshots) : base(repository, tenant, features)
     {
         LocalizationResource = typeof(MultiTenancyResource);
         GetPolicyName = MultiTenancyPermissions.AppHlgRanking.Default;
@@ -36,6 +42,7 @@ public class HlgRankingAdminAppService : FeatureProtectedCrudAppService<HlgRanki
         UpdatePolicyName = MultiTenancyPermissions.AppHlgRanking.Edit;
         DeletePolicyName = MultiTenancyPermissions.AppHlgRanking.Delete;
         _excelExporter = excelExporter;
+        _resultSnapshots = resultSnapshots;
     }
     public override async Task<PagedResultDto<HlgRankingAdminDto>> GetListAsync(GetHlgAdminListInput input)
     {
@@ -83,19 +90,32 @@ public class HlgRankingAdminAppService : FeatureProtectedCrudAppService<HlgRanki
             var old = await Repository.GetAsync(id.Value);
             if (old.GameId != input.GameId || old.StartAt != input.StartAt || old.EndAt != input.EndAt) throw new UserFriendlyException(L["Hlg:EventHasWinners"]);
         }
+        if (id.HasValue && await _resultSnapshots.AnyAsync(x => x.EventId == id.Value)) {
+            var old = await Repository.GetAsync(id.Value);
+            if (old.GameId != input.GameId || old.StartAt != input.StartAt || old.EndAt != input.EndAt) throw new UserFriendlyException(L["Hlg:EventResultsSnapshotted"]);
+        }
     }
     public override async Task DeleteAsync(Guid id)
     {
         await CheckDeletePolicyAsync();
         if (await LazyServiceProvider.LazyGetRequiredService<IRepository<HlgRankingPrize,Guid>>().AnyAsync(x => x.EventId == id)) throw new UserFriendlyException(L["Hlg:EventHasPrizes"]);
+        if (await _resultSnapshots.AnyAsync(x => x.EventId == id)) throw new UserFriendlyException(L["Hlg:EventResultsSnapshotted"]);
         await Repository.DeleteAsync(id);
     }
+    [UnitOfWork(isTransactional: true)]
     public async Task<IRemoteStreamContent> ExportResultsAsync(Guid id)
     {
         await CheckGetPolicyAsync();
         var rankingEvent = await Repository.GetAsync(id);
         HlgContentValidation.Scope(rankingEvent.TenantId, CurrentTenant.Id);
         if (Clock.Now <= rankingEvent.EndAt) throw new UserFriendlyException(L["Hlg:EventNotEndedForExport"]);
+
+        var savedSnapshots = await AsyncExecuter.ToListAsync(
+            (await _resultSnapshots.GetQueryableAsync())
+                .Where(x => x.TenantId == CurrentTenant.Id && x.EventId == id)
+                .OrderBy(x => x.EventRank).ThenBy(x => x.PlayerName).ThenBy(x => x.GameName));
+        if (savedSnapshots.Count > 0)
+            return _excelExporter.Export(rankingEvent.Title, savedSnapshots.Select(MapSnapshot).ToList());
 
         var sessionQuery = await LazyServiceProvider.LazyGetRequiredService<IRepository<HlgGameSession, Guid>>().GetQueryableAsync();
         var sessions = await AsyncExecuter.ToListAsync(sessionQuery.Where(x =>
@@ -126,6 +146,8 @@ public class HlgRankingAdminAppService : FeatureProtectedCrudAppService<HlgRanki
                 gameById.TryGetValue(group.Key.GameId, out var game);
                 return new HlgRankingResultExcelRow
                 {
+                    CustomerId = group.Key.CustomerId,
+                    GameId = group.Key.GameId,
                     EventRank = ranks[group.Key.CustomerId],
                     CustomerCode = customer?.CustomerCode,
                     PlayerName = customer?.FullName ?? "Người chơi",
@@ -144,8 +166,55 @@ public class HlgRankingAdminAppService : FeatureProtectedCrudAppService<HlgRanki
             })
             .OrderBy(x => x.EventRank).ThenBy(x => x.PlayerName).ThenBy(x => x.GameName).ToList();
 
+        if (rows.Count > 0)
+        {
+            var snapshots = rows.Select(row => new HlgRankingResultSnapshot(
+                GuidGenerator.Create(), rankingEvent.Id, row.CustomerId, row.GameId, CurrentTenant.Id)
+            {
+                EventRank = row.EventRank,
+                CustomerCode = row.CustomerCode,
+                PlayerName = row.PlayerName,
+                PhoneNumber = row.PhoneNumber,
+                ZaloUserId = row.ZaloUserId,
+                GameName = row.GameName,
+                PlayCount = row.PlayCount,
+                GameScore = row.GameScore,
+                BestScore = row.BestScore,
+                CorrectAnswerCount = row.CorrectAnswerCount,
+                TotalQuestionCount = row.TotalQuestionCount,
+                EventScore = row.EventScore,
+                FirstPlayedAt = row.FirstPlayedAt,
+                LastPlayedAt = row.LastPlayedAt
+            }).ToList();
+            await _resultSnapshots.InsertManyAsync(snapshots, autoSave: true);
+
+            foreach (var customer in customers) customer.BonusPoint = 0;
+            await LazyServiceProvider.LazyGetRequiredService<IRepository<Customer, Guid>>()
+                .UpdateManyAsync(customers, autoSave: true);
+        }
+
         return _excelExporter.Export(rankingEvent.Title, rows);
     }
+
+    private static HlgRankingResultExcelRow MapSnapshot(HlgRankingResultSnapshot snapshot) => new()
+    {
+        CustomerId = snapshot.CustomerId,
+        GameId = snapshot.GameId,
+        EventRank = snapshot.EventRank,
+        CustomerCode = snapshot.CustomerCode,
+        PlayerName = snapshot.PlayerName,
+        PhoneNumber = snapshot.PhoneNumber,
+        ZaloUserId = snapshot.ZaloUserId,
+        GameName = snapshot.GameName,
+        PlayCount = snapshot.PlayCount,
+        GameScore = snapshot.GameScore,
+        BestScore = snapshot.BestScore,
+        CorrectAnswerCount = snapshot.CorrectAnswerCount,
+        TotalQuestionCount = snapshot.TotalQuestionCount,
+        EventScore = snapshot.EventScore,
+        FirstPlayedAt = snapshot.FirstPlayedAt,
+        LastPlayedAt = snapshot.LastPlayedAt
+    };
     private static void Apply(HlgRankingInput input, HlgRankingEvent entity)
     {
         entity.Title = input.Title.Trim();

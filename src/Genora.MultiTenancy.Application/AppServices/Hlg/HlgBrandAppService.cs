@@ -71,9 +71,9 @@ namespace Genora.MultiTenancy.AppServices.Hlg
             {
                 throw new Exception("Product is not active");
             }
-            var relatedProducts = productRepository.Where(p => p.CategoryId == product.CategoryId && p.Id != product.Id && p.IsActive).ToList();
-            var detail = string.IsNullOrEmpty(product.DetailsJson) ? null : JsonSerializer.Deserialize<HlgProductContent>(product.DetailsJson);
             
+            var detail = string.IsNullOrEmpty(product.DetailsJson) ? null : JsonSerializer.Deserialize<HlgProductContent>(product.DetailsJson);
+            var relatedProducts = detail != null ? productRepository.Where(p => detail.RelatedProductIds.Contains(p.Id) && p.Id != product.Id && p.IsActive).ToList() : new();
             var result = new HlgProductDto
             {
                 Id = product.Id,

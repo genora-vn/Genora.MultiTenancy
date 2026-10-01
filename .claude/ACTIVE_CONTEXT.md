@@ -1,5 +1,11 @@
 # ACTIVE CONTEXT — Việc đang làm dở
 
+## HLG Ranking result snapshot — 2026-10-01 (mới nhất)
+
+- Đã thêm bảng `HLG.AppHlgRankingResultSnapshots`: lần xuất Excel đầu tiên lưu toàn bộ dòng người chơi–game và clear `Customer.BonusPoint` của đúng customer có kết quả trong cùng transaction; lần xuất sau đọc snapshot và không reset lần nữa.
+- Đã chặn đổi game/khoảng thời gian và xóa event sau khi snapshot; migration `20261001040131_AddHlgRankingResultSnapshots` + SQL idempotent **chưa apply DB**.
+- Web build 0 errors; 61 HLG Application tests pass; EF model clean. Chi tiết: [note](memory/notes/project/project_hlg_ranking_result_snapshot_20261001.md).
+
 ## HLG Ranking result Excel — 2026-09-30 (mới nhất)
 
 - Đã thêm action `Xuất Excel kết quả` trong dropdown dòng sự kiện `/Hlg/Ranking`, chỉ hiện khi server xác định `Clock.Now > EndAt`; endpoint vẫn enforce permission, tenant scope và end-time.

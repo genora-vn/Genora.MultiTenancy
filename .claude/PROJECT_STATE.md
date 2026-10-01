@@ -1,5 +1,10 @@
 # PROJECT STATE — Genora.MultiTenancy
 
+## HLG Ranking result snapshot — 2026-10-01 (mới nhất)
+
+- Xuất Excel event đã kết thúc lần đầu lưu toàn bộ dòng báo cáo và clear `Customer.BonusPoint` của customer có kết quả trong cùng transaction; các lần sau đọc snapshot và không reset lần nữa. Chặn thay game/thời gian hoặc xóa event đã chốt.
+- Migration `20261001040131_AddHlgRankingResultSnapshots` + SQL idempotent đã sinh, chưa apply DB. Web build 0 errors; 61 HLG Application tests pass; EF model clean.
+
 ## HLG Ranking result Excel — 2026-09-30 (mới nhất)
 
 - Sự kiện xếp hạng đã có action xuất Excel sau EndAt, kiểm tra lại ở backend; báo cáo theo người chơi–game gồm lượt/điểm/câu đúng/hạng và mốc chơi. Web build +20 Admin tests + JS syntax pass; không migration, chưa UAT runtime.

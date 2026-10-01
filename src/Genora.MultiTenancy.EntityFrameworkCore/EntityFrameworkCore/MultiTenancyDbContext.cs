@@ -189,6 +189,7 @@ public class MultiTenancyDbContext :
     public DbSet<HlgRewardHistory> AppHlgRewardHistories { get; set; }
     public DbSet<HlgShippingAddress> AppHlgShippingAddresses { get; set; }
     public DbSet<HlgRankingEvent> AppHlgRankingEvents { get; set; }
+    public DbSet<HlgRankingResultSnapshot> AppHlgRankingResultSnapshots { get; set; }
 
     // Tenant Management
     public DbSet<Tenant> Tenants { get; set; }

@@ -40,6 +40,17 @@ public static class MultiTenancyDbContextModelCreatingExtensionsHlg
             b.HasOne<HlgRankingPrize>().WithMany().HasForeignKey(x => x.PrizeId).OnDelete(DeleteBehavior.NoAction);
             b.HasIndex(x => new { x.TenantId, x.EventId, x.CustomerId }).IsUnique().HasFilter("[IsDeleted] = 0");
         });
+        builder.Entity<HlgRankingResultSnapshot>(b => {
+            b.ToTable("AppHlgRankingResultSnapshots", "HLG"); b.ConfigureByConvention();
+            b.Property(x => x.CustomerCode).HasMaxLength(100);
+            b.Property(x => x.PlayerName).IsRequired().HasMaxLength(250);
+            b.Property(x => x.PhoneNumber).IsRequired().HasMaxLength(30);
+            b.Property(x => x.ZaloUserId).HasMaxLength(100);
+            b.Property(x => x.GameName).IsRequired().HasMaxLength(250);
+            b.HasOne<HlgRankingEvent>().WithMany().HasForeignKey(x => x.EventId).OnDelete(DeleteBehavior.NoAction);
+            b.HasIndex(x => new { x.TenantId, x.EventId, x.CustomerId, x.GameId }).IsUnique();
+            b.HasIndex(x => new { x.TenantId, x.EventId, x.EventRank });
+        });
 
         // ========== HlgUserProfile ==========
         builder.Entity<HlgUserProfile>(b =>
