@@ -1,5 +1,11 @@
 # PROJECT STATE — Genora.MultiTenancy
 
+## Hoa Linh Sales — Lịch sử nhận quà — 2026-10-01 (mới nhất)
+
+- Follow-up **Host/local đã hỗ trợ `TenantId=null`**, SQL null-safe + unique index Host, không đọc chéo Tenant. Local HTTP TestServer pass Host/Tenant, tổng **79 .NET** tests liên quan pass; migration bổ sung `20261001025429_AddHlGiftReceiptHostUniqueness` + SQL chưa apply trong phiên. [Host fix](memory/notes/project/project_hl_gift_receipts_host_fix_20261001.md).
+- Đã thêm end-to-end xác nhận quà DMS voucherType2: snapshot history, chống nhận trùng theo tenant/chi nhánh/chiến dịch/kỳ/quà, APIs FE, admin filter/detail/Excel, feature mặc định tắt và dual permissions. Không thay luồng type1 hay điểm/kho hiện có.
+- Web build 0 errors; 70 .NET +33 JS tests pass; EF model clean. Migration `20260930171009_AddHlGiftReceipts`/SQL có sẵn **chưa apply**; chưa deploy/UAT thật. [API/rollout](../docs/HOALINH_GIFT_RECEIPTS_API_20261001.md) · [note](memory/notes/project/project_hl_gift_receipts_20261001.md).
+
 ## HLG Ranking result Excel — 2026-09-30 (mới nhất)
 
 - Sự kiện xếp hạng đã có action xuất Excel sau EndAt, kiểm tra lại ở backend; báo cáo theo người chơi–game gồm lượt/điểm/câu đúng/hạng và mốc chơi. Web build +20 Admin tests + JS syntax pass; không migration, chưa UAT runtime.

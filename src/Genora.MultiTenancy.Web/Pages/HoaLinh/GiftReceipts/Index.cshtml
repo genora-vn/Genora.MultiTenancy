@@ -1,0 +1,58 @@
+@page
+@model Genora.MultiTenancy.Web.Pages.HoaLinh.GiftReceipts.IndexModel
+@using Genora.MultiTenancy.Localization
+@using Microsoft.AspNetCore.Mvc.Localization
+@inject IHtmlLocalizer<MultiTenancyResource> L
+
+@section scripts {
+    <script src="~/Pages/HoaLinh/sales.js" asp-append-version="true"></script>
+    <script src="~/Pages/HoaLinh/GiftReceipts/index.js" asp-append-version="true"></script>
+}
+
+<abp-card>
+    <abp-card-header>
+        <div class="d-flex justify-content-between align-items-center gap-2">
+            <h4 class="mb-0"><i class="fa fa-gift me-2"></i>@L["Menu:AppHlGiftReceipts"]</h4>
+            @if (Model.CanExport)
+            {
+                <button type="button" id="BtnExportExcel" class="btn btn-outline-success"><i class="fa fa-file-excel me-1"></i>@L["HlGiftReceipt:Export"]</button>
+            }
+        </div>
+    </abp-card-header>
+    <abp-card-body>
+        <p class="text-muted">@L["HlGiftReceipt:Explanation"]</p>
+        <form id="ReceiptFilters" class="row g-2 mb-3">
+            <div class="col-md-4"><label for="FilterText" class="form-label">@L["HlGiftReceipt:Search"]</label><input id="FilterText" maxlength="250" class="form-control" /></div>
+            <div class="col-md-2"><label for="FilterCustCode" class="form-label">@L["HlGiftReceipt:CustCode"]</label><input id="FilterCustCode" maxlength="100" class="form-control" /></div>
+            <div class="col-md-2"><label for="FilterPhone" class="form-label">@L["HlGiftReceipt:Phone"]</label><input id="FilterPhone" maxlength="20" class="form-control" /></div>
+            <div class="col-md-2"><label for="FilterCampaign" class="form-label">@L["HlGiftReceipt:CampaignCode"]</label><input id="FilterCampaign" maxlength="100" class="form-control" /></div>
+            <div class="col-md-2"><label for="FilterVoucher" class="form-label">@L["HlGiftReceipt:VoucherCode"]</label><input id="FilterVoucher" maxlength="100" class="form-control" /></div>
+            <div class="col-md-2"><label for="FilterPeriod" class="form-label">@L["HlGiftReceipt:Period"]</label><input id="FilterPeriod" type="number" min="0" max="2147483647" step="1" class="form-control" /></div>
+            <div class="col-md-2"><label for="FilterStatus" class="form-label">@L["HlGiftReceipt:Status"]</label><select id="FilterStatus" class="form-select"><option value="">@L["HlGiftReceipt:All"]</option><option value="1">@L["HlGiftReceipt:Confirmed"]</option></select></div>
+            <div class="col-md-2"><label for="FilterDateFrom" class="form-label">@L["HlGiftReceipt:From"]</label><input id="FilterDateFrom" type="date" class="form-control" /></div>
+            <div class="col-md-2"><label for="FilterDateTo" class="form-label">@L["HlGiftReceipt:To"]</label><input id="FilterDateTo" type="date" class="form-control" /></div>
+            <div class="col-md-4 d-flex align-items-end gap-2"><button type="submit" class="btn btn-primary">@L["HlGiftReceipt:Search"]</button><button type="button" id="BtnReset" class="btn btn-outline-secondary">@L["HlGiftReceipt:Reset"]</button></div>
+        </form>
+        <div class="table-responsive" id="ReceiptResults">
+            <table class="table table-bordered table-hover align-middle" id="ReceiptTable">
+                <thead><tr><th>@L["HlGiftReceipt:ReceiptCode"]</th><th>@L["HlGiftReceipt:Customer"]</th><th>@L["HlGiftReceipt:Address"]</th><th>@L["HlGiftReceipt:Campaign"]</th><th>@L["HlGiftReceipt:Gift"]</th><th>@L["HlGiftReceipt:Quantity"]</th><th>@L["HlGiftReceipt:ConfirmedAt"]</th><th>@L["HlGiftReceipt:Status"]</th><th></th></tr></thead>
+                <tbody></tbody>
+            </table>
+        </div>
+        <div class="d-flex align-items-center justify-content-between gap-2 mt-3">
+            <span id="ReceiptCount" aria-live="polite"></span>
+            <div class="d-flex align-items-center gap-2">
+                <select id="PageSize" class="form-select" aria-label="@L["HlGiftReceipt:PageSize"]"><option>20</option><option>50</option><option>100</option></select>
+                <button type="button" id="BtnPrevious" class="btn btn-outline-secondary">@L["HlGiftReceipt:Previous"]</button>
+                <span id="PageNumber"></span><button type="button" id="BtnNext" class="btn btn-outline-secondary">@L["HlGiftReceipt:Next"]</button>
+            </div>
+        </div>
+    </abp-card-body>
+</abp-card>
+
+<div class="modal fade" id="ReceiptDetail" tabindex="-1" aria-labelledby="ReceiptDetailTitle">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable"><div class="modal-content">
+        <div class="modal-header"><h5 id="ReceiptDetailTitle" class="modal-title">@L["HlGiftReceipt:Detail"]</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="@L["HlGiftReceipt:Close"]"></button></div>
+        <div class="modal-body"><dl id="ReceiptDetailFields" class="row mb-0"></dl></div>
+    </div></div>
+</div>

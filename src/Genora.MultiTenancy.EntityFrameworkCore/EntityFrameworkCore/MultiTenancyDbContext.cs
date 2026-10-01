@@ -32,6 +32,7 @@ using Genora.MultiTenancy.DomainModels.AppDocuments;
 using Genora.MultiTenancy.DomainModels.AppCaddie;
 using Genora.MultiTenancy.DomainModels.AppHlApiLogs;
 using Genora.MultiTenancy.DomainModels.AppHlGiftExchanges;
+using Genora.MultiTenancy.DomainModels.AppHlGiftReceipts;
 using Genora.MultiTenancy.DomainModels.AppHlOrders;
 using Genora.MultiTenancy.DomainModels.AppHl25;
 using Genora.MultiTenancy.DomainModels.AppHlPoints;
@@ -160,6 +161,7 @@ public class MultiTenancyDbContext :
     public DbSet<HlPointBatch> AppHlPointBatches { get; set; }
     public DbSet<HlPointTransaction> AppHlPointTransactions { get; set; }
     public DbSet<HlBlouseCampaign> AppHlBlouseCampaigns { get; set; }
+    public DbSet<HlGiftReceipt> AppHlGiftReceipts { get; set; }
     public DbSet<HlBlouseSize> AppHlBlouseSizes { get; set; }
     public DbSet<HlBlouseRegistration> AppHlBlouseRegistrations { get; set; }
     public DbSet<HlBlouseRegistrationItem> AppHlBlouseRegistrationItems { get; set; }

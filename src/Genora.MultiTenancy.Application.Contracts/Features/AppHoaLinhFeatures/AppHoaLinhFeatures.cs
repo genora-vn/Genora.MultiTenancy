@@ -4,4 +4,5 @@ public static class AppHoaLinhFeatures
 {
     public const string GroupName = "HoaLinh";
     public const string Management = GroupName + ".Management";
+    public const string GiftReceipts = GroupName + ".GiftReceipts";
 }

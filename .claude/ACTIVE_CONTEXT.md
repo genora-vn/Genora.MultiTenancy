@@ -1,5 +1,18 @@
 # ACTIVE CONTEXT — Việc đang làm dở
 
+## Hoa Linh Sales — nhận quà Host/local — 2026-10-01 (follow-up mới nhất)
+
+- Sửa `HlGiftReceipt:TenantRequired`: Mini App hỗ trợ Host/null TenantId và Tenant hiện tại. Constructor/repo nullable, SQL Host IS NULL; giữ tenant scope và dual permissions Admin. Host không bị tenant feature gate; Mini App vẫn public như Sales hiện có.
+- Thêm migration `20261001025429_AddHlGiftReceiptHostUniqueness` + SQL chỉ thêm unique index Host, giữ nguyên migration/index Tenant cũ. Agent chưa apply DB/deploy.
+- **63 Sales +12 Web +4 EF tests pass**, gồm HTTP local TestServer POST→retry→GET cho Host/Tenant (DMS/repository fake, không real DB). EF model clean. Next: apply migration đúng connection → restart Web → test `https://localhost:44374`, không cần tenant header; cấp Host root/Export để xem Admin. [note](memory/notes/project/project_hl_gift_receipts_host_fix_20261001.md) · [runbook](../docs/HOALINH_GIFT_RECEIPTS_API_20261001.md).
+
+## Hoa Linh Sales — Lịch sử nhận quà voucherType=2 — 2026-10-01 (mới nhất)
+
+- Source hoàn tất: HL.AppHlGiftReceipts snapshots + unique tenant/branch/campaign/period/voucher; POST/GET `/api/mini-app/hl/gift-receipts`, admin `/HoaLinh/GiftReceipts`, detail/filter/paging/Excel 28 cột, dual permissions, opt-in feature `HoaLinh.GiftReceipts`.
+- DMS xác minh phone→branch + entitlement; retry trả phiếu cũ; transaction key-range lock + unique index. Trạng thái Đã xác nhận = yêu cầu đã ghi, chưa phải giao hàng. Campaign dates lưu báo cáo, không tự áp hạn claim. Type1/điểm/UrBox/HL25 giữ nguyên.
+- Web build **0 errors**; **59 Sales +8 Web +3 EF +33 Node** tests pass. Migration `20260930171009_AddHlGiftReceipts` + SQL **chưa apply**, EF model clean. Chưa deploy/bật feature/cấp quyền/UAT browser/DMS/SQL concurrency thật.
+- Next: migration đúng tenant → deploy → bật Management+GiftReceipts → grant root/Export → FE/UAT. [API/cURL](../docs/HOALINH_GIFT_RECEIPTS_API_20261001.md) · [note/code map](memory/notes/project/project_hl_gift_receipts_20261001.md).
+
 ## HLG sửa lỗi build thiếu IConfiguration — 2026-09-30 (follow-up)
 
 - `HlgRankingShareImageTests.Build` đã truyền ConfigurationBuilder().Build() vào constructor mới của HlgRankingAppService; chỉ sửa test setup.

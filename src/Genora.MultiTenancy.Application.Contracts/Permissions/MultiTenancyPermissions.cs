@@ -774,6 +774,19 @@ public static class MultiTenancyPermissions
         public const string Default = GroupName + ".HostAppHlApiLogs";
     }
 
+    // ===== Lịch sử xác nhận nhận quà =====
+    public static class AppHlGiftReceipts
+    {
+        public const string Default = GroupName + ".AppHlGiftReceipts";
+        public const string Export = Default + ".Export";
+    }
+
+    public static class HostAppHlGiftReceipts
+    {
+        public const string Default = GroupName + ".HostAppHlGiftReceipts";
+        public const string Export = Default + ".Export";
+    }
+
     // ===== Đăng ký nhận áo Blouse =====
     public static class AppHlBlouse
     {

@@ -1,6 +1,7 @@
 using Genora.MultiTenancy.DomainModels.AppHlApiLogs;
 using Genora.MultiTenancy.DomainModels.AppHlBlouse;
 using Genora.MultiTenancy.DomainModels.AppHlGiftExchanges;
+using Genora.MultiTenancy.DomainModels.AppHlGiftReceipts;
 using Genora.MultiTenancy.DomainModels.AppHlOrders;
 using Genora.MultiTenancy.DomainModels.AppHlPoints;
 using Microsoft.EntityFrameworkCore;
@@ -14,6 +15,21 @@ public static class MultiTenancyDbContextModelCreatingExtensionsHoaLinh
     public static void ConfigureHoaLinhModule(this ModelBuilder builder)
     {
         Check.NotNull(builder, nameof(builder));
+
+        builder.Entity<HlGiftReceipt>(b =>
+        {
+            b.ToTable("AppHlGiftReceipts", "HL");
+            b.ConfigureByConvention();
+            b.Property(x => x.VoucherValue).HasPrecision(18, 2);
+            b.Property(x => x.AccumulatedSales).HasPrecision(18, 2);
+            b.Property(x => x.Status).HasConversion<byte>();
+            b.HasIndex(x => new { x.TenantId, x.CustCode, x.CampaignCode, x.CampaignPeriod, x.VoucherCode })
+                .IsUnique().HasDatabaseName("UX_HlGiftReceipts_Entitlement");
+            b.HasIndex(x => new { x.CustCode, x.CampaignCode, x.CampaignPeriod, x.VoucherCode })
+                .IsUnique().HasFilter("[TenantId] IS NULL").HasDatabaseName("UX_HlGiftReceipts_HostEntitlement");
+            b.HasIndex(x => new { x.TenantId, x.PhoneNumber, x.CustCode, x.ConfirmedAt });
+            b.HasIndex(x => new { x.TenantId, x.ConfirmedAt });
+        });
 
         // ========== HlOrder ==========
         builder.Entity<HlOrder>(b =>

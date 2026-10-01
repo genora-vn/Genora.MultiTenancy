@@ -14,13 +14,17 @@ public class AppHoaLinhFeatureDefinitionProvider : FeatureDefinitionProvider
             L("FeatureGroup:HoaLinh")
         );
 
-        group.AddFeature(
+        var management = group.AddFeature(
             AppHoaLinhFeatures.Management,
             defaultValue: "false",
             displayName: L("Feature:HoaLinh"),
             description: L("Feature:HoaLinhDesc"),
             valueType: new ToggleStringValueType()
         );
+        management.CreateChild(AppHoaLinhFeatures.GiftReceipts, "false",
+            displayName: L("Feature:HoaLinhGiftReceipts"),
+            description: L("Feature:HoaLinhGiftReceiptsDesc"),
+            valueType: new ToggleStringValueType());
     }
 
     private static LocalizableString L(string name)

@@ -2019,6 +2019,11 @@ public class MultiTenancyMenuContributor : IMenuContributor
         }
 
         // ── HOA LINH ──────────────────────────────────────────────────────
+        var canSeeHlGiftReceipts = tenant.IsAvailable
+            ? await feature.IsEnabledAsync(Features.AppHoaLinhFeatures.AppHoaLinhFeatures.Management)
+              && await feature.IsEnabledAsync(Features.AppHoaLinhFeatures.AppHoaLinhFeatures.GiftReceipts)
+              && await perms.IsGrantedAsync(MultiTenancyPermissions.AppHlGiftReceipts.Default)
+            : await perms.IsGrantedAsync(MultiTenancyPermissions.HostAppHlGiftReceipts.Default);
         var canSeeHoaLinh =
             await feature.IsEnabledAsync(Features.AppHoaLinhFeatures.AppHoaLinhFeatures.Management) &&
             (
@@ -2042,7 +2047,7 @@ public class MultiTenancyMenuContributor : IMenuContributor
             await perms.IsGrantedAsync(MultiTenancyPermissions.HostAppHlBlouse.Default) ||
             await perms.IsGrantedAsync(MultiTenancyPermissions.HostAppHlApiLogs.Default);
 
-        if (canSeeHoaLinh || canSeeHoaLinhHost)
+        if (canSeeHoaLinh || canSeeHoaLinhHost || canSeeHlGiftReceipts)
         {
             var groupHl = new ApplicationMenuItem(
                 name: "MenuGroup.HoaLinh",
@@ -2192,6 +2197,10 @@ public class MultiTenancyMenuContributor : IMenuContributor
                     )
                 );
             }
+
+            if (canSeeHlGiftReceipts)
+                groupHl.AddItem(new ApplicationMenuItem("AppHlGiftReceipts", l["Menu:AppHlGiftReceipts"],
+                    "/HoaLinh/GiftReceipts", "fa fa-gift", order: 10));
 
             context.Menu.AddItem(groupHl);
         }

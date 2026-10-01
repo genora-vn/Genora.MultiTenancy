@@ -22,6 +22,11 @@ public class HlSalesExcelController : AbpController
     public Task<IRemoteStreamContent> GiftExchanges([FromQuery] HlGiftExchangeFilterDto input)
         => _service.ExportGiftExchangesAsync(input);
 
+    [HttpGet("gift-receipts")]
+    public Task<IRemoteStreamContent> GiftReceipts([FromQuery] HlGiftReceiptFilter input,
+        [FromServices] IHlGiftReceiptAdminAppService receipts)
+        => receipts.ExportAsync(input);
+
     [HttpGet("orders")]
     public Task<IRemoteStreamContent> Orders([FromQuery] HlSalesOrderFilter input)
         => _service.ExportOrdersAsync(input);

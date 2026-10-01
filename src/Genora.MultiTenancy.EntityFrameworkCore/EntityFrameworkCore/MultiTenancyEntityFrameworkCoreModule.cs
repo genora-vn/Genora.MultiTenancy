@@ -63,6 +63,7 @@ public class MultiTenancyEntityFrameworkCoreModule : AbpModule
         context.Services.AddAbpDbContext<MultiTenancyDbContext>(options =>
         {
             options.AddDefaultRepositories(includeAllEntities: true);
+            options.AddRepository<DomainModels.AppHlGiftReceipts.HlGiftReceipt, HoaLinh.EfCoreHlGiftReceiptRepository>();
         });
         context.Services.AddSingleton<SerilogCommandInterceptor>();
 

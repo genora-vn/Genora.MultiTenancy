@@ -1569,6 +1569,16 @@ public class MultiTenancyPermissionDefinitionProvider : PermissionDefinitionProv
         hlApiLogsTenantRoot.MultiTenancySide = MultiTenancySides.Tenant;
         hlApiLogsTenantRoot.RequireFeatures(Features.AppHoaLinhFeatures.AppHoaLinhFeatures.Management);
 
+        // HL GIFT RECEIPTS — Lịch sử xác nhận nhận quà (TENANT)
+        var hlReceipts = hlGroup.AddPermission(AppHlGiftReceipts.Default, L("Permission:AppHlGiftReceipts"));
+        hlReceipts.MultiTenancySide = MultiTenancySides.Tenant;
+        hlReceipts.RequireFeatures(true, Features.AppHoaLinhFeatures.AppHoaLinhFeatures.Management,
+            Features.AppHoaLinhFeatures.AppHoaLinhFeatures.GiftReceipts);
+        var hlReceiptsExport = hlReceipts.AddChild(AppHlGiftReceipts.Export, L("Permission:AppHlGiftReceipts.Export"));
+        hlReceiptsExport.MultiTenancySide = MultiTenancySides.Tenant;
+        hlReceiptsExport.RequireFeatures(true, Features.AppHoaLinhFeatures.AppHoaLinhFeatures.Management,
+            Features.AppHoaLinhFeatures.AppHoaLinhFeatures.GiftReceipts);
+
         // HL BLOUSE — Đăng ký nhận áo Blouse (TENANT)
         var hlBlouseTenantRoot = hlGroup.AddPermission(AppHlBlouse.Default, L("Permission:AppHlBlouse"));
         hlBlouseTenantRoot.MultiTenancySide = MultiTenancySides.Tenant;
@@ -1620,6 +1630,11 @@ public class MultiTenancyPermissionDefinitionProvider : PermissionDefinitionProv
         var hlApiLogsHostRoot = hlGroupHost.AddPermission(HostAppHlApiLogs.Default, L("Permission:AppHlApiLogs"));
         hlApiLogsHostRoot.MultiTenancySide = MultiTenancySides.Host;
 
+        // HL GIFT RECEIPTS — Lịch sử xác nhận nhận quà (HOST)
+        var hlReceiptsHost = hlGroupHost.AddPermission(HostAppHlGiftReceipts.Default, L("Permission:AppHlGiftReceipts"));
+        hlReceiptsHost.MultiTenancySide = MultiTenancySides.Host;
+        hlReceiptsHost.AddChild(HostAppHlGiftReceipts.Export, L("Permission:AppHlGiftReceipts.Export"))
+            .MultiTenancySide = MultiTenancySides.Host;
         // HL BLOUSE — Đăng ký nhận áo Blouse (HOST)
         var hlBlouseHostRoot = hlGroupHost.AddPermission(HostAppHlBlouse.Default, L("Permission:AppHlBlouse"));
         hlBlouseHostRoot.MultiTenancySide = MultiTenancySides.Host;

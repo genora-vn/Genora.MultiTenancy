@@ -1,5 +1,19 @@
 # HANDOFF — Bàn giao giữa các phiên làm việc
 
+## Hoa Linh Sales — Host/local nhận quà — 2026-10-01 (follow-up mới nhất)
+
+- Đã sửa guard TenantRequired, Host/null TenantId tạo/đọc phiếu được; repository query khóa dùng IS NULL, unique index riêng Host. Admin Host root/Export được kiểm tra, dữ liệu không lẫn Tenant. API Mini App giữ anonymous theo convention Sales; không thêm tenant payload.
+- Migration `20261001025429_AddHlGiftReceiptHostUniqueness` + SQL chưa apply trong phiên, không sửa migration cũ. **63 Sales+12 Web+4 EF pass**, gồm local TestServer HTTP controller/service thật + DMS/storage fake. EF model clean; chưa real DMS/DB/browser UAT.
+- Next: cập nhật DB đúng connection, restart Web local `https://localhost:44374`, cấp Host quyền root/Export, gọi API không có tenant header/cookie. [note](../memory/notes/project/project_hl_gift_receipts_host_fix_20261001.md) · [runbook/cURL](../../docs/HOALINH_GIFT_RECEIPTS_API_20261001.md). Giữ appsettings/log/upload user đang sửa.
+
+## Hoa Linh Sales — Lịch sử nhận quà — 2026-10-01 (mới nhất)
+
+- Đã hoàn tất source/API/admin/Excel/feature/permission/tests. Migration `20260930171009_AddHlGiftReceipts` + SQL chưa apply. Source chưa deploy, feature chưa bật, chưa cấp quyền/live UAT.
+- Web build 0 errors; 59 Application Sales +8 Web +3 EF +33 JS pass. Custom repository có `ITransientDependency` để ABP resolve interface, đã regression-test; chạy .NET verification tuần tự tránh lock obj, dùng OutputPath artifacts riêng để không dừng Web/VS đang chạy.
+- FE dùng POST/GET `/api/mini-app/hl/gift-receipts`. Confirmed=1/isConfirmed=true để disabled đúng campaign+period+voucher. Chỉ loại2, giữ nguyên loại1. Campaign dates không phải hạn claim; DMS entitlement quyết định. Chống trùng theo chi nhánh, không theo phone.
+- Next: migration đúng host/tenant, deploy, feature Management+GiftReceipts, grants AppHlGiftReceipts/Export (Host tương ứng), UAT quà QT34/QTHOA/retry/concurrency/history/Excel. [cURL/runbook](../../docs/HOALINH_GIFT_RECEIPTS_API_20261001.md) · [chi tiết](../memory/notes/project/project_hl_gift_receipts_20261001.md).
+- Giữ nguyên appsettings/log/upload thay đổi có sẵn; không có DB mutation/deploy trong task này.
+
 ## HLG quiz play configuration — 2026-09-24 (mới nhất)
 
 - Branch `feature/nghiadt-hoalinh-gamification`, HEAD `ca7e0c08daf2938fa23e0c71da9f3d4eb4e8959d`; task changes chưa commit, các thay đổi menu/log có sẵn được bảo toàn.
