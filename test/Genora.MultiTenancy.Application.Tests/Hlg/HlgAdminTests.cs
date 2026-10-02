@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using Genora.MultiTenancy.AppDtos.Hlg.Admin;
 using Genora.MultiTenancy.AppServices.Hlg.Admin;
 using Genora.MultiTenancy.DomainModels.AppHlg;
+using Genora.MultiTenancy.DomainModels.AppCustomers;
 using Genora.MultiTenancy.Enums.Hlg;
 using Genora.MultiTenancy.Features.AppHlgFeatures;
 using Genora.MultiTenancy.Permissions;
@@ -26,6 +27,7 @@ using Volo.Abp.Features;
 using Volo.Abp.Guids;
 using Volo.Abp.Linq;
 using Volo.Abp.MultiTenancy;
+using Volo.Abp.Timing;
 using Xunit;
 using ClosedXML.Excel;
 using System.IO;
@@ -37,10 +39,14 @@ public class HlgAdminTests : IDisposable
     private readonly ICurrentTenant _tenant = Substitute.For<ICurrentTenant>();
     private readonly IFeatureChecker _features = Substitute.For<IFeatureChecker>();
     private readonly IAbpAuthorizationService _auth = Substitute.For<IAbpAuthorizationService>();
+    private readonly IClock _clock = Substitute.For<IClock>();
     private readonly IRepository<HlgQuestion, Guid> _questions = Substitute.For<IRepository<HlgQuestion, Guid>>();
     private readonly IRepository<HlgGame, Guid> _games = Substitute.For<IRepository<HlgGame, Guid>>();
     private readonly IRepository<HlgAnswerOption, Guid> _options = Substitute.For<IRepository<HlgAnswerOption, Guid>>();
     private readonly IRepository<HlgGameSession, Guid> _sessions = Substitute.For<IRepository<HlgGameSession, Guid>>();
+    private readonly IRepository<HlgRankingEvent, Guid> _rankingEvents = Substitute.For<IRepository<HlgRankingEvent, Guid>>();
+    private readonly IRepository<HlgRankingResultSnapshot, Guid> _rankingSnapshots = Substitute.For<IRepository<HlgRankingResultSnapshot, Guid>>();
+    private readonly IRepository<Customer, Guid> _customers = Substitute.For<IRepository<Customer, Guid>>();
     private readonly ServiceProvider _provider;
     private readonly Guid _gameId = Guid.NewGuid();
     public HlgAdminTests()
@@ -48,20 +54,24 @@ public class HlgAdminTests : IDisposable
         _tenant.IsAvailable.Returns(true); _tenant.Id.Returns(Guid.NewGuid());
         _features.IsEnabledAsync(AppHlgFeatures.Management).Returns(true);
         _auth.AuthorizeAsync(Arg.Any<ClaimsPrincipal>(), Arg.Any<object>(), Arg.Any<string>()).Returns(AuthorizationResult.Success());
+        _clock.Now.Returns(DateTime.Today);
         var guid = Substitute.For<IGuidGenerator>(); guid.Create().Returns(_ => Guid.NewGuid());
         var localizer = Substitute.For<IStringLocalizer>();
         localizer[Arg.Any<string>()].Returns(c => new LocalizedString(c.Arg<string>(), c.Arg<string>()));
         var factory = Substitute.For<IStringLocalizerFactory>(); factory.Create(Arg.Any<Type>()).Returns(localizer);
         _provider = new ServiceCollection().AddSingleton(factory).AddSingleton<IAuthorizationService>(_auth).AddSingleton<ICurrentTenant>(_tenant)
-            .AddSingleton(guid).AddSingleton<IAsyncQueryableExecuter>(new AsyncQueryableExecuter(Array.Empty<IAsyncQueryableProvider>())).BuildServiceProvider();
+            .AddSingleton(guid).AddSingleton<IAsyncQueryableExecuter>(new AsyncQueryableExecuter(Array.Empty<IAsyncQueryableProvider>()))
+            .AddSingleton(_sessions).AddSingleton(_games).AddSingleton(_customers).AddSingleton(_clock).BuildServiceProvider();
         _questions.GetQueryableAsync().Returns(Task.FromResult(Array.Empty<HlgQuestion>().AsQueryable()));
         _options.GetListAsync(Arg.Any<Expression<Func<HlgAnswerOption, bool>>>(), Arg.Any<bool>(), Arg.Any<CancellationToken>()).Returns(new List<HlgAnswerOption>());
         _games.GetAsync(_gameId, Arg.Any<bool>(), Arg.Any<CancellationToken>()).Returns(new HlgGame(_gameId, "Quiz", HlgGameType.Quiz));
         _games.InsertAsync(Arg.Any<HlgGame>(), true, Arg.Any<CancellationToken>()).Returns(c => c.Arg<HlgGame>());
         _games.UpdateAsync(Arg.Any<HlgGame>(), true, Arg.Any<CancellationToken>()).Returns(c => c.Arg<HlgGame>());
+        _rankingSnapshots.GetQueryableAsync().Returns(Task.FromResult(Array.Empty<HlgRankingResultSnapshot>().AsQueryable()));
     }
     private HlgQuestionAdminAppService Service() => new(_questions, _tenant, _features, _games, _options, _sessions, new HlgQuestionExcelTemplateGenerator(), new HlgQuestionExcelImporter()) { LazyServiceProvider = new AbpLazyServiceProvider(_provider) };
     private HlgGameAdminAppService GameService() => new(_games, _tenant, _features, _questions, _sessions) { LazyServiceProvider = new AbpLazyServiceProvider(_provider) };
+    private HlgRankingAdminAppService RankingService() => new(_rankingEvents, _tenant, _features, new HlgRankingResultExcelExporter(), _rankingSnapshots) { LazyServiceProvider = new AbpLazyServiceProvider(_provider) };
     private CreateHlgQuestionInput Input() => new() { GameId = _gameId, Content = "Question", OptionA = "A", OptionB = "B", CorrectKey = HlgAnswerKey.B };
 
     [Fact]
@@ -168,6 +178,72 @@ public class HlgAdminTests : IDisposable
         sheet.Cell(2, 9).GetValue<int>().ShouldBe(2500);
         sheet.Cell(2, 13).GetValue<int>().ShouldBe(2500);
         sheet.Cell(2, 14).GetDateTime().ShouldBe(playedAt);
+    }
+
+    [Fact]
+    public async Task Ranking_Result_First_Export_Saves_All_Customer_Game_Rows()
+    {
+        var eventId = Guid.NewGuid();
+        var customerId = Guid.NewGuid();
+        var gameId = Guid.NewGuid();
+        var finishedAt = DateTime.Today.AddDays(-2);
+        var rankingEvent = new HlgRankingEvent(eventId, "Sự kiện cũ", finishedAt.AddDays(-5), finishedAt.AddDays(1), _tenant.Id);
+        var customer = new Customer(customerId, "0900123456", "Nguyễn Văn A") { TenantId = _tenant.Id, CustomerCode = "C001", ZaloUserId = "zalo-1", BonusPoint = 250 };
+        var game = new HlgGame(gameId, "Đố vui", HlgGameType.Quiz) { TenantId = _tenant.Id };
+        var sessions = new[]
+        {
+            new HlgGameSession(Guid.NewGuid(), gameId, customerId, _tenant.Id) { IsFinished = true, FinishedAt = finishedAt, Score = 100, CorrectCount = 1, TotalQuestions = 2 },
+            new HlgGameSession(Guid.NewGuid(), gameId, customerId, _tenant.Id) { IsFinished = true, FinishedAt = finishedAt.AddHours(1), Score = 150, CorrectCount = 2, TotalQuestions = 2 }
+        };
+        _rankingEvents.GetAsync(eventId, Arg.Any<bool>(), Arg.Any<CancellationToken>()).Returns(rankingEvent);
+        _sessions.GetQueryableAsync().Returns(Task.FromResult(sessions.AsQueryable()));
+        _customers.GetQueryableAsync().Returns(Task.FromResult(new[] { customer }.AsQueryable()));
+        _games.GetQueryableAsync().Returns(Task.FromResult(new[] { game }.AsQueryable()));
+
+        using var content = await RankingService().ExportResultsAsync(eventId);
+
+        await _rankingSnapshots.Received(1).InsertManyAsync(
+            Arg.Is<IEnumerable<HlgRankingResultSnapshot>>(rows => rows.Single().EventScore == 250 && rows.Single().PlayCount == 2 && rows.Single().CustomerId == customerId && rows.Single().GameId == gameId),
+            true,
+            Arg.Any<CancellationToken>());
+        customer.BonusPoint.ShouldBe(0);
+        await _customers.Received(1).UpdateManyAsync(
+            Arg.Is<IEnumerable<Customer>>(rows => rows.Single().Id == customerId && rows.Single().BonusPoint == 0),
+            true,
+            Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task Ranking_Result_Reexport_Uses_Saved_Snapshot_Without_Reading_Sessions()
+    {
+        var eventId = Guid.NewGuid();
+        var snapshot = new HlgRankingResultSnapshot(Guid.NewGuid(), eventId, Guid.NewGuid(), Guid.NewGuid(), _tenant.Id)
+        {
+            EventRank = 1,
+            PlayerName = "Tên đã lưu",
+            PhoneNumber = "0900000000",
+            GameName = "Game đã lưu",
+            PlayCount = 1,
+            GameScore = 900,
+            BestScore = 900,
+            CorrectAnswerCount = 9,
+            TotalQuestionCount = 10,
+            EventScore = 900,
+            FirstPlayedAt = DateTime.Today.AddDays(-3),
+            LastPlayedAt = DateTime.Today.AddDays(-3)
+        };
+        var rankingEvent = new HlgRankingEvent(eventId, "Sự kiện cũ", DateTime.Today.AddDays(-10), DateTime.Today.AddDays(-2), _tenant.Id);
+        _rankingEvents.GetAsync(eventId, Arg.Any<bool>(), Arg.Any<CancellationToken>()).Returns(rankingEvent);
+        _rankingSnapshots.GetQueryableAsync().Returns(Task.FromResult(new[] { snapshot }.AsQueryable()));
+
+        using var content = await RankingService().ExportResultsAsync(eventId);
+        using var workbook = new XLWorkbook(content.GetStream());
+
+        workbook.Worksheet("Kết quả sự kiện").Cell(2, 4).GetString().ShouldBe("Tên đã lưu");
+        await _sessions.DidNotReceive().GetQueryableAsync();
+        await _customers.DidNotReceive().GetQueryableAsync();
+        await _customers.DidNotReceive().UpdateManyAsync(Arg.Any<IEnumerable<Customer>>(), Arg.Any<bool>(), Arg.Any<CancellationToken>());
+        await _rankingSnapshots.DidNotReceive().InsertManyAsync(Arg.Any<IEnumerable<HlgRankingResultSnapshot>>(), Arg.Any<bool>(), Arg.Any<CancellationToken>());
     }
 
     [Fact]

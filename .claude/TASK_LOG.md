@@ -12,6 +12,7 @@
 
 | Mốc | Module | Nội dung | Note gốc |
 |-----|--------|----------|----------|
+| 2026-10-01 | HLG Ranking snapshot | Thêm bảng snapshot khi xuất Excel lần đầu và clear `Customer.BonusPoint` của người có kết quả trong cùng transaction; xuất lại dùng snapshot, không clear lần nữa. Migration + SQL chưa apply; Web build 0 errors, 61 HLG App tests pass, EF clean. | [note](memory/notes/project/project_hlg_ranking_result_snapshot_20261001.md) |
 | 2026-10-01 | Hoa Linh Sales — Host/local fix | Bỏ lỗi TenantRequired, hỗ trợ nullable tenant xuyên entity/repo/SQL; thêm unique index Host bằng migration mới, giữ tenant isolation và dual admin permissions. 63 Sales+12 Web+4 EF pass gồm 2 HTTP local TestServer; migration/SQL chưa apply trong phiên. | [note](memory/notes/project/project_hl_gift_receipts_host_fix_20261001.md) |
 | 2026-10-01 | Hoa Linh Sales — nhận quà loại 2 | Thêm HL.AppHlGiftReceipts snapshot, chống trùng branch/campaign/period/voucher bằng transaction+unique index, POST/history API, admin lọc/chi tiết/Excel28, feature opt-in/dual permissions. Web build 0 errors; 59 Sales+8 Web+3 EF+33 Node pass; migration/SQL chưa apply, chưa live UAT. | [note](memory/notes/project/project_hl_gift_receipts_20261001.md) |
 | 2026-09-30 | HLG build fix | Bổ sung IConfiguration khi HlgRankingShareImageTests tạo HlgRankingAppService; full solution build 0 errors/2 warnings, 82 RankingShareImage/DesignContent/HoaLinhSales tests pass, bỏ nhu cầu workaround loại test. | [follow-up](memory/notes/project/project_hl_blouse_config_datetime_fix_20260930.md) |

@@ -1685,6 +1685,7 @@
     "Hlg:WinnerHasNoScore": "The player has no eligible score in this event.",
     "Hlg:EventHasWinners": "Cannot change game or period once winners have been confirmed.",
     "Hlg:EventHasPrizes": "This event has prize tiers.",
+    "Hlg:EventResultsSnapshotted": "The event game, period, or event itself cannot be changed after its results have been saved.",
     "Hlg:InvalidStatusTransition": "This status transition is not allowed.",
     "Hlg:NotFound": "Record not found.",
     "Hlg:InvalidProgress": "Progress must be between 0 and 100.",

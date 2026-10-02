@@ -1,5 +1,9 @@
 # PROJECT STATE — Genora.MultiTenancy
 
+## HLG Ranking result snapshot — 2026-10-01 (mới nhất)
+
+- Xuất Excel event đã kết thúc lần đầu lưu toàn bộ dòng báo cáo và clear `Customer.BonusPoint` của customer có kết quả trong cùng transaction; các lần sau đọc snapshot và không reset lần nữa. Chặn thay game/thời gian hoặc xóa event đã chốt.
+- Migration `20261001040131_AddHlgRankingResultSnapshots` + SQL idempotent đã sinh, chưa apply DB. Web build 0 errors; 61 HLG Application tests pass; EF model clean.
 ## Hoa Linh Sales — Lịch sử nhận quà — 2026-10-01 (mới nhất)
 
 - Follow-up **Host/local đã hỗ trợ `TenantId=null`**, SQL null-safe + unique index Host, không đọc chéo Tenant. Local HTTP TestServer pass Host/Tenant, tổng **79 .NET** tests liên quan pass; migration bổ sung `20261001025429_AddHlGiftReceiptHostUniqueness` + SQL chưa apply trong phiên. [Host fix](memory/notes/project/project_hl_gift_receipts_host_fix_20261001.md).

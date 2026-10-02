@@ -4,6 +4,7 @@ using Genora.MultiTenancy.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Volo.Abp.EntityFrameworkCore;
 
@@ -12,9 +13,11 @@ using Volo.Abp.EntityFrameworkCore;
 namespace Genora.MultiTenancy.Migrations
 {
     [DbContext(typeof(MultiTenancyDbContext))]
-    partial class MultiTenancyDbContextModelSnapshot : ModelSnapshot
+    [Migration("20261001040131_AddHlgRankingResultSnapshots")]
+    partial class AddHlgRankingResultSnapshots
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -2781,9 +2784,6 @@ namespace Genora.MultiTenancy.Migrations
                     b.HasIndex("TenantId", "ParticipantId")
                         .HasDatabaseName("IX_AppHl25FrameCreations_TenantId_ParticipantId");
 
-                    b.HasIndex("TenantId", "ParticipantId", "CreatedTime")
-                        .HasDatabaseName("IX_AppHl25FrameCreations_TenantId_ParticipantId_CreatedTime");
-
                     b.ToTable("AppHl25FrameCreations", "hl25");
                 });
 
@@ -3073,9 +3073,6 @@ namespace Genora.MultiTenancy.Migrations
                         .HasDatabaseName("IX_AppHl25Participants_TenantId_ZaloUserId")
                         .HasFilter("[TenantId] IS NOT NULL AND [ZaloUserId] IS NOT NULL");
 
-                    b.HasIndex("TenantId", "PhoneNumber", "IsDeleted")
-                        .HasDatabaseName("IX_AppHl25Participants_TenantId_PhoneNumber_IsDeleted");
-
                     b.ToTable("AppHl25Participants", "hl25");
                 });
 
@@ -3171,9 +3168,6 @@ namespace Genora.MultiTenancy.Migrations
 
                     b.HasIndex("TenantId", "SpinTime")
                         .HasDatabaseName("IX_AppHl25SpinLogs_TenantId_SpinTime");
-
-                    b.HasIndex("TenantId", "ParticipantId", "SpinTime")
-                        .HasDatabaseName("IX_AppHl25SpinLogs_TenantId_ParticipantId_SpinTime");
 
                     b.ToTable("AppHl25SpinLogs", "hl25");
                 });
@@ -3505,370 +3499,6 @@ namespace Genora.MultiTenancy.Migrations
                     b.ToTable("AppHlApiLogs", "HL");
                 });
 
-            modelBuilder.Entity("Genora.MultiTenancy.DomainModels.AppHlBlouse.HlBlouseCampaign", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("ConcurrencyStamp")
-                        .IsConcurrencyToken()
-                        .IsRequired()
-                        .HasMaxLength(40)
-                        .HasColumnType("nvarchar(40)")
-                        .HasColumnName("ConcurrencyStamp");
-
-                    b.Property<DateTime>("CreationTime")
-                        .HasColumnType("datetime2")
-                        .HasColumnName("CreationTime");
-
-                    b.Property<Guid?>("CreatorId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("CreatorId");
-
-                    b.Property<Guid?>("DeleterId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("DeleterId");
-
-                    b.Property<DateTime?>("DeletionTime")
-                        .HasColumnType("datetime2")
-                        .HasColumnName("DeletionTime");
-
-                    b.Property<DateTime?>("EndTime")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("ExtraProperties")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)")
-                        .HasColumnName("ExtraProperties");
-
-                    b.Property<int>("FreeShirtLimit")
-                        .HasColumnType("int");
-
-                    b.Property<string>("IntroductionHtml")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("IsDeleted")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bit")
-                        .HasDefaultValue(false)
-                        .HasColumnName("IsDeleted");
-
-                    b.Property<DateTime?>("LastModificationTime")
-                        .HasColumnType("datetime2")
-                        .HasColumnName("LastModificationTime");
-
-                    b.Property<Guid?>("LastModifierId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("LastModifierId");
-
-                    b.Property<int>("MaxExchangeShirt")
-                        .HasColumnType("int");
-
-                    b.Property<int>("PointsPerShirt")
-                        .HasColumnType("int");
-
-                    b.Property<string>("ProgramName")
-                        .IsRequired()
-                        .HasMaxLength(250)
-                        .HasColumnType("nvarchar(250)");
-
-                    b.Property<string>("SizeChartImageUrl")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.Property<DateTime?>("StartTime")
-                        .HasColumnType("datetime2");
-
-                    b.Property<Guid?>("TenantId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("TenantId");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("TenantId", "IsActive")
-                        .HasDatabaseName("IX_AppHlBlouseCampaigns_TenantId_IsActive");
-
-                    b.ToTable("AppHlBlouseCampaigns", "HL");
-                });
-
-            modelBuilder.Entity("Genora.MultiTenancy.DomainModels.AppHlBlouse.HlBlouseRegistration", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<byte?>("BusinessType")
-                        .HasColumnType("tinyint");
-
-                    b.Property<string>("BusinessTypeName")
-                        .HasMaxLength(250)
-                        .HasColumnType("nvarchar(250)");
-
-                    b.Property<string>("ConcurrencyStamp")
-                        .IsConcurrencyToken()
-                        .IsRequired()
-                        .HasMaxLength(40)
-                        .HasColumnType("nvarchar(40)")
-                        .HasColumnName("ConcurrencyStamp");
-
-                    b.Property<DateTime>("CreationTime")
-                        .HasColumnType("datetime2")
-                        .HasColumnName("CreationTime");
-
-                    b.Property<Guid?>("CreatorId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("CreatorId");
-
-                    b.Property<string>("CustomerCode")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<string>("CustomerName")
-                        .HasMaxLength(250)
-                        .HasColumnType("nvarchar(250)");
-
-                    b.Property<string>("CustomerPhone")
-                        .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)");
-
-                    b.Property<Guid?>("DeleterId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("DeleterId");
-
-                    b.Property<DateTime?>("DeletionTime")
-                        .HasColumnType("datetime2")
-                        .HasColumnName("DeletionTime");
-
-                    b.Property<string>("DeliveryAddress")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.Property<int>("ExchangeQuantity")
-                        .HasColumnType("int");
-
-                    b.Property<string>("ExtraProperties")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)")
-                        .HasColumnName("ExtraProperties");
-
-                    b.Property<int>("FreeQuantity")
-                        .HasColumnType("int");
-
-                    b.Property<string>("InternalNote")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<bool>("IsDeleted")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bit")
-                        .HasDefaultValue(false)
-                        .HasColumnName("IsDeleted");
-
-                    b.Property<DateTime?>("LastModificationTime")
-                        .HasColumnType("datetime2")
-                        .HasColumnName("LastModificationTime");
-
-                    b.Property<Guid?>("LastModifierId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("LastModifierId");
-
-                    b.Property<string>("Note")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("PrintedName")
-                        .HasMaxLength(250)
-                        .HasColumnType("nvarchar(250)");
-
-                    b.Property<DateTime?>("ProcessedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<Guid?>("ProcessedBy")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("ReceiverName")
-                        .HasMaxLength(150)
-                        .HasColumnType("nvarchar(150)");
-
-                    b.Property<string>("RegistrationCode")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<byte>("Status")
-                        .HasColumnType("tinyint");
-
-                    b.Property<string>("StoreName")
-                        .HasMaxLength(250)
-                        .HasColumnType("nvarchar(250)");
-
-                    b.Property<Guid?>("TenantId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("TenantId");
-
-                    b.Property<int>("TotalPointsUsed")
-                        .HasColumnType("int");
-
-                    b.Property<int>("TotalQuantity")
-                        .HasColumnType("int");
-
-                    b.Property<string>("ZaloUserId")
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("TenantId", "CreationTime")
-                        .HasDatabaseName("IX_AppHlBlouseRegistrations_TenantId_CreationTime");
-
-                    b.HasIndex("TenantId", "CustomerCode")
-                        .HasDatabaseName("IX_AppHlBlouseRegistrations_TenantId_CustomerCode");
-
-                    b.HasIndex("TenantId", "RegistrationCode")
-                        .IsUnique()
-                        .HasDatabaseName("IX_AppHlBlouseRegistrations_TenantId_Code")
-                        .HasFilter("[TenantId] IS NOT NULL");
-
-                    b.HasIndex("TenantId", "Status")
-                        .HasDatabaseName("IX_AppHlBlouseRegistrations_TenantId_Status");
-
-                    b.ToTable("AppHlBlouseRegistrations", "HL");
-                });
-
-            modelBuilder.Entity("Genora.MultiTenancy.DomainModels.AppHlBlouse.HlBlouseRegistrationItem", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<byte>("ItemType")
-                        .HasColumnType("tinyint");
-
-                    b.Property<int>("PointsPerItem")
-                        .HasColumnType("int");
-
-                    b.Property<int>("Quantity")
-                        .HasColumnType("int");
-
-                    b.Property<Guid>("RegistrationId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("SizeCode")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)");
-
-                    b.Property<Guid?>("SizeId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<byte>("Style")
-                        .HasColumnType("tinyint");
-
-                    b.Property<Guid?>("TenantId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("TenantId");
-
-                    b.Property<int>("TotalPoints")
-                        .HasColumnType("int");
-
-                    b.Property<string>("WeightRange")
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("RegistrationId");
-
-                    b.HasIndex("TenantId", "RegistrationId")
-                        .HasDatabaseName("IX_AppHlBlouseRegistrationItems_TenantId_RegistrationId");
-
-                    b.ToTable("AppHlBlouseRegistrationItems", "HL");
-                });
-
-            modelBuilder.Entity("Genora.MultiTenancy.DomainModels.AppHlBlouse.HlBlouseSize", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("ConcurrencyStamp")
-                        .IsConcurrencyToken()
-                        .IsRequired()
-                        .HasMaxLength(40)
-                        .HasColumnType("nvarchar(40)")
-                        .HasColumnName("ConcurrencyStamp");
-
-                    b.Property<DateTime>("CreationTime")
-                        .HasColumnType("datetime2")
-                        .HasColumnName("CreationTime");
-
-                    b.Property<Guid?>("CreatorId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("CreatorId");
-
-                    b.Property<Guid?>("DeleterId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("DeleterId");
-
-                    b.Property<DateTime?>("DeletionTime")
-                        .HasColumnType("datetime2")
-                        .HasColumnName("DeletionTime");
-
-                    b.Property<int>("DisplayOrder")
-                        .HasColumnType("int");
-
-                    b.Property<string>("ExtraProperties")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)")
-                        .HasColumnName("ExtraProperties");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("IsDeleted")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bit")
-                        .HasDefaultValue(false)
-                        .HasColumnName("IsDeleted");
-
-                    b.Property<DateTime?>("LastModificationTime")
-                        .HasColumnType("datetime2")
-                        .HasColumnName("LastModificationTime");
-
-                    b.Property<Guid?>("LastModifierId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("LastModifierId");
-
-                    b.Property<string>("SizeCode")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)");
-
-                    b.Property<int>("StockQuantity")
-                        .HasColumnType("int");
-
-                    b.Property<byte>("Style")
-                        .HasColumnType("tinyint");
-
-                    b.Property<Guid?>("TenantId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("TenantId");
-
-                    b.Property<string>("WeightRange")
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("TenantId", "IsActive", "Style")
-                        .HasDatabaseName("IX_AppHlBlouseSizes_TenantId_IsActive_Style");
-
-                    b.HasIndex("TenantId", "Style", "SizeCode")
-                        .IsUnique()
-                        .HasDatabaseName("IX_AppHlBlouseSizes_TenantId_Style_SizeCode")
-                        .HasFilter("[TenantId] IS NOT NULL");
-
-                    b.ToTable("AppHlBlouseSizes", "HL");
-                });
-
             modelBuilder.Entity("Genora.MultiTenancy.DomainModels.AppHlGiftExchanges.HlGiftExchange", b =>
                 {
                     b.Property<Guid>("Id")
@@ -3999,158 +3629,6 @@ namespace Genora.MultiTenancy.Migrations
                         .HasDatabaseName("IX_AppHlGiftExchanges_TenantId_Status");
 
                     b.ToTable("AppHlGiftExchanges", "HL");
-                });
-
-            modelBuilder.Entity("Genora.MultiTenancy.DomainModels.AppHlGiftReceipts.HlGiftReceipt", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<int?>("AccumulatedPoints")
-                        .HasColumnType("int");
-
-                    b.Property<decimal?>("AccumulatedSales")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<string>("Address")
-                        .HasMaxLength(1000)
-                        .HasColumnType("nvarchar(1000)");
-
-                    b.Property<string>("CampaignCode")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<DateTime?>("CampaignEndDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("CampaignName")
-                        .HasMaxLength(250)
-                        .HasColumnType("nvarchar(250)");
-
-                    b.Property<int>("CampaignPeriod")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime?>("CampaignStartDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("ConcurrencyStamp")
-                        .IsConcurrencyToken()
-                        .IsRequired()
-                        .HasMaxLength(40)
-                        .HasColumnType("nvarchar(40)")
-                        .HasColumnName("ConcurrencyStamp");
-
-                    b.Property<DateTime>("ConfirmedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime>("CreationTime")
-                        .HasColumnType("datetime2")
-                        .HasColumnName("CreationTime");
-
-                    b.Property<Guid?>("CreatorId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("CreatorId");
-
-                    b.Property<string>("CustCode")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<string>("CustName")
-                        .IsRequired()
-                        .HasMaxLength(250)
-                        .HasColumnType("nvarchar(250)");
-
-                    b.Property<string>("DistributorCode")
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<string>("DistributorName")
-                        .HasMaxLength(250)
-                        .HasColumnType("nvarchar(250)");
-
-                    b.Property<string>("DsrCode")
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<string>("DsrName")
-                        .HasMaxLength(250)
-                        .HasColumnType("nvarchar(250)");
-
-                    b.Property<string>("ExtraProperties")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)")
-                        .HasColumnName("ExtraProperties");
-
-                    b.Property<string>("MembershipTier")
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<string>("Note")
-                        .HasMaxLength(1000)
-                        .HasColumnType("nvarchar(1000)");
-
-                    b.Property<string>("PhoneNumber")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)");
-
-                    b.Property<int>("Quantity")
-                        .HasColumnType("int");
-
-                    b.Property<string>("ReceiptCode")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<string>("Source")
-                        .IsRequired()
-                        .HasMaxLength(30)
-                        .HasColumnType("nvarchar(30)");
-
-                    b.Property<byte>("Status")
-                        .HasColumnType("tinyint");
-
-                    b.Property<Guid?>("TenantId")
-                        .HasColumnType("uniqueidentifier")
-                        .HasColumnName("TenantId");
-
-                    b.Property<string>("VoucherCode")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<string>("VoucherName")
-                        .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.Property<int>("VoucherType")
-                        .HasColumnType("int");
-
-                    b.Property<decimal>("VoucherValue")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("decimal(18,2)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("TenantId", "ConfirmedAt");
-
-                    b.HasIndex("CustCode", "CampaignCode", "CampaignPeriod", "VoucherCode")
-                        .IsUnique()
-                        .HasDatabaseName("UX_HlGiftReceipts_HostEntitlement")
-                        .HasFilter("[TenantId] IS NULL");
-
-                    b.HasIndex("TenantId", "PhoneNumber", "CustCode", "ConfirmedAt");
-
-                    b.HasIndex("TenantId", "CustCode", "CampaignCode", "CampaignPeriod", "VoucherCode")
-                        .IsUnique()
-                        .HasDatabaseName("UX_HlGiftReceipts_Entitlement")
-                        .HasFilter("[TenantId] IS NOT NULL");
-
-                    b.ToTable("AppHlGiftReceipts", "HL");
                 });
 
             modelBuilder.Entity("Genora.MultiTenancy.DomainModels.AppHlOrders.HlOrder", b =>
@@ -11061,17 +10539,6 @@ namespace Genora.MultiTenancy.Migrations
                     b.Navigation("WheelConfig");
                 });
 
-            modelBuilder.Entity("Genora.MultiTenancy.DomainModels.AppHlBlouse.HlBlouseRegistrationItem", b =>
-                {
-                    b.HasOne("Genora.MultiTenancy.DomainModels.AppHlBlouse.HlBlouseRegistration", "Registration")
-                        .WithMany("Items")
-                        .HasForeignKey("RegistrationId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Registration");
-                });
-
             modelBuilder.Entity("Genora.MultiTenancy.DomainModels.AppHlOrders.HlOrderItem", b =>
                 {
                     b.HasOne("Genora.MultiTenancy.DomainModels.AppHlOrders.HlOrder", "Order")
@@ -11647,11 +11114,6 @@ namespace Genora.MultiTenancy.Migrations
             modelBuilder.Entity("Genora.MultiTenancy.DomainModels.AppHl25.Hl25WheelConfig", b =>
                 {
                     b.Navigation("Slots");
-                });
-
-            modelBuilder.Entity("Genora.MultiTenancy.DomainModels.AppHlBlouse.HlBlouseRegistration", b =>
-                {
-                    b.Navigation("Items");
                 });
 
             modelBuilder.Entity("Genora.MultiTenancy.DomainModels.AppHlOrders.HlOrder", b =>

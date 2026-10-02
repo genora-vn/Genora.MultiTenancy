@@ -9,6 +9,8 @@ namespace Genora.MultiTenancy.AppServices.Hlg.Admin;
 
 public class HlgRankingResultExcelRow
 {
+    public Guid CustomerId { get; set; }
+    public Guid GameId { get; set; }
     public int EventRank { get; set; }
     public string? CustomerCode { get; set; }
     public string PlayerName { get; set; } = "";

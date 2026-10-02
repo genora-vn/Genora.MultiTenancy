@@ -5,6 +5,7 @@
 > Nguồn gốc: migrate từ `~\.claude\projects\D--Genora-...-Genora-MultiTenancy\memory\` (108 file).
 
 ## Điều hướng nhanh
+- **HLG Ranking result snapshot 2026-10-01:** [note](memory/notes/project/project_hlg_ranking_result_snapshot_20261001.md). Lần xuất Excel đầu lưu kết quả và clear `Customer.BonusPoint` của người tham gia trong cùng transaction; xuất lại không reset; migration/SQL chưa apply; Web build +61 HLG App tests pass.
 - **Sales nhận quà Host/local 2026-10-01 follow-up:** [note](memory/notes/project/project_hl_gift_receipts_host_fix_20261001.md). Bỏ TenantRequired, nullable ctor/repo + SQL IS NULL + unique index Host; giữ admin dual permissions/tenant isolation. 63 Sales+12 Web+4 EF pass, có 2 HTTP TestServer tests; migration HostUniqueness chưa apply, dùng localhost:44374 không cần tenant header.
 - **Sales nhận quà voucherType2 2026-10-01:** [note](memory/notes/project/project_hl_gift_receipts_20261001.md). Entity HL snapshots/unique entitlement, API POST+history phone/branch, admin detail/filter/Excel28, feature opt-in/dual permissions. Web build 0 errors, 70 .NET+33 JS pass; migration chưa apply, chưa live UAT. [FE cURL](../docs/HOALINH_GIFT_RECEIPTS_API_20261001.md).
 - **HLG lỗi constructor IConfiguration 2026-09-30:** [follow-up](memory/notes/project/project_hl_blouse_config_datetime_fix_20260930.md). Sửa helper test còn gọi constructor cũ; full solution build 0 errors, 82 tests liên quan pass trực tiếp, không cần loại test HLG nữa.

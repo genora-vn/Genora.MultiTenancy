@@ -1,5 +1,10 @@
 # ACTIVE CONTEXT — Việc đang làm dở
 
+## HLG Ranking result snapshot — 2026-10-01 (mới nhất)
+
+- Đã thêm bảng `HLG.AppHlgRankingResultSnapshots`: lần xuất Excel đầu tiên lưu toàn bộ dòng người chơi–game và clear `Customer.BonusPoint` của đúng customer có kết quả trong cùng transaction; lần xuất sau đọc snapshot và không reset lần nữa.
+- Đã chặn đổi game/khoảng thời gian và xóa event sau khi snapshot; migration `20261001040131_AddHlgRankingResultSnapshots` + SQL idempotent **chưa apply DB**.
+- Web build 0 errors; 61 HLG Application tests pass; EF model clean. Chi tiết: [note](memory/notes/project/project_hlg_ranking_result_snapshot_20261001.md).
 ## Hoa Linh Sales — nhận quà Host/local — 2026-10-01 (follow-up mới nhất)
 
 - Sửa `HlGiftReceipt:TenantRequired`: Mini App hỗ trợ Host/null TenantId và Tenant hiện tại. Constructor/repo nullable, SQL Host IS NULL; giữ tenant scope và dual permissions Admin. Host không bị tenant feature gate; Mini App vẫn public như Sales hiện có.
