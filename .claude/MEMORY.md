@@ -5,6 +5,7 @@
 > Nguồn gốc: migrate từ `~\.claude\projects\D--Genora-...-Genora-MultiTenancy\memory\` (108 file).
 
 ## Điều hướng nhanh
+- **HLG Ranking result snapshot 2026-10-01:** [note](memory/notes/project/project_hlg_ranking_result_snapshot_20261001.md). Lần xuất Excel đầu lưu kết quả và clear `Customer.BonusPoint` của người tham gia trong cùng transaction; xuất lại không reset; migration/SQL chưa apply; Web build +61 HLG App tests pass.
 - **HLG quiz play configuration 2026-09-24 (mới nhất):** [note](memory/notes/project/project_hlg_quiz_play_configuration_20260924.md). Thêm QuestionsPerPlay/AllowedWrongAnswers; Answer/Finish fail khi wrong count vượt limit, không cộng điểm; migration chưa apply; 57App+19Web pass, EF clean.
 - **HLG Ranking result Excel 2026-09-30:** [note](memory/notes/project/project_hlg_ranking_result_excel_20260930.md). Action chỉ hiện sau EndAt, backend chặn gọi sớm; báo cáo người chơi–game/lượt/điểm/hạng; Web build +20 Admin tests + JS syntax pass, không migration.
 - **HLG quiz play configuration 2026-09-24:** [note](memory/notes/project/project_hlg_quiz_play_configuration_20260924.md). Thêm QuestionsPerPlay/AllowedWrongAnswers; Answer/Finish fail khi wrong count vượt limit, không cộng điểm; migration chưa apply; 57App+19Web pass, EF clean.

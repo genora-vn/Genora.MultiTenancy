@@ -2024,6 +2024,7 @@
     "Hlg:WinnerHasNoScore": "Người chơi chưa có điểm hợp lệ trong sự kiện.",
     "Hlg:EventHasWinners": "Không đổi game hoặc thời gian khi sự kiện đã xác nhận người trúng thưởng.",
     "Hlg:EventHasPrizes": "Sự kiện còn cơ cấu giải thưởng.",
+    "Hlg:EventResultsSnapshotted": "Không thể đổi game, thời gian hoặc xóa sự kiện sau khi kết quả đã được lưu.",
     "Hlg:InvalidStatusTransition": "Không được chuyển sang trạng thái này.",
     "Hlg:NotFound": "Không tìm thấy dữ liệu.",
     "Hlg:InvalidProgress": "Tiến độ phải từ 0 đến 100.",

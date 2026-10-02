@@ -12,6 +12,7 @@
 
 | Mốc | Module | Nội dung | Note gốc |
 |-----|--------|----------|----------|
+| 2026-10-01 | HLG Ranking snapshot | Thêm bảng snapshot khi xuất Excel lần đầu và clear `Customer.BonusPoint` của người có kết quả trong cùng transaction; xuất lại dùng snapshot, không clear lần nữa. Migration + SQL chưa apply; Web build 0 errors, 61 HLG App tests pass, EF clean. | [note](memory/notes/project/project_hlg_ranking_result_snapshot_20261001.md) |
 | 2026-09-30 | HLG Ranking Excel | Thêm action xuất Excel trong dropdown dòng sự kiện sau khi kết thúc; backend enforce permission/tenant/end-time. Báo cáo theo người chơi–trò chơi gồm lượt chơi, điểm, câu đúng, tổng điểm và hạng sự kiện. Web build 0 errors; 20 HLG Admin tests + JS syntax pass; không migration. | [note](memory/notes/project/project_hlg_ranking_result_excel_20260930.md) |
 | 2026-09-24 | HLG Quiz configuration | Thêm số câu/lượt và số câu sai tối đa xuyên suốt Admin→DB→Mini App; Start snapshot limit, Answer/Finish trả game fail khi wrong count vượt giới hạn và không cộng điểm. Migration 20260924023725 chưa apply. Web build 0 errors; 57 App +19 Web pass; EF clean. | [note](memory/notes/project/project_hlg_quiz_play_configuration_20260924.md) |
 | 2026-09-23 | HLG Admin menu | Tách Nhãn hàng và Bài học/Sản phẩm thành hai menu độc lập cạnh Ngành hàng, cùng quyền Knowledge Tenant/Host; bỏ shortcut cũ trong nội dung trang, giữ drill-down theo ngữ cảnh. Web build output riêng pass 0 errors; không migration. | [note](memory/notes/project/project_hlg_knowledge_separate_menus_20260923.md) |
