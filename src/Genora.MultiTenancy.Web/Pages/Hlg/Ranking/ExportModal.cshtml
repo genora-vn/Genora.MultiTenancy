@@ -1,0 +1,76 @@
+@page
+@using Genora.MultiTenancy.Localization
+@using Microsoft.Extensions.Localization
+@using Volo.Abp.AspNetCore.Mvc.UI.Bootstrap.TagHelpers.Modal
+@inject IStringLocalizer<MultiTenancyResource> L
+@model Genora.MultiTenancy.Web.Pages.Hlg.Ranking.ExportModalModel
+@{
+    Layout = null;
+}
+<abp-modal size="Default">
+    <abp-modal-header title="Xuất kết quả xếp hạng"></abp-modal-header>
+    <abp-modal-body>
+        <input type="hidden" id="HlgExportEventId" value="@Model.Id" />
+        @if (!string.IsNullOrWhiteSpace(Model.EventTitle))
+        {
+            <div class="mb-2 fw-semibold">@Model.EventTitle</div>
+        }
+        @if (Model.GameOptions.Count == 0)
+        {
+            <div class="alert alert-warning mb-0">Chưa có trò chơi nào đã kết thúc trong chiến dịch này để xuất báo cáo.</div>
+        }
+        else
+        {
+            <div class="mb-3">
+                <label class="form-label">Trò chơi đã kết thúc</label>
+                <select id="HlgExportGames" class="form-select" multiple>
+                    @foreach (var g in Model.GameOptions)
+                    {
+                        <option value="@g.Value" selected>@g.Text</option>
+                    }
+                </select>
+                <div class="form-text">Chọn một hoặc nhiều trò chơi đã kết thúc để xuất báo cáo (có tìm kiếm). Bỏ chọn tất cả = xuất toàn bộ trò chơi đã kết thúc. Thao tác này không ảnh hưởng điểm/xếp hạng.</div>
+            </div>
+            <button type="button" id="HlgExportReportBtn" data-bs-dismiss="modal" class="btn btn-primary w-100 mb-2">
+                <i class="fa fa-file-excel me-1"></i> Xuất báo cáo (game đã kết thúc)
+            </button>
+        }
+        @if (Model.CanFinalize)
+        {
+            <hr />
+            <button type="button" id="HlgFinalizeBtn" data-bs-dismiss="modal" class="btn btn-outline-danger w-100">
+                <i class="fa fa-lock me-1"></i> Chốt kết quả sự kiện (khoá điểm, toàn bộ)
+            </button>
+            <div class="form-text">Chốt kết quả: đóng băng bảng xếp hạng và reset điểm người chơi — chỉ dùng khi sự kiện đã kết thúc.</div>
+        }
+    </abp-modal-body>
+    <abp-modal-footer buttons="Cancel"></abp-modal-footer>
+</abp-modal>
+<script>
+    (function () {
+        var $ = window.jQuery;
+        if (!$) return;
+        var l = abp.localization.getResource('MultiTenancy');
+        var eventId = $('#HlgExportEventId').val();
+        var $games = $('#HlgExportGames');
+        if ($.fn.select2 && $games.length) {
+            $games.select2({
+                width: '100%',
+                closeOnSelect: false,
+                placeholder: 'Chọn trò chơi...',
+                dropdownParent: $games.closest('.modal').length ? $games.closest('.modal') : $(document.body)
+            });
+        }
+        function download(url, query) {
+            if (!window.genora || !window.genora.excel) { abp.notify.error(l('Hlg:ExcelHelperUnavailable')); return; }
+            window.genora.excel.download(url, query);
+        }
+        $('#HlgExportReportBtn').on('click', function () {
+            var ids = $games.val() || [];
+            download('api/app/hlg-ranking-excel/export-report', { eventId: eventId, gameIds: ids.join(',') });
+        });
+        $('#HlgFinalizeBtn').on('click', function () {
+            download('api/app/hlg-ranking-excel/export', { eventId: eventId });
+        });
+    })();
+</script>

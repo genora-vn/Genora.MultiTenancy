@@ -2263,9 +2263,8 @@ public class MultiTenancyMenuContributor : IMenuContributor
         // HLG admin: only expose links to implemented pages, scoped to the current side.
         if (!tenant.IsAvailable || await feature.IsEnabledAsync(Genora.MultiTenancy.Features.AppHlgFeatures.AppHlgFeatures.Management))
         {
+            // Thứ tự menu: Ngành hàng, Nhãn hàng, Bài học/Sản phẩm, Sự kiện xếp hạng, Trò chơi, Quà tặng, Giao quà, Người chơi.
             var hlg = new ApplicationMenuItem("MenuGroup.Hlg", l["Menu:Hlg"], icon: "fa fa-gamepad", order: 49);
-            if (await perms.IsGrantedAsync(tenant.IsAvailable ? MultiTenancyPermissions.AppHlgRewards.Default : MultiTenancyPermissions.HostAppHlgRewards.Default))
-                hlg.AddItem(new ApplicationMenuItem("Hlg.Rewards", l["Hlg:Rewards"], url: "/Hlg/Rewards"));
             if (await perms.IsGrantedAsync(tenant.IsAvailable ? MultiTenancyPermissions.AppHlgKnowledge.Default : MultiTenancyPermissions.HostAppHlgKnowledge.Default))
             {
                 hlg.AddItem(new ApplicationMenuItem("Hlg.Categories", l["Hlg:Categories"], url: "/Hlg/Categories"));
@@ -2274,12 +2273,20 @@ public class MultiTenancyMenuContributor : IMenuContributor
             }
             if (await perms.IsGrantedAsync(tenant.IsAvailable ? MultiTenancyPermissions.AppHlgRanking.Default : MultiTenancyPermissions.HostAppHlgRanking.Default))
             {
+                // Prizes/Winners luôn thuộc 1 Sự kiện xếp hạng cụ thể (cần parentId=eventId) — không có khái niệm
+                // "xem tất cả giải/tất cả winner của mọi sự kiện". Vì vậy KHÔNG để mục riêng trên sidebar (dễ vào
+                // thiếu parentId gây rỗng dữ liệu/dropdown); chỉ truy cập qua action "Cơ cấu giải thưởng"/"Trao giải
+                // trúng thưởng" trên từng dòng sự kiện ở trang Ranking (đã tự mang theo đúng parentId).
                 hlg.AddItem(new ApplicationMenuItem("Hlg.Ranking", l["Hlg:Ranking"], url: "/Hlg/Ranking"));
-                hlg.AddItem(new ApplicationMenuItem("Hlg.Prizes", l["Hlg:Prizes"], url: "/Hlg/Prizes"));
-                hlg.AddItem(new ApplicationMenuItem("Hlg.Winners", l["Hlg:Winners"], url: "/Hlg/Winners"));
             }
             if (await perms.IsGrantedAsync(tenant.IsAvailable ? MultiTenancyPermissions.AppHlgGames.Default : MultiTenancyPermissions.HostAppHlgGames.Default))
                 hlg.AddItem(new ApplicationMenuItem("Hlg.Games", l["Hlg:Games"], url: "/Hlg/Games"));
+            if (await perms.IsGrantedAsync(tenant.IsAvailable ? MultiTenancyPermissions.AppHlgRewards.Default : MultiTenancyPermissions.HostAppHlgRewards.Default))
+            {
+                hlg.AddItem(new ApplicationMenuItem("Hlg.Rewards", l["Hlg:Rewards"], url: "/Hlg/Rewards"));
+                // Giao quà (Fulfillment) dùng chung quyền với Quà tặng (PermissionGroup "Rewards" ở PageModel).
+                hlg.AddItem(new ApplicationMenuItem("Hlg.Fulfillment", l["Hlg:Fulfillment"], url: "/Hlg/Fulfillment"));
+            }
             if (await perms.IsGrantedAsync(tenant.IsAvailable ? MultiTenancyPermissions.AppHlgUsers.Default : MultiTenancyPermissions.HostAppHlgUsers.Default))
                 hlg.AddItem(new ApplicationMenuItem("Hlg.Users", l["Hlg:Users"], url: "/Hlg/Users"));
             if (await perms.IsGrantedAsync(tenant.IsAvailable ? MultiTenancyPermissions.AppHlgContent.Default : MultiTenancyPermissions.HostAppHlgContent.Default))

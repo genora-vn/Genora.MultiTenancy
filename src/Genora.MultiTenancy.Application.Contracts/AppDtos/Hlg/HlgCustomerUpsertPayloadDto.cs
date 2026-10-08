@@ -7,6 +7,10 @@ namespace Genora.MultiTenancy.AppDtos.Hlg;
 public class HlgCustomerUpsertPayloadDto
 {
     public string Phone { get; set; } = string.Empty;
+    /// <summary>Owner phone. Omit only for owner registration (defaults to Phone).</summary>
+    public string? PharmaPhone { get; set; }
+    /// <summary>Selected DMS branch's custCode, validated again against DMS on registration.</summary>
+    public string? CustomerCode { get; set; }
     public string? FullName { get; set; }
     public string? ZaloUserId { get; set; }
     public string? AvatarUrl { get; set; }

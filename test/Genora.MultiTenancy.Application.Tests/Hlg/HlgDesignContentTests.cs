@@ -172,7 +172,7 @@ public class HlgDesignContentTests : IDisposable
     [Fact]
     public async Task Ranking_Selected_Game_Does_Not_Include_Other_Game_Scores() {
         var gameId=Guid.NewGuid();var customerId=Guid.NewGuid();var start=new DateTime(2026,9,1);var ev=new HlgRankingEvent(Guid.NewGuid(),"Event",start,start.AddMonths(1),_tenantId){GameId=gameId};
-        var events=Repo(ev);var sessions=Repo(new HlgGameSession(Guid.NewGuid(),gameId,customerId,_tenantId){IsFinished=true,FinishedAt=start.AddDays(1),Score=50},new HlgGameSession(Guid.NewGuid(),Guid.NewGuid(),customerId,_tenantId){IsFinished=true,FinishedAt=start.AddDays(1),Score=999});
+        var events=Repo(ev);var sessions=Repo(new HlgGameSession(Guid.NewGuid(),gameId,customerId,_tenantId){IsFinished=true,FinishedAt=start.AddDays(1),Score=50,TotalQuestions=2,CorrectCount=2},new HlgGameSession(Guid.NewGuid(),Guid.NewGuid(),customerId,_tenantId){IsFinished=true,FinishedAt=start.AddDays(1),Score=999,TotalQuestions=2,CorrectCount=2});
         var customers=Repo(new Customer(customerId,"0900000000","Player"){TenantId=_tenantId});
         var result=await Bind(new HlgRankingAppService(events,sessions,customers,NullLogger<HlgRankingAppService>.Instance,_configuration)).GetEventEntriesAsync(ev.Id);result.Single().Score.ShouldBe(50);
     }
@@ -197,19 +197,19 @@ public class HlgDesignContentTests : IDisposable
     [Theory][InlineData("valid")][InlineData("tooEarly")][InlineData("full")][InlineData("foreignPrize")][InlineData("otherTenant")][InlineData("noScore")][InlineData("unauthorized")]
     public async Task Winner_Publication_Enforces_Scope_Eligibility_Capacity_And_Permission(string scenario)
     {
-        var eventId=Guid.NewGuid();var playerId=Guid.NewGuid();var prizeId=Guid.NewGuid();
-        var ev=new HlgRankingEvent(eventId,"Event",new DateTime(2026,9,1),new DateTime(2026,9,18),_tenantId);
-        if(scenario=="tooEarly")ev.EndAt=new DateTime(2026,9,20);
-        Repo(ev);Repo(new Customer(playerId,"0900000000","Player"){TenantId=_tenantId});
+        var eventId=Guid.NewGuid();var playerId=Guid.NewGuid();var prizeId=Guid.NewGuid();var gameId=Guid.NewGuid();
+        var ev=new HlgRankingEvent(eventId,"Event",new DateTime(2026,9,1),new DateTime(2026,9,18),_tenantId){GameId=gameId};
+        var game=new HlgGame(gameId,"Game",default,_tenantId){EndAt=scenario=="tooEarly"?new DateTime(2026,9,20):new DateTime(2026,9,18)};
+        Repo(ev);Repo(game);Repo(new Customer(playerId,"0900000000","Player"){TenantId=_tenantId});
         var prize=new HlgRankingPrize(prizeId,scenario=="otherTenant"?Guid.NewGuid():_tenantId){EventId=scenario=="foreignPrize"?Guid.NewGuid():eventId,Quantity=1,IsActive=true};
         Repo(prize);
-        var repository=scenario=="full"?Repo(new HlgRankingWinner(Guid.NewGuid(),_tenantId){EventId=eventId,PrizeId=prizeId,CustomerId=Guid.NewGuid(),IsActive=true}):Repo<HlgRankingWinner>();
+        var repository=scenario=="full"?Repo(new HlgRankingWinner(Guid.NewGuid(),_tenantId){EventId=eventId,GameId=gameId,PrizeId=prizeId,CustomerId=Guid.NewGuid(),IsActive=true}):Repo<HlgRankingWinner>();
         var ranking=Substitute.For<IHlgRankingAppService>();
-        ranking.GetEventEntriesAsync(eventId,"0900000000",1,Arg.Any<CancellationToken>()).Returns(scenario=="noScore"?new List<RankingEntryDto>():new(){new(){UserId=playerId,Rank=2,Score=120}});
+        ranking.GetGameEntriesAsync(eventId,gameId,"0900000000",1,Arg.Any<CancellationToken>()).Returns(scenario=="noScore"?new List<RankingEntryDto>():new(){new(){UserId=playerId,Rank=2,Score=120}});
         _services.AddSingleton(ranking);
         if(scenario=="unauthorized")_auth.AuthorizeAsync(Arg.Any<ClaimsPrincipal>(),Arg.Any<object>(),Arg.Any<string>()).Returns(AuthorizationResult.Failed());
         var service=Bind(new HlgWinnerAdminAppService(repository,_tenant,_features));
-        var input=new CreateHlgWinnerInput{EventId=eventId,PrizeId=prizeId,CustomerId=playerId,IsActive=true};
+        var input=new CreateHlgWinnerInput{EventId=eventId,GameId=gameId,PrizeId=prizeId,CustomerId=playerId,IsActive=true};
         if(scenario=="valid") {
             var result=await service.CreateAsync(input);result.Rank.ShouldBe(2);result.Score.ShouldBe(120);
             await repository.Received().InsertAsync(Arg.Is<HlgRankingWinner>(x=>x.TenantId==_tenantId && x.IsActive),true,Arg.Any<CancellationToken>());

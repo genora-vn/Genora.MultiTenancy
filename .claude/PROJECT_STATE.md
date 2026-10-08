@@ -1,5 +1,19 @@
 # PROJECT STATE — Genora.MultiTenancy
 
+## HLG Trao giải trúng thưởng theo game + Fulfillment + Menu reorder — 2026-10-08 (mới nhất)
+
+- Winner gắn theo `GameId` cụ thể (không còn theo Event); gate trao giải = game đã kết thúc; 1 người được trúng nhiều game khác nhau trong 1 event. Batch create 1 game+1 giải cho nhiều người cùng lúc; Import Excel + UI Admin đã khớp theo đúng mô hình này.
+- Winners giờ tự ghi `HlgRewardHistory` (cột `WinnerId` mới) để API `reward-history` mini-app hiển thị đúng tên game + tên quà tặng thực tế (trước đó null/sai do thiếu join và dùng nhầm tên prize).
+- **Bài học quan trọng:** menu sidebar "Prizes"/"Winners" đã bị ẩn vì 2 trang này phụ thuộc `parentId` (eventId) — vào trực tiếp từ sidebar sẽ luôn rỗng dữ liệu. Chỉ truy cập qua row-action của Ranking Event.
+- Fulfillment: cột Người nhận/SĐT/Địa chỉ fallback về `dbo.AppCustomers`; thêm menu riêng "Giao quà"; dọn các link/button trùng giữa Rewards/Fulfillment; sắp xếp lại toàn bộ menu HLG theo thứ tự yêu cầu.
+- Build 0 lỗi CS; 100/100 test HLG pass. User đã test OK trên host local; **CHƯA deploy/apply migration lên staging** (3 migration mới: `AddHlgWinnerGameId`, `AddHlgRewardHistoryWinnerId`, cộng `AddHlgRankingEventGame` trước đó). Chưa commit. [Note](memory/notes/project/project_hlg_winner_per_game_fulfillment_20261008.md).
+
+## HLG pharmacy registration — 2026-10-06
+
+- GET auth trả chi nhánh DMS theo số chủ; POST upsert enforce owner-first và 5 tài khoản tổng cộng. Giữ mã Sales, nhân viên mới mã HLGKH, lưu PharmaPhone/DmsCustomerCode riêng ở HLG. Host/tenant isolation và concurrency đã test bằng SQL Server local.
+- Migration `20261006054856_AddHlgPharmacyRegistration` thêm 2 nullable columns +1 index HLG, chưa apply DB ứng dụng. Build solution PASS; 133 tests HLG (100 App/26 Web/7 EF+SQL) PASS; EF model clean.
+- HLG/Sales hiện chung HoaLinhMienNam và AppCustomers/BonusPoint theo xác nhận mới. [API + rollout](../docs/HLG_PHARMACY_REGISTRATION_API_20261006.md) · [note](memory/notes/project/project_hlg_pharmacy_registration_20261006.md).
+
 ## HLG Ranking result snapshot — 2026-10-01 (mới nhất)
 
 - Xuất Excel event đã kết thúc lần đầu lưu toàn bộ dòng báo cáo và clear `Customer.BonusPoint` của customer có kết quả trong cùng transaction; các lần sau đọc snapshot và không reset lần nữa. Chặn thay game/thời gian hoặc xóa event đã chốt.

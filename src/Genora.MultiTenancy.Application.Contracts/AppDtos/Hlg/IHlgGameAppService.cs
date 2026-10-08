@@ -38,4 +38,10 @@ public interface IHlgGameAppService : IApplicationService
 
     /// <summary>Live-feed người chơi (polling). Realtime SignalR ở Phase 6.</summary>
     Task<List<LivePlayerActivityDto>> GetLiveFeedAsync(Guid gameId, CancellationToken ct = default);
+
+    /// <summary>
+    /// Khách đã HOÀN THÀNH (thắng) game này ở phiên trước chưa — dùng để chặn chơi lại
+    /// và để màn chọn game hiển thị sớm thông báo "đã hoàn thành".
+    /// </summary>
+    Task<bool> HasPassedGameAsync(Guid gameId, Guid customerId, CancellationToken ct = default);
 }

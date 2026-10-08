@@ -4985,6 +4985,79 @@ namespace Genora.MultiTenancy.Migrations
                     b.ToTable("AppHlgRankingEvents", "HLG");
                 });
 
+            modelBuilder.Entity("Genora.MultiTenancy.DomainModels.AppHlg.HlgRankingEventGame", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("ConcurrencyStamp")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("nvarchar(40)")
+                        .HasColumnName("ConcurrencyStamp");
+
+                    b.Property<DateTime>("CreationTime")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("CreationTime");
+
+                    b.Property<Guid?>("CreatorId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("CreatorId");
+
+                    b.Property<Guid?>("DeleterId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("DeleterId");
+
+                    b.Property<DateTime?>("DeletionTime")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("DeletionTime");
+
+                    b.Property<int>("DisplayOrder")
+                        .HasColumnType("int");
+
+                    b.Property<Guid>("EventId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("ExtraProperties")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)")
+                        .HasColumnName("ExtraProperties");
+
+                    b.Property<Guid>("GameId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<bool>("IsDeleted")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false)
+                        .HasColumnName("IsDeleted");
+
+                    b.Property<DateTime?>("LastModificationTime")
+                        .HasColumnType("datetime2")
+                        .HasColumnName("LastModificationTime");
+
+                    b.Property<Guid?>("LastModifierId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("LastModifierId");
+
+                    b.Property<Guid?>("TenantId")
+                        .HasColumnType("uniqueidentifier")
+                        .HasColumnName("TenantId");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EventId");
+
+                    b.HasIndex("GameId");
+
+                    b.HasIndex("TenantId", "EventId", "GameId")
+                        .IsUnique()
+                        .HasFilter("[IsDeleted] = 0");
+
+                    b.ToTable("AppHlgRankingEventGames", "HLG");
+                });
+
             modelBuilder.Entity("Genora.MultiTenancy.DomainModels.AppHlg.HlgRankingPrize", b =>
                 {
                     b.Property<Guid>("Id")
@@ -5195,6 +5268,9 @@ namespace Genora.MultiTenancy.Migrations
                         .HasColumnType("nvarchar(max)")
                         .HasColumnName("ExtraProperties");
 
+                    b.Property<Guid?>("GameId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
 
@@ -5229,9 +5305,11 @@ namespace Genora.MultiTenancy.Migrations
 
                     b.HasIndex("EventId");
 
+                    b.HasIndex("GameId");
+
                     b.HasIndex("PrizeId");
 
-                    b.HasIndex("TenantId", "EventId", "CustomerId")
+                    b.HasIndex("TenantId", "EventId", "GameId", "CustomerId")
                         .IsUnique()
                         .HasFilter("[IsDeleted] = 0");
 
@@ -5406,7 +5484,13 @@ namespace Genora.MultiTenancy.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
+                    b.Property<Guid?>("WinnerId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.HasKey("Id");
+
+                    b.HasIndex("WinnerId")
+                        .HasDatabaseName("IX_AppHlgRewardHistories_WinnerId");
 
                     b.HasIndex("TenantId", "CustomerId")
                         .HasDatabaseName("IX_AppHlgRewardHistories_TenantId_CustomerId");
@@ -5608,6 +5692,10 @@ namespace Genora.MultiTenancy.Migrations
                         .HasColumnType("datetime2")
                         .HasColumnName("DeletionTime");
 
+                    b.Property<string>("DmsCustomerCode")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
                     b.Property<string>("ExtraProperties")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)")
@@ -5630,6 +5718,10 @@ namespace Genora.MultiTenancy.Migrations
                         .HasColumnType("uniqueidentifier")
                         .HasColumnName("LastModifierId");
 
+                    b.Property<string>("PharmaPhone")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
                     b.Property<string>("PharmacyCode")
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
@@ -5648,6 +5740,9 @@ namespace Genora.MultiTenancy.Migrations
                         .IsUnique()
                         .HasDatabaseName("IX_AppHlgUserProfiles_TenantId_CustomerId")
                         .HasFilter("[TenantId] IS NOT NULL");
+
+                    b.HasIndex("TenantId", "PharmaPhone")
+                        .HasDatabaseName("IX_AppHlgUserProfiles_TenantId_PharmaPhone");
 
                     b.HasIndex("TenantId", "ZaloId")
                         .HasDatabaseName("IX_AppHlgUserProfiles_TenantId_ZaloId");
@@ -10619,6 +10714,21 @@ namespace Genora.MultiTenancy.Migrations
                         .OnDelete(DeleteBehavior.NoAction);
                 });
 
+            modelBuilder.Entity("Genora.MultiTenancy.DomainModels.AppHlg.HlgRankingEventGame", b =>
+                {
+                    b.HasOne("Genora.MultiTenancy.DomainModels.AppHlg.HlgRankingEvent", null)
+                        .WithMany()
+                        .HasForeignKey("EventId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+
+                    b.HasOne("Genora.MultiTenancy.DomainModels.AppHlg.HlgGame", null)
+                        .WithMany()
+                        .HasForeignKey("GameId")
+                        .OnDelete(DeleteBehavior.NoAction)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("Genora.MultiTenancy.DomainModels.AppHlg.HlgRankingPrize", b =>
                 {
                     b.HasOne("Genora.MultiTenancy.DomainModels.AppHlg.HlgRankingEvent", null)
@@ -10650,6 +10760,11 @@ namespace Genora.MultiTenancy.Migrations
                         .HasForeignKey("EventId")
                         .OnDelete(DeleteBehavior.NoAction)
                         .IsRequired();
+
+                    b.HasOne("Genora.MultiTenancy.DomainModels.AppHlg.HlgGame", null)
+                        .WithMany()
+                        .HasForeignKey("GameId")
+                        .OnDelete(DeleteBehavior.NoAction);
 
                     b.HasOne("Genora.MultiTenancy.DomainModels.AppHlg.HlgRankingPrize", null)
                         .WithMany()

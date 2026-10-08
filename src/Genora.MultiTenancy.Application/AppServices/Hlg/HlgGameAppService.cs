@@ -31,6 +31,9 @@ namespace Genora.MultiTenancy.AppServices.Hlg;
 [DisableValidation]
 public class HlgGameAppService : ApplicationService, IHlgGameAppService
 {
+    /// <summary>Thông báo khi khách đã HOÀN THÀNH game trước đó (dùng ở /start và customer/by-phone).</summary>
+    public const string AlreadyCompletedMessage = "Quý khách hàng hoàn thành xuất sắc trò chơi trước đó rồi. Vui lòng xem lại lịch sử và đợi ban tổ chức công bố giải thưởng";
+
     private readonly IRepository<HlgGame, Guid> _gameRepo;
     private readonly IRepository<HlgQuestion, Guid> _questionRepo;
     private readonly IRepository<HlgAnswerOption, Guid> _optionRepo;
@@ -144,6 +147,12 @@ public class HlgGameAppService : ApplicationService, IHlgGameAppService
 
         EnsureGameIsAvailable(game);
 
+        // BD: mỗi khách chỉ cần HOÀN THÀNH (thắng) game 1 lần. Nếu đã có phiên THÀNH CÔNG trước đó
+        // thì không cho chơi lại tới khi game kết thúc (tránh cộng dồn điểm/ảnh hưởng xếp hạng).
+        // Nếu các lần trước đều THẤT BẠI thì vẫn cho chơi tiếp đến khi thành công.
+        if (await HasPassedGameAsync(gameId, customer.Id, ct))
+            throw new UserFriendlyException(AlreadyCompletedMessage);
+
         // Lấy câu hỏi + options (KHÔNG kèm CorrectKey ra client — BD-2).
         //var questionQ = await _questionRepo.GetQueryableAsync();
         //IQueryable<HlgQuestion> questionsQuery = questionQ.Where(q => q.GameId == gameId && q.IsActive).OrderBy(q => q.Index);
@@ -217,14 +226,9 @@ public class HlgGameAppService : ApplicationService, IHlgGameAppService
         if (existing != null)
         {
             var existingWrongCount = await _answerRepo.CountAsync(x => x.SessionId == session.Id && !x.IsCorrect, ct);
-            var existingResult = BuildAnswerResult(existing.IsCorrect, existing.ScoreGained, session.AllowedWrongAnswers, existingWrongCount);
-            if (existingResult.GameFailed)
-            {
-                session.IsFinished = true;
-                session.FinishedAt = Clock.Now;
-                await _sessionRepo.UpdateAsync(session, autoSave: true, cancellationToken: ct);
-            }
-            return existingResult;
+            // KHÔNG kết thúc phiên giữa chừng dù vượt số câu sai — người chơi vẫn chơi tới hết câu hỏi,
+            // verdict thắng/thua chỉ được chốt ở /finish (BD: không block giữa chừng).
+            return BuildAnswerResult(existing.IsCorrect, existing.ScoreGained, session.AllowedWrongAnswers, existingWrongCount);
         }
 
         // ===== CHẤM ĐIỂM SERVER-SIDE (BD-2) =====
@@ -250,12 +254,8 @@ public class HlgGameAppService : ApplicationService, IHlgGameAppService
         if (isCorrect) session.CorrectCount += 1;
         session.CurrentIndex += 1;
         var wrongAnswerCount = await _answerRepo.CountAsync(x => x.SessionId == session.Id && !x.IsCorrect, ct);
-        var gameFailed = HasExceededWrongAnswerLimit(session.AllowedWrongAnswers, wrongAnswerCount);
-        if (gameFailed)
-        {
-            session.IsFinished = true;
-            session.FinishedAt = Clock.Now;
-        }
+        // KHÔNG kết thúc phiên khi vượt số câu sai — người chơi tiếp tục trả lời đến hết số câu hỏi.
+        // Kết quả thắng/thua chỉ được chốt ở /finish (BD: không trả gameFailed=true giữa chừng).
         await _sessionRepo.UpdateAsync(session, autoSave: true, cancellationToken: ct);
 
         // Broadcast live-feed khi trả lời đúng (BD-4). Bọc try/catch để không fail luồng chơi.
@@ -278,6 +278,8 @@ public class HlgGameAppService : ApplicationService, IHlgGameAppService
         var serverCorrectCount = answers.Count(a => a.IsCorrect);
         var wrongAnswerCount = answers.Count(a => !a.IsCorrect);
         var gameFailed = HasExceededWrongAnswerLimit(session.AllowedWrongAnswers, wrongAnswerCount);
+        // THÀNH CÔNG = trả lời đủ số câu của phiên & số câu sai không vượt mức cho phép.
+        var passed = IsSessionPassed(session.TotalQuestions, answers.Count, session.AllowedWrongAnswers, wrongAnswerCount);
 
         // Cảnh báo nếu client gửi điểm khác server (dấu hiệu gian lận).
         if (payload.TotalScore != serverTotalScore)
@@ -295,9 +297,10 @@ public class HlgGameAppService : ApplicationService, IHlgGameAppService
             session.FinishedAt = Clock.Now;
             await _sessionRepo.UpdateAsync(session, autoSave: true, cancellationToken: ct);
 
-            // Cộng điểm vào Customer.BonusPoint (AD-2). Chỉ cộng 1 lần khi finish.
+            // Cộng điểm vào Customer.BonusPoint (AD-2). CHỈ cộng khi THÀNH CÔNG và cộng 1 lần khi finish
+            // (chống cộng dồn điểm khi chơi dở/finish sớm; phiên thất bại không được cộng).
             var customer = await _customerRepo.FirstOrDefaultAsync(x => x.Id == session.CustomerId, ct);
-            if (!gameFailed && customer != null && serverTotalScore > 0)
+            if (passed && customer != null && serverTotalScore > 0)
             {
                 customer.BonusPoint += serverTotalScore;
                 await _customerRepo.UpdateAsync(customer, autoSave: true, cancellationToken: ct);
@@ -396,8 +399,18 @@ public class HlgGameAppService : ApplicationService, IHlgGameAppService
         ScoreGained = scoreGained,
         WrongAnswerCount = wrongAnswerCount,
         AllowedWrongAnswers = allowedWrongAnswers,
-        GameFailed = HasExceededWrongAnswerLimit(allowedWrongAnswers, wrongAnswerCount)
+        // Giữa chừng KHÔNG báo thất bại — người chơi luôn chơi hết số câu, verdict cuối chốt ở /finish.
+        GameFailed = false
     };
+
+    /// <summary>
+    /// Một phiên được xem là THÀNH CÔNG khi người chơi đã trả lời đủ số câu của phiên
+    /// và số câu sai không vượt quá mức cho phép (đối soát từ HlgSessionAnswer — BD-2).
+    /// </summary>
+    internal static bool IsSessionPassed(int totalQuestions, int answeredCount, int? allowedWrongAnswers, int wrongAnswerCount)
+        => totalQuestions > 0
+           && answeredCount >= totalQuestions
+           && !HasExceededWrongAnswerLimit(allowedWrongAnswers, wrongAnswerCount);
 
     private async Task<Dictionary<Guid, int>> GetQuestionCountsAsync(List<Guid> gameIds, CancellationToken ct)
     {
@@ -418,6 +431,32 @@ public class HlgGameAppService : ApplicationService, IHlgGameAppService
 
         return await _customerRepo.FirstOrDefaultAsync(x => x.PhoneNumber == normalized, ct)
             ?? throw new UserFriendlyException("Không tìm thấy khách hàng. Vui lòng đăng ký trước.");
+    }
+
+    /// <summary>
+    /// Khách đã "THÀNH CÔNG" game này chưa: tồn tại ít nhất một phiên đã kết thúc, trả lời đủ số câu
+    /// của phiên và không vượt số câu sai cho phép (đối soát từ HlgSessionAnswer — BD-2).
+    /// Dùng để chặn chơi lại sau khi đã thắng; các phiên THẤT BẠI không tính nên khách vẫn được chơi tiếp.
+    /// </summary>
+    public async Task<bool> HasPassedGameAsync(Guid gameId, Guid customerId, CancellationToken ct = default)
+    {
+        var sessionQ = await _sessionRepo.GetQueryableAsync();
+        var sessions = await AsyncExecuter.ToListAsync(
+            sessionQ.Where(s => s.GameId == gameId && s.CustomerId == customerId && s.IsFinished), ct);
+        if (sessions.Count == 0) return false;
+
+        var sessionIds = sessions.Select(s => s.Id).ToList();
+        var answerQ = await _answerRepo.GetQueryableAsync();
+        var answerRows = await AsyncExecuter.ToListAsync(
+            answerQ.Where(a => sessionIds.Contains(a.SessionId))
+                   .Select(a => new { a.SessionId, a.IsCorrect }), ct);
+        var statsBySession = answerRows
+            .GroupBy(a => a.SessionId)
+            .ToDictionary(g => g.Key, g => new { Answered = g.Count(), Wrong = g.Count(x => !x.IsCorrect) });
+
+        return sessions.Any(s =>
+            statsBySession.TryGetValue(s.Id, out var st)
+            && IsSessionPassed(s.TotalQuestions, st.Answered, s.AllowedWrongAnswers, st.Wrong));
     }
 
     /// <summary>

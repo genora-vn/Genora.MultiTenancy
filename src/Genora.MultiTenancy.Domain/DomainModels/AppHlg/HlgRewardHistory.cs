@@ -42,6 +42,9 @@ public class HlgRewardHistory : FullAuditedAggregateRoot<Guid>, IMultiTenant
     /// <summary>Phiên game phát sinh phần thưởng (nếu đổi ngay sau game).</summary>
     public Guid? SessionId { get; set; }
 
+    /// <summary>Winner (HlgRankingWinner) phát sinh phần thưởng này, nếu được trao qua tính năng "Trao giải trúng thưởng" (khác với tự đổi quà bằng điểm).</summary>
+    public Guid? WinnerId { get; set; }
+
     protected HlgRewardHistory() { }
 
     public HlgRewardHistory(Guid id, Guid customerId, Guid rewardId, string rewardName, Guid? tenantId = null) : base(id)

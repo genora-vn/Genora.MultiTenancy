@@ -1,5 +1,7 @@
 # Memory Index — Genora.MultiTenancy
 
+Latest HLG handoff (2026-10-06): [pharmacy registration](notes/project/project_hlg_pharmacy_registration_20261006.md). DMS branches, owner-first/max5, preserve Sales identity in shared DB, nullable HLG links; 133 tests pass, application database migration pending.
+
 Đây là nơi lưu trữ project memory (kiến thức đặc thù dự án) được version-control cùng source code.
 Nguồn chân lý duy nhất cho memory của các module. Không lưu secret hay config cá nhân ở đây.
 

@@ -66,27 +66,65 @@ public class HoaLinhGamificationController : MultiTenancyController
         return Ok(HlgApiResult<ZaloDecodePhoneResponse>.Ok(result));
     }
 
-    /// <summary>Đăng ký/đồng bộ khách hàng Gamification (gọi sau decode-phone). customerType gán khi register.</summary>
+    /// <summary>Kiểm tra DMS/chi nhánh và điều kiện đăng ký. phone là người đăng ký, pharmaPhone là chủ nhà thuốc.</summary>
+    [HttpGet("auth/{phone}")]
+    public async Task<IActionResult> CheckCustomer(string phone, [FromQuery] string? pharmaPhone, CancellationToken ct)
+    {
+        try
+        {
+            return Ok(HlgApiResult<HlgCustomerCheckDto>.Ok(await _profileService.CheckCustomerAsync(phone, pharmaPhone, ct)));
+        }
+        catch (UserFriendlyException ex)
+        {
+            return RegistrationFailure(ex);
+        }
+    }
+
+    /// <summary>Đăng ký sau khi chọn CustomerCode từ auth/{phone}; kiểm tra lại DMS và hạn mức tại backend.</summary>
     [HttpPost("customer/upsert")]
     public async Task<IActionResult> UpsertCustomer([FromBody] HlgCustomerUpsertPayloadDto payload, CancellationToken ct)
     {
         if (payload == null || string.IsNullOrWhiteSpace(payload.Phone))
             return Ok(HlgApiResult<object>.Fail(400, "Thiếu số điện thoại"));
 
-        var dto = await _profileService.UpsertCustomerAsync(payload, ct);
-        return Ok(HlgApiResult<GamificationUserDto>.Ok(dto));
+        try
+        {
+            var dto = await _profileService.UpsertCustomerAsync(payload, ct);
+            return Ok(HlgApiResult<GamificationUserDto>.Ok(dto));
+        }
+        catch (UserFriendlyException ex)
+        {
+            return RegistrationFailure(ex);
+        }
+    }
+
+    private IActionResult RegistrationFailure(UserFriendlyException ex)
+    {
+        var error = ex.Code switch
+        {
+            "HlgRegistration:DmsCustomerNotFound" => 404,
+            "HlgRegistration:OwnerRequired" => 403,
+            "HlgRegistration:DmsUnavailable" => 503,
+            "HlgRegistration:AccountLimitReached" or "HlgRegistration:PharmacyAlreadyLinked"
+                or "HlgRegistration:CustomerCodeInUse" or "HlgRegistration:AmbiguousCustomer"
+                or "HlgRegistration:CustomerUnavailable"
+                or "HlgRegistration:Busy" => 409,
+            _ => 400
+        };
+        return Ok(HlgApiResult<object>.Fail(error, ex.Message));
     }
 
     /// <summary>Lấy thông tin người chơi Gamification theo số điện thoại.</summary>
     [HttpGet("customer/by-phone")]
-    public async Task<IActionResult> GetCustomerByPhone([FromQuery] string phone, CancellationToken ct)
+    public async Task<IActionResult> GetCustomerByPhone([FromQuery] string phone, [FromQuery] Guid? gameId, CancellationToken ct)
     {
         if (string.IsNullOrWhiteSpace(phone))
             return Ok(HlgApiResult<object>.Fail(400, "Thiếu số điện thoại"));
 
         try
         {
-            var dto = await _profileService.GetByPhoneAsync(phone, ct);
+            // gameId tùy chọn: nếu có, trả thêm AlreadyCompleted để FE báo sớm "đã hoàn thành" trước khi vào màn chơi.
+            var dto = await _profileService.GetByPhoneAsync(phone, gameId, ct);
             return Ok(HlgApiResult<GamificationUserDto>.Ok(dto));
         }
         catch (UserFriendlyException ex)

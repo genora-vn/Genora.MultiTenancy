@@ -70,20 +70,40 @@ public class HlgRankingAppService : ApplicationService, IHlgRankingAppService
         
         return await BuildEntriesAsync(ev, phone, top, ct);
     }
-    private async Task<List<RankingEntryDto>> BuildEntriesAsync(HlgRankingEvent ev, string? phone, int top, CancellationToken ct)
+    public async Task<List<RankingEntryDto>> GetGameEntriesAsync(Guid eventId, Guid gameId, string? phone = null, int top = 50, CancellationToken ct = default)
+    {
+        var ev = await AsyncExecuter.FirstOrDefaultAsync((await _eventRepo.GetQueryableAsync()).Where(x => x.Id == eventId && x.IsActive && x.TenantId == CurrentTenant.Id));
+        if (ev == null) return new();
+
+        return await BuildEntriesAsync(ev, phone, top, ct, gameId);
+    }
+    private async Task<List<RankingEntryDto>> BuildEntriesAsync(HlgRankingEvent ev, string? phone, int top, CancellationToken ct, Guid? gameFilter = null)
     {
         top = Math.Clamp(top, 1, 1000);
-        // Tổng điểm mỗi người chơi = sum(Score) các phiên finish trong khoảng sự kiện (BD-5).
+        // Tổng điểm mỗi người chơi = sum(Score) các phiên ĐẠT (hoàn thành đủ điều kiện) trong khoảng sự kiện (BD-5).
+        // CHỈ tính phiên ĐẠT: số câu sai (TotalQuestions - CorrectCount) không vượt mức cho phép
+        // (null = không giới hạn). Phiên THẤT BẠI không được cộng vào xếp hạng (người chơi được chơi lại).
+        // Do đã chặn chơi lại sau khi ĐẠT nên mỗi game chỉ còn 1 phiên ĐẠT → 1 kết quả/game.
         var sessionQ = await _sessionRepo.GetQueryableAsync();
         var finished = sessionQ.Where(s =>
-            s.TenantId == CurrentTenant.Id && (ev.GameId == null || s.GameId == ev.GameId) && s.IsFinished
+            s.TenantId == CurrentTenant.Id && s.IsFinished
             && s.FinishedAt != null
             && s.FinishedAt >= ev.StartAt
-            && s.FinishedAt <= ev.EndAt);
+            && s.FinishedAt <= ev.EndAt
+            && s.TotalQuestions > 0
+            && (s.AllowedWrongAnswers == null || s.TotalQuestions - s.CorrectCount <= s.AllowedWrongAnswers));
+        // Phạm vi game: gameFilter (trao giải theo 1 game) ưu tiên; nếu không, theo cấu hình sự kiện (GameId null = tất cả game).
+        if (gameFilter.HasValue) finished = finished.Where(s => s.GameId == gameFilter.Value);
+        else if (ev.GameId.HasValue) finished = finished.Where(s => s.GameId == ev.GameId.Value);
 
-        var aggregated = await AsyncExecuter.ToListAsync(
-            finished.GroupBy(s => s.CustomerId)
-                    .Select(g => new { CustomerId = g.Key, Score = g.Sum(x => x.Score) }), ct);
+        // 1 kết quả/game: lấy điểm phiên ĐẠT tốt nhất mỗi game, rồi cộng theo từng người chơi.
+        var perGame = await AsyncExecuter.ToListAsync(
+            finished.GroupBy(s => new { s.CustomerId, s.GameId })
+                    .Select(g => new { g.Key.CustomerId, Score = g.Max(x => x.Score) }), ct);
+        var aggregated = perGame
+            .GroupBy(x => x.CustomerId)
+            .Select(g => new { CustomerId = g.Key, Score = g.Sum(x => x.Score) })
+            .ToList();
 
         if (aggregated.Count == 0) return new List<RankingEntryDto>();
 

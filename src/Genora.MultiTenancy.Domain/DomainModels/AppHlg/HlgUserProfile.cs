@@ -18,6 +18,12 @@ public class HlgUserProfile : FullAuditedAggregateRoot<Guid>, IMultiTenant
     public Guid? TenantId { get; set; }
     [StringLength(100)] public string? PharmacyCode { get; set; }
 
+    /// <summary>Normalized phone of the pharmacy owner. Null for legacy/unlinked profiles.</summary>
+    [StringLength(20)] public string? PharmaPhone { get; set; }
+
+    /// <summary>DMS branch selected for HLG; may be shared by owner and employees.</summary>
+    [StringLength(50)] public string? DmsCustomerCode { get; set; }
+
     /// <summary>Liên kết tới dbo.AppCustomers (nguồn zalo/phone/code/points).</summary>
     public Guid CustomerId { get; set; }
 

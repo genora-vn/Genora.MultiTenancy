@@ -81,7 +81,7 @@ public class HlgRankingShareImageTests : IDisposable
         var events = Repo<HlgRankingEvent>();
         var sessions = Repo<HlgGameSession>();
         var custRepo = Repo(customers);
-        var service = new HlgRankingAppService(events, sessions, custRepo, NullLogger<HlgRankingAppService>.Instance);
+        var service = new HlgRankingAppService(events, sessions, custRepo, NullLogger<HlgRankingAppService>.Instance, new Microsoft.Extensions.Configuration.ConfigurationBuilder().Build());
         var provider = _services.BuildServiceProvider();
         _providers.Add(provider);
         service.LazyServiceProvider = new AbpLazyServiceProvider(provider);

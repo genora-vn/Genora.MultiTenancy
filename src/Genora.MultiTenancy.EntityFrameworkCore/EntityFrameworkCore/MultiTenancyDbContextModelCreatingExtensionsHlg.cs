@@ -38,7 +38,8 @@ public static class MultiTenancyDbContextModelCreatingExtensionsHlg
             b.ToTable("AppHlgRankingWinners", "HLG"); b.ConfigureByConvention();
             b.HasOne<HlgRankingEvent>().WithMany().HasForeignKey(x => x.EventId).OnDelete(DeleteBehavior.NoAction);
             b.HasOne<HlgRankingPrize>().WithMany().HasForeignKey(x => x.PrizeId).OnDelete(DeleteBehavior.NoAction);
-            b.HasIndex(x => new { x.TenantId, x.EventId, x.CustomerId }).IsUnique().HasFilter("[IsDeleted] = 0");
+            b.HasOne<HlgGame>().WithMany().HasForeignKey(x => x.GameId).OnDelete(DeleteBehavior.NoAction);
+            b.HasIndex(x => new { x.TenantId, x.EventId, x.GameId, x.CustomerId }).IsUnique().HasFilter("[IsDeleted] = 0");
         });
         builder.Entity<HlgRankingResultSnapshot>(b => {
             b.ToTable("AppHlgRankingResultSnapshots", "HLG"); b.ConfigureByConvention();
@@ -51,6 +52,12 @@ public static class MultiTenancyDbContextModelCreatingExtensionsHlg
             b.HasIndex(x => new { x.TenantId, x.EventId, x.CustomerId, x.GameId }).IsUnique();
             b.HasIndex(x => new { x.TenantId, x.EventId, x.EventRank });
         });
+        builder.Entity<HlgRankingEventGame>(b => {
+            b.ToTable("AppHlgRankingEventGames", "HLG"); b.ConfigureByConvention();
+            b.HasOne<HlgRankingEvent>().WithMany().HasForeignKey(x => x.EventId).OnDelete(DeleteBehavior.NoAction);
+            b.HasOne<HlgGame>().WithMany().HasForeignKey(x => x.GameId).OnDelete(DeleteBehavior.NoAction);
+            b.HasIndex(x => new { x.TenantId, x.EventId, x.GameId }).IsUnique().HasFilter("[IsDeleted] = 0");
+        });
 
         // ========== HlgUserProfile ==========
         builder.Entity<HlgUserProfile>(b =>
@@ -59,7 +66,12 @@ public static class MultiTenancyDbContextModelCreatingExtensionsHlg
             b.ConfigureByConvention();
 
             b.Property(x => x.ZaloId).HasMaxLength(100);
+            b.Property(x => x.PharmaPhone).HasMaxLength(20);
+            b.Property(x => x.DmsCustomerCode).HasMaxLength(50);
             b.Property(x => x.CustomerType).HasConversion<byte?>();
+
+            b.HasIndex(x => new { x.TenantId, x.PharmaPhone })
+                .HasDatabaseName("IX_AppHlgUserProfiles_TenantId_PharmaPhone");
 
             b.HasIndex(x => new { x.TenantId, x.CustomerId })
                 .IsUnique()
@@ -221,6 +233,10 @@ public static class MultiTenancyDbContextModelCreatingExtensionsHlg
 
             b.HasIndex(x => new { x.TenantId, x.CustomerId })
                 .HasDatabaseName("IX_AppHlgRewardHistories_TenantId_CustomerId");
+            // WinnerId: liên kết tới HlgRankingWinner khi quà được trao qua tính năng "Trao giải trúng thưởng"
+            // (null = tự đổi quà bằng điểm, luồng cũ). Không FK cứng vì winner có thể bị xóa độc lập.
+            b.HasIndex(x => x.WinnerId)
+                .HasDatabaseName("IX_AppHlgRewardHistories_WinnerId");
         });
 
         // ========== HlgShippingAddress ==========

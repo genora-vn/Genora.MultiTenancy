@@ -15,6 +15,12 @@ public interface IHlgRankingAppService : IApplicationService
     Task<List<RankingEntryDto>> GetEventEntriesAsync(Guid eventId, string? phone = null, int top = 50, CancellationToken ct = default);
 
     /// <summary>
+    /// Bảng xếp hạng theo TỪNG GAME (chặng) trong sự kiện: chỉ tính phiên ĐẠT của game đó.
+    /// Dùng cho trao giải theo game đã kết thúc.
+    /// </summary>
+    Task<List<RankingEntryDto>> GetGameEntriesAsync(Guid eventId, Guid gameId, string? phone = null, int top = 50, CancellationToken ct = default);
+
+    /// <summary>
     /// Lưu ảnh chia sẻ Bảng xếp hạng do FE chụp (PNG/JPEG), trả URL HTTPS công khai để dùng làm thumbnail share.
     /// Server tự sinh UUID + validate nội dung ảnh thật (không tin extension/MIME). phone là định danh khách hàng (không phải chứng cứ auth).
     /// Ném UserFriendlyException với Code = HTTP status ("400"/"404"/"413"/"500").

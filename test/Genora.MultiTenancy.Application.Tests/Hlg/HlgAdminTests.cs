@@ -46,6 +46,8 @@ public class HlgAdminTests : IDisposable
     private readonly IRepository<HlgGameSession, Guid> _sessions = Substitute.For<IRepository<HlgGameSession, Guid>>();
     private readonly IRepository<HlgRankingEvent, Guid> _rankingEvents = Substitute.For<IRepository<HlgRankingEvent, Guid>>();
     private readonly IRepository<HlgRankingResultSnapshot, Guid> _rankingSnapshots = Substitute.For<IRepository<HlgRankingResultSnapshot, Guid>>();
+    private readonly IRepository<HlgRankingEventGame, Guid> _rankingEventGames = Substitute.For<IRepository<HlgRankingEventGame, Guid>>();
+    private readonly IRepository<HlgRankingWinner, Guid> _rankingWinners = Substitute.For<IRepository<HlgRankingWinner, Guid>>();
     private readonly IRepository<Customer, Guid> _customers = Substitute.For<IRepository<Customer, Guid>>();
     private readonly ServiceProvider _provider;
     private readonly Guid _gameId = Guid.NewGuid();
@@ -61,17 +63,22 @@ public class HlgAdminTests : IDisposable
         var factory = Substitute.For<IStringLocalizerFactory>(); factory.Create(Arg.Any<Type>()).Returns(localizer);
         _provider = new ServiceCollection().AddSingleton(factory).AddSingleton<IAuthorizationService>(_auth).AddSingleton<ICurrentTenant>(_tenant)
             .AddSingleton(guid).AddSingleton<IAsyncQueryableExecuter>(new AsyncQueryableExecuter(Array.Empty<IAsyncQueryableProvider>()))
-            .AddSingleton(_sessions).AddSingleton(_games).AddSingleton(_customers).AddSingleton(_clock).BuildServiceProvider();
+            .AddSingleton(_sessions).AddSingleton(_games).AddSingleton(_customers).AddSingleton(_rankingWinners).AddSingleton(_clock).BuildServiceProvider();
         _questions.GetQueryableAsync().Returns(Task.FromResult(Array.Empty<HlgQuestion>().AsQueryable()));
         _options.GetListAsync(Arg.Any<Expression<Func<HlgAnswerOption, bool>>>(), Arg.Any<bool>(), Arg.Any<CancellationToken>()).Returns(new List<HlgAnswerOption>());
         _games.GetAsync(_gameId, Arg.Any<bool>(), Arg.Any<CancellationToken>()).Returns(new HlgGame(_gameId, "Quiz", HlgGameType.Quiz));
         _games.InsertAsync(Arg.Any<HlgGame>(), true, Arg.Any<CancellationToken>()).Returns(c => c.Arg<HlgGame>());
         _games.UpdateAsync(Arg.Any<HlgGame>(), true, Arg.Any<CancellationToken>()).Returns(c => c.Arg<HlgGame>());
         _rankingSnapshots.GetQueryableAsync().Returns(Task.FromResult(Array.Empty<HlgRankingResultSnapshot>().AsQueryable()));
+        _rankingEventGames.GetQueryableAsync().Returns(Task.FromResult(Array.Empty<HlgRankingEventGame>().AsQueryable()));
+        _rankingWinners.GetQueryableAsync().Returns(Task.FromResult(Array.Empty<HlgRankingWinner>().AsQueryable()));
+        // Default empty cho enrich (bổ sung 3 cột): các test export sẽ override khi cần.
+        _sessions.GetQueryableAsync().Returns(Task.FromResult(Array.Empty<HlgGameSession>().AsQueryable()));
+        _customers.GetQueryableAsync().Returns(Task.FromResult(Array.Empty<Customer>().AsQueryable()));
     }
     private HlgQuestionAdminAppService Service() => new(_questions, _tenant, _features, _games, _options, _sessions, new HlgQuestionExcelTemplateGenerator(), new HlgQuestionExcelImporter()) { LazyServiceProvider = new AbpLazyServiceProvider(_provider) };
     private HlgGameAdminAppService GameService() => new(_games, _tenant, _features, _questions, _sessions) { LazyServiceProvider = new AbpLazyServiceProvider(_provider) };
-    private HlgRankingAdminAppService RankingService() => new(_rankingEvents, _tenant, _features, new HlgRankingResultExcelExporter(), _rankingSnapshots) { LazyServiceProvider = new AbpLazyServiceProvider(_provider) };
+    private HlgRankingAdminAppService RankingService() => new(_rankingEvents, _tenant, _features, new HlgRankingResultExcelExporter(), _rankingSnapshots, _rankingEventGames) { LazyServiceProvider = new AbpLazyServiceProvider(_provider) };
     private CreateHlgQuestionInput Input() => new() { GameId = _gameId, Content = "Question", OptionA = "A", OptionB = "B", CorrectKey = HlgAnswerKey.B };
 
     [Fact]
@@ -98,15 +105,18 @@ public class HlgAdminTests : IDisposable
     public void Winner_Excel_Template_And_Importer_Preserve_Prize_And_Phone()
     {
         var rankingEvent = new HlgRankingEvent(Guid.NewGuid(), "Sự kiện tháng 9", DateTime.Today, DateTime.Today.AddDays(1), _tenant.Id);
+        var game = new HlgGame(Guid.NewGuid(), "Game tuần 1", default, _tenant.Id) { EndAt = DateTime.Today.AddDays(-1) };
+        var reward = new HlgReward(Guid.NewGuid(), "Chai Dạ Hương 100ml", default, 0, _tenant.Id);
         var prize = new HlgRankingPrize(Guid.NewGuid(), _tenant.Id)
         {
             EventId = rankingEvent.Id,
+            RewardId = reward.Id,
             Title = "Giải nhất",
             Quantity = 1,
             IsActive = true
         };
 
-        using var template = new HlgWinnerExcelTemplateGenerator().Generate(new[] { rankingEvent }, new[] { prize });
+        using var template = new HlgWinnerExcelTemplateGenerator().Generate(new[] { rankingEvent }, new[] { game }, new[] { prize }, new[] { reward });
         var templateStream = template.GetStream();
         using (var archive = new ZipArchive(templateStream, ZipArchiveMode.Read, leaveOpen: true))
         using (var reader = new StreamReader(archive.GetEntry("xl/worksheets/sheet1.xml")!.Open()))
@@ -119,11 +129,13 @@ public class HlgAdminTests : IDisposable
         using var workbook = new XLWorkbook(templateStream);
         var input = workbook.Worksheet("TraoThuong");
         var events = workbook.Worksheet("DanhMucSuKien");
+        var games = workbook.Worksheet("DanhMucGame");
         var prizes = workbook.Worksheet("DanhMucGiai");
         input.Cell(3, 1).Value = $"{rankingEvent.Title} | {rankingEvent.Id}";
-        input.Cell(3, 2).Value = $"{prize.Title} | {prize.Id}";
-        input.Cell(3, 3).Value = "0900123456";
-        input.Cell(3, 4).Value = "TRUE";
+        input.Cell(3, 2).Value = $"{game.Name} | {game.Id}";
+        input.Cell(3, 3).Value = $"{prize.Title} | {prize.Id}";
+        input.Cell(3, 4).Value = "0900123456";
+        input.Cell(3, 5).Value = "TRUE";
         using var stream = new MemoryStream();
         workbook.SaveAs(stream);
         stream.Position = 0;
@@ -133,10 +145,21 @@ public class HlgAdminTests : IDisposable
         events.Cell(2, 1).GetString().ShouldContain(rankingEvent.Id.ToString());
         events.Cell(2, 4).GetString().ShouldBe("TRUE");
         events.Cell(3, 4).GetString().ShouldBe("FALSE");
+        games.Cell(2, 1).GetString().ShouldContain(game.Id.ToString());
         prizes.Cell(2, 1).GetString().ShouldBe($"{prize.Title} | {prize.Id}");
         prizes.Cell(2, 2).GetString().ShouldBe("Giải nhất");
-        input.Column(3).Style.NumberFormat.Format.ShouldBe("@");
+        prizes.Cell(2, 3).GetString().ShouldBe("Chai Dạ Hương 100ml");
+        prizes.Cell(2, 5).GetValue<int>().ShouldBe(1);
+        input.Column(4).Style.NumberFormat.Format.ShouldBe("@");
+        // Dropdown GIẢI THƯỞNG (*) phải đúng cột C (bug cũ trỏ nhầm cột B = GAME).
+        using (var archive2 = new ZipArchive(stream, ZipArchiveMode.Read, leaveOpen: true))
+        using (var reader2 = new StreamReader(archive2.GetEntry("xl/worksheets/sheet1.xml")!.Open()))
+        {
+            var xml = reader2.ReadToEnd();
+            xml.ShouldContain("<x:formula1>=HlgWinnerPrizeIds</x:formula1>");
+        }
         rows.Single().EventId.ShouldContain(rankingEvent.Id.ToString());
+        rows.Single().GameId.ShouldContain(game.Id.ToString());
         rows.Single().PrizeId.ShouldBe($"{prize.Title} | {prize.Id}");
         rows.Single().CustomerPhone.ShouldBe("0900123456");
         rows.Single().IsActive.ShouldBe("TRUE");
@@ -240,8 +263,8 @@ public class HlgAdminTests : IDisposable
         using var workbook = new XLWorkbook(content.GetStream());
 
         workbook.Worksheet("Kết quả sự kiện").Cell(2, 4).GetString().ShouldBe("Tên đã lưu");
-        await _sessions.DidNotReceive().GetQueryableAsync();
-        await _customers.DidNotReceive().GetQueryableAsync();
+        // Nhánh reexport KHÔNG tạo lại snapshot và KHÔNG reset điểm (dữ liệu đóng băng).
+        // Vẫn đọc winner/customer/session để bổ sung 3 cột live (Quà nhận được / Đã tham gia / Địa chỉ).
         await _customers.DidNotReceive().UpdateManyAsync(Arg.Any<IEnumerable<Customer>>(), Arg.Any<bool>(), Arg.Any<CancellationToken>());
         await _rankingSnapshots.DidNotReceive().InsertManyAsync(Arg.Any<IEnumerable<HlgRankingResultSnapshot>>(), Arg.Any<bool>(), Arg.Any<CancellationToken>());
     }

@@ -38,6 +38,8 @@ public class HlgPrizeInput
 public class HlgWinnerInput
 {
     public Guid EventId { get; set; }
+    /// <summary>Game (chặng) đã kết thúc để trao giải. Bắt buộc khi trao giải theo game.</summary>
+    public Guid GameId { get; set; }
     public Guid PrizeId { get; set; }
     public Guid CustomerId { get; set; }
     public bool IsActive { get; set; }
@@ -98,8 +100,23 @@ public class ImportHlgWinnerExcelInput
 {
     public IRemoteStreamContent? File { get; set; }
 }
+/// <summary>Trao giải hàng loạt cho 1 GAME + 1 GIẢI: tạo mỗi người chơi 1 winner (cùng game, cùng giải).</summary>
+public class CreateHlgWinnersBatchInput
+{
+    public Guid EventId { get; set; }
+    public Guid GameId { get; set; }
+    public Guid PrizeId { get; set; }
+    public List<Guid> CustomerIds { get; set; } = new();
+    public bool IsActive { get; set; }
+}
+/// <summary>Game đã kết thúc của 1 sự kiện (dùng cho dropdown trao giải theo game).</summary>
+public class HlgEndedGameLookupDto : EntityDto<Guid> { public string Name { get; set; } = ""; public DateTime? EndAt { get; set; } }
 public interface IHlgWinnerAdminAppService : ICrudAppService<HlgWinnerAdminDto, Guid, GetHlgAdminListInput, CreateHlgWinnerInput, UpdateHlgWinnerInput>
 {
     Task<IRemoteStreamContent> DownloadImportTemplateAsync();
     Task<int> ImportExcelAsync(ImportHlgWinnerExcelInput input);
+    /// <summary>Trao giải hàng loạt cho 1 game + 1 giải. Trả về số winner tạo thành công (all-or-nothing trong transaction).</summary>
+    Task<int> CreateManyAsync(CreateHlgWinnersBatchInput input);
+    /// <summary>Danh sách game đã kết thúc (EndAt &lt; nay) thuộc sự kiện, để chọn trao giải.</summary>
+    Task<List<HlgEndedGameLookupDto>> GetEndedEventGamesAsync(Guid eventId);
 }

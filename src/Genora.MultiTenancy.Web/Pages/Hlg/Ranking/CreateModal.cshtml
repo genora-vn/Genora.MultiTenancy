@@ -39,7 +39,13 @@
                 <input asp-for="Input.IsActive" class="form-check-input ms-2" />
                 <span asp-validation-for="Input.IsActive" class="text-danger"></span>
             </div>
-<div class="mb-3"><label asp-for="Input.GameId" class="form-label">@L["Hlg:GameId"]</label><select asp-for="Input.GameId" class="form-select" data-hlg-lookup="games"><option value="">@L["Hlg:Select"]</option>@if (Model.Input.GameId != null) { <option value="@Model.Input.GameId" selected>@Model.Input.GameId</option> }</select><span asp-validation-for="Input.GameId" class="text-danger"></span></div>
+<input asp-for="Input.GameId" type="hidden" />
+            <div class="mb-3">
+                <label asp-for="Input.GameIds" class="form-label">Các trò chơi thuộc chiến dịch</label>
+                <select asp-for="Input.GameIds" class="form-select hlg-game-select" multiple asp-items="Model.GameOptions"></select>
+                <div class="form-text">Chọn một hoặc nhiều trò chơi thuộc chiến dịch (có tìm kiếm). Dùng cho mẫu số "Đã tham gia" và phạm vi xếp hạng.</div>
+                <span asp-validation-for="Input.GameIds" class="text-danger"></span>
+            </div>
         </abp-modal-body><abp-modal-footer buttons="@(AbpModalButtons.Cancel | AbpModalButtons.Save)"></abp-modal-footer>
     </abp-modal>
 </form>
@@ -53,6 +59,17 @@
                 allowInput: true,
                 static: true,
                 minuteIncrement: 1
+            });
+        }
+        var $ = window.jQuery;
+        if ($ && $.fn.select2) {
+            var $sel = $('#CreateHlgRanking .hlg-game-select');
+            $sel.select2({
+                width: '100%',
+                placeholder: 'Chọn trò chơi...',
+                closeOnSelect: false,
+                allowClear: true,
+                dropdownParent: $sel.closest('.modal').length ? $sel.closest('.modal') : $(document.body)
             });
         }
     })();
