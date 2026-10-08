@@ -4,8 +4,7 @@
 
 > **Staging 2026-09-23:** Host `GenoraMultiTenancy` và tenant `HoaLinhMienNam` đều đã áp `AddHlgDesignContent` (17 bảng HLG/6 migration mỗi DB). Host từng có lịch sử 5 migration nhưng 0 bảng; đã repair có backup rồi replay. Web staging ở cả hai hostname vẫn là bản cũ: HLG Admin JS/routes 404, nên menu cần publish Web hiện tại rồi UAT đăng nhập. [Chi tiết](../../docs/HLG_STAGING_RECOVERY_20260923.md).
 
-> Mini app MỚI, tách biệt hoàn toàn với module Hoa Linh (schema HL) hiện tại.
-> Schema DB riêng: **HLG**. Tenant riêng: **"Hoa Linh Miền Nam Gamification"** (database-per-tenant).
+> **Cập nhật xác nhận 2026-10-06:** Mini app/controller riêng, schema **HLG**; HLG và Hoa Linh Sales hiện dùng chung tenant/database **HoaLinhMienNam**, `dbo.AppCustomers` và số dư điểm. Không được giả định database riêng để đánh giá ảnh hưởng Sales.
 > Controller: `HoaLinhGamificationController` route `api/mini-app/hlg`.
 > Backend khớp CHÍNH XÁC API contract frontend đã cố định (Phase 1 frontend dùng data mock).
 
@@ -22,12 +21,15 @@
 Tạo `HlgApiResult<T>` chỉ gồm `{ error?, message?, data }`. KHÔNG tái dùng `HlApiResult` (class cũ có field thừa `success`). Lý do: khớp contract 100%.
 
 ### AD-2 — Điểm dùng chung `Customer.BonusPoint`
-`points` của game lưu tại `dbo.AppCustomers.BonusPoint`. An toàn vì tenant HLG có **database riêng** → các luồng loyalty DMS cũ (FIFO batch, expire worker) KHÔNG chạy trên DB này.
-- **Rủi ro (ghi nhận):** nếu sau này bật loyalty DMS cho tenant HLG, điểm game và điểm loyalty sẽ lẫn. Khi đó phải tách sang ledger riêng.
+`points` của game lưu tại `dbo.AppCustomers.BonusPoint`. **Theo xác nhận 2026-10-06, HLG và Sales đang cùng database**, nên giả định trước đây rằng loyalty DMS không tác động DB HLG không còn đúng. Đăng ký HLG giữ nguyên mã khách và số dư Sales; quy tắc đồng bộ/đổi/reset điểm phải xét các luồng dùng chung.
+- Task đăng ký nhà thuốc không thay đổi ledger hoặc logic điểm. Việc tách số dư nếu cần là scope riêng.
 - Point history tái dùng ledger `HL.AppHlPointTransactions` (lọc theo CustomerId).
 
 ### AD-3 — User model: reuse `AppCustomers` + `HlgUserProfile`
 Tái dùng `dbo.AppCustomers` (zalo/phone/code/BonusPoint) qua `CustomerId`; field đặc thù game (`CustomerType`, `IsRegistered`, `ZaloId` snapshot) đặt ở `HLG.AppHlgUserProfiles`. Tránh trùng entity, giữ dữ liệu game cô lập.
+
+### AD-4 — Pharmacy owner / employee links (2026-10-06)
+Nullable `PharmaPhone` = số chủ chuẩn hóa; nullable `DmsCustomerCode` = chi nhánh DMS chọn cho HLG; giữ PharmacyCode legacy. Một nhóm có chủ +4 nhân viên, chủ phải có AppCustomers cùng tenant trước. New owner dùng mã DMS, new employee dùng HLGKH; mọi mã khách có sẵn được giữ theo xác nhận user. GET auth là preflight; upsert kiểm tra lại và lưu trong transaction/SQL lock theo tenant, không tin riêng kiểm tra FE. [API/rollout](../../docs/HLG_PHARMACY_REGISTRATION_API_20261006.md).
 
 ---
 

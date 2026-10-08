@@ -1,5 +1,20 @@
 # ACTIVE CONTEXT — Việc đang làm dở
 
+## HLG Trao giải trúng thưởng theo game + Fulfillment + Menu reorder — 2026-10-08 (MỚI NHẤT)
+
+- **Winners theo game (6 lô):** `HlgRankingWinner` thêm `GameId` (migration `20261007115931_AddHlgWinnerGameId`); trao giải gate theo **game kết thúc** (không phải event), 1 người được trúng nhiều game khác nhau trong 1 event (chỉ chặn trùng cùng 1 game); `GetGameEntriesAsync` tính điểm riêng theo game; `CreateManyAsync` trao hàng loạt (1 game + 1 giải + nhiều người, all-or-nothing); UI Winners Create/Edit chọn Game đã kết thúc + multi-select Players; Import Excel thêm cột Game + cột Tên quà tặng.
+- **3 vòng bug fix sau khi user test thật:** (1) dropdown Prize trong file mẫu trỏ nhầm cột (lệch do thêm cột Game) — đã sửa; (2) Winners không ghi `HlgRewardHistory` nên API `reward-history` (mini app) không hiện quà — đã thêm `SyncRewardHistoryAsync`/`RemoveRewardHistoryAsync` + cột `WinnerId` (migration `20261007152354_AddHlgRewardHistoryWinnerId`); `gameName`/`rewardName` trong `reward-history` sai (null/dùng tên giải thay tên quà) — đã sửa tra qua `WinnerId→GameId` và dùng `reward.Name`.
+- **ROOT CAUSE THẬT của bug "dropdown Trò chơi trống" (quan trọng — bài học):** KHÔNG phải lỗi code. User vào trang Winners **trực tiếp từ sidebar menu** nên `parentId` rỗng trên URL, khác với vào qua action "Trao giải trúng thưởng" trên dòng sự kiện ở trang Ranking (tự mang đúng `parentId`). **Fix: ẩn hẳn 2 mục sidebar "Prizes"/"Winners"**, chỉ truy cập qua row-action của Ranking Event (giống pattern trang Questions đã có).
+- **Fulfillment + Menu polish:** thêm localization `Hlg:Address` còn thiếu; cột Người nhận/SĐT/Địa chỉ fallback về `dbo.AppCustomers` khi không có `HlgShippingAddress` riêng; bỏ dấu `· ·` thừa khi field rỗng; thêm menu riêng "Giao quà" (bỏ button cũ ở trang Rewards + link trùng ở trang Fulfillment); sắp xếp lại toàn bộ menu HLG theo thứ tự: Ngành hàng→Nhãn hàng→Bài học/Sản phẩm→Sự kiện xếp hạng→Trò chơi→Quà tặng→Giao quà→Người chơi.
+- Build Application/EntityFrameworkCore/Web 0 lỗi CS xuyên suốt; **100/100 test HLG xanh**. User đã test OK trên host **local** (build+restart, không qua IIS); **CHƯA deploy/test staging** — user sẽ tự deploy lên staging sau phiên này, cần theo dõi kết quả ở phiên sau. **3 migration mới CHƯA apply**: `20261007115931_AddHlgWinnerGameId`, `20261007152354_AddHlgRewardHistoryWinnerId` (cộng `20261007060417_AddHlgRankingEventGame` từ trước). Chưa commit (working tree changes). [Note chi tiết](memory/notes/project/project_hlg_winner_per_game_fulfillment_20261008.md).
+
+## HLG pharmacy registration — 2026-10-06
+
+- Đã thêm GET `hlg/auth/{phone}?pharmaPhone=...`, cập nhật POST `hlg/customer/upsert` kiểm tra DMS/chi nhánh, chủ đăng ký trước, tối đa **5 người gồm chủ**; chống vượt hạn mức/trùng request bằng transaction + SQL lock theo tenant/Host.
+- User xác nhận HLG + Sales chung HoaLinhMienNam; giữ CustomerCode Sales có sẵn, chi nhánh HLG lưu riêng tại DmsCustomerCode. Hai cột HLG mới nullable, giữ PharmacyCode cũ.
+- Solution Release build 0 errors; **100 App +26 Web +2 model/migration +5 SQL Server tests PASS**. EF model clean. Migration `20261006054856_AddHlgPharmacyRegistration`/SQL **chưa apply vào DB ứng dụng/staging/prod**.
+- Còn rollout migration + FE gửi CustomerCode/PharmaPhone và UAT DMS thật; không deploy/commit. [API/cURL](../docs/HLG_PHARMACY_REGISTRATION_API_20261006.md) · [note](memory/notes/project/project_hlg_pharmacy_registration_20261006.md). Bảo toàn appsettings/log changes có sẵn.
+
 ## HLG Ranking result snapshot — 2026-10-01 (mới nhất)
 
 - Đã thêm bảng `HLG.AppHlgRankingResultSnapshots`: lần xuất Excel đầu tiên lưu toàn bộ dòng người chơi–game và clear `Customer.BonusPoint` của đúng customer có kết quả trong cùng transaction; lần xuất sau đọc snapshot và không reset lần nữa.

@@ -17,16 +17,16 @@ public class HlgWinnerExcelImporter : ITransientDependency
 
         for (var rowNumber = 3; rowNumber <= lastRow; rowNumber++)
         {
-            var values = Enumerable.Range(1, 4)
+            var values = Enumerable.Range(1, 5)
                 .Select(column => worksheet.Cell(rowNumber, column).GetString().Trim())
                 .ToArray();
 
             if (values.All(string.IsNullOrWhiteSpace)) continue;
-            rows.Add(new HlgWinnerExcelRow(rowNumber, values[0], values[1], values[2], values[3]));
+            rows.Add(new HlgWinnerExcelRow(rowNumber, values[0], values[1], values[2], values[3], values[4]));
         }
 
         return rows;
     }
 }
 
-public record HlgWinnerExcelRow(int RowNumber, string EventId, string PrizeId, string CustomerPhone, string IsActive);
+public record HlgWinnerExcelRow(int RowNumber, string EventId, string GameId, string PrizeId, string CustomerPhone, string IsActive);

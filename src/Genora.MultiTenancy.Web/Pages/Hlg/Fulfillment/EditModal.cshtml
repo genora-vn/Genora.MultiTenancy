@@ -11,7 +11,9 @@
     <input asp-for="Id" type="hidden" /><abp-modal>
         <abp-modal-header title="@L["Hlg:Fulfillment"].Value"></abp-modal-header>
         <abp-modal-body>
-            <div asp-validation-summary="All" class="text-danger"></div><p>@Model.Item.CustomerName — @Model.Item.RewardName</p><p>@Model.Item.ReceiverName · @Model.Item.Phone · @Model.Item.Address</p>
+            <div asp-validation-summary="All" class="text-danger"></div><p>@Model.Item.CustomerName — @Model.Item.RewardName</p>
+            @{ var shippingParts = new[] { Model.Item.ReceiverName, Model.Item.Phone, Model.Item.Address }.Where(x => !string.IsNullOrWhiteSpace(x)); }
+            <p>@string.Join(" · ", shippingParts)</p>
             <label asp-for="Input.Status">@L["Hlg:Status"]</label>
             <select asp-for="Input.Status" class="form-select"><option value="1">@L["Hlg:Pending"]</option><option value="2">@L["Hlg:Shipping"]</option><option value="3">@L["Hlg:Delivered"]</option><option value="4">@L["Hlg:Done"]</option></select>
             <p class="text-muted mt-2">@L["Hlg:FulfillmentHint"]</p>

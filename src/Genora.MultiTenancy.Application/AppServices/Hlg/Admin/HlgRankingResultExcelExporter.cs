@@ -25,6 +25,11 @@ public class HlgRankingResultExcelRow
     public int EventScore { get; set; }
     public DateTime FirstPlayedAt { get; set; }
     public DateTime LastPlayedAt { get; set; }
+    // Bổ sung phục vụ vận hành (báo cáo Hoa Linh):
+    public bool RewardReceived { get; set; }   // đã được gán quà (winner) trong sự kiện chưa
+    public int GamesCompleted { get; set; }     // số game khách đã HOÀN THÀNH đủ điều kiện
+    public int GamesInCampaign { get; set; }    // tổng số game của chiến dịch (mẫu số)
+    public string? RewardAddress { get; set; }  // địa chỉ nhận quà = Customer.Address
 }
 
 public class HlgRankingResultExcelExporter : ITransientDependency
@@ -37,7 +42,8 @@ public class HlgRankingResultExcelExporter : ITransientDependency
         {
             "STT", "Xếp hạng sự kiện", "Mã người chơi", "Họ và tên", "Số điện thoại", "Zalo User ID",
             "Tên trò chơi", "Số lượt chơi", "Điểm trò chơi", "Điểm cao nhất/lượt", "Số câu đúng",
-            "Tổng số câu", "Tổng điểm sự kiện", "Lượt đầu tiên", "Lượt gần nhất"
+            "Tổng số câu", "Tổng điểm sự kiện", "Lượt đầu tiên", "Lượt gần nhất",
+            "Quà nhận được", "Đã tham gia", "Địa chỉ nhận quà"
         };
 
         for (var i = 0; i < headers.Length; i++) sheet.Cell(1, i + 1).Value = headers[i];
@@ -66,6 +72,9 @@ public class HlgRankingResultExcelExporter : ITransientDependency
             sheet.Cell(row, 13).Value = item.EventScore;
             sheet.Cell(row, 14).Value = item.FirstPlayedAt;
             sheet.Cell(row, 15).Value = item.LastPlayedAt;
+            SetText(sheet.Cell(row, 16), item.RewardReceived ? "Đã nhận quà" : "Chưa nhận quà"); // Quà nhận được
+            SetText(sheet.Cell(row, 17), $"{item.GamesCompleted}/{item.GamesInCampaign}");        // Đã tham gia
+            SetText(sheet.Cell(row, 18), item.RewardAddress);                                      // Địa chỉ nhận quà
         }
 
         sheet.Columns(8, 13).Style.NumberFormat.Format = "#,##0";

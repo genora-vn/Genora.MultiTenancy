@@ -26,12 +26,17 @@ public class HlgFulfillmentAdminAppService : ApplicationService, IHlgFulfillment
     }
     private async Task<IQueryable<HlgFulfillmentDto>> QueryAsync() {
         var q=await Repo<HlgRewardHistory>().GetQueryableAsync(); var customers=await Repo<Customer>().GetQueryableAsync(); var addresses=await Repo<HlgShippingAddress>().GetQueryableAsync();
+        // Người nhận/SĐT/Địa chỉ: ưu tiên địa chỉ giao hàng khai riêng cho đổi quà (HlgShippingAddress) nếu có;
+        // nếu không có (ví dụ winner được trao giải qua Trao giải trúng thưởng, không qua luồng đổi quà có nhập
+        // địa chỉ riêng) thì lấy từ hồ sơ khách hàng dbo.AppCustomers (FullName/PhoneNumber/Address).
         return from h in q join c in customers on h.CustomerId equals c.Id
             join a in addresses on h.ShippingAddressId equals (Guid?)a.Id into aa from a in aa.DefaultIfEmpty()
             where h.TenantId==CurrentTenant.Id
             select new HlgFulfillmentDto { Id=h.Id,CustomerId=h.CustomerId,CustomerName=c.FullName,RewardName=h.RewardName,
-                ReceiverName=a!=null && a.CustomerId==h.CustomerId?a.ReceiverName:null,Phone=a!=null && a.CustomerId==h.CustomerId?a.Phone:null,
-                Address=a!=null && a.CustomerId==h.CustomerId?a.Address:null,Status=h.Status,CreationTime=h.CreationTime };
+                ReceiverName=(a!=null && a.CustomerId==h.CustomerId && a.ReceiverName!=null)?a.ReceiverName:c.FullName,
+                Phone=(a!=null && a.CustomerId==h.CustomerId && a.Phone!=null)?a.Phone:c.PhoneNumber,
+                Address=(a!=null && a.CustomerId==h.CustomerId && a.Address!=null)?a.Address:c.Address,
+                Status=h.Status,CreationTime=h.CreationTime };
     }
     public virtual async Task<PagedResultDto<HlgFulfillmentDto>> GetListAsync(GetHlgAdminListInput input) {
         await CheckAsync(); var q=await QueryAsync();

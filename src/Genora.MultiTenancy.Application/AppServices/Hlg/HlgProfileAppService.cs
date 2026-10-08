@@ -1,7 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text.RegularExpressions;
+using Genora.MultiTenancy.AppHlg;
+using Genora.MultiTenancy.AppServices.HoaLinh;
+using Genora.MultiTenancy.Hlg;
+using Volo.Abp.Uow;
 using System.Threading;
 using System.Threading.Tasks;
 using Genora.MultiTenancy.AppDtos.Hlg;
@@ -14,6 +17,7 @@ using Genora.MultiTenancy.Helpers;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Volo.Abp;
+using Volo.Abp.Data;
 using Volo.Abp.Application.Services;
 using Volo.Abp.Domain.Repositories;
 using Volo.Abp.MultiTenancy;
@@ -29,7 +33,7 @@ namespace Genora.MultiTenancy.AppServices.Hlg;
 /// </summary>
 [RemoteService(false)]
 [DisableValidation]
-public class HlgProfileAppService : ApplicationService, IHlgProfileAppService
+public partial class HlgProfileAppService : ApplicationService, IHlgProfileAppService
 {
     private readonly IRepository<Customer, Guid> _customerRepo;
     private readonly IRepository<HlgUserProfile, Guid> _profileRepo;
@@ -38,9 +42,13 @@ public class HlgProfileAppService : ApplicationService, IHlgProfileAppService
     private readonly IRepository<HlgGameSession, Guid> _sessionRepo;
     private readonly IRepository<HlgProduct, Guid> _productRepo;
     private readonly IRepository<HlgRewardHistory, Guid> _rewardHistoryRepo;
+    private readonly IHlgGameAppService _gameService;
     private readonly ICurrentTenant _currentTenant;
     private readonly ILogger<HlgProfileAppService> _logger;
     private readonly IConfiguration _configuration;
+    private readonly IHlApiClientService _dms;
+    private readonly IHlgRegistrationLock _registrationLock;
+    private readonly IUnitOfWorkManager _registrationUow;
 
     public HlgProfileAppService(
         IRepository<Customer, Guid> customerRepo,
@@ -50,9 +58,13 @@ public class HlgProfileAppService : ApplicationService, IHlgProfileAppService
         IRepository<HlgGameSession, Guid> sessionRepo,
         IRepository<HlgProduct, Guid> productRepo,
         IRepository<HlgRewardHistory, Guid> rewardHistoryRepo,
+        IHlgGameAppService gameService,
         ICurrentTenant currentTenant,
         ILogger<HlgProfileAppService> logger,
-        IConfiguration configuration)
+        IConfiguration configuration,
+        IHlApiClientService dms,
+        IHlgRegistrationLock registrationLock,
+        IUnitOfWorkManager registrationUow)
     {
         LocalizationResource = typeof(Genora.MultiTenancy.Localization.MultiTenancyResource);
         _customerRepo = customerRepo;
@@ -62,93 +74,38 @@ public class HlgProfileAppService : ApplicationService, IHlgProfileAppService
         _sessionRepo = sessionRepo;
         _productRepo = productRepo;
         _rewardHistoryRepo = rewardHistoryRepo;
+        _gameService = gameService;
         _currentTenant = currentTenant;
         _logger = logger;
         _configuration = configuration;
+        _dms = dms;
+        _registrationLock = registrationLock;
+        _registrationUow = registrationUow;
     }
 
-    public async Task<GamificationUserDto> UpsertCustomerAsync(HlgCustomerUpsertPayloadDto payload, CancellationToken ct = default)
-    {
-        ValidatePharmacyCode(payload.PharmacyCode ?? payload.VgaCode);
-        ValidateCustomerType(payload.CustomerType);
-        var phone = NormalizePhone(payload.Phone);
-        if (string.IsNullOrWhiteSpace(phone))
-            throw new UserFriendlyException("Thiếu số điện thoại");
-
-        var name = string.IsNullOrWhiteSpace(payload.FullName) ? "Zalo User" : payload.FullName.Trim();
-        var existing = await _customerRepo.FirstOrDefaultAsync(x => x.PhoneNumber == phone, ct);
-
-        Customer customer;
-        if (existing == null)
-        {
-            customer = new Customer(GuidGenerator.Create(), phone, name)
-            {
-                TenantId = _currentTenant.Id,
-                AvatarUrl = NullIfBlank(payload.AvatarUrl),
-                ZaloUserId = NullIfBlank(payload.ZaloUserId),
-                IsFollower = payload.IsFollower ?? false,
-                IsActive = true,
-                Address = NullIfBlank(payload.Address),
-
-                Gender = HlgEnumMapper.GenderStringToByte(payload.Gender),
-                DateOfBirth = ParseDate(payload.Birthday),
-                CustomerCode = await GenerateCustomerCodeAsync(),
-                CustomerSource = CustomerSource.ZaloMiniApp
-            };
-            customer = await _customerRepo.InsertAsync(customer, autoSave: true, cancellationToken: ct);
-            _logger.LogInformation("HLG upsert: tạo mới KH {Phone} code={Code}", phone, customer.CustomerCode);
-        }
-        else
-        {
-            customer = existing;
-            if (!string.IsNullOrWhiteSpace(payload.FullName)) customer.FullName = name;
-            customer.AvatarUrl = NullIfBlank(payload.AvatarUrl) ?? customer.AvatarUrl;
-            customer.ZaloUserId = NullIfBlank(payload.ZaloUserId) ?? customer.ZaloUserId;
-            if (payload.IsFollower.HasValue) customer.IsFollower = payload.IsFollower.Value;
-            customer.Address = NullIfBlank(payload.Address) ?? customer.Address;
-
-            var g = HlgEnumMapper.GenderStringToByte(payload.Gender);
-            if (g.HasValue) customer.Gender = g;
-            var b = ParseDate(payload.Birthday);
-            if (b.HasValue) customer.DateOfBirth = b;
-            customer = await _customerRepo.UpdateAsync(customer, autoSave: true, cancellationToken: ct);
-        }
-
-        // Tạo/cập nhật HLG profile — customerType gán khi register (quyết định nghiệp vụ #6).
-        var profile = await _profileRepo.FirstOrDefaultAsync(x => x.CustomerId == customer.Id, ct);
-        var customerType = HlgEnumMapper.CustomerTypeFromString(payload.CustomerType);
-        if (profile == null)
-        {
-            profile = new HlgUserProfile(GuidGenerator.Create(), customer.Id, _currentTenant.Id)
-            {
-                ZaloId = customer.ZaloUserId,
-                PharmacyCode = NullIfBlank(payload.PharmacyCode ?? payload.VgaCode),
-                CustomerType = customerType,
-                IsRegistered = customerType.HasValue
-            };
-            profile = await _profileRepo.InsertAsync(profile, autoSave: true, cancellationToken: ct);
-        }
-        else
-        {
-            profile.PharmacyCode = NullIfBlank(payload.PharmacyCode ?? payload.VgaCode) ?? profile.PharmacyCode;
-            profile.ZaloId = customer.ZaloUserId ?? profile.ZaloId;
-            if (customerType.HasValue) profile.CustomerType = customerType;
-            if (customerType.HasValue) profile.IsRegistered = true;
-            profile = await _profileRepo.UpdateAsync(profile, autoSave: true, cancellationToken: ct);
-        }
-
-        return MapToDto(customer, profile);
-    }
-
-    public async Task<GamificationUserDto> GetByPhoneAsync(string phone, CancellationToken ct = default)
+    public async Task<GamificationUserDto> GetByPhoneAsync(string phone, Guid? gameId = null, CancellationToken ct = default)
     {
         var (customer, profile) = await ResolveAsync(phone, ct);
-        return MapToDto(customer, profile);
+        var dto = MapToDto(customer, profile);
+        // Màn trước khi bấm "Chơi ngay": nếu FE truyền gameId và khách đã HOÀN THÀNH game đó,
+        // trả cờ để FE hiển thị modal (xem lịch sử / bảng xếp hạng) ngay, thay vì vào màn chơi rồi mới báo.
+        if (gameId.HasValue && gameId.Value != Guid.Empty
+            && await _gameService.HasPassedGameAsync(gameId.Value, customer.Id, ct))
+        {
+            dto.AlreadyCompleted = true;
+            dto.AlreadyCompletedMessage = HlgGameAppService.AlreadyCompletedMessage;
+        }
+        return dto;
     }
 
     public async Task<GamificationUserDto> UpdateProfileAsync(string phone, UpdateProfilePayloadDto payload, CancellationToken ct = default)
     {
         var (customer, profile) = await ResolveAsync(phone, ct);
+        if (!profile.IsRegistered)
+            throw new UserFriendlyException("Vui lòng hoàn tất đăng ký qua customer/upsert trước.");
+        if (profile.PharmaPhone != null && !string.IsNullOrWhiteSpace(payload.Phone)
+            && NormalizePhone(payload.Phone) != NormalizePhone(customer.PhoneNumber))
+            throw new UserFriendlyException("Không thể đổi số điện thoại của tài khoản đã liên kết nhà thuốc.");
 
         if (!string.IsNullOrWhiteSpace(payload.FullName))
             customer.FullName = payload.FullName.Trim();
@@ -172,18 +129,11 @@ public class HlgProfileAppService : ApplicationService, IHlgProfileAppService
         var newPhone = NormalizePhone(payload.Phone);
         if (!string.IsNullOrWhiteSpace(newPhone) && newPhone != customer.PhoneNumber)
         {
-            var taken = await _customerRepo.AnyAsync(x => x.PhoneNumber == newPhone && x.Id != customer.Id, ct);
+            var taken = await _customerRepo.AnyAsync(x => x.TenantId == _currentTenant.Id && x.PhoneNumber == newPhone && x.Id != customer.Id, ct);
             if (!taken) customer.PhoneNumber = newPhone;
         }
 
         await _customerRepo.UpdateAsync(customer, autoSave: true, cancellationToken: ct);
-
-        // Đánh dấu đã đăng ký khi hồ sơ đủ thông tin cơ bản.
-        if (!profile.IsRegistered && !string.IsNullOrWhiteSpace(customer.FullName))
-        {
-            profile.IsRegistered = true;
-            await _profileRepo.UpdateAsync(profile, autoSave: true, cancellationToken: ct);
-        }
 
         return MapToDto(customer, profile);
     }
@@ -281,14 +231,24 @@ public class HlgProfileAppService : ApplicationService, IHlgProfileAppService
         var rows = await AsyncExecuter.ToListAsync(
             q.Where(x => x.CustomerId == customer.Id).OrderByDescending(x => x.CreationTime), ct);
 
+        var games = await LazyServiceProvider.LazyGetRequiredService<IRepository<HlgGame,Guid>>().GetQueryableAsync();
+
+        // Nguồn 1: tự đổi quà ngay sau 1 phiên game (SessionId) — luồng cũ.
         var sessionIds = rows.Where(x=>x.SessionId.HasValue).Select(x=>x.SessionId!.Value).ToList();
         var sessions = await _sessionRepo.GetQueryableAsync();
-        var games = await LazyServiceProvider.LazyGetRequiredService<IRepository<HlgGame,Guid>>().GetQueryableAsync();
-        var origins = await AsyncExecuter.ToListAsync(from s in sessions join g in games on s.GameId equals g.Id
+        var sessionOrigins = await AsyncExecuter.ToListAsync(from s in sessions join g in games on s.GameId equals g.Id
             where sessionIds.Contains(s.Id) && s.CustomerId == customer.Id select new { s.Id, g.Name }, ct);
+
+        // Nguồn 2: trao giải qua tính năng "Trao giải trúng thưởng" (WinnerId -> HlgRankingWinner.GameId) — luồng mới.
+        var winnerIds = rows.Where(x=>x.WinnerId.HasValue).Select(x=>x.WinnerId!.Value).ToList();
+        var winners = await LazyServiceProvider.LazyGetRequiredService<IRepository<HlgRankingWinner,Guid>>().GetQueryableAsync();
+        var winnerOrigins = await AsyncExecuter.ToListAsync(from w in winners join g in games on w.GameId equals g.Id
+            where winnerIds.Contains(w.Id) && w.CustomerId == customer.Id select new { w.Id, g.Name }, ct);
+
         return rows.Select(x => new RewardHistoryItemDto
         {
-            GameName = origins.FirstOrDefault(s=>s.Id==x.SessionId)?.Name,
+            GameName = sessionOrigins.FirstOrDefault(s=>s.Id==x.SessionId)?.Name
+                ?? winnerOrigins.FirstOrDefault(w=>w.Id==x.WinnerId)?.Name,
             Id = x.Id,
             RewardName = x.RewardName,
             PointDelta = x.PointDelta,
@@ -316,19 +276,26 @@ public class HlgProfileAppService : ApplicationService, IHlgProfileAppService
         if (string.IsNullOrWhiteSpace(normalized))
             throw new UserFriendlyException("Thiếu số điện thoại");
 
-        var customer = await _customerRepo.FirstOrDefaultAsync(x => x.PhoneNumber == normalized, ct)
+        var customer = await FindRegistrationCustomerAsync(RequireRegistrationPhone(normalized), ct)
             ?? throw new UserFriendlyException("Không tìm thấy khách hàng. Vui lòng đăng ký trước.");
 
-        var profile = await _profileRepo.FirstOrDefaultAsync(x => x.CustomerId == customer.Id, ct);
+        var profile = await FindRegistrationProfileAsync(customer.Id, ct);
         if (profile == null)
         {
-            profile = new HlgUserProfile(GuidGenerator.Create(), customer.Id, _currentTenant.Id)
+            // Reads may create legacy profiles. Coordinate with registration to avoid duplicates.
+            using var uow = _registrationUow.Begin(requiresNew: true, isTransactional: true);
+            await _registrationLock.AcquireAsync(ct);
+            profile = await FindRegistrationProfileAsync(customer.Id, ct);
+            if (profile == null)
             {
-                ZaloId = customer.ZaloUserId,
-                IsRegistered = false
-            };
-            profile = await _profileRepo.InsertAsync(profile, autoSave: true, cancellationToken: ct);
-            _logger.LogInformation("HLG: tạo profile cho customer {CustomerId} phone {Phone}", customer.Id, normalized);
+                profile = new HlgUserProfile(GuidGenerator.Create(), customer.Id, _currentTenant.Id)
+                {
+                    ZaloId = customer.ZaloUserId,
+                    IsRegistered = false
+                };
+                profile = await _profileRepo.InsertAsync(profile, autoSave: true, cancellationToken: ct);
+            }
+            await uow.CompleteAsync(ct);
         }
 
         return (customer, profile);
@@ -342,6 +309,9 @@ public class HlgProfileAppService : ApplicationService, IHlgProfileAppService
             ZaloId = c.ZaloUserId ?? p.ZaloId,
             FullName = c.FullName,
             Phone = c.PhoneNumber,
+            PharmaPhone = p.PharmaPhone,
+            CustomerCode = c.CustomerCode,
+            DmsCustomerCode = p.DmsCustomerCode,
             Gender = HlgEnumMapper.GenderByteToString(c.Gender),
             Birthday = HlgEnumMapper.DateToIso(c.DateOfBirth),
             Address = c.Address,
@@ -357,11 +327,7 @@ public class HlgProfileAppService : ApplicationService, IHlgProfileAppService
 
     private void ValidatePharmacyCode(string? code) { if (code?.Length > 100) throw new UserFriendlyException(L["Hlg:PharmacyCodeTooLong"]); }
     private void ValidateCustomerType(string? type) { if (type != null && HlgEnumMapper.CustomerTypeFromString(type) == null) throw new UserFriendlyException(L["Hlg:InvalidCustomerType"]); }
-    private static string? NormalizePhone(string? phone)
-    {
-        if (string.IsNullOrWhiteSpace(phone)) return null;
-        return Regex.Replace(phone.Trim(), @"\s+|-|\.", "");
-    }
+    private static string? NormalizePhone(string? phone) => HlgRegistrationRules.NormalizePhone(phone);
 
     private static string? NullIfBlank(string? value)
         => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
@@ -371,13 +337,16 @@ public class HlgProfileAppService : ApplicationService, IHlgProfileAppService
 
     private async Task<string> GenerateCustomerCodeAsync()
     {
+        // SQL uniqueness also reserves codes on soft-deleted customers.
+        using var includeDeleted = DataFilter.Disable<ISoftDelete>();
         const string prefix = "HLGKH";
         var queryable = await _customerRepo.GetQueryableAsync();
 
         var maxNumber = 0;
-        foreach (var code in queryable
-                     .Where(c => c.CustomerCode != null && c.CustomerCode.StartsWith(prefix))
-                     .Select(c => c.CustomerCode!))
+        var codes = await AsyncExecuter.ToListAsync(queryable
+            .Where(c => c.TenantId == _currentTenant.Id && c.CustomerCode != null && c.CustomerCode.StartsWith(prefix))
+            .Select(c => c.CustomerCode!));
+        foreach (var code in codes)
         {
             var numberPart = code.Substring(prefix.Length);
             if (int.TryParse(numberPart, System.Globalization.NumberStyles.None, System.Globalization.CultureInfo.InvariantCulture, out var n) && n > maxNumber)
@@ -387,7 +356,7 @@ public class HlgProfileAppService : ApplicationService, IHlgProfileAppService
         var next = maxNumber + 1;
         var candidate = $"{prefix}{next.ToString("D6", System.Globalization.CultureInfo.InvariantCulture)}";
 
-        while (await _customerRepo.AnyAsync(c => c.CustomerCode == candidate))
+        while (await _customerRepo.AnyAsync(c => c.TenantId == _currentTenant.Id && c.CustomerCode == candidate))
         {
             next++;
             candidate = $"{prefix}{next.ToString("D6", System.Globalization.CultureInfo.InvariantCulture)}";

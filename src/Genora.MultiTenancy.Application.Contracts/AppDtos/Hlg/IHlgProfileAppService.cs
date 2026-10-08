@@ -12,6 +12,7 @@ namespace Genora.MultiTenancy.AppDtos.Hlg;
 /// </summary>
 public interface IHlgProfileAppService : IApplicationService
 {
+    Task<HlgCustomerCheckDto> CheckCustomerAsync(string phone, string? pharmaPhone = null, CancellationToken ct = default);
     Task<List<GameHistoryDto>> GetGameHistoryAsync(string phone, int skip = 0, int take = 50);
     /// <summary>
     /// Đăng ký/đồng bộ khách hàng Gamification vào dbo.AppCustomers + tạo/cập nhật HLG profile.
@@ -19,8 +20,12 @@ public interface IHlgProfileAppService : IApplicationService
     /// </summary>
     Task<GamificationUserDto> UpsertCustomerAsync(HlgCustomerUpsertPayloadDto payload, CancellationToken ct = default);
 
-    /// <summary>Lấy hồ sơ gamification theo phone (đảm bảo đã tồn tại profile HLG, tạo nếu thiếu).</summary>
-    Task<GamificationUserDto> GetByPhoneAsync(string phone, CancellationToken ct = default);
+    /// <summary>
+    /// Lấy hồ sơ gamification theo phone (đảm bảo đã tồn tại profile HLG, tạo nếu thiếu).
+    /// Truyền <paramref name="gameId"/> để kiểm tra sớm khách đã HOÀN THÀNH game đó chưa
+    /// (set AlreadyCompleted + AlreadyCompletedMessage phục vụ hiển thị modal trước khi bấm "Chơi ngay").
+    /// </summary>
+    Task<GamificationUserDto> GetByPhoneAsync(string phone, Guid? gameId = null, CancellationToken ct = default);
 
     /// <summary>Cập nhật hồ sơ. Trả về GamificationUser đã cập nhật.</summary>
     Task<GamificationUserDto> UpdateProfileAsync(string phone, UpdateProfilePayloadDto payload, CancellationToken ct = default);

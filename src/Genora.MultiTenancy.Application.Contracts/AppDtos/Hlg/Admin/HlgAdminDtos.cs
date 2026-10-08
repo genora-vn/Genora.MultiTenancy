@@ -43,6 +43,8 @@ public class HlgProductInput
 public class HlgRankingInput : IValidatableObject
 {
     public Guid? GameId { get; set; }
+    /// <summary>Danh sách game cố định thuộc chiến dịch (map campaign↔games). Rỗng = suy biến về GameId/tất cả game.</summary>
+    public List<Guid> GameIds { get; set; } = new();
     [Required, StringLength(250)] public string Title { get; set; } = "";
     public string? Description { get; set; }
     public DateTime StartAt { get; set; } = DateTime.Today;
@@ -158,9 +160,13 @@ public interface IHlgProductAdminAppService : ICrudAppService<HlgProductAdminDto
 }
 public class CreateHlgRankingInput : HlgRankingInput { }
 public class UpdateHlgRankingInput : HlgRankingInput { }
+/// <summary>Game đã kết thúc thuộc chiến dịch (cho modal chọn game để xuất báo cáo / trao giải).</summary>
+public class HlgEndedGameDto : IEntityDto<Guid> { public Guid Id { get; set; } public string Name { get; set; } = ""; public DateTime? EndAt { get; set; } }
 public interface IHlgRankingAdminAppService : ICrudAppService<HlgRankingAdminDto, Guid, GetHlgAdminListInput, CreateHlgRankingInput, UpdateHlgRankingInput>
 {
     Task<IRemoteStreamContent> ExportResultsAsync(Guid id);
+    Task<IRemoteStreamContent> ExportReportAsync(Guid id, List<Guid> gameIds);
+    Task<List<HlgEndedGameDto>> GetEndedCampaignGamesAsync(Guid id);
 }
 public class CreateHlgGameInput : HlgGameInput { }
 public class UpdateHlgGameInput : HlgGameInput { }

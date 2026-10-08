@@ -1,5 +1,12 @@
 # HANDOFF — Bàn giao giữa các phiên làm việc
 
+## HLG pharmacy registration — 2026-10-06 (mới nhất)
+
+- Branch `feature/dev-hoalinh-gamification`, starting HEAD `6fe42b8`; changes chưa commit. Không trộn appsettings/log thay đổi có sẵn vào task.
+- GET `api/mini-app/hlg/auth/{phone}?pharmaPhone=...`, POST `customer/upsert` thêm PharmaPhone/CustomerCode; DMS branches, owner-first, tối đa chủ+4, SQL application lock + transactional UOW. User xác nhận giữ mã Sales và lưu chi nhánh HLG riêng; DB HoaLinhMienNam dùng chung Sales/HLG.
+- Nullable HLG PharmaPhone/DmsCustomerCode, giữ PharmacyCode. Migration `20261006054856_AddHlgPharmacyRegistration`, incremental SQL **chưa apply DB ứng dụng**. Không seed/gateway/middleware/Sales auth changes.
+- Solution Release build PASS; 100 HLG App +26 HLG Web +2 model/migration +5 real LocalDB tests PASS; EF clean. LocalDB dùng database tạm và DMS mock, chưa UAT DMS thật.
+- Next: review/apply migration đúng DB, FE chọn chi nhánh và gửi CustomerCode/PharmaPhone; HTTP200 error envelope phải đọc body.error. [API/cURL](../../docs/HLG_PHARMACY_REGISTRATION_API_20261006.md) · [note](../memory/notes/project/project_hlg_pharmacy_registration_20261006.md).
 ## Hoa Linh Sales — Host/local nhận quà — 2026-10-01 (follow-up mới nhất)
 
 - Đã sửa guard TenantRequired, Host/null TenantId tạo/đọc phiếu được; repository query khóa dùng IS NULL, unique index riêng Host. Admin Host root/Export được kiểm tra, dữ liệu không lẫn Tenant. API Mini App giữ anonymous theo convention Sales; không thêm tenant payload.
