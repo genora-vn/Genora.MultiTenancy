@@ -30,6 +30,7 @@ public static class GatewayApiProfiles
             else if (profile.Equals("Hlg", StringComparison.OrdinalIgnoreCase))
                 result.AddRange([
                     new() { Path = "/api/mini-app/hlg/decode-phone", Methods = ["POST"] },
+                    new() { Path = "/api/mini-app/hlg/auth/{phone}", Methods = ["GET"] },
                     new() { Path = "/api/mini-app/hlg/customer/upsert", Methods = ["POST"] },
                     new() { Path = "/api/mini-app/hlg/customer/by-phone", Methods = ["GET"] },
                     new() { Path = "/api/mini-app/hlg/profile", Methods = ["PUT"] },
