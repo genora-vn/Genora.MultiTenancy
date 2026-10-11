@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
+using Genora.MultiTenancy.AppDtos.AppImages;
 using Genora.MultiTenancy.AppDtos.Hlg;
 using Genora.MultiTenancy.DomainModels.AppCustomers;
 using Genora.MultiTenancy.DomainModels.AppHlg;
@@ -35,19 +36,22 @@ public class HlgRankingAppService : ApplicationService, IHlgRankingAppService
     private readonly IRepository<Customer, Guid> _customerRepo;
     private readonly ILogger<HlgRankingAppService> _logger;
     private readonly IConfiguration _configuration;
+    private readonly IManageImageService _manageImageService;
 
     public HlgRankingAppService(
         IRepository<HlgRankingEvent, Guid> eventRepo,
         IRepository<HlgGameSession, Guid> sessionRepo,
         IRepository<Customer, Guid> customerRepo,
         ILogger<HlgRankingAppService> logger,
-        IConfiguration configuration)
+        IConfiguration configuration,
+        IManageImageService manageImageService)
     {
         _eventRepo = eventRepo;
         _sessionRepo = sessionRepo;
         _customerRepo = customerRepo;
         _logger = logger;
         _configuration = configuration;
+        _manageImageService = manageImageService;
     }
 
     public async Task<RankingEventDto?> GetCurrentEventAsync(CancellationToken ct = default)
@@ -207,15 +211,16 @@ public class HlgRankingAppService : ApplicationService, IHlgRankingAppService
         }
 
         // Lưu ảnh: UUID server sinh (KHÔNG dùng filename/phone làm path công khai, không ghi đè ảnh người khác);
-        // ghi nguyên bytes gốc để giữ đầy đủ danh sách (không crop/re-encode).
-        string relativePath;
+        // ghi nguyên bytes gốc để giữ đầy đủ danh sách (không crop/re-encode). Dùng IManageImageService.UploadBytesAsync
+        // (tự chọn Local/S3 theo cấu hình "hlg" subFolder — nhất quán với ảnh thiệp/upload khác của HLG).
+        string resultUrl;
         try
         {
-            var dir = Path.Combine("wwwroot", HlgRankingShareImageConsts.PublicSubPath.Replace('/', Path.DirectorySeparatorChar));
-            Directory.CreateDirectory(dir);
             var fileName = Guid.NewGuid().ToString("N") + ext;
-            await File.WriteAllBytesAsync(Path.Combine(dir, fileName), content, ct);
-            relativePath = $"/{HlgRankingShareImageConsts.PublicSubPath}/{fileName}";
+            var contentType = ext == ".png" ? "image/png" : "image/jpeg";
+            resultUrl = await _manageImageService.UploadBytesAsync(
+                content, contentType, CurrentTenant.Id?.ToString() ?? "host",
+                HlgRankingShareImageConsts.ImageSubFolder, fileName);
         }
         catch (Exception ex)
         {
@@ -223,8 +228,8 @@ public class HlgRankingAppService : ApplicationService, IHlgRankingAppService
             throw new UserFriendlyException(message: "Lưu ảnh thất bại. Vui lòng thử lại.", code: "500");
         }
 
-        _logger.LogInformation("HLG: đã lưu ảnh chia sẻ ranking cho customer {CustomerId} tại {Path}", customer.Id, relativePath);
-        return new HlgRankingShareImageResultDto { Url = ToFullUrl(relativePath) };
+        _logger.LogInformation("HLG: đã lưu ảnh chia sẻ ranking cho customer {CustomerId} tại {Url}", customer.Id, resultUrl);
+        return new HlgRankingShareImageResultDto { Url = ToFullUrl(resultUrl) };
     }
 
     /// <summary>Dựng URL tuyệt đối (scheme+host+path) từ path tương đối; không có HTTP context (test) → trả nguyên path.</summary>

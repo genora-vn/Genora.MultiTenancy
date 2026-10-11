@@ -81,7 +81,16 @@ public class HlgRankingShareImageTests : IDisposable
         var events = Repo<HlgRankingEvent>();
         var sessions = Repo<HlgGameSession>();
         var custRepo = Repo(customers);
-        var service = new HlgRankingAppService(events, sessions, custRepo, NullLogger<HlgRankingAppService>.Instance, new Microsoft.Extensions.Configuration.ConfigurationBuilder().Build());
+        // ManageImageService THẬT (Provider=Local → LocalImageStorageProvider thật, ghi file thật lên wwwroot tạm)
+        // để test đúng hành vi lưu ảnh + path trả về; S3ImageStorageProvider cũng dựng thật nhưng với IAmazonS3
+        // mock (không gọi tới khi Provider=Local) — tránh mock trống IManageImageService (mặc định trả null, không throw).
+        var storageOptions = Microsoft.Extensions.Options.Options.Create(
+            new Genora.MultiTenancy.AppDtos.AppImages.StorageOptions { Provider = "Local" });
+        var local = new Genora.MultiTenancy.AppServices.AppImages.LocalImageStorageProvider();
+        var s3 = new Genora.MultiTenancy.AppServices.AppImages.S3ImageStorageProvider(
+            Substitute.For<Amazon.S3.IAmazonS3>(), storageOptions);
+        var manageImageService = new Genora.MultiTenancy.AppServices.AppImages.ManageImageService(local, s3, storageOptions);
+        var service = new HlgRankingAppService(events, sessions, custRepo, NullLogger<HlgRankingAppService>.Instance, new Microsoft.Extensions.Configuration.ConfigurationBuilder().Build(), manageImageService);
         var provider = _services.BuildServiceProvider();
         _providers.Add(provider);
         service.LazyServiceProvider = new AbpLazyServiceProvider(provider);

@@ -1,3 +1,4 @@
+using Genora.MultiTenancy.AppDtos.AppImages;
 using Genora.MultiTenancy.AppDtos.Hl25;
 using Genora.MultiTenancy.DomainModels.AppHl25;
 using Genora.MultiTenancy.Features.AppHl25Features;
@@ -31,20 +32,20 @@ public class Hl25FrameCreationAppService : ApplicationService, IHl25FrameCreatio
     private readonly IRepository<Hl25Participant, Guid> _participantRepository;
     private readonly IRepository<Hl25FrameCampaign, Guid> _campaignRepository;
     private readonly IFeatureChecker _featureChecker;
-    private readonly IHostEnvironment _hostEnvironment;
+    private readonly IManageImageService _manageImageService;
 
     public Hl25FrameCreationAppService(
         IRepository<Hl25FrameCreation, Guid> repository,
         IRepository<Hl25Participant, Guid> participantRepository,
         IRepository<Hl25FrameCampaign, Guid> campaignRepository,
         IFeatureChecker featureChecker,
-        IHostEnvironment hostEnvironment)
+        IManageImageService manageImageService)
     {
         _repository = repository;
         _participantRepository = participantRepository;
         _campaignRepository = campaignRepository;
         _featureChecker = featureChecker;
-        _hostEnvironment = hostEnvironment;
+        _manageImageService = manageImageService;
         LocalizationResource = typeof(MultiTenancyResource);
     }
 
@@ -221,28 +222,21 @@ public class Hl25FrameCreationAppService : ApplicationService, IHl25FrameCreatio
                 if (string.IsNullOrWhiteSpace(imageUrl))
                     continue;
 
-                // Parse URL: có thể là full URL hoặc relative path.
-                string relativePath;
-                if (imageUrl.StartsWith("http://", StringComparison.OrdinalIgnoreCase) ||
-                    imageUrl.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
-                {
-                    var uri = new Uri(imageUrl);
-                    relativePath = uri.AbsolutePath;
-                }
-                else
-                {
-                    relativePath = imageUrl;
-                }
-
-                var wwwrootPath = Path.Combine(_hostEnvironment.ContentRootPath, "wwwroot", relativePath.TrimStart('/'));
-                if (!File.Exists(wwwrootPath))
+                // Đọc qua IManageImageService.OpenReadAsync — tự nhận diện Local (path tương đối cũ) hoặc
+                // S3 (URL tuyệt đối mới), hoạt động đúng cho cả ảnh cũ chưa migrate và ảnh mới trên S3.
+                var bytes = await _manageImageService.OpenReadAsync(imageUrl);
+                if (bytes == null)
                     continue;
 
-                var fileName = Path.GetFileName(wwwrootPath);
+                var fileName = Path.GetFileName(
+                    imageUrl.StartsWith("http://", StringComparison.OrdinalIgnoreCase) ||
+                    imageUrl.StartsWith("https://", StringComparison.OrdinalIgnoreCase)
+                        ? new Uri(imageUrl).AbsolutePath
+                        : imageUrl);
+
                 var entry = archive.CreateEntry(fileName, CompressionLevel.Optimal);
                 using var entryStream = entry.Open();
-                using var fileStream = File.OpenRead(wwwrootPath);
-                await fileStream.CopyToAsync(entryStream);
+                await entryStream.WriteAsync(bytes, 0, bytes.Length);
             }
         }
 

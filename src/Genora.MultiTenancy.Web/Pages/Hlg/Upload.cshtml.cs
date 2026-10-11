@@ -4,7 +4,6 @@ using System.Threading.Tasks;
 using Genora.MultiTenancy.AppDtos.AppImages;
 using Genora.MultiTenancy.Features.AppHlgFeatures;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Volo.Abp.Authorization;
@@ -19,9 +18,8 @@ public class UploadModel : MultiTenancyPageModel
     private readonly IManageImageService _images;
     private readonly IAuthorizationService _authorization;
     private readonly IFeatureChecker _features;
-    private readonly IWebHostEnvironment _environment;
     private const long MaxVideoLength = 100 * 1024 * 1024;
-    public UploadModel(IManageImageService images, IAuthorizationService authorization, IFeatureChecker features, IWebHostEnvironment environment) { _images=images; _authorization=authorization; _features=features; _environment=environment; }
+    public UploadModel(IManageImageService images, IAuthorizationService authorization, IFeatureChecker features) { _images=images; _authorization=authorization; _features=features; }
     public async Task<IActionResult> OnPostAsync(IFormFile file)
     {
         await EnsureAuthorizedAsync();
@@ -41,15 +39,26 @@ public class UploadModel : MultiTenancyPageModel
             !await HasValidVideoSignatureAsync(file, extension)) return BadRequest();
 
         var tenantId = CurrentTenant.Id?.ToString() ?? "host";
-        var uploadRoot = Path.Combine(_environment.WebRootPath ?? Path.Combine(_environment.ContentRootPath, "wwwroot"), "uploads", "hlg", tenantId, "videos");
-        Directory.CreateDirectory(uploadRoot);
         var fileName = Guid.NewGuid().ToString("N") + extension;
-        var filePath = Path.Combine(uploadRoot, fileName);
-        await using (var source = file.OpenReadStream())
-        await using (var destination = new FileStream(filePath, FileMode.CreateNew, FileAccess.Write, FileShare.None, 81920, true))
-            await source.CopyToAsync(destination);
+        var contentType = extension switch
+        {
+            ".mp4" or ".mov" => "video/mp4",
+            ".webm" => "video/webm",
+            _ => "video/ogg"
+        };
 
-        return new JsonResult(new { url = $"/uploads/hlg/{tenantId}/videos/{fileName}" });
+        byte[] bytes;
+        using (var ms = new MemoryStream())
+        {
+            await using var source = file.OpenReadStream();
+            await source.CopyToAsync(ms);
+            bytes = ms.ToArray();
+        }
+
+        // Dùng IManageImageService.UploadBytesAsync (tự chọn Local/S3 theo cấu hình "hlg" subFolder) thay
+        // ghi file trực tiếp lên wwwroot — nhất quán với ảnh HLG, hoạt động đúng khi Storage:Provider=S3.
+        var url = await _images.UploadBytesAsync(bytes, contentType, tenantId, "hlg/videos", fileName);
+        return new JsonResult(new { url });
     }
 
     private async Task EnsureAuthorizedAsync()

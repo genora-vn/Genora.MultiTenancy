@@ -1,6 +1,13 @@
 # PROJECT STATE — Genora.MultiTenancy
 
-## HLG Trao giải trúng thưởng theo game + Fulfillment + Menu reorder — 2026-10-08 (mới nhất)
+## Hoa Linh 25 + HLG — S3 Storage Migration (ods.vn) — 2026-10-09 (mới nhất, PARKED)
+
+- Nhánh riêng `feature/dev-hoalinh-25year-s3-storage` — **CHƯA merge/deploy**, user ưu tiên task khác trước khi quay lại.
+- Mục tiêu: ảnh thiệp hl25 + ảnh/video HLG đổ lên S3 (`s3.ods.vn`, bucket `c01-hoalinh-prod-01`) thay `wwwroot` để giải phóng disk server (user đã tự chuyển 23GB ảnh cũ qua S3 bằng tay).
+- Kiến trúc: `IImageStorageProvider` (Local/S3) + `ManageImageService` facade (API cũ không đổi) chọn theo whitelist `Storage:S3:SubFolders` (chỉ hl25+hlg, module khác giữ Local), match theo tiền tố segment. Refactor 4 đường ghi file trực tiếp sang dùng chung provider này.
+- Build 0 lỗi; 218/218 test pass (12 test mới). `appsettings.Staging.json` đã điền credentials thật nhưng KHÔNG commit (gitignore) — deploy phải tự copy tay. [Note](memory/notes/project/project_hl25_hlg_s3_storage_migration_20261009.md).
+
+## HLG Trao giải trúng thưởng theo game + Fulfillment + Menu reorder — 2026-10-08
 
 - Winner gắn theo `GameId` cụ thể (không còn theo Event); gate trao giải = game đã kết thúc; 1 người được trúng nhiều game khác nhau trong 1 event. Batch create 1 game+1 giải cho nhiều người cùng lúc; Import Excel + UI Admin đã khớp theo đúng mô hình này.
 - Winners giờ tự ghi `HlgRewardHistory` (cột `WinnerId` mới) để API `reward-history` mini-app hiển thị đúng tên game + tên quà tặng thực tế (trước đó null/sai do thiếu join và dùng nhầm tên prize).

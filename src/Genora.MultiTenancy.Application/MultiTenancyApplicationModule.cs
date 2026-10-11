@@ -1,8 +1,13 @@
-﻿using Genora.MultiTenancy.AppDtos.AppSettings;
+﻿using Amazon.Runtime;
+using Amazon.S3;
+using Genora.MultiTenancy.AppDtos.AppImages;
+using Microsoft.Extensions.Configuration;
+using Genora.MultiTenancy.AppDtos.AppSettings;
 using Genora.MultiTenancy.AppDtos.AppZaloAuths;
 using Genora.MultiTenancy.Apps.AppSettings;
 using Genora.MultiTenancy.AppServices.AppEmails;
 using Genora.MultiTenancy.AppServices.AppEmails.Templates;
+using Genora.MultiTenancy.AppServices.AppImages;
 using Genora.MultiTenancy.AppServices.AppPayments;
 using Genora.MultiTenancy.AppServices.AppZaloAuths;
 using Genora.MultiTenancy.AppServices.HoaLinh;
@@ -85,6 +90,29 @@ public class MultiTenancyApplicationModule : AbpModule
         });
 
         //Configure<ZaloZbsOptions>(configuration.GetSection("Zalo:Zbs"));
+
+        // ── Storage ảnh/video (Local wwwroot mặc định, S3/ods.vn khi Storage:Provider=S3) ──────
+        // ManageImageService (facade public, API không đổi) tự chọn Local/S3 theo subFolder whitelist.
+        var storageSection = configuration.GetSection(StorageOptions.SectionName);
+        Configure<StorageOptions>(storageSection);
+        var storageOptions = new StorageOptions();
+        storageSection.Bind(storageOptions);
+        context.Services.AddSingleton<IAmazonS3>(_ =>
+        {
+            var s3 = storageOptions.S3;
+            var config = new AmazonS3Config
+            {
+                ServiceURL = string.IsNullOrWhiteSpace(s3.ServiceUrl) ? "https://s3.ods.vn" : s3.ServiceUrl,
+                ForcePathStyle = s3.ForcePathStyle,
+                AuthenticationRegion = string.IsNullOrWhiteSpace(s3.Region) ? "us-east-1" : s3.Region
+            };
+            // Credentials rỗng (Provider=Local, module khác chưa cấu hình S3) vẫn tạo client được —
+            // client CHỈ thực sự gọi mạng khi ManageImageService chọn S3ImageStorageProvider (theo whitelist).
+            var credentials = new BasicAWSCredentials(s3.AccessKey ?? "", s3.SecretKey ?? "");
+            return new AmazonS3Client(credentials, config);
+        });
+        context.Services.AddTransient<LocalImageStorageProvider>();
+        context.Services.AddTransient<S3ImageStorageProvider>();
 
         context.Services.AddEntityCache<AppSetting, AppSettingDto, Guid>();
         context.Services.AddTransient<IZaloZbsClient, ZaloZbsClient>();

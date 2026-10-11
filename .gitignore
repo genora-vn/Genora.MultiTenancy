@@ -272,3 +272,8 @@ src/Baygolf.MultiTenancy.Blazor.Server.Tiered/Logs/*
 # IdentityServer temp files
 tempkey.rsa
 tempkey.jwk
+
+# Per-environment secrets (S3 credentials, v.v.) — KHÔNG commit, chỉ tạo tay trên từng server.
+# appsettings.json (default) giữ Storage:Provider=Local + placeholder rỗng, an toàn để commit.
+src/Genora.MultiTenancy.Web/appsettings.Staging.json
+src/Genora.MultiTenancy.Web/appsettings.Production.json
