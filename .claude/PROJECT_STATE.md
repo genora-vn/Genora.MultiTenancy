@@ -1,5 +1,10 @@
 # PROJECT STATE — Genora.MultiTenancy
 
+## Hoa Linh Sales — Excel Blouse theo dáng/size — 2026-10-11
+
+- Export `/HoaLinh/BlouseRegistrations` có 8 cột số lượng Nam/Nữ × M/L/XL/2XL (Q:X), gộp áo tặng+đổi theo snapshot đơn, tiêu đề 2 dòng đúng bố cục mẫu. Giữ filter/permission và các cột cũ.
+- Web build PASS, 71 Sales tests PASS; không migration/deploy; chờ UAT sau cập nhật Web. [Note](memory/notes/project/project_hl_blouse_excel_style_sizes_20261011.md).
+
 ## HLG Trao giải trúng thưởng theo game + Fulfillment + Menu reorder — 2026-10-08 (mới nhất)
 
 - Winner gắn theo `GameId` cụ thể (không còn theo Event); gate trao giải = game đã kết thúc; 1 người được trúng nhiều game khác nhau trong 1 event. Batch create 1 game+1 giải cho nhiều người cùng lúc; Import Excel + UI Admin đã khớp theo đúng mô hình này.

@@ -1,5 +1,11 @@
 # ACTIVE CONTEXT — Việc đang làm dở
 
+## Hoa Linh Sales — Excel Blouse theo dáng/size — 2026-10-11 (mới nhất)
+
+- `/HoaLinh/BlouseRegistrations` xuất thêm Dáng Nam Q:T và Dáng Nữ U:X, mỗi nhóm M/L/XL/2XL; header 2 dòng, data từ dòng4 như mẫu user. Cộng cả áo tặng + áo đổi trực tiếp từ Items, số lượng Excel dạng số.
+- Mẫu Q4:X13 có 2 ô nhập lệch: Nữ L dòng4 phải vào V, Nam2XL dòng12 phải vào T; export lấy chi tiết đơn làm căn cứ. Các bộ lọc/quyền/endpoint giữ nguyên.
+- **71 Sales tests PASS**, Web Release build 0 errors; không migration/DB writes/deploy. Branch `hotfix/20261011`, giữ appsettings/log changes có sẵn. Còn UAT nút Xuất Excel sau deploy. [Note](memory/notes/project/project_hl_blouse_excel_style_sizes_20261011.md).
+
 ## HLG Trao giải trúng thưởng theo game + Fulfillment + Menu reorder — 2026-10-08 (MỚI NHẤT)
 
 - **Winners theo game (6 lô):** `HlgRankingWinner` thêm `GameId` (migration `20261007115931_AddHlgWinnerGameId`); trao giải gate theo **game kết thúc** (không phải event), 1 người được trúng nhiều game khác nhau trong 1 event (chỉ chặn trùng cùng 1 game); `GetGameEntriesAsync` tính điểm riêng theo game; `CreateManyAsync` trao hàng loạt (1 game + 1 giải + nhiều người, all-or-nothing); UI Winners Create/Edit chọn Game đã kết thúc + multi-select Players; Import Excel thêm cột Game + cột Tên quà tặng.

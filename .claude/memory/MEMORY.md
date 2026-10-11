@@ -1,5 +1,7 @@
 # Memory Index — Genora.MultiTenancy
 
+Latest Sales handoff (2026-10-11): [Blouse Excel style/size columns](notes/project/project_hl_blouse_excel_style_sizes_20261011.md). Q:X male/female M/L/XL/2XL, sums free+exchange from order snapshots, 71 Sales tests pass, Web build pass; deploy/UAT pending, no migration.
+
 Latest HLG handoff (2026-10-06): [pharmacy registration](notes/project/project_hlg_pharmacy_registration_20261006.md). DMS branches, owner-first/max5, preserve Sales identity in shared DB, nullable HLG links; 133 tests pass, application database migration pending.
 
 Đây là nơi lưu trữ project memory (kiến thức đặc thù dự án) được version-control cùng source code.

@@ -1,5 +1,11 @@
 # HANDOFF — Bàn giao giữa các phiên làm việc
 
+## Hoa Linh Sales — Excel Blouse theo dáng/size — 2026-10-11
+
+- Branch `hotfix/20261011`, starting HEAD `6156986`. Task changes: HlSalesExportAppService, partial test fixture + HlSalesBlouseExportTests, memory. Không đưa appsettings/log changes có sẵn vào commit task.
+- `/HoaLinh/BlouseRegistrations` Excel thêm Q:T Dáng Nam/U:X Dáng Nữ, mỗi nhóm M/L/XL/2XL; 2 header rows, data row4. SUM Quantity của Items (Free+Exchange), giữ snapshot và kiểu số. Hai ô mẫu nhập nhầm được tính lại theo mô tả đơn: V4=2, T12=12.
+- 71 Sales tests + Web Release build 0 errors, diff-check pass. Không migration, DB writes, deploy hoặc sửa workbook nguồn. Chưa visual/browser UAT; next deploy/restart Web và test export/filter/sum trong Excel. [Note](../memory/notes/project/project_hl_blouse_excel_style_sizes_20261011.md).
+
 ## HLG pharmacy registration — 2026-10-06 (mới nhất)
 
 - Branch `feature/dev-hoalinh-gamification`, starting HEAD `6fe42b8`; changes chưa commit. Không trộn appsettings/log thay đổi có sẵn vào task.

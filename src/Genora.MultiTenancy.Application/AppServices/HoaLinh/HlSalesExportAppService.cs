@@ -274,17 +274,15 @@ public class HlSalesExportAppService : ApplicationService, IHlSalesExportAppServ
         var items = await AsyncExecuter.ToListAsync(queryable.OrderByDescending(x => x.CreationTime).ThenBy(x => x.Id));
 
         using var workbook = new XLWorkbook();
-        var sheet = CreateSheet(workbook, "Đăng ký áo Blouse", new[] {
-            "STT", "Mã đơn", "Mã KH", "Tên khách hàng", "Số điện thoại", "Đại diện tiếp nhận",
-            "Địa chỉ giao nhận", "Loại hình KD", "Tên cửa hàng", "Tên in trên áo",
-            "Áo tặng", "Áo đổi", "Tổng áo", "Điểm quy đổi",
-            "Chi tiết áo tặng", "Chi tiết áo đổi", "Trạng thái", "Ghi chú thêm", "Ghi chú nội bộ", "Ngày đăng ký" });
-        var row = 2;
+        var sheet = CreateBlouseRegistrationSheet(workbook);
+        // Match the supplied report: two header rows, a spacer, then registrations at row 4.
+        const int firstDataRow = 4;
+        var row = firstDataRow;
         foreach (var e in items)
         {
             var free = e.Items.Where(i => i.ItemType == HlBlouseItemType.Free);
             var exchange = e.Items.Where(i => i.ItemType == HlBlouseItemType.Exchange);
-            sheet.Cell(row, 1).Value = row - 1;
+            sheet.Cell(row, 1).Value = row - firstDataRow + 1;
             Text(sheet, row, 2, e.RegistrationCode);
             Text(sheet, row, 3, e.CustomerCode);
             Text(sheet, row, 4, e.CustomerName);
@@ -300,14 +298,62 @@ public class HlSalesExportAppService : ApplicationService, IHlSalesExportAppServ
             sheet.Cell(row, 14).Value = e.TotalPointsUsed;
             Text(sheet, row, 15, SummarizeBlouseItems(free));
             Text(sheet, row, 16, SummarizeBlouseItems(exchange));
-            Text(sheet, row, 17, BlouseStatusText(e.Status));
-            Text(sheet, row, 18, e.Note);
-            Text(sheet, row, 19, e.InternalNote);
-            sheet.Cell(row, 20).Value = e.CreationTime;
+
+            // Use the persisted order snapshots, not the current size catalog or display text.
+            // Free and exchanged shirts of the same style/size share one numeric total.
+            var quantities = e.Items
+                .GroupBy(i => (i.Style, Size: (i.SizeCode ?? "").Trim().ToUpperInvariant()))
+                .ToDictionary(g => g.Key, g => g.Sum(i => i.Quantity));
+            for (var size = 0; size < BlouseReportSizes.Length; size++)
+            {
+                foreach (var (style, startColumn) in new[] { (HlBlouseStyle.Male, 17), (HlBlouseStyle.Female, 21) })
+                {
+                    var quantity = quantities.GetValueOrDefault((style, BlouseReportSizes[size]));
+                    if (quantity != 0) sheet.Cell(row, startColumn + size).Value = quantity;
+                }
+            }
+
+            Text(sheet, row, 25, BlouseStatusText(e.Status));
+            Text(sheet, row, 26, e.Note);
+            Text(sheet, row, 27, e.InternalNote);
+            sheet.Cell(row, 28).Value = e.CreationTime;
             row++;
         }
-        sheet.Column(20).Style.DateFormat.Format = "dd/MM/yyyy HH:mm:ss";
-        return Finish(workbook, sheet, row, "HoaLinhSales_BlouseRegistrations");
+        sheet.Columns(17, 24).Style.NumberFormat.Format = "0";
+        sheet.Column(28).Style.DateFormat.Format = "dd/MM/yyyy HH:mm:ss";
+        return Finish(workbook, sheet, row, "HoaLinhSales_BlouseRegistrations", headerRow: 2);
+    }
+
+    private static readonly string[] BlouseReportSizes = { "M", "L", "XL", "2XL" };
+
+    private static IXLWorksheet CreateBlouseRegistrationSheet(XLWorkbook workbook)
+    {
+        var sheet = CreateSheet(workbook, "Đăng ký áo Blouse", new[] {
+            "STT", "Mã đơn", "Mã KH", "Tên khách hàng", "Số điện thoại", "Đại diện tiếp nhận",
+            "Địa chỉ giao nhận", "Loại hình KD", "Tên cửa hàng", "Tên in trên áo",
+            "Áo tặng", "Áo đổi", "Tổng áo", "Điểm quy đổi",
+            "Chi tiết áo tặng", "Chi tiết áo đổi",
+            "Dáng Nam", "", "", "", "Dáng Nữ", "", "", "",
+            "Trạng thái", "Ghi chú thêm", "Ghi chú nội bộ", "Ngày đăng ký" });
+        for (var column = 1; column <= 28; column++)
+        {
+            if (column < 17 || column > 24) sheet.Range(1, column, 2, column).Merge();
+        }
+        sheet.Range("Q1:T1").Merge();
+        sheet.Range("U1:X1").Merge();
+        for (var size = 0; size < BlouseReportSizes.Length; size++)
+        {
+            sheet.Cell(2, 17 + size).Value = BlouseReportSizes[size];
+            sheet.Cell(2, 21 + size).Value = BlouseReportSizes[size];
+        }
+        var header = sheet.Range("A1:AB2");
+        header.Style.Font.Bold = true;
+        header.Style.Fill.BackgroundColor = XLColor.FromHtml("#DCE6F1");
+        header.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+        header.Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
+        sheet.Rows(1, 2).Height = 22;
+        sheet.SheetView.FreezeRows(2);
+        return sheet;
     }
 
     private static string BlouseStyleText(HlBlouseStyle style) => style == HlBlouseStyle.Male ? "Nam" : "Nữ";
@@ -355,9 +401,9 @@ public class HlSalesExportAppService : ApplicationService, IHlSalesExportAppServ
         cell.Value = value ?? ""; // Preserve codes, leading zeroes and literal text.
     }
 
-    private static IRemoteStreamContent Finish(XLWorkbook workbook, IXLWorksheet sheet, int nextRow, string name)
+    private static IRemoteStreamContent Finish(XLWorkbook workbook, IXLWorksheet sheet, int nextRow, string name, int headerRow = 1)
     {
-        sheet.Range(1, 1, Math.Max(1, nextRow - 1), sheet.LastColumnUsed()!.ColumnNumber()).SetAutoFilter();
+        sheet.Range(headerRow, 1, Math.Max(headerRow, nextRow - 1), sheet.LastColumnUsed()!.ColumnNumber()).SetAutoFilter();
         sheet.Columns().AdjustToContents(10d, 60d);
         var stream = new MemoryStream();
         workbook.SaveAs(stream); stream.Position = 0;

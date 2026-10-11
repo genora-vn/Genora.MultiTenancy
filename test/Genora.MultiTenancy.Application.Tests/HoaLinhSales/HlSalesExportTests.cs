@@ -25,7 +25,7 @@ using Xunit;
 
 namespace Genora.MultiTenancy.HoaLinhSales;
 
-public class HlSalesExportTests : IDisposable
+public partial class HlSalesExportTests : IDisposable
 {
     private readonly DateTime _day = new(2026, 9, 17);
     private readonly IRepository<HlPointTransaction, Guid> _transactions = Substitute.For<IRepository<HlPointTransaction, Guid>>();
