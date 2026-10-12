@@ -229,7 +229,7 @@ public class HlgRankingAppService : ApplicationService, IHlgRankingAppService
         }
 
         _logger.LogInformation("HLG: đã lưu ảnh chia sẻ ranking cho customer {CustomerId} tại {Url}", customer.Id, resultUrl);
-        return new HlgRankingShareImageResultDto { Url = ToFullUrl(resultUrl) };
+        return new HlgRankingShareImageResultDto { Url = resultUrl };
     }
 
     /// <summary>Dựng URL tuyệt đối (scheme+host+path) từ path tương đối; không có HTTP context (test) → trả nguyên path.</summary>
