@@ -7,6 +7,15 @@
 - **71 Sales tests PASS**, Web Release build 0 errors; không migration/DB writes/deploy. Branch `hotfix/20261011`, giữ appsettings/log changes có sẵn. Còn UAT nút Xuất Excel sau deploy. [Note](memory/notes/project/project_hl_blouse_excel_style_sizes_20261011.md).
 
 ## HLG Trao giải trúng thưởng theo game + Fulfillment + Menu reorder — 2026-10-08 (MỚI NHẤT)
+## Hoa Linh 25 + HLG — S3 Storage Migration (ods.vn) — 2026-10-09 (MỚI NHẤT, PARKED)
+
+- **Nhánh riêng, CHƯA merge/deploy:** `feature/dev-hoalinh-25year-s3-storage` — anh đã xác nhận **ưu tiên task khác trước**, task này tạm dừng ở đây chờ quay lại.
+- **Đã hoàn thành:** abstraction `IImageStorageProvider` (Local/S3) + `ManageImageService` facade (API cũ giữ nguyên) tự chọn provider theo `Storage:Provider` + whitelist `Storage:S3:SubFolders` (match theo tiền tố segment, VD `hlg/videos` thuộc nhóm `hlg`). Chỉ **hl25 + hlg** dùng S3 (`c01-hoalinh-prod-01` @ `s3.ods.vn`), module khác giữ Local. Refactor 4 đường ghi file trực tiếp (hl25 rename ảnh thiệp, ZIP download-all, HLG share-image, HLG video admin) sang dùng chung `IManageImageService`.
+- **3 bug tìm & sửa lúc viết test** (xem note để chi tiết root cause): double-prefix path `uploads/uploads/...` ở HLG share-image; whitelist exact-match sai (phải match theo segment đầu); test fixture dùng mock trống `IManageImageService` che giấu lỗi thật.
+- **Build + test:** 0 lỗi CS toàn solution; **218/218 test pass** (12 test mới `AppImages`). Đã viết sẵn `appsettings.Staging.json` với credentials S3 thật user cung cấp — **file này KHÔNG commit** (đã thêm `.gitignore`), user phải tự copy lên server khi deploy.
+- **CHƯA deploy/test thật trên staging.** Khi quay lại: merge nhánh, deploy, copy `appsettings.Staging.json` tay lên server, set `ASPNETCORE_ENVIRONMENT=Staging`, test upload ảnh thiệp mới + ZIP + rename + HLG share-image/video. [Note chi tiết](memory/notes/project/project_hl25_hlg_s3_storage_migration_20261009.md).
+
+## HLG Trao giải trúng thưởng theo game + Fulfillment + Menu reorder — 2026-10-08
 
 - **Winners theo game (6 lô):** `HlgRankingWinner` thêm `GameId` (migration `20261007115931_AddHlgWinnerGameId`); trao giải gate theo **game kết thúc** (không phải event), 1 người được trúng nhiều game khác nhau trong 1 event (chỉ chặn trùng cùng 1 game); `GetGameEntriesAsync` tính điểm riêng theo game; `CreateManyAsync` trao hàng loạt (1 game + 1 giải + nhiều người, all-or-nothing); UI Winners Create/Edit chọn Game đã kết thúc + multi-select Players; Import Excel thêm cột Game + cột Tên quà tặng.
 - **3 vòng bug fix sau khi user test thật:** (1) dropdown Prize trong file mẫu trỏ nhầm cột (lệch do thêm cột Game) — đã sửa; (2) Winners không ghi `HlgRewardHistory` nên API `reward-history` (mini app) không hiện quà — đã thêm `SyncRewardHistoryAsync`/`RemoveRewardHistoryAsync` + cột `WinnerId` (migration `20261007152354_AddHlgRewardHistoryWinnerId`); `gameName`/`rewardName` trong `reward-history` sai (null/dùng tên giải thay tên quà) — đã sửa tra qua `WinnerId→GameId` và dùng `reward.Name`.

@@ -17,6 +17,12 @@ public static class HlgRankingShareImageConsts
     /// <summary>Thư mục public dưới wwwroot lưu ảnh chia sẻ (UUID server sinh).</summary>
     public const string PublicSubPath = "uploads/hlg/ranking-share";
 
+    /// <summary>
+    /// subFolder dùng cho IManageImageService.UploadBytesAsync (KHÔNG có tiền tố "uploads/" — service tự thêm
+    /// khi dựng key, khớp đúng convention UploadImageAsync). Segment đầu "hlg" khớp whitelist Storage:S3:SubFolders.
+    /// </summary>
+    public const string ImageSubFolder = "hlg/ranking-share";
+
     /// <summary>Thời gian giữ ảnh tối thiểu (ngày) để thumbnail trong tin đã chia sẻ không mất sớm.</summary>
     public const int RetentionDays = 30;
 }

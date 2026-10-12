@@ -174,7 +174,7 @@ public class HlgDesignContentTests : IDisposable
         var gameId=Guid.NewGuid();var customerId=Guid.NewGuid();var start=new DateTime(2026,9,1);var ev=new HlgRankingEvent(Guid.NewGuid(),"Event",start,start.AddMonths(1),_tenantId){GameId=gameId};
         var events=Repo(ev);var sessions=Repo(new HlgGameSession(Guid.NewGuid(),gameId,customerId,_tenantId){IsFinished=true,FinishedAt=start.AddDays(1),Score=50,TotalQuestions=2,CorrectCount=2},new HlgGameSession(Guid.NewGuid(),Guid.NewGuid(),customerId,_tenantId){IsFinished=true,FinishedAt=start.AddDays(1),Score=999,TotalQuestions=2,CorrectCount=2});
         var customers=Repo(new Customer(customerId,"0900000000","Player"){TenantId=_tenantId});
-        var result=await Bind(new HlgRankingAppService(events,sessions,customers,NullLogger<HlgRankingAppService>.Instance,_configuration)).GetEventEntriesAsync(ev.Id);result.Single().Score.ShouldBe(50);
+        var result=await Bind(new HlgRankingAppService(events,sessions,customers,NullLogger<HlgRankingAppService>.Instance,_configuration,Substitute.For<Genora.MultiTenancy.AppDtos.AppImages.IManageImageService>())).GetEventEntriesAsync(ev.Id);result.Single().Score.ShouldBe(50);
     }
     [Theory][InlineData(1,2,1,true)][InlineData(2,3,1,true)][InlineData(3,1,1,false)][InlineData(1,4,2,true)][InlineData(1,4,1,false)]
     public void Fulfillment_Transitions_Are_Type_Specific_And_Forward_Only(int from,int to,int type,bool expected) => HlgFulfillmentAdminAppService.CanTransition((HlgRewardHistoryStatus)from,(HlgRewardHistoryStatus)to,(HlgRewardType)type).ShouldBe(expected);

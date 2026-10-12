@@ -771,57 +771,24 @@ public class MiniAppHl25Service : ApplicationService, IMiniAppHl25Service
     };
 
     /// <summary>
-    /// Download ảnh từ URL, lưu với tên ZaloUserId_yyyyMMddHHmmss.ext, trả về URL mới.
+    /// Copy ảnh sang tên mới ZaloUserId_yyyyMMddHHmmss.ext, trả về URL mới.
     /// Dùng cho tính năng đổi tên ảnh thiệp theo ZaloUserId + timestamp.
+    /// Dùng chung IManageImageService.CopyAsync (tự chọn Local/S3 theo cấu hình — không còn File.Copy trực tiếp,
+    /// nên hoạt động đúng khi ảnh đang ở S3).
     /// </summary>
     private async Task<string> RenameImageWithTimestampAsync(string sourceUrl, string zaloUserId)
     {
         try
         {
-            var request = _httpContextAccessor.HttpContext?.Request;
-            if (request == null)
-                return sourceUrl;
-
-            // Parse sourceUrl: có thể là full URL hoặc relative path.
-            string relativePath;
-            if (sourceUrl.StartsWith("http://", StringComparison.OrdinalIgnoreCase) ||
-                sourceUrl.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
-            {
-                var uri = new Uri(sourceUrl);
-                relativePath = uri.AbsolutePath;
-            }
-            else
-            {
-                relativePath = sourceUrl;
-            }
-
-            // Đường dẫn vật lý.
-            var wwwrootPath = Path.Combine("wwwroot", relativePath.TrimStart('/'));
-            if (!File.Exists(wwwrootPath))
-                return sourceUrl;
-
-            // Tạo tên mới: ZaloUserId_yyyyMMddHHmmss.ext
-            var ext = Path.GetExtension(wwwrootPath);
+            var ext = Path.GetExtension(new Uri(sourceUrl, UriKind.RelativeOrAbsolute).IsAbsoluteUri
+                ? new Uri(sourceUrl).AbsolutePath
+                : sourceUrl);
             var timestamp = DateTime.Now.ToString("yyyyMMddHHmmss");
+            var tenantId = CurrentTenant.Id?.ToString() ?? "host";
             var newFileName = $"{zaloUserId}_{timestamp}{ext}";
-            var directory = Path.GetDirectoryName(wwwrootPath)!;
-            var newFilePath = Path.Combine(directory, newFileName);
 
-            // Tránh trùng tên (2 thiệp cùng giây): thêm suffix _1, _2...
-            var counter = 1;
-            while (File.Exists(newFilePath))
-            {
-                newFileName = $"{zaloUserId}_{timestamp}_{counter}{ext}";
-                newFilePath = Path.Combine(directory, newFileName);
-                counter++;
-            }
-
-            // Copy file (không xóa file cũ để tránh lỗi nếu có reference khác).
-            File.Copy(wwwrootPath, newFilePath);
-
-            // Trả về relative URL mới.
-            var newRelativeUrl = $"/uploads/hl25/{(CurrentTenant.Id?.ToString() ?? "host")}/{newFileName}";
-            return newRelativeUrl;
+            var newUrl = await _manageImageService.CopyAsync(sourceUrl, tenantId, Hl25Consts.DefaultImageSubFolder, newFileName);
+            return newUrl ?? sourceUrl; // Nguồn không tồn tại (ảnh đã xóa/lỗi) → giữ nguyên URL gốc.
         }
         catch (Exception)
         {
