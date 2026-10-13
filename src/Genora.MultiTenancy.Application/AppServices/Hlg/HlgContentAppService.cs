@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Genora.MultiTenancy.AppDtos.Hlg;
 using Genora.MultiTenancy.DomainModels.AppHlg;
 using Genora.MultiTenancy.DomainModels.AppCustomers;
+using Genora.MultiTenancy.Enums.Hlg;
 using Genora.MultiTenancy.Helpers;
 using Microsoft.Extensions.Configuration;
 using Volo.Abp;
@@ -76,12 +77,22 @@ public class HlgContentAppService : ApplicationService, IHlgContentAppService
         foreach (var prize in result) prize.ImageUrl = NormalizeMediaUrl(prize.ImageUrl);
         return result;
     }
-    public async Task<List<RankingWinnerDto>> GetWinnersAsync(Guid eventId)
+    public async Task<List<RankingWinnerDto>> GetWinnersAsync(Guid gameId)
     {
-        var events=await Repo<HlgRankingEvent>().GetQueryableAsync(); var q=await Repo<HlgRankingWinner>().GetQueryableAsync(); var customers=await Repo<Customer>().GetQueryableAsync();
+        // Danh sách trúng thưởng chạy theo TỪNG TRÒ CHƠI (không theo chiến dịch): 1 chiến dịch có nhiều game,
+        // mỗi game có mốc kết thúc riêng. Chỉ trả winners khi game đã thực sự kết thúc (Status=Ended HOẶC
+        // đã qua EndAt) — khớp quy ước "đã kết thúc" đang dùng ở HlgRankingAdminAppService.GetEndedCampaignGamesAsync.
+        var games = await Repo<HlgGame>().GetQueryableAsync();
+        var game = await AsyncExecuter.FirstOrDefaultAsync(games.Where(g => g.Id == gameId && g.TenantId == CurrentTenant.Id));
+        if (game == null) return new List<RankingWinnerDto>();
+
+        var hasEnded = game.Status == HlgGameStatus.Ended || (game.EndAt.HasValue && game.EndAt.Value < Clock.Now);
+        if (!hasEnded) return new List<RankingWinnerDto>();
+
+        var q = await Repo<HlgRankingWinner>().GetQueryableAsync(); var customers = await Repo<Customer>().GetQueryableAsync();
         var result = await AsyncExecuter.ToListAsync(from w in q join c in customers on w.CustomerId equals c.Id
-            where w.TenantId==CurrentTenant.Id && w.EventId==eventId && w.IsActive && events.Any(e=>e.Id==eventId && e.IsActive)
-            orderby w.Rank,w.Id select new RankingWinnerDto { UserId=c.Id, DisplayName=c.FullName, AvatarUrl=c.AvatarUrl, Rank=w.Rank, Score=w.Score, PrizeId=w.PrizeId });
+            where w.TenantId==CurrentTenant.Id && w.GameId==gameId && w.IsActive
+            orderby w.Rank,w.Id select new RankingWinnerDto { UserId = c.Id, DisplayName = c.FullName, AvatarUrl = c.AvatarUrl, Rank = w.Rank, Score = w.Score, PrizeId = w.PrizeId });
         foreach (var winner in result) winner.AvatarUrl = NormalizeMediaUrl(winner.AvatarUrl);
         return result;
     }

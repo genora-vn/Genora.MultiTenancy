@@ -26,12 +26,19 @@ public interface IHlgRankingAppService : IApplicationService
     /// Ném UserFriendlyException với Code = HTTP status ("400"/"404"/"413"/"500").
     /// </summary>
     Task<HlgRankingShareImageResultDto> SaveShareImageAsync(string phone, byte[]? content, CancellationToken ct = default);
-    /// <summary>Sự kiện xếp hạng đang kích hoạt hiện tại (mới nhất còn hiệu lực). Null nếu không có.</summary>
-    Task<RankingEventDto?> GetCurrentEventAsync(CancellationToken ct = default);
+    /// <summary>
+    /// Thông tin GAME để render header Bảng xếp hạng.
+    /// gameId: nếu truyền → trả ĐÚNG game đó (không ràng buộc event đang active — xem được cả game đã kết thúc);
+    /// game không tồn tại/sai tenant → null; game mồ côi (không thuộc event) → trả field game, field event trống.
+    /// Nếu null → giữ hành vi cũ: game HIỆN HÀNH của sự kiện active (ongoing ưu tiên → ended mới nhất); không có → null.
+    /// </summary>
+    Task<RankingEventDto?> GetCurrentEventAsync(Guid? gameId = null, CancellationToken ct = default);
 
     /// <summary>
-    /// Bảng xếp hạng của sự kiện hiện tại. Tính rank (ORDER BY điểm) + đánh dấu isCurrentUser theo phone.
+    /// Bảng xếp hạng theo GAME trong sự kiện hiện tại. Tính rank (ORDER BY điểm) + đánh dấu isCurrentUser theo phone.
+    /// gameId: nếu truyền → xếp hạng CHỈ của game đó; nếu null → dùng "game hiện tại" của sự kiện
+    /// (ongoing ưu tiên, nếu không có thì ended mới nhất). Không có game hiện tại → danh sách rỗng.
     /// top: số lượng dòng trả về (mặc định 50); luôn kèm dòng của user hiện tại nếu ngoài top.
     /// </summary>
-    Task<List<RankingEntryDto>> GetEntriesAsync(string? phone = null, int top = 50, CancellationToken ct = default);
+    Task<List<RankingEntryDto>> GetEntriesAsync(string? phone = null, int top = 50, Guid? gameId = null, CancellationToken ct = default);
 }

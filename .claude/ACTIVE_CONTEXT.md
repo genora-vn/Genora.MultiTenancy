@@ -1,6 +1,32 @@
 # ACTIVE CONTEXT — Việc đang làm dở
 
-## Hoa Linh Sales — Excel Blouse theo dáng/size — 2026-10-11 (mới nhất)
+## HLG — /ranking/event thêm query gameId (optional) — 2026-10-13 (MỚI NHẤT)
+
+- Branch `hotfix/20261012`. Follow-up của task ranking-by-game: `GET /ranking/event` thêm `gameId` optional để header BXH khớp đúng game FE đang xem (kể cả game đã kết thúc).
+  - Có `gameId` → load `HlgGame` theo (gameId, tenant); không có → `null`; có → tìm event sở hữu (`ResolveEventForGameAsync`: map `HlgRankingEventGame` → fallback `ev.GameId` legacy) → `MapEvent(owningEvent, game)`. **Không ràng buộc event đang active**.
+  - Không `gameId` → giữ nguyên hành vi cũ (event active → game hiện hành ongoing/ended-latest → null).
+  - `MapEvent` chuyển sang **nullable-safe** (event null = game mồ côi → `Id=Guid.Empty`, `Title=""`).
+- Quyết định user duyệt: gameId không tồn tại/sai tenant → null; game mồ côi → field game + event trống; không ràng buộc active event.
+- Sửa: `IHlgRankingAppService.cs` (`GetCurrentEventAsync(Guid? gameId=null, ct)`), `HlgRankingAppService.cs` (nhánh gameId + `ResolveEventForGameAsync` + MapEvent nullable), `HoaLinhGamificationController.GetRankingEvent` (+`[FromQuery] Guid? gameId`). Thêm 3 test.
+- Build HttpApi + test project **0 errors**; `dotnet test --filter Hlg` **141/141 PASS** (+3 case mới). Backward compatible (không truyền gameId → output cũ; DTO không đổi shape). **Không migration/deploy/commit**. [Note](memory/notes/project/project_hlg_ranking_event_gameid_optional_20261013.md).
+
+## HLG — Ranking Event & Entries theo từng Game (tuần) — 2026-10-13
+
+- Branch `hotfix/20261012`. Refactor 2 API mini-app để tách xếp hạng theo **từng Game** thay vì toàn chiến dịch:
+  - `GET /ranking/event`: chọn **game hiện tại** động (ongoing ưu tiên, `StartAt` mới nhất → nếu không có, ended mới nhất theo `EndAt DESC`); chỉ còn upcoming/không có game → `data:null`. `RankingEventDto` đổi nghĩa `GameId`=game hiện tại, `StartAt/EndAt`=thời gian GAME; thêm `GameName`, `GameStatus` (ongoing|ended|upcoming), giữ event gốc ở `EventStartAt/EventEndAt`.
+  - `GET /ranking/entries`: thêm `gameId` optional; truyền → xếp hạng đúng game đó; không truyền → "game hiện tại"; không có game hiện tại → `[]`.
+  - `GET /ranking/events/{gameId}/winners`: GIỮ NGUYÊN (task 20261012).
+- Sửa: `RankingDtos.cs`, `IHlgRankingAppService.cs`, `HlgRankingAppService.cs` (inject `IRepository<HlgRankingEventGame>` + `IRepository<HlgGame>`; thêm `ResolveCurrentGameAsync`/`ComputeGameStatus`/`GetEventGameIdsAsync`), `HoaLinhGamificationController.GetRankingEntries` (+`gameId`). Cập nhật 2 test khởi tạo `HlgRankingAppService` (ctor +2 repo) + thêm 2 test.
+- Build HttpApi + test project **0 errors**; `dotnet test --filter Hlg` **138/138 PASS** (+4 case mới). **Không migration/deploy/commit** (user tự commit+test local; FE lấy gameId từ `/ranking/event` để gọi entries/winners). [Note](memory/notes/project/project_hlg_ranking_by_game_20261013.md).
+
+## HLG — Winners API theo GameId (chỉ game đã kết thúc) — 2026-10-12
+
+- Branch `hotfix/20261012`. Refactor API `GET /api/mini-app/hlg/ranking/events/{id}/winners`: đổi tham số `{id}` từ **EventId (chiến dịch)** → **GameId (`HlgGame.Id`)**. Chỉ trả winners khi game ĐÃ KẾT THÚC (`Status==Ended` HOẶC `EndAt < Clock.Now`); game chưa kết thúc / không tồn tại / sai tenant → `data: []`.
+- Sửa 2 file: `Application.Contracts/.../Hlg/ContentDtos.cs` (interface `GetWinnersAsync(Guid gameId)` + XML doc) và `Application/.../Hlg/HlgContentAppService.cs` (lookup `HlgGame` theo gameId+tenant → gate ended → filter `HlgRankingWinner.GameId==gameId && IsActive`). **Route/Controller/Gateway giữ nguyên path** (chỉ đổi giá trị `{id}` FE truyền vào).
+- **Làm rõ (quan trọng):** nhãn 2 bảng trong task file bị ĐẢO so với code. ID user truyền (`72AE3886…` Tuần 1) chính là `HlgGame.Id` (bảng thực `AppHlgGames`); junction event↔game là `AppHlgRankingEventGames` (`HlgRankingEventGame`). `HlgRankingWinner.GameId` FK → `HlgGame`.
+- Build **0 errors**; `dotnet test --filter Hlg` **134/134 PASS** (thêm 2 test mới trong `HlgDesignContentTests.cs`). Compile impact: caller duy nhất là controller, chỉ rename param cùng kiểu Guid, không JS proxy. **Không migration/deploy/commit** (user tự commit+test local trước khi lên staging; FE sẽ chuyển sang truyền game id). [Note](memory/notes/project/project_hlg_winners_by_game_api_20261012.md).
+
+## Hoa Linh Sales — Excel Blouse theo dáng/size — 2026-10-11
 
 - `/HoaLinh/BlouseRegistrations` xuất thêm Dáng Nam Q:T và Dáng Nữ U:X, mỗi nhóm M/L/XL/2XL; header 2 dòng, data từ dòng4 như mẫu user. Cộng cả áo tặng + áo đổi trực tiếp từ Items, số lượng Excel dạng số.
 - Mẫu Q4:X13 có 2 ô nhập lệch: Nữ L dòng4 phải vào V, Nam2XL dòng12 phải vào T; export lấy chi tiết đơn làm căn cứ. Các bộ lọc/quyền/endpoint giữ nguyên.

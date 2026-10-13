@@ -25,5 +25,10 @@ public interface IHlgContentAppService : IApplicationService
     Task<List<ProductDto>> SearchProductsAsync(Guid? categoryId = null, Guid? brandId = null, string? filter = null, int skip = 0, int take = 50, List<Guid>? productIds = null);
     Task<List<RankingEventDto>> GetEventsAsync(Guid? gameId = null);
     Task<List<RankingPrizeDto>> GetPrizesAsync(Guid eventId);
-    Task<List<RankingWinnerDto>> GetWinnersAsync(Guid eventId);
+    /// <summary>
+    /// Danh sách trúng thưởng của 1 TRÒ CHƠI cụ thể (KHÔNG phải chiến dịch) — vì bảng xếp hạng/trao giải chạy
+    /// theo thời gian của từng game, 1 chiến dịch có nhiều game. Chỉ trả dữ liệu khi game ĐÃ KẾT THÚC
+    /// (Status=Ended HOẶC đã qua EndAt); game chưa kết thúc hoặc không tồn tại/không đúng tenant → danh sách rỗng.
+    /// </summary>
+    Task<List<RankingWinnerDto>> GetWinnersAsync(Guid gameId);
 }

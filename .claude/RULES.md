@@ -3,6 +3,106 @@
 > Tổng hợp từ 20 note `feedback_*` trong `.claude/memory/notes/feedback/`.
 > Mỗi quy tắc kèm tên file gốc để tra cứu chi tiết. Đây là "phải nhớ" khi code trên repo này.
 
+## Memory System & Context Recovery (BẮT BUỘC)
+
+### Session Startup Rule
+- Mỗi session mới PHẢI nạp memory system trước khi phân tích hoặc code.
+- Ưu tiên đọc theo thứ tự:
+  1. `CLAUDE.md`
+  2. `RULES.md`
+  3. `ACTIVE_CONTEXT.md`
+  4. `PROJECT_STATE.md`
+  5. `MEMORY.md`
+  6. `TASK_LOG.md`
+- Nếu có thư mục handoff/task thì đọc thêm:
+  - `.claude/tasks/*`
+  - `.claude/memory/*`
+  - các file handoff được tham chiếu trong `ACTIVE_CONTEXT.md`.
+
+### Context Recovery Rule
+- Trước khi kết luận:
+  - không có task
+  - thiếu context
+  - không hiểu yêu cầu
+  - cần user nhắc lại task
+- PHẢI thực hiện:
+  1. Đọc lại `ACTIVE_CONTEXT.md`
+  2. Đọc lại `PROJECT_STATE.md`
+  3. Đọc lại `MEMORY.md`
+  4. Đọc lại `TASK_LOG.md`
+  5. Đọc lại conversation hiện tại
+  6. Tìm file task hoặc handoff liên quan
+- Nếu task tồn tại trong bất kỳ nguồn nào ở trên thì tiếp tục thực hiện.
+- Không được yêu cầu user mô tả lại task đã tồn tại trong memory system hoặc conversation hiện tại.
+
+### Plan → Build Rule
+- Khi user đã approve plan:
+  - Không hỏi lại yêu cầu.
+  - Không yêu cầu user gửi lại task.
+  - Không quay về chế độ phân tích tổng quát.
+- Plan đã được approve trở thành working context cho implementation.
+- Nếu thiếu context trong quá trình build phải đọc lại memory system trước khi hỏi user.
+
+### Build Mode Rule
+- Khi đang ở chế độ build:
+  - Ưu tiên đọc code hiện tại trước khi đặt câu hỏi.
+  - Ưu tiên đọc memory system trước khi đặt câu hỏi.
+  - Ưu tiên đọc task file trước khi đặt câu hỏi.
+- Chỉ được dừng để hỏi user nếu:
+  - Thiếu quyền truy cập.
+  - Thiếu thông tin không tồn tại trong repository.
+  - Có nhiều phương án nghiệp vụ khác nhau và không thể tự xác định.
+
+### Task File Rule
+- Với task lớn hoặc kéo dài nhiều session:
+  - Tạo file task trong `.claude/tasks/`.
+  - Task file là nguồn context chính của task.
+  - Không yêu cầu user copy lại toàn bộ task nếu task file đã tồn tại.
+
+### Branch Awareness Rule
+- Trước khi thực hiện thay đổi:
+  - Kiểm tra branch hiện tại.
+  - Kiểm tra trạng thái git.
+  - Kiểm tra task đang active trong memory.
+- Không tự ý tạo branch mới nếu user đã chỉ định branch làm việc.
+
+### Completion & Memory Update Rule
+- Trước khi kết thúc task:
+  - Cập nhật `ACTIVE_CONTEXT.md`.
+  - Cập nhật `PROJECT_STATE.md`.
+  - Cập nhật `TASK_LOG.md`.
+- Nếu có bài học mới:
+  - Tạo note mới trong memory system.
+  - Cập nhật index trong `MEMORY.md`.
+- Không handoff task khi memory chưa được cập nhật đầy đủ.
+
+### Scope Protection Rule
+- Chỉ sửa các file liên quan trực tiếp đến task.
+- Không refactor ngoài phạm vi task nếu không cần thiết.
+- Nếu phát hiện vấn đề khác:
+  - Ghi nhận vào memory hoặc task log.
+  - Không tự ý mở rộng phạm vi implementation.
+
+### Repository Investigation Rule
+- Trước khi tạo mới:
+  - DTO
+  - Enum
+  - Constant
+  - Repository method
+  - Domain Service
+  - Application Service
+- Phải tìm và tái sử dụng implementation hiện có nếu phù hợp.
+- Ưu tiên consistency với kiến trúc hiện tại của repository.
+
+### Handoff Rule
+- Khi chuẩn bị handoff:
+  - Ghi rõ trạng thái hiện tại.
+  - Ghi rõ việc đã hoàn thành.
+  - Ghi rõ việc còn lại.
+  - Ghi rõ branch đang làm việc.
+  - Ghi rõ các file đã sửa.
+- Mục tiêu là session mới có thể tiếp tục công việc mà không cần user nhắc lại bối cảnh.
+
 ## ABP Framework — Data & Domain
 - **WithDetailsAsync để load navigation props.** `GetAsync` không eager-load `Items`; dùng `WithDetailsAsync` khi cần child collection. → `feedback_abp_with_details.md`
 - **Application layer KHÔNG dùng EF Core trực tiếp.** Count/ToList/FirstOrDefault qua `AsyncExecuter`. Tạo entity `Entity<Guid>` qua constructor. → `feedback_no_ef_in_application_layer.md`

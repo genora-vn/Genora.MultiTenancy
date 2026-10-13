@@ -174,7 +174,119 @@ public class HlgDesignContentTests : IDisposable
         var gameId=Guid.NewGuid();var customerId=Guid.NewGuid();var start=new DateTime(2026,9,1);var ev=new HlgRankingEvent(Guid.NewGuid(),"Event",start,start.AddMonths(1),_tenantId){GameId=gameId};
         var events=Repo(ev);var sessions=Repo(new HlgGameSession(Guid.NewGuid(),gameId,customerId,_tenantId){IsFinished=true,FinishedAt=start.AddDays(1),Score=50,TotalQuestions=2,CorrectCount=2},new HlgGameSession(Guid.NewGuid(),Guid.NewGuid(),customerId,_tenantId){IsFinished=true,FinishedAt=start.AddDays(1),Score=999,TotalQuestions=2,CorrectCount=2});
         var customers=Repo(new Customer(customerId,"0900000000","Player"){TenantId=_tenantId});
-        var result=await Bind(new HlgRankingAppService(events,sessions,customers,NullLogger<HlgRankingAppService>.Instance,_configuration,Substitute.For<Genora.MultiTenancy.AppDtos.AppImages.IManageImageService>())).GetEventEntriesAsync(ev.Id);result.Single().Score.ShouldBe(50);
+        var result=await Bind(new HlgRankingAppService(events,sessions,customers,Repo<HlgRankingEventGame>(),Repo<HlgGame>(),NullLogger<HlgRankingAppService>.Instance,_configuration,Substitute.For<Genora.MultiTenancy.AppDtos.AppImages.IManageImageService>())).GetEventEntriesAsync(ev.Id);result.Single().Score.ShouldBe(50);
+    }
+    [Theory]
+    [InlineData("ongoing")]      // có game ongoing → chọn ongoing (startAt mới nhất)
+    [InlineData("endedOnly")]    // không ongoing → ended mới nhất theo endAt DESC
+    [InlineData("upcomingOnly")] // chỉ còn upcoming → không có "game hiện tại" → null
+    public async Task Current_Event_Picks_Ongoing_Then_Latest_Ended_Else_Null(string scenario)
+    {
+        // Clock = 2026-09-19 (xem ctor). Event bao trùm toàn bộ game.
+        var ev=new HlgRankingEvent(Guid.NewGuid(),"Dạ Hương",new DateTime(2026,9,1),new DateTime(2026,10,31),_tenantId);
+        var endedOld=new HlgGame(Guid.NewGuid(),"Tuần 1",HlgGameType.Quiz,_tenantId){Status=HlgGameStatus.Ended,StartAt=new DateTime(2026,9,1),EndAt=new DateTime(2026,9,8)};
+        var endedNew=new HlgGame(Guid.NewGuid(),"Tuần 2",HlgGameType.Quiz,_tenantId){Status=HlgGameStatus.Ended,StartAt=new DateTime(2026,9,9),EndAt=new DateTime(2026,9,16)};
+        var ongoing=new HlgGame(Guid.NewGuid(),"Tuần 3",HlgGameType.Quiz,_tenantId){Status=HlgGameStatus.Ongoing,StartAt=new DateTime(2026,9,17),EndAt=new DateTime(2026,9,24)};
+        var upcoming=new HlgGame(Guid.NewGuid(),"Tuần 4",HlgGameType.Quiz,_tenantId){Status=HlgGameStatus.Upcoming,StartAt=new DateTime(2026,9,25),EndAt=new DateTime(2026,10,2)};
+        var games=scenario switch {
+            "ongoing"=>new[]{endedOld,endedNew,ongoing,upcoming},
+            "endedOnly"=>new[]{endedOld,endedNew,upcoming},
+            _=>new[]{upcoming}
+        };
+        var eventRepo=Repo(ev);
+        var eventGames=Repo(games.Select(g=>new HlgRankingEventGame(Guid.NewGuid(),ev.Id,g.Id,_tenantId)).ToArray());
+        var gameRepo=Repo(games);
+        var service=Bind(new HlgRankingAppService(eventRepo,Repo<HlgGameSession>(),Repo<Customer>(),eventGames,gameRepo,NullLogger<HlgRankingAppService>.Instance,_configuration,Substitute.For<Genora.MultiTenancy.AppDtos.AppImages.IManageImageService>()));
+
+        var dto=await service.GetCurrentEventAsync();
+
+        if(scenario=="upcomingOnly"){ dto.ShouldBeNull(); return; }
+        dto.ShouldNotBeNull();
+        dto!.Id.ShouldBe(ev.Id);
+        dto.EventStartAt.ShouldBe(ev.StartAt);
+        dto.EventEndAt.ShouldBe(ev.EndAt);
+        if(scenario=="ongoing"){
+            dto.GameId.ShouldBe(ongoing.Id);
+            dto.GameName.ShouldBe("Tuần 3");
+            dto.GameStatus.ShouldBe("ongoing");
+            dto.StartAt.ShouldBe(ongoing.StartAt!.Value);
+            dto.EndAt.ShouldBe(ongoing.EndAt!.Value);
+        } else {
+            dto.GameId.ShouldBe(endedNew.Id); // ended mới nhất theo endAt DESC
+            dto.GameStatus.ShouldBe("ended");
+        }
+    }
+    [Fact]
+    public async Task Entries_Default_To_Current_Game_And_Respect_Explicit_GameId()
+    {
+        var ev=new HlgRankingEvent(Guid.NewGuid(),"Dạ Hương",new DateTime(2026,9,1),new DateTime(2026,10,31),_tenantId);
+        var endedGame=new HlgGame(Guid.NewGuid(),"Tuần 1",HlgGameType.Quiz,_tenantId){Status=HlgGameStatus.Ended,StartAt=new DateTime(2026,9,1),EndAt=new DateTime(2026,9,10)};
+        var ongoingGame=new HlgGame(Guid.NewGuid(),"Tuần 2",HlgGameType.Quiz,_tenantId){Status=HlgGameStatus.Ongoing,StartAt=new DateTime(2026,9,15),EndAt=new DateTime(2026,9,25)};
+        var c1=Guid.NewGuid();var c2=Guid.NewGuid();
+        var sessions=Repo(
+            new HlgGameSession(Guid.NewGuid(),endedGame.Id,c1,_tenantId){IsFinished=true,FinishedAt=new DateTime(2026,9,5),Score=70,TotalQuestions=2,CorrectCount=2},
+            new HlgGameSession(Guid.NewGuid(),ongoingGame.Id,c2,_tenantId){IsFinished=true,FinishedAt=new DateTime(2026,9,18),Score=50,TotalQuestions=2,CorrectCount=2});
+        var eventRepo=Repo(ev);
+        var eventGames=Repo(
+            new HlgRankingEventGame(Guid.NewGuid(),ev.Id,endedGame.Id,_tenantId),
+            new HlgRankingEventGame(Guid.NewGuid(),ev.Id,ongoingGame.Id,_tenantId));
+        var gameRepo=Repo(endedGame,ongoingGame);
+        var customers=Repo(new Customer(c1,"0900000001","P1"){TenantId=_tenantId},new Customer(c2,"0900000002","P2"){TenantId=_tenantId});
+        var service=Bind(new HlgRankingAppService(eventRepo,sessions,customers,eventGames,gameRepo,NullLogger<HlgRankingAppService>.Instance,_configuration,Substitute.For<Genora.MultiTenancy.AppDtos.AppImages.IManageImageService>()));
+
+        // Mặc định (không truyền gameId) → game hiện tại (ongoing Tuần 2) → chỉ c2.
+        (await service.GetEntriesAsync()).Single().UserId.ShouldBe(c2);
+        // Truyền gameId Tuần 1 (đã kết thúc) → chỉ c1.
+        (await service.GetEntriesAsync(gameId: endedGame.Id)).Single().UserId.ShouldBe(c1);
+    }
+    [Fact]
+    public async Task Ranking_Event_With_GameId_Returns_That_Game_With_Owning_Event()
+    {
+        // FE mở BXH từ 1 game đã kết thúc → /ranking/event?gameId= phải trả ĐÚNG game đó (không rơi về ongoing).
+        var ev=new HlgRankingEvent(Guid.NewGuid(),"Dạ Hương",new DateTime(2026,9,1),new DateTime(2026,10,31),_tenantId);
+        var endedGame=new HlgGame(Guid.NewGuid(),"Tuần 2",HlgGameType.Quiz,_tenantId){Status=HlgGameStatus.Ended,StartAt=new DateTime(2026,9,9),EndAt=new DateTime(2026,9,16)};
+        var ongoingGame=new HlgGame(Guid.NewGuid(),"Tuần 3",HlgGameType.Quiz,_tenantId){Status=HlgGameStatus.Ongoing,StartAt=new DateTime(2026,9,17),EndAt=new DateTime(2026,9,24)};
+        var eventRepo=Repo(ev);
+        var eventGames=Repo(
+            new HlgRankingEventGame(Guid.NewGuid(),ev.Id,endedGame.Id,_tenantId),
+            new HlgRankingEventGame(Guid.NewGuid(),ev.Id,ongoingGame.Id,_tenantId));
+        var gameRepo=Repo(endedGame,ongoingGame);
+        var service=Bind(new HlgRankingAppService(eventRepo,Repo<HlgGameSession>(),Repo<Customer>(),eventGames,gameRepo,NullLogger<HlgRankingAppService>.Instance,_configuration,Substitute.For<Genora.MultiTenancy.AppDtos.AppImages.IManageImageService>()));
+
+        var dto=await service.GetCurrentEventAsync(endedGame.Id);
+
+        dto.ShouldNotBeNull();
+        dto!.GameId.ShouldBe(endedGame.Id);
+        dto.GameName.ShouldBe("Tuần 2");
+        dto.GameStatus.ShouldBe("ended");
+        dto.StartAt.ShouldBe(endedGame.StartAt!.Value);
+        dto.EndAt.ShouldBe(endedGame.EndAt!.Value);
+        dto.Id.ShouldBe(ev.Id);               // event sở hữu
+        dto.Title.ShouldBe("Dạ Hương");
+        dto.EventStartAt.ShouldBe(ev.StartAt);
+    }
+    [Fact]
+    public async Task Ranking_Event_With_Unknown_GameId_Returns_Null()
+    {
+        var ev=new HlgRankingEvent(Guid.NewGuid(),"Dạ Hương",new DateTime(2026,9,1),new DateTime(2026,10,31),_tenantId);
+        var service=Bind(new HlgRankingAppService(Repo(ev),Repo<HlgGameSession>(),Repo<Customer>(),Repo<HlgRankingEventGame>(),Repo<HlgGame>(),NullLogger<HlgRankingAppService>.Instance,_configuration,Substitute.For<Genora.MultiTenancy.AppDtos.AppImages.IManageImageService>()));
+        (await service.GetCurrentEventAsync(Guid.NewGuid())).ShouldBeNull();
+    }
+    [Fact]
+    public async Task Ranking_Event_With_Orphan_GameId_Returns_Game_With_Empty_Event()
+    {
+        // Game hợp lệ nhưng không thuộc sự kiện nào (mồ côi) → trả field game, field event để trống.
+        var orphan=new HlgGame(Guid.NewGuid(),"Game lẻ",HlgGameType.Quiz,_tenantId){Status=HlgGameStatus.Ended,StartAt=new DateTime(2026,9,1),EndAt=new DateTime(2026,9,8)};
+        var service=Bind(new HlgRankingAppService(Repo<HlgRankingEvent>(),Repo<HlgGameSession>(),Repo<Customer>(),Repo<HlgRankingEventGame>(),Repo(orphan),NullLogger<HlgRankingAppService>.Instance,_configuration,Substitute.For<Genora.MultiTenancy.AppDtos.AppImages.IManageImageService>()));
+
+        var dto=await service.GetCurrentEventAsync(orphan.Id);
+
+        dto.ShouldNotBeNull();
+        dto!.GameId.ShouldBe(orphan.Id);
+        dto.GameName.ShouldBe("Game lẻ");
+        dto.GameStatus.ShouldBe("ended");
+        dto.Id.ShouldBe(Guid.Empty);          // không có event sở hữu
+        dto.Title.ShouldBe(string.Empty);
     }
     [Theory][InlineData(1,2,1,true)][InlineData(2,3,1,true)][InlineData(3,1,1,false)][InlineData(1,4,2,true)][InlineData(1,4,1,false)]
     public void Fulfillment_Transitions_Are_Type_Specific_And_Forward_Only(int from,int to,int type,bool expected) => HlgFulfillmentAdminAppService.CanTransition((HlgRewardHistoryStatus)from,(HlgRewardHistoryStatus)to,(HlgRewardType)type).ShouldBe(expected);
@@ -227,6 +339,53 @@ public class HlgDesignContentTests : IDisposable
         Repo(first,hidden,new HlgProduct(Guid.NewGuid(),category.Id,"Unselected",_tenantId));
         var result=await Bind(new HlgContentAppService(_configuration)).SearchProductsAsync(productIds:new(){first.Id,hidden.Id});
         result.Single().Id.ShouldBe(first.Id);
+    }
+    [Theory]
+    [InlineData("endedByStatus", 1)] // game Status=Ended (dù EndAt chưa tới) => trả winners
+    [InlineData("endedByTime", 1)]   // game Status=Ongoing nhưng EndAt đã qua => trả winners
+    [InlineData("notEnded", 0)]      // game chưa kết thúc (Ongoing + EndAt tương lai) => rỗng
+    [InlineData("otherTenant", 0)]   // game thuộc tenant khác => rỗng (không lộ dữ liệu chéo tenant)
+    [InlineData("notFound", 0)]      // gameId không tồn tại => rỗng
+    public async Task Winners_Are_Returned_Only_For_Ended_Game_Of_Current_Tenant(string scenario, int expectedCount)
+    {
+        // Clock = 2026-09-19. Mốc "đã kết thúc": Status==Ended HOẶC EndAt < now (khớp HlgContentAppService.GetWinnersAsync).
+        var gameId=Guid.NewGuid();var customerId=Guid.NewGuid();
+        var gameTenant=scenario=="otherTenant"?Guid.NewGuid():_tenantId;
+        var status=scenario=="endedByStatus"?HlgGameStatus.Ended:HlgGameStatus.Ongoing;
+        var endAt=scenario=="endedByTime"?new DateTime(2026,9,18):new DateTime(2026,9,20);
+        var game=new HlgGame(gameId,"Game",HlgGameType.Quiz,gameTenant){Status=status,EndAt=endAt};
+        if(scenario=="notFound")Repo<HlgGame>();else Repo(game);
+        Repo(new HlgRankingWinner(Guid.NewGuid(),_tenantId){EventId=Guid.NewGuid(),GameId=gameId,PrizeId=Guid.NewGuid(),CustomerId=customerId,Rank=1,Score=90,IsActive=true});
+        Repo(new Customer(customerId,"0900000000","Winner"){TenantId=_tenantId,AvatarUrl="/uploads/hlg/avatar.png"});
+
+        var result=await Bind(new HlgContentAppService(_configuration)).GetWinnersAsync(gameId);
+
+        result.Count.ShouldBe(expectedCount);
+        if(expectedCount>0)
+        {
+            result.Single().UserId.ShouldBe(customerId);
+            result.Single().Rank.ShouldBe(1);
+            result.Single().Score.ShouldBe(90);
+            result.Single().AvatarUrl.ShouldBe("https://api.example.test/uploads/hlg/avatar.png");
+        }
+    }
+    [Fact]
+    public async Task Winners_Are_Scoped_To_The_Requested_Game_Not_The_Whole_Event()
+    {
+        // 1 chiến dịch nhiều game: chỉ trả winner của ĐÚNG game yêu cầu, không trộn winner của game khác cùng event.
+        var eventId=Guid.NewGuid();var endedGameId=Guid.NewGuid();var otherGameId=Guid.NewGuid();
+        var winnerCustomerId=Guid.NewGuid();var otherCustomerId=Guid.NewGuid();
+        Repo(new HlgGame(endedGameId,"Tuần 1",HlgGameType.Quiz,_tenantId){Status=HlgGameStatus.Ended,EndAt=new DateTime(2026,9,18)});
+        Repo(
+            new HlgRankingWinner(Guid.NewGuid(),_tenantId){EventId=eventId,GameId=endedGameId,PrizeId=Guid.NewGuid(),CustomerId=winnerCustomerId,Rank=1,Score=90,IsActive=true},
+            new HlgRankingWinner(Guid.NewGuid(),_tenantId){EventId=eventId,GameId=otherGameId,PrizeId=Guid.NewGuid(),CustomerId=otherCustomerId,Rank=1,Score=80,IsActive=true});
+        Repo(
+            new Customer(winnerCustomerId,"0900000001","Winner"){TenantId=_tenantId},
+            new Customer(otherCustomerId,"0900000002","Other"){TenantId=_tenantId});
+
+        var result=await Bind(new HlgContentAppService(_configuration)).GetWinnersAsync(endedGameId);
+
+        result.Single().UserId.ShouldBe(winnerCustomerId);
     }
     public void Dispose() { foreach(var provider in _providers)provider.Dispose(); }
 }

@@ -90,7 +90,7 @@ public class HlgRankingShareImageTests : IDisposable
         var s3 = new Genora.MultiTenancy.AppServices.AppImages.S3ImageStorageProvider(
             Substitute.For<Amazon.S3.IAmazonS3>(), storageOptions);
         var manageImageService = new Genora.MultiTenancy.AppServices.AppImages.ManageImageService(local, s3, storageOptions);
-        var service = new HlgRankingAppService(events, sessions, custRepo, NullLogger<HlgRankingAppService>.Instance, new Microsoft.Extensions.Configuration.ConfigurationBuilder().Build(), manageImageService);
+        var service = new HlgRankingAppService(events, sessions, custRepo, Repo<HlgRankingEventGame>(), Repo<HlgGame>(), NullLogger<HlgRankingAppService>.Instance, new Microsoft.Extensions.Configuration.ConfigurationBuilder().Build(), manageImageService);
         var provider = _services.BuildServiceProvider();
         _providers.Add(provider);
         service.LazyServiceProvider = new AbpLazyServiceProvider(provider);

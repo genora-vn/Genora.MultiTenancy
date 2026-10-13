@@ -439,19 +439,22 @@ public class HoaLinhGamificationController : MultiTenancyController
         => Ok(HlgApiResult<RewardHistoryItemDto>.Ok(await _rewardService.RedeemForSessionAsync(rewardId,sessionId,phone,shippingAddressId,ct)));
     #region Ranking
 
-    /// <summary>Sự kiện xếp hạng hiện tại.</summary>
+    /// <summary>
+    /// Thông tin game để render header Bảng xếp hạng. gameId (optional): truyền → trả đúng game đó
+    /// (kể cả đã kết thúc); không truyền → game hiện hành của sự kiện active.
+    /// </summary>
     [HttpGet("ranking/event")]
-    public async Task<IActionResult> GetRankingEvent(CancellationToken ct)
+    public async Task<IActionResult> GetRankingEvent([FromQuery] Guid? gameId, CancellationToken ct)
     {
-        var dto = await _rankingService.GetCurrentEventAsync(ct);
+        var dto = await _rankingService.GetCurrentEventAsync(gameId, ct);
         return Ok(HlgApiResult<RankingEventDto?>.Ok(dto));
     }
 
     /// <summary>Bảng xếp hạng của sự kiện hiện tại. isCurrentUser đánh dấu theo phone (optional).</summary>
     [HttpGet("ranking/entries")]
-    public async Task<IActionResult> GetRankingEntries([FromQuery] string? phone, [FromQuery] int top, CancellationToken ct)
+    public async Task<IActionResult> GetRankingEntries([FromQuery] string? phone, [FromQuery] int top, [FromQuery] Guid? gameId, CancellationToken ct)
     {
-        var list = await _rankingService.GetEntriesAsync(phone, top <= 0 ? 50 : top, ct);
+        var list = await _rankingService.GetEntriesAsync(phone, top <= 0 ? 50 : top, gameId, ct);
         return Ok(HlgApiResult<System.Collections.Generic.List<RankingEntryDto>>.Ok(list));
     }
 

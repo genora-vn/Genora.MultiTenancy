@@ -9,6 +9,7 @@ using Genora.MultiTenancy.AppDtos.AppImages;
 using Genora.MultiTenancy.AppDtos.Hlg;
 using Genora.MultiTenancy.DomainModels.AppCustomers;
 using Genora.MultiTenancy.DomainModels.AppHlg;
+using Genora.MultiTenancy.Enums.Hlg;
 using Genora.MultiTenancy.Hlg;
 using Microsoft.AspNetCore.Http;
 using Genora.MultiTenancy.Helpers;
@@ -34,6 +35,8 @@ public class HlgRankingAppService : ApplicationService, IHlgRankingAppService
     private readonly IRepository<HlgRankingEvent, Guid> _eventRepo;
     private readonly IRepository<HlgGameSession, Guid> _sessionRepo;
     private readonly IRepository<Customer, Guid> _customerRepo;
+    private readonly IRepository<HlgRankingEventGame, Guid> _eventGameRepo;
+    private readonly IRepository<HlgGame, Guid> _gameRepo;
     private readonly ILogger<HlgRankingAppService> _logger;
     private readonly IConfiguration _configuration;
     private readonly IManageImageService _manageImageService;
@@ -42,6 +45,8 @@ public class HlgRankingAppService : ApplicationService, IHlgRankingAppService
         IRepository<HlgRankingEvent, Guid> eventRepo,
         IRepository<HlgGameSession, Guid> sessionRepo,
         IRepository<Customer, Guid> customerRepo,
+        IRepository<HlgRankingEventGame, Guid> eventGameRepo,
+        IRepository<HlgGame, Guid> gameRepo,
         ILogger<HlgRankingAppService> logger,
         IConfiguration configuration,
         IManageImageService manageImageService)
@@ -49,23 +54,67 @@ public class HlgRankingAppService : ApplicationService, IHlgRankingAppService
         _eventRepo = eventRepo;
         _sessionRepo = sessionRepo;
         _customerRepo = customerRepo;
+        _eventGameRepo = eventGameRepo;
+        _gameRepo = gameRepo;
         _logger = logger;
         _configuration = configuration;
         _manageImageService = manageImageService;
     }
 
-    public async Task<RankingEventDto?> GetCurrentEventAsync(CancellationToken ct = default)
+    public async Task<RankingEventDto?> GetCurrentEventAsync(Guid? gameId = null, CancellationToken ct = default)
     {
+        // Có gameId: trả ĐÚNG game FE chọn (KHÔNG ràng buộc event đang active — để xem được cả game đã kết thúc).
+        if (gameId.HasValue)
+        {
+            var game = await AsyncExecuter.FirstOrDefaultAsync(
+                (await _gameRepo.GetQueryableAsync()).Where(g => g.Id == gameId.Value && g.TenantId == CurrentTenant.Id));
+            if (game == null) return null; // game không tồn tại / sai tenant → null
+
+            // Event sở hữu game (có thể null nếu game mồ côi → field event để trống).
+            var owningEvent = await ResolveEventForGameAsync(game.Id);
+            return MapEvent(owningEvent, game);
+        }
+
+        // Không gameId: giữ hành vi cũ — event active → game HIỆN HÀNH (ongoing ưu tiên → ended mới nhất).
         var ev = await GetActiveEventAsync(ct);
-        return ev == null ? null : MapEvent(ev);
+        if (ev == null) return null;
+
+        var currentGame = await ResolveCurrentGameAsync(ev, ct);
+        if (currentGame == null) return null; // không có game hiện tại → null (contract)
+
+        return MapEvent(ev, currentGame);
     }
 
-    public async Task<List<RankingEntryDto>> GetEntriesAsync(string? phone = null, int top = 50, CancellationToken ct = default)
+    /// <summary>
+    /// Tìm sự kiện sở hữu một game: ưu tiên bảng map <see cref="HlgRankingEventGame"/> (sự kiện nhiều chặng),
+    /// fallback <see cref="HlgRankingEvent.GameId"/> (legacy 1 game). Null nếu game không thuộc sự kiện nào (mồ côi).
+    /// </summary>
+    private async Task<HlgRankingEvent?> ResolveEventForGameAsync(Guid gameId)
+    {
+        var mapping = await AsyncExecuter.FirstOrDefaultAsync(
+            (await _eventGameRepo.GetQueryableAsync())
+                .Where(x => x.TenantId == CurrentTenant.Id && x.GameId == gameId)
+                .OrderBy(x => x.EventId));
+        if (mapping != null)
+        {
+            var mapped = await AsyncExecuter.FirstOrDefaultAsync(
+                (await _eventRepo.GetQueryableAsync()).Where(e => e.Id == mapping.EventId && e.TenantId == CurrentTenant.Id));
+            if (mapped != null) return mapped;
+        }
+        return await AsyncExecuter.FirstOrDefaultAsync(
+            (await _eventRepo.GetQueryableAsync()).Where(e => e.GameId == gameId && e.TenantId == CurrentTenant.Id));
+    }
+
+    public async Task<List<RankingEntryDto>> GetEntriesAsync(string? phone = null, int top = 50, Guid? gameId = null, CancellationToken ct = default)
     {
         var ev = await GetActiveEventAsync(ct);
         if (ev == null) return new List<RankingEntryDto>();
 
-        return await BuildEntriesAsync(ev, phone, top, ct);
+        // gameId truyền vào → xếp hạng CHỈ game đó; nếu không → "game hiện tại" của sự kiện.
+        var effectiveGameId = gameId ?? (await ResolveCurrentGameAsync(ev, ct))?.Id;
+        if (!effectiveGameId.HasValue) return new List<RankingEntryDto>();
+
+        return await BuildEntriesAsync(ev, phone, top, ct, effectiveGameId);
     }
     public async Task<List<RankingEntryDto>> GetEventEntriesAsync(Guid eventId, string? phone = null, int top = 50, CancellationToken ct = default)
     {
@@ -264,14 +313,69 @@ public class HlgRankingAppService : ApplicationService, IHlgRankingAppService
         return events.FirstOrDefault();
     }
 
-    private static RankingEventDto MapEvent(HlgRankingEvent e) => new()
+    /// <summary>
+    /// Danh sách gameId của sự kiện: ưu tiên bảng map <see cref="HlgRankingEventGame"/> (sự kiện nhiều chặng);
+    /// nếu rỗng thì fallback <see cref="HlgRankingEvent.GameId"/> (legacy 1 game); rỗng = không có game.
+    /// </summary>
+    private async Task<List<Guid>> GetEventGameIdsAsync(HlgRankingEvent ev, CancellationToken ct)
     {
-        Id = e.Id,
-        GameId = e.GameId,
-        Title = e.Title,
-        Description = e.Description,
-        StartAt = e.StartAt,
-        EndAt = e.EndAt
+        var mapped = await AsyncExecuter.ToListAsync(
+            (await _eventGameRepo.GetQueryableAsync())
+                .Where(x => x.TenantId == CurrentTenant.Id && x.EventId == ev.Id)
+                .Select(x => x.GameId), ct);
+        if (mapped.Count > 0) return mapped.Distinct().ToList();
+        return ev.GameId.HasValue ? new List<Guid> { ev.GameId.Value } : new List<Guid>();
+    }
+
+    /// <summary>Trạng thái game theo thời gian (nhất quán với winners): "ended" | "upcoming" | "ongoing".</summary>
+    private static string ComputeGameStatus(HlgGame g, DateTime now)
+    {
+        if (g.Status == HlgGameStatus.Ended || (g.EndAt.HasValue && g.EndAt.Value < now)) return "ended";
+        if (g.StartAt.HasValue && g.StartAt.Value > now) return "upcoming";
+        return "ongoing";
+    }
+
+    /// <summary>
+    /// "Game hiện tại" của sự kiện (contract mục 3): ưu tiên game ĐANG DIỄN RA (nếu nhiều → startAt mới nhất);
+    /// nếu không có ongoing → game ĐÃ KẾT THÚC mới nhất theo endAt DESC; nếu chỉ còn upcoming / không có game → null.
+    /// </summary>
+    private async Task<HlgGame?> ResolveCurrentGameAsync(HlgRankingEvent ev, CancellationToken ct)
+    {
+        var gameIds = await GetEventGameIdsAsync(ev, ct);
+        if (gameIds.Count == 0) return null;
+
+        var games = await AsyncExecuter.ToListAsync(
+            (await _gameRepo.GetQueryableAsync())
+                .Where(g => g.TenantId == CurrentTenant.Id && gameIds.Contains(g.Id)), ct);
+        if (games.Count == 0) return null;
+
+        var now = Clock.Now;
+        var ongoing = games.Where(g => ComputeGameStatus(g, now) == "ongoing")
+            .OrderByDescending(g => g.StartAt ?? DateTime.MinValue).ThenBy(g => g.Id)
+            .FirstOrDefault();
+        if (ongoing != null) return ongoing;
+
+        return games.Where(g => ComputeGameStatus(g, now) == "ended")
+            .OrderByDescending(g => g.EndAt ?? DateTime.MinValue).ThenBy(g => g.Id)
+            .FirstOrDefault();
+    }
+
+    /// <summary>
+    /// Map DTO header BXH theo GAME. <paramref name="e"/> có thể null (game mồ côi không thuộc sự kiện nào):
+    /// khi đó field event để trống (Id=Guid.Empty, Title="") và StartAt/EndAt fallback về default.
+    /// </summary>
+    private RankingEventDto MapEvent(HlgRankingEvent? e, HlgGame game) => new()
+    {
+        Id = e?.Id ?? Guid.Empty,
+        GameId = game.Id,
+        Title = e?.Title ?? string.Empty,
+        Description = e?.Description,
+        StartAt = game.StartAt ?? e?.StartAt ?? default,
+        EndAt = game.EndAt ?? e?.EndAt ?? default,
+        GameName = game.Name,
+        GameStatus = ComputeGameStatus(game, Clock.Now),
+        EventStartAt = e?.StartAt ?? default,
+        EventEndAt = e?.EndAt ?? default
     };
 
     private static string? NormalizePhone(string? phone)
