@@ -50,12 +50,17 @@ public class S3ImageStorageProvider : IImageStorageProvider
         var destNormalized = destKey.TrimStart('/');
         try
         {
+            // MetadataDirective = REPLACE: ghi lại metadata cho object copy thay vì sao chép nguyên từ nguồn.
+            // Tránh kế thừa "Content-Encoding: aws-chunked" nếu object nguồn cũ còn dính (upload bằng SDK v4
+            // trước khi tắt flexible-checksum). Set ContentType đúng theo đuôi file, KHÔNG set ContentEncoding.
             await _client.CopyObjectAsync(new CopyObjectRequest
             {
                 SourceBucket = _options.Bucket,
                 SourceKey = sourceKey,
                 DestinationBucket = _options.Bucket,
                 DestinationKey = destNormalized,
+                MetadataDirective = S3MetadataDirective.REPLACE,
+                ContentType = GuessContentType(destNormalized),
                 CannedACL = !string.IsNullOrWhiteSpace(_options.CannedAcl) ? new S3CannedACL(_options.CannedAcl) : null
             });
             return BuildPublicUrl(destNormalized);
@@ -116,5 +121,20 @@ public class S3ImageStorageProvider : IImageStorageProvider
                 : path;
         }
         return urlOrKey.TrimStart('/');
+    }
+
+    /// <summary>Suy content-type từ đuôi file của key (dùng khi copy với MetadataDirective=REPLACE).</summary>
+    private static string GuessContentType(string key)
+    {
+        var ext = Path.GetExtension(key)?.ToLowerInvariant();
+        return ext switch
+        {
+            ".jpg" or ".jpeg" => "image/jpeg",
+            ".png" => "image/png",
+            ".gif" => "image/gif",
+            ".webp" => "image/webp",
+            ".mp4" => "video/mp4",
+            _ => "application/octet-stream"
+        };
     }
 }

@@ -1,6 +1,13 @@
 # ACTIVE CONTEXT — Việc đang làm dở
 
-## HLG — /ranking/event thêm query gameId (optional) — 2026-10-13 (MỚI NHẤT)
+## HL25/HLG — Fix S3 `Content-Encoding: aws-chunked` (ảnh không đọc được) — 2026-10-13 (MỚI NHẤT)
+
+- Branch `hotfix/20261013`. API `GET /api/mini-app/hl25/me/frames?zaloUserId=...` trả `resultImageUrl` S3 nhưng URL trả `Content-Encoding: aws-chunked` → browser/Zalo mini app + `curl --compressed` lỗi `(61) Unrecognized content encoding type`, không hiển thị ảnh.
+- **Root cause:** `AWSSDK.S3` **4.0.104.2** (SDK V4) bật mặc định flexible-checksum (CRC32) → stream qua `aws-chunked` content-encoding cho mọi PutObject. AWS thật strip header này; S3-compatible (ods.vn) **lưu luôn vào metadata object** → trả về khi GET. `DisablePayloadSigning=true` KHÔNG tắt được checksum/chunked (bẫy chính).
+- **Fix (chỉ code, KHÔNG remediate ảnh cũ — user chọn):** (1) `MultiTenancyApplicationModule.cs` `AmazonS3Config` thêm `RequestChecksumCalculation = WHEN_REQUIRED` + `ResponseChecksumValidation = WHEN_REQUIRED` (enum `Amazon.Runtime`, SCREAMING_CASE). (2) `S3ImageStorageProvider.CopyAsync` set `MetadataDirective = REPLACE` + `ContentType` (helper `GuessContentType`), KHÔNG set `ContentEncoding` → object rename sạch kể cả nguồn còn aws-chunked. Không đụng response/DTO/`ToFullUrl`/controller.
+- Build HttpApi + Application **0 errors**; `dotnet test` filter AppImages|Hl25|Hlg **196/196 PASS**. **Chưa deploy/commit.** Ảnh cũ (từ ~09/10) vẫn vỡ → test bằng ảnh TẠO MỚI; verify `curl -I <url>` không còn `Content-Encoding: aws-chunked`. [Note](memory/notes/project/project_hl25_s3_aws_chunked_fix_20261013.md).
+
+## HLG — /ranking/event thêm query gameId (optional) — 2026-10-13
 
 - Branch `hotfix/20261012`. Follow-up của task ranking-by-game: `GET /ranking/event` thêm `gameId` optional để header BXH khớp đúng game FE đang xem (kể cả game đã kết thúc).
   - Có `gameId` → load `HlgGame` theo (gameId, tenant); không có → `null`; có → tìm event sở hữu (`ResolveEventForGameAsync`: map `HlgRankingEventGame` → fallback `ev.GameId` legacy) → `MapEvent(owningEvent, game)`. **Không ràng buộc event đang active**.

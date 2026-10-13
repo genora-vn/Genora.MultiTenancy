@@ -104,7 +104,13 @@ public class MultiTenancyApplicationModule : AbpModule
             {
                 ServiceURL = string.IsNullOrWhiteSpace(s3.ServiceUrl) ? "https://s3.ods.vn" : s3.ServiceUrl,
                 ForcePathStyle = s3.ForcePathStyle,
-                AuthenticationRegion = string.IsNullOrWhiteSpace(s3.Region) ? "us-east-1" : s3.Region
+                AuthenticationRegion = string.IsNullOrWhiteSpace(s3.Region) ? "us-east-1" : s3.Region,
+                // AWS SDK v4 bật mặc định flexible-checksum (CRC32) → stream qua "aws-chunked" content-encoding.
+                // AWS thật strip header này khi GET, nhưng S3-compatible (ods.vn) lưu LUÔN "Content-Encoding: aws-chunked"
+                // vào metadata object → browser/Zalo mini app giải nén lỗi "Unrecognized content encoding type".
+                // WhenRequired = chỉ tính checksum khi operation thật sự cần → PutObject thường không còn aws-chunked.
+                RequestChecksumCalculation = RequestChecksumCalculation.WHEN_REQUIRED,
+                ResponseChecksumValidation = ResponseChecksumValidation.WHEN_REQUIRED
             };
             // Credentials rỗng (Provider=Local, module khác chưa cấu hình S3) vẫn tạo client được —
             // client CHỈ thực sự gọi mạng khi ManageImageService chọn S3ImageStorageProvider (theo whitelist).

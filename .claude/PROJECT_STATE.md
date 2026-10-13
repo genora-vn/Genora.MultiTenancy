@@ -1,6 +1,12 @@
 # PROJECT STATE — Genora.MultiTenancy
 
-## HLG — /ranking/event thêm query gameId (optional) — 2026-10-13 (mới nhất)
+## HL25/HLG — Fix S3 `Content-Encoding: aws-chunked` — 2026-10-13 (mới nhất)
+
+- Ảnh upload lên S3 (ods.vn) qua `AWSSDK.S3 4.0.104.2` (SDK V4) bị gắn `Content-Encoding: aws-chunked` (flexible-checksum CRC32 streaming mặc định) → S3-compatible lưu vào metadata → browser/Zalo không đọc được (`me/frames` resultImageUrl mở lỗi). `DisablePayloadSigning=true` không tắt được.
+- Fix: `AmazonS3Config` thêm `RequestChecksumCalculation/ResponseChecksumValidation = WHEN_REQUIRED` (tắt chunked cho PutObject, áp cả hl25+hlg); `S3ImageStorageProvider.CopyAsync` dùng `MetadataDirective=REPLACE` + set `ContentType`, không set `ContentEncoding` (rename ảnh thiệp sạch). Không đổi response/DTO/`ToFullUrl`.
+- Build HttpApi + Application 0 errors; `dotnet test` AppImages|Hl25|Hlg 196/196 PASS. Branch `hotfix/20261013`; **không migration/deploy/commit**. Ảnh cũ (~09/10) không remediate (user chọn) → test bằng ảnh mới. [Note](memory/notes/project/project_hl25_s3_aws_chunked_fix_20261013.md).
+
+## HLG — /ranking/event thêm query gameId (optional) — 2026-10-13
 
 - `GET /ranking/event` thêm `gameId` optional: truyền → trả đúng game đó (load `HlgGame` theo tenant → tìm event sở hữu qua `ResolveEventForGameAsync`; không ràng buộc event active, xem được cả game đã kết thúc); không truyền → giữ nguyên game hiện hành. gameId không tồn tại → `null`; game mồ côi → field game + event trống (`MapEvent` nullable-safe).
 - Sửa `IHlgRankingAppService.cs`, `HlgRankingAppService.cs`, `HoaLinhGamificationController.GetRankingEvent` (+`[FromQuery] Guid? gameId`). Backward compatible (DTO không đổi shape; không truyền gameId → output cũ). Branch `hotfix/20261012`; **không migration/deploy/commit**.
