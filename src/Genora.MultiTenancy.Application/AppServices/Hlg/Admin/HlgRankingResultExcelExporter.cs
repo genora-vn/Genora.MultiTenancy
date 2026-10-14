@@ -16,6 +16,7 @@ public class HlgRankingResultExcelRow
     public string PlayerName { get; set; } = "";
     public string PhoneNumber { get; set; } = "";
     public string? ZaloUserId { get; set; }
+    public string? PharmaPhone { get; set; }
     public string GameName { get; set; } = "";
     public int PlayCount { get; set; }
     public int GameScore { get; set; }
@@ -41,7 +42,7 @@ public class HlgRankingResultExcelExporter : ITransientDependency
         var headers = new[]
         {
             "STT", "Xếp hạng sự kiện", "Mã người chơi", "Họ và tên", "Số điện thoại", "Zalo User ID",
-            "Tên trò chơi", "Số lượt chơi", "Điểm trò chơi", "Điểm cao nhất/lượt", "Số câu đúng",
+            "SĐT Chủ nhà thuốc", "Tên trò chơi", "Số lượt chơi", "Điểm trò chơi", "Điểm cao nhất/lượt", "Số câu đúng",
             "Tổng số câu", "Tổng điểm sự kiện", "Lượt đầu tiên", "Lượt gần nhất",
             "Quà nhận được", "Đã tham gia", "Địa chỉ nhận quà"
         };
@@ -63,22 +64,23 @@ public class HlgRankingResultExcelExporter : ITransientDependency
             SetText(sheet.Cell(row, 4), item.PlayerName);
             SetText(sheet.Cell(row, 5), item.PhoneNumber);
             SetText(sheet.Cell(row, 6), item.ZaloUserId);
-            SetText(sheet.Cell(row, 7), item.GameName);
-            sheet.Cell(row, 8).Value = item.PlayCount;
-            sheet.Cell(row, 9).Value = item.GameScore;
-            sheet.Cell(row, 10).Value = item.BestScore;
-            sheet.Cell(row, 11).Value = item.CorrectAnswerCount;
-            sheet.Cell(row, 12).Value = item.TotalQuestionCount;
-            sheet.Cell(row, 13).Value = item.EventScore;
-            sheet.Cell(row, 14).Value = item.FirstPlayedAt;
-            sheet.Cell(row, 15).Value = item.LastPlayedAt;
-            SetText(sheet.Cell(row, 16), item.RewardReceived ? "Đã nhận quà" : "Chưa nhận quà"); // Quà nhận được
-            SetText(sheet.Cell(row, 17), $"{item.GamesCompleted}/{item.GamesInCampaign}");        // Đã tham gia
-            SetText(sheet.Cell(row, 18), item.RewardAddress);                                      // Địa chỉ nhận quà
+            SetText(sheet.Cell(row, 7), item.PharmaPhone);
+            SetText(sheet.Cell(row, 8), item.GameName);
+            sheet.Cell(row, 9).Value = item.PlayCount;
+            sheet.Cell(row, 10).Value = item.GameScore;
+            sheet.Cell(row, 11).Value = item.BestScore;
+            sheet.Cell(row, 12).Value = item.CorrectAnswerCount;
+            sheet.Cell(row, 13).Value = item.TotalQuestionCount;
+            sheet.Cell(row, 14).Value = item.EventScore;
+            sheet.Cell(row, 15).Value = item.FirstPlayedAt;
+            sheet.Cell(row, 16).Value = item.LastPlayedAt;
+            SetText(sheet.Cell(row, 17), item.RewardReceived ? "Đã nhận quà" : "Chưa nhận quà"); // Quà nhận được
+            SetText(sheet.Cell(row, 18), $"{item.GamesCompleted}/{item.GamesInCampaign}");        // Đã tham gia
+            SetText(sheet.Cell(row, 19), item.RewardAddress);                                      // Địa chỉ nhận quà
         }
 
-        sheet.Columns(8, 13).Style.NumberFormat.Format = "#,##0";
-        sheet.Columns(14, 15).Style.DateFormat.Format = "dd/MM/yyyy HH:mm:ss";
+        sheet.Columns(9, 14).Style.NumberFormat.Format = "#,##0";
+        sheet.Columns(15, 16).Style.DateFormat.Format = "dd/MM/yyyy HH:mm:ss";
         sheet.Range(1, 1, Math.Max(1, rows.Count + 1), headers.Length).SetAutoFilter();
         sheet.Columns().AdjustToContents(10d, 45d);
 
