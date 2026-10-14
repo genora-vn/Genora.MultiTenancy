@@ -49,6 +49,7 @@ public class HlgAdminTests : IDisposable
     private readonly IRepository<HlgRankingEventGame, Guid> _rankingEventGames = Substitute.For<IRepository<HlgRankingEventGame, Guid>>();
     private readonly IRepository<HlgRankingWinner, Guid> _rankingWinners = Substitute.For<IRepository<HlgRankingWinner, Guid>>();
     private readonly IRepository<Customer, Guid> _customers = Substitute.For<IRepository<Customer, Guid>>();
+    private readonly IRepository<HlgUserProfile, Guid> _profiles = Substitute.For<IRepository<HlgUserProfile, Guid>>();
     private readonly ServiceProvider _provider;
     private readonly Guid _gameId = Guid.NewGuid();
     public HlgAdminTests()
@@ -63,7 +64,7 @@ public class HlgAdminTests : IDisposable
         var factory = Substitute.For<IStringLocalizerFactory>(); factory.Create(Arg.Any<Type>()).Returns(localizer);
         _provider = new ServiceCollection().AddSingleton(factory).AddSingleton<IAuthorizationService>(_auth).AddSingleton<ICurrentTenant>(_tenant)
             .AddSingleton(guid).AddSingleton<IAsyncQueryableExecuter>(new AsyncQueryableExecuter(Array.Empty<IAsyncQueryableProvider>()))
-            .AddSingleton(_sessions).AddSingleton(_games).AddSingleton(_customers).AddSingleton(_rankingWinners).AddSingleton(_clock).BuildServiceProvider();
+            .AddSingleton(_sessions).AddSingleton(_games).AddSingleton(_customers).AddSingleton(_profiles).AddSingleton(_rankingWinners).AddSingleton(_clock).BuildServiceProvider();
         _questions.GetQueryableAsync().Returns(Task.FromResult(Array.Empty<HlgQuestion>().AsQueryable()));
         _options.GetListAsync(Arg.Any<Expression<Func<HlgAnswerOption, bool>>>(), Arg.Any<bool>(), Arg.Any<CancellationToken>()).Returns(new List<HlgAnswerOption>());
         _games.GetAsync(_gameId, Arg.Any<bool>(), Arg.Any<CancellationToken>()).Returns(new HlgGame(_gameId, "Quiz", HlgGameType.Quiz));
@@ -72,9 +73,10 @@ public class HlgAdminTests : IDisposable
         _rankingSnapshots.GetQueryableAsync().Returns(Task.FromResult(Array.Empty<HlgRankingResultSnapshot>().AsQueryable()));
         _rankingEventGames.GetQueryableAsync().Returns(Task.FromResult(Array.Empty<HlgRankingEventGame>().AsQueryable()));
         _rankingWinners.GetQueryableAsync().Returns(Task.FromResult(Array.Empty<HlgRankingWinner>().AsQueryable()));
-        // Default empty cho enrich (bổ sung 3 cột): các test export sẽ override khi cần.
+        // Default empty cho thông tin live: các test export sẽ override khi cần.
         _sessions.GetQueryableAsync().Returns(Task.FromResult(Array.Empty<HlgGameSession>().AsQueryable()));
         _customers.GetQueryableAsync().Returns(Task.FromResult(Array.Empty<Customer>().AsQueryable()));
+        _profiles.GetQueryableAsync().Returns(Task.FromResult(Array.Empty<HlgUserProfile>().AsQueryable()));
     }
     private HlgQuestionAdminAppService Service() => new(_questions, _tenant, _features, _games, _options, _sessions, new HlgQuestionExcelTemplateGenerator(), new HlgQuestionExcelImporter()) { LazyServiceProvider = new AbpLazyServiceProvider(_provider) };
     private HlgGameAdminAppService GameService() => new(_games, _tenant, _features, _questions, _sessions) { LazyServiceProvider = new AbpLazyServiceProvider(_provider) };
@@ -178,6 +180,7 @@ public class HlgAdminTests : IDisposable
                 PlayerName = "Nguyễn Văn A",
                 PhoneNumber = "0900123456",
                 ZaloUserId = "zalo-1",
+                PharmaPhone = "0912345678",
                 GameName = "Đố vui",
                 PlayCount = 3,
                 GameScore = 2500,
@@ -186,21 +189,48 @@ public class HlgAdminTests : IDisposable
                 TotalQuestionCount = 30,
                 EventScore = 2500,
                 FirstPlayedAt = playedAt,
-                LastPlayedAt = playedAt.AddHours(2)
+                LastPlayedAt = playedAt.AddHours(2),
+                RewardReceived = true,
+                GamesCompleted = 2,
+                GamesInCampaign = 3,
+                RewardAddress = "Địa chỉ nhà thuốc"
             }
         });
         using var workbook = new XLWorkbook(content.GetStream());
         var sheet = workbook.Worksheet("Kết quả sự kiện");
 
-        sheet.Cell(1, 7).GetString().ShouldBe("Tên trò chơi");
-        sheet.Cell(1, 8).GetString().ShouldBe("Số lượt chơi");
+        sheet.Row(1).Cells(1, 19).Select(c => c.GetString()).ShouldBe(new[]
+        {
+            "STT", "Xếp hạng sự kiện", "Mã người chơi", "Họ và tên", "Số điện thoại", "Zalo User ID",
+            "SĐT Chủ nhà thuốc", "Tên trò chơi", "Số lượt chơi", "Điểm trò chơi", "Điểm cao nhất/lượt",
+            "Số câu đúng", "Tổng số câu", "Tổng điểm sự kiện", "Lượt đầu tiên", "Lượt gần nhất",
+            "Quà nhận được", "Đã tham gia", "Địa chỉ nhận quà"
+        });
+        sheet.LastColumnUsed()!.ColumnNumber().ShouldBe(19);
         sheet.Cell(2, 3).GetString().ShouldBe("00123");
         sheet.Cell(2, 3).DataType.ShouldBe(XLDataType.Text);
         sheet.Cell(2, 5).GetString().ShouldBe("0900123456");
-        sheet.Cell(2, 8).GetValue<int>().ShouldBe(3);
-        sheet.Cell(2, 9).GetValue<int>().ShouldBe(2500);
-        sheet.Cell(2, 13).GetValue<int>().ShouldBe(2500);
-        sheet.Cell(2, 14).GetDateTime().ShouldBe(playedAt);
+        sheet.Cell(2, 6).GetString().ShouldBe("zalo-1");
+        sheet.Cell(2, 7).GetString().ShouldBe("0912345678");
+        sheet.Cell(2, 7).DataType.ShouldBe(XLDataType.Text);
+        sheet.Cell(2, 7).Style.NumberFormat.Format.ShouldBe("@");
+        sheet.Cell(2, 8).GetString().ShouldBe("Đố vui");
+        sheet.Row(2).Cells(9, 14).Select(c => c.GetValue<int>()).ShouldBe(new[] { 3, 2500, 1000, 25, 30, 2500 });
+        foreach (var cell in sheet.Row(2).Cells(9, 14))
+        {
+            cell.DataType.ShouldBe(XLDataType.Number);
+            cell.Style.NumberFormat.Format.ShouldBe("#,##0");
+        }
+        sheet.Cell(2, 15).GetDateTime().ShouldBe(playedAt);
+        sheet.Cell(2, 16).GetDateTime().ShouldBe(playedAt.AddHours(2));
+        sheet.Cell(2, 15).Style.DateFormat.Format.ShouldBe("dd/MM/yyyy HH:mm:ss");
+        sheet.Cell(2, 16).Style.DateFormat.Format.ShouldBe("dd/MM/yyyy HH:mm:ss");
+        sheet.Cell(2, 17).GetString().ShouldBe("Đã nhận quà");
+        sheet.Cell(2, 18).GetString().ShouldBe("2/3");
+        sheet.Cell(2, 19).GetString().ShouldBe("Địa chỉ nhà thuốc");
+        sheet.AutoFilter.Range.RangeAddress.LastAddress.ColumnNumber.ShouldBe(19);
+        sheet.AutoFilter.Range.RangeAddress.LastAddress.RowNumber.ShouldBe(2);
+        sheet.SheetView.SplitRow.ShouldBe(1);
     }
 
     [Fact]
@@ -222,8 +252,15 @@ public class HlgAdminTests : IDisposable
         _sessions.GetQueryableAsync().Returns(Task.FromResult(sessions.AsQueryable()));
         _customers.GetQueryableAsync().Returns(Task.FromResult(new[] { customer }.AsQueryable()));
         _games.GetQueryableAsync().Returns(Task.FromResult(new[] { game }.AsQueryable()));
+        var profiles = new[]
+        {
+            new HlgUserProfile(Guid.NewGuid(), customerId, _tenant.Id) { PharmaPhone = "0912345678" }
+        };
+        _profiles.GetQueryableAsync().Returns(Task.FromResult(profiles.AsQueryable()));
 
         using var content = await RankingService().ExportResultsAsync(eventId);
+        using var workbook = new XLWorkbook(content.GetStream());
+        workbook.Worksheet("Kết quả sự kiện").Cell(2, 7).GetString().ShouldBe("0912345678");
 
         await _rankingSnapshots.Received(1).InsertManyAsync(
             Arg.Is<IEnumerable<HlgRankingResultSnapshot>>(rows => rows.Single().EventScore == 250 && rows.Single().PlayCount == 2 && rows.Single().CustomerId == customerId && rows.Single().GameId == gameId),
@@ -236,8 +273,13 @@ public class HlgAdminTests : IDisposable
             Arg.Any<CancellationToken>());
     }
 
-    [Fact]
-    public async Task Ranking_Result_Reexport_Uses_Saved_Snapshot_Without_Reading_Sessions()
+    [Theory]
+    [InlineData(false, null, false, "")]
+    [InlineData(true, null, false, "")]
+    [InlineData(true, "0912345678", false, "0912345678")]
+    [InlineData(true, "0912345678", true, "")]
+    public async Task Ranking_Result_Reexport_Preserves_Snapshot_And_Enriches_Current_Profile(
+        bool hasProfile, string? pharmaPhone, bool isDeleted, string expectedPhone)
     {
         var eventId = Guid.NewGuid();
         var snapshot = new HlgRankingResultSnapshot(Guid.NewGuid(), eventId, Guid.NewGuid(), Guid.NewGuid(), _tenant.Id)
@@ -258,13 +300,110 @@ public class HlgAdminTests : IDisposable
         var rankingEvent = new HlgRankingEvent(eventId, "Sự kiện cũ", DateTime.Today.AddDays(-10), DateTime.Today.AddDays(-2), _tenant.Id);
         _rankingEvents.GetAsync(eventId, Arg.Any<bool>(), Arg.Any<CancellationToken>()).Returns(rankingEvent);
         _rankingSnapshots.GetQueryableAsync().Returns(Task.FromResult(new[] { snapshot }.AsQueryable()));
+        var profiles = new List<HlgUserProfile>();
+        if (hasProfile)
+            profiles.Add(new HlgUserProfile(Guid.NewGuid(), snapshot.CustomerId, _tenant.Id)
+            {
+                PharmaPhone = pharmaPhone, PharmacyCode = "legacy-code", IsDeleted = isDeleted
+            });
+        // Cùng CustomerId nhưng tenant khác không được dùng thay cho profile thiếu/null/đã xóa.
+        profiles.Add(new HlgUserProfile(Guid.NewGuid(), snapshot.CustomerId, Guid.NewGuid()) { PharmaPhone = "0999999999" });
+        _profiles.GetQueryableAsync().Returns(Task.FromResult(profiles.AsQueryable()));
 
         using var content = await RankingService().ExportResultsAsync(eventId);
         using var workbook = new XLWorkbook(content.GetStream());
 
         workbook.Worksheet("Kết quả sự kiện").Cell(2, 4).GetString().ShouldBe("Tên đã lưu");
+        workbook.Worksheet("Kết quả sự kiện").Cell(2, 5).GetString().ShouldBe("0900000000");
+        workbook.Worksheet("Kết quả sự kiện").Cell(2, 7).GetString().ShouldBe(expectedPhone);
+        workbook.Worksheet("Kết quả sự kiện").Cell(2, 14).GetValue<int>().ShouldBe(900);
         // Nhánh reexport KHÔNG tạo lại snapshot và KHÔNG reset điểm (dữ liệu đóng băng).
-        // Vẫn đọc winner/customer/session để bổ sung 3 cột live (Quà nhận được / Đã tham gia / Địa chỉ).
+        // Thông tin vận hành/PharmaPhone vẫn lấy từ dữ liệu live.
+        await _customers.DidNotReceive().UpdateManyAsync(Arg.Any<IEnumerable<Customer>>(), Arg.Any<bool>(), Arg.Any<CancellationToken>());
+        await _rankingSnapshots.DidNotReceive().InsertManyAsync(Arg.Any<IEnumerable<HlgRankingResultSnapshot>>(), Arg.Any<bool>(), Arg.Any<CancellationToken>());
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task Ranking_Report_Exports_Owner_Phone_For_Each_Player_Game_In_Current_Scope(bool host)
+    {
+        if (host)
+        {
+            _tenant.Id.Returns((Guid?)null);
+            _tenant.IsAvailable.Returns(false);
+        }
+        var eventId = Guid.NewGuid();
+        var finishedAt = DateTime.Today.AddDays(-2);
+        var ev = new HlgRankingEvent(eventId, "Báo cáo", finishedAt.AddDays(-5), DateTime.Today.AddDays(5), _tenant.Id);
+        var owner = new Customer(Guid.NewGuid(), "0912345678", "Chủ nhà thuốc") { TenantId = _tenant.Id, CustomerCode = "OWNER", BonusPoint = 600 };
+        var employee = new Customer(Guid.NewGuid(), "0900123456", "Nhân viên") { TenantId = _tenant.Id, CustomerCode = "EMPLOYEE", BonusPoint = 600 };
+        var games = Enumerable.Range(1, 2).Select(i => new HlgGame(Guid.NewGuid(), $"Game {i}", HlgGameType.Quiz)
+        {
+            TenantId = _tenant.Id, EndAt = finishedAt.AddDays(1)
+        }).ToList();
+        var customers = new[] { owner, employee };
+        var sessions = customers.SelectMany(c => games.Select(g => new HlgGameSession(Guid.NewGuid(), g.Id, c.Id, _tenant.Id)
+        {
+            IsFinished = true, FinishedAt = finishedAt, Score = 100, CorrectCount = 1, TotalQuestions = 1
+        })).ToList();
+        var profiles = customers.Select(c => new HlgUserProfile(Guid.NewGuid(), c.Id, _tenant.Id) { PharmaPhone = owner.PhoneNumber }).ToList();
+        // Cùng CustomerId ở scope khác: không được leak hoặc gây duplicate key.
+        var otherTenant = host ? Guid.NewGuid() : (Guid?)null;
+        profiles.Add(new HlgUserProfile(Guid.NewGuid(), employee.Id, otherTenant) { PharmaPhone = "0999999999" });
+        _rankingEvents.GetAsync(eventId, Arg.Any<bool>(), Arg.Any<CancellationToken>()).Returns(ev);
+        _sessions.GetQueryableAsync().Returns(Task.FromResult(sessions.AsQueryable()));
+        _customers.GetQueryableAsync().Returns(Task.FromResult(customers.AsQueryable()));
+        _games.GetQueryableAsync().Returns(Task.FromResult(games.AsQueryable()));
+        _profiles.GetQueryableAsync().Returns(Task.FromResult(profiles.AsQueryable()));
+
+        // Chọn một game rồi xuất tất cả game: phải giữ filter và không nhân bản dòng khi gắn profile.
+        foreach (var selectedGames in new[] { new List<Guid> { games[0].Id }, new List<Guid>() })
+        {
+            using var content = await RankingService().ExportReportAsync(eventId, selectedGames);
+            using var workbook = new XLWorkbook(content.GetStream());
+            var sheet = workbook.Worksheet("Kết quả sự kiện");
+            var expectedRows = selectedGames.Count == 0 ? 4 : 2;
+            sheet.LastRowUsed()!.RowNumber().ShouldBe(expectedRows + 1);
+            foreach (var row in sheet.Rows(2, expectedRows + 1))
+            {
+                row.Cell(7).GetString().ShouldBe(owner.PhoneNumber);
+                row.Cell(7).DataType.ShouldBe(XLDataType.Text);
+                row.Cell(5).GetString().ShouldBe(row.Cell(3).GetString() == "OWNER" ? owner.PhoneNumber : employee.PhoneNumber);
+                if (selectedGames.Count > 0) row.Cell(8).GetString().ShouldBe(games[0].Name);
+            }
+        }
+        owner.BonusPoint.ShouldBe(600);
+        employee.BonusPoint.ShouldBe(600);
+        await _customers.DidNotReceive().UpdateManyAsync(Arg.Any<IEnumerable<Customer>>(), Arg.Any<bool>(), Arg.Any<CancellationToken>());
+        await _rankingSnapshots.DidNotReceive().InsertManyAsync(Arg.Any<IEnumerable<HlgRankingResultSnapshot>>(), Arg.Any<bool>(), Arg.Any<CancellationToken>());
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task Ranking_Empty_Export_Still_Has_Owner_Phone_Header_Without_Writes(bool report)
+    {
+        var eventId = Guid.NewGuid();
+        var end = DateTime.Today.AddDays(-1);
+        var ev = new HlgRankingEvent(eventId, "Không có người chơi", end.AddDays(-5), end, _tenant.Id);
+        var games = new[]
+        {
+            new HlgGame(Guid.NewGuid(), "Game đã kết thúc", HlgGameType.Quiz) { TenantId = _tenant.Id, EndAt = end }
+        };
+        _rankingEvents.GetAsync(eventId, Arg.Any<bool>(), Arg.Any<CancellationToken>())
+            .Returns(ev);
+        _games.GetQueryableAsync().Returns(Task.FromResult(games.AsQueryable()));
+        using var content = report
+            ? await RankingService().ExportReportAsync(eventId, new List<Guid>())
+            : await RankingService().ExportResultsAsync(eventId);
+        using var workbook = new XLWorkbook(content.GetStream());
+        var sheet = workbook.Worksheet("Kết quả sự kiện");
+        sheet.Cell(1, 7).GetString().ShouldBe("SĐT Chủ nhà thuốc");
+        sheet.LastRowUsed()!.RowNumber().ShouldBe(1);
+        sheet.LastColumnUsed()!.ColumnNumber().ShouldBe(19);
+        sheet.AutoFilter.Range.RangeAddress.LastAddress.ColumnNumber.ShouldBe(19);
+        await _profiles.DidNotReceive().GetQueryableAsync();
         await _customers.DidNotReceive().UpdateManyAsync(Arg.Any<IEnumerable<Customer>>(), Arg.Any<bool>(), Arg.Any<CancellationToken>());
         await _rankingSnapshots.DidNotReceive().InsertManyAsync(Arg.Any<IEnumerable<HlgRankingResultSnapshot>>(), Arg.Any<bool>(), Arg.Any<CancellationToken>());
     }

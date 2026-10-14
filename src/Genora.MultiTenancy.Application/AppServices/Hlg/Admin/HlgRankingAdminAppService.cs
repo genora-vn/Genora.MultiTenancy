@@ -221,13 +221,20 @@ public class HlgRankingAdminAppService : FeatureProtectedCrudAppService<HlgRanki
     }
 
     /// <summary>
-    /// Bổ sung 3 cột phục vụ vận hành vào các dòng kết quả (dùng dữ liệu LIVE để luôn cập nhật,
-    /// kể cả khi đã có snapshot): Quà nhận được (winner), Đã tham gia x/n, Địa chỉ nhận quà.
+    /// Bổ sung thông tin vận hành vào các dòng kết quả (dùng dữ liệu LIVE kể cả khi đã có snapshot):
+    /// Quà nhận được (winner), Đã tham gia x/n, Địa chỉ nhận quà, SĐT Chủ nhà thuốc.
     /// </summary>
     private async Task EnrichExportRowsAsync(HlgRankingEvent ev, List<HlgRankingResultExcelRow> rows, List<Guid> campaignGameIds)
     {
         if (rows.Count == 0) return;
         var customerIds = rows.Select(r => r.CustomerId).Distinct().ToList();
+
+        // SĐT chủ nhà thuốc lấy từ hồ sơ HLG, không dùng SĐT riêng của người chơi/nhân viên.
+        var pharmaPhoneByCustomer = (await AsyncExecuter.ToListAsync(
+            (await LazyServiceProvider.LazyGetRequiredService<IRepository<HlgUserProfile, Guid>>().GetQueryableAsync())
+                .Where(p => p.TenantId == CurrentTenant.Id && !p.IsDeleted && customerIds.Contains(p.CustomerId))
+                .Select(p => new { p.CustomerId, p.PharmaPhone })))
+            .ToDictionary(p => p.CustomerId, p => p.PharmaPhone);
 
         // (1) Quà nhận được: khách đã được gán quà (winner còn hiệu lực) trong sự kiện này.
         var rewardedCustomerIds = (await AsyncExecuter.ToListAsync(
@@ -262,6 +269,7 @@ public class HlgRankingAdminAppService : FeatureProtectedCrudAppService<HlgRanki
 
         foreach (var row in rows)
         {
+            row.PharmaPhone = pharmaPhoneByCustomer.TryGetValue(row.CustomerId, out var pharmaPhone) ? pharmaPhone : null;
             row.RewardReceived = rewardedCustomerIds.Contains(row.CustomerId);
             row.RewardAddress = addressByCustomer.TryGetValue(row.CustomerId, out var addr) ? addr : null;
             row.GamesCompleted = passedGamesByCustomer.TryGetValue(row.CustomerId, out var done) ? done : 0;
