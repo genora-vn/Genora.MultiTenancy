@@ -1,28 +1,36 @@
 # PROJECT STATE — Genora.MultiTenancy
 
+## Trạng thái đã xác nhận trên `dev` — 2026-10-14
+
+- HEAD kiểm tra `779367f`; branch `dev`.
+- HLG Ranking export có cột G `SĐT Chủ nhà thuốc`, đọc `HLG.AppHlgUserProfiles.PharmaPhone` theo CustomerId + tenant; dùng cho report và finalize/re-export. Commit `5d4f2cd`. 148 HLG Application tests pass, Web build 0 lỗi/61 warnings theo phiên triển khai; chưa xác nhận UAT staging/production.
+- Ranking/winners theo game ở `fe096ef`; URL ảnh ranking storage trực tiếp ở `1e5257f`.
+- S3 storage đã merge vào `dev` qua `6302441`; fix `aws-chunked` ở `34df62b`. Các note cũ ghi chưa merge/commit phản ánh trạng thái tại thời điểm ghi. Chưa xác minh deploy hiện tại.
+- HL25 ảnh thiệp trùng S3: trên `hotfix/20261014` đã sửa CreateFrame xóa object GUID tạm sau DB commit khi RenameWithTimestamp=true và nguồn được xác thực đúng tenant, chưa được frame khác dùng; retry URL đã đặt tên không copy tiếp. `CopyAsync` xác định nguồn S3 theo public base URL, ghi đích theo Provider/whitelist; Local/S3 mixed state vẫn đọc được. 66 HL25/AppImages tests pass, HttpApi build 0 errors; chưa commit/deploy/UAT S3 thật. [Task](tasks/20261014_hl25_s3_duplicate_image_fix.md) · [note](memory/notes/project/project_hl25_s3_duplicate_image_fix_20261014.md).
+
 ## HL25/HLG — Fix S3 `Content-Encoding: aws-chunked` — 2026-10-13 (mới nhất)
 
 - Ảnh upload lên S3 (ods.vn) qua `AWSSDK.S3 4.0.104.2` (SDK V4) bị gắn `Content-Encoding: aws-chunked` (flexible-checksum CRC32 streaming mặc định) → S3-compatible lưu vào metadata → browser/Zalo không đọc được (`me/frames` resultImageUrl mở lỗi). `DisablePayloadSigning=true` không tắt được.
 - Fix: `AmazonS3Config` thêm `RequestChecksumCalculation/ResponseChecksumValidation = WHEN_REQUIRED` (tắt chunked cho PutObject, áp cả hl25+hlg); `S3ImageStorageProvider.CopyAsync` dùng `MetadataDirective=REPLACE` + set `ContentType`, không set `ContentEncoding` (rename ảnh thiệp sạch). Không đổi response/DTO/`ToFullUrl`.
-- Build HttpApi + Application 0 errors; `dotnet test` AppImages|Hl25|Hlg 196/196 PASS. Branch `hotfix/20261013`; **không migration/deploy/commit**. Ảnh cũ (~09/10) không remediate (user chọn) → test bằng ảnh mới. [Note](memory/notes/project/project_hl25_s3_aws_chunked_fix_20261013.md).
+- Build HttpApi + Application 0 errors; `dotnet test` AppImages|Hl25|Hlg 196/196 PASS. Commit `34df62b` đã có trên `dev`; không migration. Chưa xác minh deploy. Ảnh cũ (~09/10) không remediate (user chọn) → test bằng ảnh mới. [Note](memory/notes/project/project_hl25_s3_aws_chunked_fix_20261013.md).
 
 ## HLG — /ranking/event thêm query gameId (optional) — 2026-10-13
 
 - `GET /ranking/event` thêm `gameId` optional: truyền → trả đúng game đó (load `HlgGame` theo tenant → tìm event sở hữu qua `ResolveEventForGameAsync`; không ràng buộc event active, xem được cả game đã kết thúc); không truyền → giữ nguyên game hiện hành. gameId không tồn tại → `null`; game mồ côi → field game + event trống (`MapEvent` nullable-safe).
-- Sửa `IHlgRankingAppService.cs`, `HlgRankingAppService.cs`, `HoaLinhGamificationController.GetRankingEvent` (+`[FromQuery] Guid? gameId`). Backward compatible (DTO không đổi shape; không truyền gameId → output cũ). Branch `hotfix/20261012`; **không migration/deploy/commit**.
+- Sửa `IHlgRankingAppService.cs`, `HlgRankingAppService.cs`, `HoaLinhGamificationController.GetRankingEvent` (+`[FromQuery] Guid? gameId`). Backward compatible (DTO không đổi shape; không truyền gameId → output cũ). Commit `fe096ef` đã merge vào `dev` tại `779367f`; không migration. Chưa xác minh deploy.
 - Build HttpApi + test 0 errors; `dotnet test --filter Hlg` 141/141 PASS. [Note](memory/notes/project/project_hlg_ranking_event_gameid_optional_20261013.md).
 
 ## HLG — Ranking Event & Entries theo từng Game (tuần) — 2026-10-13
 
 - `GET /ranking/event` chọn **game hiện tại** động (ongoing ưu tiên `StartAt` mới nhất → ended mới nhất `EndAt DESC`; chỉ còn upcoming/không game → `data:null`). `RankingEventDto`: `GameId`=game hiện tại, `StartAt/EndAt`=thời gian GAME; thêm `GameName`/`GameStatus`; giữ event gốc ở `EventStartAt/EventEndAt`.
 - `GET /ranking/entries` thêm `gameId` optional (truyền → đúng game; không → game hiện tại; không có → `[]`). `/ranking/events/{gameId}/winners` giữ nguyên.
-- Sửa `RankingDtos.cs`, `IHlgRankingAppService.cs`, `HlgRankingAppService.cs` (inject `IRepository<HlgRankingEventGame>`+`IRepository<HlgGame>`; `ResolveCurrentGameAsync`/`ComputeGameStatus`), `HoaLinhGamificationController`. Branch `hotfix/20261012`; **không migration/deploy/commit**.
+- Sửa `RankingDtos.cs`, `IHlgRankingAppService.cs`, `HlgRankingAppService.cs` (inject `IRepository<HlgRankingEventGame>`+`IRepository<HlgGame>`; `ResolveCurrentGameAsync`/`ComputeGameStatus`), `HoaLinhGamificationController`. Commit `fe096ef` đã merge vào `dev` tại `779367f`; không migration. Chưa xác minh deploy.
 - Build HttpApi + test 0 errors; `dotnet test --filter Hlg` 138/138 PASS. [Note](memory/notes/project/project_hlg_ranking_by_game_20261013.md).
 
 ## HLG — Winners API theo GameId (chỉ game đã kết thúc) — 2026-10-12
 
 - API `GET /api/mini-app/hlg/ranking/events/{id}/winners` nay nhận `{id}` là **GameId (`HlgGame.Id`)** thay vì EventId. Chỉ trả winners khi game ĐÃ KẾT THÚC (`Status==Ended` HOẶC `EndAt < Clock.Now`); chưa kết thúc/không tồn tại/sai tenant → `data: []`. Winner lọc theo `HlgRankingWinner.GameId==gameId && IsActive`.
-- Sửa `ContentDtos.cs` (`IHlgContentAppService.GetWinnersAsync(Guid gameId)`) + `HlgContentAppService.cs`. Route/Controller/Gateway path không đổi (chỉ đổi giá trị FE truyền). Branch `hotfix/20261012`; **không migration/deploy/commit**.
+- Sửa `ContentDtos.cs` (`IHlgContentAppService.GetWinnersAsync(Guid gameId)`) + `HlgContentAppService.cs`. Route/Controller/Gateway path không đổi (chỉ đổi giá trị FE truyền). Commit `fe096ef` đã merge vào `dev` tại `779367f`; không migration. Chưa xác minh deploy.
 - Build 0 errors; `dotnet test --filter Hlg` 134/134 PASS (thêm 2 test mới). [Note](memory/notes/project/project_hlg_winners_by_game_api_20261012.md).
 
 ## Hoa Linh Sales — Excel Blouse theo dáng/size — 2026-10-11

@@ -1,6 +1,6 @@
 # Hoa Linh 25 Năm (hl25) + HLG — S3 Storage Migration (ods.vn) — 2026-10-09
 
-> Nhánh: `feature/dev-hoalinh-25year-s3-storage` (đã tạo, **CHƯA merge/deploy** — anh ưu tiên task khác trước).
+> Branch ban đầu: `feature/dev-hoalinh-25year-s3-storage`; đã merge vào `dev` qua `6302441` và `2d10c74`. Trạng thái parked ban đầu đã kết thúc.
 > Baseline trước nhánh này: `dev` HEAD `6156986` (merge `feature/dev-hoalinh-gamification`).
 
 ## Bối cảnh / vấn đề gốc
@@ -36,7 +36,7 @@
 - `appsettings.json` (**commit**): `Storage:Provider = "Local"`, `Storage:S3.*` toàn placeholder rỗng — **không có secret nào bị commit**, không đổi hành vi hiện tại tới khi ai đó chủ động đổi `Provider`.
 - `appsettings.Staging.json` (**đã tạo tại `src/Genora.MultiTenancy.Web/`, đã thêm vào `.gitignore` cùng `appsettings.Production.json` — KHÔNG commit, KHÔNG nằm trong git**): đã điền sẵn credentials thật user cung cấp:
   - `ServiceUrl: https://s3.ods.vn`, `Bucket: c01-hoalinh-prod-01`
-  - `AccessKey: QPJD3ZZ2YMP3EBCSAESJ`, `SecretKey: 7l5x4EePeGeQDCLRaD5bE47LmGJUmp57xWuxv5wQ` (user: "hoalinh", role owner, quota 1TiB)
+  - AccessKey: [REDACTED; configure via secret manager or protected deployment config].
   - `PublicBaseUrl: https://s3.ods.vn/c01-hoalinh-prod-01`, `CannedAcl: ""` (rỗng — bucket đã có policy "Everyone: ReadOnly" cho object, không set ACL per-object), `SubFolders: ["hl25","hlg"]`.
   - **File này KHÔNG trong git — khi deploy, user phải tự copy file này lên server qua kênh an toàn (SCP/RDP), KHÔNG qua git**, đặt cạnh `appsettings.json`, set `ASPNETCORE_ENVIRONMENT=Staging`, restart host.
 
@@ -51,21 +51,25 @@
 - `Domain.Shared/Hlg/HlgRankingShareImageConsts.cs` — thêm `ImageSubFolder` constant.
 - `Web/Pages/Hlg/Upload.cshtml.cs` — `OnPostVideoAsync` dùng `UploadBytesAsync`, bỏ `IWebHostEnvironment`.
 - `Web/appsettings.json` — thêm section `Storage` (Local default, placeholder S3 rỗng).
-- (mới, KHÔNG commit) `Web/appsettings.Staging.json` — credentials thật.
+- Cấu hình Staging có credentials được giữ ngoài Git; giá trị nhạy cảm không lưu trong memory. Lấy từ secret manager hoặc cấu hình deploy đã được cấp riêng.
 - `.gitignore` — thêm 2 dòng loại trừ `appsettings.Staging.json`/`appsettings.Production.json`.
 - `Application.Contracts/Genora.MultiTenancy.Application.Contracts.csproj` — có thể cần kiểm tra lại package reference AWSSDK.S3 nằm ở Application layer (không phải Contracts).
 - (mới) `test/.../AppImages/ManageImageServiceStorageSelectionTests.cs` — 12 test mới (provider selection theo whitelist, URL build S3/Local, idempotency, copy/read mixed-state, round-trip upload+read).
 - `test/.../Hlg/HlgRankingShareImageTests.cs` — sửa `Build()` dùng `ManageImageService` thật (không mock trống) để test hành vi ghi file thật đúng.
 
-## Verify
+## Trạng thái Git cập nhật 2026-10-14
+- Source S3 storage đã merge vào `dev` (merge commit `6302441`); commit `34df62b` sửa aws-chunked cũng đã có trên dev.
+- Chưa xác minh deploy/UAT hiện tại. Build/test phía dưới là kết quả lúc hoàn thành task ban đầu.
+
+## Verify tại thời điểm hoàn tất task ban đầu
 - `dotnet add package AWSSDK.S3` → cài `AWSSDK.S3 4.0.104.2` + `AWSSDK.Core 4.0.102.9` (package mới, chưa có trong repo trước đây).
 - Build toàn bộ solution (`dotnet build` không filter): **0 lỗi CS** (NU1902/NU1903 warning về `SixLabors.ImageSharp` 3.1.12 là pre-existing, không liên quan).
 - Test: `dotnet test` toàn bộ **218/218 PASS** (12 test mới `AppImages` + toàn bộ test cũ hl25/hlg không bị regressions sau 2 vòng fix bug ở trên).
 - **CHƯA chạy thật trên staging** (chưa có cơ hội deploy — user báo sẽ ưu tiên task khác trước khi quay lại nhánh này).
 
-## Việc còn lại khi quay lại task này
-1. Merge/rebase nhánh `feature/dev-hoalinh-25year-s3-storage` vào `dev` khi sẵn sàng triển khai (hiện KHÔNG merge).
-2. Deploy code lên staging + **tự tay copy `appsettings.Staging.json` lên server** (không qua git) + set `ASPNETCORE_ENVIRONMENT=Staging` + restart host.
+## Việc còn lại sau khi source đã merge
+1. S3 storage đã merge vào `dev`; bước còn lại là xác minh cấu hình bảo mật và UAT môi trường đích khi được yêu cầu.
+2. Xác minh cấu hình S3 Staging được cấp ngoài Git qua kênh an toàn; deploy/restart nếu môi trường chưa nhận các commit đã merge.
 3. Test thật trên staging: upload ảnh thiệp hl25 mới (xem URL trả về đúng dạng `https://s3.ods.vn/c01-hoalinh-prod-01/uploads/hl25/{tenantId}/{file}`), xem lại ảnh trên FE mini app, test ZIP "Tải ảnh ZIP" (đọc được cả ảnh cũ Local lẫn ảnh mới S3), test đổi tên ảnh thiệp (CreateFrame với `RenameWithTimestamp=true`), test HLG share-image ranking, test video admin HLG.
 4. Nếu ổn, cân nhắc backfill ảnh cũ còn lại trên Local (nếu còn, user nói đã tự chuyển 23GB rồi nên có thể không cần) + dọn file cũ trên Windows Server để giải phóng disk — đây là mục tiêu gốc của task.
 5. Theo dõi chi phí/quota S3 (user quota 1TiB) khi lưu lượng tăng.

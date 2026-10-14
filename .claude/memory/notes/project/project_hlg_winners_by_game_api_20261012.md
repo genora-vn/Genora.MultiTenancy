@@ -1,6 +1,6 @@
 # HLG — Winners API đổi từ EventId sang GameId (chỉ game đã kết thúc) — 2026-10-12
 
-- **Branch:** `hotfix/20261012`. **Loại:** Refactor. **Không migration/deploy/commit** (user tự commit + test local trước khi lên staging).
+- **Git status updated 2026-10-14:** commit `fe096ef` is merged into `dev` at `779367f`; no migration; deployment/UAT not verified.
 - **Task file:** `.claude/tasks/20261012_hlg_winners_by_game.md`.
 
 ## Vấn đề

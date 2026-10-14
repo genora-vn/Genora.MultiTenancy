@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Amazon.S3;
@@ -165,18 +166,129 @@ public class ManageImageServiceStorageSelectionTests : IDisposable
     }
 
     [Fact]
+    public async Task S3_Upload_Copy_And_Cleanup_Leaves_Only_Named_Frame_Object()
+    {
+        var options = new StorageOptions
+        {
+            Provider = "S3",
+            S3 = new S3StorageOptions { SubFolders = { "hl25" }, Bucket = "my-bucket", ServiceUrl = "https://s3.ods.vn" }
+        };
+        var service = BuildService(options);
+        var keys = new HashSet<string>();
+        _s3Client.PutObjectAsync(Arg.Any<PutObjectRequest>(), Arg.Any<CancellationToken>())
+            .Returns(call =>
+            {
+                keys.Add(call.Arg<PutObjectRequest>().Key);
+                return Task.FromResult(new PutObjectResponse());
+            });
+        _s3Client.CopyObjectAsync(Arg.Any<CopyObjectRequest>(), Arg.Any<CancellationToken>())
+            .Returns(call =>
+            {
+                var copy = call.Arg<CopyObjectRequest>();
+                keys.Contains(copy.SourceKey).ShouldBeTrue();
+                keys.Add(copy.DestinationKey);
+                return Task.FromResult(new CopyObjectResponse());
+            });
+        _s3Client.DeleteObjectAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
+            .Returns(call =>
+            {
+                keys.Remove(call.ArgAt<string>(1));
+                return Task.FromResult(new DeleteObjectResponse());
+            });
+
+        var uploadedUrl = await service.UploadImageAsync(MakeFile("card.jpg"), "host", "hl25");
+        keys.Single().ShouldMatch(@"/([a-f0-9]{32})\.jpg$");
+        var renamedUrl = await service.CopyAsync(uploadedUrl, "host", "hl25", "zalo123_20261014155831.jpg");
+        await service.DeleteFileAsync(uploadedUrl);
+
+        renamedUrl.ShouldBe("https://s3.ods.vn/my-bucket/uploads/hl25/host/zalo123_20261014155831.jpg");
+        keys.Single().ShouldBe("uploads/hl25/host/zalo123_20261014155831.jpg");
+    }
+
+    [Fact]
     public async Task CopyAsync_Returns_Null_When_Source_Not_Found_On_Local()
     {
         var options = new StorageOptions { Provider = "Local", S3 = new S3StorageOptions() };
         var service = BuildService(options);
 
         // Nguồn Local không tồn tại trên disk + S3 cũng không có (mock trả NotFound) → cả 2 miss → null.
-        _s3Client.CopyObjectAsync(Arg.Any<CopyObjectRequest>(), Arg.Any<CancellationToken>())
-            .Returns<Task<CopyObjectResponse>>(_ => throw new AmazonS3Exception("not found") { StatusCode = System.Net.HttpStatusCode.NotFound });
+        _s3Client.GetObjectAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
+            .Returns<Task<GetObjectResponse>>(_ => throw new AmazonS3Exception("not found") { StatusCode = System.Net.HttpStatusCode.NotFound });
 
         var result = await service.CopyAsync("/uploads/hl25/host/missing.png", "host", "hl25", "new.png");
 
         result.ShouldBeNull();
+    }
+
+    [Fact]
+    public async Task CopyAsync_Absolute_Local_Url_Writes_Only_Local_When_Provider_Is_Local()
+    {
+        var options = new StorageOptions
+        {
+            Provider = "Local",
+            S3 = new S3StorageOptions { SubFolders = { "hl25" }, Bucket = "my-bucket", ServiceUrl = "https://s3.ods.vn" }
+        };
+        var service = BuildService(options);
+        var tenantId = Guid.NewGuid().ToString("N");
+        TrackDir("hl25", tenantId);
+        var uploaded = await service.UploadImageAsync(MakeFile("card.png"), tenantId, "hl25");
+
+        var copied = await service.CopyAsync("https://mini-app.test" + uploaded, tenantId, "hl25", "zalo123_20261014155831.png");
+
+        copied.ShouldBe($"/uploads/hl25/{tenantId}/zalo123_20261014155831.png");
+        File.Exists(Path.Combine("wwwroot", "uploads", "hl25", tenantId, "zalo123_20261014155831.png")).ShouldBeTrue();
+        await _s3Client.DidNotReceive().CopyObjectAsync(Arg.Any<CopyObjectRequest>(), Arg.Any<CancellationToken>());
+        await _s3Client.DidNotReceive().PutObjectAsync(Arg.Any<PutObjectRequest>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task CopyAsync_Local_Source_To_S3_Target_Puts_One_Named_Object()
+    {
+        var tenantId = Guid.NewGuid().ToString("N");
+        TrackDir("hl25", tenantId);
+        var local = new LocalImageStorageProvider();
+        var source = await local.SaveAsync($"uploads/hl25/{tenantId}/old.png", new byte[] { 1, 2, 3 }, "image/png");
+        var options = new StorageOptions
+        {
+            Provider = "S3",
+            S3 = new S3StorageOptions { SubFolders = { "hl25" }, Bucket = "my-bucket", ServiceUrl = "https://s3.ods.vn" }
+        };
+        var service = BuildService(options);
+        _s3Client.PutObjectAsync(Arg.Any<PutObjectRequest>(), Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult(new PutObjectResponse()));
+
+        var copied = await service.CopyAsync("https://mini-app.test" + source, tenantId, "hl25", "zalo123_20261014155831.png");
+
+        copied.ShouldBe($"https://s3.ods.vn/my-bucket/uploads/hl25/{tenantId}/zalo123_20261014155831.png");
+        await _s3Client.Received(1).PutObjectAsync(
+            Arg.Is<PutObjectRequest>(r => r.Key == $"uploads/hl25/{tenantId}/zalo123_20261014155831.png"),
+            Arg.Any<CancellationToken>());
+        await _s3Client.DidNotReceive().CopyObjectAsync(Arg.Any<CopyObjectRequest>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task CopyAsync_S3_Source_To_Local_Target_Writes_Only_Local()
+    {
+        var tenantId = Guid.NewGuid().ToString("N");
+        TrackDir("hl25", tenantId);
+        var options = new StorageOptions
+        {
+            Provider = "Local",
+            S3 = new S3StorageOptions { SubFolders = { "hl25" }, Bucket = "my-bucket", ServiceUrl = "https://s3.ods.vn" }
+        };
+        var service = BuildService(options);
+        _s3Client.GetObjectAsync(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<CancellationToken>())
+            .Returns(_ => Task.FromResult(new GetObjectResponse { ResponseStream = new MemoryStream(new byte[] { 1, 2, 3 }) }));
+
+        var copied = await service.CopyAsync(
+            $"https://s3.ods.vn/my-bucket/uploads/hl25/{tenantId}/old.png",
+            tenantId, "hl25", "zalo123_20261014155831.png");
+
+        copied.ShouldBe($"/uploads/hl25/{tenantId}/zalo123_20261014155831.png");
+        File.ReadAllBytes(Path.Combine("wwwroot", "uploads", "hl25", tenantId, "zalo123_20261014155831.png"))
+            .ShouldBe(new byte[] { 1, 2, 3 });
+        await _s3Client.DidNotReceive().CopyObjectAsync(Arg.Any<CopyObjectRequest>(), Arg.Any<CancellationToken>());
+        await _s3Client.DidNotReceive().PutObjectAsync(Arg.Any<PutObjectRequest>(), Arg.Any<CancellationToken>());
     }
 
     [Fact]

@@ -36,7 +36,7 @@
 - Build HttpApi + Application: **0 errors** (chỉ warnings pre-existing).
 - `dotnet test` filter AppImages|Hl25|Hlg: **196/196 PASS, 0 failed** (tests mock `IAmazonS3`, không vỡ
   khi thêm field vào PutObjectRequest/CopyObjectRequest).
-- **Chưa deploy/commit.** Ảnh cũ (upload từ ~09/10) vẫn còn aws-chunked — user test bằng ảnh TẠO MỚI.
+- Commit `34df62b` đã có trên `dev` sau merge ngày 2026-10-14. Chưa xác minh deploy/UAT. Ảnh cũ (upload từ ~09/10) vẫn còn aws-chunked — user test bằng ảnh TẠO MỚI.
 
 ## Cách verify thủ công sau deploy
 - Tạo thiệp mới qua mini app → gọi `me/frames` → mở `resultImageUrl`.

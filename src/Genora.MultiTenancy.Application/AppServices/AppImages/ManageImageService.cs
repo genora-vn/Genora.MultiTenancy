@@ -173,16 +173,37 @@ namespace Genora.MultiTenancy.AppServices.AppImages
             tenantId = !string.IsNullOrWhiteSpace(tenantId) ? tenantId : "host";
             var destKey = $"uploads/{subFolder}/{tenantId}/{newFileName}";
 
-            // Nguồn có thể đang ở Local (ảnh cũ) hoặc S3 (ảnh mới) — thử đúng provider theo định dạng URL trước,
-            // provider hiện tại (theo cấu hình) sau, để không miss trường hợp mixed state.
-            var isAbsolute = sourceUrlOrPath.StartsWith("http://", StringComparison.OrdinalIgnoreCase) ||
-                             sourceUrlOrPath.StartsWith("https://", StringComparison.OrdinalIgnoreCase);
-            var primary = isAbsolute ? (IImageStorageProvider)_s3 : _local;
-            var fallback = isAbsolute ? (IImageStorageProvider)_local : _s3;
+            // URL Local sau ToFullUrl cũng là URL tuyệt đối. Nguồn được nhận diện theo public S3 base URL,
+            // còn đích LUÔN theo Provider/whitelist hiện tại; mixed state thì đọc nguồn và ghi vào đích.
+            var target = ResolveProvider(subFolder);
+            var primary = IsS3Url(sourceUrlOrPath) ? (IImageStorageProvider)_s3 : _local;
+            var fallback = ReferenceEquals(primary, _s3) ? (IImageStorageProvider)_local : _s3;
 
-            var result = await primary.CopyAsync(sourceUrlOrPath, destKey);
-            if (result != null) return result;
-            return await fallback.CopyAsync(sourceUrlOrPath, destKey);
+            var result = await CopyToTargetAsync(primary, target, sourceUrlOrPath, destKey);
+            return result ?? await CopyToTargetAsync(fallback, target, sourceUrlOrPath, destKey);
+        }
+
+        private async Task<string> CopyToTargetAsync(
+            IImageStorageProvider source, IImageStorageProvider target, string sourceUrlOrPath, string destKey)
+        {
+            if (ReferenceEquals(source, target))
+                return await source.CopyAsync(sourceUrlOrPath, destKey);
+
+            var content = await source.ReadAsync(sourceUrlOrPath);
+            return content == null ? null : await target.SaveAsync(destKey, content, GetContentType(Path.GetExtension(destKey)));
+        }
+
+        private bool IsS3Url(string url)
+        {
+            if (!Uri.TryCreate(url, UriKind.Absolute, out var uri) ||
+                (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps))
+                return false;
+
+            var baseUrl = _options.S3.PublicBaseUrl;
+            if (string.IsNullOrWhiteSpace(baseUrl))
+                baseUrl = $"{_options.S3.ServiceUrl.TrimEnd('/')}/{_options.S3.Bucket}";
+
+            return url.StartsWith(baseUrl.TrimEnd('/') + "/", StringComparison.OrdinalIgnoreCase);
         }
 
         public async Task<byte[]> OpenReadAsync(string urlOrPath)

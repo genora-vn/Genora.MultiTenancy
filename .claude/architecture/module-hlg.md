@@ -8,6 +8,8 @@
 > Controller: `HoaLinhGamificationController` route `api/mini-app/hlg`.
 > Backend khớp CHÍNH XÁC API contract frontend đã cố định (Phase 1 frontend dùng data mock).
 
+> **Ranking Excel 2026-10-14:** cột G “SĐT Chủ nhà thuốc” sau Zalo User ID lấy từ `HLG.AppHlgUserProfiles.PharmaPhone`, join theo `CustomerId` + tenant hiện tại. Cả export report và event finalize/re-export dùng chung enrichment; giá trị là profile hiện tại, không lưu snapshot. Không migration/API change. Commit `5d4f2cd`, đã merge vào `dev` tại `779367f`; phiên triển khai có 148/148 HLG Application tests pass và Web build 0 errors/61 warnings. Chưa xác nhận UAT staging/production. [Note](../memory/notes/project/project_hlg_ranking_export_pharma_phone_20261014.md).
+
 ## Nguyên tắc khớp contract
 - Mọi response bọc envelope `{ error?: number, message?: string, data: <payload> }` → `HlgApiResult<T>`.
 - Các "enum" trong contract là **chuỗi lowercase cụ thể** (`"male"`, `"pending"`...) → DTO dùng field `string`, map tường minh ở service qua `HlgEnumMapper` (không phụ thuộc JSON enum converter toàn cục).

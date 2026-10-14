@@ -1,6 +1,6 @@
 # HLG — /ranking/event thêm query gameId (optional) — 2026-10-13
 
-- **Branch:** `hotfix/20261012` (tiếp tục). **Loại:** Bổ sung nhỏ (follow-up của task ranking-by-game cùng ngày). **Không migration/deploy/commit.**
+- **Git status updated 2026-10-14:** commit `fe096ef` is merged into `dev` at `779367f`; no migration; deployment/UAT not verified.
 - **Task file:** `.claude/tasks/20261013_hlg_ranking_event_gameid_optional.md`.
 
 ## Vấn đề

@@ -8,6 +8,7 @@ using Genora.MultiTenancy.Localization;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -192,10 +193,19 @@ public class MiniAppHl25Service : ApplicationService, IMiniAppHl25Service
         // Lượt tự nhận đầu tiên đến từ tạo thiệp; tạo thêm thiệp không cấp lượt thứ hai.
         var grantedTurn = participant.TryGrantFrameTurn();
 
-        // Nếu request.RenameWithTimestamp = true: download ảnh, lưu với tên ZaloUserId_yyyyMMddHHmmss.ext
+        // Upload-image chưa nhận ZaloUserId nên URL GUID là ảnh tạm. Chỉ xóa ảnh tạm sau khi DB commit.
         var resultImageUrl = request.ResultImageUrl;
+        var tenantId = CurrentTenant.Id?.ToString() ?? "host";
+        var isTemporaryS3Upload = request.RenameWithTimestamp && IsTemporaryS3FrameUpload(request.ResultImageUrl, tenantId);
+        var sourceAlreadyReferenced = false;
         if (request.RenameWithTimestamp)
         {
+            if (isTemporaryS3Upload)
+            {
+                var existingFrames = await _frameCreationRepository.GetQueryableAsync();
+                sourceAlreadyReferenced = await AsyncExecuter.AnyAsync(
+                    existingFrames.Where(x => x.ResultImageUrl == request.ResultImageUrl));
+            }
             resultImageUrl = await RenameImageWithTimestampAsync(request.ResultImageUrl, request.ZaloUserId);
         }
 
@@ -221,6 +231,20 @@ public class MiniAppHl25Service : ApplicationService, IMiniAppHl25Service
         }
 
         await uow.CompleteAsync();
+
+        if (isTemporaryS3Upload && !sourceAlreadyReferenced &&
+            !string.Equals(resultImageUrl, request.ResultImageUrl, StringComparison.Ordinal))
+        {
+            try
+            {
+                await _manageImageService.DeleteFileAsync(request.ResultImageUrl);
+            }
+            catch (Exception ex)
+            {
+                // DB đã commit và URL mới còn dùng được; không trả lỗi để FE tạo thêm thiệp khi retry.
+                Logger.LogWarning(ex, "HL25: không xóa được ảnh upload tạm {ImageUrl}", request.ResultImageUrl);
+            }
+        }
 
         return new Hl25FrameResultDto
         {
@@ -778,22 +802,54 @@ public class MiniAppHl25Service : ApplicationService, IMiniAppHl25Service
     /// </summary>
     private async Task<string> RenameImageWithTimestampAsync(string sourceUrl, string zaloUserId)
     {
+        var sourcePath = Uri.TryCreate(sourceUrl, UriKind.Absolute, out var uri) ? uri.AbsolutePath : sourceUrl;
+        var ext = Path.GetExtension(sourcePath);
+        var timestamp = DateTime.Now.ToString("yyyyMMddHHmmss");
+        var tenantId = CurrentTenant.Id?.ToString() ?? "host";
+        var newFileName = $"{zaloUserId}_{timestamp}{ext}";
+
+        // URL đã đúng tên từ lần tạo trước: không tạo thêm bản copy khi FE retry sau một giây khác.
+        var sourceStem = Path.GetFileNameWithoutExtension(sourcePath);
+        var namedPrefix = zaloUserId + "_";
+        if (sourceStem.StartsWith(namedPrefix, StringComparison.Ordinal) &&
+            sourceStem.Length == namedPrefix.Length + 14 &&
+            sourceStem[namedPrefix.Length..].All(char.IsDigit))
+            return sourceUrl;
+
         try
         {
-            var ext = Path.GetExtension(new Uri(sourceUrl, UriKind.RelativeOrAbsolute).IsAbsoluteUri
-                ? new Uri(sourceUrl).AbsolutePath
-                : sourceUrl);
-            var timestamp = DateTime.Now.ToString("yyyyMMddHHmmss");
-            var tenantId = CurrentTenant.Id?.ToString() ?? "host";
-            var newFileName = $"{zaloUserId}_{timestamp}{ext}";
-
             var newUrl = await _manageImageService.CopyAsync(sourceUrl, tenantId, Hl25Consts.DefaultImageSubFolder, newFileName);
-            return newUrl ?? sourceUrl; // Nguồn không tồn tại (ảnh đã xóa/lỗi) → giữ nguyên URL gốc.
+            return newUrl ?? throw new UserFriendlyException(code: Hl25ErrorCodes.UploadFailed,
+                message: "Không tìm thấy ảnh thiệp để lưu.");
         }
-        catch (Exception)
+        catch (UserFriendlyException)
         {
-            // Nếu có lỗi thì giữ nguyên URL gốc.
-            return sourceUrl;
+            throw;
         }
+        catch (Exception ex)
+        {
+            Logger.LogWarning(ex, "HL25: không copy được ảnh thiệp {ImageUrl}", sourceUrl);
+            throw new UserFriendlyException(code: Hl25ErrorCodes.UploadFailed,
+                message: "Không thể lưu ảnh thiệp. Vui lòng thử lại.");
+        }
+    }
+
+    private bool IsTemporaryS3FrameUpload(string sourceUrl, string tenantId)
+    {
+        if (!string.Equals(_configuration["Storage:Provider"], "S3", StringComparison.OrdinalIgnoreCase) ||
+            !(_configuration.GetSection("Storage:S3:SubFolders").Get<string[]>() ?? Array.Empty<string>())
+                .Contains(Hl25Consts.DefaultImageSubFolder, StringComparer.OrdinalIgnoreCase))
+            return false;
+
+        var baseUrl = _configuration["Storage:S3:PublicBaseUrl"];
+        if (string.IsNullOrWhiteSpace(baseUrl))
+            baseUrl = $"{_configuration["Storage:S3:ServiceUrl"]?.TrimEnd('/')}/{_configuration["Storage:S3:Bucket"]}";
+
+        var prefix = $"{baseUrl?.TrimEnd('/')}/uploads/{Hl25Consts.DefaultImageSubFolder}/{tenantId}/";
+        if (!sourceUrl.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)) return false;
+
+        var fileName = sourceUrl[prefix.Length..];
+        return !fileName.Contains('/') && !fileName.Contains('?') && !fileName.Contains('#') &&
+               Guid.TryParseExact(Path.GetFileNameWithoutExtension(fileName), "N", out _);
     }
 }

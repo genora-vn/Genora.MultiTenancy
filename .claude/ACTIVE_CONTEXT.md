@@ -1,13 +1,32 @@
 # ACTIVE CONTEXT — Việc đang làm dở
 
-## HL25/HLG — Fix S3 `Content-Encoding: aws-chunked` (ảnh không đọc được) — 2026-10-13 (MỚI NHẤT)
+## HL25 — Sửa ảnh thiệp bị lưu trùng trên S3 — 2026-10-14 (DONE, chưa commit/deploy)
+
+- Branch `hotfix/20261014`. Root cause: `upload-image` sinh object GUID; `CreateFrame(RenameWithTimestamp=true)` dùng S3 `CopyObjectAsync` tạo object ZaloUserId_timestamp nhưng không xóa GUID. S3 copy không phải rename; Local `File.Copy` cũng tạo hai file trên Windows.
+- Đã sửa `MiniAppHl25Service`: sau khi copy và DB commit thành công, chỉ xóa GUID tạm thuộc đúng public S3 URL/subfolder/tenant và chưa có frame cũ tham chiếu; URL đã có tên ZaloUserId_timestamp thì không copy lại; copy thiếu nguồn thì báo lỗi thay vì lưu URL GUID. `ManageImageService.CopyAsync` nhận diện URL S3 theo public base URL và luôn ghi đích theo Provider/whitelist (hỗ trợ Local↔S3); vẫn là thao tác copy thuần. API request/response giữ nguyên.
+- Test 66/66 (`Hl25|AppImages`) và HttpApi build 0 errors/9 warnings. Chưa test S3 thật, chưa commit/deploy/migration. Nếu upload bị bỏ dở, S3 delete thất bại, hoặc GUID đã được frame khác tham chiếu thì GUID vẫn được giữ để tránh mất ảnh; xem [task](tasks/20261014_hl25_s3_duplicate_image_fix.md) và [note](memory/notes/project/project_hl25_s3_duplicate_image_fix_20261014.md).
+
+## HLG Ranking Excel — PharmaPhone — 2026-10-14 (ĐÃ COMMIT/MERGE)
+
+- Commit `5d4f2cd` đã merge vào `dev` tại `779367f`. Cột G “SĐT Chủ nhà thuốc” lấy profile theo CustomerId + tenant; áp dụng export report và chốt/xuất lại snapshot. Không migration/API change.
+- Phiên triển khai ghi nhận 148/148 HLG Application tests và Web build 0 errors/61 warnings. Đây là kết quả đã chạy trước merge, chưa phải UAT staging/production.
+- [Note](memory/notes/project/project_hlg_ranking_export_pharma_phone_20261014.md).
+
+## Đồng bộ trạng thái commit mới trên dev — 2026-10-12 đến 14
+
+- `1e5257f`: HLG ranking share image trả URL storage trực tiếp, không ghép tenant host vào URL S3.
+- `fe096ef`: Winners và Ranking Event/Entries theo game; `/ranking/event` nhận `gameId` optional.
+- `34df62b`: sửa S3 `aws-chunked`; `6302441`/`2d10c74`: S3 storage đã merge vào dev. Note 2026-10-09 nói nhánh parked/chưa merge là lịch sử cũ.
+- Chưa xác minh deploy/UAT hiện tại trên staging/production.
+
+## HL25/HLG — Fix S3 `Content-Encoding: aws-chunked` — ghi nhận task 2026-10-13 (đã commit/merge; xem trạng thái hiện tại ở đầu file)
 
 - Branch `hotfix/20261013`. API `GET /api/mini-app/hl25/me/frames?zaloUserId=...` trả `resultImageUrl` S3 nhưng URL trả `Content-Encoding: aws-chunked` → browser/Zalo mini app + `curl --compressed` lỗi `(61) Unrecognized content encoding type`, không hiển thị ảnh.
 - **Root cause:** `AWSSDK.S3` **4.0.104.2** (SDK V4) bật mặc định flexible-checksum (CRC32) → stream qua `aws-chunked` content-encoding cho mọi PutObject. AWS thật strip header này; S3-compatible (ods.vn) **lưu luôn vào metadata object** → trả về khi GET. `DisablePayloadSigning=true` KHÔNG tắt được checksum/chunked (bẫy chính).
 - **Fix (chỉ code, KHÔNG remediate ảnh cũ — user chọn):** (1) `MultiTenancyApplicationModule.cs` `AmazonS3Config` thêm `RequestChecksumCalculation = WHEN_REQUIRED` + `ResponseChecksumValidation = WHEN_REQUIRED` (enum `Amazon.Runtime`, SCREAMING_CASE). (2) `S3ImageStorageProvider.CopyAsync` set `MetadataDirective = REPLACE` + `ContentType` (helper `GuessContentType`), KHÔNG set `ContentEncoding` → object rename sạch kể cả nguồn còn aws-chunked. Không đụng response/DTO/`ToFullUrl`/controller.
-- Build HttpApi + Application **0 errors**; `dotnet test` filter AppImages|Hl25|Hlg **196/196 PASS**. **Chưa deploy/commit.** Ảnh cũ (từ ~09/10) vẫn vỡ → test bằng ảnh TẠO MỚI; verify `curl -I <url>` không còn `Content-Encoding: aws-chunked`. [Note](memory/notes/project/project_hl25_s3_aws_chunked_fix_20261013.md).
+- Build HttpApi + Application **0 errors**; `dotnet test` filter AppImages|Hl25|Hlg **196/196 PASS**. Commit `34df62b` đã merge vào `dev`; chưa xác minh deploy. Ảnh cũ (từ ~09/10) vẫn vỡ → test bằng ảnh TẠO MỚI; verify `curl -I <url>` không còn `Content-Encoding: aws-chunked`. [Note](memory/notes/project/project_hl25_s3_aws_chunked_fix_20261013.md).
 
-## HLG — /ranking/event thêm query gameId (optional) — 2026-10-13
+## HLG — /ranking/event thêm query gameId (optional) — 2026-10-13 (đã commit trong `fe096ef`, merge vào dev)
 
 - Branch `hotfix/20261012`. Follow-up của task ranking-by-game: `GET /ranking/event` thêm `gameId` optional để header BXH khớp đúng game FE đang xem (kể cả game đã kết thúc).
   - Có `gameId` → load `HlgGame` theo (gameId, tenant); không có → `null`; có → tìm event sở hữu (`ResolveEventForGameAsync`: map `HlgRankingEventGame` → fallback `ev.GameId` legacy) → `MapEvent(owningEvent, game)`. **Không ràng buộc event đang active**.
@@ -15,23 +34,23 @@
   - `MapEvent` chuyển sang **nullable-safe** (event null = game mồ côi → `Id=Guid.Empty`, `Title=""`).
 - Quyết định user duyệt: gameId không tồn tại/sai tenant → null; game mồ côi → field game + event trống; không ràng buộc active event.
 - Sửa: `IHlgRankingAppService.cs` (`GetCurrentEventAsync(Guid? gameId=null, ct)`), `HlgRankingAppService.cs` (nhánh gameId + `ResolveEventForGameAsync` + MapEvent nullable), `HoaLinhGamificationController.GetRankingEvent` (+`[FromQuery] Guid? gameId`). Thêm 3 test.
-- Build HttpApi + test project **0 errors**; `dotnet test --filter Hlg` **141/141 PASS** (+3 case mới). Backward compatible (không truyền gameId → output cũ; DTO không đổi shape). **Không migration/deploy/commit**. [Note](memory/notes/project/project_hlg_ranking_event_gameid_optional_20261013.md).
+- Build HttpApi + test project **0 errors**; `dotnet test --filter Hlg` **141/141 PASS** (+3 case mới). Backward compatible (không truyền gameId → output cũ; DTO không đổi shape). Commit `fe096ef` đã merge vào `dev`; không migration, chưa xác minh deploy.. [Note](memory/notes/project/project_hlg_ranking_event_gameid_optional_20261013.md).
 
-## HLG — Ranking Event & Entries theo từng Game (tuần) — 2026-10-13
+## HLG — Ranking Event & Entries theo từng Game (tuần) — 2026-10-13 (đã commit trong `fe096ef`, merge vào dev)
 
 - Branch `hotfix/20261012`. Refactor 2 API mini-app để tách xếp hạng theo **từng Game** thay vì toàn chiến dịch:
   - `GET /ranking/event`: chọn **game hiện tại** động (ongoing ưu tiên, `StartAt` mới nhất → nếu không có, ended mới nhất theo `EndAt DESC`); chỉ còn upcoming/không có game → `data:null`. `RankingEventDto` đổi nghĩa `GameId`=game hiện tại, `StartAt/EndAt`=thời gian GAME; thêm `GameName`, `GameStatus` (ongoing|ended|upcoming), giữ event gốc ở `EventStartAt/EventEndAt`.
   - `GET /ranking/entries`: thêm `gameId` optional; truyền → xếp hạng đúng game đó; không truyền → "game hiện tại"; không có game hiện tại → `[]`.
   - `GET /ranking/events/{gameId}/winners`: GIỮ NGUYÊN (task 20261012).
 - Sửa: `RankingDtos.cs`, `IHlgRankingAppService.cs`, `HlgRankingAppService.cs` (inject `IRepository<HlgRankingEventGame>` + `IRepository<HlgGame>`; thêm `ResolveCurrentGameAsync`/`ComputeGameStatus`/`GetEventGameIdsAsync`), `HoaLinhGamificationController.GetRankingEntries` (+`gameId`). Cập nhật 2 test khởi tạo `HlgRankingAppService` (ctor +2 repo) + thêm 2 test.
-- Build HttpApi + test project **0 errors**; `dotnet test --filter Hlg` **138/138 PASS** (+4 case mới). **Không migration/deploy/commit** (user tự commit+test local; FE lấy gameId từ `/ranking/event` để gọi entries/winners). [Note](memory/notes/project/project_hlg_ranking_by_game_20261013.md).
+- Build HttpApi + test project **0 errors**; `dotnet test --filter Hlg` **138/138 PASS** (+4 case mới). Commit `fe096ef` đã merge vào `dev`; không migration, chưa xác minh deploy. (user tự commit+test local; FE lấy gameId từ `/ranking/event` để gọi entries/winners). [Note](memory/notes/project/project_hlg_ranking_by_game_20261013.md).
 
-## HLG — Winners API theo GameId (chỉ game đã kết thúc) — 2026-10-12
+## HLG — Winners API theo GameId (chỉ game đã kết thúc) — 2026-10-12 (đã commit trong `fe096ef`, merge vào dev)
 
 - Branch `hotfix/20261012`. Refactor API `GET /api/mini-app/hlg/ranking/events/{id}/winners`: đổi tham số `{id}` từ **EventId (chiến dịch)** → **GameId (`HlgGame.Id`)**. Chỉ trả winners khi game ĐÃ KẾT THÚC (`Status==Ended` HOẶC `EndAt < Clock.Now`); game chưa kết thúc / không tồn tại / sai tenant → `data: []`.
 - Sửa 2 file: `Application.Contracts/.../Hlg/ContentDtos.cs` (interface `GetWinnersAsync(Guid gameId)` + XML doc) và `Application/.../Hlg/HlgContentAppService.cs` (lookup `HlgGame` theo gameId+tenant → gate ended → filter `HlgRankingWinner.GameId==gameId && IsActive`). **Route/Controller/Gateway giữ nguyên path** (chỉ đổi giá trị `{id}` FE truyền vào).
 - **Làm rõ (quan trọng):** nhãn 2 bảng trong task file bị ĐẢO so với code. ID user truyền (`72AE3886…` Tuần 1) chính là `HlgGame.Id` (bảng thực `AppHlgGames`); junction event↔game là `AppHlgRankingEventGames` (`HlgRankingEventGame`). `HlgRankingWinner.GameId` FK → `HlgGame`.
-- Build **0 errors**; `dotnet test --filter Hlg` **134/134 PASS** (thêm 2 test mới trong `HlgDesignContentTests.cs`). Compile impact: caller duy nhất là controller, chỉ rename param cùng kiểu Guid, không JS proxy. **Không migration/deploy/commit** (user tự commit+test local trước khi lên staging; FE sẽ chuyển sang truyền game id). [Note](memory/notes/project/project_hlg_winners_by_game_api_20261012.md).
+- Build **0 errors**; `dotnet test --filter Hlg` **134/134 PASS** (thêm 2 test mới trong `HlgDesignContentTests.cs`). Compile impact: caller duy nhất là controller, chỉ rename param cùng kiểu Guid, không JS proxy. Commit `fe096ef` đã merge vào `dev`; không migration, chưa xác minh deploy. (user tự commit+test local trước khi lên staging; FE sẽ chuyển sang truyền game id). [Note](memory/notes/project/project_hlg_winners_by_game_api_20261012.md).
 
 ## Hoa Linh Sales — Excel Blouse theo dáng/size — 2026-10-11
 
@@ -39,10 +58,10 @@
 - Mẫu Q4:X13 có 2 ô nhập lệch: Nữ L dòng4 phải vào V, Nam2XL dòng12 phải vào T; export lấy chi tiết đơn làm căn cứ. Các bộ lọc/quyền/endpoint giữ nguyên.
 - **71 Sales tests PASS**, Web Release build 0 errors; không migration/DB writes/deploy. Branch `hotfix/20261011`, giữ appsettings/log changes có sẵn. Còn UAT nút Xuất Excel sau deploy. [Note](memory/notes/project/project_hl_blouse_excel_style_sizes_20261011.md).
 
-## HLG Trao giải trúng thưởng theo game + Fulfillment + Menu reorder — 2026-10-08 (MỚI NHẤT)
-## Hoa Linh 25 + HLG — S3 Storage Migration (ods.vn) — 2026-10-09 (MỚI NHẤT, PARKED)
+## HLG Trao giải trúng thưởng theo game + Fulfillment + Menu reorder — ghi nhận 2026-10-08
+## Hoa Linh 25 + HLG — S3 Storage Migration (ods.vn) — ghi nhận task 2026-10-09 (đã merge vào dev; trạng thái parked đã kết thúc)
 
-- **Nhánh riêng, CHƯA merge/deploy:** `feature/dev-hoalinh-25year-s3-storage` — anh đã xác nhận **ưu tiên task khác trước**, task này tạm dừng ở đây chờ quay lại.
+- Nhánh riêng ban đầu `feature/dev-hoalinh-25year-s3-storage`; task đã merge vào `dev` qua `6302441`/`2d10c74`. Ghi chú “tạm dừng” bên dưới phản ánh ưu tiên tại thời điểm 2026-10-09.
 - **Đã hoàn thành:** abstraction `IImageStorageProvider` (Local/S3) + `ManageImageService` facade (API cũ giữ nguyên) tự chọn provider theo `Storage:Provider` + whitelist `Storage:S3:SubFolders` (match theo tiền tố segment, VD `hlg/videos` thuộc nhóm `hlg`). Chỉ **hl25 + hlg** dùng S3 (`c01-hoalinh-prod-01` @ `s3.ods.vn`), module khác giữ Local. Refactor 4 đường ghi file trực tiếp (hl25 rename ảnh thiệp, ZIP download-all, HLG share-image, HLG video admin) sang dùng chung `IManageImageService`.
 - **3 bug tìm & sửa lúc viết test** (xem note để chi tiết root cause): double-prefix path `uploads/uploads/...` ở HLG share-image; whitelist exact-match sai (phải match theo segment đầu); test fixture dùng mock trống `IManageImageService` che giấu lỗi thật.
 - **Build + test:** 0 lỗi CS toàn solution; **218/218 test pass** (12 test mới `AppImages`). Đã viết sẵn `appsettings.Staging.json` với credentials S3 thật user cung cấp — **file này KHÔNG commit** (đã thêm `.gitignore`), user phải tự copy lên server khi deploy.

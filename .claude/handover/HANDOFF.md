@@ -1,5 +1,12 @@
 # HANDOFF — Bàn giao giữa các phiên làm việc
 
+## Trạng thái repo `dev` và task kế tiếp — 2026-10-14
+
+- Branch `dev`, HEAD `779367f` tại lúc kiểm tra. HLG Ranking export PharmaPhone commit `5d4f2cd` đã merge; note và test/build status ở [project note](../memory/notes/project/project_hlg_ranking_export_pharma_phone_20261014.md). Chưa có bằng chứng staging/production UAT.
+- S3 storage đã merge vào `dev` qua `6302441`; sửa `aws-chunked` có commit `34df62b`. Các note cũ ghi parked/chưa commit cần hiểu là lịch sử. Cấu hình S3 server cần cấp qua kênh secrets, không ghi credentials vào memory.
+- Task chờ: điều tra ảnh duplicate trên S3 khi CreateFrame/upload-image, theo `.claude/tasks/20261014_hl25_s3_duplicate_image_fix.md`. Chỉ một object theo tên `ZaloUserId_timestamp.ext` là kết quả mong muốn; chưa phân tích/implement. Bảo toàn object hiện hữu trong lúc điều tra.
+- Dirty user files lúc kiểm tra: hai appsettings của DbMigrator/Web đang modified; log Web cũ đang deleted, log 2026-10-06 đến 10-14 untracked; task duplicate image untracked. Giữ nguyên các thay đổi này.
+
 ## Hoa Linh Sales — Excel Blouse theo dáng/size — 2026-10-11
 
 - Branch `hotfix/20261011`, starting HEAD `6156986`. Task changes: HlSalesExportAppService, partial test fixture + HlSalesBlouseExportTests, memory. Không đưa appsettings/log changes có sẵn vào commit task.
