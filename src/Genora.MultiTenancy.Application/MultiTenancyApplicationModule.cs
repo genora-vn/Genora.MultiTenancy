@@ -169,6 +169,8 @@ public class MultiTenancyApplicationModule : AbpModule
             configuration.GetSection(Genora.MultiTenancy.HoaLinh.HlPointExpireOptions.SectionName));
         Configure<Genora.MultiTenancy.HoaLinh.HlLoyaltyOptions>(
             configuration.GetSection(Genora.MultiTenancy.HoaLinh.HlLoyaltyOptions.SectionName));
+        Configure<Genora.MultiTenancy.Hlg.HlgRegistrationOptions>(
+            configuration.GetSection(Genora.MultiTenancy.Hlg.HlgRegistrationOptions.SectionName));
 
         // ── UrBox (kho quà eVoucher) ─────────────────────────────────────────
         var urBoxSection = configuration.GetSection(UrBoxSettings.SectionName);

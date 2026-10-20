@@ -1,5 +1,12 @@
 # PROJECT STATE — Genora.MultiTenancy
 
+## HLG — Lọc chi nhánh DMS theo customer channel (OTC) — 2026-10-20 (mới nhất, chưa commit/deploy)
+
+- Branch `hotfix/20261020`. `GetDmsBranchesAsync` (`HlgProfileAppService.Registration.cs`) nay lọc `HlCustomerDto.CustChannel` theo danh sách cấu hình; áp dụng cho cả `GET auth/{phone}` và `POST customer/upsert` vì cùng dùng helper này. Dedup `CustCode` chạy sau bước lọc.
+- Cấu hình: appsettings section `HlgRegistration` (`AllowedCustomerChannels` mặc định `[ "OTC" ]`, `ChannelRestrictedMessage`) bind qua `HlgRegistrationOptions`; helper so sánh ở `HlgRegistrationRules` (`NormalizeAllowedChannels`/`AllowsAllChannels`/`IsChannelAllowed`). Fail-closed khi config thiếu/rỗng; `[ "*" ]` để mở mọi kênh. Đổi cấu hình → recycle app pool.
+- Lỗi: 0 bản ghi DMS vẫn là `DmsCustomerNotFound` (404, hotline); có bản ghi nhưng không thuộc kênh được phép → `HlgRegistration:ChannelNotAllowed` (403, message Kênh Nhà Thuốc).
+- Build Application/HttpApi/EF-test 0 errors; `dotnet test --filter Hlg` **162/162 PASS**. Không migration, DTO/response không đổi shape. Chưa commit/deploy/UAT DMS thật. [Task](tasks/20261020_hlg_checkcustomer_dynamic_customer_channel_validation.md) · [note](memory/notes/project/project_hlg_customer_channel_filter_20261020.md).
+
 ## Trạng thái đã xác nhận trên `dev` — 2026-10-14
 
 - HEAD kiểm tra `779367f`; branch `dev`.

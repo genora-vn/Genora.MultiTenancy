@@ -135,6 +135,7 @@ Giữ convention HLG: lỗi nghiệp vụ trả **HTTP 200**, mã lỗi nằm �
 |---|---|---|
 | 404 | Không có chi nhánh DMS hợp lệ của số chủ | Số điện thoại của bạn chưa có trong hệ thống. Xin vui lòng liên hệ Hotline 0977872631 để được hỗ trợ |
 | 403 | Nhân viên đăng ký trước chủ | Vui lòng thông báo chủ nhà thuốc đăng ký tài khoản trước khi bạn thực hiện đăng ký. |
+| 403 | Có chi nhánh DMS nhưng không chi nhánh nào thuộc kênh được phép (xem mục 7) | Cảm ơn Quý khách quan tâm chương trình. Rất tiếc, chương trình hiện tại đang áp dụng cho Khách hàng thuộc Kênh Nhà Thuốc |
 | 409 | Nhóm đã đủ 5, đang thêm người mới | Số lượng tài khoản liên kết đã vượt quá quy định của Nhà thuốc. |
 | 400 | Chưa chọn chi nhánh / mã không thuộc số chủ / input sai | Thông báo tương ứng |
 | 409 | Đổi nhóm, trùng định danh, hồ sơ đã xóa, mã bị chiếm hoặc khóa đang bận | Thông báo tương ứng |
@@ -178,3 +179,50 @@ Remove-Item Env:HLG_REGISTRATION_LOCALDB_TESTS
 ```
 
 SQL tests cố định `(localdb)\MSSQLLocalDB`, tên database tự sinh `HlgRegistrationTest_<guid>`, không đọc appsettings. Khi không bật biến môi trường, test SQL được skip rõ ràng; hai test migration/model vẫn chạy.
+
+## 7. Lọc kênh khách hàng DMS (`cust_channel`) — bổ sung 2026-10-20
+
+Chương trình HLG chỉ áp dụng cho Kênh Nhà Thuốc. Chi nhánh DMS trả về được lọc theo `cust_channel`; kênh khác (`RETAILER` — cửa hàng/tạp hóa/siêu thị, `CONSUMER` — tiêu dùng tự do) bị bỏ khỏi `branches`.
+
+**Áp dụng ở cả hai luồng** (cùng một helper `GetDmsBranchesAsync`): `GET auth/{phone}` chỉ trả chi nhánh thuộc kênh được phép, và `POST customer/upsert` từ chối `customerCode` của chi nhánh không thuộc kênh được phép (`error: 400`, `HlgRegistration:InvalidBranch`) — gọi thẳng upsert không bỏ qua được bước lọc.
+
+**Thứ tự lỗi** (quan trọng cho FE):
+
+| Tình huống | `error` | `message` |
+|---|---|---|
+| DMS không trả bản ghi nào khớp số chủ | 404 | Số điện thoại của bạn chưa có trong hệ thống... Hotline 0977872631 |
+| Có bản ghi khớp, nhưng **không** bản ghi nào thuộc kênh được phép | 403 | Cảm ơn Quý khách quan tâm chương trình. Rất tiếc, chương trình hiện tại đang áp dụng cho Khách hàng thuộc Kênh Nhà Thuốc |
+| Có cả chi nhánh được phép và không được phép | — | Thành công, `branches` chỉ còn chi nhánh thuộc kênh được phép |
+
+**Cấu hình** — `appsettings.json` (hoặc `appsettings.{Environment}.json`):
+
+```jsonc
+"HlgRegistration": {
+  "AllowedCustomerChannels": [ "OTC" ],   // mở thêm: [ "OTC", "RETAILER" ] · mở tất cả: [ "*" ]
+  "ChannelRestrictedMessage": null        // null → message mặc định ở bảng trên
+}
+```
+
+- So sánh không phân biệt hoa/thường và tự `Trim()`; trùng lặp được dedup.
+- **Fail-closed:** thiếu section hoặc để rỗng/toàn khoảng trắng → mặc định `[ "OTC" ]`. Muốn mở cho mọi kênh phải ghi `[ "*" ]` tường minh.
+- `cust_channel` null/rỗng/giá trị lạ → chi nhánh bị loại.
+- Dedup theo `cust_code` chạy **sau** bước lọc kênh, nên bản ghi non-OTC không chiếm chỗ mã trùng.
+- Đổi cấu hình cần recycle app pool để chắc chắn có hiệu lực (`IOptionsSnapshot` có thể tự nạp lại khi file đổi, nhưng không nên dựa vào đó khi rollout).
+- Số chi nhánh bị loại được ghi `LogInformation` kèm `cust_code` để điều tra khi FE báo "mất chi nhánh".
+
+Code liên quan: `HlgRegistrationOptions` + `HlgRegistrationRules` (Domain.Shared/Hlg), `HlgProfileAppService.GetDmsBranchesAsync`, `HoaLinhGamificationController.RegistrationFailure`. Không migration, không đổi shape DTO.
+
+**cURL kiểm tra:**
+
+```bash
+# Chủ nhà thuốc OTC — branches chỉ còn bản ghi OTC
+curl --location 'https://localhost:44374/api/mini-app/hlg/auth/0916874340'
+
+# Số thuộc kênh retailer/consumer — error 403 message Kênh Nhà Thuốc
+curl --location 'https://localhost:44374/api/mini-app/hlg/auth/<so_retailer>'
+
+# Gọi thẳng upsert với mã chi nhánh non-OTC — bị từ chối, không ghi dữ liệu
+curl --location 'https://localhost:44374/api/mini-app/hlg/customer/upsert' \
+  --header 'Content-Type: application/json' \
+  --data '{"phone":"0916874340","pharmaPhone":"0916874340","customerCode":"<ma_chi_nhanh_retailer>","fullName":"Test","customerType":"pharmacy"}'
+```

@@ -1,5 +1,13 @@
 # ACTIVE CONTEXT — Việc đang làm dở
 
+## HLG — Lọc chi nhánh DMS theo customer channel (OTC) + cấu hình động — 2026-10-20 (DONE code/test, chưa commit/deploy)
+
+- Branch `hotfix/20261020`. `GET /api/mini-app/hlg/auth/{phone}` trước đây trả toàn bộ chi nhánh DMS nên khách `RETAILER`/`CONSUMER` vẫn đăng ký được. Root cause: `GetDmsBranchesAsync` (`HlgProfileAppService.Registration.cs`) — điểm lọc duy nhất, không có điều kiện nào trên `CustChannel`; helper dùng chung cho cả `CheckCustomerAsync` và `UpsertCustomerAsync`.
+- Fix tại chính helper đó: lọc cũ → `matched`; `matched` rỗng vẫn trả `DmsCustomerNotFound` (404, hotline); sau đó lọc channel → rỗng thì `ChannelNotAllowed` (403, message "Cảm ơn Quý khách quan tâm chương trình. Rất tiếc, chương trình hiện tại đang áp dụng cho Khách hàng thuộc Kênh Nhà Thuốc"); **dedup `CustCode` chạy sau bước lọc**. Lọc áp dụng cho cả hai luồng nên gọi thẳng `customer/upsert` với mã non-OTC bị chặn.
+- Cấu hình động qua appsettings section `HlgRegistration` (`AllowedCustomerChannels`, `ChannelRestrictedMessage`) + `HlgRegistrationOptions`/helper trong `HlgRegistrationRules`. Fail-closed: thiếu/rỗng → `["OTC"]`; mở mọi kênh phải ghi `["*"]`; so sánh `OrdinalIgnoreCase` + `Trim()`. Đổi cấu hình cần recycle app pool.
+- Build Application/HttpApi/EF-test **0 errors**; `dotnet test --filter Hlg` **162/162 PASS** (11 case mới). Không migration, DTO/response không đổi shape → FE không phải sửa.
+- **Chưa commit/deploy/UAT DMS thật.** `cust_channel` không lưu ở DB Genora → không đếm được bằng SQL số hồ sơ đã đăng ký đang gắn chi nhánh non-OTC; khách như vậy khi gửi lại upsert sẽ bị 403. [Task](tasks/20261020_hlg_checkcustomer_dynamic_customer_channel_validation.md) · [note](memory/notes/project/project_hlg_customer_channel_filter_20261020.md).
+
 ## HL25 — Sửa ảnh thiệp bị lưu trùng trên S3 — 2026-10-14 (DONE, chưa commit/deploy)
 
 - Branch `hotfix/20261014`. Root cause: `upload-image` sinh object GUID; `CreateFrame(RenameWithTimestamp=true)` dùng S3 `CopyObjectAsync` tạo object ZaloUserId_timestamp nhưng không xóa GUID. S3 copy không phải rename; Local `File.Copy` cũng tạo hai file trên Windows.

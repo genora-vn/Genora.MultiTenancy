@@ -103,7 +103,7 @@ public class HoaLinhGamificationController : MultiTenancyController
         var error = ex.Code switch
         {
             "HlgRegistration:DmsCustomerNotFound" => 404,
-            "HlgRegistration:OwnerRequired" => 403,
+            "HlgRegistration:OwnerRequired" or "HlgRegistration:ChannelNotAllowed" => 403,
             "HlgRegistration:DmsUnavailable" => 503,
             "HlgRegistration:AccountLimitReached" or "HlgRegistration:PharmacyAlreadyLinked"
                 or "HlgRegistration:CustomerCodeInUse" or "HlgRegistration:AmbiguousCustomer"

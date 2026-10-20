@@ -9,6 +9,7 @@ using Genora.MultiTenancy.DomainModels.AppCustomers;
 using Genora.MultiTenancy.DomainModels.AppHlg;
 using Genora.MultiTenancy.Enums;
 using Genora.MultiTenancy.Hlg;
+using Microsoft.Extensions.Logging;
 using Volo.Abp;
 using Volo.Abp.Data;
 using Volo.Abp.Domain.Repositories;
@@ -116,15 +117,35 @@ public partial class HlgProfileAppService
         ct.ThrowIfCancellationRequested();
         if (result == null || !result.Success)
             throw RegistrationError("DmsUnavailable", "Không thể kiểm tra thông tin nhà thuốc lúc này. Vui lòng thử lại sau.");
-        var branches = (result.Data ?? new List<HlCustomerDto>())
+        var matched = (result.Data ?? new List<HlCustomerDto>())
             .Where(x => x != null && x.IsCustomer != false && !string.IsNullOrWhiteSpace(x.CustCode)
                 && x.CustCode.Trim().Length <= 50
                 && (NormalizePhone(x.CustPhone) == pharmaPhone || NormalizePhone(x.Phone) == pharmaPhone))
+            .ToList();
+        // Phone not in DMS at all keeps the hotline message; wrong channel gets its own message below.
+        if (matched.Count == 0)
+            throw RegistrationError("DmsCustomerNotFound", HlgRegistrationRules.DmsCustomerNotFound);
+
+        var options = _registrationOptions.Value ?? new HlgRegistrationOptions();
+        var allowedChannels = HlgRegistrationRules.NormalizeAllowedChannels(options.AllowedCustomerChannels);
+        var allowed = HlgRegistrationRules.AllowsAllChannels(allowedChannels)
+            ? matched
+            : matched.Where(x => HlgRegistrationRules.IsChannelAllowed(x.CustChannel, allowedChannels)).ToList();
+        if (allowed.Count < matched.Count)
+        {
+            _logger.LogInformation(
+                "HLG registration: bỏ {Rejected}/{Total} chi nhánh DMS không thuộc kênh được phép [{Allowed}]. CustCode bị bỏ: {Codes}",
+                matched.Count - allowed.Count, matched.Count, string.Join(",", allowedChannels),
+                string.Join(",", matched.Except(allowed).Select(x => x.CustCode?.Trim())));
+        }
+        if (allowed.Count == 0)
+            throw RegistrationError("ChannelNotAllowed",
+                NullIfBlank(options.ChannelRestrictedMessage) ?? HlgRegistrationRules.ChannelNotAllowed);
+
+        // Dedup after the channel filter so a non-allowed row cannot occupy a duplicated CustCode.
+        return allowed
             .GroupBy(x => x.CustCode!.Trim(), StringComparer.OrdinalIgnoreCase)
             .Select(x => x.First()).ToList();
-        if (branches.Count == 0)
-            throw RegistrationError("DmsCustomerNotFound", HlgRegistrationRules.DmsCustomerNotFound);
-        return branches;
     }
 
     private async Task<int> ValidatePharmacyMembershipAsync(string phone, string pharmaPhone, HlgUserProfile? profile, CancellationToken ct)

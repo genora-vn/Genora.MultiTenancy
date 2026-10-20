@@ -16,6 +16,7 @@ using Genora.MultiTenancy.Enums.Hlg;
 using Genora.MultiTenancy.Helpers;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Volo.Abp;
 using Volo.Abp.Data;
 using Volo.Abp.Application.Services;
@@ -49,6 +50,7 @@ public partial class HlgProfileAppService : ApplicationService, IHlgProfileAppSe
     private readonly IHlApiClientService _dms;
     private readonly IHlgRegistrationLock _registrationLock;
     private readonly IUnitOfWorkManager _registrationUow;
+    private readonly IOptionsSnapshot<HlgRegistrationOptions> _registrationOptions;
 
     public HlgProfileAppService(
         IRepository<Customer, Guid> customerRepo,
@@ -64,7 +66,8 @@ public partial class HlgProfileAppService : ApplicationService, IHlgProfileAppSe
         IConfiguration configuration,
         IHlApiClientService dms,
         IHlgRegistrationLock registrationLock,
-        IUnitOfWorkManager registrationUow)
+        IUnitOfWorkManager registrationUow,
+        IOptionsSnapshot<HlgRegistrationOptions> registrationOptions)
     {
         LocalizationResource = typeof(Genora.MultiTenancy.Localization.MultiTenancyResource);
         _customerRepo = customerRepo;
@@ -81,6 +84,7 @@ public partial class HlgProfileAppService : ApplicationService, IHlgProfileAppSe
         _dms = dms;
         _registrationLock = registrationLock;
         _registrationUow = registrationUow;
+        _registrationOptions = registrationOptions;
     }
 
     public async Task<GamificationUserDto> GetByPhoneAsync(string phone, Guid? gameId = null, CancellationToken ct = default)

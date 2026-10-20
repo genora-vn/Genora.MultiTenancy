@@ -17,6 +17,7 @@ using Genora.MultiTenancy.Hlg;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Options;
 using NSubstitute;
 using Shouldly;
 using Volo.Abp;
@@ -42,6 +43,7 @@ public class HlgPharmacyRegistrationTests : IDisposable
     private readonly IHlgRegistrationLock _registrationLock = Substitute.For<IHlgRegistrationLock>();
     private readonly IUnitOfWorkManager _uow = Substitute.For<IUnitOfWorkManager>();
     private readonly IUnitOfWork _transaction = Substitute.For<IUnitOfWork>();
+    private readonly HlgRegistrationOptions _options = new();
     private readonly ServiceProvider _provider;
     private readonly HlgProfileAppService _service;
 
@@ -59,7 +61,8 @@ public class HlgPharmacyRegistrationTests : IDisposable
             Repo(new List<HlPointTransaction>()), Repo(new List<HlgLearningProgress>()),
             Repo(new List<HlgGameSession>()), Repo(new List<HlgProduct>()), Repo(new List<HlgRewardHistory>()),
             Substitute.For<IHlgGameAppService>(),
-            _tenant, NullLogger<HlgProfileAppService>.Instance, new ConfigurationBuilder().Build(), _dms, _registrationLock, _uow)
+            _tenant, NullLogger<HlgProfileAppService>.Instance, new ConfigurationBuilder().Build(), _dms, _registrationLock, _uow,
+            RegistrationOptions(_options))
         { LazyServiceProvider = new AbpLazyServiceProvider(_provider) };
         _dms.GetCustomerByPhoneAsync(OwnerPhone).Returns(HlApiResult<List<HlCustomerDto>>.Ok(new()
         {
@@ -67,8 +70,15 @@ public class HlgPharmacyRegistrationTests : IDisposable
         }));
     }
 
-    private static HlCustomerDto Branch(string code, bool gkhl) => new()
-    { CustCode = code, CustName = "Test branch", Address = "Test address", CustPhone = OwnerPhone, Phone = OwnerPhone, IsCustomer = true, IsGkhl = gkhl };
+    private static HlCustomerDto Branch(string code, bool gkhl, string? channel = "OTC") => new()
+    { CustCode = code, CustName = "Test branch", Address = "Test address", CustPhone = OwnerPhone, Phone = OwnerPhone, IsCustomer = true, IsGkhl = gkhl, CustChannel = channel };
+
+    private static IOptionsSnapshot<HlgRegistrationOptions> RegistrationOptions(HlgRegistrationOptions options)
+    {
+        var snapshot = Substitute.For<IOptionsSnapshot<HlgRegistrationOptions>>();
+        snapshot.Value.Returns(_ => options);
+        return snapshot;
+    }
 
     private static IRepository<T, Guid> Repo<T>(List<T> rows) where T : class, IEntity<Guid>
     {
@@ -129,6 +139,95 @@ public class HlgPharmacyRegistrationTests : IDisposable
         (await Should.ThrowAsync<UserFriendlyException>(() => _service.CheckCustomerAsync(OwnerPhone))).Message.ShouldBe(HlgRegistrationRules.DmsCustomerNotFound);
         (await Should.ThrowAsync<UserFriendlyException>(() => _service.UpsertCustomerAsync(Payload()))).Message.ShouldBe(HlgRegistrationRules.DmsCustomerNotFound);
         _customers.ShouldBeEmpty(); _profiles.ShouldBeEmpty();
+    }
+
+    [Theory]
+    [InlineData("RETAILER")]
+    [InlineData("CONSUMER")]
+    [InlineData("")]
+    [InlineData("   ")]
+    [InlineData((string?)null)]
+    public async Task Only_Non_Otc_Channels_Block_Both_Apis_With_Pharmacy_Channel_Message(string? channel)
+    {
+        _dms.GetCustomerByPhoneAsync(OwnerPhone).Returns(HlApiResult<List<HlCustomerDto>>.Ok(new()
+        {
+            Branch("DMS01", false, channel), Branch("DMS02", true, channel)
+        }));
+        var check = await Should.ThrowAsync<UserFriendlyException>(() => _service.CheckCustomerAsync(OwnerPhone));
+        check.Code.ShouldBe("HlgRegistration:ChannelNotAllowed");
+        check.Message.ShouldBe(HlgRegistrationRules.ChannelNotAllowed);
+        (await Should.ThrowAsync<UserFriendlyException>(() => _service.UpsertCustomerAsync(Payload()))).Code
+            .ShouldBe("HlgRegistration:ChannelNotAllowed");
+        _customers.ShouldBeEmpty(); _profiles.ShouldBeEmpty();
+    }
+
+    [Fact]
+    public async Task Mixed_Channels_Keep_Only_Otc_Branches_And_Reject_Non_Otc_Code_On_Upsert()
+    {
+        _dms.GetCustomerByPhoneAsync(OwnerPhone).Returns(HlApiResult<List<HlCustomerDto>>.Ok(new()
+        {
+            Branch("DMS02", true), Branch("DMS03", true, "RETAILER"), Branch("DMS04", false, "CONSUMER")
+        }));
+        var check = await _service.CheckCustomerAsync(OwnerPhone);
+        check.Branches.Select(x => x.CustCode).ShouldBe(new[] { "DMS02" });
+
+        var retailerPayload = Payload(); retailerPayload.CustomerCode = "DMS03";
+        (await Should.ThrowAsync<UserFriendlyException>(() => _service.UpsertCustomerAsync(retailerPayload))).Code
+            .ShouldBe("HlgRegistration:InvalidBranch");
+        _customers.ShouldBeEmpty(); _profiles.ShouldBeEmpty();
+
+        (await _service.UpsertCustomerAsync(Payload())).DmsCustomerCode.ShouldBe("DMS02");
+    }
+
+    [Fact]
+    public async Task Channel_Comparison_Ignores_Case_And_Surrounding_Spaces()
+    {
+        _dms.GetCustomerByPhoneAsync(OwnerPhone).Returns(HlApiResult<List<HlCustomerDto>>.Ok(new()
+        {
+            Branch("DMS02", true, " otc ")
+        }));
+        (await _service.CheckCustomerAsync(OwnerPhone)).Branches.Count.ShouldBe(1);
+    }
+
+    [Theory]
+    [InlineData("OTC|RETAILER", 2)]
+    [InlineData(HlgRegistrationRules.AllowAllChannelsToken, 3)]
+    [InlineData("CONSUMER", 1)]
+    public async Task Allowed_Channels_Are_Configurable_Without_Code_Change(string configured, int expected)
+    {
+        _options.AllowedCustomerChannels = configured.Split('|');
+        _dms.GetCustomerByPhoneAsync(OwnerPhone).Returns(HlApiResult<List<HlCustomerDto>>.Ok(new()
+        {
+            Branch("DMS02", true), Branch("DMS03", true, "RETAILER"), Branch("DMS04", false, "CONSUMER")
+        }));
+        (await _service.CheckCustomerAsync(OwnerPhone)).Branches.Count.ShouldBe(expected);
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("   ")]
+    [InlineData("OTC|otc| OTC ")]
+    public async Task Blank_Or_Duplicate_Channel_Config_Fails_Closed_To_Otc(string configured)
+    {
+        _options.AllowedCustomerChannels = configured.Split('|');
+        _dms.GetCustomerByPhoneAsync(OwnerPhone).Returns(HlApiResult<List<HlCustomerDto>>.Ok(new()
+        {
+            Branch("DMS02", true), Branch("DMS03", true, "RETAILER")
+        }));
+        var branches = (await _service.CheckCustomerAsync(OwnerPhone)).Branches;
+        branches.Select(x => x.CustCode).ShouldBe(new[] { "DMS02" });
+    }
+
+    [Fact]
+    public async Task Channel_Restricted_Message_Can_Be_Overridden_By_Configuration()
+    {
+        _options.ChannelRestrictedMessage = "Chương trình đang áp dụng cho kênh khác.";
+        _dms.GetCustomerByPhoneAsync(OwnerPhone).Returns(HlApiResult<List<HlCustomerDto>>.Ok(new()
+        {
+            Branch("DMS02", true, "RETAILER")
+        }));
+        (await Should.ThrowAsync<UserFriendlyException>(() => _service.CheckCustomerAsync(OwnerPhone))).Message
+            .ShouldBe("Chương trình đang áp dụng cho kênh khác.");
     }
 
     [Fact]

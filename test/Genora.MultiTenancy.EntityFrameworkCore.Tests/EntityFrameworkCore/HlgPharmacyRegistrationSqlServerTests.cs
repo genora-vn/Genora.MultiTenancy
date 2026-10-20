@@ -97,7 +97,7 @@ public class HlgRegistrationSqlServerTestModule : AbpModule
         var dms = Substitute.For<IHlApiClientService>();
         dms.GetCustomerByPhoneAsync(Arg.Any<string>()).Returns(c => HlApiResult<List<HlCustomerDto>>.Ok(new()
         {
-            new HlCustomerDto { CustCode = "DMS-" + c.Arg<string>(), CustPhone = c.Arg<string>(), Phone = c.Arg<string>(), IsCustomer = true }
+            new HlCustomerDto { CustCode = "DMS-" + c.Arg<string>(), CustPhone = c.Arg<string>(), Phone = c.Arg<string>(), IsCustomer = true, CustChannel = "OTC" }
         }));
         context.Services.Replace(ServiceDescriptor.Singleton(dms));
     }
