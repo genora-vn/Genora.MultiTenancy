@@ -1,5 +1,13 @@
 # PROJECT STATE — Genora.MultiTenancy
 
+## HLG Ranking — Sửa Xuất báo cáo BEST RESULT — 2026-10-27 (mới nhất, chưa commit/deploy)
+
+- Branch `dev`, HEAD nền `425c30e`; implementation đã hoàn thành trong worktree. Chỉ thay `HlgRankingAdminAppService.BuildRowsAsync` dùng bởi `ExportReportAsync`; thêm 12 case trong `HlgAdminTests`.
+- Mỗi người/game lấy một phiên finished tốt nhất (bao gồm failed): điểm giảm dần, câu đúng giảm dần, tổng thời gian answer tăng dần, FinishedAt tăng dần, SessionId. GameScore/BestScore/CorrectAnswerCount/TotalQuestionCount lấy cùng phiên; EventScore là tổng BEST của các game đã chọn, không cộng nhiều lượt cùng game, không ép về điểm tối đa lý thuyết.
+- Xếp hạng Excel báo cáo theo tổng BEST/câu đúng/thời gian rồi CustomerId. PlayCount vẫn đếm mọi phiên finished trong kỳ; GamesCompleted vẫn passed-only. Thời gian thiếu answer không coi là 0 giây. Query answer batch theo tenant + sessionIds, SQL aggregate qua AsyncExecuter, không N+1.
+- Giữ nguyên mini-app ranking/xét giải/chốt kết quả/reset BonusPoint/snapshot; không thay schema/DTO/endpoint/19 cột Excel. Báo cáo có thể khác hạng xét giải vì gồm cả người chưa đạt; không dùng file này tự động cấp giải.
+- Kiểm chứng: 174/174 HLG Application tests PASS, Web build 0 errors/78 warnings; diff-check sạch. Chưa browser/live DB UAT; cần test lại `/Hlg/Ranking` → “Xuất báo cáo” với game đã kết thúc. Không commit/deploy hay update DB ứng dụng. [Task](tasks/20261027_hlg_ranking_export_best_result_fix.md) · [note](memory/notes/project/project_hlg_ranking_export_best_result_20261027.md).
+
 ## HLG — Lọc chi nhánh DMS theo customer channel (OTC) — 2026-10-20 (mới nhất, chưa commit/deploy)
 
 - Branch `hotfix/20261020`. `GetDmsBranchesAsync` (`HlgProfileAppService.Registration.cs`) nay lọc `HlCustomerDto.CustChannel` theo danh sách cấu hình; áp dụng cho cả `GET auth/{phone}` và `POST customer/upsert` vì cùng dùng helper này. Dedup `CustCode` chạy sau bước lọc.

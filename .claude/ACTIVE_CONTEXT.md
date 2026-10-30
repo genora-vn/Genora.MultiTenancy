@@ -1,5 +1,14 @@
 # ACTIVE CONTEXT — Việc đang làm dở
 
+## HLG Ranking — Excel BEST RESULT — 2026-10-27 (DONE code/test, chưa commit/deploy)
+
+- Branch thực tế `dev`, HEAD nền `425c30e`. User duyệt **chỉ sửa “Xuất báo cáo”** (`ExportReportAsync`, tên file `- bao cao`); không sửa BXH mini-app, điều kiện xét giải, `ExportResultsAsync`, reset BonusPoint hay snapshot cũ.
+- Root cause: `BuildRowsAsync` cộng Score/CorrectCount/TotalQuestions của mọi phiên đạt; các phiên không đạt bị bỏ qua nên người có lịch sử vẫn hiện toàn 0. BestScore cũ đã là Max của phiên đạt, không phải cột bị cộng dồn.
+- Fix: một BEST cho mỗi CustomerId+GameId trong các phiên đã hoàn thành của scope hiện tại, kể cả không đạt. Chọn Score DESC → CorrectCount DESC → SUM(answer.TimeSpentSec) ASC → FinishedAt ASC → SessionId. Các cột điểm/câu đúng/tổng câu lấy cùng phiên; EventScore cộng một BEST/game được chọn (98 vẫn là 98). Hạng báo cáo theo tổng BEST → tổng câu đúng → tổng thời gian → CustomerId; không phải BXH xét giải.
+- Giữ 19 cột, số lượt chơi/first-last, enrich PharmaPhone/địa chỉ/quà/GamesCompleted và filter tenant/event/game. Thời gian thiếu answer là unknown, xếp sau thời gian có dữ liệu khi bằng điểm/câu đúng. Không migration/API/FE change.
+- **174/174 HLG Application tests PASS** (12 case mới; HlgAdminTests 42 case); Web build **0 errors / 78 warnings**; `git diff --check` sạch. Test mở workbook Excel thực sinh bằng ClosedXML; chưa UAT trên DB staging/production.
+- Đã cập nhật task/note; không commit/deploy, không ghi DB ứng dụng. Giữ nguyên log deleted/untracked và task HL25 Oct23 có sẵn. [Task](tasks/20261027_hlg_ranking_export_best_result_fix.md) · [note](memory/notes/project/project_hlg_ranking_export_best_result_20261027.md).
+
 ## HLG — Lọc chi nhánh DMS theo customer channel (OTC) + cấu hình động — 2026-10-20 (DONE code/test, chưa commit/deploy)
 
 - Branch `hotfix/20261020`. `GET /api/mini-app/hlg/auth/{phone}` trước đây trả toàn bộ chi nhánh DMS nên khách `RETAILER`/`CONSUMER` vẫn đăng ký được. Root cause: `GetDmsBranchesAsync` (`HlgProfileAppService.Registration.cs`) — điểm lọc duy nhất, không có điều kiện nào trên `CustChannel`; helper dùng chung cho cả `CheckCustomerAsync` và `UpsertCustomerAsync`.

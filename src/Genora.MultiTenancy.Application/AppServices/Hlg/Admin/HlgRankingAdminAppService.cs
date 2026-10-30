@@ -387,7 +387,7 @@ public class HlgRankingAdminAppService : FeatureProtectedCrudAppService<HlgRanki
         return await AsyncExecuter.ToListAsync(q.Select(g => g.Id));
     }
 
-    /// <summary>Dựng các dòng kết quả passed-only từ sessions (dùng cho xuất báo cáo). KHÔNG side-effect (không snapshot/không reset).</summary>
+    /// <summary>Báo cáo lấy một phiên tốt nhất/người/game, kể cả chưa đạt. Không dùng để xét giải hay chốt snapshot.</summary>
     private async Task<List<HlgRankingResultExcelRow>> BuildRowsAsync(List<HlgGameSession> sessions)
     {
         if (sessions.Count == 0) return new List<HlgRankingResultExcelRow>();
@@ -401,34 +401,76 @@ public class HlgRankingAdminAppService : FeatureProtectedCrudAppService<HlgRanki
                 .Where(x => x.TenantId == CurrentTenant.Id && gameIds.Contains(x.Id)));
         var customerById = customers.ToDictionary(x => x.Id);
         var gameById = games.ToDictionary(x => x.Id);
-        var eventScores = sessions.GroupBy(x => x.CustomerId)
-            .ToDictionary(g => g.Key, g => g.Where(IsFinishedSessionPassed).Sum(y => y.Score));
-        var ranks = eventScores.OrderByDescending(x => x.Value).ThenBy(x => x.Key)
-            .Select((x, index) => new { x.Key, Rank = index + 1 }).ToDictionary(x => x.Key, x => x.Rank);
-        return sessions.GroupBy(x => new { x.CustomerId, x.GameId })
+        var sessionIds = sessions.Select(s => s.Id).ToList();
+        var answerQuery = await LazyServiceProvider.LazyGetRequiredService<IRepository<HlgSessionAnswer, Guid>>().GetQueryableAsync();
+        var answerTimes = await AsyncExecuter.ToListAsync(answerQuery
+            .Where(a => a.TenantId == CurrentTenant.Id && sessionIds.Contains(a.SessionId))
+            .GroupBy(a => a.SessionId)
+            .Select(g => new { SessionId = g.Key, Seconds = g.Sum(a => (long)a.TimeSpentSec) }));
+        var secondsBySession = answerTimes.ToDictionary(x => x.SessionId, x => x.Seconds);
+
+        // Mọi chỉ số phải thuộc cùng một phiên. Thiếu answer/time không được hiểu là nhanh nhất (0 giây).
+        var bestPerGame = sessions.GroupBy(x => new { x.CustomerId, x.GameId })
             .Select(group =>
             {
-                customerById.TryGetValue(group.Key.CustomerId, out var customer);
-                gameById.TryGetValue(group.Key.GameId, out var game);
-                var passed = group.Where(IsFinishedSessionPassed).ToList();
+                var best = group.Select(s => new
+                {
+                    Session = s,
+                    Seconds = secondsBySession.TryGetValue(s.Id, out var seconds) ? (long?)seconds : null
+                })
+                .OrderByDescending(x => x.Session.Score)
+                .ThenByDescending(x => x.Session.CorrectCount)
+                .ThenBy(x => x.Seconds ?? long.MaxValue)
+                .ThenBy(x => x.Session.FinishedAt)
+                .ThenBy(x => x.Session.Id)
+                .First();
+                return new
+                {
+                    group.Key.CustomerId, group.Key.GameId,
+                    Best = best.Session, best.Seconds,
+                    PlayCount = group.Count(),
+                    FirstPlayedAt = group.Min(x => x.FinishedAt)!.Value,
+                    LastPlayedAt = group.Max(x => x.FinishedAt)!.Value
+                };
+            }).ToList();
+        var eventResults = bestPerGame.GroupBy(x => x.CustomerId)
+            .Select(g => new
+            {
+                CustomerId = g.Key,
+                Score = g.Sum(x => x.Best.Score),
+                CorrectCount = g.Sum(x => x.Best.CorrectCount),
+                Seconds = g.All(x => x.Seconds.HasValue) ? g.Sum(x => x.Seconds!.Value) : (long?)null
+            }).ToList();
+        var eventScores = eventResults.ToDictionary(x => x.CustomerId, x => x.Score);
+        var ranks = eventResults.OrderByDescending(x => x.Score)
+            .ThenByDescending(x => x.CorrectCount)
+            .ThenBy(x => x.Seconds ?? long.MaxValue)
+            .ThenBy(x => x.CustomerId)
+            .Select((x, index) => new { x.CustomerId, Rank = index + 1 })
+            .ToDictionary(x => x.CustomerId, x => x.Rank);
+        return bestPerGame
+            .Select(group =>
+            {
+                customerById.TryGetValue(group.CustomerId, out var customer);
+                gameById.TryGetValue(group.GameId, out var game);
                 return new HlgRankingResultExcelRow
                 {
-                    CustomerId = group.Key.CustomerId,
-                    GameId = group.Key.GameId,
-                    EventRank = ranks[group.Key.CustomerId],
+                    CustomerId = group.CustomerId,
+                    GameId = group.GameId,
+                    EventRank = ranks[group.CustomerId],
                     CustomerCode = customer?.CustomerCode,
                     PlayerName = customer?.FullName ?? "Người chơi",
                     PhoneNumber = customer?.PhoneNumber ?? "",
                     ZaloUserId = customer?.ZaloUserId,
                     GameName = game?.Name ?? "Trò chơi đã xóa",
-                    PlayCount = group.Count(),
-                    GameScore = passed.Sum(x => x.Score),
-                    BestScore = passed.Count > 0 ? passed.Max(x => x.Score) : 0,
-                    CorrectAnswerCount = passed.Sum(x => x.CorrectCount),
-                    TotalQuestionCount = passed.Sum(x => x.TotalQuestions),
-                    EventScore = eventScores[group.Key.CustomerId],
-                    FirstPlayedAt = group.Min(x => x.FinishedAt)!.Value,
-                    LastPlayedAt = group.Max(x => x.FinishedAt)!.Value
+                    PlayCount = group.PlayCount,
+                    GameScore = group.Best.Score,
+                    BestScore = group.Best.Score,
+                    CorrectAnswerCount = group.Best.CorrectCount,
+                    TotalQuestionCount = group.Best.TotalQuestions,
+                    EventScore = eventScores[group.CustomerId],
+                    FirstPlayedAt = group.FirstPlayedAt,
+                    LastPlayedAt = group.LastPlayedAt
                 };
             })
             .OrderBy(x => x.EventRank).ThenBy(x => x.PlayerName).ThenBy(x => x.GameName).ToList();

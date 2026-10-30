@@ -1,5 +1,12 @@
 # HANDOFF — Bàn giao giữa các phiên làm việc
 
+## HLG Ranking — Excel BEST RESULT — 2026-10-27
+
+- Branch hiện tại `dev`, HEAD nền `425c30e`; task [20261027](../tasks/20261027_hlg_ranking_export_best_result_fix.md) **DONE implementation/test/memory**, chưa commit/deploy.
+- Sửa đúng hai file source/test: `HlgRankingAdminAppService.cs` (chỉ `BuildRowsAsync` của report), `HlgAdminTests.cs` (12 case mới). Report lấy một BEST/người/game gồm cả failed; không sửa API BXH/xét giải/chốt kết quả/snapshot/reset BonusPoint. Chi tiết contract và test ở [note](../memory/notes/project/project_hlg_ranking_export_best_result_20261027.md).
+- 174/174 HLG Application tests PASS, Web build 0 errors/78 warnings. Chưa UAT DB thật/browser. Bước tiếp theo: user test `/Hlg/Ranking` → “Xuất báo cáo” game đã kết thúc; không dùng “Chốt kết quả” để thử bản sửa này.
+- Các file memory đã cập nhật: ACTIVE_CONTEXT, PROJECT_STATE, TASK_LOG, MEMORY index, note/task/handoff. Giữ nguyên 7 log tracked deleted + 7 log untracked và task HL25 Oct23 có trước phiên; không đưa chúng vào commit task.
+
 ## Trạng thái repo `dev` và task kế tiếp — 2026-10-14
 
 - Branch `dev`, HEAD `779367f` tại lúc kiểm tra. HLG Ranking export PharmaPhone commit `5d4f2cd` đã merge; note và test/build status ở [project note](../memory/notes/project/project_hlg_ranking_export_pharma_phone_20261014.md). Chưa có bằng chứng staging/production UAT.

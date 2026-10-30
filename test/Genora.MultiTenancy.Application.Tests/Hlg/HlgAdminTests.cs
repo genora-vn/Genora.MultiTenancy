@@ -44,6 +44,7 @@ public class HlgAdminTests : IDisposable
     private readonly IRepository<HlgGame, Guid> _games = Substitute.For<IRepository<HlgGame, Guid>>();
     private readonly IRepository<HlgAnswerOption, Guid> _options = Substitute.For<IRepository<HlgAnswerOption, Guid>>();
     private readonly IRepository<HlgGameSession, Guid> _sessions = Substitute.For<IRepository<HlgGameSession, Guid>>();
+    private readonly IRepository<HlgSessionAnswer, Guid> _answers = Substitute.For<IRepository<HlgSessionAnswer, Guid>>();
     private readonly IRepository<HlgRankingEvent, Guid> _rankingEvents = Substitute.For<IRepository<HlgRankingEvent, Guid>>();
     private readonly IRepository<HlgRankingResultSnapshot, Guid> _rankingSnapshots = Substitute.For<IRepository<HlgRankingResultSnapshot, Guid>>();
     private readonly IRepository<HlgRankingEventGame, Guid> _rankingEventGames = Substitute.For<IRepository<HlgRankingEventGame, Guid>>();
@@ -64,7 +65,7 @@ public class HlgAdminTests : IDisposable
         var factory = Substitute.For<IStringLocalizerFactory>(); factory.Create(Arg.Any<Type>()).Returns(localizer);
         _provider = new ServiceCollection().AddSingleton(factory).AddSingleton<IAuthorizationService>(_auth).AddSingleton<ICurrentTenant>(_tenant)
             .AddSingleton(guid).AddSingleton<IAsyncQueryableExecuter>(new AsyncQueryableExecuter(Array.Empty<IAsyncQueryableProvider>()))
-            .AddSingleton(_sessions).AddSingleton(_games).AddSingleton(_customers).AddSingleton(_profiles).AddSingleton(_rankingWinners).AddSingleton(_clock).BuildServiceProvider();
+            .AddSingleton(_sessions).AddSingleton(_answers).AddSingleton(_games).AddSingleton(_customers).AddSingleton(_profiles).AddSingleton(_rankingWinners).AddSingleton(_clock).BuildServiceProvider();
         _questions.GetQueryableAsync().Returns(Task.FromResult(Array.Empty<HlgQuestion>().AsQueryable()));
         _options.GetListAsync(Arg.Any<Expression<Func<HlgAnswerOption, bool>>>(), Arg.Any<bool>(), Arg.Any<CancellationToken>()).Returns(new List<HlgAnswerOption>());
         _games.GetAsync(_gameId, Arg.Any<bool>(), Arg.Any<CancellationToken>()).Returns(new HlgGame(_gameId, "Quiz", HlgGameType.Quiz));
@@ -75,6 +76,7 @@ public class HlgAdminTests : IDisposable
         _rankingWinners.GetQueryableAsync().Returns(Task.FromResult(Array.Empty<HlgRankingWinner>().AsQueryable()));
         // Default empty cho thông tin live: các test export sẽ override khi cần.
         _sessions.GetQueryableAsync().Returns(Task.FromResult(Array.Empty<HlgGameSession>().AsQueryable()));
+        _answers.GetQueryableAsync().Returns(Task.FromResult(Array.Empty<HlgSessionAnswer>().AsQueryable()));
         _customers.GetQueryableAsync().Returns(Task.FromResult(Array.Empty<Customer>().AsQueryable()));
         _profiles.GetQueryableAsync().Returns(Task.FromResult(Array.Empty<HlgUserProfile>().AsQueryable()));
     }
@@ -406,6 +408,193 @@ public class HlgAdminTests : IDisposable
         await _profiles.DidNotReceive().GetQueryableAsync();
         await _customers.DidNotReceive().UpdateManyAsync(Arg.Any<IEnumerable<Customer>>(), Arg.Any<bool>(), Arg.Any<CancellationToken>());
         await _rankingSnapshots.DidNotReceive().InsertManyAsync(Arg.Any<IEnumerable<HlgRankingResultSnapshot>>(), Arg.Any<bool>(), Arg.Any<CancellationToken>());
+    }
+
+    private HlgGameSession ReportSession(Guid customerId, Guid gameId, int score, int correct, int total = 10)
+        => new(Guid.NewGuid(), gameId, customerId, _tenant.Id)
+        {
+            IsFinished = true, StartedAt = _clock.Now.AddDays(-2).AddMinutes(-5),
+            FinishedAt = _clock.Now.AddDays(-2), Score = score, CorrectCount = correct,
+            TotalQuestions = total, AllowedWrongAnswers = 1
+        };
+
+    private Guid SetUpReportSessions(params HlgGameSession[] sessions)
+    {
+        var eventId = Guid.NewGuid();
+        var ev = new HlgRankingEvent(eventId, "BEST RESULT", _clock.Now.AddDays(-10), _clock.Now.AddDays(5), _tenant.Id);
+        var customers = sessions.Select(s => s.CustomerId).Distinct()
+            .Select(id => new Customer(id, "0900123456", id.ToString("N"))
+            {
+                TenantId = _tenant.Id, CustomerCode = id.ToString("N"), BonusPoint = 600
+            }).ToList();
+        var games = sessions.Select(s => s.GameId).Distinct()
+            .Select(id => new HlgGame(id, id.ToString("N"), HlgGameType.Quiz, _tenant.Id)
+            {
+                EndAt = _clock.Now.AddDays(-1)
+            }).ToList();
+        _rankingEvents.GetAsync(eventId, Arg.Any<bool>(), Arg.Any<CancellationToken>()).Returns(ev);
+        _sessions.GetQueryableAsync().Returns(Task.FromResult(sessions.AsQueryable()));
+        _customers.GetQueryableAsync().Returns(Task.FromResult(customers.AsQueryable()));
+        _games.GetQueryableAsync().Returns(Task.FromResult(games.AsQueryable()));
+        return eventId;
+    }
+
+    private HlgSessionAnswer ReportAnswer(HlgGameSession session, int seconds)
+        => new(Guid.NewGuid(), session.Id, Guid.NewGuid(), _tenant.Id) { TimeSpentSec = seconds };
+
+    private static IXLRow ReportRow(XLWorkbook workbook, Guid customerId, Guid gameId)
+        => workbook.Worksheet("Kết quả sự kiện").RowsUsed().Skip(1)
+            .Single(r => r.Cell(3).GetString() == customerId.ToString("N") && r.Cell(8).GetString() == gameId.ToString("N"));
+
+    [Theory]
+    [InlineData(3, 87, 74)]
+    [InlineData(2, 76, 71)]
+    [InlineData(3, 76, 68)]
+    public async Task Ranking_Report_Uses_One_Best_Result_Instead_Of_Accumulating_Passed_Attempts(int plays, int best, int lower)
+    {
+        var customer = Guid.NewGuid();
+        var perfect = Guid.NewGuid();
+        var sessions = new List<HlgGameSession>
+        {
+            ReportSession(customer, _gameId, best, 9),
+            ReportSession(customer, _gameId, lower, 9),
+            ReportSession(perfect, _gameId, 100, 10)
+        };
+        if (plays == 3) sessions.Add(ReportSession(customer, _gameId, 40, 5));
+        sessions[1].FinishedAt = sessions[0].FinishedAt!.Value.AddHours(1);
+        var eventId = SetUpReportSessions(sessions.ToArray());
+
+        using var content = await RankingService().ExportReportAsync(eventId, new List<Guid>());
+        using var workbook = new XLWorkbook(content.GetStream());
+        var row = ReportRow(workbook, customer, _gameId);
+
+        row.Cells(9, 14).Select(c => c.GetValue<int>()).ShouldBe(new[] { plays, best, best, 9, 10, best });
+        row.Cell(2).GetValue<int>().ShouldBe(2);
+        ReportRow(workbook, perfect, _gameId).Cell(2).GetValue<int>().ShouldBe(1);
+        row.Cell(15).GetDateTime().ShouldBe(sessions[0].FinishedAt!.Value);
+        row.Cell(16).GetDateTime().ShouldBe(sessions[1].FinishedAt!.Value);
+        row.Cell(18).GetString().ShouldBe("1/1");
+    }
+
+    [Fact]
+    public async Task Ranking_Report_Includes_Failed_Attempts_And_Preserves_Genuine_Zero()
+    {
+        var customer = Guid.NewGuid();
+        var zero = Guid.NewGuid();
+        var eventId = SetUpReportSessions(
+            ReportSession(customer, _gameId, 35, 4), ReportSession(customer, _gameId, 67, 8),
+            ReportSession(zero, _gameId, 0, 0), ReportSession(zero, _gameId, 0, 0));
+
+        using var content = await RankingService().ExportReportAsync(eventId, new List<Guid>());
+        using var workbook = new XLWorkbook(content.GetStream());
+        var row = ReportRow(workbook, customer, _gameId);
+        row.Cells(9, 14).Select(c => c.GetValue<int>()).ShouldBe(new[] { 2, 67, 67, 8, 10, 67 });
+        row.Cell(18).GetString().ShouldBe("0/1");
+        ReportRow(workbook, zero, _gameId).Cells(9, 14).Select(c => c.GetValue<int>())
+            .ShouldBe(new[] { 2, 0, 0, 0, 10, 0 });
+    }
+
+    [Fact]
+    public async Task Ranking_Report_Does_Not_Mix_Score_And_Correct_Count_From_Different_Attempts()
+    {
+        var customer = Guid.NewGuid();
+        var eventId = SetUpReportSessions(ReportSession(customer, _gameId, 80, 7), ReportSession(customer, _gameId, 70, 8));
+        using var content = await RankingService().ExportReportAsync(eventId, new List<Guid>());
+        using var workbook = new XLWorkbook(content.GetStream());
+        ReportRow(workbook, customer, _gameId).Cells(10, 14).Select(c => c.GetValue<int>())
+            .ShouldBe(new[] { 80, 80, 7, 10, 80 });
+    }
+
+    [Theory]
+    [InlineData("correct")]
+    [InlineData("time")]
+    [InlineData("missing-time")]
+    [InlineData("finished")]
+    [InlineData("id")]
+    public async Task Ranking_Report_Selects_A_Coherent_Best_Result_With_Deterministic_Ties(string tie)
+    {
+        var customer = Guid.NewGuid();
+        var first = ReportSession(customer, _gameId, 80, 8);
+        // Different historical question counts make the chosen session visible in Excel.
+        var second = ReportSession(customer, _gameId, 80, tie == "correct" ? 9 : 8, 12);
+        if (tie == "id")
+        {
+            first = new HlgGameSession(Guid.Parse("00000000-0000-0000-0000-000000000002"), _gameId, customer, _tenant.Id)
+            { IsFinished = true, FinishedAt = first.FinishedAt, Score = 80, CorrectCount = 8, TotalQuestions = 10 };
+            second = new HlgGameSession(Guid.Parse("00000000-0000-0000-0000-000000000001"), _gameId, customer, _tenant.Id)
+            { IsFinished = true, FinishedAt = second.FinishedAt, Score = 80, CorrectCount = 8, TotalQuestions = 12 };
+        }
+        if (tie == "finished") second.FinishedAt = first.FinishedAt!.Value.AddMinutes(-1);
+        var eventId = SetUpReportSessions(first, second);
+        var answers = new List<HlgSessionAnswer>();
+        if (tie != "missing-time") answers.Add(ReportAnswer(first, 30));
+        answers.Add(ReportAnswer(second, tie == "correct" ? 100 : tie == "time" ? 10 : 30));
+        if (tie == "time") answers.Add(ReportAnswer(second, 10));
+        var foreignAnswer = ReportAnswer(second, 999);
+        foreignAnswer.TenantId = Guid.NewGuid();
+        answers.Add(foreignAnswer);
+        _answers.GetQueryableAsync().Returns(Task.FromResult(answers.AsQueryable()));
+
+        using var content = await RankingService().ExportReportAsync(eventId, new List<Guid>());
+        using var workbook = new XLWorkbook(content.GetStream());
+        ReportRow(workbook, customer, _gameId).Cells(10, 14).Select(c => c.GetValue<int>())
+            .ShouldBe(new[] { 80, 80, second.CorrectCount, 12, 80 });
+    }
+
+    [Fact]
+    public async Task Ranking_Report_Ranks_By_Best_Score_Correct_Count_Then_Summed_Answer_Time()
+    {
+        var game = Guid.NewGuid();
+        var sessions = new[]
+        {
+            ReportSession(Guid.NewGuid(), game, 90, 7),
+            ReportSession(Guid.NewGuid(), game, 80, 9),
+            ReportSession(Guid.NewGuid(), game, 80, 8),
+            ReportSession(Guid.NewGuid(), game, 80, 8),
+            ReportSession(Guid.NewGuid(), game, 80, 8)
+        };
+        var eventId = SetUpReportSessions(sessions);
+        var answers = new[]
+        {
+            ReportAnswer(sessions[0], 100), ReportAnswer(sessions[1], 100),
+            ReportAnswer(sessions[2], 3), ReportAnswer(sessions[2], 2),
+            ReportAnswer(sessions[3], 2), ReportAnswer(sessions[3], 8)
+        };
+        _answers.GetQueryableAsync().Returns(Task.FromResult(answers.AsQueryable()));
+
+        using var content = await RankingService().ExportReportAsync(eventId, new List<Guid>());
+        using var workbook = new XLWorkbook(content.GetStream());
+        for (var i = 0; i < sessions.Length; i++)
+            ReportRow(workbook, sessions[i].CustomerId, game).Cell(2).GetValue<int>().ShouldBe(i + 1);
+    }
+
+    [Fact]
+    public async Task Ranking_Report_Sums_Only_One_Best_Per_Selected_Game_And_Keeps_Existing_Scope()
+    {
+        var customer = Guid.NewGuid();
+        var secondGame = Guid.NewGuid();
+        var valid = new[]
+        {
+            ReportSession(customer, _gameId, 87, 9), ReportSession(customer, _gameId, 74, 9),
+            ReportSession(customer, secondGame, 50, 6), ReportSession(customer, secondGame, 45, 5)
+        };
+        var unfinished = ReportSession(customer, _gameId, 999, 10); unfinished.IsFinished = false;
+        var outsidePeriod = ReportSession(customer, _gameId, 999, 10); outsidePeriod.FinishedAt = _clock.Now.AddDays(-11);
+        var foreignTenant = ReportSession(customer, _gameId, 999, 10); foreignTenant.TenantId = Guid.NewGuid();
+        var eventId = SetUpReportSessions(valid.Concat(new[] { unfinished, outsidePeriod, foreignTenant }).ToArray());
+
+        foreach (var selected in new[] { new List<Guid>(), new List<Guid> { _gameId } })
+        {
+            using var content = await RankingService().ExportReportAsync(eventId, selected);
+            using var workbook = new XLWorkbook(content.GetStream());
+            var row = ReportRow(workbook, customer, _gameId);
+            var expectedTotal = selected.Count == 0 ? 137 : 87;
+            row.Cells(9, 14).Select(c => c.GetValue<int>()).ShouldBe(new[] { 2, 87, 87, 9, 10, expectedTotal });
+            workbook.Worksheet("Kết quả sự kiện").LastRowUsed()!.RowNumber().ShouldBe(selected.Count == 0 ? 3 : 2);
+            if (selected.Count == 0)
+                ReportRow(workbook, customer, secondGame).Cells(9, 14).Select(c => c.GetValue<int>())
+                    .ShouldBe(new[] { 2, 50, 50, 6, 10, 137 });
+        }
     }
 
     [Fact]
