@@ -84,42 +84,75 @@ public class HlPointExpireWorker : AsyncPeriodicBackgroundWorkerBase
                 }
 
                 var totalExpired = 0m;
-                foreach (var batch in expiredBatches)
+
+                // Gom theo SĐT — quỹ thưởng khóa theo SĐT, không theo mã KH.
+                // Code cũ tra customer theo CustomerCode nên hụt đúng các ca 1 SĐT nhiều mã KH
+                // (mã trong lô khác mã đang lưu ở AppCustomers) → không trừ được gì.
+                var trustFrom = _options.TrustBatchesFrom;
+
+                foreach (var group in expiredBatches
+                             .Where(x => !string.IsNullOrWhiteSpace(x.CustomerPhone))
+                             .GroupBy(x => x.CustomerPhone!))
                 {
-                    var remaining = batch.RemainingValue;
+                    var phone = group.Key;
+                    var customer = await customerRepo.FirstOrDefaultAsync(x => x.PhoneNumber == phone);
 
-                    if (remaining > 0 && !string.IsNullOrWhiteSpace(batch.CustomerCode))
+                    foreach (var batch in group)
                     {
-                        var customer = await customerRepo.FirstOrDefaultAsync(x => x.CustomerCode == batch.CustomerCode);
-                        if (customer != null)
+                        var amount = batch.RemainingValue;
+
+                        // RemainingValue CHỈ đáng tin với lô tạo từ mốc TrustBatchesFrom trở đi.
+                        // Lô cũ hơn chưa bao giờ bị trừ (luồng UrBox cũ bỏ qua lô) nên vẫn giữ
+                        // nguyên giá trị gốc dù khách đã tiêu — trừ con số đó khỏi BonusAmount
+                        // sẽ xóa oan số dư hợp lệ. Với lô cũ: chỉ đóng lô, KHÔNG động vào quỹ.
+                        var trusted = trustFrom.HasValue && batch.CreationTime >= trustFrom.Value;
+
+                        batch.RemainingValue = 0;
+                        batch.Status = HlPointBatchStatus.Expired;
+                        await batchRepo.UpdateAsync(batch, autoSave: false);
+
+                        if (!trusted)
                         {
-                            if (batch.Unit == HlPointUnit.Point)
-                                customer.BonusPoint = Math.Max(0, customer.BonusPoint - remaining);
-                            else
-                                customer.BonusAmount = Math.Max(0, customer.BonusAmount - remaining);
-
-                            await customerRepo.UpdateAsync(customer, autoSave: false);
-
-                            await txnRepo.InsertAsync(new HlPointTransaction(_guidGenerator.Create(), batch.TenantId)
-                            {
-                                CustomerId = customer.Id,
-                                CustomerCode = batch.CustomerCode,
-                                CustomerName = batch.CustomerName,
-                                CustomerPhone = batch.CustomerPhone,
-                                Type = HlPointTransactionType.Expire,
-                                Unit = batch.Unit,
-                                Value = -remaining,
-                                BalancePointAfter = customer.BonusPoint,
-                                BalanceAmountAfter = customer.BonusAmount,
-                                BatchId = batch.Id,
-                                RefCode = batch.BatchCode,
-                                Description = $"Điểm/tiền hết hạn từ lô {batch.BatchCode}"
-                            }, autoSave: false);
-
-                            totalExpired += remaining;
+                            if (amount > 0)
+                                _logger.LogWarning(
+                                    "[HlPointExpire] Lô {Code} (tạo {Created:dd/MM/yyyy}) chưa đối soát — đóng lô, KHÔNG trừ quỹ {Amount}",
+                                    batch.BatchCode, batch.CreationTime, amount);
+                            continue;
                         }
-                    }
 
+                        if (amount <= 0 || customer == null) continue;
+
+                        // Trừ SỐ HỌC khỏi nguồn chân lý (BonusPoint/BonusAmount), không tính từ lô
+                        if (batch.Unit == HlPointUnit.Point)
+                            customer.BonusPoint = Math.Max(0, customer.BonusPoint - amount);
+                        else
+                            customer.BonusAmount = Math.Max(0, customer.BonusAmount - amount);
+                        await customerRepo.UpdateAsync(customer, autoSave: false);
+
+                        totalExpired += amount;
+
+                        await txnRepo.InsertAsync(new HlPointTransaction(_guidGenerator.Create(), batch.TenantId)
+                        {
+                            CustomerId = customer.Id,
+                            CustomerCode = batch.CustomerCode,
+                            CustomerName = batch.CustomerName,
+                            CustomerPhone = phone,
+                            Type = HlPointTransactionType.Expire,
+                            Unit = batch.Unit,
+                            Value = -amount,
+                            BalancePointAfter = customer.BonusPoint,
+                            BalanceAmountAfter = customer.BonusAmount,
+                            BatchId = batch.Id,
+                            RefCode = batch.BatchCode,
+                            Description = $"Điểm/tiền hết hạn từ lô {batch.BatchCode}"
+                        }, autoSave: false);
+                    }
+                }
+
+                // Lô không có SĐT vẫn phải đóng để không bị quét lại mỗi giờ.
+                foreach (var batch in expiredBatches.Where(x => string.IsNullOrWhiteSpace(x.CustomerPhone)))
+                {
+                    _logger.LogWarning("[HlPointExpire] Lô {Code} không có SĐT — đóng lô, không trừ quỹ", batch.BatchCode);
                     batch.RemainingValue = 0;
                     batch.Status = HlPointBatchStatus.Expired;
                     await batchRepo.UpdateAsync(batch, autoSave: false);

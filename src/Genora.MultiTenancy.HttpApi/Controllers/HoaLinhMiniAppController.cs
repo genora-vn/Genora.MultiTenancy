@@ -884,7 +884,12 @@ public class HoaLinhMiniAppController : MultiTenancyController
         if (string.IsNullOrWhiteSpace(customerCode))
             return BadRequest(HlApiResult<object>.Fail("Thiếu mã khách hàng"));
 
-        var result = await _hlPointService.GetBalanceAsync(customerCode);
+        // Quỹ thưởng khóa theo SĐT. URL vẫn nhận mã KH (Mini App hiện tại) → tra SĐT ở đây.
+        var phone = await _hlPointService.ResolvePhoneAsync(customerCode);
+        if (string.IsNullOrWhiteSpace(phone))
+            return Ok(HlApiResult<object>.Fail("Không tra được số điện thoại của khách hàng này."));
+
+        var result = await _hlPointService.GetBalanceAsync(phone);
         return Ok(HlApiResult<HlPointBalanceDto>.Ok(result));
     }
 
@@ -897,7 +902,11 @@ public class HoaLinhMiniAppController : MultiTenancyController
         if (string.IsNullOrWhiteSpace(customerCode))
             return BadRequest(HlApiResult<object>.Fail("Thiếu mã khách hàng"));
 
-        var result = await _hlPointService.GetCustomerHistoryAsync(customerCode, skip, take);
+        var phone = await _hlPointService.ResolvePhoneAsync(customerCode);
+        if (string.IsNullOrWhiteSpace(phone))
+            return Ok(HlApiResult<object>.Fail("Không tra được số điện thoại của khách hàng này."));
+
+        var result = await _hlPointService.GetCustomerHistoryAsync(phone, skip, take);
         return Ok(HlApiResult<List<HlPointTransactionDto>>.Ok(result));
     }
 
@@ -922,21 +931,28 @@ public class HoaLinhMiniAppController : MultiTenancyController
 
         var exchangeCode = $"HLGE-{DateTime.Now:yyMMdd}{Guid.NewGuid().ToString("N")[..4].ToUpper()}";
 
-        // Tiêu điểm thưởng (FIFO) trước khi tạo yêu cầu đổi quà — guard số dư.
+        // Trừ quỹ thưởng (FIFO theo SĐT) TRƯỚC khi tạo yêu cầu đổi quà — guard số dư.
+        // Đơn vị phải là Amount: chiến dịch HL cấp tiền thưởng (voucherType=1 → Unit=Amount).
+        // Code cũ truyền Point nên luôn không tìm thấy lô → nhánh này chưa từng chạy được.
         if (totalPointsUsed > 0)
         {
+            var spendPhone = await _hlPointService.ResolvePhoneAsync(
+                string.IsNullOrWhiteSpace(request.CustomerPhone) ? request.CustomerCode : request.CustomerPhone!);
+            if (string.IsNullOrWhiteSpace(spendPhone))
+                return Ok(HlApiResult<object>.Fail("Không tra được số điện thoại của khách hàng này."));
+
             try
             {
                 await _hlPointService.SpendAsync(
-                    request.CustomerCode,
-                    (int)HlPointUnit.Point,
+                    spendPhone,
+                    (int)HlPointUnit.Amount,
                     totalPointsUsed,
                     exchangeCode,
                     $"Đổi quà: {request.GiftName}");
             }
             catch (UserFriendlyException ex)
             {
-                // Không đủ điểm / không tìm thấy KH → trả lỗi, KHÔNG tạo yêu cầu đổi quà
+                // Không đủ số dư → trả lỗi, KHÔNG tạo yêu cầu đổi quà
                 return Ok(HlApiResult<object>.Fail(ex.Message));
             }
         }

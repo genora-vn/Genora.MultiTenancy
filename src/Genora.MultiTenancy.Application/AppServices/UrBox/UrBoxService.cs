@@ -1,4 +1,5 @@
 using DocumentFormat.OpenXml.Office2016.Excel;
+using Genora.MultiTenancy.AppDtos.HoaLinh;
 using Genora.MultiTenancy.AppDtos.UrBox;
 using Genora.MultiTenancy.AppServices.AppZaloAuths;
 using Genora.MultiTenancy.DomainModels.AppCustomers;
@@ -13,10 +14,13 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Globalization;
 using System.Net.Http;
+using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
+using Volo.Abp;
 using Volo.Abp.BackgroundJobs;
 using Volo.Abp.Domain.Entities;
 using Volo.Abp.Domain.Repositories;
@@ -36,6 +40,7 @@ public class UrBoxService : IUrBoxService
     private readonly UrBoxSettings _settings;
     private readonly IRepository<HlGiftExchange, Guid> _giftExchangeRepo;
     private readonly IRepository<Customer, Guid> _customerRepo;
+    private readonly IHlPointAppService _hlPoint;
     private readonly ICurrentTenant _currentTenant;
     private readonly ILogger<UrBoxService> _logger;
     private readonly IBackgroundJobManager _jobManager;
@@ -57,6 +62,7 @@ public class UrBoxService : IUrBoxService
         IOptionsSnapshot<UrBoxSettings> settings,
         IRepository<HlGiftExchange, Guid> giftExchangeRepo,
         IRepository<Customer, Guid> customerRepo,
+        IHlPointAppService hlPoint,
         ICurrentTenant currentTenant,
         ILogger<UrBoxService> logger,
         IBackgroundJobManager jobManager,
@@ -66,6 +72,7 @@ public class UrBoxService : IUrBoxService
         _settings = settings.Value;
         _giftExchangeRepo = giftExchangeRepo;
         _customerRepo = customerRepo;
+        _hlPoint = hlPoint;
         _currentTenant = currentTenant;
         _logger = logger;
         _jobManager = jobManager;
@@ -286,10 +293,60 @@ public class UrBoxService : IUrBoxService
 
     public async Task<UrBoxResponse<UrBoxRedeemData>> CreateOrderEvoucherAsync(UrBoxRedeemInput input)
     {
-        var transactionId = GenerateTransactionId();
-
-        // Chuẩn hóa SĐT: 84xxx → 0xxx
+        // ── 0. Xác định SĐT — KHÓA của quỹ tiền thưởng (1 SĐT = 1 quỹ, nhiều mã KH DMS) ──
         var phone = NormalizePhone(input.Phone);
+        if (string.IsNullOrWhiteSpace(phone) && !string.IsNullOrWhiteSpace(input.SiteUserId))
+        {
+            // FE gửi siteUserId = mã KH DMS. Thiếu SĐT thì tra ngược từ AppCustomers.
+            var byCode = await _customerRepo.FirstOrDefaultAsync(x => x.CustomerCode == input.SiteUserId);
+            phone = NormalizePhone(byCode?.PhoneNumber);
+        }
+        if (string.IsNullOrWhiteSpace(phone))
+            return RedeemFail(400, "Thiếu số điện thoại khách hàng — không xác định được quỹ tiền thưởng.");
+
+        // ── 1. F3: GIÁ LẤY TỪ URBOX (server). KHÔNG tin PointsRequired do client gửi ──
+        //    Mọi call API ngoài phải xong TRƯỚC khi vào lock trừ tiền trong SpendAsync.
+        decimal amountUsed = 0;
+        foreach (var item in input.Items)
+        {
+            if (string.IsNullOrWhiteSpace(item.PriceId))
+                return RedeemFail(400, "Thiếu mã mệnh giá quà tặng (priceId).");
+
+            var qty = item.Quantity > 0 ? item.Quantity : 1;
+            var unitPrice = await ResolveServerPriceAsync(item.PriceId);
+            if (unitPrice is null || unitPrice <= 0)
+                return RedeemFail(400,
+                    $"Không tra được giá quà tặng từ UrBox (priceId={item.PriceId}). Vui lòng thử lại.");
+
+            var lineTotal = unitPrice.Value * qty;
+            amountUsed += lineTotal;
+
+            // Client gửi PointsRequired = đơn giá × số lượng. Lệch = app cũ/cache/giả mạo.
+            if (item.PointsRequired > 0 && item.PointsRequired != lineTotal)
+                _logger.LogWarning(
+                    "UrBox redeem: giá client lệch giá server. phone={Phone} priceId={PriceId} qty={Qty} client={Client} server={Server}",
+                    phone, item.PriceId, qty, item.PointsRequired, lineTotal);
+        }
+        if (amountUsed <= 0)
+            return RedeemFail(400, "Giá trị đơn đổi quà không hợp lệ.");
+
+        // ── 2. F4: idempotency. Mini App chưa gửi requestId → tự sinh fingerprint theo
+        //    (SĐT + giỏ quà + tổng tiền + mốc 2 phút) để chặn double-submit / retry mạng.
+        //    Unique index (TenantId, RequestId) là chốt cuối khi 2 request vào đúng cùng lúc.
+        var requestId = string.IsNullOrWhiteSpace(input.RequestId)
+            ? BuildAutoRequestId(phone, input.Items, amountUsed)
+            : input.RequestId!.Trim();
+
+        var duplicate = await _giftExchangeRepo.FirstOrDefaultAsync(x => x.RequestId == requestId);
+        if (duplicate != null)
+        {
+            _logger.LogWarning("UrBox redeem: chặn yêu cầu trùng requestId={Req} exchange={Code} phone={Phone}",
+                requestId, duplicate.ExchangeCode, phone);
+            return RedeemFail(409,
+                "Yêu cầu đổi quà này đã được ghi nhận. Vui lòng kiểm tra lịch sử đổi quà trước khi thử lại.");
+        }
+
+        var transactionId = GenerateTransactionId();
 
         var dataBuy = input.Items
             .Select(i => new UrBoxDataBuy { PriceId = i.PriceId, Quantity = (i.Quantity > 0 ? i.Quantity : 1).ToString() })
@@ -323,31 +380,62 @@ public class UrBoxService : IUrBoxService
         var privateKeyPath = ResolvePrivateKeyPath();
         var (signature, canonicalJson) = UrBoxSignatureHelper.GenerateSignature(signaturePayload, privateKeyPath);
 
-        // 3. Tính tổng điểm sử dụng (lưu lịch sử).
-        // LƯU Ý: FE đã tính PointsRequired = đơn giá * số lượng rồi, nên backend KHÔNG nhân lại số lượng
-        // (nếu nhân lại sẽ bị gấp đôi). Chỉ cộng dồn các item. → PointsRequired == TotalPointsUsed.
-        var totalPoints = input.Items.Sum(i => i.PointsRequired);
+        // ── 3. Tạo bản ghi Processing và COMMIT TRƯỚC khi gọi UrBox (F6) ──
+        //    Process chết sau khi UrBox đã phát hành voucher thì vẫn còn dấu vết đối soát.
         var firstItem = input.Items.FirstOrDefault();
-
-        // 4. Tạo bản ghi lịch sử đổi quà (Pending)
         var exchangeCode = $"UB-{DateTime.Now:yyMMdd}{Guid.NewGuid().ToString("N")[..4].ToUpper()}";
         var exchange = new HlGiftExchange(
             Guid.NewGuid(),
             exchangeCode,
             firstItem?.GiftName ?? "UrBox eVoucher",
-            totalPoints, // PointsRequired == TotalPointsUsed (FE đã nhân số lượng, không nhân lại)
+            (int)amountUsed, // giá SERVER, không phải số client gửi
             _currentTenant.Id)
         {
+            RequestId = requestId,
             CustomerCode = input.SiteUserId,
             CustomerName = input.CustomerName,
             CustomerPhone = phone,
             GiftCode = firstItem?.PriceId,
             GiftImageUrl = firstItem?.GiftImageUrl,
             Quantity = firstItem?.Quantity ?? 1,
-            TotalPointsUsed = totalPoints,
+            TotalPointsUsed = (int)amountUsed,
+            AmountUsed = amountUsed,
             Status = HlGiftExchangeStatus.Processing,
             InternalNote = $"UrBox transaction_id={transactionId}"
         };
+
+        try
+        {
+            await _giftExchangeRepo.InsertAsync(exchange, autoSave: true);
+        }
+        catch (Exception ex)
+        {
+            // Unique index (TenantId, RequestId) chặn 2 request song song cùng fingerprint.
+            _logger.LogWarning(ex, "UrBox redeem: insert trùng requestId={Req} phone={Phone}", requestId, phone);
+            return RedeemFail(409,
+                "Yêu cầu đổi quà này đã được ghi nhận. Vui lòng kiểm tra lịch sử đổi quà trước khi thử lại.");
+        }
+
+        // ── 4. F2: TRỪ QUỸ TRƯỚC KHI PHÁT HÀNH. Không đủ số dư → KHÔNG gọi UrBox ──
+        try
+        {
+            await _hlPoint.SpendAsync(
+                phone,
+                (int)HlPointUnit.Amount,
+                amountUsed,
+                exchangeCode,
+                $"Đổi quà UrBox: {exchange.GiftName}");
+        }
+        catch (UserFriendlyException ex)
+        {
+            exchange.Status = HlGiftExchangeStatus.Failed;
+            exchange.InternalNote += $" | Chặn trước khi gọi UrBox: {ex.Message}";
+            await _giftExchangeRepo.UpdateAsync(exchange, autoSave: true);
+
+            _logger.LogWarning("UrBox redeem CHẶN: phone={Phone} cần={Amount} lý do={Msg}",
+                phone, amountUsed, ex.Message);
+            return RedeemFail(403, ex.Message);
+        }
 
         // 5. Gọi UrBox
         var raw = await SendRawPostAsync(_settings.CartPayVoucherPath, requestData, signature, "CartPayVoucher");
@@ -363,12 +451,27 @@ public class UrBoxService : IUrBoxService
         {
             exchange.Status = HlGiftExchangeStatus.Failed;
             exchange.InternalNote += $" | Lỗi: {result?.Msg ?? "Không parse được response"} (status={result?.Status})";
-            await _giftExchangeRepo.InsertAsync(exchange, autoSave: true);
+            await _giftExchangeRepo.UpdateAsync(exchange, autoSave: true);
+
+            // Đã trừ quỹ ở bước 4 nhưng UrBox không phát hành → HOÀN LẠI, nếu không khách mất tiền.
+            try
+            {
+                await _hlPoint.RefundAsync(
+                    phone, (int)HlPointUnit.Amount, amountUsed, exchangeCode,
+                    $"Hoàn tiền thưởng — UrBox từ chối đơn {exchangeCode}");
+            }
+            catch (Exception refundEx)
+            {
+                // Hoàn thất bại là sai lệch quỹ phải xử lý tay → log Error để alert bắt được.
+                _logger.LogError(refundEx,
+                    "UrBox redeem: HOÀN QUỸ THẤT BẠI — cần xử lý tay. phone={Phone} amount={Amount} exchange={Code}",
+                    phone, amountUsed, exchangeCode);
+            }
 
             _logger.LogWarning("UrBox redeem FAILED: tx={Tx} done={Done} status={Status} msg={Msg}",
                 transactionId, result?.Done, result?.Status, result?.Msg);
 
-            // Trả nguyên response UrBox (có msg + status) để Mini App hiển thị. KHÔNG trừ điểm.
+            // Trả nguyên response UrBox (có msg + status) để Mini App hiển thị.
             return result ?? new UrBoxResponse<UrBoxRedeemData>
             {
                 Done = 0,
@@ -382,13 +485,12 @@ public class UrBoxService : IUrBoxService
         exchange.Status = HlGiftExchangeStatus.Success;
         exchange.UrBoxVoucherCode = firstCode?.Code;
         exchange.ApprovedAt = DateTime.Now;
-        await _giftExchangeRepo.InsertAsync(exchange, autoSave: true);
+        await _giftExchangeRepo.UpdateAsync(exchange, autoSave: true);
 
         // Gán Id bản ghi HL.AppHlGiftExchanges vào response để Mini App gọi carts/{id}
         if (result.Data != null) result.Data.Id = exchange.Id;
 
-        // 7. Trừ tiền thưởng (BonusAmount) khi đổi quà thành công (done==1 && status==200)
-        await DeductBonusAmountAsync(input.SiteUserId, exchange);
+        // Quỹ đã trừ ở bước 4 (trước khi gọi UrBox) — không trừ lại ở đây.
 
         // ✅ gửi ZBS “Đổi quà thành công”
         if (!string.IsNullOrWhiteSpace(exchange.CustomerPhone))
@@ -431,35 +533,68 @@ public class UrBoxService : IUrBoxService
         return result;
     }
 
-    /// <summary>
-    /// Trừ tiền thưởng (BonusAmount) trong dbo.AppCustomers khi đổi quà UrBox thành công.
-    /// Số tiền trừ = TotalPointsUsed (giá trị tiền của quà). Clamp >= 0. Bọc try/catch — không làm fail luồng đổi quà.
-    /// </summary>
-    private async Task DeductBonusAmountAsync(string customerCode, HlGiftExchange exchange)
+    /// <summary>Response lỗi cho Mini App theo đúng shape UrBox (done=0 + msg + status).</summary>
+    private static UrBoxResponse<UrBoxRedeemData> RedeemFail(int status, string message) => new()
     {
-        if (string.IsNullOrWhiteSpace(customerCode)) return;
-        var amount = (decimal)exchange.TotalPointsUsed;
-        if (amount <= 0) return;
+        Done = 0,
+        Status = status,
+        Msg = message
+    };
 
+    /// <summary>
+    /// Tra giá 1 mệnh giá quà TỪ URBOX (nguồn chân lý về giá) theo priceId.
+    /// Trả null khi không tra được — caller phải từ chối đơn, KHÔNG fallback sang giá client gửi.
+    /// </summary>
+    private async Task<decimal?> ResolveServerPriceAsync(string priceId)
+    {
         try
         {
-            var customer = await _customerRepo.FirstOrDefaultAsync(x => x.CustomerCode == customerCode);
-            if (customer == null)
+            var resp = await GetGiftDetailAsync(priceId, "vi");
+            if (resp == null || resp.Status != UrBoxResponseStatus.Success || resp.Data == null)
             {
-                _logger.LogWarning("UrBox redeem: không tìm thấy KH {Code} để trừ BonusAmount", customerCode);
-                return;
+                _logger.LogWarning("UrBox price: không tra được priceId={PriceId} status={Status} msg={Msg}",
+                    priceId, resp?.Status, resp?.Msg);
+                return null;
             }
 
-            customer.BonusAmount = Math.Max(0, customer.BonusAmount - amount);
-            await _customerRepo.UpdateAsync(customer, autoSave: true);
+            if (!decimal.TryParse(resp.Data.Price, NumberStyles.Any, CultureInfo.InvariantCulture, out var price)
+                || price <= 0)
+            {
+                _logger.LogWarning("UrBox price: giá không parse được priceId={PriceId} raw={Raw}",
+                    priceId, resp.Data.Price);
+                return null;
+            }
 
-            _logger.LogInformation("UrBox redeem: trừ BonusAmount KH {Code} -{Amount} → còn {Balance}",
-                customerCode, amount, customer.BonusAmount);
+            // Quà đang khuyến mãi: ghi log để đối soát, vẫn trừ quỹ theo mệnh giá quà khách nhận.
+            if (resp.Data.IsPromo == 1 && resp.Data.PricePromo > 0 && resp.Data.PricePromo != price)
+                _logger.LogInformation("UrBox price: priceId={PriceId} có promo {Promo} (mệnh giá {Price})",
+                    priceId, resp.Data.PricePromo, price);
+
+            return price;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "UrBox redeem: lỗi khi trừ BonusAmount KH {Code}", customerCode);
+            _logger.LogError(ex, "UrBox price: lỗi khi tra giá priceId={PriceId}", priceId);
+            return null;
         }
+    }
+
+    /// <summary>
+    /// Fingerprint idempotency khi client không gửi requestId (Mini App hiện tại).
+    /// Gom theo (SĐT + giỏ quà + tổng tiền + mốc 2 phút) → double-submit / retry mạng trong
+    /// cùng mốc bị chặn, còn lần đổi cố ý sau 2 phút vẫn cho qua (và đã có F2 chặn theo số dư).
+    /// Best-effort: chốt chặn thật là unique index + lock trong SpendAsync.
+    /// </summary>
+    private static string BuildAutoRequestId(string phone, List<UrBoxRedeemItem> items, decimal amountUsed)
+    {
+        var bucket = DateTimeOffset.UtcNow.ToUnixTimeSeconds() / 120;
+        var cart = string.Join("|", items
+            .Select(i => $"{i.PriceId}x{(i.Quantity > 0 ? i.Quantity : 1)}")
+            .OrderBy(x => x, StringComparer.Ordinal));
+
+        var raw = $"{phone}|{cart}|{amountUsed}|{bucket}";
+        var hash = SHA256.HashData(Encoding.UTF8.GetBytes(raw));
+        return "auto:" + Convert.ToHexString(hash).ToLowerInvariant()[..40];
     }
 
     #endregion

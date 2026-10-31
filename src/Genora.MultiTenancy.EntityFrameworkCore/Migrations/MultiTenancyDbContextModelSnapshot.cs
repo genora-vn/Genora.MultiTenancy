@@ -3874,6 +3874,9 @@ namespace Genora.MultiTenancy.Migrations
                     b.Property<Guid>("Id")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<decimal>("AmountUsed")
+                        .HasColumnType("decimal(18,2)");
+
                     b.Property<DateTime?>("ApprovedAt")
                         .HasColumnType("datetime2");
 
@@ -3968,6 +3971,10 @@ namespace Genora.MultiTenancy.Migrations
                     b.Property<int>("Quantity")
                         .HasColumnType("int");
 
+                    b.Property<string>("RequestId")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
                     b.Property<byte>("Status")
                         .HasColumnType("tinyint");
 
@@ -3990,10 +3997,18 @@ namespace Genora.MultiTenancy.Migrations
                     b.HasIndex("TenantId", "CustomerCode")
                         .HasDatabaseName("IX_AppHlGiftExchanges_TenantId_CustomerCode");
 
+                    b.HasIndex("TenantId", "CustomerPhone")
+                        .HasDatabaseName("IX_AppHlGiftExchanges_TenantId_CustomerPhone");
+
                     b.HasIndex("TenantId", "ExchangeCode")
                         .IsUnique()
                         .HasDatabaseName("IX_AppHlGiftExchanges_TenantId_ExchangeCode")
                         .HasFilter("[TenantId] IS NOT NULL");
+
+                    b.HasIndex("TenantId", "RequestId")
+                        .IsUnique()
+                        .HasDatabaseName("IX_AppHlGiftExchanges_TenantId_RequestId")
+                        .HasFilter("[RequestId] IS NOT NULL");
 
                     b.HasIndex("TenantId", "Status")
                         .HasDatabaseName("IX_AppHlGiftExchanges_TenantId_Status");

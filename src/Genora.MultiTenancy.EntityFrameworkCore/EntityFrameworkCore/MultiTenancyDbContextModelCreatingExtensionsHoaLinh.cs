@@ -105,6 +105,8 @@ public static class MultiTenancyDbContextModelCreatingExtensionsHoaLinh
             b.ConfigureByConvention();
 
             b.Property(x => x.ExchangeCode).IsRequired().HasMaxLength(50);
+            b.Property(x => x.RequestId).HasMaxLength(100);
+            b.Property(x => x.AmountUsed).HasColumnType("decimal(18,2)");
             b.Property(x => x.CustomerCode).HasMaxLength(50);
             b.Property(x => x.CustomerName).HasMaxLength(250);
             b.Property(x => x.CustomerPhone).HasMaxLength(20);
@@ -121,6 +123,16 @@ public static class MultiTenancyDbContextModelCreatingExtensionsHoaLinh
 
             b.HasIndex(x => new { x.TenantId, x.CustomerCode })
                 .HasDatabaseName("IX_AppHlGiftExchanges_TenantId_CustomerCode");
+
+            // Idempotency: double-submit cùng RequestId không thể tạo 2 lần phát hành voucher.
+            // Filter IS NOT NULL để các bản ghi cũ (RequestId = null) không vi phạm unique.
+            b.HasIndex(x => new { x.TenantId, x.RequestId })
+                .IsUnique()
+                .HasFilter("[RequestId] IS NOT NULL")
+                .HasDatabaseName("IX_AppHlGiftExchanges_TenantId_RequestId");
+
+            b.HasIndex(x => new { x.TenantId, x.CustomerPhone })
+                .HasDatabaseName("IX_AppHlGiftExchanges_TenantId_CustomerPhone");
 
             b.HasIndex(x => new { x.TenantId, x.Status })
                 .HasDatabaseName("IX_AppHlGiftExchanges_TenantId_Status");

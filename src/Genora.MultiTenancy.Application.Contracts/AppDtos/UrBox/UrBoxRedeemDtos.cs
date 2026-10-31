@@ -13,6 +13,12 @@ public class UrBoxRedeemInput
     [Required]
     public string SiteUserId { get; set; } = null!;
 
+    /// <summary>
+    /// Khóa idempotency — OPTIONAL. Client sinh 1 UUID cho mỗi lần bấm "Xác nhận" và gửi lại
+    /// cùng giá trị khi retry. Mini App hiện tại chưa gửi → backend tự sinh fingerprint.
+    /// </summary>
+    public string? RequestId { get; set; }
+
     /// <summary>SĐT nhận mã quà (UrBox: ttphone)</summary>
     public string? Phone { get; set; }
 

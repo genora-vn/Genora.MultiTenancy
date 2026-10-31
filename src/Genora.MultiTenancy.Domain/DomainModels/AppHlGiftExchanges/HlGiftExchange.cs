@@ -20,6 +20,20 @@ public class HlGiftExchange : FullAuditedAggregateRoot<Guid>, IMultiTenant
     [StringLength(50)]
     public string ExchangeCode { get; set; } = null!;
 
+    /// <summary>
+    /// Khóa idempotency do client sinh cho MỘT lần bấm "Xác nhận đổi quà".
+    /// Unique theo (TenantId, RequestId) — double-submit / retry mạng gửi lại cùng RequestId
+    /// sẽ trả về bản ghi cũ thay vì phát hành thêm voucher.
+    /// </summary>
+    [StringLength(100)]
+    public string? RequestId { get; set; }
+
+    /// <summary>
+    /// Số tiền thưởng đã trừ khỏi quỹ cho yêu cầu này (VND).
+    /// Tính từ giá server của UrBox, KHÔNG tin số client gửi.
+    /// </summary>
+    public decimal AmountUsed { get; set; }
+
     /// <summary>Mã khách hàng trên DMS Hoa Linh</summary>
     [StringLength(50)]
     public string? CustomerCode { get; set; }

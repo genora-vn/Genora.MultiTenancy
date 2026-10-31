@@ -39,6 +39,7 @@ public class HlPointAppService : ApplicationService, IHlPointAppService
     private readonly IRepository<HlPointTransaction, Guid> _txnRepo;
     private readonly IRepository<Customer, Guid> _customerRepo;
     private readonly IHlApiClientService _hlApi;
+    private readonly IHlPointSpendLock _spendLock;
     private readonly IUnitOfWorkManager _uowManager;
     private readonly ICurrentTenant _currentTenant;
     private readonly HlLoyaltyOptions _loyaltyOptions;
@@ -51,6 +52,7 @@ public class HlPointAppService : ApplicationService, IHlPointAppService
         IRepository<HlPointTransaction, Guid> txnRepo,
         IRepository<Customer, Guid> customerRepo,
         IHlApiClientService hlApi,
+        IHlPointSpendLock spendLock,
         IUnitOfWorkManager uowManager,
         ICurrentTenant currentTenant,
         IOptionsSnapshot<HlLoyaltyOptions> loyaltyOptions,
@@ -62,6 +64,7 @@ public class HlPointAppService : ApplicationService, IHlPointAppService
         _txnRepo = txnRepo;
         _customerRepo = customerRepo;
         _hlApi = hlApi;
+        _spendLock = spendLock;
         _uowManager = uowManager;
         _currentTenant = currentTenant;
         _loyaltyOptions = loyaltyOptions.Value;
@@ -77,15 +80,14 @@ public class HlPointAppService : ApplicationService, IHlPointAppService
         if (string.IsNullOrWhiteSpace(input.CampaignCode))
             throw new UserFriendlyException("Thiếu mã chiến dịch");
 
-        using var uow = _uowManager.Begin(requiresNew: true, isTransactional: true);
+        // Quỹ thưởng thuộc về SĐT (1 SĐT có nhiều mã KH DMS, mọi mã cộng dồn vào 1 quỹ).
+        // Thiếu SĐT thì lô sẽ không tiêu được về sau → chặn ngay, không tạo lô mồ côi.
+        var phone = PhoneKey(input.CustomerPhone);
+        if (string.IsNullOrWhiteSpace(phone))
+            throw new UserFriendlyException("Thiếu số điện thoại khách hàng — không thể ghi nhận tiền thưởng.");
 
-        // 1. Chặn đổi trùng: mỗi (khách + chiến dịch) chỉ đổi 1 lần
-        var already = await _batchRepo.FirstOrDefaultAsync(
-            x => x.CustomerCode == input.CustomerCode && x.CampaignCode == input.CampaignCode, ct);
-        if (already != null)
-            throw new UserFriendlyException("Chiến dịch này đã được đổi điểm trước đó.");
-
-        // 2. Lấy chi tiết chiến dịch từ HL DMS
+        // 1. Lấy chi tiết chiến dịch từ HL DMS — gọi TRƯỚC khi mở transaction và lấy lock.
+        //    Không giữ lock SQL xuyên qua lời gọi HTTP (xem ghi chú trong HlgRegistrationLock).
         var campaignResult = await _hlApi.GetCampaignDetailAsync(input.CustomerCode);
         if (!campaignResult.Success || campaignResult.Data == null || campaignResult.Data.Count == 0)
             throw new UserFriendlyException("Không tìm thấy chiến dịch của khách hàng này.");
@@ -116,13 +118,25 @@ public class HlPointAppService : ApplicationService, IHlPointAppService
         if (rate <= 0) rate = 1m;
         var convertedValue = Math.Round(sourceValue * rate, 2, MidpointRounding.AwayFromZero);
 
-        // 4. Tạo lô (hạn +1 năm) — lưu đầy đủ thông tin chiến dịch + voucher để đối soát
+        // 4. Mở transaction + KHÓA quỹ của SĐT, rồi mới chặn trùng và ghi dữ liệu.
+        //    Thiếu lock thì hai request đổi thưởng song song cùng (mã KH + chiến dịch) đều qua
+        //    được check bên dưới → cấp 2 lô, thổi hạn mức lên gấp đôi.
+        using var uow = _uowManager.Begin(requiresNew: true, isTransactional: true);
+        await _spendLock.AcquireAsync(phone, ct);
+
+        // Chặn đổi trùng: mỗi (khách + chiến dịch) chỉ đổi 1 lần
+        var already = await _batchRepo.FirstOrDefaultAsync(
+            x => x.CustomerCode == input.CustomerCode && x.CampaignCode == input.CampaignCode, ct);
+        if (already != null)
+            throw new UserFriendlyException("Chiến dịch này đã được đổi điểm trước đó.");
+
+        // 5. Tạo lô (hạn +1 năm) — lưu đầy đủ thông tin chiến dịch + voucher để đối soát
         var now = DateTime.Now;
         var batch = new HlPointBatch(GuidGenerator.Create(), await GenerateBatchCodeAsync(now), _currentTenant.Id)
         {
             CustomerCode = input.CustomerCode,
             CustomerName = input.CustomerName ?? campaign.CampaignName,
-            CustomerPhone = input.CustomerPhone,
+            CustomerPhone = phone,
             CampaignCode = campaign.CampaignCode,
             CampaignName = campaign.CampaignName,
             CampaignPeriod = campaign.CampaignPeriod,
@@ -143,14 +157,16 @@ public class HlPointAppService : ApplicationService, IHlPointAppService
             ExpireDate = now.AddYears(1)
         };
 
-        // 5. Cộng quỹ AppCustomers + gán CustomerId nếu tìm được
-        var customer = await _customerRepo.FirstOrDefaultAsync(x => x.PhoneNumber == input.CustomerPhone, ct);
+        // 5. Cộng quỹ. NGUỒN CHÂN LÝ = dbo.AppCustomers.BonusAmount (khóa theo SĐT).
+        //    Lô chỉ là bản ghi lịch sử cấp thưởng để đối soát, KHÔNG dùng để tính số dư:
+        //    luồng UrBox cũ chưa bao giờ trừ lô nên RemainingValue của lô cũ không phản ánh
+        //    phần khách đã tiêu. Tính số dư từ lô sẽ cấp lại tiền đã tiêu.
+        var customer = await _customerRepo.FirstOrDefaultAsync(x => x.PhoneNumber == phone, ct);
         decimal balancePoint = 0, balanceAmount = 0;
         if (customer != null)
         {
             batch.CustomerId = customer.Id;
             if (string.IsNullOrWhiteSpace(batch.CustomerName)) batch.CustomerName = customer.FullName;
-            if (string.IsNullOrWhiteSpace(batch.CustomerPhone)) batch.CustomerPhone = customer.PhoneNumber;
 
             if (unit == HlPointUnit.Point) customer.BonusPoint += convertedValue;
             else customer.BonusAmount += convertedValue;
@@ -221,9 +237,10 @@ public class HlPointAppService : ApplicationService, IHlPointAppService
         return MapBatch(batch);
     }
 
-    public async Task SpendAsync(string customerCode, int unit, decimal value, string? refCode = null, string? description = null, CancellationToken ct = default)
+    public async Task SpendAsync(string customerPhone, int unit, decimal value, string? refCode = null, string? description = null, CancellationToken ct = default)
     {
-        if (string.IsNullOrWhiteSpace(customerCode)) throw new UserFriendlyException("Thiếu mã khách hàng");
+        var phone = PhoneKey(customerPhone);
+        if (string.IsNullOrWhiteSpace(phone)) throw new UserFriendlyException("Thiếu số điện thoại khách hàng");
         if (value <= 0) throw new UserFriendlyException("Giá trị tiêu phải lớn hơn 0");
 
         var pointUnit = unit == (int)HlPointUnit.Amount ? HlPointUnit.Amount : HlPointUnit.Point;
@@ -231,25 +248,43 @@ public class HlPointAppService : ApplicationService, IHlPointAppService
 
         using var uow = _uowManager.Begin(requiresNew: true, isTransactional: true);
 
-        var customer = await _customerRepo.FirstOrDefaultAsync(x => x.CustomerCode == customerCode, ct)
-            ?? throw new UserFriendlyException("Không tìm thấy khách hàng");
+        // Khóa quỹ của SĐT này trong suốt transaction → hai request song song không thể
+        // cùng đọc một số dư rồi cùng trừ. Mọi call API ngoài phải xong TRƯỚC khi tới đây.
+        await _spendLock.AcquireAsync(phone, ct);
 
-        // FIFO: chỉ lấy lô CÒN HIỆU LỰC (Active + chưa hết hạn). Filter ExpireDate > now để
-        // race-proof khi worker hết hạn chưa kịp chạy.
+        // ══ CHỐT CHẶN HẠN MỨC ══════════════════════════════════════════════════
+        // NGUỒN CHÂN LÝ = dbo.AppCustomers.BonusAmount (khóa theo SĐT), KHÔNG phải lô.
+        // Lý do: luồng UrBox cũ chỉ trừ BonusAmount, chưa bao giờ trừ RemainingValue của lô
+        // (RC4) → lô cũ vẫn giữ nguyên giá trị gốc. Dùng lô để tính số dư sẽ cấp lại toàn bộ
+        // phần khách đã tiêu. BonusAmount là số đã được đối soát với HL DMS và UrBox.
+        var customer = await _customerRepo.FirstOrDefaultAsync(x => x.PhoneNumber == phone, ct)
+            ?? throw new UserFriendlyException("Không tìm thấy khách hàng theo số điện thoại này.");
+
+        var available = pointUnit == HlPointUnit.Point ? customer.BonusPoint : customer.BonusAmount;
+        if (available < value)
+            throw new UserFriendlyException(
+                $"Số dư tiền thưởng không đủ. Khả dụng: {available:#,##0}đ, cần: {value:#,##0}đ.");
+
+        // Trừ quỹ. KHÔNG clamp bằng Math.Max(0, …): đã guard ở trên nên không thể âm,
+        // và nếu có bug khác làm âm thì phải lộ ra chứ không được che đi.
+        if (pointUnit == HlPointUnit.Point) customer.BonusPoint = available - value;
+        else customer.BonusAmount = available - value;
+        await _customerRepo.UpdateAsync(customer, autoSave: false, cancellationToken: ct);
+
+        var balancePoint = customer.BonusPoint;
+        var balanceAmount = customer.BonusAmount;
+
+        // Trừ lô FIFO — chỉ để ghi sổ sách, KHÔNG dùng để chặn hạn mức.
+        // Lô cũ chưa được đối soát nên có thể không đủ để trừ; thiếu thì bỏ qua,
+        // không chặn giao dịch (hạn mức đã được chặn bằng BonusAmount ở trên).
         var queryable = await _batchRepo.GetQueryableAsync();
         var batches = await AsyncExecuter.ToListAsync(
-            queryable.Where(x => x.CustomerCode == customerCode
+            queryable.Where(x => x.CustomerPhone == phone
                                  && x.Unit == pointUnit
                                  && x.Status == HlPointBatchStatus.Active
                                  && x.RemainingValue > 0
                                  && x.ExpireDate > now)
                      .OrderBy(x => x.ExpireDate), ct);
-
-        // Nguồn chân lý = tổng RemainingValue của lô còn hiệu lực, KHÔNG dùng BonusPoint thô
-        // (có thể còn điểm "mồ côi" không thuộc lô nào hoặc lô đã hết hạn).
-        var available = batches.Sum(x => x.RemainingValue);
-        if (available < value)
-            throw new UserFriendlyException("Số dư điểm thưởng không đủ hoặc đã hết hạn.");
 
         var remainingToSpend = value;
         foreach (var b in batches)
@@ -262,22 +297,17 @@ public class HlPointAppService : ApplicationService, IHlPointAppService
             await _batchRepo.UpdateAsync(b, autoSave: false, cancellationToken: ct);
         }
 
-        // Trừ quỹ (clamp >= 0)
-        if (pointUnit == HlPointUnit.Point) customer.BonusPoint = Math.Max(0, customer.BonusPoint - value);
-        else customer.BonusAmount = Math.Max(0, customer.BonusAmount - value);
-        await _customerRepo.UpdateAsync(customer, autoSave: false, cancellationToken: ct);
-
         var txn = new HlPointTransaction(GuidGenerator.Create(), _currentTenant.Id)
         {
-            CustomerId = customer.Id,
-            CustomerCode = customerCode,
-            CustomerName = customer.FullName,
-            CustomerPhone = customer.PhoneNumber,
+            CustomerId = customer?.Id,
+            CustomerCode = customer?.CustomerCode,
+            CustomerName = customer?.FullName,
+            CustomerPhone = phone,
             Type = HlPointTransactionType.Spend,
             Unit = pointUnit,
             Value = -value,
-            BalancePointAfter = customer.BonusPoint,
-            BalanceAmountAfter = customer.BonusAmount,
+            BalancePointAfter = balancePoint,
+            BalanceAmountAfter = balanceAmount,
             RefCode = refCode,
             Description = description ?? "Tiêu điểm đổi quà"
         };
@@ -286,45 +316,171 @@ public class HlPointAppService : ApplicationService, IHlPointAppService
         await uow.CompleteAsync(ct);
     }
 
-    public async Task<HlPointBalanceDto> GetBalanceAsync(string customerCode, CancellationToken ct = default)
+    public async Task RefundAsync(string customerPhone, int unit, decimal value, string? refCode = null, string? description = null, CancellationToken ct = default)
     {
-        var now = DateTime.Now;
-        var customer = await _customerRepo.FirstOrDefaultAsync(x => x.CustomerCode == customerCode, ct);
+        var phone = PhoneKey(customerPhone);
+        if (string.IsNullOrWhiteSpace(phone)) throw new UserFriendlyException("Thiếu số điện thoại khách hàng");
+        if (value <= 0) return;
 
-        // Chỉ tính lô còn hiệu lực (Active + chưa hết hạn) — nguồn chân lý cho điểm khả dụng.
+        var pointUnit = unit == (int)HlPointUnit.Amount ? HlPointUnit.Amount : HlPointUnit.Point;
+        var now = DateTime.Now;
+
+        using var uow = _uowManager.Begin(requiresNew: true, isTransactional: true);
+
+        await _spendLock.AcquireAsync(phone, ct);
+
+        // Hoàn bằng lô mới, giữ hạn của lô gốc sớm nhất còn hiệu lực để không kéo dài
+        // thời hạn ưu đãi; không còn lô nào thì fallback +1 năm.
+        var queryable = await _batchRepo.GetQueryableAsync();
+        var reference = await AsyncExecuter.FirstOrDefaultAsync(
+            queryable.Where(x => x.CustomerPhone == phone && x.Unit == pointUnit)
+                     .OrderByDescending(x => x.ExpireDate), ct);
+
+        var expireDate = reference?.ExpireDate > now ? reference.ExpireDate : now.AddYears(1);
+        var customer = await _customerRepo.FirstOrDefaultAsync(x => x.PhoneNumber == phone, ct);
+
+        var batch = new HlPointBatch(GuidGenerator.Create(), await GenerateBatchCodeAsync(now), _currentTenant.Id)
+        {
+            CustomerId = customer?.Id,
+            CustomerCode = reference?.CustomerCode ?? customer?.CustomerCode,
+            CustomerName = customer?.FullName ?? reference?.CustomerName,
+            CustomerPhone = phone,
+            CampaignCode = reference?.CampaignCode,
+            CampaignName = reference?.CampaignName,
+            Unit = pointUnit,
+            SourceValue = value,
+            ConvertedValue = value,
+            RemainingValue = value,
+            Status = HlPointBatchStatus.Active,
+            ExchangedAt = now,
+            ExpireDate = expireDate
+        };
+        await _batchRepo.InsertAsync(batch, autoSave: false, cancellationToken: ct);
+
+        // Hoàn vào NGUỒN CHÂN LÝ = BonusAmount trên AppCustomers (cộng số học, không tính từ lô)
+        decimal balancePoint = 0, balanceAmount = 0;
+        if (customer != null)
+        {
+            if (pointUnit == HlPointUnit.Point) customer.BonusPoint += value;
+            else customer.BonusAmount += value;
+
+            await _customerRepo.UpdateAsync(customer, autoSave: false, cancellationToken: ct);
+            balancePoint = customer.BonusPoint;
+            balanceAmount = customer.BonusAmount;
+        }
+
+        var txn = new HlPointTransaction(GuidGenerator.Create(), _currentTenant.Id)
+        {
+            CustomerId = customer?.Id,
+            CustomerCode = batch.CustomerCode,
+            CustomerName = batch.CustomerName,
+            CustomerPhone = phone,
+            Type = HlPointTransactionType.Adjust,
+            Unit = pointUnit,
+            Value = value,
+            BalancePointAfter = balancePoint,
+            BalanceAmountAfter = balanceAmount,
+            BatchId = batch.Id,
+            RefCode = refCode,
+            Description = description ?? "Hoàn tiền thưởng do phát hành quà thất bại"
+        };
+        await _txnRepo.InsertAsync(txn, autoSave: false, cancellationToken: ct);
+
+        await uow.CompleteAsync(ct);
+
+        _logger.LogWarning("HL refund: phone={Phone} unit={Unit} value={Val} ref={Ref}",
+            phone, pointUnit, value, refCode);
+    }
+
+    public async Task<HlPointBalanceDto> GetBalanceAsync(string customerPhone, CancellationToken ct = default)
+    {
+        var phone = PhoneKey(customerPhone);
+        var now = DateTime.Now;
+        var customer = await _customerRepo.FirstOrDefaultAsync(x => x.PhoneNumber == phone, ct);
+
+        // Chỉ tính lô còn hiệu lực (Active + chưa hết hạn) — nguồn chân lý cho số dư khả dụng.
         var queryable = await _batchRepo.GetQueryableAsync();
         var batches = await AsyncExecuter.ToListAsync(
-            queryable.Where(x => x.CustomerCode == customerCode
+            queryable.Where(x => x.CustomerPhone == phone
                                  && x.Status == HlPointBatchStatus.Active
                                  && x.RemainingValue > 0
                                  && x.ExpireDate > now)
                      .OrderBy(x => x.ExpireDate), ct);
 
-        var availablePoint = batches.Where(x => x.Unit == HlPointUnit.Point).Sum(x => x.RemainingValue);
-        var availableAmount = batches.Where(x => x.Unit == HlPointUnit.Amount).Sum(x => x.RemainingValue);
-
         return new HlPointBalanceDto
         {
-            CustomerCode = customerCode,
+            CustomerCode = customer?.CustomerCode,
             CustomerName = customer?.FullName,
-            // Số dư khả dụng thực tế = tổng lô còn hiệu lực (không dùng BonusPoint thô có thể lệch/mồ côi)
-            BonusPoint = availablePoint,
-            BonusAmount = availableAmount,
+            // Số dư khả dụng = BonusPoint/BonusAmount trên AppCustomers (nguồn chân lý).
+            // KHÔNG tính từ tổng lô: lô cũ chưa từng bị trừ nên sẽ trả về cả phần đã tiêu.
+            BonusPoint = customer?.BonusPoint ?? 0,
+            BonusAmount = customer?.BonusAmount ?? 0,
+            // Danh sách lô chỉ để tham khảo/đối soát, không phải cơ sở tính số dư.
             ActiveBatches = batches.Select(MapBatch).ToList()
         };
     }
 
-    public async Task<List<HlPointTransactionDto>> GetCustomerHistoryAsync(string customerCode, int skip = 0, int take = 20, CancellationToken ct = default)
+    public async Task<List<HlPointTransactionDto>> GetCustomerHistoryAsync(string customerPhone, int skip = 0, int take = 20, CancellationToken ct = default)
     {
+        var phone = PhoneKey(customerPhone);
         var queryable = await _txnRepo.GetQueryableAsync();
         var items = await AsyncExecuter.ToListAsync(
-            queryable.Where(x => x.CustomerCode == customerCode)
+            queryable.Where(x => x.CustomerPhone == phone)
                      .OrderByDescending(x => x.CreationTime)
                      .Skip(skip).Take(take), ct);
         return items.Select(MapTxn).ToList();
     }
 
+    public async Task<string?> ResolvePhoneAsync(string customerCodeOrPhone, CancellationToken ct = default)
+    {
+        if (string.IsNullOrWhiteSpace(customerCodeOrPhone)) return null;
+        var raw = customerCodeOrPhone.Trim();
+
+        // 1. Đã là SĐT (toàn số, 9–11 chữ số sau khi chuẩn hóa)
+        if (raw.All(char.IsDigit) || raw.StartsWith("+"))
+        {
+            var normalized = PhoneKey(raw);
+            if (normalized.Length is >= 10 and <= 11) return normalized;
+        }
+
+        // 2. Mã KH → dbo.AppCustomers
+        var customer = await _customerRepo.FirstOrDefaultAsync(x => x.CustomerCode == raw, ct);
+        if (!string.IsNullOrWhiteSpace(customer?.PhoneNumber)) return PhoneKey(customer!.PhoneNumber);
+
+        // 3. Mã KH → lô điểm. Cần bước này vì 1 SĐT có nhiều mã KH DMS mà AppCustomers
+        //    chỉ giữ được 1 mã; mã còn lại chỉ tra được qua lô.
+        var queryable = await _batchRepo.GetQueryableAsync();
+        var batch = await AsyncExecuter.FirstOrDefaultAsync(
+            queryable.Where(x => x.CustomerCode == raw && x.CustomerPhone != null)
+                     .OrderByDescending(x => x.CreationTime), ct);
+
+        return string.IsNullOrWhiteSpace(batch?.CustomerPhone) ? null : PhoneKey(batch!.CustomerPhone);
+    }
+
     // ── Helpers ──────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Chuẩn hóa SĐT về dạng 0xxxxxxxxx — đây là KHÓA ĐỊNH DANH của quỹ thưởng.
+    /// Phải khớp với dạng đang lưu trong dbo.AppCustomers.PhoneNumber.
+    /// </summary>
+    private static string PhoneKey(string? phone)
+    {
+        if (string.IsNullOrWhiteSpace(phone)) return string.Empty;
+        var digits = new string(phone.Where(char.IsDigit).ToArray());
+        if (digits.Length == 0) return string.Empty;
+        if (digits.StartsWith("84") && digits.Length >= 11) return "0" + digits[2..];
+        if (!digits.StartsWith("0") && digits.Length == 9) return "0" + digits;
+        return digits;
+    }
+
+    /// <summary>
+    /// Đồng bộ bản sao BonusPoint/BonusAmount trên dbo.AppCustomers = tổng lô còn hiệu lực của SĐT.
+    /// Luôn TÍNH LẠI từ lô thay vì cộng/trừ số học → bản sao không thể lệch khỏi nguồn chân lý.
+    /// extraPoint/extraAmount: giá trị của lô vừa Insert trong cùng UoW (chưa flush nên query chưa thấy).
+    /// </summary>
+    // Đã bỏ SyncMirrorAsync: hàm này tính BonusPoint/BonusAmount = tổng RemainingValue của lô.
+    // Lô cũ chưa bao giờ bị trừ (luồng UrBox cũ bỏ qua lô) nên gọi nó sẽ cấp lại toàn bộ phần
+    // khách đã tiêu. BonusAmount trên dbo.AppCustomers là nguồn chân lý, chỉ cộng/trừ số học.
 
     private async Task<string> GenerateBatchCodeAsync(DateTime now)
     {
