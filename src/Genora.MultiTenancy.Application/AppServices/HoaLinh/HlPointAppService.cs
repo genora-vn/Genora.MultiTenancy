@@ -161,20 +161,25 @@ public class HlPointAppService : ApplicationService, IHlPointAppService
         //    Lô chỉ là bản ghi lịch sử cấp thưởng để đối soát, KHÔNG dùng để tính số dư:
         //    luồng UrBox cũ chưa bao giờ trừ lô nên RemainingValue của lô cũ không phản ánh
         //    phần khách đã tiêu. Tính số dư từ lô sẽ cấp lại tiền đã tiêu.
-        var customer = await _customerRepo.FirstOrDefaultAsync(x => x.PhoneNumber == phone, ct);
-        decimal balancePoint = 0, balanceAmount = 0;
-        if (customer != null)
-        {
-            batch.CustomerId = customer.Id;
-            if (string.IsNullOrWhiteSpace(batch.CustomerName)) batch.CustomerName = customer.FullName;
+        //    KHÔNG tìm thấy khách thì phải BÁO LỖI, không được ghi lô rồi bỏ qua việc cộng tiền.
+        //    Code cũ dùng `if (customer != null)` nên khi khách chưa có row AppCustomers thì lô
+        //    và sổ cái vẫn được ghi mà BonusAmount không hề tăng — không lỗi, không log. Hậu quả
+        //    trên prod: 10 lượt cấp thưởng ≈ 4.400.000đ chưa bao giờ vào quỹ của khách.
+        //    BonusAmount là nguồn chân lý, nên lô không có tiền thật là lô ma → fail to loud.
+        var customer = await _customerRepo.FirstOrDefaultAsync(x => x.PhoneNumber == phone, ct)
+            ?? throw new UserFriendlyException(
+                "Chưa có thông tin khách hàng trong hệ thống cho số điện thoại này. " +
+                "Vui lòng đăng nhập lại Mini App rồi thử lại.");
 
-            if (unit == HlPointUnit.Point) customer.BonusPoint += convertedValue;
-            else customer.BonusAmount += convertedValue;
+        batch.CustomerId = customer.Id;
+        if (string.IsNullOrWhiteSpace(batch.CustomerName)) batch.CustomerName = customer.FullName;
 
-            await _customerRepo.UpdateAsync(customer, autoSave: false, cancellationToken: ct);
-            balancePoint = customer.BonusPoint;
-            balanceAmount = customer.BonusAmount;
-        }
+        if (unit == HlPointUnit.Point) customer.BonusPoint += convertedValue;
+        else customer.BonusAmount += convertedValue;
+
+        await _customerRepo.UpdateAsync(customer, autoSave: false, cancellationToken: ct);
+        var balancePoint = customer.BonusPoint;
+        var balanceAmount = customer.BonusAmount;
 
         await _batchRepo.InsertAsync(batch, autoSave: false, cancellationToken: ct);
 
